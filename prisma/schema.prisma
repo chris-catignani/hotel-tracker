@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Hotel {
+  id             Int         @id @default(autoincrement())
+  name           String
+  loyaltyProgram String?     @map("loyalty_program")
+  bookings       Booking[]
+  promotions     Promotion[]
+
+  @@map("hotels")
+}
+
+model CreditCard {
+  id         Int         @id @default(autoincrement())
+  name       String
+  rewardType String      @map("reward_type") // "points" or "cashback"
+  rewardRate Decimal     @map("reward_rate") @db.Decimal(10, 4) // e.g. 0.05 for 5x
+  pointValue Decimal     @map("point_value") @db.Decimal(10, 4) // value per point in dollars
+  bookings   Booking[]
+  promotions Promotion[]
+
+  @@map("credit_cards")
+}
+
+model ShoppingPortal {
+  id         Int         @id @default(autoincrement())
+  name       String
+  bookings   Booking[]
+  promotions Promotion[]
+
+  @@map("shopping_portals")
+}
+
+model Booking {
+  id                 Int                @id @default(autoincrement())
+  hotelId            Int                @map("hotel_id")
+  hotel              Hotel              @relation(fields: [hotelId], references: [id])
+  propertyName       String             @map("property_name")
+  checkIn            DateTime           @map("check_in") @db.Date
+  checkOut           DateTime           @map("check_out") @db.Date
+  numNights          Int                @map("num_nights")
+  pretaxCost         Decimal            @map("pretax_cost") @db.Decimal(10, 2)
+  taxAmount          Decimal            @map("tax_amount") @db.Decimal(10, 2)
+  totalCost          Decimal            @map("total_cost") @db.Decimal(10, 2)
+  creditCardId       Int?               @map("credit_card_id")
+  creditCard         CreditCard?        @relation(fields: [creditCardId], references: [id])
+  shoppingPortalId   Int?               @map("shopping_portal_id")
+  shoppingPortal     ShoppingPortal?    @relation(fields: [shoppingPortalId], references: [id])
+  portalCashbackRate Decimal?           @map("portal_cashback_rate") @db.Decimal(10, 4)
+  loyaltyPointsEarned Int?             @map("loyalty_points_earned")
+  notes              String?
+  createdAt          DateTime           @default(now()) @map("created_at")
+  bookingPromotions  BookingPromotion[]
+
+  @@map("bookings")
+}
+
+enum PromotionType {
+  hotel
+  credit_card
+  portal
+  loyalty
+}
+
+enum ValueType {
+  fixed
+  percentage
+  points_multiplier
+}
+
+model Promotion {
+  id               Int                @id @default(autoincrement())
+  name             String
+  type             PromotionType
+  valueType        ValueType          @map("value_type")
+  value            Decimal            @db.Decimal(10, 4)
+  hotelId          Int?               @map("hotel_id")
+  hotel            Hotel?             @relation(fields: [hotelId], references: [id])
+  creditCardId     Int?               @map("credit_card_id")
+  creditCard       CreditCard?        @relation(fields: [creditCardId], references: [id])
+  shoppingPortalId Int?               @map("shopping_portal_id")
+  shoppingPortal   ShoppingPortal?    @relation(fields: [shoppingPortalId], references: [id])
+  minSpend         Decimal?           @map("min_spend") @db.Decimal(10, 2)
+  startDate        DateTime?          @map("start_date") @db.Date
+  endDate          DateTime?          @map("end_date") @db.Date
+  isActive         Boolean            @default(true) @map("is_active")
+  createdAt        DateTime           @default(now()) @map("created_at")
+  bookingPromotions BookingPromotion[]
+
+  @@map("promotions")
+}
+
+model BookingPromotion {
+  id           Int       @id @default(autoincrement())
+  bookingId    Int       @map("booking_id")
+  booking      Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  promotionId  Int       @map("promotion_id")
+  promotion    Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  appliedValue Decimal   @map("applied_value") @db.Decimal(10, 2)
+  autoApplied  Boolean   @default(true) @map("auto_applied")
+
+  @@map("booking_promotions")
+}
