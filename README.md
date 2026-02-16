@@ -1,36 +1,129 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Hotel Booking Tracker
 
-## Getting Started
+A personal web app to track hotel bookings and their true net cost after accounting for promotions, loyalty points, credit card rewards, and shopping portal cashback.
 
-First, run the development server:
+Built with Next.js, Prisma, shadcn/ui, and Tailwind CSS.
+
+## Features
+
+- **Booking management** -- Track hotel stays with pre-tax cost, taxes, credit card used, shopping portal, and loyalty points earned
+- **Promotion tracking** -- Define promotions (hotel credits, card offers, portal bonuses, loyalty multipliers) with matching rules
+- **Auto-matching** -- Promotions automatically apply to bookings based on hotel chain, credit card, portal, date range, and spend thresholds
+- **Net cost calculation** -- See the true cost of each stay after all savings:
+  ```
+  Net Cost = Total Cost - Promotions - Portal Cashback - Card Rewards
+  ```
+- **Dashboard** -- Summary stats, savings breakdown by category, and per-hotel-chain analysis
+- **Settings** -- Manage your hotel chains, credit cards, and shopping portals
+
+## Prerequisites
+
+- **Node.js** 18+
+- **PostgreSQL** -- a running Postgres instance (local or cloud)
+
+## Local Development Setup
+
+### 1. Clone and install dependencies
+
+```bash
+git clone https://github.com/chris-catignani/hotel-tracker.git
+cd hotel-tracker
+npm install
+```
+
+### 2. Set up the database
+
+Copy the example env file and update `DATABASE_URL` with your Postgres connection string:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env`:
+
+```
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/hotel_tracker"
+```
+
+If you need to create the database first:
+
+```bash
+psql -U postgres -c "CREATE DATABASE hotel_tracker;"
+```
+
+### 3. Run database migrations
+
+Push the Prisma schema to your database:
+
+```bash
+npx prisma db push
+```
+
+### 4. Seed reference data (optional)
+
+Loads sample hotel chains (Hilton, Marriott, Hyatt, IHG), credit cards (Amex Platinum, Chase Sapphire Reserve, Capital One Venture X), and shopping portals (Rakuten, TopCashback):
+
+```bash
+npm run db:seed
+```
+
+### 5. Start the dev server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Pages
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Route | Description |
+|---|---|
+| `/` | Dashboard with stats, recent bookings, savings breakdown |
+| `/bookings` | All bookings list with net cost |
+| `/bookings/new` | Add a new booking |
+| `/bookings/[id]` | Booking detail with cost breakdown and applied promotions |
+| `/bookings/[id]/edit` | Edit a booking |
+| `/promotions` | All promotions with type-based tabs |
+| `/promotions/new` | Add a new promotion |
+| `/promotions/[id]/edit` | Edit a promotion |
+| `/settings` | Manage hotels, credit cards, and shopping portals |
 
-## Learn More
+## Database Schema
 
-To learn more about Next.js, take a look at the following resources:
+Six tables managed by Prisma:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **hotels** -- Hotel chains and their loyalty programs
+- **credit_cards** -- Cards with reward type, earn rate, and point value
+- **shopping_portals** -- Cashback portals (Rakuten, TopCashback, etc.)
+- **bookings** -- Hotel stays with all cost fields and references to card/portal used
+- **promotions** -- Promotion rules with type, value, matching criteria, and date ranges
+- **booking_promotions** -- Join table tracking which promotions were applied to which bookings
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Useful Commands
 
-## Deploy on Vercel
+```bash
+npm run dev          # Start dev server
+npm run build        # Production build
+npm run db:push      # Push schema to database
+npm run db:seed      # Seed reference data
+npm run db:generate  # Regenerate Prisma client
+npx prisma studio    # Open Prisma Studio (visual DB browser)
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deploying to Vercel
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Push your repo to GitHub
+2. Import the project in [Vercel](https://vercel.com)
+3. Add a Postgres database (Neon or Vercel Postgres) from the Vercel dashboard
+4. Vercel will automatically set `DATABASE_URL` -- ensure it matches your Prisma config
+5. Add a build command override if needed: `npx prisma generate && next build`
+6. After the first deploy, run migrations: `npx prisma db push`
+7. Seed the database if desired: `npm run db:seed`
+
+## Tech Stack
+
+- **Framework:** Next.js 16 (App Router)
+- **Database:** PostgreSQL with Prisma 6 ORM
+- **UI:** Tailwind CSS + shadcn/ui
+- **Language:** TypeScript
