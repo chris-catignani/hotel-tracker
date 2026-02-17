@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { matchPromotionsForBooking } from "@/lib/promotion-matching";
+import { apiError } from "@/lib/api-error";
 
 export async function GET(
   request: NextRequest,
@@ -31,10 +32,7 @@ export async function GET(
 
     return NextResponse.json(booking);
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to fetch booking" },
-      { status: 500 }
-    );
+    return apiError("Failed to fetch booking", error);
   }
 }
 
@@ -86,6 +84,32 @@ export async function PUT(
         : null;
     if (notes !== undefined) data.notes = notes || null;
 
+    // Auto-calculate loyalty points if not explicitly provided but hotel/pretax changed
+    if (loyaltyPointsEarned === undefined || loyaltyPointsEarned === null) {
+      const resolvedHotelId = hotelId !== undefined ? Number(hotelId) : undefined;
+      const resolvedPretax = pretaxCost !== undefined ? Number(pretaxCost) : undefined;
+
+      if (resolvedHotelId || resolvedPretax) {
+        // Fetch current booking to fill in missing values
+        const current = await prisma.booking.findUnique({
+          where: { id: Number(id) },
+        });
+        const finalHotelId = resolvedHotelId ?? current?.hotelId;
+        const finalPretax = resolvedPretax ?? (current ? Number(current.pretaxCost) : null);
+
+        if (finalHotelId && finalPretax) {
+          const hotel = await prisma.hotel.findUnique({
+            where: { id: finalHotelId },
+          });
+          if (hotel?.basePointRate != null) {
+            const baseRate = Number(hotel.basePointRate);
+            const eliteRate = Number(hotel.elitePointRate || 0);
+            data.loyaltyPointsEarned = Math.round(finalPretax * (baseRate + eliteRate));
+          }
+        }
+      }
+    }
+
     const booking = await prisma.booking.update({
       where: { id: Number(id) },
       data,
@@ -111,10 +135,7 @@ export async function PUT(
 
     return NextResponse.json(fullBooking);
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to update booking" },
-      { status: 500 }
-    );
+    return apiError("Failed to update booking", error);
   }
 }
 
@@ -136,9 +157,6 @@ export async function DELETE(
 
     return NextResponse.json({ message: "Booking deleted" });
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to delete booking" },
-      { status: 500 }
-    );
+    return apiError("Failed to delete booking", error);
   }
 }

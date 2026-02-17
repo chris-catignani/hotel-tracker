@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { apiError } from "@/lib/api-error";
 
 export async function GET() {
   try {
     const creditCards = await prisma.creditCard.findMany();
     return NextResponse.json(creditCards);
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to fetch credit cards" },
-      { status: 500 }
-    );
+    return apiError("Failed to fetch credit cards", error);
   }
 }
 
@@ -29,9 +27,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(creditCard, { status: 201 });
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to create credit card" },
-      { status: 500 }
-    );
+    return apiError("Failed to create credit card", error);
   }
 }

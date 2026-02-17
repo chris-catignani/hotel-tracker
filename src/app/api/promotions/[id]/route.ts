@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { apiError } from "@/lib/api-error";
 
 export async function GET(
   request: NextRequest,
@@ -25,10 +26,7 @@ export async function GET(
 
     return NextResponse.json(promotion);
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to fetch promotion" },
-      { status: 500 }
-    );
+    return apiError("Failed to fetch promotion", error);
   }
 }
 
@@ -80,10 +78,7 @@ export async function PUT(
 
     return NextResponse.json(promotion);
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to update promotion" },
-      { status: 500 }
-    );
+    return apiError("Failed to update promotion", error);
   }
 }
 
@@ -99,9 +94,6 @@ export async function DELETE(
 
     return NextResponse.json({ message: "Promotion deleted" });
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to delete promotion" },
-      { status: 500 }
-    );
+    return apiError("Failed to delete promotion", error);
   }
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { matchPromotionsForBooking } from "@/lib/promotion-matching";
+import { apiError } from "@/lib/api-error";
 
 export async function GET() {
   try {
@@ -22,10 +23,7 @@ export async function GET() {
 
     return NextResponse.json(bookings);
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to fetch bookings" },
-      { status: 500 }
-    );
+    return apiError("Failed to fetch bookings", error);
   }
 }
 
@@ -48,6 +46,21 @@ export async function POST(request: NextRequest) {
       notes,
     } = body;
 
+    // Auto-calculate loyalty points from hotel rates if not explicitly provided
+    let calculatedPoints: number | null = loyaltyPointsEarned
+      ? Number(loyaltyPointsEarned)
+      : null;
+    if (calculatedPoints == null && hotelId && pretaxCost) {
+      const hotel = await prisma.hotel.findUnique({
+        where: { id: Number(hotelId) },
+      });
+      if (hotel?.basePointRate != null) {
+        const baseRate = Number(hotel.basePointRate);
+        const eliteRate = Number(hotel.elitePointRate || 0);
+        calculatedPoints = Math.round(Number(pretaxCost) * (baseRate + eliteRate));
+      }
+    }
+
     const booking = await prisma.booking.create({
       data: {
         hotelId: Number(hotelId),
@@ -63,9 +76,7 @@ export async function POST(request: NextRequest) {
         portalCashbackRate: portalCashbackRate
           ? Number(portalCashbackRate)
           : null,
-        loyaltyPointsEarned: loyaltyPointsEarned
-          ? Number(loyaltyPointsEarned)
-          : null,
+        loyaltyPointsEarned: calculatedPoints,
         notes: notes || null,
       },
     });
@@ -90,9 +101,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(fullBooking, { status: 201 });
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to create booking" },
-      { status: 500 }
-    );
+    return apiError("Failed to create booking", error);
   }
 }

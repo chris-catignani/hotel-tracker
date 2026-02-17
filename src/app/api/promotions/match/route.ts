@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { matchPromotionsForBooking } from "@/lib/promotion-matching";
+import { apiError } from "@/lib/api-error";
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,8 +17,6 @@ export async function POST(request: NextRequest) {
     const results = await matchPromotionsForBooking(Number(bookingId));
     return NextResponse.json(results);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Failed to match promotions";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return apiError("Failed to match promotions", error);
   }
 }

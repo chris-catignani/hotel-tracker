@@ -61,6 +61,7 @@ interface Booking {
     id: number;
     name: string;
     loyaltyProgram: string | null;
+    pointValue: string | number | null;
   };
   creditCard: {
     id: number;
@@ -152,7 +153,11 @@ export default function BookingDetailPage() {
       Number(booking.creditCard.rewardRate) *
       Number(booking.creditCard.pointValue)
     : 0;
-  const netCost = totalCost - promotionSavings - portalCashback - cardReward;
+  const loyaltyPointsValue =
+    booking.loyaltyPointsEarned && booking.hotel.pointValue
+      ? booking.loyaltyPointsEarned * Number(booking.hotel.pointValue)
+      : 0;
+  const netCost = totalCost - promotionSavings - portalCashback - cardReward - loyaltyPointsValue;
 
   return (
     <div className="space-y-6">
@@ -259,6 +264,7 @@ export default function BookingDetailPage() {
         promotionSavings={promotionSavings}
         portalCashback={portalCashback}
         cardReward={cardReward}
+        loyaltyPointsValue={loyaltyPointsValue}
         netCost={netCost}
       />
 

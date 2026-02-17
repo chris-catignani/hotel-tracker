@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { apiError } from "@/lib/api-error";
 
 export async function GET() {
   try {
     const portals = await prisma.shoppingPortal.findMany();
     return NextResponse.json(portals);
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to fetch portals" },
-      { status: 500 }
-    );
+    return apiError("Failed to fetch portals", error);
   }
 }
 
@@ -26,9 +24,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(portal, { status: 201 });
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to create portal" },
-      { status: 500 }
-    );
+    return apiError("Failed to create portal", error);
   }
 }

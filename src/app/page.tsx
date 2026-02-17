@@ -27,7 +27,7 @@ interface BookingWithRelations {
   portalCashbackRate: string | null;
   loyaltyPointsEarned: number | null;
   notes: string | null;
-  hotel: { id: number; name: string };
+  hotel: { id: number; name: string; pointValue: string | null };
   creditCard: {
     id: number;
     name: string;
@@ -72,7 +72,11 @@ function calcNetCost(booking: BookingWithRelations): number {
       Number(booking.creditCard.rewardRate) *
       Number(booking.creditCard.pointValue)
     : 0;
-  return total - promoSavings - portalCashback - cardReward;
+  const loyaltyPointsValue =
+    booking.loyaltyPointsEarned && booking.hotel.pointValue
+      ? booking.loyaltyPointsEarned * Number(booking.hotel.pointValue)
+      : 0;
+  return total - promoSavings - portalCashback - cardReward - loyaltyPointsValue;
 }
 
 function calcTotalSavings(booking: BookingWithRelations): number {
@@ -244,6 +248,14 @@ export default function DashboardPage() {
                         : 0),
                     0
                   );
+                  const totalLoyaltyPointsValue = bookings.reduce(
+                    (sum, b) =>
+                      sum +
+                      (b.loyaltyPointsEarned && b.hotel.pointValue
+                        ? b.loyaltyPointsEarned * Number(b.hotel.pointValue)
+                        : 0),
+                    0
+                  );
 
                   const items = [
                     {
@@ -260,6 +272,11 @@ export default function DashboardPage() {
                       label: "Card Rewards",
                       value: totalCardRewards,
                       color: "bg-purple-500",
+                    },
+                    {
+                      label: "Loyalty Points Value",
+                      value: totalLoyaltyPointsValue,
+                      color: "bg-orange-500",
                     },
                   ];
 

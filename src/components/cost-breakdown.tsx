@@ -8,6 +8,7 @@ interface CostBreakdownProps {
   promotionSavings: number;
   portalCashback: number;
   cardReward: number;
+  loyaltyPointsValue: number;
   netCost: number;
 }
 
@@ -23,6 +24,7 @@ export function CostBreakdown({
   promotionSavings,
   portalCashback,
   cardReward,
+  loyaltyPointsValue,
   netCost,
 }: CostBreakdownProps) {
   return (
@@ -46,6 +48,10 @@ export function CostBreakdown({
         <div className="flex items-center justify-between text-sm">
           <span>Card Reward</span>
           <span className="text-green-600">-{formatDollars(cardReward)}</span>
+        </div>
+        <div className="flex items-center justify-between text-sm">
+          <span>Loyalty Points Value</span>
+          <span className="text-green-600">-{formatDollars(loyaltyPointsValue)}</span>
         </div>
         <Separator />
         <div className="flex items-center justify-between font-bold">

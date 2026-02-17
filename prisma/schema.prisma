@@ -11,6 +11,9 @@ model Hotel {
   id             Int         @id @default(autoincrement())
   name           String
   loyaltyProgram String?     @map("loyalty_program")
+  basePointRate  Decimal?    @map("base_point_rate") @db.Decimal(10, 4)
+  elitePointRate Decimal?    @map("elite_point_rate") @db.Decimal(10, 4)
+  pointValue     Decimal?    @map("point_value") @db.Decimal(10, 4)
   bookings       Booking[]
   promotions     Promotion[]
 

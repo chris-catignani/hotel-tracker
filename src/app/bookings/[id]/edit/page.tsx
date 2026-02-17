@@ -29,6 +29,9 @@ interface Hotel {
   id: number;
   name: string;
   loyaltyProgram: string | null;
+  basePointRate: number | null;
+  elitePointRate: number | null;
+  pointValue: number | null;
 }
 
 interface CreditCard {
@@ -179,6 +182,20 @@ export default function EditBookingPage() {
       setTotalCost(total.toFixed(2));
     }
   }, [pretaxCost, taxAmount, initialized]);
+
+  // Auto-calculate loyalty points when hotel or pretaxCost changes (only after initial load)
+  useEffect(() => {
+    if (!initialized) return;
+    if (hotelId && pretaxCost) {
+      const hotel = hotels.find((h) => h.id === Number(hotelId));
+      if (hotel?.basePointRate != null) {
+        const baseRate = Number(hotel.basePointRate);
+        const eliteRate = Number(hotel.elitePointRate || 0);
+        const points = Math.round(Number(pretaxCost) * (baseRate + eliteRate));
+        setLoyaltyPointsEarned(String(points));
+      }
+    }
+  }, [hotelId, pretaxCost, hotels, initialized]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -417,6 +434,11 @@ export default function EditBookingPage() {
                 onChange={(e) => setLoyaltyPointsEarned(e.target.value)}
                 placeholder="0"
               />
+              {hotelId && pretaxCost && hotels.find((h) => h.id === Number(hotelId))?.basePointRate != null && (
+                <p className="text-xs text-muted-foreground">
+                  Auto-calculated from hotel chain rates. You can override this value.
+                </p>
+              )}
             </div>
 
             {/* Notes */}

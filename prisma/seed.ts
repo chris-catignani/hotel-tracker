@@ -4,25 +4,77 @@ const prisma = new PrismaClient();
 
 async function main() {
   // Hotels
+  const hiltonData = {
+    name: "Hilton",
+    loyaltyProgram: "Hilton Honors",
+    basePointRate: 10,
+    elitePointRate: 10,
+    pointValue: 0.005,
+  };
   const hilton = await prisma.hotel.upsert({
     where: { id: 1 },
-    update: {},
-    create: { name: "Hilton", loyaltyProgram: "Hilton Honors" },
+    update: hiltonData,
+    create: hiltonData,
   });
+  const marriottData = {
+    name: "Marriott",
+    loyaltyProgram: "Marriott Bonvoy",
+    basePointRate: 10,
+    elitePointRate: 12.5,
+    pointValue: 0.007,
+  };
   const marriott = await prisma.hotel.upsert({
     where: { id: 2 },
-    update: {},
-    create: { name: "Marriott", loyaltyProgram: "Marriott Bonvoy" },
+    update: marriottData,
+    create: marriottData,
   });
+  const hyattData = {
+    name: "Hyatt",
+    loyaltyProgram: "World of Hyatt",
+    basePointRate: 5,
+    elitePointRate: 5.5,
+    pointValue: 0.017,
+  };
   const hyatt = await prisma.hotel.upsert({
     where: { id: 3 },
-    update: {},
-    create: { name: "Hyatt", loyaltyProgram: "World of Hyatt" },
+    update: hyattData,
+    create: hyattData,
   });
+  const ihgData = {
+    name: "IHG",
+    loyaltyProgram: "IHG One Rewards",
+    basePointRate: 10,
+    elitePointRate: 10,
+    pointValue: 0.005,
+  };
   const ihg = await prisma.hotel.upsert({
     where: { id: 4 },
-    update: {},
-    create: { name: "IHG", loyaltyProgram: "IHG One Rewards" },
+    update: ihgData,
+    create: ihgData,
+  });
+  const ghaData = {
+    name: "GHA Discovery",
+    loyaltyProgram: "GHA Discovery",
+    basePointRate: 0,
+    elitePointRate: 0,
+    pointValue: 0,
+  };
+  const ghaDiscovery = await prisma.hotel.upsert({
+    where: { id: 5 },
+    update: ghaData,
+    create: ghaData,
+  });
+  const accorData = {
+    name: "Accor",
+    loyaltyProgram: "ALL - Accor Live Limitless",
+    basePointRate: 25,
+    elitePointRate: 0,
+    pointValue: 0.02,
+  };
+  const accor = await prisma.hotel.upsert({
+    where: { id: 6 },
+    update: accorData,
+    create: accorData,
   });
 
   // Credit Cards
@@ -70,7 +122,7 @@ async function main() {
   });
 
   console.log("Seed data created:", {
-    hotels: [hilton, marriott, hyatt, ihg],
+    hotels: [hilton, marriott, hyatt, ihg, ghaDiscovery, accor],
     creditCards: [amexPlat, chaseSapphire, ventureX],
     shoppingPortals: [rakuten, topCashback],
   });

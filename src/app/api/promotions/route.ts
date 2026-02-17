@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { PromotionType } from "@prisma/client";
+import { apiError } from "@/lib/api-error";
 
 export async function GET(request: NextRequest) {
   try {
@@ -23,10 +24,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(promotions);
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to fetch promotions" },
-      { status: 500 }
-    );
+    return apiError("Failed to fetch promotions", error);
   }
 }
 
@@ -65,9 +63,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(promotion, { status: 201 });
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to create promotion" },
-      { status: 500 }
-    );
+    return apiError("Failed to create promotion", error);
   }
 }
