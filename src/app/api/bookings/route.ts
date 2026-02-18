@@ -17,7 +17,7 @@ export async function GET() {
         },
       },
       orderBy: {
-        checkIn: "desc",
+        checkIn: "asc",
       },
     });
 
