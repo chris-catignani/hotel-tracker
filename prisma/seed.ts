@@ -6,8 +6,8 @@ async function main() {
   // PointTypes
   await prisma.pointType.upsert({
     where: { id: 1 },
-    update: { name: "Hilton Honors", category: "hotel", centsPerPoint: 0.005 },
-    create: { id: 1, name: "Hilton Honors", category: "hotel", centsPerPoint: 0.005 },
+    update: { name: "Hilton Honors", category: "hotel", centsPerPoint: 0.0045 },
+    create: { id: 1, name: "Hilton Honors", category: "hotel", centsPerPoint: 0.0045 },
   });
   await prisma.pointType.upsert({
     where: { id: 2 },
@@ -16,23 +16,23 @@ async function main() {
   });
   await prisma.pointType.upsert({
     where: { id: 3 },
-    update: { name: "World of Hyatt", category: "hotel", centsPerPoint: 0.017 },
-    create: { id: 3, name: "World of Hyatt", category: "hotel", centsPerPoint: 0.017 },
+    update: { name: "World of Hyatt", category: "hotel", centsPerPoint: 0.02 },
+    create: { id: 3, name: "World of Hyatt", category: "hotel", centsPerPoint: 0.02 },
   });
   await prisma.pointType.upsert({
     where: { id: 4 },
-    update: { name: "IHG One Rewards", category: "hotel", centsPerPoint: 0.005 },
-    create: { id: 4, name: "IHG One Rewards", category: "hotel", centsPerPoint: 0.005 },
+    update: { name: "IHG One Rewards", category: "hotel", centsPerPoint: 0.006 },
+    create: { id: 4, name: "IHG One Rewards", category: "hotel", centsPerPoint: 0.006 },
   });
   await prisma.pointType.upsert({
     where: { id: 5 },
-    update: { name: "GHA Discovery", category: "hotel", centsPerPoint: 0.000 },
-    create: { id: 5, name: "GHA Discovery", category: "hotel", centsPerPoint: 0.000 },
+    update: { name: "GHA Discovery", category: "hotel", centsPerPoint: 0.01 },
+    create: { id: 5, name: "GHA Discovery", category: "hotel", centsPerPoint: 0.01 },
   });
   await prisma.pointType.upsert({
     where: { id: 6 },
-    update: { name: "ALL - Accor Live Limitless", category: "hotel", centsPerPoint: 0.020 },
-    create: { id: 6, name: "ALL - Accor Live Limitless", category: "hotel", centsPerPoint: 0.020 },
+    update: { name: "ALL - Accor Live Limitless", category: "hotel", centsPerPoint: 0.022 },
+    create: { id: 6, name: "ALL - Accor Live Limitless", category: "hotel", centsPerPoint: 0.022 },
   });
   await prisma.pointType.upsert({
     where: { id: 7 },
@@ -46,8 +46,8 @@ async function main() {
   });
   await prisma.pointType.upsert({
     where: { id: 9 },
-    update: { name: "Capital One Miles", category: "credit_card", centsPerPoint: 0.010 },
-    create: { id: 9, name: "Capital One Miles", category: "credit_card", centsPerPoint: 0.010 },
+    update: { name: "Capital One Miles", category: "credit_card", centsPerPoint: 0.02 },
+    create: { id: 9, name: "Capital One Miles", category: "credit_card", centsPerPoint: 0.02 },
   });
 
   // Hotels
