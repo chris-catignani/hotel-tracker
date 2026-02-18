@@ -308,7 +308,6 @@ function PointTypesTab() {
         <TableHeader>
           <TableRow>
             <TableHead>Name</TableHead>
-            <TableHead>Category</TableHead>
             <TableHead>Value/Point</TableHead>
             <TableHead></TableHead>
           </TableRow>
@@ -316,28 +315,41 @@ function PointTypesTab() {
         <TableBody>
           {pointTypes.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={4} className="text-center text-muted-foreground">
+              <TableCell colSpan={3} className="text-center text-muted-foreground">
                 No point types added yet.
               </TableCell>
             </TableRow>
           ) : (
-            pointTypes.map((pt) => (
-              <TableRow key={pt.id}>
-                <TableCell>{pt.name}</TableCell>
-                <TableCell>{CATEGORY_LABELS[pt.category] ?? pt.category}</TableCell>
-                <TableCell>${Number(pt.centsPerPoint).toFixed(6)}</TableCell>
-                <TableCell>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => handleEdit(pt)}>
-                      Edit
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleDelete(pt)}>
-                      Delete
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))
+            (["hotel", "airline", "credit_card"] as const).flatMap((category) => {
+              const group = pointTypes.filter((pt) => pt.category === category);
+              if (group.length === 0) return [];
+              return [
+                <TableRow key={`header-${category}`}>
+                  <TableCell
+                    colSpan={3}
+                    className="text-muted-foreground text-xs font-semibold uppercase tracking-wide bg-muted/30 py-1.5"
+                  >
+                    {CATEGORY_LABELS[category]}
+                  </TableCell>
+                </TableRow>,
+                ...group.map((pt) => (
+                  <TableRow key={pt.id}>
+                    <TableCell>{pt.name}</TableCell>
+                    <TableCell>${parseFloat(Number(pt.centsPerPoint).toFixed(6))}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => handleEdit(pt)}>
+                          Edit
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDelete(pt)}>
+                          Delete
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )),
+              ];
+            })
           )}
         </TableBody>
       </Table>
