@@ -40,7 +40,7 @@ export default function NewPromotionPage() {
   const router = useRouter();
 
   const [name, setName] = useState("");
-  const [type, setType] = useState<string>("hotel");
+  const [type, setType] = useState<string>("loyalty");
   const [valueType, setValueType] = useState<string>("fixed");
   const [value, setValue] = useState("");
   const [hotelId, setHotelId] = useState<string>("");
@@ -83,7 +83,7 @@ export default function NewPromotionPage() {
       isActive,
     };
 
-    if ((type === "hotel" || type === "loyalty") && hotelId) {
+    if (type === "loyalty" && hotelId) {
       body.hotelId = parseInt(hotelId);
     }
     if (type === "credit_card" && creditCardId) {
@@ -155,7 +155,6 @@ export default function NewPromotionPage() {
                     <SelectValue placeholder="Select type..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="hotel">Hotel</SelectItem>
                     <SelectItem value="credit_card">Credit Card</SelectItem>
                     <SelectItem value="portal">Portal</SelectItem>
                     <SelectItem value="loyalty">Loyalty</SelectItem>
@@ -199,7 +198,7 @@ export default function NewPromotionPage() {
               />
             </div>
 
-            {(type === "hotel" || type === "loyalty") && (
+            {type === "loyalty" && (
               <div className="space-y-2">
                 <Label>Hotel</Label>
                 <Select value={hotelId} onValueChange={setHotelId}>

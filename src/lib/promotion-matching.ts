@@ -30,9 +30,6 @@ export async function matchPromotionsForBooking(
     let typeMatches = false;
 
     switch (promo.type) {
-      case PromotionType.hotel:
-        typeMatches = promo.hotelId === booking.hotelId;
-        break;
       case PromotionType.credit_card:
         typeMatches = promo.creditCardId === booking.creditCardId;
         break;
@@ -53,10 +50,9 @@ export async function matchPromotionsForBooking(
       if (promo.endDate && checkInDate > new Date(promo.endDate)) continue;
     }
 
-    // Min spend check for hotel and credit_card types
+    // Min spend check for credit_card types
     if (
-      (promo.type === PromotionType.hotel ||
-        promo.type === PromotionType.credit_card) &&
+      promo.type === PromotionType.credit_card &&
       promo.minSpend !== null &&
       booking.totalCost < promo.minSpend
     ) {

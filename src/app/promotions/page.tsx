@@ -18,7 +18,7 @@ import { Plus } from "lucide-react";
 interface Promotion {
   id: number;
   name: string;
-  type: "hotel" | "credit_card" | "portal" | "loyalty";
+  type: "credit_card" | "portal" | "loyalty";
   valueType: "fixed" | "percentage" | "points_multiplier";
   value: string;
   hotelId: number | null;
@@ -68,8 +68,6 @@ function getLinkedName(promo: Promotion): string {
 
 function typeBadgeVariant(type: string): "default" | "secondary" | "outline" | "destructive" {
   switch (type) {
-    case "hotel":
-      return "default";
     case "credit_card":
       return "secondary";
     case "portal":
@@ -83,8 +81,6 @@ function typeBadgeVariant(type: string): "default" | "secondary" | "outline" | "
 
 function typeLabel(type: string): string {
   switch (type) {
-    case "hotel":
-      return "Hotel";
     case "credit_card":
       return "Credit Card";
     case "portal":
@@ -152,7 +148,6 @@ export default function PromotionsPage() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="hotel">Hotel</TabsTrigger>
           <TabsTrigger value="credit_card">Credit Card</TabsTrigger>
           <TabsTrigger value="portal">Portal</TabsTrigger>
           <TabsTrigger value="loyalty">Loyalty</TabsTrigger>

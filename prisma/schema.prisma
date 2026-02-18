@@ -10,7 +10,7 @@ datasource db {
 enum PointCategory {
   hotel
   airline
-  credit_card
+  transferable
 }
 
 model PointType {
@@ -90,7 +90,6 @@ model Booking {
 }
 
 enum PromotionType {
-  hotel
   credit_card
   portal
   loyalty

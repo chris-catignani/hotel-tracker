@@ -39,7 +39,7 @@ interface ShoppingPortal {
 interface Promotion {
   id: number;
   name: string;
-  type: "hotel" | "credit_card" | "portal" | "loyalty";
+  type: "credit_card" | "portal" | "loyalty";
   valueType: "fixed" | "percentage" | "points_multiplier";
   value: string;
   hotelId: number | null;
@@ -64,7 +64,7 @@ export default function EditPromotionPage() {
 
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
-  const [type, setType] = useState<string>("hotel");
+  const [type, setType] = useState<string>("loyalty");
   const [valueType, setValueType] = useState<string>("fixed");
   const [value, setValue] = useState("");
   const [hotelId, setHotelId] = useState<string>("");
@@ -137,7 +137,7 @@ export default function EditPromotionPage() {
       isActive,
     };
 
-    if ((type === "hotel" || type === "loyalty") && hotelId) {
+    if (type === "loyalty" && hotelId) {
       body.hotelId = parseInt(hotelId);
     } else {
       body.hotelId = null;
@@ -225,7 +225,6 @@ export default function EditPromotionPage() {
                     <SelectValue placeholder="Select type..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="hotel">Hotel</SelectItem>
                     <SelectItem value="credit_card">Credit Card</SelectItem>
                     <SelectItem value="portal">Portal</SelectItem>
                     <SelectItem value="loyalty">Loyalty</SelectItem>
@@ -269,7 +268,7 @@ export default function EditPromotionPage() {
               />
             </div>
 
-            {(type === "hotel" || type === "loyalty") && (
+            {type === "loyalty" && (
               <div className="space-y-2">
                 <Label>Hotel</Label>
                 <Select value={hotelId} onValueChange={setHotelId}>

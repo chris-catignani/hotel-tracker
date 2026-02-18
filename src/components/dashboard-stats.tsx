@@ -5,6 +5,7 @@ interface DashboardStatsProps {
   totalSpend: number;
   totalSavings: number;
   avgNetCost: number;
+  avgNetCostPerNight: number;
 }
 
 function formatDollars(amount: number) {
@@ -19,16 +20,18 @@ export function DashboardStats({
   totalSpend,
   totalSavings,
   avgNetCost,
+  avgNetCostPerNight,
 }: DashboardStatsProps) {
   const stats = [
     { label: "Total Bookings", value: totalBookings.toString() },
     { label: "Total Spend", value: formatDollars(totalSpend) },
     { label: "Total Savings", value: formatDollars(totalSavings) },
     { label: "Avg Net Cost", value: formatDollars(avgNetCost) },
+    { label: "Avg Net Cost / Night", value: formatDollars(avgNetCostPerNight) },
   ];
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
       {stats.map((stat) => (
         <Card key={stat.label}>
           <CardHeader>

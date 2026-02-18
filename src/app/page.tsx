@@ -134,6 +134,11 @@ export default function DashboardPage() {
     totalBookings > 0
       ? bookings.reduce((sum, b) => sum + calcNetCost(b), 0) / totalBookings
       : 0;
+  const totalNights = bookings.reduce((sum, b) => sum + b.numNights, 0);
+  const avgNetCostPerNight =
+    totalNights > 0
+      ? bookings.reduce((sum, b) => sum + calcNetCost(b), 0) / totalNights
+      : 0;
 
   const recentBookings = bookings.slice(0, 5);
 
@@ -151,10 +156,11 @@ export default function DashboardPage() {
         totalSpend={totalSpend}
         totalSavings={totalSavings}
         avgNetCost={avgNetCost}
+        avgNetCostPerNight={avgNetCostPerNight}
       />
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
+      <div className="grid gap-6 lg:grid-cols-5">
+        <Card className="lg:col-span-3">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Recent Bookings</CardTitle>
@@ -181,6 +187,7 @@ export default function DashboardPage() {
                     <TableHead>Dates</TableHead>
                     <TableHead className="text-right">Total</TableHead>
                     <TableHead className="text-right">Net</TableHead>
+                    <TableHead className="text-right">Net/Night</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -217,6 +224,13 @@ export default function DashboardPage() {
                         >
                           {formatDollars(netCost)}
                         </TableCell>
+                        <TableCell
+                          className={`text-right font-medium ${
+                            netCost < total ? "text-green-600" : ""
+                          }`}
+                        >
+                          {formatDollars(netCost / booking.numNights)}
+                        </TableCell>
                       </TableRow>
                     );
                   })}
@@ -226,7 +240,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Savings Breakdown</CardTitle>
           </CardHeader>
@@ -359,9 +373,11 @@ export default function DashboardPage() {
                 <TableRow>
                   <TableHead>Hotel Chain</TableHead>
                   <TableHead className="text-right">Bookings</TableHead>
+                  <TableHead className="text-right">Nights</TableHead>
                   <TableHead className="text-right">Total Spend</TableHead>
                   <TableHead className="text-right">Total Savings</TableHead>
                   <TableHead className="text-right">Avg Net Cost</TableHead>
+                  <TableHead className="text-right">Net/Night</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -373,12 +389,14 @@ export default function DashboardPage() {
                         acc[chain] = {
                           chain,
                           count: 0,
+                          totalNights: 0,
                           totalSpend: 0,
                           totalSavings: 0,
                           totalNet: 0,
                         };
                       }
                       acc[chain].count++;
+                      acc[chain].totalNights += b.numNights;
                       acc[chain].totalSpend += Number(b.totalCost);
                       acc[chain].totalSavings += calcTotalSavings(b);
                       acc[chain].totalNet += calcNetCost(b);
@@ -389,6 +407,7 @@ export default function DashboardPage() {
                       {
                         chain: string;
                         count: number;
+                        totalNights: number;
                         totalSpend: number;
                         totalSavings: number;
                         totalNet: number;
@@ -404,6 +423,9 @@ export default function DashboardPage() {
                       {summary.count}
                     </TableCell>
                     <TableCell className="text-right">
+                      {summary.totalNights}
+                    </TableCell>
+                    <TableCell className="text-right">
                       {formatDollars(summary.totalSpend)}
                     </TableCell>
                     <TableCell className="text-right text-green-600">
@@ -411,6 +433,9 @@ export default function DashboardPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       {formatDollars(summary.totalNet / summary.count)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatDollars(summary.totalNet / summary.totalNights)}
                     </TableCell>
                   </TableRow>
                 ))}

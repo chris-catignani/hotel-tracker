@@ -158,19 +158,20 @@ export default function BookingsPage() {
             <TableHead>Nights</TableHead>
             <TableHead>Total Cost</TableHead>
             <TableHead>Net Cost</TableHead>
+            <TableHead>Net/Night</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {loading ? (
             <TableRow>
-              <TableCell colSpan={8} className="text-center text-muted-foreground">
+              <TableCell colSpan={9} className="text-center text-muted-foreground">
                 Loading...
               </TableCell>
             </TableRow>
           ) : bookings.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={8} className="text-center text-muted-foreground">
+              <TableCell colSpan={9} className="text-center text-muted-foreground">
                 No bookings yet.
               </TableCell>
             </TableRow>
@@ -190,6 +191,9 @@ export default function BookingsPage() {
                   <TableCell>{formatCurrency(totalCost)}</TableCell>
                   <TableCell className={isSaving ? "text-green-600 font-medium" : ""}>
                     {formatCurrency(netCost)}
+                  </TableCell>
+                  <TableCell className={isSaving ? "text-green-600 font-medium" : ""}>
+                    {formatCurrency(netCost / booking.numNights)}
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">

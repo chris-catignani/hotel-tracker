@@ -67,7 +67,7 @@ function ErrorBanner({
 interface PointType {
   id: number;
   name: string;
-  category: "hotel" | "airline" | "credit_card";
+  category: "hotel" | "airline" | "transferable";
   centsPerPoint: string | number;
 }
 
@@ -101,7 +101,7 @@ interface ShoppingPortal {
 const CATEGORY_LABELS: Record<string, string> = {
   hotel: "Hotel",
   airline: "Airline",
-  credit_card: "Credit Card",
+  transferable: "Transferable",
 };
 
 // ---------------------------------------------------------------------------
@@ -112,14 +112,14 @@ function PointTypesTab() {
   const [pointTypes, setPointTypes] = useState<PointType[]>([]);
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
-  const [category, setCategory] = useState<"hotel" | "airline" | "credit_card">("hotel");
+  const [category, setCategory] = useState<"hotel" | "airline" | "transferable">("hotel");
   const [centsPerPoint, setCentsPerPoint] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const [editOpen, setEditOpen] = useState(false);
   const [editPt, setEditPt] = useState<PointType | null>(null);
   const [editName, setEditName] = useState("");
-  const [editCategory, setEditCategory] = useState<"hotel" | "airline" | "credit_card">("hotel");
+  const [editCategory, setEditCategory] = useState<"hotel" | "airline" | "transferable">("hotel");
   const [editCentsPerPoint, setEditCentsPerPoint] = useState("");
 
   const fetchPointTypes = useCallback(async () => {
@@ -229,7 +229,7 @@ function PointTypesTab() {
                   <SelectContent>
                     <SelectItem value="hotel">Hotel</SelectItem>
                     <SelectItem value="airline">Airline</SelectItem>
-                    <SelectItem value="credit_card">Credit Card</SelectItem>
+                    <SelectItem value="transferable">Transferable</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -280,7 +280,7 @@ function PointTypesTab() {
                 <SelectContent>
                   <SelectItem value="hotel">Hotel</SelectItem>
                   <SelectItem value="airline">Airline</SelectItem>
-                  <SelectItem value="credit_card">Credit Card</SelectItem>
+                  <SelectItem value="transferable">Transferable</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -320,7 +320,7 @@ function PointTypesTab() {
               </TableCell>
             </TableRow>
           ) : (
-            (["hotel", "airline", "credit_card"] as const).flatMap((category) => {
+            (["hotel", "airline", "transferable"] as const).flatMap((category) => {
               const group = pointTypes.filter((pt) => pt.category === category);
               if (group.length === 0) return [];
               return [
