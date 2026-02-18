@@ -31,7 +31,6 @@ interface Hotel {
   loyaltyProgram: string | null;
   basePointRate: number | null;
   elitePointRate: number | null;
-  pointValue: number | null;
 }
 
 interface CreditCard {
@@ -39,12 +38,13 @@ interface CreditCard {
   name: string;
   rewardType: string;
   rewardRate: number;
-  pointValue: number;
 }
 
 interface ShoppingPortal {
   id: number;
   name: string;
+  rewardType: string;
+  pointType: { centsPerPoint: number } | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -146,10 +146,13 @@ export default function NewBookingPage() {
       totalCost: Number(totalCost),
       creditCardId: creditCardId === "none" ? null : Number(creditCardId),
       shoppingPortalId: shoppingPortalId === "none" ? null : Number(shoppingPortalId),
-      portalCashbackRate:
-        shoppingPortalId !== "none" && portalCashbackRate
-          ? Number(portalCashbackRate) / 100
-          : null,
+      portalCashbackRate: (() => {
+        if (shoppingPortalId === "none" || !portalCashbackRate) return null;
+        const portal = portals.find((p) => String(p.id) === shoppingPortalId);
+        return portal?.rewardType === "points"
+          ? Number(portalCashbackRate)
+          : Number(portalCashbackRate) / 100;
+      })(),
       portalCashbackOnTotal: shoppingPortalId !== "none" ? portalCashbackOnTotal : false,
       loyaltyPointsEarned: loyaltyPointsEarned
         ? Number(loyaltyPointsEarned)
@@ -327,10 +330,18 @@ export default function NewBookingPage() {
               </Select>
             </div>
 
-            {/* Portal Cashback Rate - shown when portal selected */}
+            {/* Portal Rate - shown when portal selected */}
             {shoppingPortalId !== "none" && (
               <div className="space-y-2">
-                <Label htmlFor="portalCashbackRate">Portal Cashback Rate (%)</Label>
+                {(() => {
+                  const portal = portals.find((p) => String(p.id) === shoppingPortalId);
+                  const isPoints = portal?.rewardType === "points";
+                  return (
+                    <Label htmlFor="portalCashbackRate">
+                      {isPoints ? "Points Rate (pts/$)" : "Cashback Rate (%)"}
+                    </Label>
+                  );
+                })()}
                 <Input
                   id="portalCashbackRate"
                   type="number"
@@ -338,7 +349,10 @@ export default function NewBookingPage() {
                   min="0"
                   value={portalCashbackRate}
                   onChange={(e) => setPortalCashbackRate(e.target.value)}
-                  placeholder="e.g. 6.75"
+                  placeholder={(() => {
+                    const portal = portals.find((p) => String(p.id) === shoppingPortalId);
+                    return portal?.rewardType === "points" ? "e.g. 5.0" : "e.g. 6.75";
+                  })()}
                 />
                 <div className="flex items-center gap-2">
                   <input

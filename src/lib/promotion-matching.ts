@@ -7,8 +7,8 @@ export async function matchPromotionsForBooking(
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
     include: {
-      hotel: true,
-      creditCard: true,
+      hotel: { include: { pointType: true } },
+      creditCard: { include: { pointType: true } },
       shoppingPortal: true,
     },
   });
@@ -73,13 +73,13 @@ export async function matchPromotionsForBooking(
         appliedValue = Number(booking.totalCost) * Number(promo.value) / 100;
         break;
       case ValueType.points_multiplier: {
-        const pointValue = booking.creditCard
-          ? Number(booking.creditCard.pointValue)
+        const centsPerPoint = booking.creditCard?.pointType?.centsPerPoint
+          ? Number(booking.creditCard.pointType.centsPerPoint)
           : 0.01;
         appliedValue =
           Number(booking.loyaltyPointsEarned) *
           (Number(promo.value) - 1) *
-          pointValue;
+          centsPerPoint;
         break;
       }
     }

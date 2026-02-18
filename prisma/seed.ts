@@ -3,13 +3,60 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
+  // PointTypes
+  await prisma.pointType.upsert({
+    where: { id: 1 },
+    update: { name: "Hilton Honors", category: "hotel", centsPerPoint: 0.005 },
+    create: { id: 1, name: "Hilton Honors", category: "hotel", centsPerPoint: 0.005 },
+  });
+  await prisma.pointType.upsert({
+    where: { id: 2 },
+    update: { name: "Marriott Bonvoy", category: "hotel", centsPerPoint: 0.007 },
+    create: { id: 2, name: "Marriott Bonvoy", category: "hotel", centsPerPoint: 0.007 },
+  });
+  await prisma.pointType.upsert({
+    where: { id: 3 },
+    update: { name: "World of Hyatt", category: "hotel", centsPerPoint: 0.017 },
+    create: { id: 3, name: "World of Hyatt", category: "hotel", centsPerPoint: 0.017 },
+  });
+  await prisma.pointType.upsert({
+    where: { id: 4 },
+    update: { name: "IHG One Rewards", category: "hotel", centsPerPoint: 0.005 },
+    create: { id: 4, name: "IHG One Rewards", category: "hotel", centsPerPoint: 0.005 },
+  });
+  await prisma.pointType.upsert({
+    where: { id: 5 },
+    update: { name: "GHA Discovery", category: "hotel", centsPerPoint: 0.000 },
+    create: { id: 5, name: "GHA Discovery", category: "hotel", centsPerPoint: 0.000 },
+  });
+  await prisma.pointType.upsert({
+    where: { id: 6 },
+    update: { name: "ALL - Accor Live Limitless", category: "hotel", centsPerPoint: 0.020 },
+    create: { id: 6, name: "ALL - Accor Live Limitless", category: "hotel", centsPerPoint: 0.020 },
+  });
+  await prisma.pointType.upsert({
+    where: { id: 7 },
+    update: { name: "Amex Membership Rewards", category: "credit_card", centsPerPoint: 0.020 },
+    create: { id: 7, name: "Amex Membership Rewards", category: "credit_card", centsPerPoint: 0.020 },
+  });
+  await prisma.pointType.upsert({
+    where: { id: 8 },
+    update: { name: "Chase Ultimate Rewards", category: "credit_card", centsPerPoint: 0.020 },
+    create: { id: 8, name: "Chase Ultimate Rewards", category: "credit_card", centsPerPoint: 0.020 },
+  });
+  await prisma.pointType.upsert({
+    where: { id: 9 },
+    update: { name: "Capital One Miles", category: "credit_card", centsPerPoint: 0.010 },
+    create: { id: 9, name: "Capital One Miles", category: "credit_card", centsPerPoint: 0.010 },
+  });
+
   // Hotels
   const hiltonData = {
     name: "Hilton",
     loyaltyProgram: "Hilton Honors",
     basePointRate: 10,
     elitePointRate: 10,
-    pointValue: 0.0045,
+    pointTypeId: 1,
   };
   const hilton = await prisma.hotel.upsert({
     where: { id: 1 },
@@ -21,7 +68,7 @@ async function main() {
     loyaltyProgram: "Marriott Bonvoy",
     basePointRate: 10,
     elitePointRate: 7.5,
-    pointValue: 0.007,
+    pointTypeId: 2,
   };
   const marriott = await prisma.hotel.upsert({
     where: { id: 2 },
@@ -33,7 +80,7 @@ async function main() {
     loyaltyProgram: "World of Hyatt",
     basePointRate: 5,
     elitePointRate: 1.5,
-    pointValue: 0.02,
+    pointTypeId: 3,
   };
   const hyatt = await prisma.hotel.upsert({
     where: { id: 3 },
@@ -45,7 +92,7 @@ async function main() {
     loyaltyProgram: "IHG One Rewards",
     basePointRate: 10,
     elitePointRate: 10,
-    pointValue: 0.006,
+    pointTypeId: 4,
   };
   const ihg = await prisma.hotel.upsert({
     where: { id: 4 },
@@ -57,7 +104,7 @@ async function main() {
     loyaltyProgram: "GHA Discovery",
     basePointRate: 4,
     elitePointRate: 3,
-    pointValue: 0.01,
+    pointTypeId: 5,
   };
   const ghaDiscovery = await prisma.hotel.upsert({
     where: { id: 5 },
@@ -69,7 +116,7 @@ async function main() {
     loyaltyProgram: "ALL - Accor Live Limitless",
     basePointRate: 25,
     elitePointRate: 0,
-    pointValue: 0.022,
+    pointTypeId: 6,
   };
   const accor = await prisma.hotel.upsert({
     where: { id: 6 },
@@ -80,32 +127,32 @@ async function main() {
   // Credit Cards
   const amexPlat = await prisma.creditCard.upsert({
     where: { id: 1 },
-    update: {},
+    update: { pointTypeId: 7 },
     create: {
       name: "Amex Platinum",
       rewardType: "points",
       rewardRate: 1,
-      pointValue: 0.02,
+      pointTypeId: 7,
     },
   });
   const chaseSapphire = await prisma.creditCard.upsert({
     where: { id: 2 },
-    update: {},
+    update: { pointTypeId: 8 },
     create: {
       name: "Chase Sapphire Reserve",
       rewardType: "points",
       rewardRate: 4,
-      pointValue: 0.02,
+      pointTypeId: 8,
     },
   });
   const ventureX = await prisma.creditCard.upsert({
     where: { id: 3 },
-    update: {},
+    update: { pointTypeId: 9 },
     create: {
       name: "Capital One Venture X",
       rewardType: "points",
       rewardRate: 2,
-      pointValue: 0.02,
+      pointTypeId: 9,
     },
   });
 

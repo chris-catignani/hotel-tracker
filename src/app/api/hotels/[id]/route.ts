@@ -9,7 +9,7 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { name, loyaltyProgram, basePointRate, elitePointRate, pointValue } = body;
+    const { name, loyaltyProgram, basePointRate, elitePointRate, pointTypeId } = body;
 
     const data: Record<string, unknown> = {};
     if (name !== undefined) data.name = name;
@@ -18,12 +18,13 @@ export async function PUT(
       data.basePointRate = basePointRate != null ? Number(basePointRate) : null;
     if (elitePointRate !== undefined)
       data.elitePointRate = elitePointRate != null ? Number(elitePointRate) : null;
-    if (pointValue !== undefined)
-      data.pointValue = pointValue != null ? Number(pointValue) : null;
+    if (pointTypeId !== undefined)
+      data.pointTypeId = pointTypeId ? Number(pointTypeId) : null;
 
     const hotel = await prisma.hotel.update({
       where: { id: Number(id) },
       data,
+      include: { pointType: true },
     });
 
     return NextResponse.json(hotel);

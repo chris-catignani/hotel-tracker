@@ -63,18 +63,20 @@ interface Booking {
     id: number;
     name: string;
     loyaltyProgram: string | null;
-    pointValue: string | number | null;
+    pointType: { centsPerPoint: string | number } | null;
   };
   creditCard: {
     id: number;
     name: string;
     rewardType: string;
     rewardRate: string | number;
-    pointValue: string | number;
+    pointType: { centsPerPoint: string | number } | null;
   } | null;
   shoppingPortal: {
     id: number;
     name: string;
+    rewardType: string;
+    pointType: { centsPerPoint: string | number } | null;
   } | null;
   bookingPromotions: BookingPromotion[];
 }
@@ -168,17 +170,22 @@ export default function BookingDetailPage() {
     (sum, bp) => sum + Number(bp.appliedValue),
     0
   );
-  const portalCashback =
-    Number(booking.portalCashbackRate || 0) *
-    (booking.portalCashbackOnTotal ? totalCost : Number(booking.pretaxCost));
+  const portalBasis = booking.portalCashbackOnTotal ? totalCost : Number(booking.pretaxCost);
+  const portalRate = Number(booking.portalCashbackRate || 0);
+  let portalCashback = 0;
+  if (booking.shoppingPortal?.rewardType === "points") {
+    portalCashback = portalRate * portalBasis * Number(booking.shoppingPortal.pointType?.centsPerPoint ?? 0);
+  } else {
+    portalCashback = portalRate * portalBasis;
+  }
   const cardReward = booking.creditCard
     ? totalCost *
       Number(booking.creditCard.rewardRate) *
-      Number(booking.creditCard.pointValue)
+      Number(booking.creditCard.pointType?.centsPerPoint ?? 0)
     : 0;
   const loyaltyPointsValue =
-    booking.loyaltyPointsEarned && booking.hotel.pointValue
-      ? booking.loyaltyPointsEarned * Number(booking.hotel.pointValue)
+    booking.loyaltyPointsEarned && booking.hotel.pointType
+      ? booking.loyaltyPointsEarned * Number(booking.hotel.pointType.centsPerPoint)
       : 0;
   const netCost = totalCost - promotionSavings - portalCashback - cardReward - loyaltyPointsValue;
 
@@ -253,7 +260,9 @@ export default function BookingDetailPage() {
                 <p className="font-medium">
                   {booking.shoppingPortal.name}
                   {booking.portalCashbackRate
-                    ? ` (${(Number(booking.portalCashbackRate) * 100).toFixed(1)}% — ${booking.portalCashbackOnTotal ? "total cost basis" : "pre-tax basis"})`
+                    ? booking.shoppingPortal.rewardType === "points"
+                      ? ` (${Number(booking.portalCashbackRate).toFixed(2)} pts/$ — ${booking.portalCashbackOnTotal ? "total cost basis" : "pre-tax basis"})`
+                      : ` (${(Number(booking.portalCashbackRate) * 100).toFixed(1)}% — ${booking.portalCashbackOnTotal ? "total cost basis" : "pre-tax basis"})`
                     : ""}
                 </p>
               </div>

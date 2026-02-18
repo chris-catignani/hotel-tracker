@@ -58,11 +58,13 @@ interface Booking {
     name: string;
     rewardType: string;
     rewardRate: string | number;
-    pointValue: string | number;
+    pointType: { centsPerPoint: string | number } | null;
   } | null;
   shoppingPortal: {
     id: number;
     name: string;
+    rewardType: string;
+    pointType: { centsPerPoint: string | number } | null;
   } | null;
   bookingPromotions: BookingPromotion[];
 }
@@ -92,13 +94,18 @@ function calculateNetCost(booking: Booking): number {
     (sum, bp) => sum + Number(bp.appliedValue),
     0
   );
-  const portalCashback =
-    Number(booking.portalCashbackRate || 0) *
-    (booking.portalCashbackOnTotal ? totalCost : Number(booking.pretaxCost));
+  const portalBasis = booking.portalCashbackOnTotal ? totalCost : Number(booking.pretaxCost);
+  const portalRate = Number(booking.portalCashbackRate || 0);
+  let portalCashback = 0;
+  if (booking.shoppingPortal?.rewardType === "points") {
+    portalCashback = portalRate * portalBasis * Number(booking.shoppingPortal.pointType?.centsPerPoint ?? 0);
+  } else {
+    portalCashback = portalRate * portalBasis;
+  }
   const cardReward = booking.creditCard
     ? totalCost *
       Number(booking.creditCard.rewardRate) *
-      Number(booking.creditCard.pointValue)
+      Number(booking.creditCard.pointType?.centsPerPoint ?? 0)
     : 0;
   return totalCost - promotionSavings - portalCashback - cardReward;
 }

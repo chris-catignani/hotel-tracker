@@ -28,14 +28,23 @@ interface BookingWithRelations {
   portalCashbackOnTotal: boolean;
   loyaltyPointsEarned: number | null;
   notes: string | null;
-  hotel: { id: number; name: string; pointValue: string | null };
+  hotel: {
+    id: number;
+    name: string;
+    pointType: { centsPerPoint: string } | null;
+  };
   creditCard: {
     id: number;
     name: string;
     rewardRate: string;
-    pointValue: string;
+    pointType: { centsPerPoint: string } | null;
   } | null;
-  shoppingPortal: { id: number; name: string } | null;
+  shoppingPortal: {
+    id: number;
+    name: string;
+    rewardType: string;
+    pointType: { centsPerPoint: string } | null;
+  } | null;
   bookingPromotions: {
     id: number;
     appliedValue: string;
@@ -66,17 +75,22 @@ function calcNetCost(booking: BookingWithRelations): number {
     (sum, bp) => sum + Number(bp.appliedValue),
     0
   );
-  const portalCashback =
-    Number(booking.portalCashbackRate || 0) *
-    (booking.portalCashbackOnTotal ? total : Number(booking.pretaxCost));
+  const portalBasis = booking.portalCashbackOnTotal ? total : Number(booking.pretaxCost);
+  const portalRate = Number(booking.portalCashbackRate || 0);
+  let portalCashback = 0;
+  if (booking.shoppingPortal?.rewardType === "points") {
+    portalCashback = portalRate * portalBasis * Number(booking.shoppingPortal.pointType?.centsPerPoint ?? 0);
+  } else {
+    portalCashback = portalRate * portalBasis;
+  }
   const cardReward = booking.creditCard
     ? total *
       Number(booking.creditCard.rewardRate) *
-      Number(booking.creditCard.pointValue)
+      Number(booking.creditCard.pointType?.centsPerPoint ?? 0)
     : 0;
   const loyaltyPointsValue =
-    booking.loyaltyPointsEarned && booking.hotel.pointValue
-      ? booking.loyaltyPointsEarned * Number(booking.hotel.pointValue)
+    booking.loyaltyPointsEarned && booking.hotel.pointType
+      ? booking.loyaltyPointsEarned * Number(booking.hotel.pointType.centsPerPoint)
       : 0;
   return total - promoSavings - portalCashback - cardReward - loyaltyPointsValue;
 }
@@ -233,28 +247,29 @@ export default function DashboardPage() {
                       ),
                     0
                   );
-                  const totalPortalCashback = bookings.reduce(
-                    (sum, b) =>
-                      sum +
-                      Number(b.portalCashbackRate || 0) *
-                        (b.portalCashbackOnTotal ? Number(b.totalCost) : Number(b.pretaxCost)),
-                    0
-                  );
+                  const totalPortalCashback = bookings.reduce((sum, b) => {
+                    const portalBasis = b.portalCashbackOnTotal ? Number(b.totalCost) : Number(b.pretaxCost);
+                    const portalRate = Number(b.portalCashbackRate || 0);
+                    if (b.shoppingPortal?.rewardType === "points") {
+                      return sum + portalRate * portalBasis * Number(b.shoppingPortal.pointType?.centsPerPoint ?? 0);
+                    }
+                    return sum + portalRate * portalBasis;
+                  }, 0);
                   const totalCardRewards = bookings.reduce(
                     (sum, b) =>
                       sum +
                       (b.creditCard
                         ? Number(b.totalCost) *
                           Number(b.creditCard.rewardRate) *
-                          Number(b.creditCard.pointValue)
+                          Number(b.creditCard.pointType?.centsPerPoint ?? 0)
                         : 0),
                     0
                   );
                   const totalLoyaltyPointsValue = bookings.reduce(
                     (sum, b) =>
                       sum +
-                      (b.loyaltyPointsEarned && b.hotel.pointValue
-                        ? b.loyaltyPointsEarned * Number(b.hotel.pointValue)
+                      (b.loyaltyPointsEarned && b.hotel.pointType
+                        ? b.loyaltyPointsEarned * Number(b.hotel.pointType.centsPerPoint)
                         : 0),
                     0
                   );

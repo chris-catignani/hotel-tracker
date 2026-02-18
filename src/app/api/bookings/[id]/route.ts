@@ -12,9 +12,9 @@ export async function GET(
     const booking = await prisma.booking.findUnique({
       where: { id: Number(id) },
       include: {
-        hotel: true,
-        creditCard: true,
-        shoppingPortal: true,
+        hotel: { include: { pointType: true } },
+        creditCard: { include: { pointType: true } },
+        shoppingPortal: { include: { pointType: true } },
         bookingPromotions: {
           include: {
             promotion: true,
@@ -124,9 +124,9 @@ export async function PUT(
     const fullBooking = await prisma.booking.findUnique({
       where: { id: booking.id },
       include: {
-        hotel: true,
-        creditCard: true,
-        shoppingPortal: true,
+        hotel: { include: { pointType: true } },
+        creditCard: { include: { pointType: true } },
+        shoppingPortal: { include: { pointType: true } },
         bookingPromotions: {
           include: {
             promotion: true,

@@ -9,23 +9,22 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { name, rewardType, rewardRate, pointTypeId } = body;
+    const { name, rewardType, pointTypeId } = body;
 
     const data: Record<string, unknown> = {};
     if (name !== undefined) data.name = name;
     if (rewardType !== undefined) data.rewardType = rewardType;
-    if (rewardRate !== undefined) data.rewardRate = Number(rewardRate);
     if (pointTypeId !== undefined)
       data.pointTypeId = pointTypeId ? Number(pointTypeId) : null;
 
-    const creditCard = await prisma.creditCard.update({
+    const portal = await prisma.shoppingPortal.update({
       where: { id: Number(id) },
       data,
       include: { pointType: true },
     });
 
-    return NextResponse.json(creditCard);
+    return NextResponse.json(portal);
   } catch (error) {
-    return apiError("Failed to update credit card", error);
+    return apiError("Failed to update portal", error);
   }
 }
