@@ -56,8 +56,9 @@ model Booking {
   creditCard         CreditCard?        @relation(fields: [creditCardId], references: [id])
   shoppingPortalId   Int?               @map("shopping_portal_id")
   shoppingPortal     ShoppingPortal?    @relation(fields: [shoppingPortalId], references: [id])
-  portalCashbackRate Decimal?           @map("portal_cashback_rate") @db.Decimal(10, 4)
-  loyaltyPointsEarned Int?             @map("loyalty_points_earned")
+  portalCashbackRate    Decimal?           @map("portal_cashback_rate") @db.Decimal(10, 4)
+  portalCashbackOnTotal Boolean            @default(false) @map("portal_cashback_on_total")
+  loyaltyPointsEarned   Int?               @map("loyalty_points_earned")
   notes              String?
   createdAt          DateTime           @default(now()) @map("created_at")
   bookingPromotions  BookingPromotion[]

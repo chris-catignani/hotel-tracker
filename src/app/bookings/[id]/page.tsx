@@ -54,6 +54,7 @@ interface Booking {
   creditCardId: number | null;
   shoppingPortalId: number | null;
   portalCashbackRate: string | number | null;
+  portalCashbackOnTotal: boolean;
   loyaltyPointsEarned: number | null;
   notes: string | null;
   createdAt: string;
@@ -147,7 +148,8 @@ export default function BookingDetailPage() {
     0
   );
   const portalCashback =
-    Number(booking.portalCashbackRate || 0) * totalCost;
+    Number(booking.portalCashbackRate || 0) *
+    (booking.portalCashbackOnTotal ? totalCost : Number(booking.pretaxCost));
   const cardReward = booking.creditCard
     ? totalCost *
       Number(booking.creditCard.rewardRate) *
@@ -230,7 +232,7 @@ export default function BookingDetailPage() {
                 <p className="font-medium">
                   {booking.shoppingPortal.name}
                   {booking.portalCashbackRate
-                    ? ` (${(Number(booking.portalCashbackRate) * 100).toFixed(1)}%)`
+                    ? ` (${(Number(booking.portalCashbackRate) * 100).toFixed(1)}% — ${booking.portalCashbackOnTotal ? "total cost basis" : "pre-tax basis"})`
                     : ""}
                 </p>
               </div>

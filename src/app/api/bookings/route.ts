@@ -42,6 +42,7 @@ export async function POST(request: NextRequest) {
       creditCardId,
       shoppingPortalId,
       portalCashbackRate,
+      portalCashbackOnTotal,
       loyaltyPointsEarned,
       notes,
     } = body;
@@ -76,6 +77,7 @@ export async function POST(request: NextRequest) {
         portalCashbackRate: portalCashbackRate
           ? Number(portalCashbackRate)
           : null,
+        portalCashbackOnTotal: portalCashbackOnTotal ?? false,
         loyaltyPointsEarned: calculatedPoints,
         notes: notes || null,
       },

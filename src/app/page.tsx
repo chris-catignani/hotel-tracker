@@ -25,6 +25,7 @@ interface BookingWithRelations {
   taxAmount: string;
   totalCost: string;
   portalCashbackRate: string | null;
+  portalCashbackOnTotal: boolean;
   loyaltyPointsEarned: number | null;
   notes: string | null;
   hotel: { id: number; name: string; pointValue: string | null };
@@ -66,7 +67,8 @@ function calcNetCost(booking: BookingWithRelations): number {
     0
   );
   const portalCashback =
-    Number(booking.portalCashbackRate || 0) * total;
+    Number(booking.portalCashbackRate || 0) *
+    (booking.portalCashbackOnTotal ? total : Number(booking.pretaxCost));
   const cardReward = booking.creditCard
     ? total *
       Number(booking.creditCard.rewardRate) *
@@ -235,7 +237,7 @@ export default function DashboardPage() {
                     (sum, b) =>
                       sum +
                       Number(b.portalCashbackRate || 0) *
-                        Number(b.totalCost),
+                        (b.portalCashbackOnTotal ? Number(b.totalCost) : Number(b.pretaxCost)),
                     0
                   );
                   const totalCardRewards = bookings.reduce(

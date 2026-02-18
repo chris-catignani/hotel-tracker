@@ -82,6 +82,7 @@ export default function NewBookingPage() {
   const [creditCardId, setCreditCardId] = useState("none");
   const [shoppingPortalId, setShoppingPortalId] = useState("none");
   const [portalCashbackRate, setPortalCashbackRate] = useState("");
+  const [portalCashbackOnTotal, setPortalCashbackOnTotal] = useState(false);
   const [loyaltyPointsEarned, setLoyaltyPointsEarned] = useState("");
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -149,6 +150,7 @@ export default function NewBookingPage() {
         shoppingPortalId !== "none" && portalCashbackRate
           ? Number(portalCashbackRate) / 100
           : null,
+      portalCashbackOnTotal: shoppingPortalId !== "none" ? portalCashbackOnTotal : false,
       loyaltyPointsEarned: loyaltyPointsEarned
         ? Number(loyaltyPointsEarned)
         : null,
@@ -338,6 +340,17 @@ export default function NewBookingPage() {
                   onChange={(e) => setPortalCashbackRate(e.target.value)}
                   placeholder="e.g. 6.75"
                 />
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="portalCashbackOnTotal"
+                    checked={portalCashbackOnTotal}
+                    onChange={(e) => setPortalCashbackOnTotal(e.target.checked)}
+                  />
+                  <Label htmlFor="portalCashbackOnTotal" className="font-normal">
+                    Apply rate to total cost (default: pre-tax cost)
+                  </Label>
+                </div>
               </div>
             )}
 
@@ -349,14 +362,13 @@ export default function NewBookingPage() {
                 type="number"
                 min="0"
                 value={loyaltyPointsEarned}
-                onChange={(e) => setLoyaltyPointsEarned(e.target.value)}
+                readOnly
+                className="bg-muted text-muted-foreground"
                 placeholder="0"
               />
-              {hotelId && pretaxCost && hotels.find((h) => h.id === Number(hotelId))?.basePointRate != null && (
-                <p className="text-xs text-muted-foreground">
-                  Auto-calculated from hotel chain rates. You can override this value.
-                </p>
-              )}
+              <p className="text-xs text-muted-foreground">
+                Auto-calculated from hotel chain rates.
+              </p>
             </div>
 
             {/* Notes */}

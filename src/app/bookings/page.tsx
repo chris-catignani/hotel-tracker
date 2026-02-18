@@ -44,6 +44,7 @@ interface Booking {
   creditCardId: number | null;
   shoppingPortalId: number | null;
   portalCashbackRate: string | number | null;
+  portalCashbackOnTotal: boolean;
   loyaltyPointsEarned: number | null;
   notes: string | null;
   createdAt: string;
@@ -92,7 +93,8 @@ function calculateNetCost(booking: Booking): number {
     0
   );
   const portalCashback =
-    Number(booking.portalCashbackRate || 0) * totalCost;
+    Number(booking.portalCashbackRate || 0) *
+    (booking.portalCashbackOnTotal ? totalCost : Number(booking.pretaxCost));
   const cardReward = booking.creditCard
     ? totalCost *
       Number(booking.creditCard.rewardRate) *

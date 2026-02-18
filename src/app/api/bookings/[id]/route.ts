@@ -55,6 +55,7 @@ export async function PUT(
       creditCardId,
       shoppingPortalId,
       portalCashbackRate,
+      portalCashbackOnTotal,
       loyaltyPointsEarned,
       notes,
     } = body;
@@ -82,6 +83,7 @@ export async function PUT(
       data.loyaltyPointsEarned = loyaltyPointsEarned
         ? Number(loyaltyPointsEarned)
         : null;
+    if (portalCashbackOnTotal !== undefined) data.portalCashbackOnTotal = portalCashbackOnTotal;
     if (notes !== undefined) data.notes = notes || null;
 
     // Auto-calculate loyalty points if not explicitly provided but hotel/pretax changed
