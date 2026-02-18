@@ -4,7 +4,7 @@ import { apiError } from "@/lib/api-error";
 
 export async function GET() {
   try {
-    const creditCards = await prisma.creditCard.findMany();
+    const creditCards = await prisma.creditCard.findMany({ orderBy: { name: "asc" } });
     return NextResponse.json(creditCards);
   } catch (error) {
     return apiError("Failed to fetch credit cards", error);

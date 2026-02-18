@@ -109,13 +109,13 @@ export default function NewBookingPage() {
     }
   }, [checkIn, checkOut]);
 
-  // Auto-calculate totalCost when pretaxCost/taxAmount change
+  // Auto-calculate taxAmount when pretaxCost/totalCost change
   useEffect(() => {
-    if (pretaxCost && taxAmount) {
-      const total = Number(pretaxCost) + Number(taxAmount);
-      setTotalCost(total.toFixed(2));
+    if (pretaxCost && totalCost) {
+      const tax = Number(totalCost) - Number(pretaxCost);
+      setTaxAmount(tax.toFixed(2));
     }
-  }, [pretaxCost, taxAmount]);
+  }, [pretaxCost, totalCost]);
 
   // Auto-calculate loyalty points when hotel or pretaxCost changes
   useEffect(() => {
@@ -147,7 +147,7 @@ export default function NewBookingPage() {
       shoppingPortalId: shoppingPortalId === "none" ? null : Number(shoppingPortalId),
       portalCashbackRate:
         shoppingPortalId !== "none" && portalCashbackRate
-          ? Number(portalCashbackRate)
+          ? Number(portalCashbackRate) / 100
           : null,
       loyaltyPointsEarned: loyaltyPointsEarned
         ? Number(loyaltyPointsEarned)
@@ -170,7 +170,7 @@ export default function NewBookingPage() {
   };
 
   const isValid =
-    hotelId && propertyName.trim() && checkIn && checkOut && numNights && pretaxCost && taxAmount && totalCost;
+    hotelId && propertyName.trim() && checkIn && checkOut && numNights && pretaxCost && totalCost;
 
   return (
     <div className="space-y-6">
@@ -261,20 +261,7 @@ export default function NewBookingPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="taxAmount">Tax Amount *</Label>
-                <Input
-                  id="taxAmount"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={taxAmount}
-                  onChange={(e) => setTaxAmount(e.target.value)}
-                  placeholder="0.00"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="totalCost">Total Cost</Label>
+                <Label htmlFor="totalCost">Total Cost *</Label>
                 <Input
                   id="totalCost"
                   type="number"
@@ -283,7 +270,22 @@ export default function NewBookingPage() {
                   value={totalCost}
                   onChange={(e) => setTotalCost(e.target.value)}
                   placeholder="0.00"
+                  required
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="taxAmount">Tax Amount</Label>
+                <Input
+                  id="taxAmount"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={taxAmount}
+                  placeholder="0.00"
+                  readOnly
+                  className="bg-muted text-muted-foreground"
+                />
+                <p className="text-xs text-muted-foreground">Auto-calculated</p>
               </div>
             </div>
 
@@ -326,7 +328,7 @@ export default function NewBookingPage() {
             {/* Portal Cashback Rate - shown when portal selected */}
             {shoppingPortalId !== "none" && (
               <div className="space-y-2">
-                <Label htmlFor="portalCashbackRate">Portal Cashback Rate</Label>
+                <Label htmlFor="portalCashbackRate">Portal Cashback Rate (%)</Label>
                 <Input
                   id="portalCashbackRate"
                   type="number"
@@ -334,7 +336,7 @@ export default function NewBookingPage() {
                   min="0"
                   value={portalCashbackRate}
                   onChange={(e) => setPortalCashbackRate(e.target.value)}
-                  placeholder="e.g. 0.05 for 5%"
+                  placeholder="e.g. 6.75"
                 />
               </div>
             )}

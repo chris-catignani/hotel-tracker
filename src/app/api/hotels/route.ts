@@ -4,7 +4,7 @@ import { apiError } from "@/lib/api-error";
 
 export async function GET() {
   try {
-    const hotels = await prisma.hotel.findMany();
+    const hotels = await prisma.hotel.findMany({ orderBy: { name: "asc" } });
     return NextResponse.json(hotels);
   } catch (error) {
     return apiError("Failed to fetch hotels", error);

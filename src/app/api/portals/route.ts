@@ -4,7 +4,7 @@ import { apiError } from "@/lib/api-error";
 
 export async function GET() {
   try {
-    const portals = await prisma.shoppingPortal.findMany();
+    const portals = await prisma.shoppingPortal.findMany({ orderBy: { name: "asc" } });
     return NextResponse.json(portals);
   } catch (error) {
     return apiError("Failed to fetch portals", error);
