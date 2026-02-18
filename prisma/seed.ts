@@ -9,7 +9,7 @@ async function main() {
     loyaltyProgram: "Hilton Honors",
     basePointRate: 10,
     elitePointRate: 10,
-    pointValue: 0.005,
+    pointValue: 0.0045,
   };
   const hilton = await prisma.hotel.upsert({
     where: { id: 1 },
@@ -20,7 +20,7 @@ async function main() {
     name: "Marriott",
     loyaltyProgram: "Marriott Bonvoy",
     basePointRate: 10,
-    elitePointRate: 12.5,
+    elitePointRate: 7.5,
     pointValue: 0.007,
   };
   const marriott = await prisma.hotel.upsert({
@@ -32,8 +32,8 @@ async function main() {
     name: "Hyatt",
     loyaltyProgram: "World of Hyatt",
     basePointRate: 5,
-    elitePointRate: 5.5,
-    pointValue: 0.017,
+    elitePointRate: 1.5,
+    pointValue: 0.02,
   };
   const hyatt = await prisma.hotel.upsert({
     where: { id: 3 },
@@ -45,7 +45,7 @@ async function main() {
     loyaltyProgram: "IHG One Rewards",
     basePointRate: 10,
     elitePointRate: 10,
-    pointValue: 0.005,
+    pointValue: 0.006,
   };
   const ihg = await prisma.hotel.upsert({
     where: { id: 4 },
@@ -55,9 +55,9 @@ async function main() {
   const ghaData = {
     name: "GHA Discovery",
     loyaltyProgram: "GHA Discovery",
-    basePointRate: 0,
-    elitePointRate: 0,
-    pointValue: 0,
+    basePointRate: 4,
+    elitePointRate: 3,
+    pointValue: 0.01,
   };
   const ghaDiscovery = await prisma.hotel.upsert({
     where: { id: 5 },
@@ -69,7 +69,7 @@ async function main() {
     loyaltyProgram: "ALL - Accor Live Limitless",
     basePointRate: 25,
     elitePointRate: 0,
-    pointValue: 0.02,
+    pointValue: 0.022,
   };
   const accor = await prisma.hotel.upsert({
     where: { id: 6 },
@@ -84,7 +84,7 @@ async function main() {
     create: {
       name: "Amex Platinum",
       rewardType: "points",
-      rewardRate: 0.05,
+      rewardRate: 1,
       pointValue: 0.02,
     },
   });
@@ -94,7 +94,7 @@ async function main() {
     create: {
       name: "Chase Sapphire Reserve",
       rewardType: "points",
-      rewardRate: 0.03,
+      rewardRate: 4,
       pointValue: 0.02,
     },
   });
@@ -104,8 +104,8 @@ async function main() {
     create: {
       name: "Capital One Venture X",
       rewardType: "points",
-      rewardRate: 0.1,
-      pointValue: 0.01,
+      rewardRate: 2,
+      pointValue: 0.02,
     },
   });
 
