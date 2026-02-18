@@ -109,6 +109,7 @@ model BookingPromotion {
   promotion    Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
   appliedValue Decimal   @map("applied_value") @db.Decimal(10, 2)
   autoApplied  Boolean   @default(true) @map("auto_applied")
+  verified     Boolean   @default(false)
 
   @@map("booking_promotions")
 }

@@ -32,6 +32,7 @@ interface BookingPromotion {
   promotionId: number;
   appliedValue: string | number;
   autoApplied: boolean;
+  verified: boolean;
   promotion: {
     id: number;
     name: string;
@@ -116,6 +117,26 @@ export default function BookingDetailPage() {
     }
     setLoading(false);
   }, [id]);
+
+  const toggleVerified = async (bp: BookingPromotion) => {
+    const res = await fetch(`/api/booking-promotions/${bp.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ verified: !bp.verified }),
+    });
+    if (res.ok) {
+      setBooking((prev) =>
+        prev
+          ? {
+              ...prev,
+              bookingPromotions: prev.bookingPromotions.map((p) =>
+                p.id === bp.id ? { ...p, verified: !bp.verified } : p
+              ),
+            }
+          : prev
+      );
+    }
+  };
 
   useEffect(() => {
     fetchBooking();
@@ -284,6 +305,7 @@ export default function BookingDetailPage() {
                   <TableHead>Type</TableHead>
                   <TableHead>Applied Value</TableHead>
                   <TableHead>Auto-applied</TableHead>
+                  <TableHead>Verified</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -302,6 +324,15 @@ export default function BookingDetailPage() {
                       >
                         {bp.autoApplied ? "Yes" : "No"}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant={bp.verified ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => toggleVerified(bp)}
+                      >
+                        {bp.verified ? "Verified" : "Mark Verified"}
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
