@@ -119,6 +119,23 @@ async function main() {
     create: { id: 4, name: "Wells Fargo Autograph Journey", rewardType: "points", rewardRate: 5, pointTypeId: 12 },
   });
 
+  // OTA Agencies
+  await prisma.otaAgency.upsert({
+    where: { id: 1 },
+    update: { name: "AMEX FHR" },
+    create: { id: 1, name: "AMEX FHR" },
+  });
+  await prisma.otaAgency.upsert({
+    where: { id: 2 },
+    update: { name: "AMEX THC" },
+    create: { id: 2, name: "AMEX THC" },
+  });
+  await prisma.otaAgency.upsert({
+    where: { id: 3 },
+    update: { name: "Chase The Edit" },
+    create: { id: 3, name: "Chase The Edit" },
+  });
+
   // Shopping Portals
   await prisma.shoppingPortal.upsert({
     where: { id: 1 },
