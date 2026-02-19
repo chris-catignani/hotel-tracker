@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { DashboardStats } from "@/components/dashboard-stats";
-import { certTypeLabel } from "@/lib/cert-types";
+import { certTypeShortLabel } from "@/lib/cert-types";
 import { calculateNetCost, getNetCostBreakdown } from "@/lib/net-cost";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -88,7 +88,7 @@ function formatCerts(certificates: { id: number; certType: string }[]): string {
   if (certificates.length === 0) return "—";
   const counts: Record<string, number> = {};
   for (const cert of certificates) {
-    const label = certTypeLabel(cert.certType);
+    const label = certTypeShortLabel(cert.certType);
     counts[label] = (counts[label] || 0) + 1;
   }
   return Object.entries(counts)
