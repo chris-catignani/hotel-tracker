@@ -6,18 +6,18 @@ async function main() {
   // PointTypes
   await prisma.pointType.upsert({
     where: { id: 1 },
-    update: { name: "Hilton Honors", category: "hotel", centsPerPoint: 0.0045 },
-    create: { id: 1, name: "Hilton Honors", category: "hotel", centsPerPoint: 0.0045 },
+    update: { name: "Hilton Honors Points", category: "hotel", centsPerPoint: 0.0045 },
+    create: { id: 1, name: "Hilton Honors Points", category: "hotel", centsPerPoint: 0.0045 },
   });
   await prisma.pointType.upsert({
     where: { id: 2 },
-    update: { name: "Marriott Bonvoy", category: "hotel", centsPerPoint: 0.007 },
-    create: { id: 2, name: "Marriott Bonvoy", category: "hotel", centsPerPoint: 0.007 },
+    update: { name: "Marriott Bonvoy Points", category: "hotel", centsPerPoint: 0.007 },
+    create: { id: 2, name: "Marriott Bonvoy Points", category: "hotel", centsPerPoint: 0.007 },
   });
   await prisma.pointType.upsert({
     where: { id: 3 },
-    update: { name: "World of Hyatt", category: "hotel", centsPerPoint: 0.02 },
-    create: { id: 3, name: "World of Hyatt", category: "hotel", centsPerPoint: 0.02 },
+    update: { name: "World of Hyatt Points", category: "hotel", centsPerPoint: 0.02 },
+    create: { id: 3, name: "World of Hyatt Points", category: "hotel", centsPerPoint: 0.02 },
   });
   await prisma.pointType.upsert({
     where: { id: 4 },
@@ -26,8 +26,8 @@ async function main() {
   });
   await prisma.pointType.upsert({
     where: { id: 5 },
-    update: { name: "GHA Discovery", category: "hotel", centsPerPoint: 0.01 },
-    create: { id: 5, name: "GHA Discovery", category: "hotel", centsPerPoint: 0.01 },
+    update: { name: "Discovery Dollars", category: "hotel", centsPerPoint: 0.01 },
+    create: { id: 5, name: "Discovery Dollars", category: "hotel", centsPerPoint: 0.01 },
   });
   await prisma.pointType.upsert({
     where: { id: 6 },
@@ -36,143 +36,124 @@ async function main() {
   });
   await prisma.pointType.upsert({
     where: { id: 7 },
-    update: { name: "Amex Membership Rewards", category: "transferable", centsPerPoint: 0.020 },
-    create: { id: 7, name: "Amex Membership Rewards", category: "transferable", centsPerPoint: 0.020 },
+    update: { name: "Membership Rewards", category: "transferable", centsPerPoint: 0.02 },
+    create: { id: 7, name: "Membership Rewards", category: "transferable", centsPerPoint: 0.02 },
   });
   await prisma.pointType.upsert({
     where: { id: 8 },
-    update: { name: "Chase Ultimate Rewards", category: "transferable", centsPerPoint: 0.020 },
-    create: { id: 8, name: "Chase Ultimate Rewards", category: "transferable", centsPerPoint: 0.020 },
+    update: { name: "Ultimate Rewards", category: "transferable", centsPerPoint: 0.02 },
+    create: { id: 8, name: "Ultimate Rewards", category: "transferable", centsPerPoint: 0.02 },
   });
   await prisma.pointType.upsert({
     where: { id: 9 },
-    update: { name: "Capital One Miles", category: "transferable", centsPerPoint: 0.02 },
-    create: { id: 9, name: "Capital One Miles", category: "transferable", centsPerPoint: 0.02 },
+    update: { name: "Capital One Miles", category: "transferable", centsPerPoint: 0.0175 },
+    create: { id: 9, name: "Capital One Miles", category: "transferable", centsPerPoint: 0.0175 },
+  });
+  await prisma.pointType.upsert({
+    where: { id: 10 },
+    update: { name: "Avios", category: "airline", centsPerPoint: 0.012 },
+    create: { id: 10, name: "Avios", category: "airline", centsPerPoint: 0.012 },
+  });
+  await prisma.pointType.upsert({
+    where: { id: 11 },
+    update: { name: "Bilt", category: "transferable", centsPerPoint: 0.02 },
+    create: { id: 11, name: "Bilt", category: "transferable", centsPerPoint: 0.02 },
+  });
+  await prisma.pointType.upsert({
+    where: { id: 12 },
+    update: { name: "Wells Fargo Rewards", category: "transferable", centsPerPoint: 0.015 },
+    create: { id: 12, name: "Wells Fargo Rewards", category: "transferable", centsPerPoint: 0.015 },
   });
 
   // Hotels
-  const hiltonData = {
-    name: "Hilton",
-    loyaltyProgram: "Hilton Honors",
-    basePointRate: 10,
-    elitePointRate: 10,
-    pointTypeId: 1,
-  };
-  const hilton = await prisma.hotel.upsert({
+  await prisma.hotel.upsert({
     where: { id: 1 },
-    update: hiltonData,
-    create: hiltonData,
+    update: { name: "Hilton", loyaltyProgram: "Hilton Honors", basePointRate: 10, elitePointRate: 10, pointTypeId: 1 },
+    create: { id: 1, name: "Hilton", loyaltyProgram: "Hilton Honors", basePointRate: 10, elitePointRate: 10, pointTypeId: 1 },
   });
-  const marriottData = {
-    name: "Marriott",
-    loyaltyProgram: "Marriott Bonvoy",
-    basePointRate: 10,
-    elitePointRate: 7.5,
-    pointTypeId: 2,
-  };
-  const marriott = await prisma.hotel.upsert({
+  await prisma.hotel.upsert({
     where: { id: 2 },
-    update: marriottData,
-    create: marriottData,
+    update: { name: "Marriott", loyaltyProgram: "Marriott Bonvoy", basePointRate: 10, elitePointRate: 7.5, pointTypeId: 2 },
+    create: { id: 2, name: "Marriott", loyaltyProgram: "Marriott Bonvoy", basePointRate: 10, elitePointRate: 7.5, pointTypeId: 2 },
   });
-  const hyattData = {
-    name: "Hyatt",
-    loyaltyProgram: "World of Hyatt",
-    basePointRate: 5,
-    elitePointRate: 1.5,
-    pointTypeId: 3,
-  };
-  const hyatt = await prisma.hotel.upsert({
+  await prisma.hotel.upsert({
     where: { id: 3 },
-    update: hyattData,
-    create: hyattData,
+    update: { name: "Hyatt", loyaltyProgram: "World of Hyatt", basePointRate: 5, elitePointRate: 1.5, pointTypeId: 3 },
+    create: { id: 3, name: "Hyatt", loyaltyProgram: "World of Hyatt", basePointRate: 5, elitePointRate: 1.5, pointTypeId: 3 },
   });
-  const ihgData = {
-    name: "IHG",
-    loyaltyProgram: "IHG One Rewards",
-    basePointRate: 10,
-    elitePointRate: 10,
-    pointTypeId: 4,
-  };
-  const ihg = await prisma.hotel.upsert({
+  await prisma.hotel.upsert({
     where: { id: 4 },
-    update: ihgData,
-    create: ihgData,
+    update: { name: "IHG", loyaltyProgram: "IHG One Rewards", basePointRate: 10, elitePointRate: 10, pointTypeId: 4 },
+    create: { id: 4, name: "IHG", loyaltyProgram: "IHG One Rewards", basePointRate: 10, elitePointRate: 10, pointTypeId: 4 },
   });
-  const ghaData = {
-    name: "GHA Discovery",
-    loyaltyProgram: "GHA Discovery",
-    basePointRate: 4,
-    elitePointRate: 3,
-    pointTypeId: 5,
-  };
-  const ghaDiscovery = await prisma.hotel.upsert({
+  await prisma.hotel.upsert({
     where: { id: 5 },
-    update: ghaData,
-    create: ghaData,
+    update: { name: "GHA Discovery", loyaltyProgram: "GHA Discovery", basePointRate: 4, elitePointRate: 3, pointTypeId: 5 },
+    create: { id: 5, name: "GHA Discovery", loyaltyProgram: "GHA Discovery", basePointRate: 4, elitePointRate: 3, pointTypeId: 5 },
   });
-  const accorData = {
-    name: "Accor",
-    loyaltyProgram: "ALL - Accor Live Limitless",
-    basePointRate: 25,
-    elitePointRate: 0,
-    pointTypeId: 6,
-  };
-  const accor = await prisma.hotel.upsert({
+  await prisma.hotel.upsert({
     where: { id: 6 },
-    update: accorData,
-    create: accorData,
+    update: { name: "Accor", loyaltyProgram: "ALL - Accor Live Limitless", basePointRate: 25, elitePointRate: 0, pointTypeId: 6 },
+    create: { id: 6, name: "Accor", loyaltyProgram: "ALL - Accor Live Limitless", basePointRate: 25, elitePointRate: 0, pointTypeId: 6 },
   });
 
   // Credit Cards
-  const amexPlat = await prisma.creditCard.upsert({
+  await prisma.creditCard.upsert({
     where: { id: 1 },
-    update: { pointTypeId: 7 },
-    create: {
-      name: "Amex Platinum",
-      rewardType: "points",
-      rewardRate: 1,
-      pointTypeId: 7,
-    },
+    update: { name: "Amex Platinum", rewardType: "points", rewardRate: 1, pointTypeId: 7 },
+    create: { id: 1, name: "Amex Platinum", rewardType: "points", rewardRate: 1, pointTypeId: 7 },
   });
-  const chaseSapphire = await prisma.creditCard.upsert({
+  await prisma.creditCard.upsert({
     where: { id: 2 },
-    update: { pointTypeId: 8 },
-    create: {
-      name: "Chase Sapphire Reserve",
-      rewardType: "points",
-      rewardRate: 4,
-      pointTypeId: 8,
-    },
+    update: { name: "Chase Sapphire Reserve", rewardType: "points", rewardRate: 4, pointTypeId: 8 },
+    create: { id: 2, name: "Chase Sapphire Reserve", rewardType: "points", rewardRate: 4, pointTypeId: 8 },
   });
-  const ventureX = await prisma.creditCard.upsert({
+  await prisma.creditCard.upsert({
     where: { id: 3 },
-    update: { pointTypeId: 9 },
-    create: {
-      name: "Capital One Venture X",
-      rewardType: "points",
-      rewardRate: 2,
-      pointTypeId: 9,
-    },
+    update: { name: "Capital One Venture X", rewardType: "points", rewardRate: 2, pointTypeId: 9 },
+    create: { id: 3, name: "Capital One Venture X", rewardType: "points", rewardRate: 2, pointTypeId: 9 },
+  });
+  await prisma.creditCard.upsert({
+    where: { id: 4 },
+    update: { name: "Wells Fargo Autograph Journey", rewardType: "points", rewardRate: 5, pointTypeId: 12 },
+    create: { id: 4, name: "Wells Fargo Autograph Journey", rewardType: "points", rewardRate: 5, pointTypeId: 12 },
+  });
+
+  // OTA Agencies
+  await prisma.otaAgency.upsert({
+    where: { id: 1 },
+    update: { name: "AMEX FHR" },
+    create: { id: 1, name: "AMEX FHR" },
+  });
+  await prisma.otaAgency.upsert({
+    where: { id: 2 },
+    update: { name: "AMEX THC" },
+    create: { id: 2, name: "AMEX THC" },
+  });
+  await prisma.otaAgency.upsert({
+    where: { id: 3 },
+    update: { name: "Chase The Edit" },
+    create: { id: 3, name: "Chase The Edit" },
   });
 
   // Shopping Portals
-  const rakuten = await prisma.shoppingPortal.upsert({
+  await prisma.shoppingPortal.upsert({
     where: { id: 1 },
-    update: {},
-    create: { name: "Rakuten" },
+    update: { name: "Rakuten", rewardType: "points", pointTypeId: 11 },
+    create: { id: 1, name: "Rakuten", rewardType: "points", pointTypeId: 11 },
   });
-  const topCashback = await prisma.shoppingPortal.upsert({
+  await prisma.shoppingPortal.upsert({
     where: { id: 2 },
-    update: {},
-    create: { name: "TopCashback" },
+    update: { name: "TopCashback", rewardType: "cashback", pointTypeId: null },
+    create: { id: 2, name: "TopCashback", rewardType: "cashback" },
+  });
+  await prisma.shoppingPortal.upsert({
+    where: { id: 3 },
+    update: { name: "British Airways", rewardType: "points", pointTypeId: 10 },
+    create: { id: 3, name: "British Airways", rewardType: "points", pointTypeId: 10 },
   });
 
-  console.log("Seed data created:", {
-    hotels: [hilton, marriott, hyatt, ihg, ghaDiscovery, accor],
-    creditCards: [amexPlat, chaseSapphire, ventureX],
-    shoppingPortals: [rakuten, topCashback],
-  });
+  console.log("Seed data created successfully");
 }
 
 main()
