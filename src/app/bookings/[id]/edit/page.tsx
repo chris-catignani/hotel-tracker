@@ -47,12 +47,20 @@ type PaymentType = typeof PAYMENT_TYPES[number]["value"];
 // Types
 // ---------------------------------------------------------------------------
 
+interface HotelSubBrand {
+  id: number;
+  name: string;
+  basePointRate: number | null;
+  elitePointRate: number | null;
+}
+
 interface Hotel {
   id: number;
   name: string;
   loyaltyProgram: string | null;
   basePointRate: number | null;
   elitePointRate: number | null;
+  subBrands: HotelSubBrand[];
 }
 
 interface CreditCard {
@@ -77,6 +85,7 @@ interface OtaAgency {
 interface Booking {
   id: number;
   hotelId: number;
+  subBrandId: number | null;
   propertyName: string;
   checkIn: string;
   checkOut: string;
@@ -169,6 +178,7 @@ export default function EditBookingPage() {
 
   // Form fields
   const [hotelId, setHotelId] = useState("");
+  const [subBrandId, setSubBrandId] = useState("none");
   const [propertyName, setPropertyName] = useState("");
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
@@ -223,6 +233,7 @@ export default function EditBookingPage() {
     if (bookingRes.ok) {
       const booking: Booking = await bookingRes.json();
       setHotelId(String(booking.hotelId));
+      setSubBrandId(booking.subBrandId ? String(booking.subBrandId) : "none");
       setPropertyName(booking.propertyName);
       setCheckIn(toDateInputValue(booking.checkIn));
       setCheckOut(toDateInputValue(booking.checkOut));
@@ -296,19 +307,27 @@ export default function EditBookingPage() {
     }
   }, [pretaxCost, totalCost, initialized]);
 
-  // Auto-calculate loyalty points when hotel or pretaxCost changes (only after initial load)
+  // Reset sub-brand when hotel changes (only after initial load)
+  useEffect(() => {
+    if (!initialized) return;
+    setSubBrandId("none");
+  }, [hotelId, initialized]);
+
+  // Auto-calculate loyalty points when hotel, sub-brand, or pretaxCost changes (only after initial load)
   useEffect(() => {
     if (!initialized) return;
     if (hotelId && pretaxCost) {
       const hotel = hotels.find((h) => h.id === Number(hotelId));
-      if (hotel?.basePointRate != null) {
-        const baseRate = Number(hotel.basePointRate);
-        const eliteRate = Number(hotel.elitePointRate || 0);
-        const points = Math.round(Number(pretaxCost) * (baseRate + eliteRate));
-        setLoyaltyPointsEarned(String(points));
+      const subBrand = subBrandId !== "none"
+        ? hotel?.subBrands.find((sb) => sb.id === Number(subBrandId))
+        : null;
+      const baseRate = Number(subBrand?.basePointRate ?? hotel?.basePointRate ?? null);
+      const eliteRate = Number(subBrand?.elitePointRate ?? hotel?.elitePointRate ?? 0);
+      if (!isNaN(baseRate) && (subBrand?.basePointRate != null || hotel?.basePointRate != null)) {
+        setLoyaltyPointsEarned(String(Math.round(Number(pretaxCost) * (baseRate + eliteRate))));
       }
     }
-  }, [hotelId, pretaxCost, hotels, initialized]);
+  }, [hotelId, subBrandId, pretaxCost, hotels, initialized]);
 
   // Clear sub-fields when switching payment type (only after initial load)
   useEffect(() => {
@@ -335,6 +354,7 @@ export default function EditBookingPage() {
 
     const body = {
       hotelId: Number(hotelId),
+      subBrandId: subBrandId !== "none" ? Number(subBrandId) : null,
       propertyName,
       checkIn,
       checkOut,
@@ -439,6 +459,26 @@ export default function EditBookingPage() {
                 />
               </div>
             </div>
+
+            {/* Sub-brand selector (only when selected hotel has sub-brands) */}
+            {hotels.find((h) => h.id === Number(hotelId))?.subBrands.length ? (
+              <div className="space-y-2">
+                <Label htmlFor="subBrandId">Sub-brand</Label>
+                <Select value={subBrandId} onValueChange={setSubBrandId}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select sub-brand..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None / Not applicable</SelectItem>
+                    {hotels.find((h) => h.id === Number(hotelId))?.subBrands.map((sb) => (
+                      <SelectItem key={sb.id} value={String(sb.id)}>
+                        {sb.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : null}
 
             {/* Booking Source */}
             <div className="space-y-2">

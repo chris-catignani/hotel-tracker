@@ -21,9 +21,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+interface HotelSubBrand {
+  id: number;
+  name: string;
+}
+
 interface Hotel {
   id: number;
   name: string;
+  subBrands: HotelSubBrand[];
 }
 
 interface CreditCard {
@@ -44,6 +50,7 @@ export default function NewPromotionPage() {
   const [valueType, setValueType] = useState<string>("fixed");
   const [value, setValue] = useState("");
   const [hotelId, setHotelId] = useState<string>("");
+  const [subBrandId, setSubBrandId] = useState<string>("");
   const [creditCardId, setCreditCardId] = useState<string>("");
   const [shoppingPortalId, setShoppingPortalId] = useState<string>("");
   const [minSpend, setMinSpend] = useState("");
@@ -85,6 +92,7 @@ export default function NewPromotionPage() {
 
     if (type === "loyalty" && hotelId) {
       body.hotelId = parseInt(hotelId);
+      body.subBrandId = subBrandId ? parseInt(subBrandId) : null;
     }
     if (type === "credit_card" && creditCardId) {
       body.creditCardId = parseInt(creditCardId);
@@ -201,7 +209,7 @@ export default function NewPromotionPage() {
             {type === "loyalty" && (
               <div className="space-y-2">
                 <Label>Hotel</Label>
-                <Select value={hotelId} onValueChange={setHotelId}>
+                <Select value={hotelId} onValueChange={(v) => { setHotelId(v); setSubBrandId(""); }}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select hotel..." />
                   </SelectTrigger>
@@ -209,6 +217,25 @@ export default function NewPromotionPage() {
                     {hotels.map((hotel) => (
                       <SelectItem key={hotel.id} value={String(hotel.id)}>
                         {hotel.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {type === "loyalty" && hotelId && (hotels.find((h) => h.id === Number(hotelId))?.subBrands.length ?? 0) > 0 && (
+              <div className="space-y-2">
+                <Label>Sub-brand</Label>
+                <Select value={subBrandId || "all"} onValueChange={(v) => setSubBrandId(v === "all" ? "" : v)}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select sub-brand..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All sub-brands (no filter)</SelectItem>
+                    {hotels.find((h) => h.id === Number(hotelId))?.subBrands.map((sb) => (
+                      <SelectItem key={sb.id} value={String(sb.id)}>
+                        {sb.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

@@ -41,6 +41,7 @@ interface BookingCertificate {
 interface Booking {
   id: number;
   hotelId: number;
+  subBrand: { id: number; name: string } | null;
   propertyName: string;
   checkIn: string;
   checkOut: string;
@@ -197,7 +198,12 @@ export default function BookingsPage() {
 
               return (
                 <TableRow key={booking.id}>
-                  <TableCell>{booking.propertyName}</TableCell>
+                  <TableCell>
+                    <div>{booking.propertyName}</div>
+                    {booking.subBrand && (
+                      <div className="text-xs text-muted-foreground">{booking.subBrand.name}</div>
+                    )}
+                  </TableCell>
                   <TableCell>{booking.hotel.name}</TableCell>
                   <TableCell>{formatDate(booking.checkIn)}</TableCell>
                   <TableCell>{formatDate(booking.checkOut)}</TableCell>

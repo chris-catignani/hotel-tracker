@@ -59,6 +59,7 @@ interface BookingBenefit {
 interface Booking {
   id: number;
   hotelId: number;
+  subBrand: { id: number; name: string } | null;
   propertyName: string;
   checkIn: string;
   checkOut: string;
@@ -270,6 +271,12 @@ export default function BookingDetailPage() {
               <p className="text-sm text-muted-foreground">Hotel Chain</p>
               <p className="font-medium">{booking.hotel.name}</p>
             </div>
+            {booking.subBrand && (
+              <div>
+                <p className="text-sm text-muted-foreground">Sub-brand</p>
+                <p className="font-medium">{booking.subBrand.name}</p>
+              </div>
+            )}
             {booking.hotel.loyaltyProgram && (
               <div>
                 <p className="text-sm text-muted-foreground">Loyalty Program</p>

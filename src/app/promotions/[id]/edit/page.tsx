@@ -21,9 +21,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+interface HotelSubBrand {
+  id: number;
+  name: string;
+}
+
 interface Hotel {
   id: number;
   name: string;
+  subBrands: HotelSubBrand[];
 }
 
 interface CreditCard {
@@ -43,6 +49,7 @@ interface Promotion {
   valueType: "fixed" | "percentage" | "points_multiplier";
   value: string;
   hotelId: number | null;
+  subBrandId: number | null;
   creditCardId: number | null;
   shoppingPortalId: number | null;
   minSpend: string | null;
@@ -68,6 +75,7 @@ export default function EditPromotionPage() {
   const [valueType, setValueType] = useState<string>("fixed");
   const [value, setValue] = useState("");
   const [hotelId, setHotelId] = useState<string>("");
+  const [subBrandId, setSubBrandId] = useState<string>("");
   const [creditCardId, setCreditCardId] = useState<string>("");
   const [shoppingPortalId, setShoppingPortalId] = useState<string>("");
   const [minSpend, setMinSpend] = useState("");
@@ -109,6 +117,7 @@ export default function EditPromotionPage() {
         setValueType(promo.valueType);
         setValue(String(parseFloat(promo.value)));
         setHotelId(promo.hotelId ? String(promo.hotelId) : "");
+        setSubBrandId(promo.subBrandId ? String(promo.subBrandId) : "");
         setCreditCardId(promo.creditCardId ? String(promo.creditCardId) : "");
         setShoppingPortalId(
           promo.shoppingPortalId ? String(promo.shoppingPortalId) : ""
@@ -139,8 +148,10 @@ export default function EditPromotionPage() {
 
     if (type === "loyalty" && hotelId) {
       body.hotelId = parseInt(hotelId);
+      body.subBrandId = subBrandId ? parseInt(subBrandId) : null;
     } else {
       body.hotelId = null;
+      body.subBrandId = null;
     }
 
     if (type === "credit_card" && creditCardId) {
@@ -271,7 +282,7 @@ export default function EditPromotionPage() {
             {type === "loyalty" && (
               <div className="space-y-2">
                 <Label>Hotel</Label>
-                <Select value={hotelId} onValueChange={setHotelId}>
+                <Select value={hotelId} onValueChange={(v) => { setHotelId(v); setSubBrandId(""); }}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select hotel..." />
                   </SelectTrigger>
@@ -279,6 +290,25 @@ export default function EditPromotionPage() {
                     {hotels.map((hotel) => (
                       <SelectItem key={hotel.id} value={String(hotel.id)}>
                         {hotel.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {type === "loyalty" && hotelId && (hotels.find((h) => h.id === Number(hotelId))?.subBrands.length ?? 0) > 0 && (
+              <div className="space-y-2">
+                <Label>Sub-brand</Label>
+                <Select value={subBrandId || "all"} onValueChange={(v) => setSubBrandId(v === "all" ? "" : v)}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select sub-brand..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All sub-brands (no filter)</SelectItem>
+                    {hotels.find((h) => h.id === Number(hotelId))?.subBrands.map((sb) => (
+                      <SelectItem key={sb.id} value={String(sb.id)}>
+                        {sb.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

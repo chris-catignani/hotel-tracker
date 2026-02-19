@@ -47,12 +47,20 @@ type PaymentType = typeof PAYMENT_TYPES[number]["value"];
 // Types
 // ---------------------------------------------------------------------------
 
+interface HotelSubBrand {
+  id: number;
+  name: string;
+  basePointRate: number | null;
+  elitePointRate: number | null;
+}
+
 interface Hotel {
   id: number;
   name: string;
   loyaltyProgram: string | null;
   basePointRate: number | null;
   elitePointRate: number | null;
+  subBrands: HotelSubBrand[];
 }
 
 interface CreditCard {
@@ -117,6 +125,7 @@ export default function NewBookingPage() {
 
   // Form fields
   const [hotelId, setHotelId] = useState("");
+  const [subBrandId, setSubBrandId] = useState("none");
   const [propertyName, setPropertyName] = useState("");
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
@@ -178,18 +187,25 @@ export default function NewBookingPage() {
     }
   }, [pretaxCost, totalCost]);
 
-  // Auto-calculate loyalty points when hotel or pretaxCost changes
+  // Reset sub-brand when hotel changes
+  useEffect(() => {
+    setSubBrandId("none");
+  }, [hotelId]);
+
+  // Auto-calculate loyalty points when hotel, sub-brand, or pretaxCost changes
   useEffect(() => {
     if (hotelId && pretaxCost) {
       const hotel = hotels.find((h) => h.id === Number(hotelId));
-      if (hotel?.basePointRate != null) {
-        const baseRate = Number(hotel.basePointRate);
-        const eliteRate = Number(hotel.elitePointRate || 0);
-        const points = Math.round(Number(pretaxCost) * (baseRate + eliteRate));
-        setLoyaltyPointsEarned(String(points));
+      const subBrand = subBrandId !== "none"
+        ? hotel?.subBrands.find((sb) => sb.id === Number(subBrandId))
+        : null;
+      const baseRate = Number(subBrand?.basePointRate ?? hotel?.basePointRate ?? null);
+      const eliteRate = Number(subBrand?.elitePointRate ?? hotel?.elitePointRate ?? 0);
+      if (!isNaN(baseRate) && (subBrand?.basePointRate != null || hotel?.basePointRate != null)) {
+        setLoyaltyPointsEarned(String(Math.round(Number(pretaxCost) * (baseRate + eliteRate))));
       }
     }
-  }, [hotelId, pretaxCost, hotels]);
+  }, [hotelId, subBrandId, pretaxCost, hotels]);
 
   // Clear sub-fields when switching payment type
   useEffect(() => {
@@ -215,6 +231,7 @@ export default function NewBookingPage() {
 
     const body = {
       hotelId: Number(hotelId),
+      subBrandId: subBrandId !== "none" ? Number(subBrandId) : null,
       propertyName,
       checkIn,
       checkOut,
@@ -305,6 +322,26 @@ export default function NewBookingPage() {
                 />
               </div>
             </div>
+
+            {/* Sub-brand selector (only when selected hotel has sub-brands) */}
+            {hotels.find((h) => h.id === Number(hotelId))?.subBrands.length ? (
+              <div className="space-y-2">
+                <Label htmlFor="subBrandId">Sub-brand</Label>
+                <Select value={subBrandId} onValueChange={setSubBrandId}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select sub-brand..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None / Not applicable</SelectItem>
+                    {hotels.find((h) => h.id === Number(hotelId))?.subBrands.map((sb) => (
+                      <SelectItem key={sb.id} value={String(sb.id)}>
+                        {sb.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : null}
 
             {/* Booking Source */}
             <div className="space-y-2">

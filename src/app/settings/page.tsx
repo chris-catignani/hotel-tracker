@@ -71,6 +71,14 @@ interface PointType {
   centsPerPoint: string | number;
 }
 
+interface HotelSubBrand {
+  id: number;
+  hotelId: number;
+  name: string;
+  basePointRate: number | null;
+  elitePointRate: number | null;
+}
+
 interface Hotel {
   id: number;
   name: string;
@@ -79,6 +87,7 @@ interface Hotel {
   elitePointRate: number | null;
   pointTypeId: number | null;
   pointType: PointType | null;
+  subBrands: HotelSubBrand[];
 }
 
 interface CreditCard {
@@ -380,6 +389,20 @@ function HotelChainsTab() {
   const [editElitePointRate, setEditElitePointRate] = useState("");
   const [editPointTypeId, setEditPointTypeId] = useState("none");
 
+  // Sub-brands management
+  const [sbOpen, setSbOpen] = useState(false);
+  const [sbHotelId, setSbHotelId] = useState<number | null>(null);
+  const [sbName, setSbName] = useState("");
+  const [sbBaseRate, setSbBaseRate] = useState("");
+  const [sbEliteRate, setSbEliteRate] = useState("");
+  const [editSbOpen, setEditSbOpen] = useState(false);
+  const [editSb, setEditSb] = useState<HotelSubBrand | null>(null);
+  const [editSbName, setEditSbName] = useState("");
+  const [editSbBaseRate, setEditSbBaseRate] = useState("");
+  const [editSbEliteRate, setEditSbEliteRate] = useState("");
+
+  const sbHotel = hotels.find((h) => h.id === sbHotelId) ?? null;
+
   const fetchData = useCallback(async () => {
     const [hotelsRes, ptRes] = await Promise.all([
       fetch("/api/hotels"),
@@ -450,6 +473,77 @@ function HotelChainsTab() {
       fetchData();
     } else {
       setError(await extractApiError(res, "Failed to update hotel chain."));
+    }
+  };
+
+  const openSubBrands = (hotel: Hotel) => {
+    setSbHotelId(hotel.id);
+    setSbName("");
+    setSbBaseRate("");
+    setSbEliteRate("");
+    setSbOpen(true);
+  };
+
+  const handleAddSubBrand = async () => {
+    if (!sbHotelId) return;
+    setError(null);
+    const res = await fetch(`/api/hotels/${sbHotelId}/sub-brands`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: sbName,
+        basePointRate: sbBaseRate ? Number(sbBaseRate) : null,
+        elitePointRate: sbEliteRate ? Number(sbEliteRate) : null,
+      }),
+    });
+    if (res.ok) {
+      setSbName("");
+      setSbBaseRate("");
+      setSbEliteRate("");
+      fetchData();
+    } else {
+      setError(await extractApiError(res, "Failed to add sub-brand."));
+    }
+  };
+
+  const handleEditSb = (sb: HotelSubBrand) => {
+    setEditSb(sb);
+    setEditSbName(sb.name);
+    setEditSbBaseRate(sb.basePointRate != null ? String(sb.basePointRate) : "");
+    setEditSbEliteRate(sb.elitePointRate != null ? String(sb.elitePointRate) : "");
+    setEditSbOpen(true);
+  };
+
+  const handleEditSbSubmit = async () => {
+    if (!editSb) return;
+    setError(null);
+    const res = await fetch(`/api/hotel-sub-brands/${editSb.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: editSbName,
+        basePointRate: editSbBaseRate ? Number(editSbBaseRate) : null,
+        elitePointRate: editSbEliteRate ? Number(editSbEliteRate) : null,
+      }),
+    });
+    if (res.ok) {
+      setEditSbOpen(false);
+      setEditSb(null);
+      fetchData();
+    } else {
+      setError(await extractApiError(res, "Failed to update sub-brand."));
+    }
+  };
+
+  const handleDeleteSb = async (sb: HotelSubBrand) => {
+    setError(null);
+    const res = await fetch(`/api/hotel-sub-brands/${sb.id}`, { method: "DELETE" });
+    if (res.ok) {
+      fetchData();
+    } else if (res.status === 409) {
+      setError("Cannot delete: this sub-brand is referenced by existing bookings.");
+    } else {
+      setError(await extractApiError(res, "Failed to delete sub-brand."));
     }
   };
 
@@ -611,6 +705,128 @@ function HotelChainsTab() {
         </DialogContent>
       </Dialog>
 
+      {/* Sub-brands Management Dialog */}
+      <Dialog open={sbOpen} onOpenChange={setSbOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Sub-brands — {sbHotel?.name}</DialogTitle>
+            <DialogDescription>
+              Manage sub-brands with optional point rate overrides (blank = inherit from chain).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            {!sbHotel || sbHotel.subBrands.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No sub-brands yet.</p>
+            ) : (
+              sbHotel.subBrands.map((sb) => (
+                <div key={sb.id} className="flex items-center justify-between border rounded-md px-3 py-2">
+                  <div>
+                    <span className="font-medium text-sm">{sb.name}</span>
+                    {(sb.basePointRate != null || sb.elitePointRate != null) && (
+                      <span className="text-xs text-muted-foreground ml-2">
+                        {sb.basePointRate != null ? `Base: ${sb.basePointRate}x` : ""}
+                        {sb.elitePointRate != null ? ` Elite: ${sb.elitePointRate}x` : ""}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => handleEditSb(sb)}>Edit</Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleDeleteSb(sb)}>Delete</Button>
+                  </div>
+                </div>
+              ))
+            )}
+            <div className="border-t pt-3 space-y-2">
+              <p className="text-sm font-medium">Add Sub-brand</p>
+              <div className="space-y-2">
+                <Label htmlFor="sb-name">Name *</Label>
+                <Input
+                  id="sb-name"
+                  value={sbName}
+                  onChange={(e) => setSbName(e.target.value)}
+                  placeholder="e.g. Park Hyatt"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label htmlFor="sb-base-rate" className="text-xs">Base Rate (per $1)</Label>
+                  <Input
+                    id="sb-base-rate"
+                    type="number"
+                    step="0.1"
+                    value={sbBaseRate}
+                    onChange={(e) => setSbBaseRate(e.target.value)}
+                    placeholder="Inherit"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="sb-elite-rate" className="text-xs">Elite Rate (per $1)</Label>
+                  <Input
+                    id="sb-elite-rate"
+                    type="number"
+                    step="0.1"
+                    value={sbEliteRate}
+                    onChange={(e) => setSbEliteRate(e.target.value)}
+                    placeholder="Inherit"
+                  />
+                </div>
+              </div>
+              <Button size="sm" onClick={handleAddSubBrand} disabled={!sbName.trim()}>
+                Add Sub-brand
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Sub-brand Dialog */}
+      <Dialog open={editSbOpen} onOpenChange={setEditSbOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Sub-brand</DialogTitle>
+            <DialogDescription>Update sub-brand name and point rate overrides.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="edit-sb-name">Name</Label>
+              <Input
+                id="edit-sb-name"
+                value={editSbName}
+                onChange={(e) => setEditSbName(e.target.value)}
+                placeholder="Sub-brand name"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-2">
+                <Label htmlFor="edit-sb-base-rate">Base Rate (per $1)</Label>
+                <Input
+                  id="edit-sb-base-rate"
+                  type="number"
+                  step="0.1"
+                  value={editSbBaseRate}
+                  onChange={(e) => setEditSbBaseRate(e.target.value)}
+                  placeholder="Inherit from chain"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-sb-elite-rate">Elite Rate (per $1)</Label>
+                <Input
+                  id="edit-sb-elite-rate"
+                  type="number"
+                  step="0.1"
+                  value={editSbEliteRate}
+                  onChange={(e) => setEditSbEliteRate(e.target.value)}
+                  placeholder="Inherit from chain"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleEditSbSubmit} disabled={!editSbName.trim()}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Table>
         <TableHeader>
           <TableRow>
@@ -638,9 +854,14 @@ function HotelChainsTab() {
                 <TableCell>{hotel.elitePointRate ?? "-"}</TableCell>
                 <TableCell>{hotel.pointType?.name ?? "—"}</TableCell>
                 <TableCell>
-                  <Button variant="ghost" size="sm" onClick={() => handleEdit(hotel)}>
-                    Edit
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => openSubBrands(hotel)}>
+                      Sub-brands
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleEdit(hotel)}>
+                      Edit
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))
