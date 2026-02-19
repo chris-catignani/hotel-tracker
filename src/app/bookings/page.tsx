@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { certTypeLabel } from "@/lib/cert-types";
 import {
   Table,
   TableBody,
@@ -130,22 +130,16 @@ function formatSourceColumn(booking: { bookingSource: string | null; otaAgency: 
   }
 }
 
-function getBookingTypeBadge(booking: {
-  totalCost: string | number;
-  pointsRedeemed: number | null;
-  certificates: { id: number }[];
-}): string | null {
-  const hasCash = Number(booking.totalCost) > 0;
-  const hasPoints = !!booking.pointsRedeemed;
-  const hasCert = booking.certificates.length > 0;
-  if (!hasPoints && !hasCert) return null;
-  if (!hasCash && hasPoints && !hasCert) return "Award";
-  if (!hasCash && !hasPoints && hasCert) return "Cert";
-  if (!hasCash && hasPoints && hasCert) return "Award + Cert";
-  if (hasCash && hasPoints && !hasCert) return "Cash + Points";
-  if (hasCash && !hasPoints && hasCert) return "Cash + Cert";
-  if (hasCash && hasPoints && hasCert) return "Cash + Points + Cert";
-  return null;
+function formatCerts(certificates: { id: number; certType: string }[]): string {
+  if (certificates.length === 0) return "—";
+  const counts: Record<string, number> = {};
+  for (const cert of certificates) {
+    const label = certTypeLabel(cert.certType);
+    counts[label] = (counts[label] || 0) + 1;
+  }
+  return Object.entries(counts)
+    .map(([desc, count]) => (count > 1 ? `${count} × ${desc}` : desc))
+    .join(", ");
 }
 
 // ---------------------------------------------------------------------------
@@ -194,11 +188,11 @@ export default function BookingsPage() {
             <TableHead>Check-in</TableHead>
             <TableHead>Check-out</TableHead>
             <TableHead>Nights</TableHead>
-            <TableHead>Type</TableHead>
             <TableHead className="hidden sm:table-cell">Source</TableHead>
-            <TableHead>Total Cost</TableHead>
-            <TableHead>Net Cost</TableHead>
-            <TableHead>Net/Night</TableHead>
+            <TableHead className="text-right">Cash</TableHead>
+            <TableHead className="text-right">Points</TableHead>
+            <TableHead className="text-right">Certs</TableHead>
+            <TableHead className="text-right">Net/Night</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -219,8 +213,9 @@ export default function BookingsPage() {
             bookings.map((booking) => {
               const totalCost = Number(booking.totalCost);
               const netCost = calculateNetCost(booking);
-              const isSaving = netCost < totalCost;
-              const typeBadge = getBookingTypeBadge(booking);
+              const isAwardOnly =
+                totalCost === 0 &&
+                !!(booking.pointsRedeemed || booking.certificates.length > 0);
 
               return (
                 <TableRow key={booking.id}>
@@ -229,22 +224,22 @@ export default function BookingsPage() {
                   <TableCell>{formatDate(booking.checkIn)}</TableCell>
                   <TableCell>{formatDate(booking.checkOut)}</TableCell>
                   <TableCell>{booking.numNights}</TableCell>
-                  <TableCell>
-                    {typeBadge && (
-                      <Badge variant="secondary" className="text-xs">
-                        {typeBadge}
-                      </Badge>
-                    )}
-                  </TableCell>
                   <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">
                     {formatSourceColumn(booking)}
                   </TableCell>
-                  <TableCell>{formatCurrency(totalCost)}</TableCell>
-                  <TableCell className={isSaving ? "text-green-600 font-medium" : ""}>
-                    {formatCurrency(netCost)}
+                  <TableCell className="text-right">
+                    {totalCost > 0 ? formatCurrency(totalCost) : "—"}
                   </TableCell>
-                  <TableCell className={isSaving ? "text-green-600 font-medium" : ""}>
-                    {formatCurrency(netCost / booking.numNights)}
+                  <TableCell className="text-right text-sm">
+                    {booking.pointsRedeemed
+                      ? `${booking.pointsRedeemed.toLocaleString("en-US")} pts`
+                      : "—"}
+                  </TableCell>
+                  <TableCell className="text-right text-sm">
+                    {formatCerts(booking.certificates)}
+                  </TableCell>
+                  <TableCell className={`text-right font-medium ${!isAwardOnly && netCost < totalCost ? "text-green-600" : ""}`}>
+                    {isAwardOnly ? "—" : formatCurrency(netCost / booking.numNights)}
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
