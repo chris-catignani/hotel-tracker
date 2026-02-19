@@ -28,45 +28,57 @@ export function DashboardStats({
 }: DashboardStatsProps) {
   const stats = [
     { label: "Total Bookings", value: totalBookings.toString() },
-    { label: "Total Spend", value: formatDollars(totalSpend) },
     { label: "Total Savings", value: formatDollars(totalSavings) },
     { label: "Total Nights", value: totalNights.toString() },
     { label: "Avg Net Cost / Night", value: formatDollars(avgNetCostPerNight) },
   ];
 
+  const cashDisplay =
+    totalSpend > 0
+      ? `$${Math.round(totalSpend).toLocaleString("en-US")}`
+      : "—";
+  const pointsDisplay =
+    totalPointsRedeemed > 0
+      ? `${totalPointsRedeemed.toLocaleString("en-US")} pts`
+      : "—";
+  const certsDisplay =
+    totalCertificates > 0
+      ? `${totalCertificates} cert${totalCertificates !== 1 ? "s" : ""}`
+      : "—";
+
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6 items-start">
       {stats.map((stat) => (
         <Card key={stat.label}>
-          <CardHeader>
+          <CardHeader className="p-4 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               {stat.label}
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 pt-0">
             <p className="text-2xl font-bold">{stat.value}</p>
           </CardContent>
         </Card>
       ))}
-      <Card>
-        <CardHeader>
+      <Card className="lg:col-span-2" style={{ gap: 0 }}>
+        <CardHeader className="px-4 pt-4 pb-0">
           <CardTitle className="text-sm font-medium text-muted-foreground">
-            Award Points Redeemed
+            Total Spend
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-2xl font-bold">
-            {totalPointsRedeemed > 0
-              ? `${totalPointsRedeemed.toLocaleString("en-US")} pts`
-              : totalCertificates > 0
-              ? `${totalCertificates} cert${totalCertificates !== 1 ? "s" : ""}`
-              : "—"}
-          </p>
-          {totalPointsRedeemed > 0 && totalCertificates > 0 && (
-            <p className="text-sm text-muted-foreground mt-1">
-              + {totalCertificates} cert{totalCertificates !== 1 ? "s" : ""}
-            </p>
-          )}
+        <CardContent className="px-4 pt-0 pb-4 space-y-0.5">
+          <div className="flex justify-between items-baseline">
+            <span className="text-xs text-muted-foreground">Cash</span>
+            <span className="text-sm font-bold">{cashDisplay}</span>
+          </div>
+          <div className="flex justify-between items-baseline">
+            <span className="text-xs text-muted-foreground">Points</span>
+            <span className="text-sm font-bold">{pointsDisplay}</span>
+          </div>
+          <div className="flex justify-between items-baseline">
+            <span className="text-xs text-muted-foreground">Certs</span>
+            <span className="text-sm font-bold">{certsDisplay}</span>
+          </div>
         </CardContent>
       </Card>
     </div>
