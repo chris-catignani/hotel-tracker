@@ -5,7 +5,7 @@ import { apiError } from "@/lib/api-error";
 export async function GET() {
   try {
     const hotels = await prisma.hotel.findMany({
-      include: { pointType: true },
+      include: { pointType: true, subBrands: { orderBy: { name: "asc" } } },
       orderBy: { name: "asc" },
     });
     return NextResponse.json(hotels);

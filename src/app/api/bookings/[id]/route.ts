@@ -13,6 +13,7 @@ export async function GET(
       where: { id: Number(id) },
       include: {
         hotel: { include: { pointType: true } },
+        subBrand: true,
         creditCard: { include: { pointType: true } },
         shoppingPortal: { include: { pointType: true } },
         bookingPromotions: {
@@ -68,10 +69,13 @@ export async function PUT(
       otaAgencyId,
       benefits,
       notes,
+      subBrandId,
     } = body;
 
     const data: Record<string, unknown> = {};
     if (hotelId !== undefined) data.hotelId = Number(hotelId);
+    if (subBrandId !== undefined)
+      data.subBrandId = subBrandId ? Number(subBrandId) : null;
     if (propertyName !== undefined) data.propertyName = propertyName;
     if (checkIn !== undefined) data.checkIn = new Date(checkIn);
     if (checkOut !== undefined) data.checkOut = new Date(checkOut);
@@ -117,14 +121,33 @@ export async function PUT(
         });
         const finalHotelId = resolvedHotelId ?? current?.hotelId;
         const finalPretax = resolvedPretax ?? (current ? Number(current.pretaxCost) : null);
+        const finalSubBrandId =
+          subBrandId !== undefined
+            ? subBrandId ? Number(subBrandId) : null
+            : current?.subBrandId ?? null;
 
         if (finalHotelId && finalPretax) {
-          const hotel = await prisma.hotel.findUnique({
-            where: { id: finalHotelId },
-          });
-          if (hotel?.basePointRate != null) {
-            const baseRate = Number(hotel.basePointRate);
-            const eliteRate = Number(hotel.elitePointRate || 0);
+          let baseRate: number | null = null;
+          let eliteRate = 0;
+          if (finalSubBrandId) {
+            const subBrand = await prisma.hotelSubBrand.findUnique({
+              where: { id: finalSubBrandId },
+            });
+            if (subBrand?.basePointRate != null) {
+              baseRate = Number(subBrand.basePointRate);
+              eliteRate = Number(subBrand.elitePointRate || 0);
+            }
+          }
+          if (baseRate == null) {
+            const hotel = await prisma.hotel.findUnique({
+              where: { id: finalHotelId },
+            });
+            if (hotel?.basePointRate != null) {
+              baseRate = Number(hotel.basePointRate);
+              eliteRate = Number(hotel.elitePointRate || 0);
+            }
+          }
+          if (baseRate != null) {
             data.loyaltyPointsEarned = Math.round(finalPretax * (baseRate + eliteRate));
           }
         }
@@ -178,6 +201,7 @@ export async function PUT(
       where: { id: booking.id },
       include: {
         hotel: { include: { pointType: true } },
+        subBrand: true,
         creditCard: { include: { pointType: true } },
         shoppingPortal: { include: { pointType: true } },
         bookingPromotions: {

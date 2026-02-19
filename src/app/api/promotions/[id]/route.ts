@@ -12,6 +12,7 @@ export async function GET(
       where: { id: Number(id) },
       include: {
         hotel: true,
+        subBrand: true,
         creditCard: true,
         shoppingPortal: true,
       },
@@ -43,6 +44,7 @@ export async function PUT(
       valueType,
       value,
       hotelId,
+      subBrandId,
       creditCardId,
       shoppingPortalId,
       minSpend,
@@ -57,6 +59,8 @@ export async function PUT(
     if (valueType !== undefined) data.valueType = valueType;
     if (value !== undefined) data.value = Number(value);
     if (hotelId !== undefined) data.hotelId = hotelId ? Number(hotelId) : null;
+    if (subBrandId !== undefined)
+      data.subBrandId = subBrandId ? Number(subBrandId) : null;
     if (creditCardId !== undefined)
       data.creditCardId = creditCardId ? Number(creditCardId) : null;
     if (shoppingPortalId !== undefined)

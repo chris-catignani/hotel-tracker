@@ -8,6 +8,7 @@ export async function matchPromotionsForBooking(
     where: { id: bookingId },
     include: {
       hotel: { include: { pointType: true } },
+      subBrand: true,
       creditCard: { include: { pointType: true } },
       shoppingPortal: true,
     },
@@ -42,6 +43,9 @@ export async function matchPromotionsForBooking(
     }
 
     if (!typeMatches) continue;
+
+    // Sub-brand filter: if promo is scoped to a sub-brand, booking must match
+    if (promo.subBrandId !== null && promo.subBrandId !== booking.subBrandId) continue;
 
     // Date range check
     if (promo.startDate || promo.endDate) {

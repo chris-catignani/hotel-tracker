@@ -8,6 +8,7 @@ export async function GET() {
     const bookings = await prisma.booking.findMany({
       include: {
         hotel: { include: { pointType: true } },
+        subBrand: true,
         creditCard: { include: { pointType: true } },
         shoppingPortal: { include: { pointType: true } },
         bookingPromotions: {
@@ -55,19 +56,35 @@ export async function POST(request: NextRequest) {
       otaAgencyId,
       benefits,
       notes,
+      subBrandId,
     } = body;
 
-    // Auto-calculate loyalty points from hotel rates if not explicitly provided
+    // Auto-calculate loyalty points from hotel/sub-brand rates if not explicitly provided
     let calculatedPoints: number | null = loyaltyPointsEarned
       ? Number(loyaltyPointsEarned)
       : null;
     if (calculatedPoints == null && hotelId && pretaxCost) {
-      const hotel = await prisma.hotel.findUnique({
-        where: { id: Number(hotelId) },
-      });
-      if (hotel?.basePointRate != null) {
-        const baseRate = Number(hotel.basePointRate);
-        const eliteRate = Number(hotel.elitePointRate || 0);
+      let baseRate: number | null = null;
+      let eliteRate = 0;
+      if (subBrandId) {
+        const subBrand = await prisma.hotelSubBrand.findUnique({
+          where: { id: Number(subBrandId) },
+        });
+        if (subBrand?.basePointRate != null) {
+          baseRate = Number(subBrand.basePointRate);
+          eliteRate = Number(subBrand.elitePointRate || 0);
+        }
+      }
+      if (baseRate == null) {
+        const hotel = await prisma.hotel.findUnique({
+          where: { id: Number(hotelId) },
+        });
+        if (hotel?.basePointRate != null) {
+          baseRate = Number(hotel.basePointRate);
+          eliteRate = Number(hotel.elitePointRate || 0);
+        }
+      }
+      if (baseRate != null) {
         calculatedPoints = Math.round(Number(pretaxCost) * (baseRate + eliteRate));
       }
     }
@@ -75,6 +92,7 @@ export async function POST(request: NextRequest) {
     const booking = await prisma.booking.create({
       data: {
         hotelId: Number(hotelId),
+        subBrandId: subBrandId ? Number(subBrandId) : null,
         propertyName,
         checkIn: new Date(checkIn),
         checkOut: new Date(checkOut),
@@ -120,6 +138,7 @@ export async function POST(request: NextRequest) {
       where: { id: booking.id },
       include: {
         hotel: { include: { pointType: true } },
+        subBrand: true,
         creditCard: { include: { pointType: true } },
         shoppingPortal: { include: { pointType: true } },
         bookingPromotions: {

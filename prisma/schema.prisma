@@ -53,17 +53,31 @@ model PointType {
 }
 
 model Hotel {
-  id             Int         @id @default(autoincrement())
+  id             Int              @id @default(autoincrement())
   name           String
-  loyaltyProgram String?     @map("loyalty_program")
+  loyaltyProgram String?          @map("loyalty_program")
+  basePointRate  Decimal?         @map("base_point_rate") @db.Decimal(10, 4)
+  elitePointRate Decimal?         @map("elite_point_rate") @db.Decimal(10, 4)
+  pointTypeId    Int?             @map("point_type_id")
+  pointType      PointType?       @relation(fields: [pointTypeId], references: [id])
+  bookings       Booking[]
+  promotions     Promotion[]
+  subBrands      HotelSubBrand[]
+
+  @@map("hotels")
+}
+
+model HotelSubBrand {
+  id             Int         @id @default(autoincrement())
+  hotelId        Int         @map("hotel_id")
+  hotel          Hotel       @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  name           String
   basePointRate  Decimal?    @map("base_point_rate") @db.Decimal(10, 4)
   elitePointRate Decimal?    @map("elite_point_rate") @db.Decimal(10, 4)
-  pointTypeId    Int?        @map("point_type_id")
-  pointType      PointType?  @relation(fields: [pointTypeId], references: [id])
   bookings       Booking[]
   promotions     Promotion[]
 
-  @@map("hotels")
+  @@map("hotel_sub_brands")
 }
 
 model CreditCard {
@@ -103,6 +117,8 @@ model Booking {
   id                 Int                @id @default(autoincrement())
   hotelId            Int                @map("hotel_id")
   hotel              Hotel              @relation(fields: [hotelId], references: [id])
+  subBrandId         Int?               @map("sub_brand_id")
+  subBrand           HotelSubBrand?     @relation(fields: [subBrandId], references: [id])
   propertyName       String             @map("property_name")
   checkIn            DateTime           @map("check_in") @db.Date
   checkOut           DateTime           @map("check_out") @db.Date
@@ -172,6 +188,8 @@ model Promotion {
   value            Decimal            @db.Decimal(10, 4)
   hotelId          Int?               @map("hotel_id")
   hotel            Hotel?             @relation(fields: [hotelId], references: [id])
+  subBrandId       Int?               @map("sub_brand_id")
+  subBrand         HotelSubBrand?     @relation(fields: [subBrandId], references: [id])
   creditCardId     Int?               @map("credit_card_id")
   creditCard       CreditCard?        @relation(fields: [creditCardId], references: [id])
   shoppingPortalId Int?               @map("shopping_portal_id")

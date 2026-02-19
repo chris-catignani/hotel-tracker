@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
       where,
       include: {
         hotel: true,
+        subBrand: true,
         creditCard: true,
         shoppingPortal: true,
       },
@@ -37,6 +38,7 @@ export async function POST(request: NextRequest) {
       valueType,
       value,
       hotelId,
+      subBrandId,
       creditCardId,
       shoppingPortalId,
       minSpend,
@@ -52,6 +54,7 @@ export async function POST(request: NextRequest) {
         valueType,
         value: Number(value),
         hotelId: hotelId ? Number(hotelId) : null,
+        subBrandId: subBrandId ? Number(subBrandId) : null,
         creditCardId: creditCardId ? Number(creditCardId) : null,
         shoppingPortalId: shoppingPortalId ? Number(shoppingPortalId) : null,
         minSpend: minSpend != null ? Number(minSpend) : null,
