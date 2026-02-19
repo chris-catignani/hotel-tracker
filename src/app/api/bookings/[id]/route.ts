@@ -20,6 +20,9 @@ export async function GET(
             promotion: true,
           },
         },
+        certificates: true,
+        otaAgency: true,
+        benefits: true,
       },
     });
 
@@ -57,6 +60,13 @@ export async function PUT(
       portalCashbackRate,
       portalCashbackOnTotal,
       loyaltyPointsEarned,
+      pointsRedeemed,
+      currency,
+      originalAmount,
+      certificates,
+      bookingSource,
+      otaAgencyId,
+      benefits,
       notes,
     } = body;
 
@@ -84,7 +94,16 @@ export async function PUT(
         ? Number(loyaltyPointsEarned)
         : null;
     if (portalCashbackOnTotal !== undefined) data.portalCashbackOnTotal = portalCashbackOnTotal;
+    if (pointsRedeemed !== undefined)
+      data.pointsRedeemed = pointsRedeemed ? Number(pointsRedeemed) : null;
+    if (currency !== undefined) data.currency = currency;
+    if (originalAmount !== undefined)
+      data.originalAmount = originalAmount ? Number(originalAmount) : null;
     if (notes !== undefined) data.notes = notes || null;
+    if (bookingSource !== undefined) {
+      data.bookingSource = bookingSource || null;
+      data.otaAgencyId = bookingSource === "ota" && otaAgencyId ? Number(otaAgencyId) : null;
+    }
 
     // Auto-calculate loyalty points if not explicitly provided but hotel/pretax changed
     if (loyaltyPointsEarned === undefined || loyaltyPointsEarned === null) {
@@ -112,6 +131,40 @@ export async function PUT(
       }
     }
 
+    // Handle certificates: delete old ones and recreate if provided
+    if (certificates !== undefined) {
+      await prisma.bookingCertificate.deleteMany({
+        where: { bookingId: Number(id) },
+      });
+      if ((certificates as string[]).length > 0) {
+        await prisma.bookingCertificate.createMany({
+          data: (certificates as string[]).map((v) => ({
+            bookingId: Number(id),
+            value: v,
+          })),
+        });
+      }
+    }
+
+    // Handle benefits: delete old ones and recreate if provided
+    if (benefits !== undefined) {
+      await prisma.bookingBenefit.deleteMany({
+        where: { bookingId: Number(id) },
+      });
+      const validBenefits = (benefits as { benefitType: string; label?: string; dollarValue?: number }[])
+        .filter((b) => b.benefitType);
+      if (validBenefits.length > 0) {
+        await prisma.bookingBenefit.createMany({
+          data: validBenefits.map((b) => ({
+            bookingId: Number(id),
+            benefitType: b.benefitType as import("@prisma/client").BenefitType,
+            label: b.label || null,
+            dollarValue: b.dollarValue != null ? Number(b.dollarValue) : null,
+          })),
+        });
+      }
+    }
+
     const booking = await prisma.booking.update({
       where: { id: Number(id) },
       data,
@@ -132,6 +185,9 @@ export async function PUT(
             promotion: true,
           },
         },
+        certificates: true,
+        otaAgency: true,
+        benefits: true,
       },
     });
 

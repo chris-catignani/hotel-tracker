@@ -42,6 +42,18 @@ interface BookingPromotion {
   };
 }
 
+interface BookingCertificate {
+  id: number;
+  value: string;
+}
+
+interface BookingBenefit {
+  id: number;
+  benefitType: string;
+  label: string | null;
+  dollarValue: string | number | null;
+}
+
 interface Booking {
   id: number;
   hotelId: number;
@@ -52,13 +64,18 @@ interface Booking {
   pretaxCost: string | number;
   taxAmount: string | number;
   totalCost: string | number;
+  currency: string;
+  originalAmount: string | number | null;
   creditCardId: number | null;
   shoppingPortalId: number | null;
   portalCashbackRate: string | number | null;
   portalCashbackOnTotal: boolean;
   loyaltyPointsEarned: number | null;
+  pointsRedeemed: number | null;
   notes: string | null;
   createdAt: string;
+  bookingSource: string | null;
+  otaAgency: { id: number; name: string } | null;
   hotel: {
     id: number;
     name: string;
@@ -79,6 +96,8 @@ interface Booking {
     pointType: { centsPerPoint: string | number } | null;
   } | null;
   bookingPromotions: BookingPromotion[];
+  certificates: BookingCertificate[];
+  benefits: BookingBenefit[];
 }
 
 // ---------------------------------------------------------------------------
@@ -98,6 +117,47 @@ function formatCurrency(amount: number): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
+}
+
+function formatBookingSource(booking: { bookingSource: string | null; otaAgency: { name: string } | null }): string {
+  switch (booking.bookingSource) {
+    case "direct_web": return "Direct — Hotel Website";
+    case "direct_app": return "Direct — Hotel App";
+    case "ota": return booking.otaAgency ? `OTA — ${booking.otaAgency.name}` : "OTA";
+    case "other": return "Other";
+    default: return "—";
+  }
+}
+
+function formatBenefitType(type: string): string {
+  const labels: Record<string, string> = {
+    free_breakfast: "Free Breakfast",
+    dining_credit: "Dining Credit",
+    spa_credit: "Spa Credit",
+    room_upgrade: "Room Upgrade",
+    late_checkout: "Late Checkout",
+    early_checkin: "Early Check-in",
+    other: "Other",
+  };
+  return labels[type] ?? type;
+}
+
+function getBookingTypeBadge(booking: {
+  totalCost: string | number;
+  pointsRedeemed: number | null;
+  certificates: { id: number }[];
+}): string | null {
+  const hasCash = Number(booking.totalCost) > 0;
+  const hasPoints = !!booking.pointsRedeemed;
+  const hasCert = booking.certificates.length > 0;
+  if (!hasPoints && !hasCert) return null;
+  if (!hasCash && hasPoints && !hasCert) return "Award";
+  if (!hasCash && !hasPoints && hasCert) return "Cert";
+  if (!hasCash && hasPoints && hasCert) return "Award + Cert";
+  if (hasCash && hasPoints && !hasCert) return "Cash + Points";
+  if (hasCash && !hasPoints && hasCert) return "Cash + Cert";
+  if (hasCash && hasPoints && hasCert) return "Cash + Points + Cert";
+  return null;
 }
 
 // ---------------------------------------------------------------------------
@@ -189,6 +249,8 @@ export default function BookingDetailPage() {
       : 0;
   const netCost = totalCost - promotionSavings - portalCashback - cardReward - loyaltyPointsValue;
 
+  const typeBadge = getBookingTypeBadge(booking);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -206,7 +268,12 @@ export default function BookingDetailPage() {
       {/* Booking Info Card */}
       <Card>
         <CardHeader>
-          <CardTitle>{booking.propertyName}</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            {booking.propertyName}
+            {typeBadge && (
+              <Badge variant="secondary">{typeBadge}</Badge>
+            )}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -232,22 +299,32 @@ export default function BookingDetailPage() {
               <p className="text-sm text-muted-foreground">Nights</p>
               <p className="font-medium">{booking.numNights}</p>
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Pre-tax Cost</p>
-              <p className="font-medium">
-                {formatCurrency(Number(booking.pretaxCost))}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Tax Amount</p>
-              <p className="font-medium">
-                {formatCurrency(Number(booking.taxAmount))}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total Cost</p>
-              <p className="font-medium">{formatCurrency(totalCost)}</p>
-            </div>
+            {totalCost > 0 && (
+              <div>
+                <p className="text-sm text-muted-foreground">Pre-tax Cost</p>
+                <p className="font-medium">
+                  {formatCurrency(Number(booking.pretaxCost))}
+                </p>
+              </div>
+            )}
+            {totalCost > 0 && (
+              <div>
+                <p className="text-sm text-muted-foreground">Total Cost</p>
+                <p className="font-medium">{formatCurrency(totalCost)}</p>
+              </div>
+            )}
+            {booking.currency !== "USD" && booking.originalAmount != null && (
+              <div>
+                <p className="text-sm text-muted-foreground">Original Amount</p>
+                <p className="font-medium">
+                  {Number(booking.originalAmount).toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}{" "}
+                  {booking.currency}
+                </p>
+              </div>
+            )}
             {booking.creditCard && (
               <div>
                 <p className="text-sm text-muted-foreground">Credit Card</p>
@@ -277,6 +354,32 @@ export default function BookingDetailPage() {
                 </p>
               </div>
             )}
+            {booking.pointsRedeemed != null && (
+              <div>
+                <p className="text-sm text-muted-foreground">Points Redeemed</p>
+                <p className="font-medium">
+                  {booking.pointsRedeemed.toLocaleString()}
+                </p>
+              </div>
+            )}
+            {booking.certificates.length > 0 && (
+              <div>
+                <p className="text-sm text-muted-foreground">Certificates</p>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {booking.certificates.map((cert) => (
+                    <Badge key={cert.id} variant="outline">
+                      {cert.value}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+            {booking.bookingSource && (
+              <div>
+                <p className="text-sm text-muted-foreground">Booking Source</p>
+                <p className="font-medium">{formatBookingSource(booking)}</p>
+              </div>
+            )}
           </div>
           {booking.notes && (
             <>
@@ -289,6 +392,32 @@ export default function BookingDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Booking Benefits */}
+      {booking.benefits.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Booking Benefits</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2">
+              {booking.benefits.map((b) => (
+                <li key={b.id} className="flex items-center justify-between">
+                  <span>
+                    {formatBenefitType(b.benefitType)}
+                    {b.label ? ` — ${b.label}` : ""}
+                  </span>
+                  {b.dollarValue != null && (
+                    <span className="text-muted-foreground">
+                      ${Number(b.dollarValue).toFixed(2)}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Cost Breakdown */}
       <CostBreakdown

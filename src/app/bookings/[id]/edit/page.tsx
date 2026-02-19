@@ -22,6 +22,27 @@ import {
 } from "@/components/ui/card";
 
 // ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+const CURRENCIES = [
+  "USD", "EUR", "GBP", "CAD", "AUD", "JPY", "CHF",
+  "MXN", "SGD", "HKD", "MYR", "NTD", "THB", "IDR", "NZD",
+];
+
+const PAYMENT_TYPES = [
+  { value: "cash",             label: "Cash" },
+  { value: "points",           label: "Points (Award Stay)" },
+  { value: "cert",             label: "Certificate(s) (Free Night)" },
+  { value: "points_cert",      label: "Points + Certificate(s)" },
+  { value: "cash_points",      label: "Cash + Points" },
+  { value: "cash_cert",        label: "Cash + Certificate(s)" },
+  { value: "cash_points_cert", label: "Cash + Points + Certificate(s)" },
+] as const;
+
+type PaymentType = typeof PAYMENT_TYPES[number]["value"];
+
+// ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
@@ -47,6 +68,11 @@ interface ShoppingPortal {
   pointType: { centsPerPoint: number } | null;
 }
 
+interface OtaAgency {
+  id: number;
+  name: string;
+}
+
 interface Booking {
   id: number;
   hotelId: number;
@@ -57,13 +83,37 @@ interface Booking {
   pretaxCost: string | number;
   taxAmount: string | number;
   totalCost: string | number;
+  currency: string;
+  originalAmount: string | number | null;
   creditCardId: number | null;
   shoppingPortalId: number | null;
   portalCashbackRate: string | number | null;
   portalCashbackOnTotal: boolean;
   loyaltyPointsEarned: number | null;
+  pointsRedeemed: number | null;
   notes: string | null;
+  certificates: { id: number; value: string }[];
+  bookingSource: string | null;
+  otaAgencyId: number | null;
+  benefits: { id: number; benefitType: string; label: string | null; dollarValue: string | number | null }[];
 }
+
+const BOOKING_SOURCE_OPTIONS = [
+  { value: "direct_web", label: "Direct — Hotel Website" },
+  { value: "direct_app", label: "Direct — Hotel App" },
+  { value: "ota", label: "Online Travel Agency (OTA)" },
+  { value: "other", label: "Other" },
+];
+
+const BENEFIT_TYPE_OPTIONS = [
+  { value: "free_breakfast", label: "Free Breakfast" },
+  { value: "dining_credit", label: "Dining Credit" },
+  { value: "spa_credit", label: "Spa Credit" },
+  { value: "room_upgrade", label: "Room Upgrade" },
+  { value: "late_checkout", label: "Late Checkout" },
+  { value: "early_checkin", label: "Early Check-in" },
+  { value: "other", label: "Other" },
+];
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -84,6 +134,23 @@ function toDateInputValue(dateStr: string): string {
   return `${year}-${month}-${day}`;
 }
 
+function toPaymentType(
+  totalCost: string | number,
+  pointsRedeemed: number | null,
+  certificates: { id: number; value: string }[],
+): PaymentType {
+  const hasCash = Number(totalCost) > 0;
+  const hasPoints = pointsRedeemed != null;
+  const hasCert = certificates.length > 0;
+  if (hasCash && hasPoints && hasCert) return "cash_points_cert";
+  if (hasCash && hasPoints) return "cash_points";
+  if (hasCash && hasCert) return "cash_cert";
+  if (hasPoints && hasCert) return "points_cert";
+  if (hasPoints) return "points";
+  if (hasCert) return "cert";
+  return "cash";
+}
+
 // ---------------------------------------------------------------------------
 // Edit Booking Page
 // ---------------------------------------------------------------------------
@@ -97,6 +164,7 @@ export default function EditBookingPage() {
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
   const [portals, setPortals] = useState<ShoppingPortal[]>([]);
+  const [otaAgencies, setOtaAgencies] = useState<OtaAgency[]>([]);
 
   // Form fields
   const [hotelId, setHotelId] = useState("");
@@ -104,31 +172,46 @@ export default function EditBookingPage() {
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
   const [numNights, setNumNights] = useState("");
+  const [paymentType, setPaymentType] = useState<PaymentType>("cash");
   const [pretaxCost, setPretaxCost] = useState("");
   const [taxAmount, setTaxAmount] = useState("");
   const [totalCost, setTotalCost] = useState("");
+  const [currency, setCurrency] = useState("USD");
+  const [originalAmount, setOriginalAmount] = useState("");
+  const [pointsRedeemed, setPointsRedeemed] = useState("");
+  const [certificates, setCertificates] = useState<string[]>([]);
   const [creditCardId, setCreditCardId] = useState("none");
   const [shoppingPortalId, setShoppingPortalId] = useState("none");
   const [portalCashbackRate, setPortalCashbackRate] = useState("");
   const [portalCashbackOnTotal, setPortalCashbackOnTotal] = useState(false);
   const [loyaltyPointsEarned, setLoyaltyPointsEarned] = useState("");
+  const [bookingSource, setBookingSource] = useState("");
+  const [otaAgencyId, setOtaAgencyId] = useState("none");
+  const [benefits, setBenefits] = useState<{ type: string; label: string; dollarValue: string }[]>([]);
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
 
+  // Derived booleans from payment type
+  const hasCash = paymentType.includes("cash");
+  const hasPoints = paymentType.includes("points");
+  const hasCert = paymentType.includes("cert");
+
   // Fetch reference data and existing booking
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const [hotelsRes, cardsRes, portalsRes, bookingRes] = await Promise.all([
+    const [hotelsRes, cardsRes, portalsRes, agenciesRes, bookingRes] = await Promise.all([
       fetch("/api/hotels"),
       fetch("/api/credit-cards"),
       fetch("/api/portals"),
+      fetch("/api/ota-agencies"),
       fetch(`/api/bookings/${id}`),
     ]);
 
     if (hotelsRes.ok) setHotels(await hotelsRes.json());
     if (cardsRes.ok) setCreditCards(await cardsRes.json());
+    if (agenciesRes.ok) setOtaAgencies(await agenciesRes.json());
 
     let loadedPortals: ShoppingPortal[] = [];
     if (portalsRes.ok) {
@@ -143,9 +226,12 @@ export default function EditBookingPage() {
       setCheckIn(toDateInputValue(booking.checkIn));
       setCheckOut(toDateInputValue(booking.checkOut));
       setNumNights(String(booking.numNights));
+      setPaymentType(toPaymentType(booking.totalCost, booking.pointsRedeemed, booking.certificates));
       setPretaxCost(String(Number(booking.pretaxCost)));
       setTaxAmount(String(Number(booking.taxAmount)));
       setTotalCost(String(Number(booking.totalCost)));
+      setCurrency(booking.currency || "USD");
+      setOriginalAmount(booking.originalAmount ? String(Number(booking.originalAmount)) : "");
       setCreditCardId(
         booking.creditCardId ? String(booking.creditCardId) : "none"
       );
@@ -167,6 +253,19 @@ export default function EditBookingPage() {
         booking.loyaltyPointsEarned != null
           ? String(booking.loyaltyPointsEarned)
           : ""
+      );
+      if (booking.pointsRedeemed != null) {
+        setPointsRedeemed(String(booking.pointsRedeemed));
+      }
+      setCertificates(booking.certificates.map((c) => c.value));
+      setBookingSource(booking.bookingSource || "");
+      setOtaAgencyId(booking.otaAgencyId ? String(booking.otaAgencyId) : "none");
+      setBenefits(
+        booking.benefits.map((b) => ({
+          type: b.benefitType,
+          label: b.label || "",
+          dollarValue: b.dollarValue != null ? String(Number(b.dollarValue)) : "",
+        }))
       );
       setNotes(booking.notes || "");
       setInitialized(true);
@@ -210,6 +309,25 @@ export default function EditBookingPage() {
     }
   }, [hotelId, pretaxCost, hotels, initialized]);
 
+  // Clear sub-fields when switching payment type (only after initial load)
+  useEffect(() => {
+    if (!initialized) return;
+    if (!hasPoints) setPointsRedeemed("");
+    if (!hasCert) setCertificates([]);
+  }, [hasPoints, hasCert, initialized]);
+
+  const addCertificate = () => setCertificates((prev) => [...prev, ""]);
+  const updateCertificate = (idx: number, value: string) =>
+    setCertificates((prev) => prev.map((c, i) => (i === idx ? value : c)));
+  const removeCertificate = (idx: number) =>
+    setCertificates((prev) => prev.filter((_, i) => i !== idx));
+
+  const addBenefit = () => setBenefits((prev) => [...prev, { type: "", label: "", dollarValue: "" }]);
+  const updateBenefit = (idx: number, field: string, value: string) =>
+    setBenefits((prev) => prev.map((b, i) => (i === idx ? { ...b, [field]: value } : b)));
+  const removeBenefit = (idx: number) =>
+    setBenefits((prev) => prev.filter((_, i) => i !== idx));
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -220,9 +338,13 @@ export default function EditBookingPage() {
       checkIn,
       checkOut,
       numNights: Number(numNights),
-      pretaxCost: Number(pretaxCost),
-      taxAmount: Number(taxAmount),
-      totalCost: Number(totalCost),
+      pretaxCost: hasCash ? Number(pretaxCost) : 0,
+      taxAmount:  hasCash ? Number(taxAmount)  : 0,
+      totalCost:  hasCash ? Number(totalCost)  : 0,
+      currency:   hasCash ? currency : "USD",
+      originalAmount: hasCash && currency !== "USD" && originalAmount ? Number(originalAmount) : null,
+      pointsRedeemed: hasPoints && pointsRedeemed ? Number(pointsRedeemed) : null,
+      certificates: hasCert ? certificates.filter((c) => c.trim()) : [],
       creditCardId: creditCardId === "none" ? null : Number(creditCardId),
       shoppingPortalId:
         shoppingPortalId === "none" ? null : Number(shoppingPortalId),
@@ -234,9 +356,16 @@ export default function EditBookingPage() {
           : Number(portalCashbackRate) / 100;
       })(),
       portalCashbackOnTotal: shoppingPortalId !== "none" ? portalCashbackOnTotal : false,
-      loyaltyPointsEarned: loyaltyPointsEarned
-        ? Number(loyaltyPointsEarned)
-        : null,
+      loyaltyPointsEarned: loyaltyPointsEarned ? Number(loyaltyPointsEarned) : null,
+      bookingSource: bookingSource || null,
+      otaAgencyId: bookingSource === "ota" && otaAgencyId !== "none" ? Number(otaAgencyId) : null,
+      benefits: benefits
+        .filter((b) => b.type)
+        .map((b) => ({
+          benefitType: b.type,
+          label: b.label || null,
+          dollarValue: b.dollarValue ? Number(b.dollarValue) : null,
+        })),
       notes: notes || null,
     };
 
@@ -269,8 +398,7 @@ export default function EditBookingPage() {
     checkIn &&
     checkOut &&
     numNights &&
-    pretaxCost &&
-    totalCost;
+    (!hasCash || (pretaxCost !== "" && totalCost !== ""));
 
   return (
     <div className="space-y-6">
@@ -282,34 +410,74 @@ export default function EditBookingPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Hotel Chain */}
+            {/* Hotel Chain + Property Name */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="hotelId">Hotel Chain *</Label>
+                <Select value={hotelId} onValueChange={setHotelId}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select hotel chain..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {hotels.map((hotel) => (
+                      <SelectItem key={hotel.id} value={String(hotel.id)}>
+                        {hotel.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="propertyName">Property Name *</Label>
+                <Input
+                  id="propertyName"
+                  value={propertyName}
+                  onChange={(e) => setPropertyName(e.target.value)}
+                  placeholder="e.g. Marriott Downtown Chicago"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Booking Source */}
             <div className="space-y-2">
-              <Label htmlFor="hotelId">Hotel Chain *</Label>
-              <Select value={hotelId} onValueChange={setHotelId}>
+              <Label htmlFor="bookingSource">Booking Source</Label>
+              <Select value={bookingSource || "none"} onValueChange={(v) => {
+                setBookingSource(v === "none" ? "" : v);
+                if (v !== "ota") setOtaAgencyId("none");
+              }}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select hotel chain..." />
+                  <SelectValue placeholder="Where was this booked? (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  {hotels.map((hotel) => (
-                    <SelectItem key={hotel.id} value={String(hotel.id)}>
-                      {hotel.name}
+                  <SelectItem value="none">Not specified</SelectItem>
+                  {BOOKING_SOURCE_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Property Name */}
-            <div className="space-y-2">
-              <Label htmlFor="propertyName">Property Name *</Label>
-              <Input
-                id="propertyName"
-                value={propertyName}
-                onChange={(e) => setPropertyName(e.target.value)}
-                placeholder="e.g. Marriott Downtown Chicago"
-                required
-              />
-            </div>
+            {bookingSource === "ota" && (
+              <div className="space-y-2">
+                <Label htmlFor="otaAgencyId">OTA Agency</Label>
+                <Select value={otaAgencyId} onValueChange={setOtaAgencyId}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select agency..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Not specified</SelectItem>
+                    {otaAgencies.map((a) => (
+                      <SelectItem key={a.id} value={String(a.id)}>
+                        {a.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Dates */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -340,89 +508,178 @@ export default function EditBookingPage() {
                   type="number"
                   min="1"
                   value={numNights}
-                  onChange={(e) => setNumNights(e.target.value)}
-                />
-              </div>
-            </div>
-
-            {/* Costs */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div className="space-y-2">
-                <Label htmlFor="pretaxCost">Pre-tax Cost *</Label>
-                <Input
-                  id="pretaxCost"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={pretaxCost}
-                  onChange={(e) => setPretaxCost(e.target.value)}
-                  placeholder="0.00"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="totalCost">Total Cost *</Label>
-                <Input
-                  id="totalCost"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={totalCost}
-                  onChange={(e) => setTotalCost(e.target.value)}
-                  placeholder="0.00"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="taxAmount">Tax Amount</Label>
-                <Input
-                  id="taxAmount"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={taxAmount}
-                  placeholder="0.00"
                   readOnly
                   className="bg-muted text-muted-foreground"
                 />
-                <p className="text-xs text-muted-foreground">Auto-calculated</p>
               </div>
             </div>
 
-            {/* Credit Card */}
+            {/* Payment Type */}
             <div className="space-y-2">
-              <Label htmlFor="creditCardId">Credit Card</Label>
-              <Select value={creditCardId} onValueChange={setCreditCardId}>
+              <Label htmlFor="paymentType">Payment Type</Label>
+              <Select value={paymentType} onValueChange={(v) => setPaymentType(v as PaymentType)}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select credit card..." />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  {creditCards.map((card) => (
-                    <SelectItem key={card.id} value={String(card.id)}>
-                      {card.name}
+                  {PAYMENT_TYPES.map((pt) => (
+                    <SelectItem key={pt.value} value={pt.value}>
+                      {pt.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Shopping Portal */}
-            <div className="space-y-2">
-              <Label htmlFor="shoppingPortalId">Shopping Portal</Label>
-              <Select value={shoppingPortalId} onValueChange={setShoppingPortalId}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select portal..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  {portals.map((portal) => (
-                    <SelectItem key={portal.id} value={String(portal.id)}>
-                      {portal.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            {/* Costs — only when hasCash */}
+            {hasCash && (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="pretaxCost">Pre-tax Cost (USD) *</Label>
+                  <Input
+                    id="pretaxCost"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={pretaxCost}
+                    onChange={(e) => setPretaxCost(e.target.value)}
+                    placeholder="0.00"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="totalCost">Total Cost (USD) *</Label>
+                  <Input
+                    id="totalCost"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={totalCost}
+                    onChange={(e) => setTotalCost(e.target.value)}
+                    placeholder="0.00"
+                    required
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Currency — only when hasCash */}
+            {hasCash && (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="currency">Currency</Label>
+                  <Select value={currency} onValueChange={setCurrency}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CURRENCIES.map((c) => (
+                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {currency !== "USD" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="originalAmount">Original Amount ({currency})</Label>
+                    <Input
+                      id="originalAmount"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={originalAmount}
+                      onChange={(e) => setOriginalAmount(e.target.value)}
+                      placeholder="0.00"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      USD amounts above are used for all calculations.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Points Redeemed — only when hasPoints */}
+            {hasPoints && (
+              <div className="space-y-2">
+                <Label htmlFor="pointsRedeemed">Points Redeemed</Label>
+                <Input
+                  id="pointsRedeemed"
+                  type="number"
+                  min="0"
+                  value={pointsRedeemed}
+                  onChange={(e) => setPointsRedeemed(e.target.value)}
+                  placeholder="e.g. 40000"
+                />
+              </div>
+            )}
+
+            {/* Free Night Certificates — only when hasCert */}
+            {hasCert && (
+              <div className="space-y-2">
+                <Label>Free Night Certificate(s)</Label>
+                {certificates.map((cert, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <Input
+                      value={cert}
+                      onChange={(e) => updateCertificate(idx, e.target.value)}
+                      placeholder='e.g. "40,000 pts" or "Category 1-4"'
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removeCertificate(idx)}
+                    >
+                      ×
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addCertificate}
+                >
+                  + Add Certificate
+                </Button>
+              </div>
+            )}
+
+            {/* Credit Card + Shopping Portal */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="creditCardId">Credit Card</Label>
+                <Select value={creditCardId} onValueChange={setCreditCardId}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select credit card..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {creditCards.map((card) => (
+                      <SelectItem key={card.id} value={String(card.id)}>
+                        {card.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="shoppingPortalId">Shopping Portal</Label>
+                <Select value={shoppingPortalId} onValueChange={setShoppingPortalId}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select portal..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {portals.map((portal) => (
+                      <SelectItem key={portal.id} value={String(portal.id)}>
+                        {portal.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             {/* Portal Rate - shown when portal selected */}
@@ -478,6 +735,56 @@ export default function EditBookingPage() {
               <p className="text-xs text-muted-foreground">
                 Auto-calculated from hotel chain rates.
               </p>
+            </div>
+
+            {/* Benefits */}
+            <div className="space-y-2">
+              <Label>Booking Benefits</Label>
+              {benefits.map((benefit, idx) => (
+                <div key={idx} className="flex items-start gap-2">
+                  <Select value={benefit.type || "none"} onValueChange={(v) => updateBenefit(idx, "type", v === "none" ? "" : v)}>
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Select type..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Select type...</SelectItem>
+                      {BENEFIT_TYPE_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {benefit.type === "other" && (
+                    <Input
+                      value={benefit.label}
+                      onChange={(e) => updateBenefit(idx, "label", e.target.value)}
+                      placeholder="Description"
+                      className="flex-1"
+                    />
+                  )}
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={benefit.dollarValue}
+                    onChange={(e) => updateBenefit(idx, "dollarValue", e.target.value)}
+                    placeholder="$ value"
+                    className="w-32"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => removeBenefit(idx)}
+                  >
+                    ×
+                  </Button>
+                </div>
+              ))}
+              <Button type="button" variant="outline" size="sm" onClick={addBenefit}>
+                + Add Benefit
+              </Button>
             </div>
 
             {/* Notes */}

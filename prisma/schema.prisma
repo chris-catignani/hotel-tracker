@@ -13,6 +13,23 @@ enum PointCategory {
   transferable
 }
 
+enum BookingSourceType {
+  direct_web
+  direct_app
+  ota
+  other
+}
+
+enum BenefitType {
+  free_breakfast
+  dining_credit
+  spa_credit
+  room_upgrade
+  late_checkout
+  early_checkin
+  other
+}
+
 model PointType {
   id              Int              @id @default(autoincrement())
   name            String
@@ -64,6 +81,14 @@ model ShoppingPortal {
   @@map("shopping_portals")
 }
 
+model OtaAgency {
+  id       Int       @id @default(autoincrement())
+  name     String
+  bookings Booking[]
+
+  @@map("ota_agencies")
+}
+
 model Booking {
   id                 Int                @id @default(autoincrement())
   hotelId            Int                @map("hotel_id")
@@ -82,11 +107,39 @@ model Booking {
   portalCashbackRate    Decimal?           @map("portal_cashback_rate") @db.Decimal(10, 4)
   portalCashbackOnTotal Boolean            @default(false) @map("portal_cashback_on_total")
   loyaltyPointsEarned   Int?               @map("loyalty_points_earned")
+  pointsRedeemed        Int?               @map("points_redeemed")
+  currency              String             @default("USD")
+  originalAmount        Decimal?           @map("original_amount") @db.Decimal(10, 2)
+  bookingSource         BookingSourceType? @map("booking_source")
+  otaAgencyId           Int?               @map("ota_agency_id")
+  otaAgency             OtaAgency?         @relation(fields: [otaAgencyId], references: [id])
   notes              String?
   createdAt          DateTime           @default(now()) @map("created_at")
   bookingPromotions  BookingPromotion[]
+  certificates       BookingCertificate[]
+  benefits           BookingBenefit[]
 
   @@map("bookings")
+}
+
+model BookingBenefit {
+  id          Int         @id @default(autoincrement())
+  bookingId   Int         @map("booking_id")
+  benefitType BenefitType @map("benefit_type")
+  label       String?
+  dollarValue Decimal?    @map("dollar_value") @db.Decimal(10, 2)
+  booking     Booking     @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("booking_benefits")
+}
+
+model BookingCertificate {
+  id        Int     @id @default(autoincrement())
+  bookingId Int     @map("booking_id")
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  value     String
+
+  @@map("booking_certificates")
 }
 
 enum PromotionType {

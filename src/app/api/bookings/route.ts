@@ -15,6 +15,9 @@ export async function GET() {
             promotion: true,
           },
         },
+        certificates: true,
+        otaAgency: true,
+        benefits: true,
       },
       orderBy: {
         checkIn: "asc",
@@ -44,6 +47,13 @@ export async function POST(request: NextRequest) {
       portalCashbackRate,
       portalCashbackOnTotal,
       loyaltyPointsEarned,
+      pointsRedeemed,
+      currency,
+      originalAmount,
+      certificates,
+      bookingSource,
+      otaAgencyId,
+      benefits,
       notes,
     } = body;
 
@@ -79,7 +89,26 @@ export async function POST(request: NextRequest) {
           : null,
         portalCashbackOnTotal: portalCashbackOnTotal ?? false,
         loyaltyPointsEarned: calculatedPoints,
+        pointsRedeemed: pointsRedeemed ? Number(pointsRedeemed) : null,
+        currency: currency || "USD",
+        originalAmount: originalAmount ? Number(originalAmount) : null,
         notes: notes || null,
+        bookingSource: bookingSource || null,
+        otaAgencyId: bookingSource === "ota" && otaAgencyId ? Number(otaAgencyId) : null,
+        certificates: certificates?.length
+          ? { create: (certificates as string[]).map((v) => ({ value: v })) }
+          : undefined,
+        benefits: benefits?.length
+          ? {
+              create: (benefits as { benefitType: string; label?: string; dollarValue?: number }[])
+                .filter((b) => b.benefitType)
+                .map((b) => ({
+                  benefitType: b.benefitType as import("@prisma/client").BenefitType,
+                  label: b.label || null,
+                  dollarValue: b.dollarValue != null ? Number(b.dollarValue) : null,
+                })),
+            }
+          : undefined,
       },
     });
 
@@ -98,6 +127,9 @@ export async function POST(request: NextRequest) {
             promotion: true,
           },
         },
+        certificates: true,
+        otaAgency: true,
+        benefits: true,
       },
     });
 

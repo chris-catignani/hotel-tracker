@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -31,6 +32,11 @@ interface BookingPromotion {
   };
 }
 
+interface BookingCertificate {
+  id: number;
+  value: string;
+}
+
 interface Booking {
   id: number;
   hotelId: number;
@@ -46,8 +52,11 @@ interface Booking {
   portalCashbackRate: string | number | null;
   portalCashbackOnTotal: boolean;
   loyaltyPointsEarned: number | null;
+  pointsRedeemed: number | null;
   notes: string | null;
   createdAt: string;
+  bookingSource: string | null;
+  otaAgency: { id: number; name: string } | null;
   hotel: {
     id: number;
     name: string;
@@ -67,6 +76,7 @@ interface Booking {
     pointType: { centsPerPoint: string | number } | null;
   } | null;
   bookingPromotions: BookingPromotion[];
+  certificates: BookingCertificate[];
 }
 
 // ---------------------------------------------------------------------------
@@ -108,6 +118,34 @@ function calculateNetCost(booking: Booking): number {
       Number(booking.creditCard.pointType?.centsPerPoint ?? 0)
     : 0;
   return totalCost - promotionSavings - portalCashback - cardReward;
+}
+
+function formatSourceColumn(booking: { bookingSource: string | null; otaAgency: { name: string } | null }): string {
+  switch (booking.bookingSource) {
+    case "direct_web":
+    case "direct_app": return "Direct";
+    case "ota": return booking.otaAgency ? booking.otaAgency.name : "OTA";
+    case "other": return "Other";
+    default: return "—";
+  }
+}
+
+function getBookingTypeBadge(booking: {
+  totalCost: string | number;
+  pointsRedeemed: number | null;
+  certificates: { id: number }[];
+}): string | null {
+  const hasCash = Number(booking.totalCost) > 0;
+  const hasPoints = !!booking.pointsRedeemed;
+  const hasCert = booking.certificates.length > 0;
+  if (!hasPoints && !hasCert) return null;
+  if (!hasCash && hasPoints && !hasCert) return "Award";
+  if (!hasCash && !hasPoints && hasCert) return "Cert";
+  if (!hasCash && hasPoints && hasCert) return "Award + Cert";
+  if (hasCash && hasPoints && !hasCert) return "Cash + Points";
+  if (hasCash && !hasPoints && hasCert) return "Cash + Cert";
+  if (hasCash && hasPoints && hasCert) return "Cash + Points + Cert";
+  return null;
 }
 
 // ---------------------------------------------------------------------------
@@ -156,6 +194,8 @@ export default function BookingsPage() {
             <TableHead>Check-in</TableHead>
             <TableHead>Check-out</TableHead>
             <TableHead>Nights</TableHead>
+            <TableHead>Type</TableHead>
+            <TableHead className="hidden sm:table-cell">Source</TableHead>
             <TableHead>Total Cost</TableHead>
             <TableHead>Net Cost</TableHead>
             <TableHead>Net/Night</TableHead>
@@ -165,13 +205,13 @@ export default function BookingsPage() {
         <TableBody>
           {loading ? (
             <TableRow>
-              <TableCell colSpan={9} className="text-center text-muted-foreground">
+              <TableCell colSpan={11} className="text-center text-muted-foreground">
                 Loading...
               </TableCell>
             </TableRow>
           ) : bookings.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={9} className="text-center text-muted-foreground">
+              <TableCell colSpan={11} className="text-center text-muted-foreground">
                 No bookings yet.
               </TableCell>
             </TableRow>
@@ -180,6 +220,7 @@ export default function BookingsPage() {
               const totalCost = Number(booking.totalCost);
               const netCost = calculateNetCost(booking);
               const isSaving = netCost < totalCost;
+              const typeBadge = getBookingTypeBadge(booking);
 
               return (
                 <TableRow key={booking.id}>
@@ -188,6 +229,16 @@ export default function BookingsPage() {
                   <TableCell>{formatDate(booking.checkIn)}</TableCell>
                   <TableCell>{formatDate(booking.checkOut)}</TableCell>
                   <TableCell>{booking.numNights}</TableCell>
+                  <TableCell>
+                    {typeBadge && (
+                      <Badge variant="secondary" className="text-xs">
+                        {typeBadge}
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">
+                    {formatSourceColumn(booking)}
+                  </TableCell>
                   <TableCell>{formatCurrency(totalCost)}</TableCell>
                   <TableCell className={isSaving ? "text-green-600 font-medium" : ""}>
                     {formatCurrency(netCost)}

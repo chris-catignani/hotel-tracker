@@ -36,18 +36,18 @@ async function main() {
   });
   await prisma.pointType.upsert({
     where: { id: 7 },
-    update: { name: "Amex Membership Rewards", category: "credit_card", centsPerPoint: 0.020 },
-    create: { id: 7, name: "Amex Membership Rewards", category: "credit_card", centsPerPoint: 0.020 },
+    update: { name: "Amex Membership Rewards", category: "transferable", centsPerPoint: 0.020 },
+    create: { id: 7, name: "Amex Membership Rewards", category: "transferable", centsPerPoint: 0.020 },
   });
   await prisma.pointType.upsert({
     where: { id: 8 },
-    update: { name: "Chase Ultimate Rewards", category: "credit_card", centsPerPoint: 0.020 },
-    create: { id: 8, name: "Chase Ultimate Rewards", category: "credit_card", centsPerPoint: 0.020 },
+    update: { name: "Chase Ultimate Rewards", category: "transferable", centsPerPoint: 0.020 },
+    create: { id: 8, name: "Chase Ultimate Rewards", category: "transferable", centsPerPoint: 0.020 },
   });
   await prisma.pointType.upsert({
     where: { id: 9 },
-    update: { name: "Capital One Miles", category: "credit_card", centsPerPoint: 0.02 },
-    create: { id: 9, name: "Capital One Miles", category: "credit_card", centsPerPoint: 0.02 },
+    update: { name: "Capital One Miles", category: "transferable", centsPerPoint: 0.02 },
+    create: { id: 9, name: "Capital One Miles", category: "transferable", centsPerPoint: 0.02 },
   });
 
   // Hotels
