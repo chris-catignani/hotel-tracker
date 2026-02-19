@@ -61,23 +61,23 @@ export function DashboardStats({
         </Card>
       ))}
       <Card className="lg:col-span-2" style={{ gap: 0 }}>
-        <CardHeader className="px-4 pt-4 pb-0">
+        <CardHeader className="px-4 pt-3 pb-0">
           <CardTitle className="text-sm font-medium text-muted-foreground">
             Total Spend
           </CardTitle>
         </CardHeader>
-        <CardContent className="px-4 pt-0 pb-4 space-y-0.5">
+        <CardContent className="px-4 pt-0 pb-3 space-y-0">
           <div className="flex justify-between items-baseline">
-            <span className="text-xs text-muted-foreground">Cash</span>
-            <span className="text-sm font-bold">{cashDisplay}</span>
+            <span className="text-sm text-muted-foreground">Cash</span>
+            <span className="text-base font-bold">{cashDisplay}</span>
           </div>
           <div className="flex justify-between items-baseline">
-            <span className="text-xs text-muted-foreground">Points</span>
-            <span className="text-sm font-bold">{pointsDisplay}</span>
+            <span className="text-sm text-muted-foreground">Points</span>
+            <span className="text-base font-bold">{pointsDisplay}</span>
           </div>
           <div className="flex justify-between items-baseline">
-            <span className="text-xs text-muted-foreground">Certs</span>
-            <span className="text-sm font-bold">{certsDisplay}</span>
+            <span className="text-sm text-muted-foreground">Certs</span>
+            <span className="text-base font-bold">{certsDisplay}</span>
           </div>
         </CardContent>
       </Card>
