@@ -26,10 +26,13 @@ export function DashboardStats({
   totalPointsRedeemed,
   totalCertificates,
 }: DashboardStatsProps) {
-  const stats = [
+  const statsBefore = [
     { label: "Total Bookings", value: totalBookings.toString() },
-    { label: "Total Savings", value: formatDollars(totalSavings) },
     { label: "Total Nights", value: totalNights.toString() },
+  ];
+
+  const statsAfter = [
+    { label: "Total Savings", value: formatDollars(totalSavings) },
     { label: "Avg Net Cost / Night", value: formatDollars(avgNetCostPerNight) },
   ];
 
@@ -48,7 +51,7 @@ export function DashboardStats({
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6 items-start">
-      {stats.map((stat) => (
+      {statsBefore.map((stat) => (
         <Card key={stat.label}>
           <CardHeader className="p-4 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -81,6 +84,18 @@ export function DashboardStats({
           </div>
         </CardContent>
       </Card>
+      {statsAfter.map((stat) => (
+        <Card key={stat.label}>
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              {stat.label}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            <p className="text-2xl font-bold">{stat.value}</p>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 }
