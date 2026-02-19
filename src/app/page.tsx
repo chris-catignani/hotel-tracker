@@ -474,10 +474,10 @@ export default function DashboardPage() {
                   <TableHead className="text-right">Bookings</TableHead>
                   <TableHead className="text-right">Nights</TableHead>
                   <TableHead className="text-right">Total Spend</TableHead>
+                  <TableHead className="text-right">Award Points</TableHead>
                   <TableHead className="text-right">Total Savings</TableHead>
                   <TableHead className="text-right">Avg Net Cost</TableHead>
                   <TableHead className="text-right">Net/Night</TableHead>
-                  <TableHead className="text-right">Award Points</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -543,19 +543,6 @@ export default function DashboardPage() {
                     <TableCell className="text-right">
                       {formatDollars(summary.totalSpend)}
                     </TableCell>
-                    <TableCell className="text-right text-green-600">
-                      {formatDollars(summary.totalSavings)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {summary.cashCount > 0
-                        ? formatDollars(summary.totalNet / summary.cashCount)
-                        : "—"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {summary.cashNights > 0
-                        ? formatDollars(summary.totalNet / summary.cashNights)
-                        : "—"}
-                    </TableCell>
                     <TableCell className="text-right text-sm">
                       {(() => {
                         const parts = [
@@ -568,6 +555,19 @@ export default function DashboardPage() {
                         ].filter(Boolean);
                         return parts.length > 0 ? parts.join(" · ") : "—";
                       })()}
+                    </TableCell>
+                    <TableCell className="text-right text-green-600">
+                      {formatDollars(summary.totalSavings)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {summary.cashCount > 0
+                        ? formatDollars(summary.totalNet / summary.cashCount)
+                        : "—"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {summary.cashNights > 0
+                        ? formatDollars(summary.totalNet / summary.cashNights)
+                        : "—"}
                     </TableCell>
                   </TableRow>
                 ))}
