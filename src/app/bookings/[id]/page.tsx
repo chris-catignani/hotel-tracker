@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { certTypeLabel } from "@/lib/cert-types";
+import { getNetCostBreakdown } from "@/lib/net-cost";
 import {
   Table,
   TableBody,
@@ -226,29 +227,16 @@ export default function BookingDetailPage() {
     );
   }
 
-  const totalCost = Number(booking.totalCost);
-  const promotionSavings = booking.bookingPromotions.reduce(
-    (sum, bp) => sum + Number(bp.appliedValue),
-    0
-  );
-  const portalBasis = booking.portalCashbackOnTotal ? totalCost : Number(booking.pretaxCost);
-  const portalRate = Number(booking.portalCashbackRate || 0);
-  let portalCashback = 0;
-  if (booking.shoppingPortal?.rewardType === "points") {
-    portalCashback = portalRate * portalBasis * Number(booking.shoppingPortal.pointType?.centsPerPoint ?? 0);
-  } else {
-    portalCashback = portalRate * portalBasis;
-  }
-  const cardReward = booking.creditCard
-    ? totalCost *
-      Number(booking.creditCard.rewardRate) *
-      Number(booking.creditCard.pointType?.centsPerPoint ?? 0)
-    : 0;
-  const loyaltyPointsValue =
-    booking.loyaltyPointsEarned && booking.hotel.pointType
-      ? booking.loyaltyPointsEarned * Number(booking.hotel.pointType.centsPerPoint)
-      : 0;
-  const netCost = totalCost - promotionSavings - portalCashback - cardReward - loyaltyPointsValue;
+  const {
+    totalCost,
+    promoSavings: promotionSavings,
+    portalCashback,
+    cardReward,
+    loyaltyPointsValue,
+    pointsRedeemedValue,
+    certsValue,
+    netCost,
+  } = getNetCostBreakdown(booking);
 
   const typeBadge = getBookingTypeBadge(booking);
 
@@ -423,6 +411,8 @@ export default function BookingDetailPage() {
       {/* Cost Breakdown */}
       <CostBreakdown
         totalCost={totalCost}
+        pointsRedeemedValue={pointsRedeemedValue}
+        certsValue={certsValue}
         promotionSavings={promotionSavings}
         portalCashback={portalCashback}
         cardReward={cardReward}

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { DashboardStats } from "@/components/dashboard-stats";
 import { certTypeLabel } from "@/lib/cert-types";
+import { calculateNetCost, getNetCostBreakdown } from "@/lib/net-cost";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -78,34 +79,9 @@ function formatDate(dateStr: string) {
   });
 }
 
-function calcNetCost(booking: BookingWithRelations): number {
-  const total = Number(booking.totalCost);
-  const promoSavings = booking.bookingPromotions.reduce(
-    (sum, bp) => sum + Number(bp.appliedValue),
-    0
-  );
-  const portalBasis = booking.portalCashbackOnTotal ? total : Number(booking.pretaxCost);
-  const portalRate = Number(booking.portalCashbackRate || 0);
-  let portalCashback = 0;
-  if (booking.shoppingPortal?.rewardType === "points") {
-    portalCashback = portalRate * portalBasis * Number(booking.shoppingPortal.pointType?.centsPerPoint ?? 0);
-  } else {
-    portalCashback = portalRate * portalBasis;
-  }
-  const cardReward = booking.creditCard
-    ? total *
-      Number(booking.creditCard.rewardRate) *
-      Number(booking.creditCard.pointType?.centsPerPoint ?? 0)
-    : 0;
-  const loyaltyPointsValue =
-    booking.loyaltyPointsEarned && booking.hotel.pointType
-      ? booking.loyaltyPointsEarned * Number(booking.hotel.pointType.centsPerPoint)
-      : 0;
-  return total - promoSavings - portalCashback - cardReward - loyaltyPointsValue;
-}
-
 function calcTotalSavings(booking: BookingWithRelations): number {
-  return Number(booking.totalCost) - calcNetCost(booking);
+  const { promoSavings, portalCashback, cardReward, loyaltyPointsValue } = getNetCostBreakdown(booking);
+  return promoSavings + portalCashback + cardReward + loyaltyPointsValue;
 }
 
 function formatCerts(certificates: { id: number; certType: string }[]): string {
@@ -175,7 +151,7 @@ export default function DashboardPage() {
   const cashNights = cashBookings.reduce((sum, b) => sum + b.numNights, 0);
   const avgNetCostPerNight =
     cashNights > 0
-      ? cashBookings.reduce((sum, b) => sum + calcNetCost(b), 0) / cashNights
+      ? cashBookings.reduce((sum, b) => sum + calculateNetCost(b), 0) / cashNights
       : 0;
 
   const totalPointsRedeemed = bookings.reduce((sum, b) => sum + (b.pointsRedeemed ?? 0), 0);
@@ -247,12 +223,9 @@ export default function DashboardPage() {
                 </TableHeader>
                 <TableBody>
                   {recentBookings.map((booking) => {
-                    const netCost = calcNetCost(booking);
+                    const netCost = calculateNetCost(booking);
                     const total = Number(booking.totalCost);
                     const typeBadge = getBookingTypeBadge(booking);
-                    const isAwardOnly =
-                      total === 0 &&
-                      !!(booking.pointsRedeemed || booking.certificates.length > 0);
                     return (
                       <TableRow key={booking.id}>
                         <TableCell>
@@ -291,10 +264,10 @@ export default function DashboardPage() {
                         </TableCell>
                         <TableCell
                           className={`text-right font-medium ${
-                            !isAwardOnly && netCost < total ? "text-green-600" : ""
+                            netCost < total ? "text-green-600" : ""
                           }`}
                         >
-                          {isAwardOnly ? "—" : formatDollars(netCost / booking.numNights)}
+                          {formatDollars(netCost / booking.numNights)}
                         </TableCell>
                       </TableRow>
                     );
@@ -490,8 +463,6 @@ export default function DashboardPage() {
                           chain,
                           count: 0,
                           totalNights: 0,
-                          cashCount: 0,
-                          cashNights: 0,
                           totalSpend: 0,
                           totalSavings: 0,
                           totalNet: 0,
@@ -503,13 +474,11 @@ export default function DashboardPage() {
                       acc[chain].totalNights += b.numNights;
                       acc[chain].pointsRedeemed += b.pointsRedeemed ?? 0;
                       acc[chain].certs += b.certificates.length;
-                      // Only cash bookings contribute to spend/savings/net
+                      acc[chain].totalNet += calculateNetCost(b);
+                      // Only cash bookings contribute to spend/savings
                       if (Number(b.totalCost) > 0) {
-                        acc[chain].cashCount++;
-                        acc[chain].cashNights += b.numNights;
                         acc[chain].totalSpend += Number(b.totalCost);
                         acc[chain].totalSavings += calcTotalSavings(b);
-                        acc[chain].totalNet += calcNetCost(b);
                       }
                       return acc;
                     },
@@ -519,8 +488,6 @@ export default function DashboardPage() {
                         chain: string;
                         count: number;
                         totalNights: number;
-                        cashCount: number;
-                        cashNights: number;
                         totalSpend: number;
                         totalSavings: number;
                         totalNet: number;
@@ -560,13 +527,13 @@ export default function DashboardPage() {
                       {formatDollars(summary.totalSavings)}
                     </TableCell>
                     <TableCell className="text-right">
-                      {summary.cashCount > 0
-                        ? formatDollars(summary.totalNet / summary.cashCount)
+                      {summary.count > 0
+                        ? formatDollars(summary.totalNet / summary.count)
                         : "—"}
                     </TableCell>
                     <TableCell className="text-right">
-                      {summary.cashNights > 0
-                        ? formatDollars(summary.totalNet / summary.cashNights)
+                      {summary.totalNights > 0
+                        ? formatDollars(summary.totalNet / summary.totalNights)
                         : "—"}
                     </TableCell>
                   </TableRow>

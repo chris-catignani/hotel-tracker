@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { certTypeLabel } from "@/lib/cert-types";
+import { calculateNetCost } from "@/lib/net-cost";
 import {
   Table,
   TableBody,
@@ -61,6 +62,7 @@ interface Booking {
     id: number;
     name: string;
     loyaltyProgram: string | null;
+    pointType: { centsPerPoint: string | number } | null;
   };
   creditCard: {
     id: number;
@@ -98,27 +100,6 @@ function formatCurrency(amount: number): string {
   })}`;
 }
 
-function calculateNetCost(booking: Booking): number {
-  const totalCost = Number(booking.totalCost);
-  const promotionSavings = booking.bookingPromotions.reduce(
-    (sum, bp) => sum + Number(bp.appliedValue),
-    0
-  );
-  const portalBasis = booking.portalCashbackOnTotal ? totalCost : Number(booking.pretaxCost);
-  const portalRate = Number(booking.portalCashbackRate || 0);
-  let portalCashback = 0;
-  if (booking.shoppingPortal?.rewardType === "points") {
-    portalCashback = portalRate * portalBasis * Number(booking.shoppingPortal.pointType?.centsPerPoint ?? 0);
-  } else {
-    portalCashback = portalRate * portalBasis;
-  }
-  const cardReward = booking.creditCard
-    ? totalCost *
-      Number(booking.creditCard.rewardRate) *
-      Number(booking.creditCard.pointType?.centsPerPoint ?? 0)
-    : 0;
-  return totalCost - promotionSavings - portalCashback - cardReward;
-}
 
 function formatSourceColumn(booking: { bookingSource: string | null; otaAgency: { name: string } | null }): string {
   switch (booking.bookingSource) {
@@ -213,9 +194,6 @@ export default function BookingsPage() {
             bookings.map((booking) => {
               const totalCost = Number(booking.totalCost);
               const netCost = calculateNetCost(booking);
-              const isAwardOnly =
-                totalCost === 0 &&
-                !!(booking.pointsRedeemed || booking.certificates.length > 0);
 
               return (
                 <TableRow key={booking.id}>
@@ -238,8 +216,8 @@ export default function BookingsPage() {
                   <TableCell className="text-right text-sm">
                     {formatCerts(booking.certificates)}
                   </TableCell>
-                  <TableCell className={`text-right font-medium ${!isAwardOnly && netCost < totalCost ? "text-green-600" : ""}`}>
-                    {isAwardOnly ? "—" : formatCurrency(netCost / booking.numNights)}
+                  <TableCell className={`text-right font-medium ${netCost < totalCost ? "text-green-600" : ""}`}>
+                    {formatCurrency(netCost / booking.numNights)}
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">

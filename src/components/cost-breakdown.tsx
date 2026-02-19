@@ -5,6 +5,8 @@ import { Separator } from "@/components/ui/separator";
 
 interface CostBreakdownProps {
   totalCost: number;
+  pointsRedeemedValue: number;
+  certsValue: number;
   promotionSavings: number;
   portalCashback: number;
   cardReward: number;
@@ -21,6 +23,8 @@ function formatDollars(amount: number) {
 
 export function CostBreakdown({
   totalCost,
+  pointsRedeemedValue,
+  certsValue,
   promotionSavings,
   portalCashback,
   cardReward,
@@ -34,9 +38,21 @@ export function CostBreakdown({
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex items-center justify-between text-sm">
-          <span>Total Cost</span>
+          <span>Cash Cost</span>
           <span>{formatDollars(totalCost)}</span>
         </div>
+        {pointsRedeemedValue > 0 && (
+          <div className="flex items-center justify-between text-sm">
+            <span>Award Points (value)</span>
+            <span>+{formatDollars(pointsRedeemedValue)}</span>
+          </div>
+        )}
+        {certsValue > 0 && (
+          <div className="flex items-center justify-between text-sm">
+            <span>Certificates (value)</span>
+            <span>+{formatDollars(certsValue)}</span>
+          </div>
+        )}
         <div className="flex items-center justify-between text-sm">
           <span>Promotion Savings</span>
           <span className="text-green-600">-{formatDollars(promotionSavings)}</span>
