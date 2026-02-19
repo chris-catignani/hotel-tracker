@@ -4,8 +4,10 @@ interface DashboardStatsProps {
   totalBookings: number;
   totalSpend: number;
   totalSavings: number;
-  avgNetCost: number;
+  totalNights: number;
   avgNetCostPerNight: number;
+  totalPointsRedeemed: number;
+  totalCertificates: number;
 }
 
 function formatDollars(amount: number) {
@@ -19,19 +21,21 @@ export function DashboardStats({
   totalBookings,
   totalSpend,
   totalSavings,
-  avgNetCost,
+  totalNights,
   avgNetCostPerNight,
+  totalPointsRedeemed,
+  totalCertificates,
 }: DashboardStatsProps) {
   const stats = [
     { label: "Total Bookings", value: totalBookings.toString() },
     { label: "Total Spend", value: formatDollars(totalSpend) },
     { label: "Total Savings", value: formatDollars(totalSavings) },
-    { label: "Avg Net Cost", value: formatDollars(avgNetCost) },
+    { label: "Total Nights", value: totalNights.toString() },
     { label: "Avg Net Cost / Night", value: formatDollars(avgNetCostPerNight) },
   ];
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
       {stats.map((stat) => (
         <Card key={stat.label}>
           <CardHeader>
@@ -44,6 +48,27 @@ export function DashboardStats({
           </CardContent>
         </Card>
       ))}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm font-medium text-muted-foreground">
+            Award Points Redeemed
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-2xl font-bold">
+            {totalPointsRedeemed > 0
+              ? `${totalPointsRedeemed.toLocaleString("en-US")} pts`
+              : totalCertificates > 0
+              ? `${totalCertificates} cert${totalCertificates !== 1 ? "s" : ""}`
+              : "—"}
+          </p>
+          {totalPointsRedeemed > 0 && totalCertificates > 0 && (
+            <p className="text-sm text-muted-foreground mt-1">
+              + {totalCertificates} cert{totalCertificates !== 1 ? "s" : ""}
+            </p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

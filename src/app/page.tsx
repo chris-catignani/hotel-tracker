@@ -15,6 +15,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+interface BookingCertificate {
+  id: number;
+  value: string;
+}
+
 interface BookingWithRelations {
   id: number;
   propertyName: string;
@@ -27,10 +32,12 @@ interface BookingWithRelations {
   portalCashbackRate: string | null;
   portalCashbackOnTotal: boolean;
   loyaltyPointsEarned: number | null;
+  pointsRedeemed: number | null;
   notes: string | null;
   hotel: {
     id: number;
     name: string;
+    loyaltyProgram: string | null;
     pointType: { centsPerPoint: string } | null;
   };
   creditCard: {
@@ -51,6 +58,7 @@ interface BookingWithRelations {
     autoApplied: boolean;
     promotion: { id: number; name: string; type: string };
   }[];
+  certificates: BookingCertificate[];
 }
 
 function formatDollars(amount: number) {
@@ -99,6 +107,35 @@ function calcTotalSavings(booking: BookingWithRelations): number {
   return Number(booking.totalCost) - calcNetCost(booking);
 }
 
+function formatCerts(certificates: { id: number; value: string }[]): string {
+  if (certificates.length === 0) return "—";
+  const counts: Record<string, number> = {};
+  for (const cert of certificates) {
+    counts[cert.value] = (counts[cert.value] || 0) + 1;
+  }
+  return Object.entries(counts)
+    .map(([desc, count]) => (count > 1 ? `${count} × ${desc}` : desc))
+    .join(", ");
+}
+
+function getBookingTypeBadge(booking: {
+  totalCost: string;
+  pointsRedeemed: number | null;
+  certificates: { id: number }[];
+}): string | null {
+  const hasCash = Number(booking.totalCost) > 0;
+  const hasPoints = !!booking.pointsRedeemed;
+  const hasCert = booking.certificates.length > 0;
+  if (!hasPoints && !hasCert) return null;
+  if (!hasCash && hasPoints && !hasCert) return "Award";
+  if (!hasCash && !hasPoints && hasCert) return "Cert";
+  if (!hasCash && hasPoints && hasCert) return "Award + Cert";
+  if (hasCash && hasPoints && !hasCert) return "Cash + Points";
+  if (hasCash && !hasPoints && hasCert) return "Cash + Cert";
+  if (hasCash && hasPoints && hasCert) return "Cash + Points + Cert";
+  return null;
+}
+
 export default function DashboardPage() {
   const [bookings, setBookings] = useState<BookingWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
@@ -122,23 +159,36 @@ export default function DashboardPage() {
   }
 
   const totalBookings = bookings.length;
-  const totalSpend = bookings.reduce(
+  // Only cash bookings (totalCost > 0) contribute to spend/savings/avg stats
+  const cashBookings = bookings.filter((b) => Number(b.totalCost) > 0);
+  const totalSpend = cashBookings.reduce(
     (sum, b) => sum + Number(b.totalCost),
     0
   );
-  const totalSavings = bookings.reduce(
+  const totalSavings = cashBookings.reduce(
     (sum, b) => sum + calcTotalSavings(b),
     0
   );
-  const avgNetCost =
-    totalBookings > 0
-      ? bookings.reduce((sum, b) => sum + calcNetCost(b), 0) / totalBookings
-      : 0;
   const totalNights = bookings.reduce((sum, b) => sum + b.numNights, 0);
+  const cashNights = cashBookings.reduce((sum, b) => sum + b.numNights, 0);
   const avgNetCostPerNight =
-    totalNights > 0
-      ? bookings.reduce((sum, b) => sum + calcNetCost(b), 0) / totalNights
+    cashNights > 0
+      ? cashBookings.reduce((sum, b) => sum + calcNetCost(b), 0) / cashNights
       : 0;
+
+  const totalPointsRedeemed = bookings.reduce((sum, b) => sum + (b.pointsRedeemed ?? 0), 0);
+  const totalCertificates = bookings.reduce((sum, b) => sum + b.certificates.length, 0);
+  const awardByProgram = Object.values(
+    bookings.reduce((acc, b) => {
+      const hasAward = (b.pointsRedeemed ?? 0) > 0 || b.certificates.length > 0;
+      if (!hasAward) return acc;
+      const key = b.hotel.loyaltyProgram || b.hotel.name;
+      if (!acc[key]) acc[key] = { program: key, points: 0, certs: 0 };
+      acc[key].points += b.pointsRedeemed ?? 0;
+      acc[key].certs += b.certificates.length;
+      return acc;
+    }, {} as Record<string, { program: string; points: number; certs: number }>)
+  );
 
   const recentBookings = bookings.slice(0, 5);
 
@@ -155,8 +205,10 @@ export default function DashboardPage() {
         totalBookings={totalBookings}
         totalSpend={totalSpend}
         totalSavings={totalSavings}
-        avgNetCost={avgNetCost}
+        totalNights={totalNights}
         avgNetCostPerNight={avgNetCostPerNight}
+        totalPointsRedeemed={totalPointsRedeemed}
+        totalCertificates={totalCertificates}
       />
 
       <div className="grid gap-6 lg:grid-cols-5">
@@ -185,8 +237,9 @@ export default function DashboardPage() {
                   <TableRow>
                     <TableHead>Property</TableHead>
                     <TableHead>Dates</TableHead>
-                    <TableHead className="text-right">Total</TableHead>
-                    <TableHead className="text-right">Net</TableHead>
+                    <TableHead className="text-right">Cash</TableHead>
+                    <TableHead className="text-right">Points</TableHead>
+                    <TableHead className="text-right">Certs</TableHead>
                     <TableHead className="text-right">Net/Night</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -194,6 +247,10 @@ export default function DashboardPage() {
                   {recentBookings.map((booking) => {
                     const netCost = calcNetCost(booking);
                     const total = Number(booking.totalCost);
+                    const typeBadge = getBookingTypeBadge(booking);
+                    const isAwardOnly =
+                      total === 0 &&
+                      !!(booking.pointsRedeemed || booking.certificates.length > 0);
                     return (
                       <TableRow key={booking.id}>
                         <TableCell>
@@ -203,8 +260,13 @@ export default function DashboardPage() {
                           >
                             {booking.propertyName}
                           </Link>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                             {booking.hotel.name}
+                            {typeBadge && (
+                              <Badge variant="secondary" className="text-xs py-0">
+                                {typeBadge}
+                              </Badge>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell className="text-sm">
@@ -215,21 +277,22 @@ export default function DashboardPage() {
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          {formatDollars(total)}
+                          {total > 0 ? formatDollars(total) : "—"}
+                        </TableCell>
+                        <TableCell className="text-right text-sm">
+                          {booking.pointsRedeemed
+                            ? `${booking.pointsRedeemed.toLocaleString("en-US")} pts`
+                            : "—"}
+                        </TableCell>
+                        <TableCell className="text-right text-sm">
+                          {formatCerts(booking.certificates)}
                         </TableCell>
                         <TableCell
                           className={`text-right font-medium ${
-                            netCost < total ? "text-green-600" : ""
+                            !isAwardOnly && netCost < total ? "text-green-600" : ""
                           }`}
                         >
-                          {formatDollars(netCost)}
-                        </TableCell>
-                        <TableCell
-                          className={`text-right font-medium ${
-                            netCost < total ? "text-green-600" : ""
-                          }`}
-                        >
-                          {formatDollars(netCost / booking.numNights)}
+                          {isAwardOnly ? "—" : formatDollars(netCost / booking.numNights)}
                         </TableCell>
                       </TableRow>
                     );
@@ -240,19 +303,20 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Savings Breakdown</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {bookings.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">
-                No data to display yet
-              </p>
-            ) : (
-              <div className="space-y-4">
-                {(() => {
-                  const totalPromoSavings = bookings.reduce(
+        <div className="lg:col-span-2 flex flex-col gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Savings Breakdown</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {cashBookings.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">
+                  No data to display yet
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {(() => {
+                  const totalPromoSavings = cashBookings.reduce(
                     (sum, b) =>
                       sum +
                       b.bookingPromotions.reduce(
@@ -261,7 +325,7 @@ export default function DashboardPage() {
                       ),
                     0
                   );
-                  const totalPortalCashback = bookings.reduce((sum, b) => {
+                  const totalPortalCashback = cashBookings.reduce((sum, b) => {
                     const portalBasis = b.portalCashbackOnTotal ? Number(b.totalCost) : Number(b.pretaxCost);
                     const portalRate = Number(b.portalCashbackRate || 0);
                     if (b.shoppingPortal?.rewardType === "points") {
@@ -269,7 +333,7 @@ export default function DashboardPage() {
                     }
                     return sum + portalRate * portalBasis;
                   }, 0);
-                  const totalCardRewards = bookings.reduce(
+                  const totalCardRewards = cashBookings.reduce(
                     (sum, b) =>
                       sum +
                       (b.creditCard
@@ -279,7 +343,7 @@ export default function DashboardPage() {
                         : 0),
                     0
                   );
-                  const totalLoyaltyPointsValue = bookings.reduce(
+                  const totalLoyaltyPointsValue = cashBookings.reduce(
                     (sum, b) =>
                       sum +
                       (b.loyaltyPointsEarned && b.hotel.pointType
@@ -359,7 +423,40 @@ export default function DashboardPage() {
               </div>
             )}
           </CardContent>
-        </Card>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Award Stays Breakdown</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {awardByProgram.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">
+                  No award stays yet
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {awardByProgram.map(({ program, points, certs }) => {
+                    const parts = [
+                      points > 0
+                        ? `${points.toLocaleString("en-US")} pts`
+                        : null,
+                      certs > 0
+                        ? `${certs} cert${certs !== 1 ? "s" : ""}`
+                        : null,
+                    ].filter(Boolean);
+                    return (
+                      <div key={program} className="flex justify-between text-sm">
+                        <span>{program}</span>
+                        <span className="font-medium">{parts.join(" · ")}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {bookings.length > 0 && (
@@ -378,6 +475,7 @@ export default function DashboardPage() {
                   <TableHead className="text-right">Total Savings</TableHead>
                   <TableHead className="text-right">Avg Net Cost</TableHead>
                   <TableHead className="text-right">Net/Night</TableHead>
+                  <TableHead className="text-right">Award Points</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -390,16 +488,27 @@ export default function DashboardPage() {
                           chain,
                           count: 0,
                           totalNights: 0,
+                          cashCount: 0,
+                          cashNights: 0,
                           totalSpend: 0,
                           totalSavings: 0,
                           totalNet: 0,
+                          pointsRedeemed: 0,
+                          certs: 0,
                         };
                       }
                       acc[chain].count++;
                       acc[chain].totalNights += b.numNights;
-                      acc[chain].totalSpend += Number(b.totalCost);
-                      acc[chain].totalSavings += calcTotalSavings(b);
-                      acc[chain].totalNet += calcNetCost(b);
+                      acc[chain].pointsRedeemed += b.pointsRedeemed ?? 0;
+                      acc[chain].certs += b.certificates.length;
+                      // Only cash bookings contribute to spend/savings/net
+                      if (Number(b.totalCost) > 0) {
+                        acc[chain].cashCount++;
+                        acc[chain].cashNights += b.numNights;
+                        acc[chain].totalSpend += Number(b.totalCost);
+                        acc[chain].totalSavings += calcTotalSavings(b);
+                        acc[chain].totalNet += calcNetCost(b);
+                      }
                       return acc;
                     },
                     {} as Record<
@@ -408,9 +517,13 @@ export default function DashboardPage() {
                         chain: string;
                         count: number;
                         totalNights: number;
+                        cashCount: number;
+                        cashNights: number;
                         totalSpend: number;
                         totalSavings: number;
                         totalNet: number;
+                        pointsRedeemed: number;
+                        certs: number;
                       }
                     >
                   )
@@ -432,10 +545,27 @@ export default function DashboardPage() {
                       {formatDollars(summary.totalSavings)}
                     </TableCell>
                     <TableCell className="text-right">
-                      {formatDollars(summary.totalNet / summary.count)}
+                      {summary.cashCount > 0
+                        ? formatDollars(summary.totalNet / summary.cashCount)
+                        : "—"}
                     </TableCell>
                     <TableCell className="text-right">
-                      {formatDollars(summary.totalNet / summary.totalNights)}
+                      {summary.cashNights > 0
+                        ? formatDollars(summary.totalNet / summary.cashNights)
+                        : "—"}
+                    </TableCell>
+                    <TableCell className="text-right text-sm">
+                      {(() => {
+                        const parts = [
+                          summary.pointsRedeemed > 0
+                            ? `${summary.pointsRedeemed.toLocaleString("en-US")} pts`
+                            : null,
+                          summary.certs > 0
+                            ? `${summary.certs} cert${summary.certs !== 1 ? "s" : ""}`
+                            : null,
+                        ].filter(Boolean);
+                        return parts.length > 0 ? parts.join(" · ") : "—";
+                      })()}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -443,6 +573,12 @@ export default function DashboardPage() {
             </Table>
           </CardContent>
         </Card>
+      )}
+
+      {totalBookings > cashBookings.length && (
+        <p className="text-xs text-muted-foreground">
+          * Spend, savings, and average cost metrics exclude award/cert bookings ($0 cost). Nights and booking counts include all bookings.
+        </p>
       )}
     </div>
   );
