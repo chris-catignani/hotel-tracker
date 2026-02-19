@@ -1,6 +1,7 @@
 export const CERT_TYPE_OPTIONS = [
-  { value: "marriott_40k", label: "Marriott 40k" },
   { value: "marriott_35k", label: "Marriott 35k" },
+  { value: "marriott_40k", label: "Marriott 40k" },
+  { value: "marriott_50k", label: "Marriott 50k" },
   { value: "marriott_85k", label: "Marriott 85k" },
   { value: "hyatt_cat1_4", label: "Hyatt Cat 1–4" },
   { value: "hyatt_cat1_7", label: "Hyatt Cat 1–7" },

@@ -21,8 +21,9 @@ enum BookingSourceType {
 }
 
 enum CertType {
-  marriott_40k
   marriott_35k
+  marriott_40k
+  marriott_50k
   marriott_85k
   hyatt_cat1_4
   hyatt_cat1_7
