@@ -12,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { certTypeLabel } from "@/lib/cert-types";
 import {
   Table,
   TableBody,
@@ -44,7 +45,7 @@ interface BookingPromotion {
 
 interface BookingCertificate {
   id: number;
-  value: string;
+  certType: string;
 }
 
 interface BookingBenefit {
@@ -368,7 +369,7 @@ export default function BookingDetailPage() {
                 <div className="flex flex-wrap gap-1 mt-1">
                   {booking.certificates.map((cert) => (
                     <Badge key={cert.id} variant="outline">
-                      {cert.value}
+                      {certTypeLabel(cert.certType)}
                     </Badge>
                   ))}
                 </div>

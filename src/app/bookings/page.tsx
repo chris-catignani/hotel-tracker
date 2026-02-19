@@ -34,7 +34,7 @@ interface BookingPromotion {
 
 interface BookingCertificate {
   id: number;
-  value: string;
+  certType: string;
 }
 
 interface Booking {

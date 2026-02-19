@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
         bookingSource: bookingSource || null,
         otaAgencyId: bookingSource === "ota" && otaAgencyId ? Number(otaAgencyId) : null,
         certificates: certificates?.length
-          ? { create: (certificates as string[]).map((v) => ({ value: v })) }
+          ? { create: (certificates as string[]).map((v) => ({ certType: v as import("@prisma/client").CertType })) }
           : undefined,
         benefits: benefits?.length
           ? {

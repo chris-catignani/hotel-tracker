@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { DashboardStats } from "@/components/dashboard-stats";
+import { certTypeLabel } from "@/lib/cert-types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,7 @@ import {
 
 interface BookingCertificate {
   id: number;
-  value: string;
+  certType: string;
 }
 
 interface BookingWithRelations {
@@ -107,11 +108,12 @@ function calcTotalSavings(booking: BookingWithRelations): number {
   return Number(booking.totalCost) - calcNetCost(booking);
 }
 
-function formatCerts(certificates: { id: number; value: string }[]): string {
+function formatCerts(certificates: { id: number; certType: string }[]): string {
   if (certificates.length === 0) return "—";
   const counts: Record<string, number> = {};
   for (const cert of certificates) {
-    counts[cert.value] = (counts[cert.value] || 0) + 1;
+    const label = certTypeLabel(cert.certType);
+    counts[label] = (counts[label] || 0) + 1;
   }
   return Object.entries(counts)
     .map(([desc, count]) => (count > 1 ? `${count} × ${desc}` : desc))

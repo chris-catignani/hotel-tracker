@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CERT_TYPE_OPTIONS } from "@/lib/cert-types";
 import {
   Card,
   CardContent,
@@ -92,7 +93,7 @@ interface Booking {
   loyaltyPointsEarned: number | null;
   pointsRedeemed: number | null;
   notes: string | null;
-  certificates: { id: number; value: string }[];
+  certificates: { id: number; certType: string }[];
   bookingSource: string | null;
   otaAgencyId: number | null;
   benefits: { id: number; benefitType: string; label: string | null; dollarValue: string | number | null }[];
@@ -137,7 +138,7 @@ function toDateInputValue(dateStr: string): string {
 function toPaymentType(
   totalCost: string | number,
   pointsRedeemed: number | null,
-  certificates: { id: number; value: string }[],
+  certificates: { id: number; certType: string }[],
 ): PaymentType {
   const hasCash = Number(totalCost) > 0;
   const hasPoints = pointsRedeemed != null;
@@ -257,7 +258,7 @@ export default function EditBookingPage() {
       if (booking.pointsRedeemed != null) {
         setPointsRedeemed(String(booking.pointsRedeemed));
       }
-      setCertificates(booking.certificates.map((c) => c.value));
+      setCertificates(booking.certificates.map((c) => c.certType));
       setBookingSource(booking.bookingSource || "");
       setOtaAgencyId(booking.otaAgencyId ? String(booking.otaAgencyId) : "none");
       setBenefits(
@@ -620,11 +621,18 @@ export default function EditBookingPage() {
                 <Label>Free Night Certificate(s)</Label>
                 {certificates.map((cert, idx) => (
                   <div key={idx} className="flex items-center gap-2">
-                    <Input
-                      value={cert}
-                      onChange={(e) => updateCertificate(idx, e.target.value)}
-                      placeholder='e.g. "40,000 pts" or "Category 1-4"'
-                    />
+                    <Select value={cert} onValueChange={(v) => updateCertificate(idx, v)}>
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Select certificate type..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CERT_TYPE_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <Button
                       type="button"
                       variant="outline"

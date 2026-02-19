@@ -140,7 +140,7 @@ export async function PUT(
         await prisma.bookingCertificate.createMany({
           data: (certificates as string[]).map((v) => ({
             bookingId: Number(id),
-            value: v,
+            certType: v as import("@prisma/client").CertType,
           })),
         });
       }

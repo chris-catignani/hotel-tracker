@@ -20,6 +20,15 @@ enum BookingSourceType {
   other
 }
 
+enum CertType {
+  marriott_40k
+  marriott_35k
+  marriott_85k
+  hyatt_cat1_4
+  hyatt_cat1_7
+  ihg_40k
+}
+
 enum BenefitType {
   free_breakfast
   dining_credit
@@ -134,10 +143,10 @@ model BookingBenefit {
 }
 
 model BookingCertificate {
-  id        Int     @id @default(autoincrement())
-  bookingId Int     @map("booking_id")
-  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  value     String
+  id        Int      @id @default(autoincrement())
+  bookingId Int      @map("booking_id")
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  certType  CertType @map("cert_type")
 
   @@map("booking_certificates")
 }
