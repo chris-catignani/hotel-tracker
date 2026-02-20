@@ -77,6 +77,7 @@ model HotelChainSubBrand {
   bookings       Booking[]
   promotions     Promotion[]
 
+  @@unique([hotelChainId, name])
   @@map("hotel_chain_sub_brands")
 }
 
@@ -91,6 +92,7 @@ model HotelChainEliteStatus {
   isFixed         Boolean     @default(false) @map("is_fixed")
   userStatuses    UserStatus[]
 
+  @@unique([hotelChainId, name])
   @@map("hotel_chain_elite_statuses")
 }
 
