@@ -64,7 +64,9 @@ loyaltyPointsValue = loyaltyPointsEarned × hotel.pointValue
 
 ### Loyalty Points Auto-Calculation
 
-`loyaltyPointsEarned = pretaxCost × (basePointRate + elitePointRate)`
+`loyaltyPointsEarned` is calculated based on elite status:
+- **Percentage-based (e.g. Marriott):** `pretaxCost × baseRate × (1 + bonusPercentage)`
+- **Fixed-rate (e.g. GHA):** `pretaxCost × fixedRate`
 
 Calculated server-side in the booking API and client-side in the booking form (user can override).
 

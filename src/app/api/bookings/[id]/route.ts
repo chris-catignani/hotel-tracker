@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { matchPromotionsForBooking } from "@/lib/promotion-matching";
 import { apiError } from "@/lib/api-error";
+import { calculatePoints } from "@/lib/loyalty-utils";
 
 export async function GET(
   request: NextRequest,
@@ -127,29 +128,40 @@ export async function PUT(
             : current?.hotelChainSubBrandId ?? null;
 
         if (finalHotelChainId && finalPretax) {
-          let baseRate: number | null = null;
-          let eliteRate = 0;
+          // Fetch UserStatus for this chain
+          const userStatus = await prisma.userStatus.findUnique({
+            where: { hotelChainId: Number(finalHotelChainId) },
+            include: { eliteStatus: true },
+          });
+
+          let basePointRate: number | null = null;
           if (finalHotelChainSubBrandId) {
             const subBrand = await prisma.hotelChainSubBrand.findUnique({
               where: { id: finalHotelChainSubBrandId },
             });
             if (subBrand?.basePointRate != null) {
-              baseRate = Number(subBrand.basePointRate);
-              eliteRate = Number(subBrand.elitePointRate || 0);
+              basePointRate = Number(subBrand.basePointRate);
             }
           }
-          if (baseRate == null) {
+          if (basePointRate == null) {
             const hotelChain = await prisma.hotelChain.findUnique({
               where: { id: finalHotelChainId },
             });
             if (hotelChain?.basePointRate != null) {
-              baseRate = Number(hotelChain.basePointRate);
-              eliteRate = Number(hotelChain.elitePointRate || 0);
+              basePointRate = Number(hotelChain.basePointRate);
             }
           }
-          if (baseRate != null) {
-            data.loyaltyPointsEarned = Math.round(finalPretax * (baseRate + eliteRate));
-          }
+
+          data.loyaltyPointsEarned = calculatePoints({
+            pretaxCost: Number(finalPretax),
+            basePointRate,
+            eliteStatus: userStatus?.eliteStatus ? {
+              ...userStatus.eliteStatus,
+              bonusPercentage: userStatus.eliteStatus.bonusPercentage ? Number(userStatus.eliteStatus.bonusPercentage) : null,
+              fixedRate: userStatus.eliteStatus.fixedRate ? Number(userStatus.eliteStatus.fixedRate) : null,
+              isFixed: userStatus.eliteStatus.isFixed,
+            } : null,
+          });
         }
       }
     }

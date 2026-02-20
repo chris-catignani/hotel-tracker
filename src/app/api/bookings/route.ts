@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { matchPromotionsForBooking } from "@/lib/promotion-matching";
 import { apiError } from "@/lib/api-error";
+import { calculatePoints } from "@/lib/loyalty-utils";
 
 export async function GET() {
   try {
@@ -63,30 +64,42 @@ export async function POST(request: NextRequest) {
     let calculatedPoints: number | null = loyaltyPointsEarned
       ? Number(loyaltyPointsEarned)
       : null;
+
     if (calculatedPoints == null && hotelChainId && pretaxCost) {
-      let baseRate: number | null = null;
-      let eliteRate = 0;
+      // Fetch UserStatus for this chain
+      const userStatus = await prisma.userStatus.findUnique({
+        where: { hotelChainId: Number(hotelChainId) },
+        include: { eliteStatus: true },
+      });
+
+      let basePointRate: number | null = null;
       if (hotelChainSubBrandId) {
         const subBrand = await prisma.hotelChainSubBrand.findUnique({
           where: { id: Number(hotelChainSubBrandId) },
         });
         if (subBrand?.basePointRate != null) {
-          baseRate = Number(subBrand.basePointRate);
-          eliteRate = Number(subBrand.elitePointRate || 0);
+          basePointRate = Number(subBrand.basePointRate);
         }
       }
-      if (baseRate == null) {
+      if (basePointRate == null) {
         const hotelChain = await prisma.hotelChain.findUnique({
           where: { id: Number(hotelChainId) },
         });
         if (hotelChain?.basePointRate != null) {
-          baseRate = Number(hotelChain.basePointRate);
-          eliteRate = Number(hotelChain.elitePointRate || 0);
+          basePointRate = Number(hotelChain.basePointRate);
         }
       }
-      if (baseRate != null) {
-        calculatedPoints = Math.round(Number(pretaxCost) * (baseRate + eliteRate));
-      }
+
+      calculatedPoints = calculatePoints({
+        pretaxCost: Number(pretaxCost),
+        basePointRate,
+        eliteStatus: userStatus?.eliteStatus ? {
+          ...userStatus.eliteStatus,
+          bonusPercentage: userStatus.eliteStatus.bonusPercentage ? Number(userStatus.eliteStatus.bonusPercentage) : null,
+          fixedRate: userStatus.eliteStatus.fixedRate ? Number(userStatus.eliteStatus.fixedRate) : null,
+          isFixed: userStatus.eliteStatus.isFixed,
+        } : null,
+      });
     }
 
     const booking = await prisma.booking.create({
