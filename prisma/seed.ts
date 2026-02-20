@@ -81,6 +81,29 @@ async function main() {
       { hotelChainId: HOTEL_ID.HILTON, name: "Diamond Reserve", bonusPercentage: 1.20, eliteTierLevel: 4 },
     ],
   });
+  await prisma.hotelChainSubBrand.deleteMany({ where: { hotelChainId: HOTEL_ID.HILTON } });
+  await prisma.hotelChainSubBrand.createMany({
+    data: [
+      { hotelChainId: HOTEL_ID.HILTON, name: "Waldorf Astoria", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.HILTON, name: "LXR Hotels & Resorts", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.HILTON, name: "Conrad Hotels & Resorts", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.HILTON, name: "Canopy by Hilton", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.HILTON, name: "Signia by Hilton", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.HILTON, name: "Hilton Hotels & Resorts", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.HILTON, name: "Curio Collection by Hilton", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.HILTON, name: "DoubleTree by Hilton", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.HILTON, name: "Tapestry Collection by Hilton", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.HILTON, name: "Embassy Suites by Hilton", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.HILTON, name: "Tempo by Hilton", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.HILTON, name: "Motto by Hilton", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.HILTON, name: "Hilton Garden Inn", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.HILTON, name: "Hampton by Hilton", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.HILTON, name: "Home2 Suites by Hilton", basePointRate: 5 },
+      { hotelChainId: HOTEL_ID.HILTON, name: "Tru by Hilton", basePointRate: 5 },
+      { hotelChainId: HOTEL_ID.HILTON, name: "Spark by Hilton", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.HILTON, name: "Hilton Grand Vacations", basePointRate: 10 },
+    ],
+  });
 
   await prisma.hotelChain.upsert({
     where: { id: HOTEL_ID.MARRIOTT },
@@ -97,6 +120,37 @@ async function main() {
       { hotelChainId: HOTEL_ID.MARRIOTT, name: "Ambassador", bonusPercentage: 0.75, eliteTierLevel: 5 },
     ],
   });
+  await prisma.hotelChainSubBrand.deleteMany({ where: { hotelChainId: HOTEL_ID.MARRIOTT } });
+  await prisma.hotelChainSubBrand.createMany({
+    data: [
+      { hotelChainId: HOTEL_ID.MARRIOTT, name: "The Ritz-Carlton", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.MARRIOTT, name: "St. Regis", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.MARRIOTT, name: "JW Marriott", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.MARRIOTT, name: "The Luxury Collection", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.MARRIOTT, name: "W Hotels", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.MARRIOTT, name: "EDITION", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.MARRIOTT, name: "Marriott Hotels", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.MARRIOTT, name: "Sheraton", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.MARRIOTT, name: "Westin", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.MARRIOTT, name: "Le Meridien", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.MARRIOTT, name: "Renaissance Hotels", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.MARRIOTT, name: "Autograph Collection Hotels", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.MARRIOTT, name: "Delta Hotels", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.MARRIOTT, name: "Gaylord Hotels", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.MARRIOTT, name: "Courtyard by Marriott", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.MARRIOTT, name: "Four Points by Sheraton", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.MARRIOTT, name: "SpringHill Suites", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.MARRIOTT, name: "Fairfield by Marriott", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.MARRIOTT, name: "Protea Hotels", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.MARRIOTT, name: "AC Hotels by Marriott", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.MARRIOTT, name: "Aloft Hotels", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.MARRIOTT, name: "Moxy Hotels", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.MARRIOTT, name: "Residence Inn by Marriott", basePointRate: 5 },
+      { hotelChainId: HOTEL_ID.MARRIOTT, name: "TownePlace Suites", basePointRate: 5 },
+      { hotelChainId: HOTEL_ID.MARRIOTT, name: "Element by Westin", basePointRate: 5 },
+      { hotelChainId: HOTEL_ID.MARRIOTT, name: "Homes & Villas by Marriott Bonvoy", basePointRate: 5 },
+    ],
+  });
 
   await prisma.hotelChain.upsert({
     where: { id: HOTEL_ID.HYATT },
@@ -109,6 +163,26 @@ async function main() {
       { hotelChainId: HOTEL_ID.HYATT, name: "Discoverist", bonusPercentage: 0.10, eliteTierLevel: 1 },
       { hotelChainId: HOTEL_ID.HYATT, name: "Explorist", bonusPercentage: 0.20, eliteTierLevel: 2 },
       { hotelChainId: HOTEL_ID.HYATT, name: "Globalist", bonusPercentage: 0.30, eliteTierLevel: 3 },
+    ],
+  });
+  await prisma.hotelChainSubBrand.deleteMany({ where: { hotelChainId: HOTEL_ID.HYATT } });
+  await prisma.hotelChainSubBrand.createMany({
+    data: [
+      { hotelChainId: HOTEL_ID.HYATT, name: "Park Hyatt", basePointRate: 5 },
+      { hotelChainId: HOTEL_ID.HYATT, name: "Andaz", basePointRate: 5 },
+      { hotelChainId: HOTEL_ID.HYATT, name: "Grand Hyatt", basePointRate: 5 },
+      { hotelChainId: HOTEL_ID.HYATT, name: "Hyatt Regency", basePointRate: 5 },
+      { hotelChainId: HOTEL_ID.HYATT, name: "Hyatt Centric", basePointRate: 5 },
+      { hotelChainId: HOTEL_ID.HYATT, name: "The Unbound Collection by Hyatt", basePointRate: 5 },
+      { hotelChainId: HOTEL_ID.HYATT, name: "Hyatt Place", basePointRate: 5 },
+      { hotelChainId: HOTEL_ID.HYATT, name: "Hyatt House", basePointRate: 5 },
+      { hotelChainId: HOTEL_ID.HYATT, name: "Hyatt Ziva", basePointRate: 5 },
+      { hotelChainId: HOTEL_ID.HYATT, name: "Hyatt Zilara", basePointRate: 5 },
+      { hotelChainId: HOTEL_ID.HYATT, name: "Thompson Hotels", basePointRate: 5 },
+      { hotelChainId: HOTEL_ID.HYATT, name: "Destination by Hyatt", basePointRate: 5 },
+      { hotelChainId: HOTEL_ID.HYATT, name: "Alila", basePointRate: 5 },
+      { hotelChainId: HOTEL_ID.HYATT, name: "Caption by Hyatt", basePointRate: 5 },
+      { hotelChainId: HOTEL_ID.HYATT, name: "Hyatt Studios", basePointRate: 2.5 },
     ],
   });
 
@@ -126,6 +200,22 @@ async function main() {
       { hotelChainId: HOTEL_ID.IHG, name: "Diamond", bonusPercentage: 1.00, eliteTierLevel: 4 },
     ],
   });
+  await prisma.hotelChainSubBrand.deleteMany({ where: { hotelChainId: HOTEL_ID.IHG } });
+  await prisma.hotelChainSubBrand.createMany({
+    data: [
+      { hotelChainId: HOTEL_ID.IHG, name: "InterContinental Hotels & Resorts", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.IHG, name: "Kimpton Hotels & Restaurants", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.IHG, name: "Hotel Indigo", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.IHG, name: "Crowne Plaza Hotels & Resorts", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.IHG, name: "Holiday Inn Hotels & Resorts", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.IHG, name: "Holiday Inn Express", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.IHG, name: "Staybridge Suites", basePointRate: 5 },
+      { hotelChainId: HOTEL_ID.IHG, name: "Candlewood Suites", basePointRate: 5 },
+      { hotelChainId: HOTEL_ID.IHG, name: "Voco Hotels", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.IHG, name: "Even Hotels", basePointRate: 10 },
+      { hotelChainId: HOTEL_ID.IHG, name: "Avid Hotels", basePointRate: 10 },
+    ],
+  });
 
   await prisma.hotelChain.upsert({
     where: { id: HOTEL_ID.GHA_DISCOVERY },
@@ -141,19 +231,54 @@ async function main() {
       { hotelChainId: HOTEL_ID.GHA_DISCOVERY, name: "Titanium", fixedRate: 7, isFixed: true, eliteTierLevel: 4 },
     ],
   });
+  await prisma.hotelChainSubBrand.deleteMany({ where: { hotelChainId: HOTEL_ID.GHA_DISCOVERY } });
+  await prisma.hotelChainSubBrand.createMany({
+    data: [
+      { hotelChainId: HOTEL_ID.GHA_DISCOVERY, name: "Kempinski Hotels" },
+      { hotelChainId: HOTEL_ID.GHA_DISCOVERY, name: "Anantara Hotels, Resorts & Spas" },
+      { hotelChainId: HOTEL_ID.GHA_DISCOVERY, name: "Pan Pacific Hotels & Resorts" },
+      { hotelChainId: HOTEL_ID.GHA_DISCOVERY, name: "Viceroy Hotels & Resorts" },
+      { hotelChainId: HOTEL_ID.GHA_DISCOVERY, name: "Parkroyal Hotels & Resorts" },
+      { hotelChainId: HOTEL_ID.GHA_DISCOVERY, name: "Outrigger Resorts & Hotels" },
+      { hotelChainId: HOTEL_ID.GHA_DISCOVERY, name: "The Leela Palaces, Hotels and Resorts" },
+      { hotelChainId: HOTEL_ID.GHA_DISCOVERY, name: "Capella Hotels and Resorts" },
+    ],
+  });
 
+  // Accor: 25 pts per 10 EUR. 1 EUR = 1.2 USD. 10 EUR = 12 USD.
+  // Base rate = 25 / 12 = 2.0833 pts per $1
+  const ACCOR_BASE_RATE = 25 / 12; // ~2.0833
   await prisma.hotelChain.upsert({
     where: { id: HOTEL_ID.ACCOR },
-    update: { name: "Accor", loyaltyProgram: "ALL - Accor Live Limitless", basePointRate: 25, pointTypeId: 6 },
-    create: { id: HOTEL_ID.ACCOR, name: "Accor", loyaltyProgram: "ALL - Accor Live Limitless", basePointRate: 25, pointTypeId: 6 },
+    update: { name: "Accor", loyaltyProgram: "ALL - Accor Live Limitless", basePointRate: ACCOR_BASE_RATE, pointTypeId: 6 },
+    create: { id: HOTEL_ID.ACCOR, name: "Accor", loyaltyProgram: "ALL - Accor Live Limitless", basePointRate: ACCOR_BASE_RATE, pointTypeId: 6 },
   });
   await prisma.hotelChainEliteStatus.deleteMany({ where: { hotelChainId: HOTEL_ID.ACCOR } });
   await prisma.hotelChainEliteStatus.createMany({
     data: [
-      { hotelChainId: HOTEL_ID.ACCOR, name: "Silver", bonusPercentage: 0.0, eliteTierLevel: 1 },
-      { hotelChainId: HOTEL_ID.ACCOR, name: "Gold", bonusPercentage: 0.0, eliteTierLevel: 2 },
-      { hotelChainId: HOTEL_ID.ACCOR, name: "Platinum", bonusPercentage: 0.0, eliteTierLevel: 3 },
-      { hotelChainId: HOTEL_ID.ACCOR, name: "Diamond", bonusPercentage: 0.0, eliteTierLevel: 4 },
+      { hotelChainId: HOTEL_ID.ACCOR, name: "Silver", bonusPercentage: 0.24, eliteTierLevel: 1 },
+      { hotelChainId: HOTEL_ID.ACCOR, name: "Gold", bonusPercentage: 0.48, eliteTierLevel: 2 },
+      { hotelChainId: HOTEL_ID.ACCOR, name: "Platinum", bonusPercentage: 0.76, eliteTierLevel: 3 },
+      { hotelChainId: HOTEL_ID.ACCOR, name: "Diamond", bonusPercentage: 0.76, eliteTierLevel: 4 },
+    ],
+  });
+  await prisma.hotelChainSubBrand.deleteMany({ where: { hotelChainId: HOTEL_ID.ACCOR } });
+  await prisma.hotelChainSubBrand.createMany({
+    data: [
+      { hotelChainId: HOTEL_ID.ACCOR, name: "Raffles", basePointRate: ACCOR_BASE_RATE },
+      { hotelChainId: HOTEL_ID.ACCOR, name: "Banyan Tree", basePointRate: ACCOR_BASE_RATE },
+      { hotelChainId: HOTEL_ID.ACCOR, name: "Fairmont", basePointRate: ACCOR_BASE_RATE },
+      { hotelChainId: HOTEL_ID.ACCOR, name: "Sofitel", basePointRate: ACCOR_BASE_RATE },
+      { hotelChainId: HOTEL_ID.ACCOR, name: "MGallery", basePointRate: ACCOR_BASE_RATE },
+      { hotelChainId: HOTEL_ID.ACCOR, name: "Pullman", basePointRate: ACCOR_BASE_RATE },
+      { hotelChainId: HOTEL_ID.ACCOR, name: "Swissôtel", basePointRate: ACCOR_BASE_RATE },
+      { hotelChainId: HOTEL_ID.ACCOR, name: "Novotel", basePointRate: ACCOR_BASE_RATE },
+      { hotelChainId: HOTEL_ID.ACCOR, name: "Mercure", basePointRate: ACCOR_BASE_RATE },
+      { hotelChainId: HOTEL_ID.ACCOR, name: "ibis", basePointRate: 12.5 / 12 }, // 1.0417
+      { hotelChainId: HOTEL_ID.ACCOR, name: "ibis Styles", basePointRate: 12.5 / 12 }, // 1.0417
+      { hotelChainId: HOTEL_ID.ACCOR, name: "ibis budget", basePointRate: 5 / 12 }, // 0.4167
+      { hotelChainId: HOTEL_ID.ACCOR, name: "Adagio", basePointRate: 10 / 12 }, // 0.8333
+      { hotelChainId: HOTEL_ID.ACCOR, name: "Adagio Access", basePointRate: 5 / 12 }, // 0.4167
     ],
   });
 
