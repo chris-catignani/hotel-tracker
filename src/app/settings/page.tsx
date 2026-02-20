@@ -71,15 +71,15 @@ interface PointType {
   centsPerPoint: string | number;
 }
 
-interface HotelSubBrand {
+interface HotelChainSubBrand {
   id: number;
-  hotelId: number;
+  hotelChainId: number;
   name: string;
   basePointRate: number | null;
   elitePointRate: number | null;
 }
 
-interface Hotel {
+interface HotelChain {
   id: number;
   name: string;
   loyaltyProgram: string | null;
@@ -87,7 +87,7 @@ interface Hotel {
   elitePointRate: number | null;
   pointTypeId: number | null;
   pointType: PointType | null;
-  subBrands: HotelSubBrand[];
+  hotelChainSubBrands: HotelChainSubBrand[];
 }
 
 interface CreditCard {
@@ -197,7 +197,7 @@ function PointTypesTab() {
     if (res.ok) {
       fetchPointTypes();
     } else if (res.status === 409) {
-      setError("Cannot delete: this point type is in use by hotels, cards, or portals.");
+      setError("Cannot delete: this point type is in use by hotel chains, cards, or portals.");
     } else {
       setError(await extractApiError(res, "Failed to delete point type."));
     }
@@ -371,7 +371,7 @@ function PointTypesTab() {
 // ---------------------------------------------------------------------------
 
 function HotelChainsTab() {
-  const [hotels, setHotels] = useState<Hotel[]>([]);
+  const [hotelChains, setHotelChains] = useState<HotelChain[]>([]);
   const [pointTypes, setPointTypes] = useState<PointType[]>([]);
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -382,34 +382,34 @@ function HotelChainsTab() {
   const [error, setError] = useState<string | null>(null);
 
   const [editOpen, setEditOpen] = useState(false);
-  const [editHotel, setEditHotel] = useState<Hotel | null>(null);
+  const [editHotelChain, setEditHotelChain] = useState<HotelChain | null>(null);
   const [editName, setEditName] = useState("");
   const [editLoyaltyProgram, setEditLoyaltyProgram] = useState("");
   const [editBasePointRate, setEditBasePointRate] = useState("");
   const [editElitePointRate, setEditElitePointRate] = useState("");
   const [editPointTypeId, setEditPointTypeId] = useState("none");
 
-  // Sub-brands management
+  // Hotel chain sub-brands management
   const [sbOpen, setSbOpen] = useState(false);
-  const [sbHotelId, setSbHotelId] = useState<number | null>(null);
+  const [sbHotelChainId, setSbHotelChainId] = useState<number | null>(null);
   const [sbName, setSbName] = useState("");
   const [sbBaseRate, setSbBaseRate] = useState("");
   const [sbEliteRate, setSbEliteRate] = useState("");
   const [editSbOpen, setEditSbOpen] = useState(false);
-  const [editSb, setEditSb] = useState<HotelSubBrand | null>(null);
+  const [editSb, setEditSb] = useState<HotelChainSubBrand | null>(null);
   const [editSbName, setEditSbName] = useState("");
   const [editSbBaseRate, setEditSbBaseRate] = useState("");
   const [editSbEliteRate, setEditSbEliteRate] = useState("");
 
-  const sbHotel = hotels.find((h) => h.id === sbHotelId) ?? null;
+  const sbHotelChain = hotelChains.find((h) => h.id === sbHotelChainId) ?? null;
 
   const fetchData = useCallback(async () => {
-    const [hotelsRes, ptRes] = await Promise.all([
-      fetch("/api/hotels"),
+    const [hotelChainsRes, ptRes] = await Promise.all([
+      fetch("/api/hotel-chains"),
       fetch("/api/point-types"),
     ]);
-    if (hotelsRes.ok) setHotels(await hotelsRes.json());
-    else setError(await extractApiError(hotelsRes, "Failed to load hotel chains."));
+    if (hotelChainsRes.ok) setHotelChains(await hotelChainsRes.json());
+    else setError(await extractApiError(hotelChainsRes, "Failed to load hotel chains."));
     if (ptRes.ok) setPointTypes(await ptRes.json());
   }, []);
 
@@ -419,7 +419,7 @@ function HotelChainsTab() {
 
   const handleSubmit = async () => {
     setError(null);
-    const res = await fetch("/api/hotels", {
+    const res = await fetch("/api/hotel-chains", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -443,20 +443,20 @@ function HotelChainsTab() {
     }
   };
 
-  const handleEdit = (hotel: Hotel) => {
-    setEditHotel(hotel);
-    setEditName(hotel.name);
-    setEditLoyaltyProgram(hotel.loyaltyProgram || "");
-    setEditBasePointRate(hotel.basePointRate != null ? String(hotel.basePointRate) : "");
-    setEditElitePointRate(hotel.elitePointRate != null ? String(hotel.elitePointRate) : "");
-    setEditPointTypeId(hotel.pointTypeId != null ? String(hotel.pointTypeId) : "none");
+  const handleEdit = (hotelChain: HotelChain) => {
+    setEditHotelChain(hotelChain);
+    setEditName(hotelChain.name);
+    setEditLoyaltyProgram(hotelChain.loyaltyProgram || "");
+    setEditBasePointRate(hotelChain.basePointRate != null ? String(hotelChain.basePointRate) : "");
+    setEditElitePointRate(hotelChain.elitePointRate != null ? String(hotelChain.elitePointRate) : "");
+    setEditPointTypeId(hotelChain.pointTypeId != null ? String(hotelChain.pointTypeId) : "none");
     setEditOpen(true);
   };
 
   const handleEditSubmit = async () => {
-    if (!editHotel) return;
+    if (!editHotelChain) return;
     setError(null);
-    const res = await fetch(`/api/hotels/${editHotel.id}`, {
+    const res = await fetch(`/api/hotel-chains/${editHotelChain.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -469,15 +469,15 @@ function HotelChainsTab() {
     });
     if (res.ok) {
       setEditOpen(false);
-      setEditHotel(null);
+      setEditHotelChain(null);
       fetchData();
     } else {
       setError(await extractApiError(res, "Failed to update hotel chain."));
     }
   };
 
-  const openSubBrands = (hotel: Hotel) => {
-    setSbHotelId(hotel.id);
+  const openSubBrands = (hotelChain: HotelChain) => {
+    setSbHotelChainId(hotelChain.id);
     setSbName("");
     setSbBaseRate("");
     setSbEliteRate("");
@@ -485,9 +485,9 @@ function HotelChainsTab() {
   };
 
   const handleAddSubBrand = async () => {
-    if (!sbHotelId) return;
+    if (!sbHotelChainId) return;
     setError(null);
-    const res = await fetch(`/api/hotels/${sbHotelId}/sub-brands`, {
+    const res = await fetch(`/api/hotel-chains/${sbHotelChainId}/hotel-chain-sub-brands`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -502,11 +502,11 @@ function HotelChainsTab() {
       setSbEliteRate("");
       fetchData();
     } else {
-      setError(await extractApiError(res, "Failed to add sub-brand."));
+      setError(await extractApiError(res, "Failed to add hotel chain sub-brand."));
     }
   };
 
-  const handleEditSb = (sb: HotelSubBrand) => {
+  const handleEditSb = (sb: HotelChainSubBrand) => {
     setEditSb(sb);
     setEditSbName(sb.name);
     setEditSbBaseRate(sb.basePointRate != null ? String(sb.basePointRate) : "");
@@ -517,7 +517,7 @@ function HotelChainsTab() {
   const handleEditSbSubmit = async () => {
     if (!editSb) return;
     setError(null);
-    const res = await fetch(`/api/hotel-sub-brands/${editSb.id}`, {
+    const res = await fetch(`/api/hotel-chain-sub-brands/${editSb.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -531,19 +531,19 @@ function HotelChainsTab() {
       setEditSb(null);
       fetchData();
     } else {
-      setError(await extractApiError(res, "Failed to update sub-brand."));
+      setError(await extractApiError(res, "Failed to update hotel chain sub-brand."));
     }
   };
 
-  const handleDeleteSb = async (sb: HotelSubBrand) => {
+  const handleDeleteSb = async (sb: HotelChainSubBrand) => {
     setError(null);
-    const res = await fetch(`/api/hotel-sub-brands/${sb.id}`, { method: "DELETE" });
+    const res = await fetch(`/api/hotel-chain-sub-brands/${sb.id}`, { method: "DELETE" });
     if (res.ok) {
       fetchData();
     } else if (res.status === 409) {
-      setError("Cannot delete: this sub-brand is referenced by existing bookings.");
+      setError("Cannot delete: this hotel chain sub-brand is referenced by existing bookings.");
     } else {
-      setError(await extractApiError(res, "Failed to delete sub-brand."));
+      setError(await extractApiError(res, "Failed to delete hotel chain sub-brand."));
     }
   };
 
@@ -709,16 +709,16 @@ function HotelChainsTab() {
       <Dialog open={sbOpen} onOpenChange={setSbOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Sub-brands — {sbHotel?.name}</DialogTitle>
+            <DialogTitle>Sub-brands — {sbHotelChain?.name}</DialogTitle>
             <DialogDescription>
               Manage sub-brands with optional point rate overrides (blank = inherit from chain).
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
-            {!sbHotel || sbHotel.subBrands.length === 0 ? (
+            {!sbHotelChain || sbHotelChain.hotelChainSubBrands.length === 0 ? (
               <p className="text-sm text-muted-foreground">No sub-brands yet.</p>
             ) : (
-              sbHotel.subBrands.map((sb) => (
+              sbHotelChain.hotelChainSubBrands.map((sb) => (
                 <div key={sb.id} className="flex items-center justify-between border rounded-md px-3 py-2">
                   <div>
                     <span className="font-medium text-sm">{sb.name}</span>
@@ -839,26 +839,26 @@ function HotelChainsTab() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {hotels.length === 0 ? (
+          {hotelChains.length === 0 ? (
             <TableRow>
               <TableCell colSpan={6} className="text-center text-muted-foreground">
                 No hotel chains added yet.
               </TableCell>
             </TableRow>
           ) : (
-            hotels.map((hotel) => (
-              <TableRow key={hotel.id}>
-                <TableCell>{hotel.name}</TableCell>
-                <TableCell>{hotel.loyaltyProgram ?? "-"}</TableCell>
-                <TableCell>{hotel.basePointRate ?? "-"}</TableCell>
-                <TableCell>{hotel.elitePointRate ?? "-"}</TableCell>
-                <TableCell>{hotel.pointType?.name ?? "—"}</TableCell>
+            hotelChains.map((hotelChain) => (
+              <TableRow key={hotelChain.id}>
+                <TableCell>{hotelChain.name}</TableCell>
+                <TableCell>{hotelChain.loyaltyProgram ?? "-"}</TableCell>
+                <TableCell>{hotelChain.basePointRate ?? "-"}</TableCell>
+                <TableCell>{hotelChain.elitePointRate ?? "-"}</TableCell>
+                <TableCell>{hotelChain.pointType?.name ?? "—"}</TableCell>
                 <TableCell>
                   <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => openSubBrands(hotel)}>
+                    <Button variant="ghost" size="sm" onClick={() => openSubBrands(hotelChain)}>
                       Sub-brands
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleEdit(hotel)}>
+                    <Button variant="ghost" size="sm" onClick={() => handleEdit(hotelChain)}>
                       Edit
                     </Button>
                   </div>

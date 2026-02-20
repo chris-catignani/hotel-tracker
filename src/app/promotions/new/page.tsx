@@ -21,15 +21,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-interface HotelSubBrand {
+interface HotelChainSubBrand {
   id: number;
   name: string;
 }
 
-interface Hotel {
+interface HotelChain {
   id: number;
   name: string;
-  subBrands: HotelSubBrand[];
+  hotelChainSubBrands: HotelChainSubBrand[];
 }
 
 interface CreditCard {
@@ -49,8 +49,8 @@ export default function NewPromotionPage() {
   const [type, setType] = useState<string>("loyalty");
   const [valueType, setValueType] = useState<string>("fixed");
   const [value, setValue] = useState("");
-  const [hotelId, setHotelId] = useState<string>("");
-  const [subBrandId, setSubBrandId] = useState<string>("");
+  const [hotelChainId, setHotelChainId] = useState<string>("");
+  const [hotelChainSubBrandId, setHotelChainSubBrandId] = useState<string>("");
   const [creditCardId, setCreditCardId] = useState<string>("");
   const [shoppingPortalId, setShoppingPortalId] = useState<string>("");
   const [minSpend, setMinSpend] = useState("");
@@ -59,14 +59,14 @@ export default function NewPromotionPage() {
   const [isActive, setIsActive] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  const [hotels, setHotels] = useState<Hotel[]>([]);
+  const [hotelChains, setHotelChains] = useState<HotelChain[]>([]);
   const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
   const [portals, setPortals] = useState<ShoppingPortal[]>([]);
 
   useEffect(() => {
-    fetch("/api/hotels")
+    fetch("/api/hotel-chains")
       .then((res) => res.json())
-      .then(setHotels)
+      .then(setHotelChains)
       .catch(console.error);
     fetch("/api/credit-cards")
       .then((res) => res.json())
@@ -90,9 +90,9 @@ export default function NewPromotionPage() {
       isActive,
     };
 
-    if (type === "loyalty" && hotelId) {
-      body.hotelId = parseInt(hotelId);
-      body.subBrandId = subBrandId ? parseInt(subBrandId) : null;
+    if (type === "loyalty" && hotelChainId) {
+      body.hotelChainId = parseInt(hotelChainId);
+      body.hotelChainSubBrandId = hotelChainSubBrandId ? parseInt(hotelChainSubBrandId) : null;
     }
     if (type === "credit_card" && creditCardId) {
       body.creditCardId = parseInt(creditCardId);
@@ -208,15 +208,15 @@ export default function NewPromotionPage() {
 
             {type === "loyalty" && (
               <div className="space-y-2">
-                <Label>Hotel</Label>
-                <Select value={hotelId} onValueChange={(v) => { setHotelId(v); setSubBrandId(""); }}>
+                <Label>Hotel Chain</Label>
+                <Select value={hotelChainId} onValueChange={(v) => { setHotelChainId(v); setHotelChainSubBrandId(""); }}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select hotel..." />
+                    <SelectValue placeholder="Select hotel chain..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {hotels.map((hotel) => (
-                      <SelectItem key={hotel.id} value={String(hotel.id)}>
-                        {hotel.name}
+                    {hotelChains.map((chain) => (
+                      <SelectItem key={chain.id} value={String(chain.id)}>
+                        {chain.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -224,16 +224,16 @@ export default function NewPromotionPage() {
               </div>
             )}
 
-            {type === "loyalty" && hotelId && (hotels.find((h) => h.id === Number(hotelId))?.subBrands.length ?? 0) > 0 && (
+            {type === "loyalty" && hotelChainId && (hotelChains.find((h) => h.id === Number(hotelChainId))?.hotelChainSubBrands.length ?? 0) > 0 && (
               <div className="space-y-2">
                 <Label>Sub-brand</Label>
-                <Select value={subBrandId || "all"} onValueChange={(v) => setSubBrandId(v === "all" ? "" : v)}>
+                <Select value={hotelChainSubBrandId || "all"} onValueChange={(v) => setHotelChainSubBrandId(v === "all" ? "" : v)}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select sub-brand..." />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All sub-brands (no filter)</SelectItem>
-                    {hotels.find((h) => h.id === Number(hotelId))?.subBrands.map((sb) => (
+                    {hotelChains.find((h) => h.id === Number(hotelChainId))?.hotelChainSubBrands.map((sb) => (
                       <SelectItem key={sb.id} value={String(sb.id)}>
                         {sb.name}
                       </SelectItem>

@@ -58,8 +58,8 @@ interface BookingBenefit {
 
 interface Booking {
   id: number;
-  hotelId: number;
-  subBrand: { id: number; name: string } | null;
+  hotelChainId: number;
+  hotelChainSubBrand: { id: number; name: string } | null;
   propertyName: string;
   checkIn: string;
   checkOut: string;
@@ -79,7 +79,7 @@ interface Booking {
   createdAt: string;
   bookingSource: string | null;
   otaAgency: { id: number; name: string } | null;
-  hotel: {
+  hotelChain: {
     id: number;
     name: string;
     loyaltyProgram: string | null;
@@ -124,8 +124,8 @@ function formatCurrency(amount: number): string {
 
 function formatBookingSource(booking: { bookingSource: string | null; otaAgency: { name: string } | null }): string {
   switch (booking.bookingSource) {
-    case "direct_web": return "Direct — Hotel Website";
-    case "direct_app": return "Direct — Hotel App";
+    case "direct_web": return "Direct — Hotel Chain Website";
+    case "direct_app": return "Direct — Hotel Chain App";
     case "ota": return booking.otaAgency ? `OTA — ${booking.otaAgency.name}` : "OTA";
     case "other": return "Other";
     default: return "—";
@@ -269,18 +269,18 @@ export default function BookingDetailPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <p className="text-sm text-muted-foreground">Hotel Chain</p>
-              <p className="font-medium">{booking.hotel.name}</p>
+              <p className="font-medium">{booking.hotelChain.name}</p>
             </div>
-            {booking.subBrand && (
+            {booking.hotelChainSubBrand && (
               <div>
                 <p className="text-sm text-muted-foreground">Sub-brand</p>
-                <p className="font-medium">{booking.subBrand.name}</p>
+                <p className="font-medium">{booking.hotelChainSubBrand.name}</p>
               </div>
             )}
-            {booking.hotel.loyaltyProgram && (
+            {booking.hotelChain.loyaltyProgram && (
               <div>
                 <p className="text-sm text-muted-foreground">Loyalty Program</p>
-                <p className="font-medium">{booking.hotel.loyaltyProgram}</p>
+                <p className="font-medium">{booking.hotelChain.loyaltyProgram}</p>
               </div>
             )}
             <div>

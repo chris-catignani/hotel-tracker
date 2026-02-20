@@ -21,14 +21,14 @@ export async function PUT(
     if (pointTypeId !== undefined)
       data.pointTypeId = pointTypeId ? Number(pointTypeId) : null;
 
-    const hotel = await prisma.hotel.update({
+    const hotelChain = await prisma.hotelChain.update({
       where: { id: Number(id) },
       data,
       include: { pointType: true },
     });
 
-    return NextResponse.json(hotel);
+    return NextResponse.json(hotelChain);
   } catch (error) {
-    return apiError("Failed to update hotel", error);
+    return apiError("Failed to update hotel chain", error);
   }
 }

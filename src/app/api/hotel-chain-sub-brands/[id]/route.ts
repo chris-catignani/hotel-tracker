@@ -19,14 +19,14 @@ export async function PUT(
       data.elitePointRate =
         elitePointRate != null ? Number(elitePointRate) : null;
 
-    const subBrand = await prisma.hotelSubBrand.update({
+    const hotelChainSubBrand = await prisma.hotelChainSubBrand.update({
       where: { id: Number(id) },
       data,
     });
 
-    return NextResponse.json(subBrand);
+    return NextResponse.json(hotelChainSubBrand);
   } catch (error) {
-    return apiError("Failed to update sub-brand", error);
+    return apiError("Failed to update hotel chain sub-brand", error);
   }
 }
 
@@ -38,22 +38,22 @@ export async function DELETE(
     const { id } = await params;
 
     const bookingCount = await prisma.booking.count({
-      where: { subBrandId: Number(id) },
+      where: { hotelChainSubBrandId: Number(id) },
     });
 
     if (bookingCount > 0) {
       return NextResponse.json(
-        { error: "Cannot delete sub-brand with existing bookings" },
+        { error: "Cannot delete hotel chain sub-brand with existing bookings" },
         { status: 409 }
       );
     }
 
-    await prisma.hotelSubBrand.delete({
+    await prisma.hotelChainSubBrand.delete({
       where: { id: Number(id) },
     });
 
-    return NextResponse.json({ message: "Sub-brand deleted" });
+    return NextResponse.json({ message: "Hotel chain sub-brand deleted" });
   } catch (error) {
-    return apiError("Failed to delete sub-brand", error);
+    return apiError("Failed to delete hotel chain sub-brand", error);
   }
 }

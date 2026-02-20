@@ -8,13 +8,13 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const subBrands = await prisma.hotelSubBrand.findMany({
-      where: { hotelId: Number(id) },
+    const hotelChainSubBrands = await prisma.hotelChainSubBrand.findMany({
+      where: { hotelChainId: Number(id) },
       orderBy: { name: "asc" },
     });
-    return NextResponse.json(subBrands);
+    return NextResponse.json(hotelChainSubBrands);
   } catch (error) {
-    return apiError("Failed to fetch sub-brands", error);
+    return apiError("Failed to fetch hotel chain sub-brands", error);
   }
 }
 
@@ -27,17 +27,17 @@ export async function POST(
     const body = await request.json();
     const { name, basePointRate, elitePointRate } = body;
 
-    const subBrand = await prisma.hotelSubBrand.create({
+    const hotelChainSubBrand = await prisma.hotelChainSubBrand.create({
       data: {
-        hotelId: Number(id),
+        hotelChainId: Number(id),
         name,
         basePointRate: basePointRate != null ? Number(basePointRate) : null,
         elitePointRate: elitePointRate != null ? Number(elitePointRate) : null,
       },
     });
 
-    return NextResponse.json(subBrand, { status: 201 });
+    return NextResponse.json(hotelChainSubBrand, { status: 201 });
   } catch (error) {
-    return apiError("Failed to create sub-brand", error);
+    return apiError("Failed to create hotel chain sub-brand", error);
   }
 }
