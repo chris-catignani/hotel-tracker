@@ -69,7 +69,7 @@ export function DashboardStats({
             Total Spend
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-4 pt-0 flex items-center">
+        <CardContent className="p-4 pt-0 flex-1 flex items-center">
           <div className="flex justify-evenly w-full">
             <div className="text-center">
               <div className="text-sm text-muted-foreground">Cash</div>
