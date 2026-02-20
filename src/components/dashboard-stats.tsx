@@ -50,7 +50,7 @@ export function DashboardStats({
       : "—";
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6 items-start">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6 items-stretch">
       {statsBefore.map((stat) => (
         <Card key={stat.label}>
           <CardHeader className="p-4 pb-2">
@@ -63,14 +63,14 @@ export function DashboardStats({
           </CardContent>
         </Card>
       ))}
-      <Card className="lg:col-span-2" style={{ gap: 0 }}>
-        <CardHeader className="px-4 pt-3 pb-0">
+      <Card className="lg:col-span-2">
+        <CardHeader className="p-4 pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground text-center">
             Total Spend
           </CardTitle>
         </CardHeader>
-        <CardContent className="px-4 pt-0 pb-3">
-          <div className="flex justify-center gap-6">
+        <CardContent className="p-4 pt-0 flex items-center">
+          <div className="flex justify-evenly w-full">
             <div className="text-center">
               <div className="text-sm text-muted-foreground">Cash</div>
               <div className="text-base font-bold">{cashDisplay}</div>
