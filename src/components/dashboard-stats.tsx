@@ -54,45 +54,47 @@ export function DashboardStats({
       {statsBefore.map((stat) => (
         <Card key={stat.label}>
           <CardHeader className="p-4 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-sm font-medium text-muted-foreground text-center">
               {stat.label}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            <p className="text-2xl font-bold">{stat.value}</p>
+            <p className="text-2xl font-bold text-center">{stat.value}</p>
           </CardContent>
         </Card>
       ))}
       <Card className="lg:col-span-2" style={{ gap: 0 }}>
         <CardHeader className="px-4 pt-3 pb-0">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
+          <CardTitle className="text-sm font-medium text-muted-foreground text-center">
             Total Spend
           </CardTitle>
         </CardHeader>
-        <CardContent className="px-4 pt-0 pb-3 space-y-0">
-          <div className="flex justify-between items-baseline">
-            <span className="text-sm text-muted-foreground">Cash</span>
-            <span className="text-base font-bold">{cashDisplay}</span>
-          </div>
-          <div className="flex justify-between items-baseline">
-            <span className="text-sm text-muted-foreground">Points</span>
-            <span className="text-base font-bold">{pointsDisplay}</span>
-          </div>
-          <div className="flex justify-between items-baseline">
-            <span className="text-sm text-muted-foreground">Certs</span>
-            <span className="text-base font-bold">{certsDisplay}</span>
+        <CardContent className="px-4 pt-0 pb-3">
+          <div className="flex justify-center gap-6">
+            <div className="text-center">
+              <div className="text-sm text-muted-foreground">Cash</div>
+              <div className="text-base font-bold">{cashDisplay}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-sm text-muted-foreground">Points</div>
+              <div className="text-base font-bold">{pointsDisplay}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-sm text-muted-foreground">Certs</div>
+              <div className="text-base font-bold">{certsDisplay}</div>
+            </div>
           </div>
         </CardContent>
       </Card>
       {statsAfter.map((stat) => (
         <Card key={stat.label}>
           <CardHeader className="p-4 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-sm font-medium text-muted-foreground text-center">
               {stat.label}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            <p className="text-2xl font-bold">{stat.value}</p>
+            <p className="text-2xl font-bold text-center">{stat.value}</p>
           </CardContent>
         </Card>
       ))}
