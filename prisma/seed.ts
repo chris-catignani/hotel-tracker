@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { HOTEL_ID } from "../src/lib/constants";
 
 const prisma = new PrismaClient();
 
@@ -67,34 +68,34 @@ async function main() {
 
   // Hotels
   await prisma.hotel.upsert({
-    where: { id: 1 },
+    where: { id: HOTEL_ID.HILTON },
     update: { name: "Hilton", loyaltyProgram: "Hilton Honors", basePointRate: 10, elitePointRate: 10, pointTypeId: 1 },
-    create: { id: 1, name: "Hilton", loyaltyProgram: "Hilton Honors", basePointRate: 10, elitePointRate: 10, pointTypeId: 1 },
+    create: { id: HOTEL_ID.HILTON, name: "Hilton", loyaltyProgram: "Hilton Honors", basePointRate: 10, elitePointRate: 10, pointTypeId: 1 },
   });
   await prisma.hotel.upsert({
-    where: { id: 2 },
+    where: { id: HOTEL_ID.MARRIOTT },
     update: { name: "Marriott", loyaltyProgram: "Marriott Bonvoy", basePointRate: 10, elitePointRate: 7.5, pointTypeId: 2 },
-    create: { id: 2, name: "Marriott", loyaltyProgram: "Marriott Bonvoy", basePointRate: 10, elitePointRate: 7.5, pointTypeId: 2 },
+    create: { id: HOTEL_ID.MARRIOTT, name: "Marriott", loyaltyProgram: "Marriott Bonvoy", basePointRate: 10, elitePointRate: 7.5, pointTypeId: 2 },
   });
   await prisma.hotel.upsert({
-    where: { id: 3 },
+    where: { id: HOTEL_ID.HYATT },
     update: { name: "Hyatt", loyaltyProgram: "World of Hyatt", basePointRate: 5, elitePointRate: 1.5, pointTypeId: 3 },
-    create: { id: 3, name: "Hyatt", loyaltyProgram: "World of Hyatt", basePointRate: 5, elitePointRate: 1.5, pointTypeId: 3 },
+    create: { id: HOTEL_ID.HYATT, name: "Hyatt", loyaltyProgram: "World of Hyatt", basePointRate: 5, elitePointRate: 1.5, pointTypeId: 3 },
   });
   await prisma.hotel.upsert({
-    where: { id: 4 },
+    where: { id: HOTEL_ID.IHG },
     update: { name: "IHG", loyaltyProgram: "IHG One Rewards", basePointRate: 10, elitePointRate: 10, pointTypeId: 4 },
-    create: { id: 4, name: "IHG", loyaltyProgram: "IHG One Rewards", basePointRate: 10, elitePointRate: 10, pointTypeId: 4 },
+    create: { id: HOTEL_ID.IHG, name: "IHG", loyaltyProgram: "IHG One Rewards", basePointRate: 10, elitePointRate: 10, pointTypeId: 4 },
   });
   await prisma.hotel.upsert({
-    where: { id: 5 },
+    where: { id: HOTEL_ID.GHA_DISCOVERY },
     update: { name: "GHA Discovery", loyaltyProgram: "GHA Discovery", basePointRate: 4, elitePointRate: 3, pointTypeId: 5 },
-    create: { id: 5, name: "GHA Discovery", loyaltyProgram: "GHA Discovery", basePointRate: 4, elitePointRate: 3, pointTypeId: 5 },
+    create: { id: HOTEL_ID.GHA_DISCOVERY, name: "GHA Discovery", loyaltyProgram: "GHA Discovery", basePointRate: 4, elitePointRate: 3, pointTypeId: 5 },
   });
   await prisma.hotel.upsert({
-    where: { id: 6 },
+    where: { id: HOTEL_ID.ACCOR },
     update: { name: "Accor", loyaltyProgram: "ALL - Accor Live Limitless", basePointRate: 25, elitePointRate: 0, pointTypeId: 6 },
-    create: { id: 6, name: "Accor", loyaltyProgram: "ALL - Accor Live Limitless", basePointRate: 25, elitePointRate: 0, pointTypeId: 6 },
+    create: { id: HOTEL_ID.ACCOR, name: "Accor", loyaltyProgram: "ALL - Accor Live Limitless", basePointRate: 25, elitePointRate: 0, pointTypeId: 6 },
   });
 
   // Credit Cards
