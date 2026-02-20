@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       include: {
         pointType: true,
         eliteStatuses: { orderBy: { eliteTierLevel: "asc" } },
-        userStatus: true,
+        userStatus: { include: { eliteStatus: true } },
       },
     });
 
