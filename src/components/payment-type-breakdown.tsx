@@ -181,9 +181,9 @@ export function PaymentTypeBreakdown({ bookings }: PaymentTypeBreakdownProps) {
                     paddingAngle={5}
                     dataKey="value"
                   >
-                    {data.chartData.map((entry, index) => (
+                    {data.chartData.map((entry) => (
                       <Cell
-                        key={`cell-${index}`}
+                        key={`cell-${entry.name}`}
                         fill={TYPE_COLORS[entry.name] || "#94a3b8"}
                       />
                     ))}
