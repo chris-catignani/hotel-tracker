@@ -114,3 +114,13 @@ export async function matchPromotionsForBooking(
 
   return createdRecords;
 }
+
+export async function matchPromotionsForAllBookings(): Promise<void> {
+  const bookings = await prisma.booking.findMany({
+    select: { id: true },
+  });
+
+  for (const booking of bookings) {
+    await matchPromotionsForBooking(booking.id);
+  }
+}
