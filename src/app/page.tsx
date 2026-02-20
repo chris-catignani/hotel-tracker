@@ -126,7 +126,7 @@ export default function DashboardPage() {
     (sum, b) => sum + Number(b.totalCost),
     0
   );
-  const totalSavings = cashBookings.reduce(
+  const totalSavings = bookings.reduce(
     (sum, b) => sum + calcTotalSavings(b),
     0
   );
