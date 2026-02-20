@@ -8,7 +8,7 @@ export async function GET() {
       include: {
         hotelChainSubBrands: { orderBy: { name: "asc" } },
         pointType: true,
-        eliteStatuses: { orderBy: { name: "asc" } },
+        eliteStatuses: { orderBy: { eliteTierLevel: "asc" } },
         userStatus: { include: { eliteStatus: true } },
       },
       orderBy: { name: "asc" },
@@ -31,7 +31,11 @@ export async function POST(request: NextRequest) {
         basePointRate: basePointRate != null ? Number(basePointRate) : null,
         pointTypeId: pointTypeId ? Number(pointTypeId) : null,
       },
-      include: { pointType: true, eliteStatuses: true, userStatus: true },
+      include: {
+        pointType: true,
+        eliteStatuses: { orderBy: { eliteTierLevel: "asc" } },
+        userStatus: { include: { eliteStatus: true } },
+      },
     });
 
     return NextResponse.json(hotelChain, { status: 201 });
