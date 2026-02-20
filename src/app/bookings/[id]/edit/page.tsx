@@ -47,11 +47,25 @@ type PaymentType = typeof PAYMENT_TYPES[number]["value"];
 // Types
 // ---------------------------------------------------------------------------
 
+interface HotelChainEliteStatus {
+  id: number;
+  name: string;
+  bonusPercentage: number | null;
+  fixedRate: number | null;
+  isFixed: boolean;
+}
+
+interface UserStatus {
+  id: number;
+  hotelChainId: number;
+  eliteStatusId: number | null;
+  eliteStatus: HotelChainEliteStatus | null;
+}
+
 interface HotelChainSubBrand {
   id: number;
   name: string;
   basePointRate: number | null;
-  elitePointRate: number | null;
 }
 
 interface HotelChain {
@@ -59,8 +73,9 @@ interface HotelChain {
   name: string;
   loyaltyProgram: string | null;
   basePointRate: number | null;
-  elitePointRate: number | null;
   hotelChainSubBrands: HotelChainSubBrand[];
+  eliteStatuses: HotelChainEliteStatus[];
+  userStatus: UserStatus | null;
 }
 
 interface CreditCard {
@@ -316,10 +331,21 @@ export default function EditBookingPage() {
       const subBrand = hotelChainSubBrandId !== "none"
         ? hotelChain?.hotelChainSubBrands.find((sb) => sb.id === Number(hotelChainSubBrandId))
         : null;
-      const baseRate = Number(subBrand?.basePointRate ?? hotelChain?.basePointRate ?? null);
-      const eliteRate = Number(subBrand?.elitePointRate ?? hotelChain?.elitePointRate ?? 0);
-      if (!isNaN(baseRate) && (subBrand?.basePointRate != null || hotelChain?.basePointRate != null)) {
-        setLoyaltyPointsEarned(String(Math.round(Number(pretaxCost) * (baseRate + eliteRate))));
+
+      const basePointRate = Number(subBrand?.basePointRate ?? hotelChain?.basePointRate ?? null);
+      const eliteStatus = hotelChain?.userStatus?.eliteStatus;
+
+      if (eliteStatus) {
+        if (eliteStatus.isFixed && eliteStatus.fixedRate != null) {
+          setLoyaltyPointsEarned(String(Math.round(Number(pretaxCost) * Number(eliteStatus.fixedRate))));
+        } else if (eliteStatus.bonusPercentage != null && !isNaN(basePointRate)) {
+          const bonusMultiplier = 1 + Number(eliteStatus.bonusPercentage);
+          setLoyaltyPointsEarned(String(Math.round(Number(pretaxCost) * basePointRate * bonusMultiplier)));
+        } else if (!isNaN(basePointRate)) {
+          setLoyaltyPointsEarned(String(Math.round(Number(pretaxCost) * basePointRate)));
+        }
+      } else if (!isNaN(basePointRate)) {
+        setLoyaltyPointsEarned(String(Math.round(Number(pretaxCost) * basePointRate)));
       }
     }
   }, [hotelChainId, hotelChainSubBrandId, pretaxCost, hotelChains, initialized]);

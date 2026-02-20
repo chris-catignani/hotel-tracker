@@ -5,7 +5,12 @@ import { apiError } from "@/lib/api-error";
 export async function GET() {
   try {
     const hotelChains = await prisma.hotelChain.findMany({
-      include: { hotelChainSubBrands: { orderBy: { name: "asc" } }, pointType: true },
+      include: {
+        hotelChainSubBrands: { orderBy: { name: "asc" } },
+        pointType: true,
+        eliteStatuses: { orderBy: { name: "asc" } },
+        userStatus: { include: { eliteStatus: true } },
+      },
       orderBy: { name: "asc" },
     });
     return NextResponse.json(hotelChains);
@@ -17,17 +22,16 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, loyaltyProgram, basePointRate, elitePointRate, pointTypeId } = body;
+    const { name, loyaltyProgram, basePointRate, pointTypeId } = body;
 
     const hotelChain = await prisma.hotelChain.create({
       data: {
         name,
         loyaltyProgram,
         basePointRate: basePointRate != null ? Number(basePointRate) : null,
-        elitePointRate: elitePointRate != null ? Number(elitePointRate) : null,
         pointTypeId: pointTypeId ? Number(pointTypeId) : null,
       },
-      include: { pointType: true },
+      include: { pointType: true, eliteStatuses: true, userStatus: true },
     });
 
     return NextResponse.json(hotelChain, { status: 201 });

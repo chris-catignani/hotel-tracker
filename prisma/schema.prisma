@@ -57,12 +57,13 @@ model HotelChain {
   name           String
   loyaltyProgram String?                @map("loyalty_program")
   basePointRate  Decimal?               @map("base_point_rate") @db.Decimal(10, 4)
-  elitePointRate Decimal?               @map("elite_point_rate") @db.Decimal(10, 4)
   pointTypeId    Int?                   @map("point_type_id")
   pointType      PointType?             @relation(fields: [pointTypeId], references: [id])
   bookings       Booking[]
   promotions     Promotion[]
   hotelChainSubBrands HotelChainSubBrand[]
+  eliteStatuses       HotelChainEliteStatus[]
+  userStatus          UserStatus?
 
   @@map("hotel_chains")
 }
@@ -73,11 +74,33 @@ model HotelChainSubBrand {
   hotelChain     HotelChain  @relation(fields: [hotelChainId], references: [id], onDelete: Cascade)
   name           String
   basePointRate  Decimal?    @map("base_point_rate") @db.Decimal(10, 4)
-  elitePointRate Decimal?    @map("elite_point_rate") @db.Decimal(10, 4)
   bookings       Booking[]
   promotions     Promotion[]
 
   @@map("hotel_chain_sub_brands")
+}
+
+model HotelChainEliteStatus {
+  id              Int         @id @default(autoincrement())
+  hotelChainId    Int         @map("hotel_chain_id")
+  hotelChain      HotelChain  @relation(fields: [hotelChainId], references: [id], onDelete: Cascade)
+  name            String
+  bonusPercentage Decimal?    @map("bonus_percentage") @db.Decimal(10, 4) // e.g. 0.50 for 50%
+  fixedRate       Decimal?    @map("fixed_rate") @db.Decimal(10, 4)       // e.g. 7.0 for 7 points/$1
+  isFixed         Boolean     @default(false) @map("is_fixed")
+  userStatuses    UserStatus[]
+
+  @@map("hotel_chain_elite_statuses")
+}
+
+model UserStatus {
+  id            Int                    @id @default(autoincrement())
+  hotelChainId  Int                    @unique @map("hotel_chain_id")
+  hotelChain    HotelChain             @relation(fields: [hotelChainId], references: [id], onDelete: Cascade)
+  eliteStatusId Int?                   @map("elite_status_id")
+  eliteStatus   HotelChainEliteStatus? @relation(fields: [eliteStatusId], references: [id])
+
+  @@map("user_statuses")
 }
 
 model CreditCard {

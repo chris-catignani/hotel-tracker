@@ -9,22 +9,20 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { name, loyaltyProgram, basePointRate, elitePointRate, pointTypeId } = body;
+    const { name, loyaltyProgram, basePointRate, pointTypeId } = body;
 
     const data: Record<string, unknown> = {};
     if (name !== undefined) data.name = name;
     if (loyaltyProgram !== undefined) data.loyaltyProgram = loyaltyProgram || null;
     if (basePointRate !== undefined)
       data.basePointRate = basePointRate != null ? Number(basePointRate) : null;
-    if (elitePointRate !== undefined)
-      data.elitePointRate = elitePointRate != null ? Number(elitePointRate) : null;
     if (pointTypeId !== undefined)
       data.pointTypeId = pointTypeId ? Number(pointTypeId) : null;
 
     const hotelChain = await prisma.hotelChain.update({
       where: { id: Number(id) },
       data,
-      include: { pointType: true },
+      include: { pointType: true, eliteStatuses: true, userStatus: true },
     });
 
     return NextResponse.json(hotelChain);

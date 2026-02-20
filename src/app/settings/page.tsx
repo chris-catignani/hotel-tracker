@@ -76,7 +76,21 @@ interface HotelChainSubBrand {
   hotelChainId: number;
   name: string;
   basePointRate: number | null;
-  elitePointRate: number | null;
+}
+
+interface HotelChainEliteStatus {
+  id: number;
+  name: string;
+  bonusPercentage: number | null;
+  fixedRate: number | null;
+  isFixed: boolean;
+}
+
+interface UserStatus {
+  id: number;
+  hotelChainId: number;
+  eliteStatusId: number | null;
+  eliteStatus: HotelChainEliteStatus | null;
 }
 
 interface HotelChain {
@@ -84,10 +98,11 @@ interface HotelChain {
   name: string;
   loyaltyProgram: string | null;
   basePointRate: number | null;
-  elitePointRate: number | null;
   pointTypeId: number | null;
   pointType: PointType | null;
   hotelChainSubBrands: HotelChainSubBrand[];
+  eliteStatuses: HotelChainEliteStatus[];
+  userStatus: UserStatus | null;
 }
 
 interface CreditCard {
@@ -112,6 +127,95 @@ const CATEGORY_LABELS: Record<string, string> = {
   airline: "Airline",
   transferable: "Transferable",
 };
+
+// ---------------------------------------------------------------------------
+// User Status Tab
+// ---------------------------------------------------------------------------
+
+function UserStatusTab() {
+  const [userStatuses, setUserStatuses] = useState<UserStatus[]>([]);
+  const [hotelChains, setHotelChains] = useState<HotelChain[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchData = useCallback(async () => {
+    const [statusRes, chainsRes] = await Promise.all([
+      fetch("/api/user-statuses"),
+      fetch("/api/hotel-chains"),
+    ]);
+    if (statusRes.ok) setUserStatuses(await statusRes.json());
+    if (chainsRes.ok) setHotelChains(await chainsRes.json());
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const handleStatusChange = async (hotelChainId: number, eliteStatusId: string) => {
+    setError(null);
+    const res = await fetch("/api/user-statuses", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        hotelChainId,
+        eliteStatusId: eliteStatusId === "none" ? null : Number(eliteStatusId),
+      }),
+    });
+    if (res.ok) {
+      fetchData();
+    } else {
+      setError(await extractApiError(res, "Failed to update status."));
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <ErrorBanner error={error} onDismiss={() => setError(null)} />
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">My Elite Status</h2>
+      </div>
+      <p className="text-sm text-muted-foreground">
+        Select your current elite status level for each hotel chain to improve point earning calculations.
+      </p>
+
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Hotel Chain</TableHead>
+            <TableHead>Current Status</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {hotelChains.map((chain) => {
+            const currentStatus = userStatuses.find((us) => us.hotelChainId === chain.id);
+            return (
+              <TableRow key={chain.id}>
+                <TableCell className="font-medium">{chain.name}</TableCell>
+                <TableCell>
+                  <Select
+                    value={currentStatus?.eliteStatusId ? String(currentStatus.eliteStatusId) : "none"}
+                    onValueChange={(v) => handleStatusChange(chain.id, v)}
+                  >
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue placeholder="Select status..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Base Member / No Status</SelectItem>
+                      {chain.eliteStatuses?.map((status) => (
+                        <SelectItem key={status.id} value={String(status.id)}>
+                          {status.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Point Types Tab
@@ -377,7 +481,6 @@ function HotelChainsTab() {
   const [name, setName] = useState("");
   const [loyaltyProgram, setLoyaltyProgram] = useState("");
   const [basePointRate, setBasePointRate] = useState("");
-  const [elitePointRate, setElitePointRate] = useState("");
   const [pointTypeId, setPointTypeId] = useState("none");
   const [error, setError] = useState<string | null>(null);
 
@@ -386,7 +489,6 @@ function HotelChainsTab() {
   const [editName, setEditName] = useState("");
   const [editLoyaltyProgram, setEditLoyaltyProgram] = useState("");
   const [editBasePointRate, setEditBasePointRate] = useState("");
-  const [editElitePointRate, setEditElitePointRate] = useState("");
   const [editPointTypeId, setEditPointTypeId] = useState("none");
 
   // Hotel chain sub-brands management
@@ -394,12 +496,10 @@ function HotelChainsTab() {
   const [sbHotelChainId, setSbHotelChainId] = useState<number | null>(null);
   const [sbName, setSbName] = useState("");
   const [sbBaseRate, setSbBaseRate] = useState("");
-  const [sbEliteRate, setSbEliteRate] = useState("");
   const [editSbOpen, setEditSbOpen] = useState(false);
   const [editSb, setEditSb] = useState<HotelChainSubBrand | null>(null);
   const [editSbName, setEditSbName] = useState("");
   const [editSbBaseRate, setEditSbBaseRate] = useState("");
-  const [editSbEliteRate, setEditSbEliteRate] = useState("");
 
   const sbHotelChain = hotelChains.find((h) => h.id === sbHotelChainId) ?? null;
 
@@ -426,7 +526,6 @@ function HotelChainsTab() {
         name,
         loyaltyProgram: loyaltyProgram || null,
         basePointRate: basePointRate ? Number(basePointRate) : null,
-        elitePointRate: elitePointRate ? Number(elitePointRate) : null,
         pointTypeId: pointTypeId !== "none" ? Number(pointTypeId) : null,
       }),
     });
@@ -434,7 +533,6 @@ function HotelChainsTab() {
       setName("");
       setLoyaltyProgram("");
       setBasePointRate("");
-      setElitePointRate("");
       setPointTypeId("none");
       setOpen(false);
       fetchData();
@@ -448,7 +546,6 @@ function HotelChainsTab() {
     setEditName(hotelChain.name);
     setEditLoyaltyProgram(hotelChain.loyaltyProgram || "");
     setEditBasePointRate(hotelChain.basePointRate != null ? String(hotelChain.basePointRate) : "");
-    setEditElitePointRate(hotelChain.elitePointRate != null ? String(hotelChain.elitePointRate) : "");
     setEditPointTypeId(hotelChain.pointTypeId != null ? String(hotelChain.pointTypeId) : "none");
     setEditOpen(true);
   };
@@ -463,7 +560,6 @@ function HotelChainsTab() {
         name: editName,
         loyaltyProgram: editLoyaltyProgram || null,
         basePointRate: editBasePointRate ? Number(editBasePointRate) : null,
-        elitePointRate: editElitePointRate ? Number(editElitePointRate) : null,
         pointTypeId: editPointTypeId !== "none" ? Number(editPointTypeId) : null,
       }),
     });
@@ -480,7 +576,6 @@ function HotelChainsTab() {
     setSbHotelChainId(hotelChain.id);
     setSbName("");
     setSbBaseRate("");
-    setSbEliteRate("");
     setSbOpen(true);
   };
 
@@ -493,13 +588,11 @@ function HotelChainsTab() {
       body: JSON.stringify({
         name: sbName,
         basePointRate: sbBaseRate ? Number(sbBaseRate) : null,
-        elitePointRate: sbEliteRate ? Number(sbEliteRate) : null,
       }),
     });
     if (res.ok) {
       setSbName("");
       setSbBaseRate("");
-      setSbEliteRate("");
       fetchData();
     } else {
       setError(await extractApiError(res, "Failed to add hotel chain sub-brand."));
@@ -510,7 +603,6 @@ function HotelChainsTab() {
     setEditSb(sb);
     setEditSbName(sb.name);
     setEditSbBaseRate(sb.basePointRate != null ? String(sb.basePointRate) : "");
-    setEditSbEliteRate(sb.elitePointRate != null ? String(sb.elitePointRate) : "");
     setEditSbOpen(true);
   };
 
@@ -523,7 +615,6 @@ function HotelChainsTab() {
       body: JSON.stringify({
         name: editSbName,
         basePointRate: editSbBaseRate ? Number(editSbBaseRate) : null,
-        elitePointRate: editSbEliteRate ? Number(editSbEliteRate) : null,
       }),
     });
     if (res.ok) {
@@ -594,17 +685,6 @@ function HotelChainsTab() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="hotel-elite-rate">Elite Point Rate (per $1)</Label>
-                <Input
-                  id="hotel-elite-rate"
-                  type="number"
-                  step="0.1"
-                  value={elitePointRate}
-                  onChange={(e) => setElitePointRate(e.target.value)}
-                  placeholder="e.g. 10"
-                />
-              </div>
-              <div className="space-y-2">
                 <Label htmlFor="hotel-point-type">Point Type</Label>
                 <Select value={pointTypeId} onValueChange={setPointTypeId}>
                   <SelectTrigger className="w-full">
@@ -670,17 +750,6 @@ function HotelChainsTab() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-hotel-elite-rate">Elite Point Rate (per $1)</Label>
-              <Input
-                id="edit-hotel-elite-rate"
-                type="number"
-                step="0.1"
-                value={editElitePointRate}
-                onChange={(e) => setEditElitePointRate(e.target.value)}
-                placeholder="e.g. 10"
-              />
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="edit-hotel-point-type">Point Type</Label>
               <Select value={editPointTypeId} onValueChange={setEditPointTypeId}>
                 <SelectTrigger className="w-full">
@@ -722,10 +791,9 @@ function HotelChainsTab() {
                 <div key={sb.id} className="flex items-center justify-between border rounded-md px-3 py-2">
                   <div>
                     <span className="font-medium text-sm">{sb.name}</span>
-                    {(sb.basePointRate != null || sb.elitePointRate != null) && (
+                    {sb.basePointRate != null && (
                       <span className="text-xs text-muted-foreground ml-2">
                         {sb.basePointRate != null ? `Base: ${sb.basePointRate}x` : ""}
-                        {sb.elitePointRate != null ? ` Elite: ${sb.elitePointRate}x` : ""}
                       </span>
                     )}
                   </div>
@@ -747,29 +815,16 @@ function HotelChainsTab() {
                   placeholder="e.g. Park Hyatt"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <Label htmlFor="sb-base-rate" className="text-xs">Base Rate (per $1)</Label>
-                  <Input
-                    id="sb-base-rate"
-                    type="number"
-                    step="0.1"
-                    value={sbBaseRate}
-                    onChange={(e) => setSbBaseRate(e.target.value)}
-                    placeholder="Inherit"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="sb-elite-rate" className="text-xs">Elite Rate (per $1)</Label>
-                  <Input
-                    id="sb-elite-rate"
-                    type="number"
-                    step="0.1"
-                    value={sbEliteRate}
-                    onChange={(e) => setSbEliteRate(e.target.value)}
-                    placeholder="Inherit"
-                  />
-                </div>
+              <div className="space-y-1">
+                <Label htmlFor="sb-base-rate" className="text-xs">Base Rate (per $1)</Label>
+                <Input
+                  id="sb-base-rate"
+                  type="number"
+                  step="0.1"
+                  value={sbBaseRate}
+                  onChange={(e) => setSbBaseRate(e.target.value)}
+                  placeholder="Inherit"
+                />
               </div>
               <Button size="sm" onClick={handleAddSubBrand} disabled={!sbName.trim()}>
                 Add Sub-brand
@@ -796,29 +851,16 @@ function HotelChainsTab() {
                 placeholder="Sub-brand name"
               />
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-2">
-                <Label htmlFor="edit-sb-base-rate">Base Rate (per $1)</Label>
-                <Input
-                  id="edit-sb-base-rate"
-                  type="number"
-                  step="0.1"
-                  value={editSbBaseRate}
-                  onChange={(e) => setEditSbBaseRate(e.target.value)}
-                  placeholder="Inherit from chain"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-sb-elite-rate">Elite Rate (per $1)</Label>
-                <Input
-                  id="edit-sb-elite-rate"
-                  type="number"
-                  step="0.1"
-                  value={editSbEliteRate}
-                  onChange={(e) => setEditSbEliteRate(e.target.value)}
-                  placeholder="Inherit from chain"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-sb-base-rate">Base Rate (per $1)</Label>
+              <Input
+                id="edit-sb-base-rate"
+                type="number"
+                step="0.1"
+                value={editSbBaseRate}
+                onChange={(e) => setEditSbBaseRate(e.target.value)}
+                placeholder="Inherit from chain"
+              />
             </div>
           </div>
           <DialogFooter>
@@ -833,7 +875,6 @@ function HotelChainsTab() {
             <TableHead>Name</TableHead>
             <TableHead>Loyalty Program</TableHead>
             <TableHead>Base Rate</TableHead>
-            <TableHead>Elite Rate</TableHead>
             <TableHead>Point Type</TableHead>
             <TableHead></TableHead>
           </TableRow>
@@ -841,7 +882,7 @@ function HotelChainsTab() {
         <TableBody>
           {hotelChains.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-center text-muted-foreground">
+              <TableCell colSpan={5} className="text-center text-muted-foreground">
                 No hotel chains added yet.
               </TableCell>
             </TableRow>
@@ -851,7 +892,6 @@ function HotelChainsTab() {
                 <TableCell>{hotelChain.name}</TableCell>
                 <TableCell>{hotelChain.loyaltyProgram ?? "-"}</TableCell>
                 <TableCell>{hotelChain.basePointRate ?? "-"}</TableCell>
-                <TableCell>{hotelChain.elitePointRate ?? "-"}</TableCell>
                 <TableCell>{hotelChain.pointType?.name ?? "—"}</TableCell>
                 <TableCell>
                   <div className="flex gap-2">
@@ -1579,14 +1619,18 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Settings</h1>
-      <Tabs defaultValue="point-types">
+      <Tabs defaultValue="my-status">
         <TabsList>
+          <TabsTrigger value="my-status">My Status</TabsTrigger>
           <TabsTrigger value="point-types">Point Types</TabsTrigger>
           <TabsTrigger value="hotels">Hotel Chains</TabsTrigger>
           <TabsTrigger value="credit-cards">Credit Cards</TabsTrigger>
           <TabsTrigger value="portals">Shopping Portals</TabsTrigger>
           <TabsTrigger value="ota-agencies">OTA Agencies</TabsTrigger>
         </TabsList>
+        <TabsContent value="my-status">
+          <UserStatusTab />
+        </TabsContent>
         <TabsContent value="point-types">
           <PointTypesTab />
         </TabsContent>

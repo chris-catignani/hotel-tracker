@@ -25,14 +25,13 @@ export async function POST(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { name, basePointRate, elitePointRate } = body;
+    const { name, basePointRate } = body;
 
     const hotelChainSubBrand = await prisma.hotelChainSubBrand.create({
       data: {
         hotelChainId: Number(id),
         name,
         basePointRate: basePointRate != null ? Number(basePointRate) : null,
-        elitePointRate: elitePointRate != null ? Number(elitePointRate) : null,
       },
     });
 

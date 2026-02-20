@@ -9,15 +9,12 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { name, basePointRate, elitePointRate } = body;
+    const { name, basePointRate } = body;
 
     const data: Record<string, unknown> = {};
     if (name !== undefined) data.name = name;
     if (basePointRate !== undefined)
       data.basePointRate = basePointRate != null ? Number(basePointRate) : null;
-    if (elitePointRate !== undefined)
-      data.elitePointRate =
-        elitePointRate != null ? Number(elitePointRate) : null;
 
     const hotelChainSubBrand = await prisma.hotelChainSubBrand.update({
       where: { id: Number(id) },
