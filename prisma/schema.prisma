@@ -85,6 +85,7 @@ model HotelChainEliteStatus {
   hotelChainId    Int         @map("hotel_chain_id")
   hotelChain      HotelChain  @relation(fields: [hotelChainId], references: [id], onDelete: Cascade)
   name            String
+  order           Int         @default(0)
   bonusPercentage Decimal?    @map("bonus_percentage") @db.Decimal(10, 4) // e.g. 0.50 for 50%
   fixedRate       Decimal?    @map("fixed_rate") @db.Decimal(10, 4)       // e.g. 7.0 for 7 points/$1
   isFixed         Boolean     @default(false) @map("is_fixed")

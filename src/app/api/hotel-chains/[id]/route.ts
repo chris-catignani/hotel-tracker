@@ -22,7 +22,11 @@ export async function PUT(
     const hotelChain = await prisma.hotelChain.update({
       where: { id: Number(id) },
       data,
-      include: { pointType: true, eliteStatuses: true, userStatus: true },
+      include: {
+        pointType: true,
+        eliteStatuses: { orderBy: { order: "asc" } },
+        userStatus: { include: { eliteStatus: true } },
+      },
     });
 
     return NextResponse.json(hotelChain);

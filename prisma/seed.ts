@@ -75,10 +75,10 @@ async function main() {
   await prisma.hotelChainEliteStatus.deleteMany({ where: { hotelChainId: HOTEL_ID.HILTON } });
   await prisma.hotelChainEliteStatus.createMany({
     data: [
-      { hotelChainId: HOTEL_ID.HILTON, name: "Silver", bonusPercentage: 0.20 },
-      { hotelChainId: HOTEL_ID.HILTON, name: "Gold", bonusPercentage: 0.80 },
-      { hotelChainId: HOTEL_ID.HILTON, name: "Diamond", bonusPercentage: 1.00 },
-      { hotelChainId: HOTEL_ID.HILTON, name: "Diamond Reserve", bonusPercentage: 1.20 },
+      { hotelChainId: HOTEL_ID.HILTON, name: "Silver", bonusPercentage: 0.20, order: 1 },
+      { hotelChainId: HOTEL_ID.HILTON, name: "Gold", bonusPercentage: 0.80, order: 2 },
+      { hotelChainId: HOTEL_ID.HILTON, name: "Diamond", bonusPercentage: 1.00, order: 3 },
+      { hotelChainId: HOTEL_ID.HILTON, name: "Diamond Reserve", bonusPercentage: 1.20, order: 4 },
     ],
   });
 
@@ -90,11 +90,11 @@ async function main() {
   await prisma.hotelChainEliteStatus.deleteMany({ where: { hotelChainId: HOTEL_ID.MARRIOTT } });
   await prisma.hotelChainEliteStatus.createMany({
     data: [
-      { hotelChainId: HOTEL_ID.MARRIOTT, name: "Silver", bonusPercentage: 0.10 },
-      { hotelChainId: HOTEL_ID.MARRIOTT, name: "Gold", bonusPercentage: 0.25 },
-      { hotelChainId: HOTEL_ID.MARRIOTT, name: "Platinum", bonusPercentage: 0.50 },
-      { hotelChainId: HOTEL_ID.MARRIOTT, name: "Titanium", bonusPercentage: 0.75 },
-      { hotelChainId: HOTEL_ID.MARRIOTT, name: "Ambassador", bonusPercentage: 0.75 },
+      { hotelChainId: HOTEL_ID.MARRIOTT, name: "Silver", bonusPercentage: 0.10, order: 1 },
+      { hotelChainId: HOTEL_ID.MARRIOTT, name: "Gold", bonusPercentage: 0.25, order: 2 },
+      { hotelChainId: HOTEL_ID.MARRIOTT, name: "Platinum", bonusPercentage: 0.50, order: 3 },
+      { hotelChainId: HOTEL_ID.MARRIOTT, name: "Titanium", bonusPercentage: 0.75, order: 4 },
+      { hotelChainId: HOTEL_ID.MARRIOTT, name: "Ambassador", bonusPercentage: 0.75, order: 5 },
     ],
   });
 
@@ -106,9 +106,9 @@ async function main() {
   await prisma.hotelChainEliteStatus.deleteMany({ where: { hotelChainId: HOTEL_ID.HYATT } });
   await prisma.hotelChainEliteStatus.createMany({
     data: [
-      { hotelChainId: HOTEL_ID.HYATT, name: "Discoverist", bonusPercentage: 0.10 },
-      { hotelChainId: HOTEL_ID.HYATT, name: "Explorist", bonusPercentage: 0.20 },
-      { hotelChainId: HOTEL_ID.HYATT, name: "Globalist", bonusPercentage: 0.30 },
+      { hotelChainId: HOTEL_ID.HYATT, name: "Discoverist", bonusPercentage: 0.10, order: 1 },
+      { hotelChainId: HOTEL_ID.HYATT, name: "Explorist", bonusPercentage: 0.20, order: 2 },
+      { hotelChainId: HOTEL_ID.HYATT, name: "Globalist", bonusPercentage: 0.30, order: 3 },
     ],
   });
 
@@ -120,10 +120,10 @@ async function main() {
   await prisma.hotelChainEliteStatus.deleteMany({ where: { hotelChainId: HOTEL_ID.IHG } });
   await prisma.hotelChainEliteStatus.createMany({
     data: [
-      { hotelChainId: HOTEL_ID.IHG, name: "Silver", bonusPercentage: 0.20 },
-      { hotelChainId: HOTEL_ID.IHG, name: "Gold", bonusPercentage: 0.40 },
-      { hotelChainId: HOTEL_ID.IHG, name: "Platinum", bonusPercentage: 0.60 },
-      { hotelChainId: HOTEL_ID.IHG, name: "Diamond", bonusPercentage: 1.00 },
+      { hotelChainId: HOTEL_ID.IHG, name: "Silver", bonusPercentage: 0.20, order: 1 },
+      { hotelChainId: HOTEL_ID.IHG, name: "Gold", bonusPercentage: 0.40, order: 2 },
+      { hotelChainId: HOTEL_ID.IHG, name: "Platinum", bonusPercentage: 0.60, order: 3 },
+      { hotelChainId: HOTEL_ID.IHG, name: "Diamond", bonusPercentage: 1.00, order: 4 },
     ],
   });
 
@@ -135,10 +135,10 @@ async function main() {
   await prisma.hotelChainEliteStatus.deleteMany({ where: { hotelChainId: HOTEL_ID.GHA_DISCOVERY } });
   await prisma.hotelChainEliteStatus.createMany({
     data: [
-      { hotelChainId: HOTEL_ID.GHA_DISCOVERY, name: "Silver", fixedRate: 4, isFixed: true },
-      { hotelChainId: HOTEL_ID.GHA_DISCOVERY, name: "Gold", fixedRate: 5, isFixed: true },
-      { hotelChainId: HOTEL_ID.GHA_DISCOVERY, name: "Platinum", fixedRate: 6, isFixed: true },
-      { hotelChainId: HOTEL_ID.GHA_DISCOVERY, name: "Titanium", fixedRate: 7, isFixed: true },
+      { hotelChainId: HOTEL_ID.GHA_DISCOVERY, name: "Silver", fixedRate: 4, isFixed: true, order: 1 },
+      { hotelChainId: HOTEL_ID.GHA_DISCOVERY, name: "Gold", fixedRate: 5, isFixed: true, order: 2 },
+      { hotelChainId: HOTEL_ID.GHA_DISCOVERY, name: "Platinum", fixedRate: 6, isFixed: true, order: 3 },
+      { hotelChainId: HOTEL_ID.GHA_DISCOVERY, name: "Titanium", fixedRate: 7, isFixed: true, order: 4 },
     ],
   });
 
@@ -147,10 +147,19 @@ async function main() {
     update: { name: "Accor", loyaltyProgram: "ALL - Accor Live Limitless", basePointRate: 25, pointTypeId: 6 },
     create: { id: HOTEL_ID.ACCOR, name: "Accor", loyaltyProgram: "ALL - Accor Live Limitless", basePointRate: 25, pointTypeId: 6 },
   });
+  await prisma.hotelChainEliteStatus.deleteMany({ where: { hotelChainId: HOTEL_ID.ACCOR } });
+  await prisma.hotelChainEliteStatus.createMany({
+    data: [
+      { hotelChainId: HOTEL_ID.ACCOR, name: "Silver", bonusPercentage: 0.0, order: 1 },
+      { hotelChainId: HOTEL_ID.ACCOR, name: "Gold", bonusPercentage: 0.0, order: 2 },
+      { hotelChainId: HOTEL_ID.ACCOR, name: "Platinum", bonusPercentage: 0.0, order: 3 },
+      { hotelChainId: HOTEL_ID.ACCOR, name: "Diamond", bonusPercentage: 0.0, order: 4 },
+    ],
+  });
 
   // Seed UserStatus
-  const marriottPlatinum = await prisma.hotelChainEliteStatus.findFirst({
-    where: { hotelChainId: HOTEL_ID.MARRIOTT, name: "Platinum" },
+  const marriottTitanium = await prisma.hotelChainEliteStatus.findFirst({
+    where: { hotelChainId: HOTEL_ID.MARRIOTT, name: "Titanium" },
   });
   const hyattGlobalist = await prisma.hotelChainEliteStatus.findFirst({
     where: { hotelChainId: HOTEL_ID.HYATT, name: "Globalist" },
@@ -165,7 +174,7 @@ async function main() {
     where: { hotelChainId: HOTEL_ID.GHA_DISCOVERY, name: "Titanium" },
   });
 
-  if (marriottPlatinum) await prisma.userStatus.upsert({ where: { hotelChainId: HOTEL_ID.MARRIOTT }, update: { eliteStatusId: marriottPlatinum.id }, create: { hotelChainId: HOTEL_ID.MARRIOTT, eliteStatusId: marriottPlatinum.id } });
+  if (marriottTitanium) await prisma.userStatus.upsert({ where: { hotelChainId: HOTEL_ID.MARRIOTT }, update: { eliteStatusId: marriottTitanium.id }, create: { hotelChainId: HOTEL_ID.MARRIOTT, eliteStatusId: marriottTitanium.id } });
   if (hyattGlobalist) await prisma.userStatus.upsert({ where: { hotelChainId: HOTEL_ID.HYATT }, update: { eliteStatusId: hyattGlobalist.id }, create: { hotelChainId: HOTEL_ID.HYATT, eliteStatusId: hyattGlobalist.id } });
   if (hiltonDiamond) await prisma.userStatus.upsert({ where: { hotelChainId: HOTEL_ID.HILTON }, update: { eliteStatusId: hiltonDiamond.id }, create: { hotelChainId: HOTEL_ID.HILTON, eliteStatusId: hiltonDiamond.id } });
   if (ihgDiamond) await prisma.userStatus.upsert({ where: { hotelChainId: HOTEL_ID.IHG }, update: { eliteStatusId: ihgDiamond.id }, create: { hotelChainId: HOTEL_ID.IHG, eliteStatusId: ihgDiamond.id } });
