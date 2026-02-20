@@ -24,7 +24,7 @@ export async function PUT(
       data,
       include: {
         pointType: true,
-        eliteStatuses: { orderBy: { order: "asc" } },
+        eliteStatuses: { orderBy: { eliteTierLevel: "asc" } },
         userStatus: { include: { eliteStatus: true } },
       },
     });

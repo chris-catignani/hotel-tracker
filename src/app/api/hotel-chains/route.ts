@@ -8,7 +8,7 @@ export async function GET() {
       include: {
         hotelChainSubBrands: { orderBy: { name: "asc" } },
         pointType: true,
-        eliteStatuses: { orderBy: { order: "asc" } },
+        eliteStatuses: { orderBy: { eliteTierLevel: "asc" } },
         userStatus: { include: { eliteStatus: true } },
       },
       orderBy: { name: "asc" },
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       },
       include: {
         pointType: true,
-        eliteStatuses: { orderBy: { order: "asc" } },
+        eliteStatuses: { orderBy: { eliteTierLevel: "asc" } },
         userStatus: true,
       },
     });
