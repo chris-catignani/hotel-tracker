@@ -78,6 +78,7 @@ async function main() {
       { hotelChainId: HOTEL_ID.HILTON, name: "Silver", bonusPercentage: 0.20 },
       { hotelChainId: HOTEL_ID.HILTON, name: "Gold", bonusPercentage: 0.80 },
       { hotelChainId: HOTEL_ID.HILTON, name: "Diamond", bonusPercentage: 1.00 },
+      { hotelChainId: HOTEL_ID.HILTON, name: "Diamond Reserve", bonusPercentage: 1.20 },
     ],
   });
 
