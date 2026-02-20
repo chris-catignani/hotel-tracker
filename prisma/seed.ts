@@ -157,8 +157,8 @@ async function main() {
   const hiltonDiamond = await prisma.hotelChainEliteStatus.findFirst({
     where: { hotelChainId: HOTEL_ID.HILTON, name: "Diamond" },
   });
-  const ihgPlatinum = await prisma.hotelChainEliteStatus.findFirst({
-    where: { hotelChainId: HOTEL_ID.IHG, name: "Platinum" },
+  const ihgDiamond = await prisma.hotelChainEliteStatus.findFirst({
+    where: { hotelChainId: HOTEL_ID.IHG, name: "Diamond" },
   });
   const ghaTitanium = await prisma.hotelChainEliteStatus.findFirst({
     where: { hotelChainId: HOTEL_ID.GHA_DISCOVERY, name: "Titanium" },
@@ -167,7 +167,7 @@ async function main() {
   if (marriottPlatinum) await prisma.userStatus.upsert({ where: { hotelChainId: HOTEL_ID.MARRIOTT }, update: { eliteStatusId: marriottPlatinum.id }, create: { hotelChainId: HOTEL_ID.MARRIOTT, eliteStatusId: marriottPlatinum.id } });
   if (hyattGlobalist) await prisma.userStatus.upsert({ where: { hotelChainId: HOTEL_ID.HYATT }, update: { eliteStatusId: hyattGlobalist.id }, create: { hotelChainId: HOTEL_ID.HYATT, eliteStatusId: hyattGlobalist.id } });
   if (hiltonDiamond) await prisma.userStatus.upsert({ where: { hotelChainId: HOTEL_ID.HILTON }, update: { eliteStatusId: hiltonDiamond.id }, create: { hotelChainId: HOTEL_ID.HILTON, eliteStatusId: hiltonDiamond.id } });
-  if (ihgPlatinum) await prisma.userStatus.upsert({ where: { hotelChainId: HOTEL_ID.IHG }, update: { eliteStatusId: ihgPlatinum.id }, create: { hotelChainId: HOTEL_ID.IHG, eliteStatusId: ihgPlatinum.id } });
+  if (ihgDiamond) await prisma.userStatus.upsert({ where: { hotelChainId: HOTEL_ID.IHG }, update: { eliteStatusId: ihgDiamond.id }, create: { hotelChainId: HOTEL_ID.IHG, eliteStatusId: ihgDiamond.id } });
   if (ghaTitanium) await prisma.userStatus.upsert({ where: { hotelChainId: HOTEL_ID.GHA_DISCOVERY }, update: { eliteStatusId: ghaTitanium.id }, create: { hotelChainId: HOTEL_ID.GHA_DISCOVERY, eliteStatusId: ghaTitanium.id } });
 
   // Credit Cards
