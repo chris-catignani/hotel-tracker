@@ -187,10 +187,6 @@ export default function NewBookingPage() {
     }
   }, [pretaxCost, totalCost]);
 
-  // Reset sub-brand when hotel changes
-  useEffect(() => {
-    setSubBrandId("none");
-  }, [hotelId]);
 
   // Auto-calculate loyalty points when hotel, sub-brand, or pretaxCost changes
   useEffect(() => {
@@ -298,7 +294,18 @@ export default function NewBookingPage() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="hotelId">Hotel Chain *</Label>
-                <Select value={hotelId} onValueChange={setHotelId}>
+                <Select value={hotelId} onValueChange={(val) => {
+                  setHotelId(val);
+                  setSubBrandId("none");
+                  const selectedHotel = hotels.find((h) => h.id === Number(val));
+                  setCertificates((prev) =>
+                    prev.filter((cert) => {
+                      if (!cert) return true;
+                      const opt = CERT_TYPE_OPTIONS.find((o) => o.value === cert);
+                      return opt && opt.hotelChain === selectedHotel?.name;
+                    })
+                  );
+                }}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select hotel chain..." />
                   </SelectTrigger>
@@ -518,11 +525,16 @@ export default function NewBookingPage() {
                         <SelectValue placeholder="Select certificate type..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {CERT_TYPE_OPTIONS.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </SelectItem>
-                        ))}
+                        {CERT_TYPE_OPTIONS
+                          .filter((opt) => {
+                            const selectedHotel = hotels.find((h) => h.id === Number(hotelId));
+                            return opt.hotelChain === selectedHotel?.name;
+                          })
+                          .map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                     <Button
