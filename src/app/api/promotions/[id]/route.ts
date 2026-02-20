@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
-import { matchPromotionsForAllBookings } from "@/lib/promotion-matching";
+import { matchPromotionsForAffectedBookings } from "@/lib/promotion-matching";
 
 export async function GET(
   request: NextRequest,
@@ -81,7 +81,7 @@ export async function PUT(
       data,
     });
 
-    await matchPromotionsForAllBookings();
+    await matchPromotionsForAffectedBookings(promotion.id);
 
     return NextResponse.json(promotion);
   } catch (error) {
@@ -98,8 +98,6 @@ export async function DELETE(
     await prisma.promotion.delete({
       where: { id: Number(id) },
     });
-
-    await matchPromotionsForAllBookings();
 
     return NextResponse.json({ message: "Promotion deleted" });
   } catch (error) {

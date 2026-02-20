@@ -115,12 +115,38 @@ export async function matchPromotionsForBooking(
   return createdRecords;
 }
 
-export async function matchPromotionsForAllBookings(): Promise<void> {
-  const bookings = await prisma.booking.findMany({
+export async function matchPromotionsForAffectedBookings(
+  promotionId: number
+): Promise<void> {
+  const promotion = await prisma.promotion.findUnique({
+    where: { id: promotionId },
+  });
+
+  if (!promotion) return;
+
+  // Find bookings that match the promotion's core criteria or already have it applied
+  const affectedBookings = await prisma.booking.findMany({
+    where: {
+      OR: [
+        { hotelChainId: promotion.hotelChainId ?? undefined },
+        { creditCardId: promotion.creditCardId ?? undefined },
+        { shoppingPortalId: promotion.shoppingPortalId ?? undefined },
+        {
+          bookingPromotions: {
+            some: { promotionId: promotion.id },
+          },
+        },
+      ].filter((condition) => {
+        // Remove conditions that are undefined/null to avoid matching everything
+        const value = Object.values(condition)[0];
+        return value !== undefined && value !== null;
+      }),
+    },
     select: { id: true },
   });
 
-  for (const booking of bookings) {
-    await matchPromotionsForBooking(booking.id);
-  }
+  // Re-evaluate affected bookings in parallel
+  await Promise.all(
+    affectedBookings.map((b) => matchPromotionsForBooking(b.id))
+  );
 }
