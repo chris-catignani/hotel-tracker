@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { PromotionType } from "@prisma/client";
 import { apiError } from "@/lib/api-error";
+import { matchPromotionsForAffectedBookings } from "@/lib/promotion-matching";
 
 export async function GET(request: NextRequest) {
   try {
@@ -63,6 +64,8 @@ export async function POST(request: NextRequest) {
         isActive: isActive !== undefined ? isActive : true,
       },
     });
+
+    await matchPromotionsForAffectedBookings(promotion.id);
 
     return NextResponse.json(promotion, { status: 201 });
   } catch (error) {

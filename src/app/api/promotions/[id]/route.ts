@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
+import { matchPromotionsForAffectedBookings, reevaluateBookings } from "@/lib/promotion-matching";
 
 export async function GET(
   request: NextRequest,
@@ -80,6 +81,8 @@ export async function PUT(
       data,
     });
 
+    await matchPromotionsForAffectedBookings(promotion.id);
+
     return NextResponse.json(promotion);
   } catch (error) {
     return apiError("Failed to update promotion", error);
@@ -92,9 +95,29 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    await prisma.promotion.delete({
-      where: { id: Number(id) },
+    const promotionId = Number(id);
+
+    // Find bookings that currently have this promotion applied
+    const affectedBookings = await prisma.booking.findMany({
+      where: {
+        bookingPromotions: {
+          some: { promotionId },
+        },
+      },
+      select: { id: true },
     });
+
+    await prisma.promotion.delete({
+      where: { id: promotionId },
+    });
+
+    // Re-evaluate affected bookings after deletion.
+    // Note: While Prisma cascade deletes will remove BookingPromotion records, 
+    // we manually re-evaluate to ensure the bookings are correctly updated 
+    // (e.g., if other promotions now apply or if summary totals need refresh).
+    if (affectedBookings.length > 0) {
+      await reevaluateBookings(affectedBookings.map((b) => b.id));
+    }
 
     return NextResponse.json({ message: "Promotion deleted" });
   } catch (error) {
