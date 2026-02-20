@@ -297,12 +297,11 @@ export default function NewBookingPage() {
                 <Select value={hotelId} onValueChange={(val) => {
                   setHotelId(val);
                   setSubBrandId("none");
-                  const selectedHotel = hotels.find((h) => h.id === Number(val));
                   setCertificates((prev) =>
                     prev.filter((cert) => {
                       if (!cert) return true;
                       const opt = CERT_TYPE_OPTIONS.find((o) => o.value === cert);
-                      return opt && opt.hotelChain === selectedHotel?.name;
+                      return opt && opt.hotelId === Number(val);
                     })
                   );
                 }}>
@@ -526,10 +525,7 @@ export default function NewBookingPage() {
                       </SelectTrigger>
                       <SelectContent>
                         {CERT_TYPE_OPTIONS
-                          .filter((opt) => {
-                            const selectedHotel = hotels.find((h) => h.id === Number(hotelId));
-                            return opt.hotelChain === selectedHotel?.name;
-                          })
+                          .filter((opt) => opt.hotelId === Number(hotelId))
                           .map((opt) => (
                             <SelectItem key={opt.value} value={opt.value}>
                               {opt.label}
