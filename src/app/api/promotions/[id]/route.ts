@@ -11,8 +11,8 @@ export async function GET(
     const promotion = await prisma.promotion.findUnique({
       where: { id: Number(id) },
       include: {
-        hotel: true,
-        subBrand: true,
+        hotelChain: true,
+        hotelChainSubBrand: true,
         creditCard: true,
         shoppingPortal: true,
       },
@@ -43,8 +43,8 @@ export async function PUT(
       type,
       valueType,
       value,
-      hotelId,
-      subBrandId,
+      hotelChainId,
+      hotelChainSubBrandId,
       creditCardId,
       shoppingPortalId,
       minSpend,
@@ -58,9 +58,9 @@ export async function PUT(
     if (type !== undefined) data.type = type;
     if (valueType !== undefined) data.valueType = valueType;
     if (value !== undefined) data.value = Number(value);
-    if (hotelId !== undefined) data.hotelId = hotelId ? Number(hotelId) : null;
-    if (subBrandId !== undefined)
-      data.subBrandId = subBrandId ? Number(subBrandId) : null;
+    if (hotelChainId !== undefined) data.hotelChainId = hotelChainId ? Number(hotelChainId) : null;
+    if (hotelChainSubBrandId !== undefined)
+      data.hotelChainSubBrandId = hotelChainSubBrandId ? Number(hotelChainSubBrandId) : null;
     if (creditCardId !== undefined)
       data.creditCardId = creditCardId ? Number(creditCardId) : null;
     if (shoppingPortalId !== undefined)

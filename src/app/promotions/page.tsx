@@ -21,7 +21,7 @@ interface Promotion {
   type: "credit_card" | "portal" | "loyalty";
   valueType: "fixed" | "percentage" | "points_multiplier";
   value: string;
-  hotelId: number | null;
+  hotelChainId: number | null;
   creditCardId: number | null;
   shoppingPortalId: number | null;
   minSpend: string | null;
@@ -29,7 +29,7 @@ interface Promotion {
   endDate: string | null;
   isActive: boolean;
   createdAt: string;
-  hotel: { id: number; name: string } | null;
+  hotelChain: { id: number; name: string } | null;
   creditCard: { id: number; name: string } | null;
   shoppingPortal: { id: number; name: string } | null;
 }
@@ -60,7 +60,7 @@ function formatDateRange(startDate: string | null, endDate: string | null): stri
 }
 
 function getLinkedName(promo: Promotion): string {
-  if (promo.hotel) return promo.hotel.name;
+  if (promo.hotelChain) return promo.hotelChain.name;
   if (promo.creditCard) return promo.creditCard.name;
   if (promo.shoppingPortal) return promo.shoppingPortal.name;
   return "-";

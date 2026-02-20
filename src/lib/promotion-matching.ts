@@ -7,8 +7,8 @@ export async function matchPromotionsForBooking(
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
     include: {
-      hotel: { include: { pointType: true } },
-      subBrand: true,
+      hotelChain: { include: { pointType: true } },
+      hotelChainSubBrand: true,
       creditCard: { include: { pointType: true } },
       shoppingPortal: true,
     },
@@ -38,14 +38,14 @@ export async function matchPromotionsForBooking(
         typeMatches = promo.shoppingPortalId === booking.shoppingPortalId;
         break;
       case PromotionType.loyalty:
-        typeMatches = promo.hotelId === booking.hotelId;
+        typeMatches = promo.hotelChainId === booking.hotelChainId;
         break;
     }
 
     if (!typeMatches) continue;
 
     // Sub-brand filter: if promo is scoped to a sub-brand, booking must match
-    if (promo.subBrandId !== null && promo.subBrandId !== booking.subBrandId) continue;
+    if (promo.hotelChainSubBrandId !== null && promo.hotelChainSubBrandId !== booking.hotelChainSubBrandId) continue;
 
     // Date range check
     if (promo.startDate || promo.endDate) {

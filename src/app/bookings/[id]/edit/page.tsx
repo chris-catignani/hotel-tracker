@@ -47,20 +47,20 @@ type PaymentType = typeof PAYMENT_TYPES[number]["value"];
 // Types
 // ---------------------------------------------------------------------------
 
-interface HotelSubBrand {
+interface HotelChainSubBrand {
   id: number;
   name: string;
   basePointRate: number | null;
   elitePointRate: number | null;
 }
 
-interface Hotel {
+interface HotelChain {
   id: number;
   name: string;
   loyaltyProgram: string | null;
   basePointRate: number | null;
   elitePointRate: number | null;
-  subBrands: HotelSubBrand[];
+  hotelChainSubBrands: HotelChainSubBrand[];
 }
 
 interface CreditCard {
@@ -84,8 +84,8 @@ interface OtaAgency {
 
 interface Booking {
   id: number;
-  hotelId: number;
-  subBrandId: number | null;
+  hotelChainId: number;
+  hotelChainSubBrandId: number | null;
   propertyName: string;
   checkIn: string;
   checkOut: string;
@@ -109,8 +109,8 @@ interface Booking {
 }
 
 const BOOKING_SOURCE_OPTIONS = [
-  { value: "direct_web", label: "Direct — Hotel Website" },
-  { value: "direct_app", label: "Direct — Hotel App" },
+  { value: "direct_web", label: "Direct — Hotel Chain Website" },
+  { value: "direct_app", label: "Direct — Hotel Chain App" },
   { value: "ota", label: "Online Travel Agency (OTA)" },
   { value: "other", label: "Other" },
 ];
@@ -171,14 +171,14 @@ export default function EditBookingPage() {
   const router = useRouter();
 
   // Reference data
-  const [hotels, setHotels] = useState<Hotel[]>([]);
+  const [hotelChains, setHotelChains] = useState<HotelChain[]>([]);
   const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
   const [portals, setPortals] = useState<ShoppingPortal[]>([]);
   const [otaAgencies, setOtaAgencies] = useState<OtaAgency[]>([]);
 
   // Form fields
-  const [hotelId, setHotelId] = useState("");
-  const [subBrandId, setSubBrandId] = useState("none");
+  const [hotelChainId, setHotelChainId] = useState("");
+  const [hotelChainSubBrandId, setHotelChainSubBrandId] = useState("none");
   const [propertyName, setPropertyName] = useState("");
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
@@ -212,15 +212,15 @@ export default function EditBookingPage() {
   // Fetch reference data and existing booking
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const [hotelsRes, cardsRes, portalsRes, agenciesRes, bookingRes] = await Promise.all([
-      fetch("/api/hotels"),
+    const [hotelChainsRes, cardsRes, portalsRes, agenciesRes, bookingRes] = await Promise.all([
+      fetch("/api/hotel-chains"),
       fetch("/api/credit-cards"),
       fetch("/api/portals"),
       fetch("/api/ota-agencies"),
       fetch(`/api/bookings/${id}`),
     ]);
 
-    if (hotelsRes.ok) setHotels(await hotelsRes.json());
+    if (hotelChainsRes.ok) setHotelChains(await hotelChainsRes.json());
     if (cardsRes.ok) setCreditCards(await cardsRes.json());
     if (agenciesRes.ok) setOtaAgencies(await agenciesRes.json());
 
@@ -232,8 +232,8 @@ export default function EditBookingPage() {
 
     if (bookingRes.ok) {
       const booking: Booking = await bookingRes.json();
-      setHotelId(String(booking.hotelId));
-      setSubBrandId(booking.subBrandId ? String(booking.subBrandId) : "none");
+      setHotelChainId(String(booking.hotelChainId));
+      setHotelChainSubBrandId(booking.hotelChainSubBrandId ? String(booking.hotelChainSubBrandId) : "none");
       setPropertyName(booking.propertyName);
       setCheckIn(toDateInputValue(booking.checkIn));
       setCheckOut(toDateInputValue(booking.checkOut));
@@ -308,21 +308,21 @@ export default function EditBookingPage() {
   }, [pretaxCost, totalCost, initialized]);
 
 
-  // Auto-calculate loyalty points when hotel, sub-brand, or pretaxCost changes (only after initial load)
+  // Auto-calculate loyalty points when hotel chain, sub-brand, or pretaxCost changes (only after initial load)
   useEffect(() => {
     if (!initialized) return;
-    if (hotelId && pretaxCost) {
-      const hotel = hotels.find((h) => h.id === Number(hotelId));
-      const subBrand = subBrandId !== "none"
-        ? hotel?.subBrands.find((sb) => sb.id === Number(subBrandId))
+    if (hotelChainId && pretaxCost) {
+      const hotelChain = hotelChains.find((h) => h.id === Number(hotelChainId));
+      const subBrand = hotelChainSubBrandId !== "none"
+        ? hotelChain?.hotelChainSubBrands.find((sb) => sb.id === Number(hotelChainSubBrandId))
         : null;
-      const baseRate = Number(subBrand?.basePointRate ?? hotel?.basePointRate ?? null);
-      const eliteRate = Number(subBrand?.elitePointRate ?? hotel?.elitePointRate ?? 0);
-      if (!isNaN(baseRate) && (subBrand?.basePointRate != null || hotel?.basePointRate != null)) {
+      const baseRate = Number(subBrand?.basePointRate ?? hotelChain?.basePointRate ?? null);
+      const eliteRate = Number(subBrand?.elitePointRate ?? hotelChain?.elitePointRate ?? 0);
+      if (!isNaN(baseRate) && (subBrand?.basePointRate != null || hotelChain?.basePointRate != null)) {
         setLoyaltyPointsEarned(String(Math.round(Number(pretaxCost) * (baseRate + eliteRate))));
       }
     }
-  }, [hotelId, subBrandId, pretaxCost, hotels, initialized]);
+  }, [hotelChainId, hotelChainSubBrandId, pretaxCost, hotelChains, initialized]);
 
   // Clear sub-fields when switching payment type (only after initial load)
   useEffect(() => {
@@ -348,8 +348,8 @@ export default function EditBookingPage() {
     setSubmitting(true);
 
     const body = {
-      hotelId: Number(hotelId),
-      subBrandId: subBrandId !== "none" ? Number(subBrandId) : null,
+      hotelChainId: Number(hotelChainId),
+      hotelChainSubBrandId: hotelChainSubBrandId === "none" ? null : Number(hotelChainSubBrandId),
       propertyName,
       checkIn,
       checkOut,
@@ -409,7 +409,7 @@ export default function EditBookingPage() {
   }
 
   const isValid =
-    hotelId &&
+    hotelChainId &&
     propertyName.trim() &&
     checkIn &&
     checkOut &&
@@ -429,15 +429,15 @@ export default function EditBookingPage() {
             {/* Hotel Chain + Property Name */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="hotelId">Hotel Chain *</Label>
-                <Select value={hotelId} onValueChange={(val) => {
-                  setHotelId(val);
-                  setSubBrandId("none");
+                <Label htmlFor="hotelChainId">Hotel Chain *</Label>
+                <Select value={hotelChainId} onValueChange={(val) => {
+                  setHotelChainId(val);
+                  setHotelChainSubBrandId("none");
                   setCertificates((prev) =>
                     prev.filter((cert) => {
                       if (!cert) return true;
                       const opt = CERT_TYPE_OPTIONS.find((o) => o.value === cert);
-                      return opt && opt.hotelId === Number(val);
+                      return opt && opt.hotelChainId === Number(val);
                     })
                   );
                 }}>
@@ -445,9 +445,9 @@ export default function EditBookingPage() {
                     <SelectValue placeholder="Select hotel chain..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {hotels.map((hotel) => (
-                      <SelectItem key={hotel.id} value={String(hotel.id)}>
-                        {hotel.name}
+                    {hotelChains.map((chain) => (
+                      <SelectItem key={chain.id} value={String(chain.id)}>
+                        {chain.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -465,17 +465,17 @@ export default function EditBookingPage() {
               </div>
             </div>
 
-            {/* Sub-brand selector (only when selected hotel has sub-brands) */}
-            {hotels.find((h) => h.id === Number(hotelId))?.subBrands.length ? (
+            {/* Sub-brand selector (only when selected hotel chain has sub-brands) */}
+            {hotelChains.find((h) => h.id === Number(hotelChainId))?.hotelChainSubBrands.length ? (
               <div className="space-y-2">
-                <Label htmlFor="subBrandId">Sub-brand</Label>
-                <Select value={subBrandId} onValueChange={setSubBrandId}>
+                <Label htmlFor="hotelChainSubBrandId">Sub-brand</Label>
+                <Select value={hotelChainSubBrandId} onValueChange={setHotelChainSubBrandId}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select sub-brand..." />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">None / Not applicable</SelectItem>
-                    {hotels.find((h) => h.id === Number(hotelId))?.subBrands.map((sb) => (
+                    {hotelChains.find((h) => h.id === Number(hotelChainId))?.hotelChainSubBrands.map((sb) => (
                       <SelectItem key={sb.id} value={String(sb.id)}>
                         {sb.name}
                       </SelectItem>
@@ -499,7 +499,8 @@ export default function EditBookingPage() {
                   <SelectItem value="none">Not specified</SelectItem>
                   {BOOKING_SOURCE_OPTIONS.map((opt) => (
                     <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
+                      {opt.label === "Direct — Hotel Website" ? "Direct — Hotel Chain Website" : 
+                       opt.label === "Direct — Hotel App" ? "Direct — Hotel Chain App" : opt.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -672,7 +673,7 @@ export default function EditBookingPage() {
                       </SelectTrigger>
                       <SelectContent>
                         {CERT_TYPE_OPTIONS
-                          .filter((opt) => opt.hotelId === Number(hotelId))
+                          .filter((opt) => opt.hotelChainId === Number(hotelChainId))
                           .map((opt) => (
                             <SelectItem key={opt.value} value={opt.value}>
                               {opt.label}

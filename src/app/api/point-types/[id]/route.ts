@@ -36,13 +36,13 @@ export async function DELETE(
     const numId = Number(id);
 
     // Check if in use
-    const hotelCount = await prisma.hotel.count({ where: { pointTypeId: numId } });
+    const hotelChainCount = await prisma.hotelChain.count({ where: { pointTypeId: numId } });
     const cardCount = await prisma.creditCard.count({ where: { pointTypeId: numId } });
     const portalCount = await prisma.shoppingPortal.count({ where: { pointTypeId: numId } });
 
-    if (hotelCount + cardCount + portalCount > 0) {
+    if (hotelChainCount + cardCount + portalCount > 0) {
       return NextResponse.json(
-        { error: "Cannot delete: point type is in use by hotels, cards, or portals" },
+        { error: "Cannot delete: point type is in use by hotel chains, cards, or portals" },
         { status: 409 }
       );
     }

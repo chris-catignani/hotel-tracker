@@ -45,39 +45,39 @@ model PointType {
   name            String
   category        PointCategory
   centsPerPoint   Decimal          @map("cents_per_point") @db.Decimal(10, 6)
-  hotels          Hotel[]
+  hotelChains     HotelChain[]
   creditCards     CreditCard[]
   shoppingPortals ShoppingPortal[]
 
   @@map("point_types")
 }
 
-model Hotel {
-  id             Int              @id @default(autoincrement())
+model HotelChain {
+  id             Int                    @id @default(autoincrement())
   name           String
-  loyaltyProgram String?          @map("loyalty_program")
-  basePointRate  Decimal?         @map("base_point_rate") @db.Decimal(10, 4)
-  elitePointRate Decimal?         @map("elite_point_rate") @db.Decimal(10, 4)
-  pointTypeId    Int?             @map("point_type_id")
-  pointType      PointType?       @relation(fields: [pointTypeId], references: [id])
+  loyaltyProgram String?                @map("loyalty_program")
+  basePointRate  Decimal?               @map("base_point_rate") @db.Decimal(10, 4)
+  elitePointRate Decimal?               @map("elite_point_rate") @db.Decimal(10, 4)
+  pointTypeId    Int?                   @map("point_type_id")
+  pointType      PointType?             @relation(fields: [pointTypeId], references: [id])
   bookings       Booking[]
   promotions     Promotion[]
-  subBrands      HotelSubBrand[]
+  hotelChainSubBrands HotelChainSubBrand[]
 
-  @@map("hotels")
+  @@map("hotel_chains")
 }
 
-model HotelSubBrand {
+model HotelChainSubBrand {
   id             Int         @id @default(autoincrement())
-  hotelId        Int         @map("hotel_id")
-  hotel          Hotel       @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  hotelChainId   Int         @map("hotel_chain_id")
+  hotelChain     HotelChain  @relation(fields: [hotelChainId], references: [id], onDelete: Cascade)
   name           String
   basePointRate  Decimal?    @map("base_point_rate") @db.Decimal(10, 4)
   elitePointRate Decimal?    @map("elite_point_rate") @db.Decimal(10, 4)
   bookings       Booking[]
   promotions     Promotion[]
 
-  @@map("hotel_sub_brands")
+  @@map("hotel_chain_sub_brands")
 }
 
 model CreditCard {
@@ -114,36 +114,36 @@ model OtaAgency {
 }
 
 model Booking {
-  id                 Int                @id @default(autoincrement())
-  hotelId            Int                @map("hotel_id")
-  hotel              Hotel              @relation(fields: [hotelId], references: [id])
-  subBrandId         Int?               @map("sub_brand_id")
-  subBrand           HotelSubBrand?     @relation(fields: [subBrandId], references: [id])
-  propertyName       String             @map("property_name")
-  checkIn            DateTime           @map("check_in") @db.Date
-  checkOut           DateTime           @map("check_out") @db.Date
-  numNights          Int                @map("num_nights")
-  pretaxCost         Decimal            @map("pretax_cost") @db.Decimal(10, 2)
-  taxAmount          Decimal            @map("tax_amount") @db.Decimal(10, 2)
-  totalCost          Decimal            @map("total_cost") @db.Decimal(10, 2)
-  creditCardId       Int?               @map("credit_card_id")
-  creditCard         CreditCard?        @relation(fields: [creditCardId], references: [id])
-  shoppingPortalId   Int?               @map("shopping_portal_id")
-  shoppingPortal     ShoppingPortal?    @relation(fields: [shoppingPortalId], references: [id])
-  portalCashbackRate    Decimal?           @map("portal_cashback_rate") @db.Decimal(10, 4)
-  portalCashbackOnTotal Boolean            @default(false) @map("portal_cashback_on_total")
-  loyaltyPointsEarned   Int?               @map("loyalty_points_earned")
-  pointsRedeemed        Int?               @map("points_redeemed")
-  currency              String             @default("USD")
-  originalAmount        Decimal?           @map("original_amount") @db.Decimal(10, 2)
-  bookingSource         BookingSourceType? @map("booking_source")
-  otaAgencyId           Int?               @map("ota_agency_id")
-  otaAgency             OtaAgency?         @relation(fields: [otaAgencyId], references: [id])
-  notes              String?
-  createdAt          DateTime           @default(now()) @map("created_at")
-  bookingPromotions  BookingPromotion[]
-  certificates       BookingCertificate[]
-  benefits           BookingBenefit[]
+  id                     Int                 @id @default(autoincrement())
+  hotelChainId           Int                 @map("hotel_chain_id")
+  hotelChain             HotelChain          @relation(fields: [hotelChainId], references: [id])
+  hotelChainSubBrandId   Int?                @map("hotel_chain_sub_brand_id")
+  hotelChainSubBrand     HotelChainSubBrand? @relation(fields: [hotelChainSubBrandId], references: [id])
+  propertyName           String              @map("property_name")
+  checkIn                DateTime            @map("check_in") @db.Date
+  checkOut               DateTime            @map("check_out") @db.Date
+  numNights              Int                 @map("num_nights")
+  pretaxCost             Decimal             @map("pretax_cost") @db.Decimal(10, 2)
+  taxAmount              Decimal             @map("tax_amount") @db.Decimal(10, 2)
+  totalCost              Decimal             @map("total_cost") @db.Decimal(10, 2)
+  creditCardId           Int?                @map("credit_card_id")
+  creditCard             CreditCard?         @relation(fields: [creditCardId], references: [id])
+  shoppingPortalId       Int?                @map("shopping_portal_id")
+  shoppingPortal         ShoppingPortal?     @relation(fields: [shoppingPortalId], references: [id])
+  portalCashbackRate     Decimal?            @map("portal_cashback_rate") @db.Decimal(10, 4)
+  portalCashbackOnTotal  Boolean             @default(false) @map("portal_cashback_on_total")
+  loyaltyPointsEarned    Int?                @map("loyalty_points_earned")
+  pointsRedeemed         Int?                @map("points_redeemed")
+  currency               String              @default("USD")
+  originalAmount         Decimal?            @map("original_amount") @db.Decimal(10, 2)
+  bookingSource          BookingSourceType?  @map("booking_source")
+  otaAgencyId            Int?                @map("ota_agency_id")
+  otaAgency              OtaAgency?          @relation(fields: [otaAgencyId], references: [id])
+  notes                  String?
+  createdAt              DateTime            @default(now()) @map("created_at")
+  bookingPromotions      BookingPromotion[]
+  certificates           BookingCertificate[]
+  benefits               BookingBenefit[]
 
   @@map("bookings")
 }
@@ -181,25 +181,25 @@ enum ValueType {
 }
 
 model Promotion {
-  id               Int                @id @default(autoincrement())
-  name             String
-  type             PromotionType
-  valueType        ValueType          @map("value_type")
-  value            Decimal            @db.Decimal(10, 4)
-  hotelId          Int?               @map("hotel_id")
-  hotel            Hotel?             @relation(fields: [hotelId], references: [id])
-  subBrandId       Int?               @map("sub_brand_id")
-  subBrand         HotelSubBrand?     @relation(fields: [subBrandId], references: [id])
-  creditCardId     Int?               @map("credit_card_id")
-  creditCard       CreditCard?        @relation(fields: [creditCardId], references: [id])
-  shoppingPortalId Int?               @map("shopping_portal_id")
-  shoppingPortal   ShoppingPortal?    @relation(fields: [shoppingPortalId], references: [id])
-  minSpend         Decimal?           @map("min_spend") @db.Decimal(10, 2)
-  startDate        DateTime?          @map("start_date") @db.Date
-  endDate          DateTime?          @map("end_date") @db.Date
-  isActive         Boolean            @default(true) @map("is_active")
-  createdAt        DateTime           @default(now()) @map("created_at")
-  bookingPromotions BookingPromotion[]
+  id                   Int                 @id @default(autoincrement())
+  name                 String
+  type                 PromotionType
+  valueType            ValueType           @map("value_type")
+  value                Decimal             @db.Decimal(10, 4)
+  hotelChainId         Int?                @map("hotel_chain_id")
+  hotelChain           HotelChain?         @relation(fields: [hotelChainId], references: [id])
+  hotelChainSubBrandId Int?                @map("hotel_chain_sub_brand_id")
+  hotelChainSubBrand   HotelChainSubBrand? @relation(fields: [hotelChainSubBrandId], references: [id])
+  creditCardId         Int?                @map("credit_card_id")
+  creditCard           CreditCard?         @relation(fields: [creditCardId], references: [id])
+  shoppingPortalId     Int?                @map("shopping_portal_id")
+  shoppingPortal       ShoppingPortal?     @relation(fields: [shoppingPortalId], references: [id])
+  minSpend             Decimal?            @map("min_spend") @db.Decimal(10, 2)
+  startDate            DateTime?           @map("start_date") @db.Date
+  endDate              DateTime?           @map("end_date") @db.Date
+  isActive             Boolean             @default(true) @map("is_active")
+  createdAt            DateTime            @default(now()) @map("created_at")
+  bookingPromotions    BookingPromotion[]
 
   @@map("promotions")
 }

@@ -8,7 +8,7 @@ export interface NetCostBooking {
   loyaltyPointsEarned: number | null;
   pointsRedeemed: number | null;
   certificates: { certType: string }[];
-  hotel: {
+  hotelChain: {
     pointType: { centsPerPoint: string | number } | null;
   };
   creditCard: {
@@ -55,15 +55,15 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
       Number(booking.creditCard.pointType?.centsPerPoint ?? 0)
     : 0;
   const loyaltyPointsValue =
-    booking.loyaltyPointsEarned && booking.hotel.pointType
-      ? booking.loyaltyPointsEarned * Number(booking.hotel.pointType.centsPerPoint)
+    booking.loyaltyPointsEarned && booking.hotelChain.pointType
+      ? booking.loyaltyPointsEarned * Number(booking.hotelChain.pointType.centsPerPoint)
       : 0;
-  const hotelCentsPerPoint = booking.hotel.pointType
-    ? Number(booking.hotel.pointType.centsPerPoint)
+  const hotelChainCentsPerPoint = booking.hotelChain.pointType
+    ? Number(booking.hotelChain.pointType.centsPerPoint)
     : 0;
-  const pointsRedeemedValue = (booking.pointsRedeemed ?? 0) * hotelCentsPerPoint;
+  const pointsRedeemedValue = (booking.pointsRedeemed ?? 0) * hotelChainCentsPerPoint;
   const certsValue = booking.certificates.reduce(
-    (sum, cert) => sum + certPointsValue(cert.certType) * hotelCentsPerPoint,
+    (sum, cert) => sum + certPointsValue(cert.certType) * hotelChainCentsPerPoint,
     0
   );
   const netCost =

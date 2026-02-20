@@ -12,8 +12,8 @@ export async function GET(
     const booking = await prisma.booking.findUnique({
       where: { id: Number(id) },
       include: {
-        hotel: { include: { pointType: true } },
-        subBrand: true,
+        hotelChain: { include: { pointType: true } },
+        hotelChainSubBrand: true,
         creditCard: { include: { pointType: true } },
         shoppingPortal: { include: { pointType: true } },
         bookingPromotions: {
@@ -48,7 +48,7 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
     const {
-      hotelId,
+      hotelChainId,
       propertyName,
       checkIn,
       checkOut,
@@ -69,13 +69,13 @@ export async function PUT(
       otaAgencyId,
       benefits,
       notes,
-      subBrandId,
+      hotelChainSubBrandId,
     } = body;
 
     const data: Record<string, unknown> = {};
-    if (hotelId !== undefined) data.hotelId = Number(hotelId);
-    if (subBrandId !== undefined)
-      data.subBrandId = subBrandId ? Number(subBrandId) : null;
+    if (hotelChainId !== undefined) data.hotelChainId = Number(hotelChainId);
+    if (hotelChainSubBrandId !== undefined)
+      data.hotelChainSubBrandId = hotelChainSubBrandId ? Number(hotelChainSubBrandId) : null;
     if (propertyName !== undefined) data.propertyName = propertyName;
     if (checkIn !== undefined) data.checkIn = new Date(checkIn);
     if (checkOut !== undefined) data.checkOut = new Date(checkOut);
@@ -111,27 +111,27 @@ export async function PUT(
 
     // Auto-calculate loyalty points if not explicitly provided but hotel/pretax changed
     if (loyaltyPointsEarned === undefined || loyaltyPointsEarned === null) {
-      const resolvedHotelId = hotelId !== undefined ? Number(hotelId) : undefined;
+      const resolvedHotelChainId = hotelChainId !== undefined ? Number(hotelChainId) : undefined;
       const resolvedPretax = pretaxCost !== undefined ? Number(pretaxCost) : undefined;
 
-      if (resolvedHotelId || resolvedPretax) {
+      if (resolvedHotelChainId || resolvedPretax) {
         // Fetch current booking to fill in missing values
         const current = await prisma.booking.findUnique({
           where: { id: Number(id) },
         });
-        const finalHotelId = resolvedHotelId ?? current?.hotelId;
+        const finalHotelChainId = resolvedHotelChainId ?? current?.hotelChainId;
         const finalPretax = resolvedPretax ?? (current ? Number(current.pretaxCost) : null);
-        const finalSubBrandId =
-          subBrandId !== undefined
-            ? subBrandId ? Number(subBrandId) : null
-            : current?.subBrandId ?? null;
+        const finalHotelChainSubBrandId =
+          hotelChainSubBrandId !== undefined
+            ? hotelChainSubBrandId ? Number(hotelChainSubBrandId) : null
+            : current?.hotelChainSubBrandId ?? null;
 
-        if (finalHotelId && finalPretax) {
+        if (finalHotelChainId && finalPretax) {
           let baseRate: number | null = null;
           let eliteRate = 0;
-          if (finalSubBrandId) {
-            const subBrand = await prisma.hotelSubBrand.findUnique({
-              where: { id: finalSubBrandId },
+          if (finalHotelChainSubBrandId) {
+            const subBrand = await prisma.hotelChainSubBrand.findUnique({
+              where: { id: finalHotelChainSubBrandId },
             });
             if (subBrand?.basePointRate != null) {
               baseRate = Number(subBrand.basePointRate);
@@ -139,12 +139,12 @@ export async function PUT(
             }
           }
           if (baseRate == null) {
-            const hotel = await prisma.hotel.findUnique({
-              where: { id: finalHotelId },
+            const hotelChain = await prisma.hotelChain.findUnique({
+              where: { id: finalHotelChainId },
             });
-            if (hotel?.basePointRate != null) {
-              baseRate = Number(hotel.basePointRate);
-              eliteRate = Number(hotel.elitePointRate || 0);
+            if (hotelChain?.basePointRate != null) {
+              baseRate = Number(hotelChain.basePointRate);
+              eliteRate = Number(hotelChain.elitePointRate || 0);
             }
           }
           if (baseRate != null) {
@@ -200,8 +200,8 @@ export async function PUT(
     const fullBooking = await prisma.booking.findUnique({
       where: { id: booking.id },
       include: {
-        hotel: { include: { pointType: true } },
-        subBrand: true,
+        hotelChain: { include: { pointType: true } },
+        hotelChainSubBrand: true,
         creditCard: { include: { pointType: true } },
         shoppingPortal: { include: { pointType: true } },
         bookingPromotions: {

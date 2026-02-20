@@ -37,12 +37,16 @@ interface BookingWithRelations {
   loyaltyPointsEarned: number | null;
   pointsRedeemed: number | null;
   notes: string | null;
-  hotel: {
+  hotelChain: {
     id: number;
     name: string;
     loyaltyProgram: string | null;
     pointType: { centsPerPoint: string } | null;
   };
+  hotelChainSubBrand?: {
+    id: number;
+    name: string;
+  } | null;
   creditCard: {
     id: number;
     name: string;
@@ -212,7 +216,7 @@ export default function DashboardPage() {
                             {booking.propertyName}
                           </Link>
                           <div className="text-xs text-muted-foreground mt-0.5">
-                            {booking.hotel.name}
+                            {booking.hotelChain.name}
                           </div>
                         </TableCell>
                         <TableCell className="text-sm">
@@ -292,8 +296,8 @@ export default function DashboardPage() {
                   const totalLoyaltyPointsValue = cashBookings.reduce(
                     (sum, b) =>
                       sum +
-                      (b.loyaltyPointsEarned && b.hotel.pointType
-                        ? b.loyaltyPointsEarned * Number(b.hotel.pointType.centsPerPoint)
+                      (b.loyaltyPointsEarned && b.hotelChain.pointType
+                        ? b.loyaltyPointsEarned * Number(b.hotelChain.pointType.centsPerPoint)
                         : 0),
                     0
                   );
@@ -397,7 +401,7 @@ export default function DashboardPage() {
                 {Object.values(
                   bookings.reduce(
                     (acc, b) => {
-                      const chain = b.hotel.name;
+                      const chain = b.hotelChain.name;
                       if (!acc[chain]) {
                         acc[chain] = {
                           chain,

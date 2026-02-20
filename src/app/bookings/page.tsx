@@ -40,8 +40,8 @@ interface BookingCertificate {
 
 interface Booking {
   id: number;
-  hotelId: number;
-  subBrand: { id: number; name: string } | null;
+  hotelChainId: number;
+  hotelChainSubBrand: { id: number; name: string } | null;
   propertyName: string;
   checkIn: string;
   checkOut: string;
@@ -59,7 +59,7 @@ interface Booking {
   createdAt: string;
   bookingSource: string | null;
   otaAgency: { id: number; name: string } | null;
-  hotel: {
+  hotelChain: {
     id: number;
     name: string;
     loyaltyProgram: string | null;
@@ -200,11 +200,11 @@ export default function BookingsPage() {
                 <TableRow key={booking.id}>
                   <TableCell>
                     <div>{booking.propertyName}</div>
-                    {booking.subBrand && (
-                      <div className="text-xs text-muted-foreground">{booking.subBrand.name}</div>
+                    {booking.hotelChainSubBrand && (
+                      <div className="text-xs text-muted-foreground">{booking.hotelChainSubBrand.name}</div>
                     )}
                   </TableCell>
-                  <TableCell>{booking.hotel.name}</TableCell>
+                  <TableCell>{booking.hotelChain.name}</TableCell>
                   <TableCell>{formatDate(booking.checkIn)}</TableCell>
                   <TableCell>{formatDate(booking.checkOut)}</TableCell>
                   <TableCell>{booking.numNights}</TableCell>
