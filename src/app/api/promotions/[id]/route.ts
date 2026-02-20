@@ -111,7 +111,10 @@ export async function DELETE(
       where: { id: promotionId },
     });
 
-    // Re-evaluate affected bookings after deletion
+    // Re-evaluate affected bookings after deletion.
+    // Note: While Prisma cascade deletes will remove BookingPromotion records, 
+    // we manually re-evaluate to ensure the bookings are correctly updated 
+    // (e.g., if other promotions now apply or if summary totals need refresh).
     if (affectedBookings.length > 0) {
       await reevaluateBookings(affectedBookings.map((b) => b.id));
     }
