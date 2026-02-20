@@ -3,6 +3,68 @@ import { HOTEL_ID } from "../src/lib/constants";
 
 const prisma = new PrismaClient();
 
+interface EliteStatusData {
+  name: string;
+  bonusPercentage?: number;
+  fixedRate?: number;
+  isFixed?: boolean;
+  eliteTierLevel: number;
+}
+
+interface SubBrandData {
+  name: string;
+  basePointRate?: number;
+}
+
+async function upsertEliteStatuses(hotelChainId: number, statuses: EliteStatusData[]) {
+  for (const status of statuses) {
+    await prisma.hotelChainEliteStatus.upsert({
+      where: {
+        hotelChainId_name: {
+          hotelChainId,
+          name: status.name,
+        },
+      },
+      update: status,
+      create: {
+        ...status,
+        hotelChainId,
+      },
+    });
+  }
+}
+
+async function upsertSubBrands(hotelChainId: number, subBrands: SubBrandData[]) {
+  for (const sb of subBrands) {
+    await prisma.hotelChainSubBrand.upsert({
+      where: {
+        hotelChainId_name: {
+          hotelChainId,
+          name: sb.name,
+        },
+      },
+      update: sb,
+      create: {
+        ...sb,
+        hotelChainId,
+      },
+    });
+  }
+}
+
+async function upsertUserStatus(hotelChainId: number, statusName: string) {
+  const eliteStatus = await prisma.hotelChainEliteStatus.findFirst({
+    where: { hotelChainId, name: statusName },
+  });
+  if (eliteStatus) {
+    await prisma.userStatus.upsert({
+      where: { hotelChainId },
+      update: { eliteStatusId: eliteStatus.id },
+      create: { hotelChainId, eliteStatusId: eliteStatus.id },
+    });
+  }
+}
+
 async function main() {
   // PointTypes
   await prisma.pointType.upsert({
@@ -66,119 +128,202 @@ async function main() {
     create: { id: 12, name: "Wells Fargo Rewards", category: "transferable", centsPerPoint: 0.015 },
   });
 
-  // Hotel Chains
+  // Hilton
   await prisma.hotelChain.upsert({
     where: { id: HOTEL_ID.HILTON },
     update: { name: "Hilton", loyaltyProgram: "Hilton Honors", basePointRate: 10, pointTypeId: 1 },
     create: { id: HOTEL_ID.HILTON, name: "Hilton", loyaltyProgram: "Hilton Honors", basePointRate: 10, pointTypeId: 1 },
   });
-  await prisma.hotelChainEliteStatus.deleteMany({ where: { hotelChainId: HOTEL_ID.HILTON } });
-  await prisma.hotelChainEliteStatus.createMany({
-    data: [
-      { hotelChainId: HOTEL_ID.HILTON, name: "Silver", bonusPercentage: 0.20, eliteTierLevel: 1 },
-      { hotelChainId: HOTEL_ID.HILTON, name: "Gold", bonusPercentage: 0.80, eliteTierLevel: 2 },
-      { hotelChainId: HOTEL_ID.HILTON, name: "Diamond", bonusPercentage: 1.00, eliteTierLevel: 3 },
-      { hotelChainId: HOTEL_ID.HILTON, name: "Diamond Reserve", bonusPercentage: 1.20, eliteTierLevel: 4 },
-    ],
-  });
+  await upsertEliteStatuses(HOTEL_ID.HILTON, [
+    { name: "Silver", bonusPercentage: 0.20, eliteTierLevel: 1 },
+    { name: "Gold", bonusPercentage: 0.80, eliteTierLevel: 2 },
+    { name: "Diamond", bonusPercentage: 1.00, eliteTierLevel: 3 },
+    { name: "Diamond Reserve", bonusPercentage: 1.20, eliteTierLevel: 4 },
+  ]);
+  await upsertSubBrands(HOTEL_ID.HILTON, [
+    { name: "Waldorf Astoria" },
+    { name: "LXR Hotels & Resorts" },
+    { name: "Conrad Hotels & Resorts" },
+    { name: "Canopy by Hilton" },
+    { name: "Signia by Hilton" },
+    { name: "Hilton Hotels & Resorts" },
+    { name: "Curio Collection by Hilton" },
+    { name: "DoubleTree by Hilton" },
+    { name: "Tapestry Collection by Hilton" },
+    { name: "Embassy Suites by Hilton" },
+    { name: "Tempo by Hilton" },
+    { name: "Motto by Hilton" },
+    { name: "Hilton Garden Inn" },
+    { name: "Hampton by Hilton" },
+    { name: "Home2 Suites by Hilton", basePointRate: 5 },
+    { name: "Tru by Hilton", basePointRate: 5 },
+    { name: "Homewood Suites by Hilton", basePointRate: 5 },
+    { name: "Spark by Hilton", basePointRate: 5 },
+    { name: "Hilton Grand Vacations" },
+  ]);
 
+  // Marriott
   await prisma.hotelChain.upsert({
     where: { id: HOTEL_ID.MARRIOTT },
     update: { name: "Marriott", loyaltyProgram: "Marriott Bonvoy", basePointRate: 10, pointTypeId: 2 },
     create: { id: HOTEL_ID.MARRIOTT, name: "Marriott", loyaltyProgram: "Marriott Bonvoy", basePointRate: 10, pointTypeId: 2 },
   });
-  await prisma.hotelChainEliteStatus.deleteMany({ where: { hotelChainId: HOTEL_ID.MARRIOTT } });
-  await prisma.hotelChainEliteStatus.createMany({
-    data: [
-      { hotelChainId: HOTEL_ID.MARRIOTT, name: "Silver", bonusPercentage: 0.10, eliteTierLevel: 1 },
-      { hotelChainId: HOTEL_ID.MARRIOTT, name: "Gold", bonusPercentage: 0.25, eliteTierLevel: 2 },
-      { hotelChainId: HOTEL_ID.MARRIOTT, name: "Platinum", bonusPercentage: 0.50, eliteTierLevel: 3 },
-      { hotelChainId: HOTEL_ID.MARRIOTT, name: "Titanium", bonusPercentage: 0.75, eliteTierLevel: 4 },
-      { hotelChainId: HOTEL_ID.MARRIOTT, name: "Ambassador", bonusPercentage: 0.75, eliteTierLevel: 5 },
-    ],
-  });
+  await upsertEliteStatuses(HOTEL_ID.MARRIOTT, [
+    { name: "Silver", bonusPercentage: 0.10, eliteTierLevel: 1 },
+    { name: "Gold", bonusPercentage: 0.25, eliteTierLevel: 2 },
+    { name: "Platinum", bonusPercentage: 0.50, eliteTierLevel: 3 },
+    { name: "Titanium", bonusPercentage: 0.75, eliteTierLevel: 4 },
+    { name: "Ambassador", bonusPercentage: 0.75, eliteTierLevel: 5 },
+  ]);
+  await upsertSubBrands(HOTEL_ID.MARRIOTT, [
+    { name: "The Ritz-Carlton" },
+    { name: "St. Regis" },
+    { name: "JW Marriott" },
+    { name: "The Luxury Collection" },
+    { name: "W Hotels" },
+    { name: "EDITION" },
+    { name: "Marriott Hotels" },
+    { name: "Sheraton" },
+    { name: "Westin" },
+    { name: "Le Meridien" },
+    { name: "Renaissance Hotels" },
+    { name: "Autograph Collection Hotels" },
+    { name: "Delta Hotels" },
+    { name: "Gaylord Hotels" },
+    { name: "Courtyard by Marriott" },
+    { name: "Four Points by Sheraton" },
+    { name: "SpringHill Suites" },
+    { name: "Fairfield by Marriott" },
+    { name: "AC Hotels by Marriott" },
+    { name: "Aloft Hotels" },
+    { name: "Moxy Hotels" },
+    { name: "Residence Inn by Marriott", basePointRate: 5 },
+    { name: "TownePlace Suites", basePointRate: 5 },
+    { name: "Element by Westin", basePointRate: 5 },
+    { name: "Homes & Villas by Marriott Bonvoy", basePointRate: 5 },
+    { name: "Marriott Executive Apartments", basePointRate: 5 },
+    { name: "Apartments by Marriott Bonvoy", basePointRate: 5 },
+    { name: "Protea Hotels by Marriott", basePointRate: 5 },
+    { name: "City Express by Marriott", basePointRate: 5 },
+    { name: "Four Points Flex by Sheraton", basePointRate: 5 },
+    { name: "Four Points Express by Sheraton", basePointRate: 5 },
+    { name: "StudioRes by Marriott", basePointRate: 5 },
+  ]);
 
+  // Hyatt
   await prisma.hotelChain.upsert({
     where: { id: HOTEL_ID.HYATT },
     update: { name: "Hyatt", loyaltyProgram: "World of Hyatt", basePointRate: 5, pointTypeId: 3 },
     create: { id: HOTEL_ID.HYATT, name: "Hyatt", loyaltyProgram: "World of Hyatt", basePointRate: 5, pointTypeId: 3 },
   });
-  await prisma.hotelChainEliteStatus.deleteMany({ where: { hotelChainId: HOTEL_ID.HYATT } });
-  await prisma.hotelChainEliteStatus.createMany({
-    data: [
-      { hotelChainId: HOTEL_ID.HYATT, name: "Discoverist", bonusPercentage: 0.10, eliteTierLevel: 1 },
-      { hotelChainId: HOTEL_ID.HYATT, name: "Explorist", bonusPercentage: 0.20, eliteTierLevel: 2 },
-      { hotelChainId: HOTEL_ID.HYATT, name: "Globalist", bonusPercentage: 0.30, eliteTierLevel: 3 },
-    ],
-  });
+  await upsertEliteStatuses(HOTEL_ID.HYATT, [
+    { name: "Discoverist", bonusPercentage: 0.10, eliteTierLevel: 1 },
+    { name: "Explorist", bonusPercentage: 0.20, eliteTierLevel: 2 },
+    { name: "Globalist", bonusPercentage: 0.30, eliteTierLevel: 3 },
+  ]);
+  await upsertSubBrands(HOTEL_ID.HYATT, [
+    { name: "Park Hyatt" },
+    { name: "Andaz" },
+    { name: "Grand Hyatt" },
+    { name: "Hyatt Regency" },
+    { name: "Hyatt Centric" },
+    { name: "The Unbound Collection by Hyatt" },
+    { name: "Hyatt Place" },
+    { name: "Hyatt House" },
+    { name: "Hyatt Ziva" },
+    { name: "Hyatt Zilara" },
+    { name: "Thompson Hotels" },
+    { name: "Destination by Hyatt" },
+    { name: "Alila" },
+    { name: "Caption by Hyatt" },
+    { name: "Hyatt Studios", basePointRate: 2.5 },
+  ]);
 
+  // IHG
   await prisma.hotelChain.upsert({
     where: { id: HOTEL_ID.IHG },
     update: { name: "IHG", loyaltyProgram: "IHG One Rewards", basePointRate: 10, pointTypeId: 4 },
     create: { id: HOTEL_ID.IHG, name: "IHG", loyaltyProgram: "IHG One Rewards", basePointRate: 10, pointTypeId: 4 },
   });
-  await prisma.hotelChainEliteStatus.deleteMany({ where: { hotelChainId: HOTEL_ID.IHG } });
-  await prisma.hotelChainEliteStatus.createMany({
-    data: [
-      { hotelChainId: HOTEL_ID.IHG, name: "Silver", bonusPercentage: 0.20, eliteTierLevel: 1 },
-      { hotelChainId: HOTEL_ID.IHG, name: "Gold", bonusPercentage: 0.40, eliteTierLevel: 2 },
-      { hotelChainId: HOTEL_ID.IHG, name: "Platinum", bonusPercentage: 0.60, eliteTierLevel: 3 },
-      { hotelChainId: HOTEL_ID.IHG, name: "Diamond", bonusPercentage: 1.00, eliteTierLevel: 4 },
-    ],
-  });
+  await upsertEliteStatuses(HOTEL_ID.IHG, [
+    { name: "Silver", bonusPercentage: 0.20, eliteTierLevel: 1 },
+    { name: "Gold", bonusPercentage: 0.40, eliteTierLevel: 2 },
+    { name: "Platinum", bonusPercentage: 0.60, eliteTierLevel: 3 },
+    { name: "Diamond", bonusPercentage: 1.00, eliteTierLevel: 4 },
+  ]);
+  await upsertSubBrands(HOTEL_ID.IHG, [
+    { name: "InterContinental Hotels & Resorts" },
+    { name: "Kimpton Hotels & Restaurants" },
+    { name: "Hotel Indigo" },
+    { name: "Crowne Plaza Hotels & Resorts" },
+    { name: "Holiday Inn Hotels & Resorts" },
+    { name: "Holiday Inn Express" },
+    { name: "Staybridge Suites", basePointRate: 5 },
+    { name: "Candlewood Suites", basePointRate: 5 },
+    { name: "Voco Hotels" },
+    { name: "Even Hotels" },
+    { name: "Avid Hotels" },
+  ]);
 
+  // GHA Discovery
   await prisma.hotelChain.upsert({
     where: { id: HOTEL_ID.GHA_DISCOVERY },
     update: { name: "GHA Discovery", loyaltyProgram: "GHA Discovery", basePointRate: 4, pointTypeId: 5 },
     create: { id: HOTEL_ID.GHA_DISCOVERY, name: "GHA Discovery", loyaltyProgram: "GHA Discovery", basePointRate: 4, pointTypeId: 5 },
   });
-  await prisma.hotelChainEliteStatus.deleteMany({ where: { hotelChainId: HOTEL_ID.GHA_DISCOVERY } });
-  await prisma.hotelChainEliteStatus.createMany({
-    data: [
-      { hotelChainId: HOTEL_ID.GHA_DISCOVERY, name: "Silver", fixedRate: 4, isFixed: true, eliteTierLevel: 1 },
-      { hotelChainId: HOTEL_ID.GHA_DISCOVERY, name: "Gold", fixedRate: 5, isFixed: true, eliteTierLevel: 2 },
-      { hotelChainId: HOTEL_ID.GHA_DISCOVERY, name: "Platinum", fixedRate: 6, isFixed: true, eliteTierLevel: 3 },
-      { hotelChainId: HOTEL_ID.GHA_DISCOVERY, name: "Titanium", fixedRate: 7, isFixed: true, eliteTierLevel: 4 },
-    ],
-  });
+  await upsertEliteStatuses(HOTEL_ID.GHA_DISCOVERY, [
+    { name: "Silver", fixedRate: 4, isFixed: true, eliteTierLevel: 1 },
+    { name: "Gold", fixedRate: 5, isFixed: true, eliteTierLevel: 2 },
+    { name: "Platinum", fixedRate: 6, isFixed: true, eliteTierLevel: 3 },
+    { name: "Titanium", fixedRate: 7, isFixed: true, eliteTierLevel: 4 },
+  ]);
+  await upsertSubBrands(HOTEL_ID.GHA_DISCOVERY, [
+    { name: "Kempinski Hotels" },
+    { name: "Anantara Hotels, Resorts & Spas" },
+    { name: "Pan Pacific Hotels & Resorts" },
+    { name: "Viceroy Hotels & Resorts" },
+    { name: "Parkroyal Hotels & Resorts" },
+    { name: "Outrigger Resorts & Hotels" },
+    { name: "The Leela Palaces, Hotels and Resorts" },
+    { name: "Capella Hotels and Resorts" },
+  ]);
 
+  // Accor
+  const ACCOR_BASE_RATE = 25 / 12; // ~2.0833
   await prisma.hotelChain.upsert({
     where: { id: HOTEL_ID.ACCOR },
-    update: { name: "Accor", loyaltyProgram: "ALL - Accor Live Limitless", basePointRate: 25, pointTypeId: 6 },
-    create: { id: HOTEL_ID.ACCOR, name: "Accor", loyaltyProgram: "ALL - Accor Live Limitless", basePointRate: 25, pointTypeId: 6 },
+    update: { name: "Accor", loyaltyProgram: "ALL - Accor Live Limitless", basePointRate: ACCOR_BASE_RATE, pointTypeId: 6 },
+    create: { id: HOTEL_ID.ACCOR, name: "Accor", loyaltyProgram: "ALL - Accor Live Limitless", basePointRate: ACCOR_BASE_RATE, pointTypeId: 6 },
   });
-  await prisma.hotelChainEliteStatus.deleteMany({ where: { hotelChainId: HOTEL_ID.ACCOR } });
-  await prisma.hotelChainEliteStatus.createMany({
-    data: [
-      { hotelChainId: HOTEL_ID.ACCOR, name: "Silver", bonusPercentage: 0.0, eliteTierLevel: 1 },
-      { hotelChainId: HOTEL_ID.ACCOR, name: "Gold", bonusPercentage: 0.0, eliteTierLevel: 2 },
-      { hotelChainId: HOTEL_ID.ACCOR, name: "Platinum", bonusPercentage: 0.0, eliteTierLevel: 3 },
-      { hotelChainId: HOTEL_ID.ACCOR, name: "Diamond", bonusPercentage: 0.0, eliteTierLevel: 4 },
-    ],
-  });
+  await upsertEliteStatuses(HOTEL_ID.ACCOR, [
+    { name: "Silver", bonusPercentage: 0.24, eliteTierLevel: 1 },
+    { name: "Gold", bonusPercentage: 0.48, eliteTierLevel: 2 },
+    { name: "Platinum", bonusPercentage: 0.76, eliteTierLevel: 3 },
+    { name: "Diamond", bonusPercentage: 0.76, eliteTierLevel: 4 },
+  ]);
+  await upsertSubBrands(HOTEL_ID.ACCOR, [
+    { name: "Raffles" },
+    { name: "Banyan Tree" },
+    { name: "Fairmont" },
+    { name: "Sofitel" },
+    { name: "MGallery" },
+    { name: "Pullman" },
+    { name: "Swissôtel" },
+    { name: "Novotel" },
+    { name: "Mercure" },
+    { name: "ibis", basePointRate: 12.5 / 12 }, // 1.0417
+    { name: "ibis Styles", basePointRate: 12.5 / 12 }, // 1.0417
+    { name: "ibis budget", basePointRate: 5 / 12 }, // 0.4167
+    { name: "Adagio", basePointRate: 10 / 12 }, // 0.8333
+    { name: "Adagio Access", basePointRate: 5 / 12 }, // 0.4167
+  ]);
 
   // Seed UserStatus
-  const marriottTitanium = await prisma.hotelChainEliteStatus.findFirst({
-    where: { hotelChainId: HOTEL_ID.MARRIOTT, name: "Titanium" },
-  });
-  const hyattGlobalist = await prisma.hotelChainEliteStatus.findFirst({
-    where: { hotelChainId: HOTEL_ID.HYATT, name: "Globalist" },
-  });
-  const hiltonDiamond = await prisma.hotelChainEliteStatus.findFirst({
-    where: { hotelChainId: HOTEL_ID.HILTON, name: "Diamond" },
-  });
-  const ihgDiamond = await prisma.hotelChainEliteStatus.findFirst({
-    where: { hotelChainId: HOTEL_ID.IHG, name: "Diamond" },
-  });
-  const ghaTitanium = await prisma.hotelChainEliteStatus.findFirst({
-    where: { hotelChainId: HOTEL_ID.GHA_DISCOVERY, name: "Titanium" },
-  });
-
-  if (marriottTitanium) await prisma.userStatus.upsert({ where: { hotelChainId: HOTEL_ID.MARRIOTT }, update: { eliteStatusId: marriottTitanium.id }, create: { hotelChainId: HOTEL_ID.MARRIOTT, eliteStatusId: marriottTitanium.id } });
-  if (hyattGlobalist) await prisma.userStatus.upsert({ where: { hotelChainId: HOTEL_ID.HYATT }, update: { eliteStatusId: hyattGlobalist.id }, create: { hotelChainId: HOTEL_ID.HYATT, eliteStatusId: hyattGlobalist.id } });
-  if (hiltonDiamond) await prisma.userStatus.upsert({ where: { hotelChainId: HOTEL_ID.HILTON }, update: { eliteStatusId: hiltonDiamond.id }, create: { hotelChainId: HOTEL_ID.HILTON, eliteStatusId: hiltonDiamond.id } });
-  if (ihgDiamond) await prisma.userStatus.upsert({ where: { hotelChainId: HOTEL_ID.IHG }, update: { eliteStatusId: ihgDiamond.id }, create: { hotelChainId: HOTEL_ID.IHG, eliteStatusId: ihgDiamond.id } });
-  if (ghaTitanium) await prisma.userStatus.upsert({ where: { hotelChainId: HOTEL_ID.GHA_DISCOVERY }, update: { eliteStatusId: ghaTitanium.id }, create: { hotelChainId: HOTEL_ID.GHA_DISCOVERY, eliteStatusId: ghaTitanium.id } });
+  await upsertUserStatus(HOTEL_ID.MARRIOTT, "Titanium");
+  await upsertUserStatus(HOTEL_ID.HYATT, "Globalist");
+  await upsertUserStatus(HOTEL_ID.HILTON, "Diamond");
+  await upsertUserStatus(HOTEL_ID.IHG, "Diamond");
+  await upsertUserStatus(HOTEL_ID.GHA_DISCOVERY, "Titanium");
 
   // Credit Cards
   await prisma.creditCard.upsert({
