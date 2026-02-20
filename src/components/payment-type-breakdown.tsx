@@ -190,8 +190,8 @@ export function PaymentTypeBreakdown({ bookings }: PaymentTypeBreakdownProps) {
                   </Pie>
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "hsl(var(--background))",
-                      borderColor: "hsl(var(--border))",
+                      backgroundColor: "var(--background)",
+                      borderColor: "var(--border)",
                       borderRadius: "8px",
                     }}
                     itemStyle={{ fontSize: "12px" }}
