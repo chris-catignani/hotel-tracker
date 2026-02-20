@@ -1,27 +1,24 @@
 import prisma from "@/lib/prisma";
-import { BookingPromotion, PromotionType, ValueType } from "@prisma/client";
+import { BookingPromotion, PromotionType, ValueType, Promotion, Prisma } from "@prisma/client";
 
-export async function matchPromotionsForBooking(
-  bookingId: number
-): Promise<BookingPromotion[]> {
-  const booking = await prisma.booking.findUnique({
-    where: { id: bookingId },
-    include: {
-      hotelChain: { include: { pointType: true } },
-      hotelChainSubBrand: true,
-      creditCard: { include: { pointType: true } },
-      shoppingPortal: true,
-    },
-  });
+const BOOKING_INCLUDE = {
+  hotelChain: { include: { pointType: true } },
+  hotelChainSubBrand: true,
+  creditCard: { include: { pointType: true } },
+  shoppingPortal: true,
+} as const;
 
-  if (!booking) {
-    throw new Error(`Booking with id ${bookingId} not found`);
-  }
+type BookingWithIncludes = Prisma.BookingGetPayload<{
+  include: typeof BOOKING_INCLUDE;
+}>;
 
-  const activePromotions = await prisma.promotion.findMany({
-    where: { isActive: true },
-  });
-
+/**
+ * Calculates which promotions match a given booking without side effects.
+ */
+function calculateMatchedPromotions(
+  booking: BookingWithIncludes,
+  activePromotions: Promotion[]
+) {
   const matched: {
     promotionId: number;
     appliedValue: number;
@@ -58,7 +55,7 @@ export async function matchPromotionsForBooking(
     if (
       promo.type === PromotionType.credit_card &&
       promo.minSpend !== null &&
-      booking.totalCost < promo.minSpend
+      Number(booking.totalCost) < Number(promo.minSpend)
     ) {
       continue;
     }
@@ -70,14 +67,14 @@ export async function matchPromotionsForBooking(
         appliedValue = Number(promo.value);
         break;
       case ValueType.percentage:
-        appliedValue = Number(booking.totalCost) * Number(promo.value) / 100;
+        appliedValue = (Number(booking.totalCost) * Number(promo.value)) / 100;
         break;
       case ValueType.points_multiplier: {
         const centsPerPoint = booking.creditCard?.pointType?.centsPerPoint
           ? Number(booking.creditCard.pointType.centsPerPoint)
           : 0.01;
         appliedValue =
-          Number(booking.loyaltyPointsEarned) *
+          Number(booking.loyaltyPointsEarned || 0) *
           (Number(promo.value) - 1) *
           centsPerPoint;
         break;
@@ -90,6 +87,16 @@ export async function matchPromotionsForBooking(
     });
   }
 
+  return matched;
+}
+
+/**
+ * Persists matched promotions to a booking, replacing existing auto-applied ones.
+ */
+async function applyMatchedPromotions(
+  bookingId: number,
+  matched: { promotionId: number; appliedValue: number }[]
+): Promise<BookingPromotion[]> {
   // Delete existing auto-applied BookingPromotions for this booking
   await prisma.bookingPromotion.deleteMany({
     where: {
@@ -115,6 +122,57 @@ export async function matchPromotionsForBooking(
   return createdRecords;
 }
 
+/**
+ * Re-evaluates and applies promotions for a list of booking IDs.
+ * Minimizes database calls by fetching active promotions once.
+ */
+export async function reevaluateBookings(bookingIds: number[]): Promise<void> {
+  if (bookingIds.length === 0) return;
+
+  const activePromotions = await prisma.promotion.findMany({
+    where: { isActive: true },
+  });
+
+  const bookings = await prisma.booking.findMany({
+    where: { id: { in: bookingIds } },
+    include: BOOKING_INCLUDE,
+  });
+
+  await Promise.all(
+    bookings.map((booking) => {
+      const matched = calculateMatchedPromotions(booking, activePromotions);
+      return applyMatchedPromotions(booking.id, matched);
+    })
+  );
+}
+
+/**
+ * Re-evaluates and applies promotions for a single booking.
+ */
+export async function matchPromotionsForBooking(
+  bookingId: number
+): Promise<BookingPromotion[]> {
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    include: BOOKING_INCLUDE,
+  });
+
+  if (!booking) {
+    throw new Error(`Booking with id ${bookingId} not found`);
+  }
+
+  const activePromotions = await prisma.promotion.findMany({
+    where: { isActive: true },
+  });
+
+  const matched = calculateMatchedPromotions(booking, activePromotions);
+  return applyMatchedPromotions(bookingId, matched);
+}
+
+/**
+ * Re-evaluates and applies promotions for all bookings potentially affected by a promotion change.
+ * Minimizes database calls by fetching active promotions once and processing bookings in parallel.
+ */
 export async function matchPromotionsForAffectedBookings(
   promotionId: number
 ): Promise<void> {
@@ -145,8 +203,5 @@ export async function matchPromotionsForAffectedBookings(
     select: { id: true },
   });
 
-  // Re-evaluate affected bookings in parallel
-  await Promise.all(
-    affectedBookings.map((b) => matchPromotionsForBooking(b.id))
-  );
+  await reevaluateBookings(affectedBookings.map((b) => b.id));
 }

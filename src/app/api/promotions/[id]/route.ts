@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
-import { matchPromotionsForAffectedBookings } from "@/lib/promotion-matching";
+import { matchPromotionsForAffectedBookings, reevaluateBookings } from "@/lib/promotion-matching";
 
 export async function GET(
   request: NextRequest,
@@ -95,9 +95,26 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    await prisma.promotion.delete({
-      where: { id: Number(id) },
+    const promotionId = Number(id);
+
+    // Find bookings that currently have this promotion applied
+    const affectedBookings = await prisma.booking.findMany({
+      where: {
+        bookingPromotions: {
+          some: { promotionId },
+        },
+      },
+      select: { id: true },
     });
+
+    await prisma.promotion.delete({
+      where: { id: promotionId },
+    });
+
+    // Re-evaluate affected bookings after deletion
+    if (affectedBookings.length > 0) {
+      await reevaluateBookings(affectedBookings.map((b) => b.id));
+    }
 
     return NextResponse.json({ message: "Promotion deleted" });
   } catch (error) {
