@@ -32,7 +32,12 @@ interface PaymentTypeBreakdownProps {
 
 type BreakdownMode = "stays" | "nights";
 
-const COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#ef4444"]; // Emerald-500, Blue-500, Amber-500, Red-500
+const TYPE_COLORS: Record<string, string> = {
+  Cash: "#10b981", // Emerald-500
+  Points: "#3b82f6", // Blue-500
+  Certificates: "#f59e0b", // Amber-500
+  Combination: "#ef4444", // Red-500
+};
 
 export function PaymentTypeBreakdown({ bookings }: PaymentTypeBreakdownProps) {
   const [mode, setMode] = useState<BreakdownMode>("stays");
@@ -70,43 +75,44 @@ export function PaymentTypeBreakdown({ bookings }: PaymentTypeBreakdownProps) {
         // Nights mode: Attempt to deduce per-night breakdown
         let deduced = false;
 
-        if (hasCerts) {
+        // Effective types for nightly breakdown (ignore cash < $20 if other methods are present)
+        const hasEffectiveCash = isSignificantCash || (!hasPoints && !hasCerts && hasCash);
+        const effectiveTypes = [
+          hasEffectiveCash ? "cash" : null,
+          hasPoints ? "points" : null,
+          hasCerts ? "certs" : null,
+        ].filter(Boolean);
+        const typesCount = effectiveTypes.length;
+
+        // 1. Single effective payment type
+        if (typesCount === 1) {
+          const type = effectiveTypes[0];
+          if (type === "cash") cashCount += numNights;
+          else if (type === "points") pointsCount += numNights;
+          else if (type === "certs") certsCount += numNights;
+          deduced = true;
+        } 
+        // 2. Number of nights matches number of payment types (1 night each)
+        else if (typesCount === numNights) {
+          effectiveTypes.forEach((t) => {
+            if (t === "cash") cashCount += 1;
+            else if (t === "points") pointsCount += 1;
+            else if (t === "certs") certsCount += 1;
+          });
+          deduced = true;
+        }
+        // 3. Certificates + one other effective type
+        else if (hasCerts && typesCount === 2) {
+          const otherType = hasPoints ? "points" : "cash";
           const certNights = Math.min(numCerts, numNights);
           const remainingNights = numNights - certNights;
-
-          if (remainingNights === 0) {
+          
+          if (remainingNights >= 0) {
             certsCount += certNights;
-            deduced = true;
-          } else {
-            // Check if remaining nights can be assigned to exactly one other type
-            // Ignore cash < 20 if points are present
-            if (hasPoints && !isSignificantCash) {
-              certsCount += certNights;
-              pointsCount += remainingNights;
-              deduced = true;
-            } else if (!hasPoints && isSignificantCash) {
-              certsCount += certNights;
-              cashCount += remainingNights;
-              deduced = true;
-            }
-          }
-        } else if (hasPoints && hasCash) {
-          if (!isSignificantCash) {
-            // Cash is likely just fees, treat all nights as points
-            pointsCount += numNights;
-            deduced = true;
-          } else if (numNights === 2) {
-            // 2 nights, Points + Cash: Deduce 1 night each
-            pointsCount += 1;
-            cashCount += 1;
+            if (otherType === "points") pointsCount += remainingNights;
+            else cashCount += remainingNights;
             deduced = true;
           }
-        } else if (hasPoints) {
-          pointsCount += numNights;
-          deduced = true;
-        } else if (hasCash) {
-          cashCount += numNights;
-          deduced = true;
         }
 
         if (!deduced) {
@@ -178,7 +184,7 @@ export function PaymentTypeBreakdown({ bookings }: PaymentTypeBreakdownProps) {
                     {data.chartData.map((entry, index) => (
                       <Cell
                         key={`cell-${index}`}
-                        fill={COLORS[index % COLORS.length]}
+                        fill={TYPE_COLORS[entry.name] || "#94a3b8"}
                       />
                     ))}
                   </Pie>
