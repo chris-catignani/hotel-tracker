@@ -28,7 +28,7 @@ After schema changes: restart the dev server to pick up the new Prisma client.
 RESTful routes with Next.js `route.ts` handlers:
 - `bookings/` — GET list, POST create; `[id]/` — GET, PUT, DELETE
 - `hotels/`, `credit-cards/`, `portals/` — CRUD
-- `promotions/` — CRUD; `promotions/match/` — POST to auto-match promotions for a booking
+- `promotions/` — CRUD
 
 ### Key Library Files (`src/lib/`)
 
