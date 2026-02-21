@@ -8,15 +8,26 @@ const BOOKING_INCLUDE = {
   shoppingPortal: true,
 } as const;
 
-type BookingWithIncludes = Prisma.BookingGetPayload<{
-  include: typeof BOOKING_INCLUDE;
-}>;
+export interface MatchingBooking {
+  creditCardId: number | null;
+  shoppingPortalId: number | null;
+  hotelChainId: number | null;
+  hotelChainSubBrandId: number | null;
+  checkIn: Date | string;
+  totalCost: string | number | Prisma.Decimal;
+  loyaltyPointsEarned: number | null;
+  creditCard?: {
+    pointType?: {
+      centsPerPoint: string | number | Prisma.Decimal | null;
+    } | null;
+  } | null;
+}
 
 /**
  * Calculates which promotions match a given booking without side effects.
  */
-function calculateMatchedPromotions(
-  booking: BookingWithIncludes,
+export function calculateMatchedPromotions(
+  booking: MatchingBooking,
   activePromotions: Promotion[]
 ) {
   const matched: {
