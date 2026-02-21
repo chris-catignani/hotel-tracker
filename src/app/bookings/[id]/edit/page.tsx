@@ -210,10 +210,8 @@ export default function EditBookingPage() {
   const [propertyName, setPropertyName] = useState("");
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
-  const [numNights, setNumNights] = useState("");
   const [paymentType, setPaymentType] = useState<PaymentType>("cash");
   const [pretaxCost, setPretaxCost] = useState("");
-  const [taxAmount, setTaxAmount] = useState("");
   const [totalCost, setTotalCost] = useState("");
   const [currency, setCurrency] = useState("USD");
   const [originalAmount, setOriginalAmount] = useState("");
@@ -223,7 +221,6 @@ export default function EditBookingPage() {
   const [shoppingPortalId, setShoppingPortalId] = useState("none");
   const [portalCashbackRate, setPortalCashbackRate] = useState("");
   const [portalCashbackOnTotal, setPortalCashbackOnTotal] = useState(false);
-  const [loyaltyPointsEarned, setLoyaltyPointsEarned] = useState("");
   const [bookingSource, setBookingSource] = useState("");
   const [otaAgencyId, setOtaAgencyId] = useState("none");
   const [benefits, setBenefits] = useState<{ type: string; label: string; dollarValue: string }[]>(
@@ -232,12 +229,43 @@ export default function EditBookingPage() {
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [initialized, setInitialized] = useState(false);
 
   // Derived booleans from payment type
   const hasCash = paymentType.includes("cash");
   const hasPoints = paymentType.includes("points");
   const hasCert = paymentType.includes("cert");
+
+  // Derived state (no useEffect needed)
+  const numNights = checkIn && checkOut ? String(diffDays(checkIn, checkOut)) : "0";
+
+  const taxAmount =
+    pretaxCost && totalCost ? (Number(totalCost) - Number(pretaxCost)).toFixed(2) : "0.00";
+
+  const loyaltyPointsEarned = (() => {
+    if (!hotelChainId || !pretaxCost) return "";
+    const hotelChain = hotelChains.find((h) => h.id === Number(hotelChainId));
+    const subBrand =
+      hotelChainSubBrandId !== "none"
+        ? hotelChain?.hotelChainSubBrands.find((sb) => sb.id === Number(hotelChainSubBrandId))
+        : null;
+
+    const basePointRate = Number(subBrand?.basePointRate ?? hotelChain?.basePointRate ?? null);
+    const eliteStatus = hotelChain?.userStatus?.eliteStatus;
+
+    if (eliteStatus) {
+      if (eliteStatus.isFixed && eliteStatus.fixedRate != null) {
+        return String(Math.round(Number(pretaxCost) * Number(eliteStatus.fixedRate)));
+      } else if (eliteStatus.bonusPercentage != null && !isNaN(basePointRate)) {
+        const bonusMultiplier = 1 + Number(eliteStatus.bonusPercentage);
+        return String(Math.round(Number(pretaxCost) * basePointRate * bonusMultiplier));
+      } else if (!isNaN(basePointRate)) {
+        return String(Math.round(Number(pretaxCost) * basePointRate));
+      }
+    } else if (!isNaN(basePointRate)) {
+      return String(Math.round(Number(pretaxCost) * basePointRate));
+    }
+    return "";
+  })();
 
   // Fetch reference data and existing booking
   const fetchData = useCallback(async () => {
@@ -269,12 +297,10 @@ export default function EditBookingPage() {
       setPropertyName(booking.propertyName);
       setCheckIn(toDateInputValue(booking.checkIn));
       setCheckOut(toDateInputValue(booking.checkOut));
-      setNumNights(String(booking.numNights));
       setPaymentType(
         toPaymentType(booking.totalCost, booking.pointsRedeemed, booking.certificates)
       );
       setPretaxCost(String(Number(booking.pretaxCost)));
-      setTaxAmount(String(Number(booking.taxAmount)));
       setTotalCost(String(Number(booking.totalCost)));
       setCurrency(booking.currency || "USD");
       setOriginalAmount(booking.originalAmount ? String(Number(booking.originalAmount)) : "");
@@ -291,9 +317,6 @@ export default function EditBookingPage() {
           : ""
       );
       setPortalCashbackOnTotal(booking.portalCashbackOnTotal ?? false);
-      setLoyaltyPointsEarned(
-        booking.loyaltyPointsEarned != null ? String(booking.loyaltyPointsEarned) : ""
-      );
       if (booking.pointsRedeemed != null) {
         setPointsRedeemed(String(booking.pointsRedeemed));
       }
@@ -318,61 +341,12 @@ export default function EditBookingPage() {
     fetchData();
   }, [fetchData]);
 
-  // Auto-calculate numNights when dates change (only after initial load)
-  useEffect(() => {
-    if (!initialized) return;
-    if (checkIn && checkOut) {
-      setNumNights(String(diffDays(checkIn, checkOut)));
-    }
-  }, [checkIn, checkOut, initialized]);
-
-  // Auto-calculate taxAmount when pretaxCost/totalCost change (only after initial load)
-  useEffect(() => {
-    if (!initialized) return;
-    if (pretaxCost && totalCost) {
-      const tax = Number(totalCost) - Number(pretaxCost);
-      setTaxAmount(tax.toFixed(2));
-    }
-  }, [pretaxCost, totalCost, initialized]);
-
-  // Auto-calculate loyalty points when hotel chain, sub-brand, or pretaxCost changes (only after initial load)
-  useEffect(() => {
-    if (!initialized) return;
-    if (hotelChainId && pretaxCost) {
-      const hotelChain = hotelChains.find((h) => h.id === Number(hotelChainId));
-      const subBrand =
-        hotelChainSubBrandId !== "none"
-          ? hotelChain?.hotelChainSubBrands.find((sb) => sb.id === Number(hotelChainSubBrandId))
-          : null;
-
-      const basePointRate = Number(subBrand?.basePointRate ?? hotelChain?.basePointRate ?? null);
-      const eliteStatus = hotelChain?.userStatus?.eliteStatus;
-
-      if (eliteStatus) {
-        if (eliteStatus.isFixed && eliteStatus.fixedRate != null) {
-          setLoyaltyPointsEarned(
-            String(Math.round(Number(pretaxCost) * Number(eliteStatus.fixedRate)))
-          );
-        } else if (eliteStatus.bonusPercentage != null && !isNaN(basePointRate)) {
-          const bonusMultiplier = 1 + Number(eliteStatus.bonusPercentage);
-          setLoyaltyPointsEarned(
-            String(Math.round(Number(pretaxCost) * basePointRate * bonusMultiplier))
-          );
-        } else if (!isNaN(basePointRate)) {
-          setLoyaltyPointsEarned(String(Math.round(Number(pretaxCost) * basePointRate)));
-        }
-      } else if (!isNaN(basePointRate)) {
-        setLoyaltyPointsEarned(String(Math.round(Number(pretaxCost) * basePointRate)));
-      }
-    }
-  }, [hotelChainId, hotelChainSubBrandId, pretaxCost, hotelChains, initialized]);
-
-  // Clear sub-fields when switching payment type (only after initial load)
-  useEffect(() => {
-    if (!initialized) return;
-    if (!hasPoints) setPointsRedeemed("");
-    if (!hasCert) setCertificates([]);
-  }, [hasPoints, hasCert, initialized]);
+  const handlePaymentTypeChange = (v: PaymentType) => {
+    setPaymentType(v);
+    // Side effects move from useEffect to handler
+    if (!v.includes("points")) setPointsRedeemed("");
+    if (!v.includes("cert")) setCertificates([]);
+  };
 
   const addCertificate = () => setCertificates((prev) => [...prev, ""]);
   const updateCertificate = (idx: number, value: string) =>
@@ -618,7 +592,10 @@ export default function EditBookingPage() {
             {/* Payment Type */}
             <div className="space-y-2">
               <Label htmlFor="paymentType">Payment Type</Label>
-              <Select value={paymentType} onValueChange={(v) => setPaymentType(v as PaymentType)}>
+              <Select
+                value={paymentType}
+                onValueChange={(v) => handlePaymentTypeChange(v as PaymentType)}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
