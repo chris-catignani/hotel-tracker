@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { CERT_TYPE_OPTIONS } from "@/lib/cert-types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { calculatePointsFromChain } from "@/lib/loyalty-utils";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -182,31 +183,16 @@ export default function NewBookingPage() {
   const taxAmount =
     pretaxCost && totalCost ? (Number(totalCost) - Number(pretaxCost)).toFixed(2) : "0.00";
 
-  const loyaltyPointsEarned = (() => {
-    if (!hotelChainId || !pretaxCost) return "";
-    const hotelChain = hotelChains.find((h) => h.id === Number(hotelChainId));
-    const subBrand =
-      hotelChainSubBrandId !== "none"
-        ? hotelChain?.hotelChainSubBrands.find((sb) => sb.id === Number(hotelChainSubBrandId))
-        : null;
-
-    const basePointRate = Number(subBrand?.basePointRate ?? hotelChain?.basePointRate ?? null);
-    const eliteStatus = hotelChain?.userStatus?.eliteStatus;
-
-    if (eliteStatus) {
-      if (eliteStatus.isFixed && eliteStatus.fixedRate != null) {
-        return String(Math.round(Number(pretaxCost) * Number(eliteStatus.fixedRate)));
-      } else if (eliteStatus.bonusPercentage != null && !isNaN(basePointRate)) {
-        const bonusMultiplier = 1 + Number(eliteStatus.bonusPercentage);
-        return String(Math.round(Number(pretaxCost) * basePointRate * bonusMultiplier));
-      } else if (!isNaN(basePointRate)) {
-        return String(Math.round(Number(pretaxCost) * basePointRate));
-      }
-    } else if (!isNaN(basePointRate)) {
-      return String(Math.round(Number(pretaxCost) * basePointRate));
-    }
-    return "";
-  })();
+  const loyaltyPointsEarned = useMemo(
+    () =>
+      calculatePointsFromChain({
+        hotelChainId,
+        hotelChainSubBrandId,
+        pretaxCost,
+        hotelChains,
+      }),
+    [hotelChainId, hotelChainSubBrandId, pretaxCost, hotelChains]
+  );
 
   // Fetch reference data
   const fetchData = useCallback(async () => {
