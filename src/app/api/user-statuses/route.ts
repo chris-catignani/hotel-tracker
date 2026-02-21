@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
-import { recalculateLoyaltyForChain } from "@/lib/loyalty-recalculation";
+import { recalculateLoyaltyForHotelChain } from "@/lib/loyalty-recalculation";
 
 export async function GET() {
   try {
@@ -25,6 +25,12 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const { hotelChainId, eliteStatusId } = await request.json();
+
+    // Check if status is actually changing
+    const existing = await prisma.userStatus.findUnique({
+      where: { hotelChainId: Number(hotelChainId) },
+      select: { eliteStatusId: true }
+    });
 
     // Validate that eliteStatusId belongs to hotelChainId
     if (eliteStatusId) {
@@ -52,8 +58,10 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Recalculate loyalty points for all future bookings for this chain
-    await recalculateLoyaltyForChain(Number(hotelChainId));
+    // Only recalculate if the elite status changed
+    if (!existing || existing.eliteStatusId !== status.eliteStatusId) {
+      await recalculateLoyaltyForHotelChain(Number(hotelChainId));
+    }
 
     return NextResponse.json(status);
   } catch (error) {

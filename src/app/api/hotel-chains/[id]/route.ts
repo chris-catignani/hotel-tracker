@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
-import { recalculateLoyaltyForChain } from "@/lib/loyalty-recalculation";
+import { recalculateLoyaltyForHotelChain } from "@/lib/loyalty-recalculation";
 
 export async function PUT(
   request: NextRequest,
@@ -11,6 +11,12 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
     const { name, loyaltyProgram, basePointRate, pointTypeId } = body;
+
+    // Check if basePointRate is changing to avoid unnecessary recalculations
+    const existing = await prisma.hotelChain.findUnique({
+      where: { id: Number(id) },
+      select: { basePointRate: true }
+    });
 
     const data: Record<string, unknown> = {};
     if (name !== undefined) data.name = name;
@@ -30,9 +36,10 @@ export async function PUT(
       },
     });
 
-    // Recalculate loyalty points for all future bookings for this chain
-    // (This covers base rate changes)
-    await recalculateLoyaltyForChain(hotelChain.id);
+    // Recalculate loyalty points if the base rate changed
+    if (basePointRate !== undefined && Number(existing?.basePointRate) !== Number(basePointRate)) {
+      await recalculateLoyaltyForHotelChain(hotelChain.id);
+    }
 
     return NextResponse.json(hotelChain);
   } catch (error) {

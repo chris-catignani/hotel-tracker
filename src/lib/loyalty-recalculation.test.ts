@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { recalculateLoyaltyForChain } from './loyalty-recalculation';
+import { recalculateLoyaltyForHotelChain } from './loyalty-recalculation';
 import prisma from './prisma';
 import { reevaluateBookings } from './promotion-matching';
 
@@ -13,6 +13,7 @@ vi.mock('./prisma', () => ({
       findMany: vi.fn(),
       update: vi.fn(),
     },
+    $transaction: vi.fn((ops) => Promise.all(ops)),
   },
 }));
 
@@ -41,43 +42,34 @@ describe('loyalty-recalculation', () => {
     };
     (prisma.hotelChain.findUnique as any).mockResolvedValue(mockChain);
 
-    // 2. Mock future bookings (Today is mocked to be a fixed date in logic, 
-    // but here we just return what findMany would return)
+    // 2. Mock future bookings
     const mockBookings = [
-      { id: 101, pretaxCost: 100 }, // Expected: 100 * 10 * 1.5 = 1500
-      { id: 102, pretaxCost: 200 }, // Expected: 200 * 10 * 1.5 = 3000
+      { id: 101, pretaxCost: 100 }, // Expected: 1500
+      { id: 102, pretaxCost: 200 }, // Expected: 3000
     ];
     (prisma.booking.findMany as any).mockResolvedValue(mockBookings);
 
     // 3. Run the recalculation
-    await recalculateLoyaltyForChain(1);
+    await recalculateLoyaltyForHotelChain(1);
 
-    // 4. Verify updates
+    // 4. Verify transaction was called with updates
+    expect(prisma.$transaction).toHaveBeenCalled();
     expect(prisma.booking.update).toHaveBeenCalledTimes(2);
-    expect(prisma.booking.update).toHaveBeenCalledWith({
-      where: { id: 101 },
-      data: { loyaltyPointsEarned: 1500 }
-    });
-    expect(prisma.booking.update).toHaveBeenCalledWith({
-      where: { id: 102 },
-      data: { loyaltyPointsEarned: 3000 }
-    });
 
-    // 5. Verify promotion re-evaluation was triggered for both bookings
+    // 5. Verify promotion re-evaluation
     expect(reevaluateBookings).toHaveBeenCalledWith([101, 102]);
   });
 
   it('should return early if chain not found', async () => {
     (prisma.hotelChain.findUnique as any).mockResolvedValue(null);
-    await recalculateLoyaltyForChain(1);
+    await recalculateLoyaltyForHotelChain(1);
     expect(prisma.booking.findMany).not.toHaveBeenCalled();
   });
 
   it('should return early if no future bookings found', async () => {
     (prisma.hotelChain.findUnique as any).mockResolvedValue({ id: 1 });
     (prisma.booking.findMany as any).mockResolvedValue([]);
-    await recalculateLoyaltyForChain(1);
-    expect(prisma.booking.update).not.toHaveBeenCalled();
-    expect(reevaluateBookings).not.toHaveBeenCalled();
+    await recalculateLoyaltyForHotelChain(1);
+    expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 });

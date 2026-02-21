@@ -6,7 +6,7 @@ import { reevaluateBookings } from "./promotion-matching";
  * Re-calculates loyalty points for all upcoming bookings of a specific hotel chain.
  * This is triggered when the chain's base rate or the user's status for that chain changes.
  */
-export async function recalculateLoyaltyForChain(hotelChainId: number): Promise<void> {
+export async function recalculateLoyaltyForHotelChain(hotelChainId: number): Promise<void> {
   // 1. Fetch chain and its current user status/elite details
   const hotelChain = await prisma.hotelChain.findUnique({
     where: { id: hotelChainId },
@@ -40,27 +40,24 @@ export async function recalculateLoyaltyForChain(hotelChainId: number): Promise<
 
   if (bookings.length === 0) return;
 
-  // 3. Update each booking with new calculated points
-  const bookingIds: number[] = [];
-  
-  await Promise.all(
-    bookings.map(async (booking) => {
-      const newPoints = calculatePoints({
-        pretaxCost: Number(booking.pretaxCost),
-        basePointRate: hotelChain.basePointRate ? Number(hotelChain.basePointRate) : null,
-        eliteStatus: hotelChain.userStatus?.eliteStatus
-      });
+  // 3. Prepare update operations
+  const bookingIds = bookings.map(b => b.id);
+  const updateOperations = bookings.map(booking => {
+    const newPoints = calculatePoints({
+      pretaxCost: Number(booking.pretaxCost),
+      basePointRate: hotelChain.basePointRate ? Number(hotelChain.basePointRate) : null,
+      eliteStatus: hotelChain.userStatus?.eliteStatus,
+    });
+    return prisma.booking.update({
+      where: { id: booking.id },
+      data: { loyaltyPointsEarned: newPoints },
+    });
+  });
 
-      await prisma.booking.update({
-        where: { id: booking.id },
-        data: { loyaltyPointsEarned: newPoints }
-      });
+  // 4. Use a transaction to ensure all bookings are updated atomically and improve performance.
+  await prisma.$transaction(updateOperations);
 
-      bookingIds.push(booking.id);
-    })
-  );
-
-  // 4. Re-evaluate promotions (especially points multipliers) for these bookings
+  // 5. Re-evaluate promotions (especially points multipliers) for these bookings
   // Since we changed the base points, any 2x/3x multipliers need their appliedValue updated
   await reevaluateBookings(bookingIds);
 }
