@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { CERT_TYPE_OPTIONS } from "@/lib/cert-types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { calculatePointsFromChain } from "@/lib/loyalty-utils";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -152,10 +153,8 @@ export default function NewBookingPage() {
   const [propertyName, setPropertyName] = useState("");
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
-  const [numNights, setNumNights] = useState("");
   const [paymentType, setPaymentType] = useState<PaymentType>("cash");
   const [pretaxCost, setPretaxCost] = useState("");
-  const [taxAmount, setTaxAmount] = useState("");
   const [totalCost, setTotalCost] = useState("");
   const [currency, setCurrency] = useState("USD");
   const [originalAmount, setOriginalAmount] = useState("");
@@ -165,7 +164,6 @@ export default function NewBookingPage() {
   const [shoppingPortalId, setShoppingPortalId] = useState("none");
   const [portalCashbackRate, setPortalCashbackRate] = useState("");
   const [portalCashbackOnTotal, setPortalCashbackOnTotal] = useState(false);
-  const [loyaltyPointsEarned, setLoyaltyPointsEarned] = useState("");
   const [bookingSource, setBookingSource] = useState("");
   const [otaAgencyId, setOtaAgencyId] = useState("none");
   const [benefits, setBenefits] = useState<{ type: string; label: string; dollarValue: string }[]>(
@@ -178,6 +176,23 @@ export default function NewBookingPage() {
   const hasCash = paymentType.includes("cash");
   const hasPoints = paymentType.includes("points");
   const hasCert = paymentType.includes("cert");
+
+  // Derived state (no useEffect needed)
+  const numNights = checkIn && checkOut ? String(diffDays(checkIn, checkOut)) : "0";
+
+  const taxAmount =
+    pretaxCost && totalCost ? (Number(totalCost) - Number(pretaxCost)).toFixed(2) : "0.00";
+
+  const loyaltyPointsEarned = useMemo(
+    () =>
+      calculatePointsFromChain({
+        hotelChainId,
+        hotelChainSubBrandId,
+        pretaxCost,
+        hotelChains,
+      }),
+    [hotelChainId, hotelChainSubBrandId, pretaxCost, hotelChains]
+  );
 
   // Fetch reference data
   const fetchData = useCallback(async () => {
@@ -194,60 +209,16 @@ export default function NewBookingPage() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchData();
   }, [fetchData]);
 
-  // Auto-calculate numNights when dates change
-  useEffect(() => {
-    if (checkIn && checkOut) {
-      setNumNights(String(diffDays(checkIn, checkOut)));
-    }
-  }, [checkIn, checkOut]);
-
-  // Auto-calculate taxAmount when pretaxCost/totalCost change
-  useEffect(() => {
-    if (pretaxCost && totalCost) {
-      const tax = Number(totalCost) - Number(pretaxCost);
-      setTaxAmount(tax.toFixed(2));
-    }
-  }, [pretaxCost, totalCost]);
-
-  // Auto-calculate loyalty points when hotel chain, sub-brand, or pretaxCost changes
-  useEffect(() => {
-    if (hotelChainId && pretaxCost) {
-      const hotelChain = hotelChains.find((h) => h.id === Number(hotelChainId));
-      const subBrand =
-        hotelChainSubBrandId !== "none"
-          ? hotelChain?.hotelChainSubBrands.find((sb) => sb.id === Number(hotelChainSubBrandId))
-          : null;
-
-      const basePointRate = Number(subBrand?.basePointRate ?? hotelChain?.basePointRate ?? null);
-      const eliteStatus = hotelChain?.userStatus?.eliteStatus;
-
-      if (eliteStatus) {
-        if (eliteStatus.isFixed && eliteStatus.fixedRate != null) {
-          setLoyaltyPointsEarned(
-            String(Math.round(Number(pretaxCost) * Number(eliteStatus.fixedRate)))
-          );
-        } else if (eliteStatus.bonusPercentage != null && !isNaN(basePointRate)) {
-          const bonusMultiplier = 1 + Number(eliteStatus.bonusPercentage);
-          setLoyaltyPointsEarned(
-            String(Math.round(Number(pretaxCost) * basePointRate * bonusMultiplier))
-          );
-        } else if (!isNaN(basePointRate)) {
-          setLoyaltyPointsEarned(String(Math.round(Number(pretaxCost) * basePointRate)));
-        }
-      } else if (!isNaN(basePointRate)) {
-        setLoyaltyPointsEarned(String(Math.round(Number(pretaxCost) * basePointRate)));
-      }
-    }
-  }, [hotelChainId, hotelChainSubBrandId, pretaxCost, hotelChains]);
-
-  // Clear sub-fields when switching payment type
-  useEffect(() => {
-    if (!hasPoints) setPointsRedeemed("");
-    if (!hasCert) setCertificates([]);
-  }, [hasPoints, hasCert]);
+  const handlePaymentTypeChange = (v: PaymentType) => {
+    setPaymentType(v);
+    // Side effects move from useEffect to handler
+    if (!v.includes("points")) setPointsRedeemed("");
+    if (!v.includes("cert")) setCertificates([]);
+  };
 
   const addCertificate = () => setCertificates((prev) => [...prev, ""]);
   const updateCertificate = (idx: number, value: string) =>
@@ -473,7 +444,10 @@ export default function NewBookingPage() {
             {/* Payment Type */}
             <div className="space-y-2">
               <Label htmlFor="paymentType">Payment Type</Label>
-              <Select value={paymentType} onValueChange={(v) => setPaymentType(v as PaymentType)}>
+              <Select
+                value={paymentType}
+                onValueChange={(v) => handlePaymentTypeChange(v as PaymentType)}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>

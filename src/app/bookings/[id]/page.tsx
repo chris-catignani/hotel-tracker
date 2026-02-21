@@ -175,6 +175,7 @@ export default function BookingDetailPage() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchBooking();
   }, [fetchBooking]);
 

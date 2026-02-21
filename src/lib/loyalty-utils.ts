@@ -34,3 +34,63 @@ export function calculatePoints({
   // Fallback to just base rate
   return Math.round(pretaxCost * baseRate);
 }
+
+interface LoyaltyCalculationParams {
+  hotelChainId: string;
+  hotelChainSubBrandId: string;
+  pretaxCost: string;
+  hotelChains: {
+    id: number;
+    basePointRate: number | null;
+    hotelChainSubBrands: { id: number; basePointRate: number | null }[];
+    userStatus: {
+      eliteStatus: {
+        isFixed: boolean;
+        fixedRate: number | null;
+        bonusPercentage: number | null;
+      } | null;
+    } | null;
+  }[];
+}
+
+/**
+ * Higher-level helper to find the correct chain/sub-brand and calculate points.
+ * Useful for UI components that have the full list of chains.
+ */
+export function calculatePointsFromChain({
+  hotelChainId,
+  hotelChainSubBrandId,
+  pretaxCost,
+  hotelChains,
+}: LoyaltyCalculationParams): string {
+  if (!hotelChainId || !pretaxCost) return "";
+
+  const hotelChain = hotelChains.find((h) => h.id === Number(hotelChainId));
+  if (!hotelChain) return "";
+
+  const subBrand =
+    hotelChainSubBrandId !== "none"
+      ? hotelChain.hotelChainSubBrands.find((sb) => sb.id === Number(hotelChainSubBrandId))
+      : null;
+
+  const basePointRate = Number(subBrand?.basePointRate ?? hotelChain.basePointRate ?? null);
+  const eliteStatus = hotelChain.userStatus?.eliteStatus;
+
+  const points = calculatePoints({
+    pretaxCost: Number(pretaxCost),
+    basePointRate: !isNaN(basePointRate) ? basePointRate : null,
+    eliteStatus: eliteStatus
+      ? {
+          ...eliteStatus,
+          id: 0,
+          hotelChainId: hotelChain.id,
+          name: "",
+          eliteTierLevel: 0,
+          bonusPercentage: eliteStatus.bonusPercentage ? String(eliteStatus.bonusPercentage) : null,
+          fixedRate: eliteStatus.fixedRate ? String(eliteStatus.fixedRate) : null,
+        }
+      : null,
+  });
+
+  return String(points);
+}
