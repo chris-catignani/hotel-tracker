@@ -41,7 +41,8 @@ interface BookingWithRelations {
     id: number;
     name: string;
     loyaltyProgram: string | null;
-    pointType: { centsPerPoint: string } | null;
+    basePointRate: string | number | null;
+    pointType: { name: string; centsPerPoint: string } | null;
   };
   hotelChainSubBrand?: {
     id: number;
@@ -50,14 +51,15 @@ interface BookingWithRelations {
   creditCard: {
     id: number;
     name: string;
-    rewardRate: string;
-    pointType: { centsPerPoint: string } | null;
+    rewardType: string;
+    rewardRate: string | number;
+    pointType: { name: string; centsPerPoint: string } | null;
   } | null;
   shoppingPortal: {
     id: number;
     name: string;
     rewardType: string;
-    pointType: { centsPerPoint: string } | null;
+    pointType: { name: string; centsPerPoint: string } | null;
   } | null;
   bookingPromotions: {
     id: number;

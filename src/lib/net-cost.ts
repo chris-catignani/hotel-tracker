@@ -20,8 +20,8 @@ export interface NetCostBooking {
   hotelChain: {
     name: string;
     loyaltyProgram: string | null;
-    basePointRate?: string | number | null;
-    pointType: { name?: string; centsPerPoint: string | number } | null;
+    basePointRate: string | number | null;
+    pointType: { name: string; centsPerPoint: string | number } | null;
     userStatus?: {
       eliteStatus: {
         name: string;
@@ -33,13 +33,13 @@ export interface NetCostBooking {
   };
   creditCard: {
     name: string;
-    rewardRate?: string | number;
-    pointType: { name?: string; centsPerPoint?: string | number } | null;
+    rewardRate: string | number;
+    pointType: { name: string; centsPerPoint: string | number } | null;
   } | null;
   shoppingPortal: {
     name: string;
     rewardType: string;
-    pointType: { name?: string; centsPerPoint: string | number } | null;
+    pointType: { name: string; centsPerPoint: string | number } | null;
   } | null;
   bookingPromotions: {
     id: number;

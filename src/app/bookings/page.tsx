@@ -64,20 +64,21 @@ interface Booking {
     id: number;
     name: string;
     loyaltyProgram: string | null;
-    pointType: { centsPerPoint: string | number } | null;
+    basePointRate: string | number | null;
+    pointType: { name: string; centsPerPoint: string | number } | null;
   };
   creditCard: {
     id: number;
     name: string;
     rewardType: string;
     rewardRate: string | number;
-    pointType: { centsPerPoint: string | number } | null;
+    pointType: { name: string; centsPerPoint: string | number } | null;
   } | null;
   shoppingPortal: {
     id: number;
     name: string;
     rewardType: string;
-    pointType: { centsPerPoint: string | number } | null;
+    pointType: { name: string; centsPerPoint: string | number } | null;
   } | null;
   bookingPromotions: BookingPromotion[];
   certificates: BookingCertificate[];
