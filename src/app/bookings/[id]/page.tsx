@@ -13,7 +13,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { certTypeLabel } from "@/lib/cert-types";
-import { getNetCostBreakdown } from "@/lib/net-cost";
+import { getNetCostBreakdown, NetCostBooking } from "@/lib/net-cost";
+import { formatCurrency } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -56,7 +57,8 @@ interface BookingBenefit {
   dollarValue: string | number | null;
 }
 
-interface Booking {
+// Ensure Booking interface matches NetCostBooking for the breakdown logic
+interface Booking extends NetCostBooking {
   id: number;
   hotelChainId: number;
   hotelChainSubBrand: { id: number; name: string } | null;
@@ -64,41 +66,14 @@ interface Booking {
   checkIn: string;
   checkOut: string;
   numNights: number;
-  pretaxCost: string | number;
-  taxAmount: string | number;
-  totalCost: string | number;
   currency: string;
   originalAmount: string | number | null;
   creditCardId: number | null;
   shoppingPortalId: number | null;
-  portalCashbackRate: string | number | null;
-  portalCashbackOnTotal: boolean;
-  loyaltyPointsEarned: number | null;
-  pointsRedeemed: number | null;
   notes: string | null;
   createdAt: string;
   bookingSource: string | null;
   otaAgency: { id: number; name: string } | null;
-  hotelChain: {
-    id: number;
-    name: string;
-    loyaltyProgram: string | null;
-    pointType: { centsPerPoint: string | number } | null;
-  };
-  creditCard: {
-    id: number;
-    name: string;
-    rewardType: string;
-    rewardRate: string | number;
-    pointType: { centsPerPoint: string | number } | null;
-  } | null;
-  shoppingPortal: {
-    id: number;
-    name: string;
-    rewardType: string;
-    pointType: { centsPerPoint: string | number } | null;
-  } | null;
-  bookingPromotions: BookingPromotion[];
   certificates: BookingCertificate[];
   benefits: BookingBenefit[];
 }
@@ -113,13 +88,6 @@ function formatDate(dateStr: string): string {
   const day = String(date.getUTCDate()).padStart(2, "0");
   const year = date.getUTCFullYear();
   return `${month}/${day}/${year}`;
-}
-
-function formatCurrency(amount: number): string {
-  return `$${amount.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
 }
 
 function formatBookingSource(booking: { bookingSource: string | null; otaAgency: { name: string } | null }): string {
@@ -228,16 +196,8 @@ export default function BookingDetailPage() {
     );
   }
 
-  const {
-    totalCost,
-    promoSavings: promotionSavings,
-    portalCashback,
-    cardReward,
-    loyaltyPointsValue,
-    pointsRedeemedValue,
-    certsValue,
-    netCost,
-  } = getNetCostBreakdown(booking);
+  const breakdown = getNetCostBreakdown(booking);
+  const totalCost = Number(booking.totalCost);
 
   const typeBadge = getBookingTypeBadge(booking);
 
@@ -416,16 +376,7 @@ export default function BookingDetailPage() {
       )}
 
       {/* Cost Breakdown */}
-      <CostBreakdown
-        totalCost={totalCost}
-        pointsRedeemedValue={pointsRedeemedValue}
-        certsValue={certsValue}
-        promotionSavings={promotionSavings}
-        portalCashback={portalCashback}
-        cardReward={cardReward}
-        loyaltyPointsValue={loyaltyPointsValue}
-        netCost={netCost}
-      />
+      <CostBreakdown breakdown={breakdown} />
 
       {/* Applied Promotions */}
       {booking.bookingPromotions.length > 0 && (
