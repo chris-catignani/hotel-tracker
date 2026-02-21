@@ -16,6 +16,11 @@ export interface MatchingBooking {
   checkIn: Date | string;
   totalCost: string | number | Prisma.Decimal;
   loyaltyPointsEarned: number | null;
+  hotelChain?: {
+    pointType?: {
+      centsPerPoint: string | number | Prisma.Decimal | null;
+    } | null;
+  } | null;
   creditCard?: {
     pointType?: {
       centsPerPoint: string | number | Prisma.Decimal | null;
@@ -81,8 +86,8 @@ export function calculateMatchedPromotions(
         appliedValue = (Number(booking.totalCost) * Number(promo.value)) / 100;
         break;
       case ValueType.points_multiplier: {
-        const centsPerPoint = booking.creditCard?.pointType?.centsPerPoint
-          ? Number(booking.creditCard.pointType.centsPerPoint)
+        const centsPerPoint = booking.hotelChain?.pointType?.centsPerPoint
+          ? Number(booking.hotelChain.pointType.centsPerPoint)
           : 0.01;
         appliedValue =
           Number(booking.loyaltyPointsEarned || 0) *

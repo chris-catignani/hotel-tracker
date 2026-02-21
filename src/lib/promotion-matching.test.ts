@@ -11,6 +11,9 @@ describe('promotion-matching', () => {
     checkIn: new Date('2026-06-01'),
     totalCost: 100,
     loyaltyPointsEarned: 1000,
+    hotelChain: {
+      pointType: { centsPerPoint: 0.01 }
+    },
     creditCard: {
       pointType: { centsPerPoint: 0.01 }
     }

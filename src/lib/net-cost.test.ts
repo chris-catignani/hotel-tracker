@@ -69,7 +69,7 @@ describe('net-cost', () => {
     // (1000 earned * (2-1) = 1000 bonus pts) * 0.01 = $10.00
     expect(result.promoSavings).toBe(10);
     expect(result.netCost).toBe(80);
-    expect(result.promotions[0].formula).toContain('1,000 pts × (2 - 1) × 1¢ = $10.00');
+    expect(result.promotions[0].formula).toContain('1,000 pts (from pre-tax cost) × (2 - 1) × 1¢ = $10.00');
   });
 
   it('should calculate shopping portal cashback (pre-tax)', () => {
