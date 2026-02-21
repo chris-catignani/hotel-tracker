@@ -42,9 +42,16 @@ export interface NetCostBooking {
     pointType: { name: string; centsPerPoint: string | number } | null;
   } | null;
   bookingPromotions: {
+    id: number;
+    bookingId: number;
+    promotionId: number;
     appliedValue: string | number;
+    autoApplied: boolean;
+    verified: boolean;
     promotion: {
+      id: number;
       name: string;
+      type: string;
       value: string | number;
       valueType: string;
     };
