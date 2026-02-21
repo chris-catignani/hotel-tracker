@@ -51,16 +51,18 @@ Key fields:
 - `Promotion`: `type` (hotel/credit_card/portal/loyalty), `valueType` (fixed/percentage/points_multiplier), `value`, optional `hotelId`/`creditCardId`/`shoppingPortalId`, `minSpend`, `startDate`/`endDate`
 - `BookingPromotion`: join table with `appliedValue` and `autoApplied`
 
-### Net Cost Formula
+### Net Cost Formula & Explanations
 
 ```
 Net Cost = totalCost - promotionSavings - portalCashback - cardReward - loyaltyPointsValue
-
-promotionSavings  = sum(bookingPromotions.appliedValue)
-portalCashback    = portalCashbackRate × totalCost
-cardReward        = totalCost × creditCard.rewardRate × creditCard.pointValue
-loyaltyPointsValue = loyaltyPointsEarned × hotel.pointValue
 ```
+
+**Mandate:** Whenever adding new promotion types, portal reward options, or modifying loyalty logic, you **MUST** update the `getNetCostBreakdown` function in `src/lib/net-cost.ts` to include detailed, human-readable explanations (description and formula) for the new logic. These explanations must explicitly state whether the calculation is based on the **pre-tax cost** or the **total cost**.
+
+- `promotionSavings`  = sum(bookingPromotions.appliedValue)
+- `portalCashback`    = portalCashbackRate × basis (pre-tax or total)
+- `cardReward`        = totalCost × creditCard.rewardRate × creditCard.pointValue
+- `loyaltyPointsValue` = loyaltyPointsEarned × hotel.pointValue (basis is typically pre-tax)
 
 ### Loyalty Points Auto-Calculation
 
