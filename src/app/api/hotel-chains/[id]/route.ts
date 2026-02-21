@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
+import { recalculateLoyaltyForChain } from "@/lib/loyalty-recalculation";
 
 export async function PUT(
   request: NextRequest,
@@ -28,6 +29,10 @@ export async function PUT(
         userStatus: { include: { eliteStatus: true } },
       },
     });
+
+    // Recalculate loyalty points for all future bookings for this chain
+    // (This covers base rate changes)
+    await recalculateLoyaltyForChain(hotelChain.id);
 
     return NextResponse.json(hotelChain);
   } catch (error) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
+import { recalculateLoyaltyForChain } from "@/lib/loyalty-recalculation";
 
 export async function GET() {
   try {
@@ -50,6 +51,10 @@ export async function POST(request: NextRequest) {
         eliteStatus: true,
       },
     });
+
+    // Recalculate loyalty points for all future bookings for this chain
+    await recalculateLoyaltyForChain(Number(hotelChainId));
+
     return NextResponse.json(status);
   } catch (error) {
     return apiError("Failed to update user status", error);
