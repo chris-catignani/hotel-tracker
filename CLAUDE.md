@@ -85,3 +85,16 @@ Calculated server-side in the booking API and client-side in the booking form (u
 - Settings page uses controlled `Dialog` components with separate open/edit state variables
 - `db:push` clears `.next` cache automatically; dev server restart still required after schema changes
 - PostgreSQL on WSL2: start with `sudo service postgresql start` if not running
+
+## Testing
+
+**Framework:** Vitest, React Testing Library (RTL), jsdom
+
+**Command:** `npm test`
+
+### Standards
+
+- **Precise Selectors:** ALWAYS use `data-testid` attributes on React components for specific values or elements to be tested (e.g., `data-testid="stat-value-total-bookings"`). This avoids ambiguity and ensures tests are robust against formatting changes.
+- **Pure Logic:** Extract core business logic into pure functions (as seen in `promotion-matching.ts`) to allow for simple unit testing without mocking complex Prisma objects.
+- **Mocking:** Mock large or browser-only dependencies in tests (e.g., `recharts`) to avoid issues with `jsdom` and keep tests fast.
+- **Cost Basis:** When testing cost calculations, always verify that the description/formula explicitly states the cost basis (pre-tax vs total) per the project mandate.
