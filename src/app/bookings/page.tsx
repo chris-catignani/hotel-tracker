@@ -24,6 +24,7 @@ interface BookingPromotion {
   promotionId: number;
   appliedValue: string | number;
   autoApplied: boolean;
+  verified: boolean;
   promotion: {
     id: number;
     name: string;

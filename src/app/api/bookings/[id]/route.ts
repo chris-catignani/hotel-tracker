@@ -148,13 +148,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
             basePointRate,
             eliteStatus: userStatus?.eliteStatus
               ? {
-                  ...userStatus.eliteStatus,
-                  bonusPercentage: userStatus.eliteStatus.bonusPercentage
-                    ? Number(userStatus.eliteStatus.bonusPercentage)
-                    : null,
-                  fixedRate: userStatus.eliteStatus.fixedRate
-                    ? Number(userStatus.eliteStatus.fixedRate)
-                    : null,
+                  bonusPercentage: userStatus.eliteStatus.bonusPercentage,
+                  fixedRate: userStatus.eliteStatus.fixedRate,
                   isFixed: userStatus.eliteStatus.isFixed,
                 }
               : null,

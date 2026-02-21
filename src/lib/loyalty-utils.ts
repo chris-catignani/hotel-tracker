@@ -1,9 +1,13 @@
-import { HotelChainEliteStatus } from "@prisma/client";
+import { HotelChainEliteStatus, Prisma } from "@prisma/client";
 
 interface CalculationInput {
   pretaxCost: number;
   basePointRate: number | null;
-  eliteStatus?: (HotelChainEliteStatus & { isFixed: boolean }) | null;
+  eliteStatus?: {
+    isFixed: boolean;
+    fixedRate: number | string | Prisma.Decimal | null;
+    bonusPercentage: number | string | Prisma.Decimal | null;
+  } | null;
 }
 
 /**
@@ -81,13 +85,9 @@ export function calculatePointsFromChain({
     basePointRate: !isNaN(basePointRate) ? basePointRate : null,
     eliteStatus: eliteStatus
       ? {
-          ...eliteStatus,
-          id: 0,
-          hotelChainId: hotelChain.id,
-          name: "",
-          eliteTierLevel: 0,
-          bonusPercentage: eliteStatus.bonusPercentage ? String(eliteStatus.bonusPercentage) : null,
-          fixedRate: eliteStatus.fixedRate ? String(eliteStatus.fixedRate) : null,
+          isFixed: eliteStatus.isFixed,
+          bonusPercentage: eliteStatus.bonusPercentage,
+          fixedRate: eliteStatus.fixedRate,
         }
       : null,
   });

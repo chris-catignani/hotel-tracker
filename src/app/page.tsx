@@ -61,9 +61,18 @@ interface BookingWithRelations {
   } | null;
   bookingPromotions: {
     id: number;
+    bookingId: number;
+    promotionId: number;
     appliedValue: string;
     autoApplied: boolean;
-    promotion: { id: number; name: string; type: string };
+    verified: boolean;
+    promotion: {
+      id: number;
+      name: string;
+      type: string;
+      value: string | number;
+      valueType: string;
+    };
   }[];
   certificates: BookingCertificate[];
 }
