@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     // Check if status is actually changing
     const existing = await prisma.userStatus.findUnique({
       where: { hotelChainId: Number(hotelChainId) },
-      select: { eliteStatusId: true }
+      select: { eliteStatusId: true },
     });
 
     // Validate that eliteStatusId belongs to hotelChainId

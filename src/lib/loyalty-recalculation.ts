@@ -13,10 +13,10 @@ export async function recalculateLoyaltyForHotelChain(hotelChainId: number): Pro
     include: {
       userStatus: {
         include: {
-          eliteStatus: true
-        }
-      }
-    }
+          eliteStatus: true,
+        },
+      },
+    },
   });
 
   if (!hotelChain) return;
@@ -29,20 +29,20 @@ export async function recalculateLoyaltyForHotelChain(hotelChainId: number): Pro
     where: {
       hotelChainId,
       checkIn: {
-        gte: today
-      }
+        gte: today,
+      },
     },
     select: {
       id: true,
-      pretaxCost: true
-    }
+      pretaxCost: true,
+    },
   });
 
   if (bookings.length === 0) return;
 
   // 3. Prepare update operations
-  const bookingIds = bookings.map(b => b.id);
-  const updateOperations = bookings.map(booking => {
+  const bookingIds = bookings.map((b) => b.id);
+  const updateOperations = bookings.map((booking) => {
     const newPoints = calculatePoints({
       pretaxCost: Number(booking.pretaxCost),
       basePointRate: hotelChain.basePointRate ? Number(hotelChain.basePointRate) : null,

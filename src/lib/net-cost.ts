@@ -103,7 +103,9 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
       formula = `${formatCurrency(value)} = ${formatCurrency(appliedValue)}`;
       description = `This is a fixed-value promotion of ${formatCurrency(value)}.`;
     } else if (bp.promotion.valueType === "points_multiplier") {
-      const centsPerPoint = booking.hotelChain.pointType?.centsPerPoint ? Number(booking.hotelChain.pointType.centsPerPoint) : DEFAULT_CENTS_PER_POINT;
+      const centsPerPoint = booking.hotelChain.pointType?.centsPerPoint
+        ? Number(booking.hotelChain.pointType.centsPerPoint)
+        : DEFAULT_CENTS_PER_POINT;
       const centsStr = formatCents(centsPerPoint);
       formula = `${(booking.loyaltyPointsEarned || 0).toLocaleString()} pts (from pre-tax cost) × (${value} - 1) × ${centsStr}¢ = ${formatCurrency(appliedValue)}`;
       description = `This promotion is a ${value}x points multiplier on earned loyalty points, which are typically based on the pre-tax cost. We value these points at ${centsStr}¢ each.`;
@@ -128,11 +130,13 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
 
   if (booking.shoppingPortal) {
     const isPoints = booking.shoppingPortal.rewardType === "points";
-    const centsPerPoint = isPoints ? Number(booking.shoppingPortal.pointType?.centsPerPoint ?? 0) : 1;
+    const centsPerPoint = isPoints
+      ? Number(booking.shoppingPortal.pointType?.centsPerPoint ?? 0)
+      : 1;
     portalCashback = portalRate * portalBasis * (isPoints ? centsPerPoint : 1);
 
     const basisStr = booking.portalCashbackOnTotal ? "total cost" : "pre-tax cost";
-    
+
     let formula = "";
     let description = "";
     if (isPoints) {
@@ -156,7 +160,9 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
   let cardRewardCalc: CalculationDetail | undefined;
   if (booking.creditCard) {
     const rate = Number(booking.creditCard.rewardRate);
-    const centsPerPoint = booking.creditCard.pointType ? Number(booking.creditCard.pointType.centsPerPoint) : DEFAULT_CENTS_PER_POINT;
+    const centsPerPoint = booking.creditCard.pointType
+      ? Number(booking.creditCard.pointType.centsPerPoint)
+      : DEFAULT_CENTS_PER_POINT;
     const pointName = booking.creditCard.pointType?.name || "points";
     const centsStr = formatCents(centsPerPoint);
     cardReward = totalCost * rate * centsPerPoint;
@@ -178,7 +184,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
     loyaltyPointsValue = booking.loyaltyPointsEarned * centsPerPoint;
 
     let description = `You earned ${booking.loyaltyPointsEarned.toLocaleString()} ${pointName} for this stay. Loyalty points are typically earned on the pre-tax cost only. We value these points at ${centsStr}¢ each.`;
-    
+
     const elite = booking.hotelChain.userStatus?.eliteStatus;
     if (elite) {
       if (elite.isFixed && elite.fixedRate != null) {
@@ -200,7 +206,9 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
   }
 
   // 5. Points Redeemed
-  const hotelChainCentsPerPoint = booking.hotelChain.pointType ? Number(booking.hotelChain.pointType.centsPerPoint) : 0;
+  const hotelChainCentsPerPoint = booking.hotelChain.pointType
+    ? Number(booking.hotelChain.pointType.centsPerPoint)
+    : 0;
   const pointsRedeemedValue = (booking.pointsRedeemed ?? 0) * hotelChainCentsPerPoint;
   let pointsRedeemedCalc: CalculationDetail | undefined;
   if (booking.pointsRedeemed) {
@@ -222,28 +230,38 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
     const centsStr = formatCents(hotelChainCentsPerPoint);
     certsCalc = {
       label: "Certificates (value)",
-      formula: booking.certificates.map(c => `${certPointsValue(c.certType).toLocaleString()} pts`).join(" + ") + ` × ${centsStr}¢ = ${formatCurrency(certsValue)}`,
+      formula:
+        booking.certificates
+          .map((c) => `${certPointsValue(c.certType).toLocaleString()} pts`)
+          .join(" + ") + ` × ${centsStr}¢ = ${formatCurrency(certsValue)}`,
       description: `You used ${booking.certificates.length} certificate(s). We value them based on the maximum point value they can be redeemed for.`,
     };
   }
 
-  const netCost = totalCost + pointsRedeemedValue + certsValue - promoSavings - portalCashback - cardReward - loyaltyPointsValue;
-  
-  return { 
-    totalCost, 
-    promoSavings, 
+  const netCost =
+    totalCost +
+    pointsRedeemedValue +
+    certsValue -
+    promoSavings -
+    portalCashback -
+    cardReward -
+    loyaltyPointsValue;
+
+  return {
+    totalCost,
+    promoSavings,
     promotions,
-    portalCashback, 
+    portalCashback,
     portalCashbackCalc,
-    cardReward, 
+    cardReward,
     cardRewardCalc,
-    loyaltyPointsValue, 
+    loyaltyPointsValue,
     loyaltyPointsCalc,
-    pointsRedeemedValue, 
+    pointsRedeemedValue,
     pointsRedeemedCalc,
-    certsValue, 
+    certsValue,
     certsCalc,
-    netCost 
+    netCost,
   };
 }
 

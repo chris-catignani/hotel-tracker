@@ -3,10 +3,7 @@ import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { matchPromotionsForAffectedBookings, reevaluateBookings } from "@/lib/promotion-matching";
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const promotion = await prisma.promotion.findUnique({
@@ -20,10 +17,7 @@ export async function GET(
     });
 
     if (!promotion) {
-      return NextResponse.json(
-        { error: "Promotion not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Promotion not found" }, { status: 404 });
     }
 
     return NextResponse.json(promotion);
@@ -32,10 +26,7 @@ export async function GET(
   }
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const body = await request.json();
@@ -62,18 +53,12 @@ export async function PUT(
     if (hotelChainId !== undefined) data.hotelChainId = hotelChainId ? Number(hotelChainId) : null;
     if (hotelChainSubBrandId !== undefined)
       data.hotelChainSubBrandId = hotelChainSubBrandId ? Number(hotelChainSubBrandId) : null;
-    if (creditCardId !== undefined)
-      data.creditCardId = creditCardId ? Number(creditCardId) : null;
+    if (creditCardId !== undefined) data.creditCardId = creditCardId ? Number(creditCardId) : null;
     if (shoppingPortalId !== undefined)
-      data.shoppingPortalId = shoppingPortalId
-        ? Number(shoppingPortalId)
-        : null;
-    if (minSpend !== undefined)
-      data.minSpend = minSpend != null ? Number(minSpend) : null;
-    if (startDate !== undefined)
-      data.startDate = startDate ? new Date(startDate) : null;
-    if (endDate !== undefined)
-      data.endDate = endDate ? new Date(endDate) : null;
+      data.shoppingPortalId = shoppingPortalId ? Number(shoppingPortalId) : null;
+    if (minSpend !== undefined) data.minSpend = minSpend != null ? Number(minSpend) : null;
+    if (startDate !== undefined) data.startDate = startDate ? new Date(startDate) : null;
+    if (endDate !== undefined) data.endDate = endDate ? new Date(endDate) : null;
     if (isActive !== undefined) data.isActive = isActive;
 
     const promotion = await prisma.promotion.update({
@@ -112,8 +97,8 @@ export async function DELETE(
     });
 
     // Re-evaluate affected bookings after deletion.
-    // Note: While Prisma cascade deletes will remove BookingPromotion records, 
-    // we manually re-evaluate to ensure the bookings are correctly updated 
+    // Note: While Prisma cascade deletes will remove BookingPromotion records,
+    // we manually re-evaluate to ensure the bookings are correctly updated
     // (e.g., if other promotions now apply or if summary totals need refresh).
     if (affectedBookings.length > 0) {
       await reevaluateBookings(affectedBookings.map((b) => b.id));

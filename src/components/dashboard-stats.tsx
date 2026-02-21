@@ -36,18 +36,11 @@ export function DashboardStats({
     { label: "Avg Net Cost / Night", value: formatDollars(avgNetCostPerNight) },
   ];
 
-  const cashDisplay =
-    totalSpend > 0
-      ? `$${Math.round(totalSpend).toLocaleString("en-US")}`
-      : "—";
+  const cashDisplay = totalSpend > 0 ? `$${Math.round(totalSpend).toLocaleString("en-US")}` : "—";
   const pointsDisplay =
-    totalPointsRedeemed > 0
-      ? `${totalPointsRedeemed.toLocaleString("en-US")} pts`
-      : "—";
+    totalPointsRedeemed > 0 ? `${totalPointsRedeemed.toLocaleString("en-US")} pts` : "—";
   const certsDisplay =
-    totalCertificates > 0
-      ? `${totalCertificates} cert${totalCertificates !== 1 ? "s" : ""}`
-      : "—";
+    totalCertificates > 0 ? `${totalCertificates} cert${totalCertificates !== 1 ? "s" : ""}` : "—";
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6 items-stretch">
@@ -59,7 +52,12 @@ export function DashboardStats({
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            <p className="text-2xl font-bold text-center" data-testid={`stat-value-${stat.label.toLowerCase().replace(/\s+/g, '-')}`}>{stat.value}</p>
+            <p
+              className="text-2xl font-bold text-center"
+              data-testid={`stat-value-${stat.label.toLowerCase().replace(/\s+/g, "-")}`}
+            >
+              {stat.value}
+            </p>
           </CardContent>
         </Card>
       ))}
@@ -73,15 +71,21 @@ export function DashboardStats({
           <div className="flex justify-evenly w-full">
             <div className="text-center">
               <div className="text-sm text-muted-foreground">Cash</div>
-              <div className="text-base font-bold" data-testid="stat-value-cash">{cashDisplay}</div>
+              <div className="text-base font-bold" data-testid="stat-value-cash">
+                {cashDisplay}
+              </div>
             </div>
             <div className="text-center">
               <div className="text-sm text-muted-foreground">Points</div>
-              <div className="text-base font-bold" data-testid="stat-value-points">{pointsDisplay}</div>
+              <div className="text-base font-bold" data-testid="stat-value-points">
+                {pointsDisplay}
+              </div>
             </div>
             <div className="text-center">
               <div className="text-sm text-muted-foreground">Certs</div>
-              <div className="text-base font-bold" data-testid="stat-value-certs">{certsDisplay}</div>
+              <div className="text-base font-bold" data-testid="stat-value-certs">
+                {certsDisplay}
+              </div>
             </div>
           </div>
         </CardContent>
@@ -94,7 +98,12 @@ export function DashboardStats({
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            <p className="text-2xl font-bold text-center" data-testid={`stat-value-${stat.label.toLowerCase().replace(/\s+/g, '-')}`}>{stat.value}</p>
+            <p
+              className="text-2xl font-bold text-center"
+              data-testid={`stat-value-${stat.label.toLowerCase().replace(/\s+/g, "-")}`}
+            >
+              {stat.value}
+            </p>
           </CardContent>
         </Card>
       ))}

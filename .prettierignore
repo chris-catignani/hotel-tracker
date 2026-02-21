@@ -1,0 +1,8 @@
+.next/
+node_modules/
+public/
+package-lock.json
+.prisma/
+prisma/schema.prisma
+dist/
+build/

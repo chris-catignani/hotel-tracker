@@ -23,10 +23,7 @@ export function Sidebar() {
       <nav className="flex-1 space-y-1 p-4">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive =
-            item.href === "/"
-              ? pathname === "/"
-              : pathname.startsWith(item.href);
+          const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
 
           return (
             <Link
@@ -35,9 +32,7 @@ export function Sidebar() {
               className={cn(
                 "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                 "hover:bg-accent hover:text-accent-foreground",
-                isActive
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground"
+                isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground"
               )}
             >
               <Icon className="size-4" />

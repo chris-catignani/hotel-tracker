@@ -58,7 +58,11 @@ export function calculateMatchedPromotions(
     if (!typeMatches) continue;
 
     // Sub-brand filter: if promo is scoped to a sub-brand, booking must match
-    if (promo.hotelChainSubBrandId !== null && promo.hotelChainSubBrandId !== booking.hotelChainSubBrandId) continue;
+    if (
+      promo.hotelChainSubBrandId !== null &&
+      promo.hotelChainSubBrandId !== booking.hotelChainSubBrandId
+    )
+      continue;
 
     // Date range check
     if (promo.startDate || promo.endDate) {
@@ -90,9 +94,7 @@ export function calculateMatchedPromotions(
           ? Number(booking.hotelChain.pointType.centsPerPoint)
           : 0.01;
         appliedValue =
-          Number(booking.loyaltyPointsEarned || 0) *
-          (Number(promo.value) - 1) *
-          centsPerPoint;
+          Number(booking.loyaltyPointsEarned || 0) * (Number(promo.value) - 1) * centsPerPoint;
         break;
       }
     }
@@ -165,9 +167,7 @@ export async function reevaluateBookings(bookingIds: number[]): Promise<void> {
 /**
  * Re-evaluates and applies promotions for a single booking.
  */
-export async function matchPromotionsForBooking(
-  bookingId: number
-): Promise<BookingPromotion[]> {
+export async function matchPromotionsForBooking(bookingId: number): Promise<BookingPromotion[]> {
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
     include: BOOKING_INCLUDE,
@@ -189,9 +189,7 @@ export async function matchPromotionsForBooking(
  * Re-evaluates and applies promotions for all bookings potentially affected by a promotion change.
  * Minimizes database calls by fetching active promotions once and processing bookings in parallel.
  */
-export async function matchPromotionsForAffectedBookings(
-  promotionId: number
-): Promise<void> {
+export async function matchPromotionsForAffectedBookings(promotionId: number): Promise<void> {
   const promotion = await prisma.promotion.findUnique({
     where: { id: promotionId },
   });

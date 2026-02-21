@@ -4,11 +4,7 @@ import { useState } from "react";
 import { InfoIcon, ChevronDown, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { 
-  Popover, 
-  PopoverContent, 
-  PopoverTrigger 
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { NetCostBreakdown, CalculationDetail } from "@/lib/net-cost";
 import { formatCurrency } from "@/lib/utils";
 
@@ -18,7 +14,7 @@ interface CostBreakdownProps {
 
 function CalculationInfo({ calc }: { calc: CalculationDetail | undefined }) {
   if (!calc) return null;
-  
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -30,9 +26,7 @@ function CalculationInfo({ calc }: { calc: CalculationDetail | undefined }) {
         <div className="space-y-3">
           <div>
             <h4 className="font-semibold text-sm mb-1">{calc.label}</h4>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              {calc.description}
-            </p>
+            <p className="text-xs text-muted-foreground leading-relaxed">{calc.description}</p>
           </div>
           <div className="rounded-md bg-muted p-2 font-mono text-[10px] break-all">
             {calc.formula}
@@ -73,7 +67,7 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
           <span>Cash Cost</span>
           <span>{formatCurrency(totalCost)}</span>
         </div>
-        
+
         {pointsRedeemedValue > 0 && (
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-1.5">
@@ -83,7 +77,7 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
             <span>+{formatCurrency(pointsRedeemedValue)}</span>
           </div>
         )}
-        
+
         {certsValue > 0 && (
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-1.5">
@@ -126,7 +120,7 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
 
         {promotions.length > 0 && (
           <div className="space-y-2">
-            <button 
+            <button
               className="flex w-full items-center justify-between text-sm hover:bg-muted/50 py-0.5 rounded transition-colors group"
               onClick={() => setIsPromosExpanded(!isPromosExpanded)}
             >
@@ -140,7 +134,7 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
               </div>
               <span className="text-green-600">-{formatCurrency(promoSavings)}</span>
             </button>
-            
+
             {isPromosExpanded && (
               <div className="ml-5 space-y-2 border-l pl-3 py-1">
                 {promotions.map((p) => (

@@ -85,7 +85,8 @@ function formatDate(dateStr: string) {
 }
 
 function calcTotalSavings(booking: BookingWithRelations): number {
-  const { promoSavings, portalCashback, cardReward, loyaltyPointsValue } = getNetCostBreakdown(booking);
+  const { promoSavings, portalCashback, cardReward, loyaltyPointsValue } =
+    getNetCostBreakdown(booking);
   return promoSavings + portalCashback + cardReward + loyaltyPointsValue;
 }
 
@@ -100,7 +101,6 @@ function formatCerts(certificates: { id: number; certType: string }[]): string {
     .map(([desc, count]) => (count > 1 ? `${count} × ${desc}` : desc))
     .join(", ");
 }
-
 
 export default function DashboardPage() {
   const [bookings, setBookings] = useState<BookingWithRelations[]>([]);
@@ -127,20 +127,12 @@ export default function DashboardPage() {
   const totalBookings = bookings.length;
   // Only cash bookings (totalCost > 0) contribute to spend/savings/avg stats
   const cashBookings = bookings.filter((b) => Number(b.totalCost) > 0);
-  const totalSpend = cashBookings.reduce(
-    (sum, b) => sum + Number(b.totalCost),
-    0
-  );
-  const totalSavings = bookings.reduce(
-    (sum, b) => sum + calcTotalSavings(b),
-    0
-  );
+  const totalSpend = cashBookings.reduce((sum, b) => sum + Number(b.totalCost), 0);
+  const totalSavings = bookings.reduce((sum, b) => sum + calcTotalSavings(b), 0);
   const totalNights = bookings.reduce((sum, b) => sum + b.numNights, 0);
   const cashNights = cashBookings.reduce((sum, b) => sum + b.numNights, 0);
   const avgNetCostPerNight =
-    cashNights > 0
-      ? cashBookings.reduce((sum, b) => sum + calculateNetCost(b), 0) / cashNights
-      : 0;
+    cashNights > 0 ? cashBookings.reduce((sum, b) => sum + calculateNetCost(b), 0) / cashNights : 0;
 
   const totalPointsRedeemed = bookings.reduce((sum, b) => sum + (b.pointsRedeemed ?? 0), 0);
   const totalCertificates = bookings.reduce((sum, b) => sum + b.certificates.length, 0);
@@ -155,9 +147,7 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Overview of your hotel bookings and savings
-        </p>
+        <p className="text-muted-foreground">Overview of your hotel bookings and savings</p>
       </div>
 
       <DashboardStats
@@ -260,119 +250,115 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               {cashBookings.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">
-                  No data to display yet
-                </p>
+                <p className="text-center text-muted-foreground py-8">No data to display yet</p>
               ) : (
                 <div className="space-y-4">
                   {(() => {
-                  const totalPromoSavings = cashBookings.reduce(
-                    (sum, b) =>
-                      sum +
-                      b.bookingPromotions.reduce(
-                        (s, bp) => s + Number(bp.appliedValue),
-                        0
-                      ),
-                    0
-                  );
-                  const totalPortalCashback = cashBookings.reduce((sum, b) => {
-                    const portalBasis = b.portalCashbackOnTotal ? Number(b.totalCost) : Number(b.pretaxCost);
-                    const portalRate = Number(b.portalCashbackRate || 0);
-                    if (b.shoppingPortal?.rewardType === "points") {
-                      return sum + portalRate * portalBasis * Number(b.shoppingPortal.pointType?.centsPerPoint ?? 0);
-                    }
-                    return sum + portalRate * portalBasis;
-                  }, 0);
-                  const totalCardRewards = cashBookings.reduce(
-                    (sum, b) =>
-                      sum +
-                      (b.creditCard
-                        ? Number(b.totalCost) *
-                          Number(b.creditCard.rewardRate) *
-                          Number(b.creditCard.pointType?.centsPerPoint ?? 0)
-                        : 0),
-                    0
-                  );
-                  const totalLoyaltyPointsValue = cashBookings.reduce(
-                    (sum, b) =>
-                      sum +
-                      (b.loyaltyPointsEarned && b.hotelChain.pointType
-                        ? b.loyaltyPointsEarned * Number(b.hotelChain.pointType.centsPerPoint)
-                        : 0),
-                    0
-                  );
+                    const totalPromoSavings = cashBookings.reduce(
+                      (sum, b) =>
+                        sum + b.bookingPromotions.reduce((s, bp) => s + Number(bp.appliedValue), 0),
+                      0
+                    );
+                    const totalPortalCashback = cashBookings.reduce((sum, b) => {
+                      const portalBasis = b.portalCashbackOnTotal
+                        ? Number(b.totalCost)
+                        : Number(b.pretaxCost);
+                      const portalRate = Number(b.portalCashbackRate || 0);
+                      if (b.shoppingPortal?.rewardType === "points") {
+                        return (
+                          sum +
+                          portalRate *
+                            portalBasis *
+                            Number(b.shoppingPortal.pointType?.centsPerPoint ?? 0)
+                        );
+                      }
+                      return sum + portalRate * portalBasis;
+                    }, 0);
+                    const totalCardRewards = cashBookings.reduce(
+                      (sum, b) =>
+                        sum +
+                        (b.creditCard
+                          ? Number(b.totalCost) *
+                            Number(b.creditCard.rewardRate) *
+                            Number(b.creditCard.pointType?.centsPerPoint ?? 0)
+                          : 0),
+                      0
+                    );
+                    const totalLoyaltyPointsValue = cashBookings.reduce(
+                      (sum, b) =>
+                        sum +
+                        (b.loyaltyPointsEarned && b.hotelChain.pointType
+                          ? b.loyaltyPointsEarned * Number(b.hotelChain.pointType.centsPerPoint)
+                          : 0),
+                      0
+                    );
 
-                  const items = [
-                    {
-                      label: "Promotion Savings",
-                      value: totalPromoSavings,
-                      color: "bg-blue-500",
-                    },
-                    {
-                      label: "Portal Cashback",
-                      value: totalPortalCashback,
-                      color: "bg-green-500",
-                    },
-                    {
-                      label: "Card Rewards",
-                      value: totalCardRewards,
-                      color: "bg-purple-500",
-                    },
-                    {
-                      label: "Loyalty Points Value",
-                      value: totalLoyaltyPointsValue,
-                      color: "bg-orange-500",
-                    },
-                  ];
+                    const items = [
+                      {
+                        label: "Promotion Savings",
+                        value: totalPromoSavings,
+                        color: "bg-blue-500",
+                      },
+                      {
+                        label: "Portal Cashback",
+                        value: totalPortalCashback,
+                        color: "bg-green-500",
+                      },
+                      {
+                        label: "Card Rewards",
+                        value: totalCardRewards,
+                        color: "bg-purple-500",
+                      },
+                      {
+                        label: "Loyalty Points Value",
+                        value: totalLoyaltyPointsValue,
+                        color: "bg-orange-500",
+                      },
+                    ];
 
-                  const maxValue = Math.max(...items.map((i) => i.value), 1);
+                    const maxValue = Math.max(...items.map((i) => i.value), 1);
 
-                  return (
-                    <>
-                      {items.map((item) => (
-                        <div key={item.label} className="space-y-1">
-                          <div className="flex justify-between text-sm">
-                            <span>{item.label}</span>
-                            <span className="font-medium text-green-600">
-                              {formatDollars(item.value)}
+                    return (
+                      <>
+                        {items.map((item) => (
+                          <div key={item.label} className="space-y-1">
+                            <div className="flex justify-between text-sm">
+                              <span>{item.label}</span>
+                              <span className="font-medium text-green-600">
+                                {formatDollars(item.value)}
+                              </span>
+                            </div>
+                            <div className="h-3 rounded-full bg-secondary">
+                              <div
+                                className={`h-3 rounded-full ${item.color}`}
+                                style={{
+                                  width: `${Math.max((item.value / maxValue) * 100, 0)}%`,
+                                }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                        <div className="pt-2 border-t">
+                          <div className="flex justify-between font-medium">
+                            <span>Total Savings</span>
+                            <span className="text-green-600">{formatDollars(totalSavings)}</span>
+                          </div>
+                          <div className="flex justify-between text-sm text-muted-foreground mt-1">
+                            <span>Effective Savings Rate</span>
+                            <span>
+                              {totalCombinedSpend > 0
+                                ? ((totalSavings / totalCombinedSpend) * 100).toFixed(1)
+                                : "0.0"}
+                              %
                             </span>
                           </div>
-                          <div className="h-3 rounded-full bg-secondary">
-                            <div
-                              className={`h-3 rounded-full ${item.color}`}
-                              style={{
-                                width: `${Math.max(
-                                  (item.value / maxValue) * 100,
-                                  0
-                                )}%`,
-                              }}
-                            />
-                          </div>
                         </div>
-                      ))}
-                      <div className="pt-2 border-t">
-                        <div className="flex justify-between font-medium">
-                          <span>Total Savings</span>
-                          <span className="text-green-600">
-                            {formatDollars(totalSavings)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-sm text-muted-foreground mt-1">
-                          <span>Effective Savings Rate</span>
-                          <span>
-                            {totalCombinedSpend > 0
-                              ? ((totalSavings / totalCombinedSpend) * 100).toFixed(1)
-                              : "0.0"}
-                            %
-                          </span>
-                        </div>
-                      </div>
-                    </>
-                  );
-                })()}
-              </div>
-            )}
-          </CardContent>
+                      </>
+                    );
+                  })()}
+                </div>
+              )}
+            </CardContent>
           </Card>
 
           <PaymentTypeBreakdown bookings={bookings} />
@@ -445,12 +431,8 @@ export default function DashboardPage() {
                     <TableCell className="font-medium">
                       <Badge variant="outline">{summary.chain}</Badge>
                     </TableCell>
-                    <TableCell className="text-right">
-                      {summary.count}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {summary.totalNights}
-                    </TableCell>
+                    <TableCell className="text-right">{summary.count}</TableCell>
+                    <TableCell className="text-right">{summary.totalNights}</TableCell>
                     <TableCell className="text-right">
                       {formatDollars(summary.totalSpend)}
                     </TableCell>
@@ -482,7 +464,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       )}
-
     </div>
   );
 }

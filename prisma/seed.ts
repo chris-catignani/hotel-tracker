@@ -132,13 +132,19 @@ async function main() {
   await prisma.hotelChain.upsert({
     where: { id: HOTEL_ID.HILTON },
     update: { name: "Hilton", loyaltyProgram: "Hilton Honors", basePointRate: 10, pointTypeId: 1 },
-    create: { id: HOTEL_ID.HILTON, name: "Hilton", loyaltyProgram: "Hilton Honors", basePointRate: 10, pointTypeId: 1 },
+    create: {
+      id: HOTEL_ID.HILTON,
+      name: "Hilton",
+      loyaltyProgram: "Hilton Honors",
+      basePointRate: 10,
+      pointTypeId: 1,
+    },
   });
   await upsertEliteStatuses(HOTEL_ID.HILTON, [
-    { name: "Silver", bonusPercentage: 0.20, eliteTierLevel: 1 },
-    { name: "Gold", bonusPercentage: 0.80, eliteTierLevel: 2 },
-    { name: "Diamond", bonusPercentage: 1.00, eliteTierLevel: 3 },
-    { name: "Diamond Reserve", bonusPercentage: 1.20, eliteTierLevel: 4 },
+    { name: "Silver", bonusPercentage: 0.2, eliteTierLevel: 1 },
+    { name: "Gold", bonusPercentage: 0.8, eliteTierLevel: 2 },
+    { name: "Diamond", bonusPercentage: 1.0, eliteTierLevel: 3 },
+    { name: "Diamond Reserve", bonusPercentage: 1.2, eliteTierLevel: 4 },
   ]);
   await upsertSubBrands(HOTEL_ID.HILTON, [
     { name: "Waldorf Astoria" },
@@ -165,13 +171,24 @@ async function main() {
   // Marriott
   await prisma.hotelChain.upsert({
     where: { id: HOTEL_ID.MARRIOTT },
-    update: { name: "Marriott", loyaltyProgram: "Marriott Bonvoy", basePointRate: 10, pointTypeId: 2 },
-    create: { id: HOTEL_ID.MARRIOTT, name: "Marriott", loyaltyProgram: "Marriott Bonvoy", basePointRate: 10, pointTypeId: 2 },
+    update: {
+      name: "Marriott",
+      loyaltyProgram: "Marriott Bonvoy",
+      basePointRate: 10,
+      pointTypeId: 2,
+    },
+    create: {
+      id: HOTEL_ID.MARRIOTT,
+      name: "Marriott",
+      loyaltyProgram: "Marriott Bonvoy",
+      basePointRate: 10,
+      pointTypeId: 2,
+    },
   });
   await upsertEliteStatuses(HOTEL_ID.MARRIOTT, [
-    { name: "Silver", bonusPercentage: 0.10, eliteTierLevel: 1 },
+    { name: "Silver", bonusPercentage: 0.1, eliteTierLevel: 1 },
     { name: "Gold", bonusPercentage: 0.25, eliteTierLevel: 2 },
-    { name: "Platinum", bonusPercentage: 0.50, eliteTierLevel: 3 },
+    { name: "Platinum", bonusPercentage: 0.5, eliteTierLevel: 3 },
     { name: "Titanium", bonusPercentage: 0.75, eliteTierLevel: 4 },
     { name: "Ambassador", bonusPercentage: 0.75, eliteTierLevel: 5 },
   ]);
@@ -214,12 +231,18 @@ async function main() {
   await prisma.hotelChain.upsert({
     where: { id: HOTEL_ID.HYATT },
     update: { name: "Hyatt", loyaltyProgram: "World of Hyatt", basePointRate: 5, pointTypeId: 3 },
-    create: { id: HOTEL_ID.HYATT, name: "Hyatt", loyaltyProgram: "World of Hyatt", basePointRate: 5, pointTypeId: 3 },
+    create: {
+      id: HOTEL_ID.HYATT,
+      name: "Hyatt",
+      loyaltyProgram: "World of Hyatt",
+      basePointRate: 5,
+      pointTypeId: 3,
+    },
   });
   await upsertEliteStatuses(HOTEL_ID.HYATT, [
-    { name: "Discoverist", bonusPercentage: 0.10, eliteTierLevel: 1 },
-    { name: "Explorist", bonusPercentage: 0.20, eliteTierLevel: 2 },
-    { name: "Globalist", bonusPercentage: 0.30, eliteTierLevel: 3 },
+    { name: "Discoverist", bonusPercentage: 0.1, eliteTierLevel: 1 },
+    { name: "Explorist", bonusPercentage: 0.2, eliteTierLevel: 2 },
+    { name: "Globalist", bonusPercentage: 0.3, eliteTierLevel: 3 },
   ]);
   await upsertSubBrands(HOTEL_ID.HYATT, [
     { name: "Park Hyatt" },
@@ -243,13 +266,19 @@ async function main() {
   await prisma.hotelChain.upsert({
     where: { id: HOTEL_ID.IHG },
     update: { name: "IHG", loyaltyProgram: "IHG One Rewards", basePointRate: 10, pointTypeId: 4 },
-    create: { id: HOTEL_ID.IHG, name: "IHG", loyaltyProgram: "IHG One Rewards", basePointRate: 10, pointTypeId: 4 },
+    create: {
+      id: HOTEL_ID.IHG,
+      name: "IHG",
+      loyaltyProgram: "IHG One Rewards",
+      basePointRate: 10,
+      pointTypeId: 4,
+    },
   });
   await upsertEliteStatuses(HOTEL_ID.IHG, [
-    { name: "Silver", bonusPercentage: 0.20, eliteTierLevel: 1 },
-    { name: "Gold", bonusPercentage: 0.40, eliteTierLevel: 2 },
-    { name: "Platinum", bonusPercentage: 0.60, eliteTierLevel: 3 },
-    { name: "Diamond", bonusPercentage: 1.00, eliteTierLevel: 4 },
+    { name: "Silver", bonusPercentage: 0.2, eliteTierLevel: 1 },
+    { name: "Gold", bonusPercentage: 0.4, eliteTierLevel: 2 },
+    { name: "Platinum", bonusPercentage: 0.6, eliteTierLevel: 3 },
+    { name: "Diamond", bonusPercentage: 1.0, eliteTierLevel: 4 },
   ]);
   await upsertSubBrands(HOTEL_ID.IHG, [
     { name: "InterContinental Hotels & Resorts" },
@@ -268,8 +297,19 @@ async function main() {
   // GHA Discovery
   await prisma.hotelChain.upsert({
     where: { id: HOTEL_ID.GHA_DISCOVERY },
-    update: { name: "GHA Discovery", loyaltyProgram: "GHA Discovery", basePointRate: 4, pointTypeId: 5 },
-    create: { id: HOTEL_ID.GHA_DISCOVERY, name: "GHA Discovery", loyaltyProgram: "GHA Discovery", basePointRate: 4, pointTypeId: 5 },
+    update: {
+      name: "GHA Discovery",
+      loyaltyProgram: "GHA Discovery",
+      basePointRate: 4,
+      pointTypeId: 5,
+    },
+    create: {
+      id: HOTEL_ID.GHA_DISCOVERY,
+      name: "GHA Discovery",
+      loyaltyProgram: "GHA Discovery",
+      basePointRate: 4,
+      pointTypeId: 5,
+    },
   });
   await upsertEliteStatuses(HOTEL_ID.GHA_DISCOVERY, [
     { name: "Silver", fixedRate: 4, isFixed: true, eliteTierLevel: 1 },
@@ -292,8 +332,19 @@ async function main() {
   const ACCOR_BASE_RATE = 25 / 12; // ~2.0833
   await prisma.hotelChain.upsert({
     where: { id: HOTEL_ID.ACCOR },
-    update: { name: "Accor", loyaltyProgram: "ALL - Accor Live Limitless", basePointRate: ACCOR_BASE_RATE, pointTypeId: 6 },
-    create: { id: HOTEL_ID.ACCOR, name: "Accor", loyaltyProgram: "ALL - Accor Live Limitless", basePointRate: ACCOR_BASE_RATE, pointTypeId: 6 },
+    update: {
+      name: "Accor",
+      loyaltyProgram: "ALL - Accor Live Limitless",
+      basePointRate: ACCOR_BASE_RATE,
+      pointTypeId: 6,
+    },
+    create: {
+      id: HOTEL_ID.ACCOR,
+      name: "Accor",
+      loyaltyProgram: "ALL - Accor Live Limitless",
+      basePointRate: ACCOR_BASE_RATE,
+      pointTypeId: 6,
+    },
   });
   await upsertEliteStatuses(HOTEL_ID.ACCOR, [
     { name: "Silver", bonusPercentage: 0.24, eliteTierLevel: 1 },
@@ -334,17 +385,40 @@ async function main() {
   await prisma.creditCard.upsert({
     where: { id: 2 },
     update: { name: "Chase Sapphire Reserve", rewardType: "points", rewardRate: 4, pointTypeId: 8 },
-    create: { id: 2, name: "Chase Sapphire Reserve", rewardType: "points", rewardRate: 4, pointTypeId: 8 },
+    create: {
+      id: 2,
+      name: "Chase Sapphire Reserve",
+      rewardType: "points",
+      rewardRate: 4,
+      pointTypeId: 8,
+    },
   });
   await prisma.creditCard.upsert({
     where: { id: 3 },
     update: { name: "Capital One Venture X", rewardType: "points", rewardRate: 2, pointTypeId: 9 },
-    create: { id: 3, name: "Capital One Venture X", rewardType: "points", rewardRate: 2, pointTypeId: 9 },
+    create: {
+      id: 3,
+      name: "Capital One Venture X",
+      rewardType: "points",
+      rewardRate: 2,
+      pointTypeId: 9,
+    },
   });
   await prisma.creditCard.upsert({
     where: { id: 4 },
-    update: { name: "Wells Fargo Autograph Journey", rewardType: "points", rewardRate: 5, pointTypeId: 12 },
-    create: { id: 4, name: "Wells Fargo Autograph Journey", rewardType: "points", rewardRate: 5, pointTypeId: 12 },
+    update: {
+      name: "Wells Fargo Autograph Journey",
+      rewardType: "points",
+      rewardRate: 5,
+      pointTypeId: 12,
+    },
+    create: {
+      id: 4,
+      name: "Wells Fargo Autograph Journey",
+      rewardType: "points",
+      rewardRate: 5,
+      pointTypeId: 12,
+    },
   });
 
   // OTA Agencies
