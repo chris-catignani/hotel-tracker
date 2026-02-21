@@ -59,7 +59,7 @@ export function DashboardStats({
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            <p className="text-2xl font-bold text-center">{stat.value}</p>
+            <p className="text-2xl font-bold text-center" data-testid={`stat-value-${stat.label.toLowerCase().replace(/\s+/g, '-')}`}>{stat.value}</p>
           </CardContent>
         </Card>
       ))}
@@ -73,15 +73,15 @@ export function DashboardStats({
           <div className="flex justify-evenly w-full">
             <div className="text-center">
               <div className="text-sm text-muted-foreground">Cash</div>
-              <div className="text-base font-bold">{cashDisplay}</div>
+              <div className="text-base font-bold" data-testid="stat-value-cash">{cashDisplay}</div>
             </div>
             <div className="text-center">
               <div className="text-sm text-muted-foreground">Points</div>
-              <div className="text-base font-bold">{pointsDisplay}</div>
+              <div className="text-base font-bold" data-testid="stat-value-points">{pointsDisplay}</div>
             </div>
             <div className="text-center">
               <div className="text-sm text-muted-foreground">Certs</div>
-              <div className="text-base font-bold">{certsDisplay}</div>
+              <div className="text-base font-bold" data-testid="stat-value-certs">{certsDisplay}</div>
             </div>
           </div>
         </CardContent>
@@ -94,7 +94,7 @@ export function DashboardStats({
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            <p className="text-2xl font-bold text-center">{stat.value}</p>
+            <p className="text-2xl font-bold text-center" data-testid={`stat-value-${stat.label.toLowerCase().replace(/\s+/g, '-')}`}>{stat.value}</p>
           </CardContent>
         </Card>
       ))}

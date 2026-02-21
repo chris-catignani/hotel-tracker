@@ -168,49 +168,47 @@ export function PaymentTypeBreakdown({ bookings }: PaymentTypeBreakdownProps) {
             No data to display
           </div>
         ) : (
-          <>
-            <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={data.chartData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {data.chartData.map((entry) => (
-                      <Cell
-                        key={`cell-${entry.name}`}
-                        fill={TYPE_COLORS[entry.name] || "#94a3b8"}
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "var(--background)",
-                      borderColor: "var(--border)",
-                      borderRadius: "8px",
-                    }}
-                    itemStyle={{ fontSize: "12px" }}
-                  />
-                  <Legend verticalAlign="bottom" height={36} />
-                </PieChart>
-              </ResponsiveContainer>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={data.chartData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {data.chartData.map((entry) => (
+                    <Cell
+                      key={`cell-${entry.name}`}
+                      fill={TYPE_COLORS[entry.name] || "#94a3b8"}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "var(--background)",
+                    borderColor: "var(--border)",
+                    borderRadius: "8px",
+                  }}
+                  itemStyle={{ fontSize: "12px" }}
+                />
+                <Legend verticalAlign="bottom" height={36} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+        {mode === "nights" && data.ignoredCount > 0 && (
+          <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-md flex items-start gap-2 text-amber-800">
+            <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+            <div className="text-xs">
+              <span className="font-semibold">{data.ignoredCount}</span> combination{" "}
+              {data.ignoredCount === 1 ? "booking" : "bookings"} ignored because
+              nightly breakdown is unavailable.
             </div>
-            {mode === "nights" && data.ignoredCount > 0 && (
-              <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-md flex items-start gap-2 text-amber-800">
-                <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                <div className="text-xs">
-                  <span className="font-semibold">{data.ignoredCount}</span> combination{" "}
-                  {data.ignoredCount === 1 ? "booking" : "bookings"} ignored because
-                  nightly breakdown is unavailable.
-                </div>
-              </div>
-            )}
-          </>
+          </div>
         )}
       </CardContent>
     </Card>
