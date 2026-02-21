@@ -15,33 +15,41 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CERT_TYPE_OPTIONS } from "@/lib/cert-types";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
 const CURRENCIES = [
-  "USD", "EUR", "GBP", "CAD", "AUD", "JPY", "CHF",
-  "MXN", "SGD", "HKD", "MYR", "NTD", "THB", "IDR", "NZD",
+  "USD",
+  "EUR",
+  "GBP",
+  "CAD",
+  "AUD",
+  "JPY",
+  "CHF",
+  "MXN",
+  "SGD",
+  "HKD",
+  "MYR",
+  "NTD",
+  "THB",
+  "IDR",
+  "NZD",
 ];
 
 const PAYMENT_TYPES = [
-  { value: "cash",             label: "Cash" },
-  { value: "points",           label: "Points (Award Stay)" },
-  { value: "cert",             label: "Certificate(s) (Free Night)" },
-  { value: "points_cert",      label: "Points + Certificate(s)" },
-  { value: "cash_points",      label: "Cash + Points" },
-  { value: "cash_cert",        label: "Cash + Certificate(s)" },
+  { value: "cash", label: "Cash" },
+  { value: "points", label: "Points (Award Stay)" },
+  { value: "cert", label: "Certificate(s) (Free Night)" },
+  { value: "points_cert", label: "Points + Certificate(s)" },
+  { value: "cash_points", label: "Cash + Points" },
+  { value: "cash_cert", label: "Cash + Certificate(s)" },
   { value: "cash_points_cert", label: "Cash + Points + Certificate(s)" },
 ] as const;
 
-type PaymentType = typeof PAYMENT_TYPES[number]["value"];
+type PaymentType = (typeof PAYMENT_TYPES)[number]["value"];
 
 // ---------------------------------------------------------------------------
 // Types
@@ -120,7 +128,12 @@ interface Booking {
   certificates: { id: number; certType: string }[];
   bookingSource: string | null;
   otaAgencyId: number | null;
-  benefits: { id: number; benefitType: string; label: string | null; dollarValue: string | number | null }[];
+  benefits: {
+    id: number;
+    benefitType: string;
+    label: string | null;
+    dollarValue: string | number | null;
+  }[];
 }
 
 const BOOKING_SOURCE_OPTIONS = [
@@ -162,7 +175,7 @@ function toDateInputValue(dateStr: string): string {
 function toPaymentType(
   totalCost: string | number,
   pointsRedeemed: number | null,
-  certificates: { id: number; certType: string }[],
+  certificates: { id: number; certType: string }[]
 ): PaymentType {
   const hasCash = Number(totalCost) > 0;
   const hasPoints = pointsRedeemed != null;
@@ -213,7 +226,9 @@ export default function EditBookingPage() {
   const [loyaltyPointsEarned, setLoyaltyPointsEarned] = useState("");
   const [bookingSource, setBookingSource] = useState("");
   const [otaAgencyId, setOtaAgencyId] = useState("none");
-  const [benefits, setBenefits] = useState<{ type: string; label: string; dollarValue: string }[]>([]);
+  const [benefits, setBenefits] = useState<{ type: string; label: string; dollarValue: string }[]>(
+    []
+  );
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -248,23 +263,23 @@ export default function EditBookingPage() {
     if (bookingRes.ok) {
       const booking: Booking = await bookingRes.json();
       setHotelChainId(String(booking.hotelChainId));
-      setHotelChainSubBrandId(booking.hotelChainSubBrandId ? String(booking.hotelChainSubBrandId) : "none");
+      setHotelChainSubBrandId(
+        booking.hotelChainSubBrandId ? String(booking.hotelChainSubBrandId) : "none"
+      );
       setPropertyName(booking.propertyName);
       setCheckIn(toDateInputValue(booking.checkIn));
       setCheckOut(toDateInputValue(booking.checkOut));
       setNumNights(String(booking.numNights));
-      setPaymentType(toPaymentType(booking.totalCost, booking.pointsRedeemed, booking.certificates));
+      setPaymentType(
+        toPaymentType(booking.totalCost, booking.pointsRedeemed, booking.certificates)
+      );
       setPretaxCost(String(Number(booking.pretaxCost)));
       setTaxAmount(String(Number(booking.taxAmount)));
       setTotalCost(String(Number(booking.totalCost)));
       setCurrency(booking.currency || "USD");
       setOriginalAmount(booking.originalAmount ? String(Number(booking.originalAmount)) : "");
-      setCreditCardId(
-        booking.creditCardId ? String(booking.creditCardId) : "none"
-      );
-      setShoppingPortalId(
-        booking.shoppingPortalId ? String(booking.shoppingPortalId) : "none"
-      );
+      setCreditCardId(booking.creditCardId ? String(booking.creditCardId) : "none");
+      setShoppingPortalId(booking.shoppingPortalId ? String(booking.shoppingPortalId) : "none");
       const portalForBooking = booking.shoppingPortalId
         ? loadedPortals.find((p) => p.id === booking.shoppingPortalId)
         : null;
@@ -277,9 +292,7 @@ export default function EditBookingPage() {
       );
       setPortalCashbackOnTotal(booking.portalCashbackOnTotal ?? false);
       setLoyaltyPointsEarned(
-        booking.loyaltyPointsEarned != null
-          ? String(booking.loyaltyPointsEarned)
-          : ""
+        booking.loyaltyPointsEarned != null ? String(booking.loyaltyPointsEarned) : ""
       );
       if (booking.pointsRedeemed != null) {
         setPointsRedeemed(String(booking.pointsRedeemed));
@@ -322,25 +335,29 @@ export default function EditBookingPage() {
     }
   }, [pretaxCost, totalCost, initialized]);
 
-
   // Auto-calculate loyalty points when hotel chain, sub-brand, or pretaxCost changes (only after initial load)
   useEffect(() => {
     if (!initialized) return;
     if (hotelChainId && pretaxCost) {
       const hotelChain = hotelChains.find((h) => h.id === Number(hotelChainId));
-      const subBrand = hotelChainSubBrandId !== "none"
-        ? hotelChain?.hotelChainSubBrands.find((sb) => sb.id === Number(hotelChainSubBrandId))
-        : null;
+      const subBrand =
+        hotelChainSubBrandId !== "none"
+          ? hotelChain?.hotelChainSubBrands.find((sb) => sb.id === Number(hotelChainSubBrandId))
+          : null;
 
       const basePointRate = Number(subBrand?.basePointRate ?? hotelChain?.basePointRate ?? null);
       const eliteStatus = hotelChain?.userStatus?.eliteStatus;
 
       if (eliteStatus) {
         if (eliteStatus.isFixed && eliteStatus.fixedRate != null) {
-          setLoyaltyPointsEarned(String(Math.round(Number(pretaxCost) * Number(eliteStatus.fixedRate))));
+          setLoyaltyPointsEarned(
+            String(Math.round(Number(pretaxCost) * Number(eliteStatus.fixedRate)))
+          );
         } else if (eliteStatus.bonusPercentage != null && !isNaN(basePointRate)) {
           const bonusMultiplier = 1 + Number(eliteStatus.bonusPercentage);
-          setLoyaltyPointsEarned(String(Math.round(Number(pretaxCost) * basePointRate * bonusMultiplier)));
+          setLoyaltyPointsEarned(
+            String(Math.round(Number(pretaxCost) * basePointRate * bonusMultiplier))
+          );
         } else if (!isNaN(basePointRate)) {
           setLoyaltyPointsEarned(String(Math.round(Number(pretaxCost) * basePointRate)));
         }
@@ -363,11 +380,11 @@ export default function EditBookingPage() {
   const removeCertificate = (idx: number) =>
     setCertificates((prev) => prev.filter((_, i) => i !== idx));
 
-  const addBenefit = () => setBenefits((prev) => [...prev, { type: "", label: "", dollarValue: "" }]);
+  const addBenefit = () =>
+    setBenefits((prev) => [...prev, { type: "", label: "", dollarValue: "" }]);
   const updateBenefit = (idx: number, field: string, value: string) =>
     setBenefits((prev) => prev.map((b, i) => (i === idx ? { ...b, [field]: value } : b)));
-  const removeBenefit = (idx: number) =>
-    setBenefits((prev) => prev.filter((_, i) => i !== idx));
+  const removeBenefit = (idx: number) => setBenefits((prev) => prev.filter((_, i) => i !== idx));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -381,15 +398,15 @@ export default function EditBookingPage() {
       checkOut,
       numNights: Number(numNights),
       pretaxCost: hasCash ? Number(pretaxCost) : 0,
-      taxAmount:  hasCash ? Number(taxAmount)  : 0,
-      totalCost:  hasCash ? Number(totalCost)  : 0,
-      currency:   hasCash ? currency : "USD",
-      originalAmount: hasCash && currency !== "USD" && originalAmount ? Number(originalAmount) : null,
+      taxAmount: hasCash ? Number(taxAmount) : 0,
+      totalCost: hasCash ? Number(totalCost) : 0,
+      currency: hasCash ? currency : "USD",
+      originalAmount:
+        hasCash && currency !== "USD" && originalAmount ? Number(originalAmount) : null,
       pointsRedeemed: hasPoints && pointsRedeemed ? Number(pointsRedeemed) : null,
       certificates: hasCert ? certificates.filter((c) => c.trim()) : [],
       creditCardId: creditCardId === "none" ? null : Number(creditCardId),
-      shoppingPortalId:
-        shoppingPortalId === "none" ? null : Number(shoppingPortalId),
+      shoppingPortalId: shoppingPortalId === "none" ? null : Number(shoppingPortalId),
       portalCashbackRate: (() => {
         if (shoppingPortalId === "none" || !portalCashbackRate) return null;
         const portal = portals.find((p) => String(p.id) === shoppingPortalId);
@@ -456,17 +473,20 @@ export default function EditBookingPage() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="hotelChainId">Hotel Chain *</Label>
-                <Select value={hotelChainId} onValueChange={(val) => {
-                  setHotelChainId(val);
-                  setHotelChainSubBrandId("none");
-                  setCertificates((prev) =>
-                    prev.filter((cert) => {
-                      if (!cert) return true;
-                      const opt = CERT_TYPE_OPTIONS.find((o) => o.value === cert);
-                      return opt && opt.hotelChainId === Number(val);
-                    })
-                  );
-                }}>
+                <Select
+                  value={hotelChainId}
+                  onValueChange={(val) => {
+                    setHotelChainId(val);
+                    setHotelChainSubBrandId("none");
+                    setCertificates((prev) =>
+                      prev.filter((cert) => {
+                        if (!cert) return true;
+                        const opt = CERT_TYPE_OPTIONS.find((o) => o.value === cert);
+                        return opt && opt.hotelChainId === Number(val);
+                      })
+                    );
+                  }}
+                >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select hotel chain..." />
                   </SelectTrigger>
@@ -501,11 +521,13 @@ export default function EditBookingPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">None / Not applicable</SelectItem>
-                    {hotelChains.find((h) => h.id === Number(hotelChainId))?.hotelChainSubBrands.map((sb) => (
-                      <SelectItem key={sb.id} value={String(sb.id)}>
-                        {sb.name}
-                      </SelectItem>
-                    ))}
+                    {hotelChains
+                      .find((h) => h.id === Number(hotelChainId))
+                      ?.hotelChainSubBrands.map((sb) => (
+                        <SelectItem key={sb.id} value={String(sb.id)}>
+                          {sb.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -514,10 +536,13 @@ export default function EditBookingPage() {
             {/* Booking Source */}
             <div className="space-y-2">
               <Label htmlFor="bookingSource">Booking Source</Label>
-              <Select value={bookingSource || "none"} onValueChange={(v) => {
-                setBookingSource(v === "none" ? "" : v);
-                if (v !== "ota") setOtaAgencyId("none");
-              }}>
+              <Select
+                value={bookingSource || "none"}
+                onValueChange={(v) => {
+                  setBookingSource(v === "none" ? "" : v);
+                  if (v !== "ota") setOtaAgencyId("none");
+                }}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Where was this booked? (optional)" />
                 </SelectTrigger>
@@ -525,8 +550,11 @@ export default function EditBookingPage() {
                   <SelectItem value="none">Not specified</SelectItem>
                   {BOOKING_SOURCE_OPTIONS.map((opt) => (
                     <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label === "Direct — Hotel Website" ? "Direct — Hotel Chain Website" : 
-                       opt.label === "Direct — Hotel App" ? "Direct — Hotel Chain App" : opt.label}
+                      {opt.label === "Direct — Hotel Website"
+                        ? "Direct — Hotel Chain Website"
+                        : opt.label === "Direct — Hotel App"
+                          ? "Direct — Hotel Chain App"
+                          : opt.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -647,7 +675,9 @@ export default function EditBookingPage() {
                     </SelectTrigger>
                     <SelectContent>
                       {CURRENCIES.map((c) => (
-                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -698,13 +728,13 @@ export default function EditBookingPage() {
                         <SelectValue placeholder="Select certificate type..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {CERT_TYPE_OPTIONS
-                          .filter((opt) => opt.hotelChainId === Number(hotelChainId))
-                          .map((opt) => (
-                            <SelectItem key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </SelectItem>
-                          ))}
+                        {CERT_TYPE_OPTIONS.filter(
+                          (opt) => opt.hotelChainId === Number(hotelChainId)
+                        ).map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <Button
@@ -717,12 +747,7 @@ export default function EditBookingPage() {
                     </Button>
                   </div>
                 ))}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={addCertificate}
-                >
+                <Button type="button" variant="outline" size="sm" onClick={addCertificate}>
                   + Add Certificate
                 </Button>
               </div>
@@ -824,7 +849,10 @@ export default function EditBookingPage() {
               <Label>Booking Benefits</Label>
               {benefits.map((benefit, idx) => (
                 <div key={idx} className="flex items-start gap-2">
-                  <Select value={benefit.type || "none"} onValueChange={(v) => updateBenefit(idx, "type", v === "none" ? "" : v)}>
+                  <Select
+                    value={benefit.type || "none"}
+                    onValueChange={(v) => updateBenefit(idx, "type", v === "none" ? "" : v)}
+                  >
                     <SelectTrigger className="w-48">
                       <SelectValue placeholder="Select type..." />
                     </SelectTrigger>

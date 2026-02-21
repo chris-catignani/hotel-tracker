@@ -1,14 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-  Legend,
-} from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
@@ -91,7 +84,7 @@ export function PaymentTypeBreakdown({ bookings }: PaymentTypeBreakdownProps) {
           else if (type === "points") pointsCount += numNights;
           else if (type === "certs") certsCount += numNights;
           deduced = true;
-        } 
+        }
         // 2. Number of nights matches number of payment types (1 night each)
         else if (typesCount === numNights) {
           effectiveTypes.forEach((t) => {
@@ -106,7 +99,7 @@ export function PaymentTypeBreakdown({ bookings }: PaymentTypeBreakdownProps) {
           const otherType = hasPoints ? "points" : "cash";
           const certNights = Math.min(numCerts, numNights);
           const remainingNights = numNights - certNights;
-          
+
           if (remainingNights >= 0) {
             certsCount += certNights;
             if (otherType === "points") pointsCount += remainingNights;
@@ -181,10 +174,7 @@ export function PaymentTypeBreakdown({ bookings }: PaymentTypeBreakdownProps) {
                   dataKey="value"
                 >
                   {data.chartData.map((entry) => (
-                    <Cell
-                      key={`cell-${entry.name}`}
-                      fill={TYPE_COLORS[entry.name] || "#94a3b8"}
-                    />
+                    <Cell key={`cell-${entry.name}`} fill={TYPE_COLORS[entry.name] || "#94a3b8"} />
                   ))}
                 </Pie>
                 <Tooltip
@@ -205,8 +195,8 @@ export function PaymentTypeBreakdown({ bookings }: PaymentTypeBreakdownProps) {
             <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
             <div className="text-xs">
               <span className="font-semibold">{data.ignoredCount}</span> combination{" "}
-              {data.ignoredCount === 1 ? "booking" : "bookings"} ignored because
-              nightly breakdown is unavailable.
+              {data.ignoredCount === 1 ? "booking" : "bookings"} ignored because nightly breakdown
+              is unavailable.
             </div>
           </div>
         )}

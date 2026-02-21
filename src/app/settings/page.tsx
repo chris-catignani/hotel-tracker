@@ -35,20 +35,12 @@ import { extractApiError } from "@/lib/client-error";
 // Error Banner
 // ---------------------------------------------------------------------------
 
-function ErrorBanner({
-  error,
-  onDismiss,
-}: {
-  error: string | null;
-  onDismiss: () => void;
-}) {
+function ErrorBanner({ error, onDismiss }: { error: string | null; onDismiss: () => void }) {
   if (!error) return null;
   return (
     <div className="rounded-md border border-red-300 bg-red-50 p-4 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">
       <div className="flex items-start justify-between gap-2">
-        <pre className="whitespace-pre-wrap font-mono text-xs flex-1">
-          {error}
-        </pre>
+        <pre className="whitespace-pre-wrap font-mono text-xs flex-1">{error}</pre>
         <button
           onClick={onDismiss}
           className="shrink-0 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-200"
@@ -174,7 +166,8 @@ function UserStatusTab() {
         <h2 className="text-lg font-semibold">My Elite Status</h2>
       </div>
       <p className="text-sm text-muted-foreground">
-        Select your current elite status level for each hotel chain to improve point earning calculations.
+        Select your current elite status level for each hotel chain to improve point earning
+        calculations.
       </p>
 
       <Table>
@@ -192,7 +185,9 @@ function UserStatusTab() {
                 <TableCell className="font-medium">{chain.name}</TableCell>
                 <TableCell>
                   <Select
-                    value={currentStatus?.eliteStatusId ? String(currentStatus.eliteStatusId) : "none"}
+                    value={
+                      currentStatus?.eliteStatusId ? String(currentStatus.eliteStatusId) : "none"
+                    }
                     onValueChange={(v) => handleStatusChange(chain.id, v)}
                   >
                     <SelectTrigger className="w-[200px]">
@@ -386,7 +381,10 @@ function PointTypesTab() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-pt-category">Category</Label>
-              <Select value={editCategory} onValueChange={(v) => setEditCategory(v as typeof editCategory)}>
+              <Select
+                value={editCategory}
+                onValueChange={(v) => setEditCategory(v as typeof editCategory)}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
@@ -650,9 +648,7 @@ function HotelChainsTab() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Add Hotel Chain</DialogTitle>
-              <DialogDescription>
-                Add a new hotel chain to track bookings for.
-              </DialogDescription>
+              <DialogDescription>Add a new hotel chain to track bookings for.</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-2">
               <div className="space-y-2">
@@ -715,9 +711,7 @@ function HotelChainsTab() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Hotel Chain</DialogTitle>
-            <DialogDescription>
-              Update hotel chain details and point rates.
-            </DialogDescription>
+            <DialogDescription>Update hotel chain details and point rates.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
@@ -788,7 +782,10 @@ function HotelChainsTab() {
               <p className="text-sm text-muted-foreground">No sub-brands yet.</p>
             ) : (
               sbHotelChain.hotelChainSubBrands.map((sb) => (
-                <div key={sb.id} className="flex items-center justify-between border rounded-md px-3 py-2">
+                <div
+                  key={sb.id}
+                  className="flex items-center justify-between border rounded-md px-3 py-2"
+                >
                   <div>
                     <span className="font-medium text-sm">{sb.name}</span>
                     {sb.basePointRate != null && (
@@ -798,8 +795,12 @@ function HotelChainsTab() {
                     )}
                   </div>
                   <div className="flex gap-1">
-                    <Button variant="ghost" size="sm" onClick={() => handleEditSb(sb)}>Edit</Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleDeleteSb(sb)}>Delete</Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleEditSb(sb)}>
+                      Edit
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleDeleteSb(sb)}>
+                      Delete
+                    </Button>
                   </div>
                 </div>
               ))
@@ -816,7 +817,9 @@ function HotelChainsTab() {
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="sb-base-rate" className="text-xs">Base Rate (per $1)</Label>
+                <Label htmlFor="sb-base-rate" className="text-xs">
+                  Base Rate (per $1)
+                </Label>
                 <Input
                   id="sb-base-rate"
                   type="number"
@@ -864,7 +867,9 @@ function HotelChainsTab() {
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={handleEditSbSubmit} disabled={!editSbName.trim()}>Save</Button>
+            <Button onClick={handleEditSbSubmit} disabled={!editSbName.trim()}>
+              Save
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1014,9 +1019,7 @@ function CreditCardsTab() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Add Credit Card</DialogTitle>
-              <DialogDescription>
-                Add a credit card to track rewards.
-              </DialogDescription>
+              <DialogDescription>Add a credit card to track rewards.</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-2">
               <div className="space-y-2">
@@ -1069,10 +1072,7 @@ function CreditCardsTab() {
               </div>
             </div>
             <DialogFooter>
-              <Button
-                onClick={handleSubmit}
-                disabled={!name.trim() || !rewardRate}
-              >
+              <Button onClick={handleSubmit} disabled={!name.trim() || !rewardRate}>
                 Save
               </Button>
             </DialogFooter>
@@ -1085,9 +1085,7 @@ function CreditCardsTab() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Credit Card</DialogTitle>
-            <DialogDescription>
-              Update credit card details and reward rate.
-            </DialogDescription>
+            <DialogDescription>Update credit card details and reward rate.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
@@ -1140,10 +1138,7 @@ function CreditCardsTab() {
             </div>
           </div>
           <DialogFooter>
-            <Button
-              onClick={handleEditSubmit}
-              disabled={!editName.trim() || !editRewardRate}
-            >
+            <Button onClick={handleEditSubmit} disabled={!editName.trim() || !editRewardRate}>
               Save
             </Button>
           </DialogFooter>
@@ -1260,9 +1255,10 @@ function ShoppingPortalsTab() {
       body: JSON.stringify({
         name: editName,
         rewardType: editRewardType,
-        pointTypeId: editRewardType === "points" && editPointTypeId !== "none"
-          ? Number(editPointTypeId)
-          : null,
+        pointTypeId:
+          editRewardType === "points" && editPointTypeId !== "none"
+            ? Number(editPointTypeId)
+            : null,
       }),
     });
     if (res.ok) {

@@ -51,10 +51,18 @@ function formatValue(valueType: string, value: string): string {
 function formatDateRange(startDate: string | null, endDate: string | null): string {
   if (!startDate && !endDate) return "Always";
   const start = startDate
-    ? new Date(startDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    ? new Date(startDate).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
     : "...";
   const end = endDate
-    ? new Date(endDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    ? new Date(endDate).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
     : "...";
   return `${start} - ${end}`;
 }
@@ -129,9 +137,7 @@ export default function PromotionsPage() {
   };
 
   const filteredPromotions =
-    activeTab === "all"
-      ? promotions
-      : promotions.filter((p) => p.type === activeTab);
+    activeTab === "all" ? promotions : promotions.filter((p) => p.type === activeTab);
 
   return (
     <div className="space-y-6">
@@ -155,13 +161,9 @@ export default function PromotionsPage() {
 
         <TabsContent value={activeTab}>
           {loading ? (
-            <p className="text-muted-foreground py-8 text-center text-sm">
-              Loading promotions...
-            </p>
+            <p className="text-muted-foreground py-8 text-center text-sm">Loading promotions...</p>
           ) : filteredPromotions.length === 0 ? (
-            <p className="text-muted-foreground py-8 text-center text-sm">
-              No promotions found.
-            </p>
+            <p className="text-muted-foreground py-8 text-center text-sm">No promotions found.</p>
           ) : (
             <Table>
               <TableHeader>
@@ -180,30 +182,20 @@ export default function PromotionsPage() {
                   <TableRow key={promo.id}>
                     <TableCell className="font-medium">{promo.name}</TableCell>
                     <TableCell>
-                      <Badge variant={typeBadgeVariant(promo.type)}>
-                        {typeLabel(promo.type)}
-                      </Badge>
+                      <Badge variant={typeBadgeVariant(promo.type)}>{typeLabel(promo.type)}</Badge>
                     </TableCell>
-                    <TableCell>
-                      {formatValue(promo.valueType, promo.value)}
-                    </TableCell>
+                    <TableCell>{formatValue(promo.valueType, promo.value)}</TableCell>
                     <TableCell>{getLinkedName(promo)}</TableCell>
+                    <TableCell>{formatDateRange(promo.startDate, promo.endDate)}</TableCell>
                     <TableCell>
-                      {formatDateRange(promo.startDate, promo.endDate)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={promo.isActive ? "default" : "secondary"}
-                      >
+                      <Badge variant={promo.isActive ? "default" : "secondary"}>
                         {promo.isActive ? "Active" : "Inactive"}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Button variant="outline" size="sm" asChild>
-                          <Link href={`/promotions/${promo.id}/edit`}>
-                            Edit
-                          </Link>
+                          <Link href={`/promotions/${promo.id}/edit`}>Edit</Link>
                         </Button>
                         <Button
                           variant="destructive"

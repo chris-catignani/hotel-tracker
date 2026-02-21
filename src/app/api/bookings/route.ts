@@ -61,9 +61,7 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Auto-calculate loyalty points from hotel/sub-brand rates if not explicitly provided
-    let calculatedPoints: number | null = loyaltyPointsEarned
-      ? Number(loyaltyPointsEarned)
-      : null;
+    let calculatedPoints: number | null = loyaltyPointsEarned ? Number(loyaltyPointsEarned) : null;
 
     if (calculatedPoints == null && hotelChainId && pretaxCost) {
       // Fetch UserStatus for this chain
@@ -93,12 +91,18 @@ export async function POST(request: NextRequest) {
       calculatedPoints = calculatePoints({
         pretaxCost: Number(pretaxCost),
         basePointRate,
-        eliteStatus: userStatus?.eliteStatus ? {
-          ...userStatus.eliteStatus,
-          bonusPercentage: userStatus.eliteStatus.bonusPercentage ? Number(userStatus.eliteStatus.bonusPercentage) : null,
-          fixedRate: userStatus.eliteStatus.fixedRate ? Number(userStatus.eliteStatus.fixedRate) : null,
-          isFixed: userStatus.eliteStatus.isFixed,
-        } : null,
+        eliteStatus: userStatus?.eliteStatus
+          ? {
+              ...userStatus.eliteStatus,
+              bonusPercentage: userStatus.eliteStatus.bonusPercentage
+                ? Number(userStatus.eliteStatus.bonusPercentage)
+                : null,
+              fixedRate: userStatus.eliteStatus.fixedRate
+                ? Number(userStatus.eliteStatus.fixedRate)
+                : null,
+              isFixed: userStatus.eliteStatus.isFixed,
+            }
+          : null,
       });
     }
 
@@ -115,9 +119,7 @@ export async function POST(request: NextRequest) {
         totalCost: Number(totalCost),
         creditCardId: creditCardId ? Number(creditCardId) : null,
         shoppingPortalId: shoppingPortalId ? Number(shoppingPortalId) : null,
-        portalCashbackRate: portalCashbackRate
-          ? Number(portalCashbackRate)
-          : null,
+        portalCashbackRate: portalCashbackRate ? Number(portalCashbackRate) : null,
         portalCashbackOnTotal: portalCashbackOnTotal ?? false,
         loyaltyPointsEarned: calculatedPoints,
         pointsRedeemed: pointsRedeemed ? Number(pointsRedeemed) : null,
@@ -127,7 +129,11 @@ export async function POST(request: NextRequest) {
         bookingSource: bookingSource || null,
         otaAgencyId: bookingSource === "ota" && otaAgencyId ? Number(otaAgencyId) : null,
         certificates: certificates?.length
-          ? { create: (certificates as string[]).map((v) => ({ certType: v as import("@prisma/client").CertType })) }
+          ? {
+              create: (certificates as string[]).map((v) => ({
+                certType: v as import("@prisma/client").CertType,
+              })),
+            }
           : undefined,
         benefits: benefits?.length
           ? {

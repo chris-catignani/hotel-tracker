@@ -3,10 +3,7 @@ import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { recalculateLoyaltyForHotelChain } from "@/lib/loyalty-recalculation";
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const body = await request.json();
@@ -15,7 +12,7 @@ export async function PUT(
     // Check if basePointRate is changing to avoid unnecessary recalculations
     const existing = await prisma.hotelChain.findUnique({
       where: { id: Number(id) },
-      select: { basePointRate: true }
+      select: { basePointRate: true },
     });
 
     const data: Record<string, unknown> = {};
@@ -23,8 +20,7 @@ export async function PUT(
     if (loyaltyProgram !== undefined) data.loyaltyProgram = loyaltyProgram || null;
     if (basePointRate !== undefined)
       data.basePointRate = basePointRate != null ? Number(basePointRate) : null;
-    if (pointTypeId !== undefined)
-      data.pointTypeId = pointTypeId ? Number(pointTypeId) : null;
+    if (pointTypeId !== undefined) data.pointTypeId = pointTypeId ? Number(pointTypeId) : null;
 
     const hotelChain = await prisma.hotelChain.update({
       where: { id: Number(id) },

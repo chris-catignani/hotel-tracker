@@ -4,10 +4,7 @@ import { matchPromotionsForBooking } from "@/lib/promotion-matching";
 import { apiError } from "@/lib/api-error";
 import { calculatePoints } from "@/lib/loyalty-utils";
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const booking = await prisma.booking.findUnique({
@@ -34,10 +31,7 @@ export async function GET(
     });
 
     if (!booking) {
-      return NextResponse.json(
-        { error: "Booking not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Booking not found" }, { status: 404 });
     }
 
     return NextResponse.json(booking);
@@ -46,10 +40,7 @@ export async function GET(
   }
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const body = await request.json();
@@ -89,20 +80,13 @@ export async function PUT(
     if (pretaxCost !== undefined) data.pretaxCost = Number(pretaxCost);
     if (taxAmount !== undefined) data.taxAmount = Number(taxAmount);
     if (totalCost !== undefined) data.totalCost = Number(totalCost);
-    if (creditCardId !== undefined)
-      data.creditCardId = creditCardId ? Number(creditCardId) : null;
+    if (creditCardId !== undefined) data.creditCardId = creditCardId ? Number(creditCardId) : null;
     if (shoppingPortalId !== undefined)
-      data.shoppingPortalId = shoppingPortalId
-        ? Number(shoppingPortalId)
-        : null;
+      data.shoppingPortalId = shoppingPortalId ? Number(shoppingPortalId) : null;
     if (portalCashbackRate !== undefined)
-      data.portalCashbackRate = portalCashbackRate
-        ? Number(portalCashbackRate)
-        : null;
+      data.portalCashbackRate = portalCashbackRate ? Number(portalCashbackRate) : null;
     if (loyaltyPointsEarned !== undefined)
-      data.loyaltyPointsEarned = loyaltyPointsEarned
-        ? Number(loyaltyPointsEarned)
-        : null;
+      data.loyaltyPointsEarned = loyaltyPointsEarned ? Number(loyaltyPointsEarned) : null;
     if (portalCashbackOnTotal !== undefined) data.portalCashbackOnTotal = portalCashbackOnTotal;
     if (pointsRedeemed !== undefined)
       data.pointsRedeemed = pointsRedeemed ? Number(pointsRedeemed) : null;
@@ -129,8 +113,10 @@ export async function PUT(
         const finalPretax = resolvedPretax ?? (current ? Number(current.pretaxCost) : null);
         const finalHotelChainSubBrandId =
           hotelChainSubBrandId !== undefined
-            ? hotelChainSubBrandId ? Number(hotelChainSubBrandId) : null
-            : current?.hotelChainSubBrandId ?? null;
+            ? hotelChainSubBrandId
+              ? Number(hotelChainSubBrandId)
+              : null
+            : (current?.hotelChainSubBrandId ?? null);
 
         if (finalHotelChainId && finalPretax) {
           // Fetch UserStatus for this chain
@@ -160,12 +146,18 @@ export async function PUT(
           data.loyaltyPointsEarned = calculatePoints({
             pretaxCost: Number(finalPretax),
             basePointRate,
-            eliteStatus: userStatus?.eliteStatus ? {
-              ...userStatus.eliteStatus,
-              bonusPercentage: userStatus.eliteStatus.bonusPercentage ? Number(userStatus.eliteStatus.bonusPercentage) : null,
-              fixedRate: userStatus.eliteStatus.fixedRate ? Number(userStatus.eliteStatus.fixedRate) : null,
-              isFixed: userStatus.eliteStatus.isFixed,
-            } : null,
+            eliteStatus: userStatus?.eliteStatus
+              ? {
+                  ...userStatus.eliteStatus,
+                  bonusPercentage: userStatus.eliteStatus.bonusPercentage
+                    ? Number(userStatus.eliteStatus.bonusPercentage)
+                    : null,
+                  fixedRate: userStatus.eliteStatus.fixedRate
+                    ? Number(userStatus.eliteStatus.fixedRate)
+                    : null,
+                  isFixed: userStatus.eliteStatus.isFixed,
+                }
+              : null,
           });
         }
       }
@@ -191,8 +183,9 @@ export async function PUT(
       await prisma.bookingBenefit.deleteMany({
         where: { bookingId: Number(id) },
       });
-      const validBenefits = (benefits as { benefitType: string; label?: string; dollarValue?: number }[])
-        .filter((b) => b.benefitType);
+      const validBenefits = (
+        benefits as { benefitType: string; label?: string; dollarValue?: number }[]
+      ).filter((b) => b.benefitType);
       if (validBenefits.length > 0) {
         await prisma.bookingBenefit.createMany({
           data: validBenefits.map((b) => ({

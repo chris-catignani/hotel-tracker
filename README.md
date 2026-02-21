@@ -77,17 +77,17 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Pages
 
-| Route | Description |
-|---|---|
-| `/` | Dashboard with stats, recent bookings, savings breakdown |
-| `/bookings` | All bookings list with net cost |
-| `/bookings/new` | Add a new booking |
-| `/bookings/[id]` | Booking detail with cost breakdown and applied promotions |
-| `/bookings/[id]/edit` | Edit a booking |
-| `/promotions` | All promotions with type-based tabs |
-| `/promotions/new` | Add a new promotion |
-| `/promotions/[id]/edit` | Edit a promotion |
-| `/settings` | Manage hotels, credit cards, and shopping portals |
+| Route                   | Description                                               |
+| ----------------------- | --------------------------------------------------------- |
+| `/`                     | Dashboard with stats, recent bookings, savings breakdown  |
+| `/bookings`             | All bookings list with net cost                           |
+| `/bookings/new`         | Add a new booking                                         |
+| `/bookings/[id]`        | Booking detail with cost breakdown and applied promotions |
+| `/bookings/[id]/edit`   | Edit a booking                                            |
+| `/promotions`           | All promotions with type-based tabs                       |
+| `/promotions/new`       | Add a new promotion                                       |
+| `/promotions/[id]/edit` | Edit a promotion                                          |
+| `/settings`             | Manage hotels, credit cards, and shopping portals         |
 
 ## Database Schema
 

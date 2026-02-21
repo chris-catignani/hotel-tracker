@@ -6,12 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { certTypeLabel } from "@/lib/cert-types";
 import { getNetCostBreakdown, NetCostBooking } from "@/lib/net-cost";
 import { formatCurrency } from "@/lib/utils";
@@ -90,13 +85,21 @@ function formatDate(dateStr: string): string {
   return `${month}/${day}/${year}`;
 }
 
-function formatBookingSource(booking: { bookingSource: string | null; otaAgency: { name: string } | null }): string {
+function formatBookingSource(booking: {
+  bookingSource: string | null;
+  otaAgency: { name: string } | null;
+}): string {
   switch (booking.bookingSource) {
-    case "direct_web": return "Direct — Hotel Chain Website";
-    case "direct_app": return "Direct — Hotel Chain App";
-    case "ota": return booking.otaAgency ? `OTA — ${booking.otaAgency.name}` : "OTA";
-    case "other": return "Other";
-    default: return "—";
+    case "direct_web":
+      return "Direct — Hotel Chain Website";
+    case "direct_app":
+      return "Direct — Hotel Chain App";
+    case "ota":
+      return booking.otaAgency ? `OTA — ${booking.otaAgency.name}` : "OTA";
+    case "other":
+      return "Other";
+    default:
+      return "—";
   }
 }
 
@@ -220,9 +223,7 @@ export default function BookingDetailPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             {booking.propertyName}
-            {typeBadge && (
-              <Badge variant="secondary">{typeBadge}</Badge>
-            )}
+            {typeBadge && <Badge variant="secondary">{typeBadge}</Badge>}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -258,9 +259,7 @@ export default function BookingDetailPage() {
             {totalCost > 0 && (
               <div>
                 <p className="text-sm text-muted-foreground">Pre-tax Cost</p>
-                <p className="font-medium">
-                  {formatCurrency(Number(booking.pretaxCost))}
-                </p>
+                <p className="font-medium">{formatCurrency(Number(booking.pretaxCost))}</p>
               </div>
             )}
             {totalCost > 0 && (
@@ -302,20 +301,14 @@ export default function BookingDetailPage() {
             )}
             {booking.loyaltyPointsEarned != null && (
               <div>
-                <p className="text-sm text-muted-foreground">
-                  Loyalty Points Earned
-                </p>
-                <p className="font-medium">
-                  {booking.loyaltyPointsEarned.toLocaleString()}
-                </p>
+                <p className="text-sm text-muted-foreground">Loyalty Points Earned</p>
+                <p className="font-medium">{booking.loyaltyPointsEarned.toLocaleString()}</p>
               </div>
             )}
             {booking.pointsRedeemed != null && (
               <div>
                 <p className="text-sm text-muted-foreground">Points Redeemed</p>
-                <p className="font-medium">
-                  {booking.pointsRedeemed.toLocaleString()}
-                </p>
+                <p className="font-medium">{booking.pointsRedeemed.toLocaleString()}</p>
               </div>
             )}
             {booking.certificates.length > 0 && (
@@ -402,13 +395,9 @@ export default function BookingDetailPage() {
                     <TableCell>
                       <Badge variant="secondary">{bp.promotion.type}</Badge>
                     </TableCell>
+                    <TableCell>{formatCurrency(Number(bp.appliedValue))}</TableCell>
                     <TableCell>
-                      {formatCurrency(Number(bp.appliedValue))}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={bp.autoApplied ? "default" : "outline"}
-                      >
+                      <Badge variant={bp.autoApplied ? "default" : "outline"}>
                         {bp.autoApplied ? "Yes" : "No"}
                       </Badge>
                     </TableCell>

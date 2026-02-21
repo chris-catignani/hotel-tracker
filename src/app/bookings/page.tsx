@@ -101,14 +101,20 @@ function formatCurrency(amount: number): string {
   })}`;
 }
 
-
-function formatSourceColumn(booking: { bookingSource: string | null; otaAgency: { name: string } | null }): string {
+function formatSourceColumn(booking: {
+  bookingSource: string | null;
+  otaAgency: { name: string } | null;
+}): string {
   switch (booking.bookingSource) {
     case "direct_web":
-    case "direct_app": return "Direct";
-    case "ota": return booking.otaAgency ? booking.otaAgency.name : "OTA";
-    case "other": return "Other";
-    default: return "—";
+    case "direct_app":
+      return "Direct";
+    case "ota":
+      return booking.otaAgency ? booking.otaAgency.name : "OTA";
+    case "other":
+      return "Other";
+    default:
+      return "—";
   }
 }
 
@@ -201,7 +207,9 @@ export default function BookingsPage() {
                   <TableCell>
                     <div>{booking.propertyName}</div>
                     {booking.hotelChainSubBrand && (
-                      <div className="text-xs text-muted-foreground">{booking.hotelChainSubBrand.name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {booking.hotelChainSubBrand.name}
+                      </div>
                     )}
                   </TableCell>
                   <TableCell>{booking.hotelChain.name}</TableCell>
@@ -222,7 +230,9 @@ export default function BookingsPage() {
                   <TableCell className="text-right text-sm">
                     {formatCerts(booking.certificates)}
                   </TableCell>
-                  <TableCell className={`text-right font-medium ${netCost < totalCost ? "text-green-600" : ""}`}>
+                  <TableCell
+                    className={`text-right font-medium ${netCost < totalCost ? "text-green-600" : ""}`}
+                  >
                     {formatCurrency(netCost / booking.numNights)}
                   </TableCell>
                   <TableCell>

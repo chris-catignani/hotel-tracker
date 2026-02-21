@@ -4,10 +4,7 @@ const IS_DEBUG = process.env.NEXT_PUBLIC_DEBUG === "true";
  * Extracts a user-facing error message from an API response.
  * In debug mode (NEXT_PUBLIC_DEBUG=true), includes detailed server error info.
  */
-export async function extractApiError(
-  res: Response,
-  fallback: string
-): Promise<string> {
+export async function extractApiError(res: Response, fallback: string): Promise<string> {
   try {
     const body = await res.json();
     const base = body.error || fallback;

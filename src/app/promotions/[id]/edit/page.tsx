@@ -6,13 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -117,11 +111,11 @@ export default function EditPromotionPage() {
         setValueType(promo.valueType);
         setValue(String(parseFloat(promo.value)));
         setHotelChainId(promo.hotelChainId ? String(promo.hotelChainId) : "");
-        setHotelChainSubBrandId(promo.hotelChainSubBrandId ? String(promo.hotelChainSubBrandId) : "");
-        setCreditCardId(promo.creditCardId ? String(promo.creditCardId) : "");
-        setShoppingPortalId(
-          promo.shoppingPortalId ? String(promo.shoppingPortalId) : ""
+        setHotelChainSubBrandId(
+          promo.hotelChainSubBrandId ? String(promo.hotelChainSubBrandId) : ""
         );
+        setCreditCardId(promo.creditCardId ? String(promo.creditCardId) : "");
+        setShoppingPortalId(promo.shoppingPortalId ? String(promo.shoppingPortalId) : "");
         setMinSpend(promo.minSpend ? String(parseFloat(promo.minSpend)) : "");
         setStartDate(toDateInputValue(promo.startDate));
         setEndDate(toDateInputValue(promo.endDate));
@@ -204,16 +198,12 @@ export default function EditPromotionPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight">
-        Edit Promotion
-      </h1>
+      <h1 className="text-2xl font-semibold tracking-tight">Edit Promotion</h1>
 
       <Card>
         <CardHeader>
           <CardTitle>Edit Promotion</CardTitle>
-          <CardDescription>
-            Update the details of this promotion.
-          </CardDescription>
+          <CardDescription>Update the details of this promotion.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -252,9 +242,7 @@ export default function EditPromotionPage() {
                   <SelectContent>
                     <SelectItem value="fixed">Fixed ($)</SelectItem>
                     <SelectItem value="percentage">Percentage (%)</SelectItem>
-                    <SelectItem value="points_multiplier">
-                      Points Multiplier (x)
-                    </SelectItem>
+                    <SelectItem value="points_multiplier">Points Multiplier (x)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -282,7 +270,13 @@ export default function EditPromotionPage() {
             {type === "loyalty" && (
               <div className="space-y-2">
                 <Label>Hotel Chain</Label>
-                <Select value={hotelChainId} onValueChange={(v) => { setHotelChainId(v); setHotelChainSubBrandId(""); }}>
+                <Select
+                  value={hotelChainId}
+                  onValueChange={(v) => {
+                    setHotelChainId(v);
+                    setHotelChainSubBrandId("");
+                  }}
+                >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select hotel chain..." />
                   </SelectTrigger>
@@ -297,24 +291,32 @@ export default function EditPromotionPage() {
               </div>
             )}
 
-            {type === "loyalty" && hotelChainId && (hotelChains.find((h) => h.id === Number(hotelChainId))?.hotelChainSubBrands.length ?? 0) > 0 && (
-              <div className="space-y-2">
-                <Label>Sub-brand</Label>
-                <Select value={hotelChainSubBrandId || "all"} onValueChange={(v) => setHotelChainSubBrandId(v === "all" ? "" : v)}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select sub-brand..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All sub-brands (no filter)</SelectItem>
-                    {hotelChains.find((h) => h.id === Number(hotelChainId))?.hotelChainSubBrands.map((sb) => (
-                      <SelectItem key={sb.id} value={String(sb.id)}>
-                        {sb.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            {type === "loyalty" &&
+              hotelChainId &&
+              (hotelChains.find((h) => h.id === Number(hotelChainId))?.hotelChainSubBrands.length ??
+                0) > 0 && (
+                <div className="space-y-2">
+                  <Label>Sub-brand</Label>
+                  <Select
+                    value={hotelChainSubBrandId || "all"}
+                    onValueChange={(v) => setHotelChainSubBrandId(v === "all" ? "" : v)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select sub-brand..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All sub-brands (no filter)</SelectItem>
+                      {hotelChains
+                        .find((h) => h.id === Number(hotelChainId))
+                        ?.hotelChainSubBrands.map((sb) => (
+                          <SelectItem key={sb.id} value={String(sb.id)}>
+                            {sb.name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
             {type === "credit_card" && (
               <div className="space-y-2">
@@ -337,10 +339,7 @@ export default function EditPromotionPage() {
             {type === "portal" && (
               <div className="space-y-2">
                 <Label>Shopping Portal</Label>
-                <Select
-                  value={shoppingPortalId}
-                  onValueChange={setShoppingPortalId}
-                >
+                <Select value={shoppingPortalId} onValueChange={setShoppingPortalId}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select portal..." />
                   </SelectTrigger>
