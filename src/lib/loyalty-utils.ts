@@ -1,4 +1,4 @@
-import { HotelChainEliteStatus, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
 interface CalculationInput {
   pretaxCost: number;
