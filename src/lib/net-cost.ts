@@ -1,4 +1,7 @@
 import { certPointsValue } from "@/lib/cert-types";
+import { formatCurrency } from "@/lib/utils";
+
+const DEFAULT_CENTS_PER_POINT = 0.01;
 
 export interface CalculationDetail {
   label: string;
@@ -71,13 +74,6 @@ export interface NetCostBreakdown {
   netCost: number;
 }
 
-function formatDollars(amount: number) {
-  return `$${amount.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-}
-
 export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
   const totalCost = Number(booking.totalCost);
   const pretaxCost = Number(booking.pretaxCost);
@@ -90,14 +86,14 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
     let description = "";
 
     if (bp.promotion.valueType === "percentage") {
-      formula = `${formatDollars(totalCost)} (total cost) × ${value}% = ${formatDollars(appliedValue)}`;
+      formula = `${formatCurrency(totalCost)} (total cost) × ${value}% = ${formatCurrency(appliedValue)}`;
       description = `This promotion offers a ${value}% discount on the total cost of the booking.`;
     } else if (bp.promotion.valueType === "fixed") {
-      formula = `${formatDollars(value)} = ${formatDollars(appliedValue)}`;
-      description = `This is a fixed-value promotion of ${formatDollars(value)}.`;
+      formula = `${formatCurrency(value)} = ${formatCurrency(appliedValue)}`;
+      description = `This is a fixed-value promotion of ${formatCurrency(value)}.`;
     } else if (bp.promotion.valueType === "points_multiplier") {
-      const centsPerPoint = booking.creditCard?.pointType?.centsPerPoint ? Number(booking.creditCard.pointType.centsPerPoint) : 0.01;
-      formula = `${(booking.loyaltyPointsEarned || 0).toLocaleString()} pts × (${value} - 1) × ${centsPerPoint}¢ = ${formatDollars(appliedValue)}`;
+      const centsPerPoint = booking.hotelChain.pointType?.centsPerPoint ? Number(booking.hotelChain.pointType.centsPerPoint) : DEFAULT_CENTS_PER_POINT;
+      formula = `${(booking.loyaltyPointsEarned || 0).toLocaleString()} pts × (${value} - 1) × ${centsPerPoint * 100}¢ = ${formatCurrency(appliedValue)}`;
       description = `This promotion is a ${value}x points multiplier on earned loyalty points. We value these points at ${centsPerPoint * 100}¢ each.`;
     }
 
@@ -128,10 +124,10 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
     let formula = "";
     let description = "";
     if (isPoints) {
-      formula = `${formatDollars(portalBasis)} (${basisStr}) × ${portalRate} pts/$ × ${centsPerPoint * 100}¢ = ${formatDollars(portalCashback)}`;
+      formula = `${formatCurrency(portalBasis)} (${basisStr}) × ${portalRate} pts/$ × ${centsPerPoint * 100}¢ = ${formatCurrency(portalCashback)}`;
       description = `${booking.shoppingPortal.name} offers ${portalRate} ${booking.shoppingPortal.pointType?.name || "points"} per dollar based on the ${basisStr}. We value these points at ${centsPerPoint * 100}¢ each.`;
     } else {
-      formula = `${formatDollars(portalBasis)} (${basisStr}) × ${(portalRate * 100).toFixed(1)}% = ${formatDollars(portalCashback)}`;
+      formula = `${formatCurrency(portalBasis)} (${basisStr}) × ${(portalRate * 100).toFixed(1)}% = ${formatCurrency(portalCashback)}`;
       description = `${booking.shoppingPortal.name} offers a ${(portalRate * 100).toFixed(1)}% cashback bonus based on the ${basisStr}.`;
     }
 
@@ -147,13 +143,13 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
   let cardRewardCalc: CalculationDetail | undefined;
   if (booking.creditCard) {
     const rate = Number(booking.creditCard.rewardRate);
-    const centsPerPoint = booking.creditCard.pointType ? Number(booking.creditCard.pointType.centsPerPoint) : 0.01;
+    const centsPerPoint = booking.creditCard.pointType ? Number(booking.creditCard.pointType.centsPerPoint) : DEFAULT_CENTS_PER_POINT;
     const pointName = booking.creditCard.pointType?.name || "points";
     cardReward = totalCost * rate * centsPerPoint;
 
     cardRewardCalc = {
       label: "Card Reward",
-      formula: `${formatDollars(totalCost)} (total cost) × ${rate}x × ${centsPerPoint * 100}¢ = ${formatDollars(cardReward)}`,
+      formula: `${formatCurrency(totalCost)} (total cost) × ${rate}x × ${centsPerPoint * 100}¢ = ${formatCurrency(cardReward)}`,
       description: `The ${booking.creditCard.name} earns ${rate}x ${pointName} per dollar spent on the total cost of the booking. We value ${pointName} at ${centsPerPoint * 100}¢ each.`,
     };
   }
@@ -183,7 +179,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
 
     loyaltyPointsCalc = {
       label: "Loyalty Points Value",
-      formula: `${booking.loyaltyPointsEarned.toLocaleString()} pts × ${centsPerPoint * 100}¢ = ${formatDollars(loyaltyPointsValue)}`,
+      formula: `${booking.loyaltyPointsEarned.toLocaleString()} pts × ${centsPerPoint * 100}¢ = ${formatCurrency(loyaltyPointsValue)}`,
       description,
     };
   }
@@ -195,8 +191,8 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
   if (booking.pointsRedeemed) {
     pointsRedeemedCalc = {
       label: "Award Points (value)",
-      formula: `${booking.pointsRedeemed.toLocaleString()} pts × ${hotelChainCentsPerPoint * 100}¢ = ${formatDollars(pointsRedeemedValue)}`,
-      description: `You redeemed ${booking.pointsRedeemed.toLocaleString()} points for this stay. Their equivalent cash value based on our valuation is ${formatDollars(pointsRedeemedValue)}.`,
+      formula: `${booking.pointsRedeemed.toLocaleString()} pts × ${hotelChainCentsPerPoint * 100}¢ = ${formatCurrency(pointsRedeemedValue)}`,
+      description: `You redeemed ${booking.pointsRedeemed.toLocaleString()} points for this stay. Their equivalent cash value based on our valuation is ${formatCurrency(pointsRedeemedValue)}.`,
     };
   }
 
@@ -209,7 +205,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
   if (booking.certificates.length > 0) {
     certsCalc = {
       label: "Certificates (value)",
-      formula: booking.certificates.map(c => `${certPointsValue(c.certType).toLocaleString()} pts`).join(" + ") + ` × ${hotelChainCentsPerPoint * 100}¢ = ${formatDollars(certsValue)}`,
+      formula: booking.certificates.map(c => `${certPointsValue(c.certType).toLocaleString()} pts`).join(" + ") + ` × ${hotelChainCentsPerPoint * 100}¢ = ${formatCurrency(certsValue)}`,
       description: `You used ${booking.certificates.length} certificate(s). We value them based on the maximum point value they can be redeemed for.`,
     };
   }

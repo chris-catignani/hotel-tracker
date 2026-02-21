@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { certTypeLabel } from "@/lib/cert-types";
 import { getNetCostBreakdown, NetCostBooking } from "@/lib/net-cost";
+import { formatCurrency } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -73,7 +74,7 @@ interface Booking extends NetCostBooking {
   createdAt: string;
   bookingSource: string | null;
   otaAgency: { id: number; name: string } | null;
-  certificates: (BookingCertificate & { certType: string })[];
+  certificates: BookingCertificate[];
   benefits: BookingBenefit[];
 }
 
@@ -87,13 +88,6 @@ function formatDate(dateStr: string): string {
   const day = String(date.getUTCDate()).padStart(2, "0");
   const year = date.getUTCFullYear();
   return `${month}/${day}/${year}`;
-}
-
-function formatCurrency(amount: number): string {
-  return `$${amount.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
 }
 
 function formatBookingSource(booking: { bookingSource: string | null; otaAgency: { name: string } | null }): string {

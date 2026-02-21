@@ -10,16 +10,10 @@ import {
   PopoverTrigger 
 } from "@/components/ui/popover";
 import { NetCostBreakdown, CalculationDetail } from "@/lib/net-cost";
+import { formatCurrency } from "@/lib/utils";
 
 interface CostBreakdownProps {
   breakdown: NetCostBreakdown;
-}
-
-function formatDollars(amount: number) {
-  return `$${amount.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
 }
 
 function CalculationInfo({ calc }: { calc: CalculationDetail | undefined }) {
@@ -77,7 +71,7 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
       <CardContent className="space-y-3">
         <div className="flex items-center justify-between text-sm">
           <span>Cash Cost</span>
-          <span>{formatDollars(totalCost)}</span>
+          <span>{formatCurrency(totalCost)}</span>
         </div>
         
         {pointsRedeemedValue > 0 && (
@@ -86,7 +80,7 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
               <span>Award Points (value)</span>
               <CalculationInfo calc={pointsRedeemedCalc} />
             </div>
-            <span>+{formatDollars(pointsRedeemedValue)}</span>
+            <span>+{formatCurrency(pointsRedeemedValue)}</span>
           </div>
         )}
         
@@ -96,7 +90,7 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
               <span>Certificates (value)</span>
               <CalculationInfo calc={certsCalc} />
             </div>
-            <span>+{formatDollars(certsValue)}</span>
+            <span>+{formatCurrency(certsValue)}</span>
           </div>
         )}
 
@@ -106,7 +100,7 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
               <span>Portal Cashback</span>
               <CalculationInfo calc={portalCashbackCalc} />
             </div>
-            <span className="text-green-600">-{formatDollars(portalCashback)}</span>
+            <span className="text-green-600">-{formatCurrency(portalCashback)}</span>
           </div>
         )}
 
@@ -116,7 +110,7 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
               <span>Card Reward</span>
               <CalculationInfo calc={cardRewardCalc} />
             </div>
-            <span className="text-green-600">-{formatDollars(cardReward)}</span>
+            <span className="text-green-600">-{formatCurrency(cardReward)}</span>
           </div>
         )}
 
@@ -126,7 +120,7 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
               <span>Loyalty Points Value</span>
               <CalculationInfo calc={loyaltyPointsCalc} />
             </div>
-            <span className="text-green-600">-{formatDollars(loyaltyPointsValue)}</span>
+            <span className="text-green-600">-{formatCurrency(loyaltyPointsValue)}</span>
           </div>
         )}
 
@@ -144,7 +138,7 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
                   <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
                 )}
               </div>
-              <span className="text-green-600">-{formatDollars(promoSavings)}</span>
+              <span className="text-green-600">-{formatCurrency(promoSavings)}</span>
             </button>
             
             {isPromosExpanded && (
@@ -155,7 +149,7 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
                       <span className="text-muted-foreground">{p.name}</span>
                       <CalculationInfo calc={p} />
                     </div>
-                    <span className="text-green-600">-{formatDollars(p.appliedValue)}</span>
+                    <span className="text-green-600">-{formatCurrency(p.appliedValue)}</span>
                   </div>
                 ))}
               </div>
@@ -166,7 +160,7 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
         <Separator />
         <div className="flex items-center justify-between font-bold">
           <span>Net Cost</span>
-          <span>{formatDollars(netCost)}</span>
+          <span>{formatCurrency(netCost)}</span>
         </div>
       </CardContent>
     </Card>
