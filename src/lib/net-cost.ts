@@ -105,8 +105,8 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
     } else if (bp.promotion.valueType === "points_multiplier") {
       const centsPerPoint = booking.hotelChain.pointType?.centsPerPoint ? Number(booking.hotelChain.pointType.centsPerPoint) : DEFAULT_CENTS_PER_POINT;
       const centsStr = formatCents(centsPerPoint);
-      formula = `${(booking.loyaltyPointsEarned || 0).toLocaleString()} pts × (${value} - 1) × ${centsStr}¢ = ${formatCurrency(appliedValue)}`;
-      description = `This promotion is a ${value}x points multiplier on earned loyalty points. We value these points at ${centsStr}¢ each.`;
+      formula = `${(booking.loyaltyPointsEarned || 0).toLocaleString()} pts (from pre-tax cost) × (${value} - 1) × ${centsStr}¢ = ${formatCurrency(appliedValue)}`;
+      description = `This promotion is a ${value}x points multiplier on earned loyalty points, which are typically based on the pre-tax cost. We value these points at ${centsStr}¢ each.`;
     }
 
     return {
