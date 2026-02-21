@@ -12,10 +12,10 @@ describe('promotion-matching', () => {
     totalCost: 100,
     loyaltyPointsEarned: 1000,
     hotelChain: {
-      pointType: { centsPerPoint: 0.01 }
+      pointType: { centsPerPoint: 0.015 } // non-default
     },
     creditCard: {
-      pointType: { centsPerPoint: 0.01 }
+      pointType: { centsPerPoint: 0.02 } // distinct non-default
     }
   };
 
@@ -103,7 +103,7 @@ describe('promotion-matching', () => {
   it('should calculate points multiplier value correctly', () => {
     const promo: Promotion = { ...basePromo, value: 3, valueType: ValueType.points_multiplier };
     const matched = calculateMatchedPromotions(mockBooking, [promo]);
-    // 1000 pts * (3-1) * 0.01 $/pt = 20
-    expect(matched[0].appliedValue).toBe(20);
+    // 1000 pts * (3-1) * 0.015 $/pt = 30
+    expect(matched[0].appliedValue).toBe(30);
   });
 });

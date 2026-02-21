@@ -14,7 +14,7 @@ describe('net-cost', () => {
       name: 'Test Hotel',
       loyaltyProgram: 'Test Points',
       basePointRate: 10,
-      pointType: { name: 'Test Pts', centsPerPoint: 0.01 },
+      pointType: { name: 'Test Pts', centsPerPoint: 0.015 }, // non-default
     },
     creditCard: null,
     shoppingPortal: null,
@@ -61,15 +61,15 @@ describe('net-cost', () => {
       ...mockBaseBooking,
       loyaltyPointsEarned: 1000,
       bookingPromotions: [{
-        appliedValue: 10,
+        appliedValue: 15,
         promotion: { name: '2x multiplier', value: 2, valueType: 'points_multiplier' },
       }],
     };
     const result = getNetCostBreakdown(booking);
-    // (1000 earned * (2-1) = 1000 bonus pts) * 0.01 = $10.00
-    expect(result.promoSavings).toBe(10);
-    expect(result.netCost).toBe(80);
-    expect(result.promotions[0].formula).toContain('1,000 pts (from pre-tax cost) × (2 - 1) × 1¢ = $10.00');
+    // (1000 earned * (2-1) = 1000 bonus pts) * 0.015 = $15.00
+    expect(result.promoSavings).toBe(15);
+    expect(result.netCost).toBe(70);
+    expect(result.promotions[0].formula).toContain('1,000 pts (from pre-tax cost) × (2 - 1) × 1.5¢ = $15.00');
   });
 
   it('should calculate shopping portal cashback (pre-tax)', () => {
@@ -130,14 +130,14 @@ describe('net-cost', () => {
       creditCard: {
         name: 'Amex Plat',
         rewardRate: 5,
-        pointType: { name: 'MR Pts', centsPerPoint: 0.02 },
+        pointType: { name: 'MR Pts', centsPerPoint: 0.0125 },
       },
     };
     const result = getNetCostBreakdown(booking);
-    // 100 total * 5 pts/$ * 0.02 $/pt = 10
-    expect(result.cardReward).toBe(10);
-    expect(result.netCost).toBe(90);
-    expect(result.cardRewardCalc?.formula).toContain('$100.00 (total cost) × 5x × 2¢ = $10.00');
+    // 100 total * 5 pts/$ * 0.0125 $/pt = 6.25
+    expect(result.cardReward).toBe(6.25);
+    expect(result.netCost).toBe(93.75);
+    expect(result.cardRewardCalc?.formula).toContain('$100.00 (total cost) × 5x × 1.25¢ = $6.25');
   });
 
   it('should calculate loyalty points value', () => {
@@ -146,10 +146,10 @@ describe('net-cost', () => {
       loyaltyPointsEarned: 2000,
     };
     const result = getNetCostBreakdown(booking);
-    // 2000 earned * 0.01 = 20
-    expect(result.loyaltyPointsValue).toBe(20);
-    expect(result.netCost).toBe(80);
-    expect(result.loyaltyPointsCalc?.formula).toContain('2,000 pts × 1¢ = $20.00');
+    // 2000 earned * 0.015 = 30
+    expect(result.loyaltyPointsValue).toBe(30);
+    expect(result.netCost).toBe(70);
+    expect(result.loyaltyPointsCalc?.formula).toContain('2,000 pts × 1.5¢ = $30.00');
   });
 
   it('should calculate points redeemed value', () => {
@@ -158,11 +158,11 @@ describe('net-cost', () => {
       pointsRedeemed: 10000,
     };
     const result = getNetCostBreakdown(booking);
-    // 10000 redeemed * 0.01 = 100
-    // Net cost is 100 (total) + 100 (redeemed value) = 200
-    expect(result.pointsRedeemedValue).toBe(100);
-    expect(result.netCost).toBe(200);
-    expect(result.pointsRedeemedCalc?.formula).toContain('10,000 pts × 1¢ = $100.00');
+    // 10000 redeemed * 0.015 = 150
+    // Net cost is 100 (total) + 150 (redeemed value) = 250
+    expect(result.pointsRedeemedValue).toBe(150);
+    expect(result.netCost).toBe(250);
+    expect(result.pointsRedeemedCalc?.formula).toContain('10,000 pts × 1.5¢ = $150.00');
   });
 
   it('should calculate certificates value', () => {
@@ -171,10 +171,10 @@ describe('net-cost', () => {
       certificates: [{ certType: 'marriott_35k' }],
     };
     const result = getNetCostBreakdown(booking);
-    // marriott_35k = 35000 pts * 0.01 = 350
-    // Net cost is 100 (total) + 350 (cert value) = 450
-    expect(result.certsValue).toBe(350);
-    expect(result.netCost).toBe(450);
-    expect(result.certsCalc?.formula).toContain('35,000 pts × 1¢ = $350.00');
+    // marriott_35k = 35000 pts * 0.015 = 525
+    // Net cost is 100 (total) + 525 (cert value) = 625
+    expect(result.certsValue).toBe(525);
+    expect(result.netCost).toBe(625);
+    expect(result.certsCalc?.formula).toContain('35,000 pts × 1.5¢ = $525.00');
   });
 });
