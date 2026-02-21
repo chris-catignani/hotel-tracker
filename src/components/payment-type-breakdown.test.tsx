@@ -4,11 +4,11 @@ import { PaymentTypeBreakdown } from './payment-type-breakdown';
 
 // Mock Recharts to avoid issues in JSDOM
 vi.mock('recharts', () => ({
-  ResponsiveContainer: ({ children }: any) => <div>{children}</div>,
-  PieChart: ({ children }: any) => <div>{children}</div>,
-  Pie: ({ data, dataKey }: any) => (
+  ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  PieChart: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  Pie: ({ data }: { data: { name: string; value: number }[] }) => (
     <div data-testid="pie-chart">
-      {data.map((entry: any, i: number) => (
+      {data.map((entry, i: number) => (
         <div key={i} data-testid={`pie-slice-${entry.name}`}>
           {entry.name}: {entry.value}
         </div>

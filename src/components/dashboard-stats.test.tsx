@@ -16,18 +16,18 @@ describe('DashboardStats', () => {
   it('renders all summary statistics with correct formatting', () => {
     render(<DashboardStats {...defaultProps} />);
 
-    // Basic counts
-    expect(screen.getByText('5')).toBeInTheDocument(); // Total Bookings
-    expect(screen.getByText('12')).toBeInTheDocument(); // Total Nights
+    // Precise value checks using data-testid
+    expect(screen.getByTestId('stat-value-total-bookings')).toHaveTextContent('5');
+    expect(screen.getByTestId('stat-value-total-nights')).toHaveTextContent('12');
 
     // Formatted currency
-    expect(screen.getByText('$450.75')).toBeInTheDocument(); // Total Savings
-    expect(screen.getByText('$104.21')).toBeInTheDocument(); // Avg Net Cost / Night
+    expect(screen.getByTestId('stat-value-total-savings')).toHaveTextContent('$450.75');
+    expect(screen.getByTestId('stat-value-avg-net-cost-/-night')).toHaveTextContent('$104.21');
 
     // Spend breakdown
-    expect(screen.getByText('$1,251')).toBeInTheDocument(); // Math.round(1250.5) = 1251
-    expect(screen.getByText('25,000 pts')).toBeInTheDocument();
-    expect(screen.getByText('2 certs')).toBeInTheDocument();
+    expect(screen.getByTestId('stat-value-cash')).toHaveTextContent('$1,251');
+    expect(screen.getByTestId('stat-value-points')).toHaveTextContent('25,000 pts');
+    expect(screen.getByTestId('stat-value-certs')).toHaveTextContent('2 certs');
   });
 
   it('handles zero values and empty states correctly', () => {
@@ -43,12 +43,15 @@ describe('DashboardStats', () => {
     render(<DashboardStats {...zeroProps} />);
 
     // Basic counts show "0", currency shows "$0.00"
-    expect(screen.getAllByText('0')).toHaveLength(2); // Bookings, Nights
-    expect(screen.getAllByText('$0.00')).toHaveLength(2); // Savings, Avg Net Cost
+    expect(screen.getByTestId('stat-value-total-bookings')).toHaveTextContent('0');
+    expect(screen.getByTestId('stat-value-total-nights')).toHaveTextContent('0');
+    expect(screen.getByTestId('stat-value-total-savings')).toHaveTextContent('$0.00');
+    expect(screen.getByTestId('stat-value-avg-net-cost-/-night')).toHaveTextContent('$0.00');
 
     // Spend breakdown shows em-dash for zero values
-    const emDashes = screen.getAllByText('—');
-    expect(emDashes).toHaveLength(3); // Cash, Points, Certs
+    expect(screen.getByTestId('stat-value-cash')).toHaveTextContent('—');
+    expect(screen.getByTestId('stat-value-points')).toHaveTextContent('—');
+    expect(screen.getByTestId('stat-value-certs')).toHaveTextContent('—');
   });
 
   it('handles singular certificate correctly', () => {
