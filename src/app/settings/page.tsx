@@ -715,14 +715,14 @@ function HotelChainsTab() {
 
       {/* Sub-brands Management Dialog */}
       <Dialog open={sbOpen} onOpenChange={setSbOpen}>
-        <DialogContent className="max-w-lg max-h-[90vh] flex flex-col gap-0 p-0 overflow-hidden">
-          <DialogHeader className="p-6 pb-2 shrink-0">
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
             <DialogTitle>Sub-brands — {sbHotelChain?.name}</DialogTitle>
             <DialogDescription>
               Manage sub-brands with optional point rate overrides (blank = inherit from chain).
             </DialogDescription>
           </DialogHeader>
-          <div className="flex-1 overflow-y-auto px-6 py-2 space-y-3">
+          <div className="space-y-3 py-2">
             {!sbHotelChain || sbHotelChain.hotelChainSubBrands.length === 0 ? (
               <p className="text-sm text-muted-foreground">No sub-brands yet.</p>
             ) : (
@@ -750,34 +750,34 @@ function HotelChainsTab() {
                 </div>
               ))
             )}
-          </div>
-          <div className="border-t p-6 pt-3 space-y-2 shrink-0 bg-muted/20">
-            <p className="text-sm font-medium">Add Sub-brand</p>
-            <div className="space-y-2">
-              <Label htmlFor="sb-name">Name *</Label>
-              <Input
-                id="sb-name"
-                value={sbName}
-                onChange={(e) => setSbName(e.target.value)}
-                placeholder="e.g. Park Hyatt"
-              />
+            <div className="border-t pt-3 space-y-2">
+              <p className="text-sm font-medium">Add Sub-brand</p>
+              <div className="space-y-2">
+                <Label htmlFor="sb-name">Name *</Label>
+                <Input
+                  id="sb-name"
+                  value={sbName}
+                  onChange={(e) => setSbName(e.target.value)}
+                  placeholder="e.g. Park Hyatt"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="sb-base-rate" className="text-xs">
+                  Base Rate (per $1)
+                </Label>
+                <Input
+                  id="sb-base-rate"
+                  type="number"
+                  step="0.1"
+                  value={sbBaseRate}
+                  onChange={(e) => setSbBaseRate(e.target.value)}
+                  placeholder="Inherit"
+                />
+              </div>
+              <Button size="sm" onClick={handleAddSubBrand} disabled={!sbName.trim()}>
+                Add Sub-brand
+              </Button>
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="sb-base-rate" className="text-xs">
-                Base Rate (per $1)
-              </Label>
-              <Input
-                id="sb-base-rate"
-                type="number"
-                step="0.1"
-                value={sbBaseRate}
-                onChange={(e) => setSbBaseRate(e.target.value)}
-                placeholder="Inherit"
-              />
-            </div>
-            <Button size="sm" onClick={handleAddSubBrand} disabled={!sbName.trim()}>
-              Add Sub-brand
-            </Button>
           </div>
         </DialogContent>
       </Dialog>
