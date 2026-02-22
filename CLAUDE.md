@@ -13,6 +13,9 @@ npm run db:push      # Push schema changes to DB + clear .next cache (use for sc
 npm run db:migrate   # Create and apply migrations (named migrations)
 npm run db:generate  # Regenerate Prisma client only
 npm run db:seed      # Seed reference data (hotels, cards, portals)
+
+npm run test         # Run unit tests (Vitest)
+npm run test:e2e     # Run functional E2E tests (Playwright)
 ```
 
 After schema changes: restart the dev server to pick up the new Prisma client.
@@ -91,12 +94,16 @@ Calculated server-side in the booking API and client-side in the booking form (u
 
 ## Testing
 
-**Framework:** Vitest, React Testing Library (RTL), jsdom
+**Framework:** Vitest, React Testing Library (RTL), jsdom, Playwright (E2E)
 
-**Command:** `npm test`
+**Commands:**
+
+- `npm test`: Unit tests
+- `npm run test:e2e`: Functional E2E tests (requires `DATABASE_URL_TEST`)
 
 ### Standards
 
+- **Functional Tests:** Located in `e2e/`. Use Playwright for critical user flows. Ensure tests are isolated and idempotent.
 - **Precise Selectors:** ALWAYS use `data-testid` attributes on React components for specific values or elements to be tested (e.g., `data-testid="stat-value-total-bookings"`). This avoids ambiguity and ensures tests are robust against formatting changes.
 - **Pure Logic:** Extract core business logic into pure functions (as seen in `promotion-matching.ts`) to allow for simple unit testing without mocking complex Prisma objects.
 - **Mocking:** Mock large or browser-only dependencies in tests (e.g., `recharts`) to avoid issues with `jsdom` and keep tests fast.
