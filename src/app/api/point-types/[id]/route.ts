@@ -38,9 +38,10 @@ export async function DELETE(
     const portalCount = await prisma.shoppingPortal.count({ where: { pointTypeId: numId } });
 
     if (hotelChainCount + cardCount + portalCount > 0) {
-      return NextResponse.json(
-        { error: "Cannot delete: point type is in use by hotel chains, cards, or portals" },
-        { status: 409 }
+      return apiError(
+        "Cannot delete: point type is in use by hotel chains, cards, or portals",
+        null,
+        409
       );
     }
 
