@@ -1,4 +1,5 @@
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { render, screen, waitFor, act } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { BookingForm } from "./booking-form";
 import { HotelChain } from "@/lib/types";
@@ -54,6 +55,7 @@ describe("BookingForm", () => {
   });
 
   it("calculates number of nights correctly when dates change", async () => {
+    const user = userEvent.setup();
     await act(async () => {
       render(<BookingForm {...defaultProps} />);
     });
@@ -63,20 +65,26 @@ describe("BookingForm", () => {
     const numNightsInput = screen.getByLabelText(/Number of Nights/i) as HTMLInputElement;
 
     await act(async () => {
-      fireEvent.change(checkInInput, { target: { value: "2026-03-01" } });
-      fireEvent.change(checkOutInput, { target: { value: "2026-03-05" } });
+      await user.type(checkInInput, "2026-03-01");
+      await user.type(checkOutInput, "2026-03-05");
     });
 
-    expect(numNightsInput.value).toBe("4");
+    await waitFor(() => {
+      expect(numNightsInput.value).toBe("4");
+    });
   });
 
   it("calls onCancel when cancel button is clicked", async () => {
+    const user = userEvent.setup();
     await act(async () => {
       render(<BookingForm {...defaultProps} />);
     });
+
+    const cancelButton = screen.getByRole("button", { name: /Cancel/i });
     await act(async () => {
-      fireEvent.click(screen.getByText(/Cancel/i));
+      await user.click(cancelButton);
     });
+
     expect(defaultProps.onCancel).toHaveBeenCalled();
   });
 });

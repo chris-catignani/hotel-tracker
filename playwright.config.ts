@@ -19,15 +19,15 @@ export default defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: "html",
+  reporter: [["list"], ["html", { open: "never" }]],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
     baseURL: "http://127.0.0.1:3000",
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: "on-first-retry",
-    video: "on-first-retry",
+    trace: process.env.CI ? "on-first-retry" : "retain-on-failure",
+    video: process.env.CI ? "on-first-retry" : "retain-on-failure",
   },
 
   /* Configure projects for major browsers */
@@ -56,8 +56,7 @@ export default defineConfig({
     stdout: "pipe",
     stderr: "pipe",
     env: {
-      // Use a test database if provided, otherwise standard DATABASE_URL
-      DATABASE_URL: process.env.DATABASE_URL_TEST || process.env.DATABASE_URL || "",
+      DATABASE_URL: process.env.DATABASE_URL_TEST || "",
       NEXT_PUBLIC_DEBUG: "false",
     },
   },

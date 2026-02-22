@@ -119,13 +119,7 @@ We use **Playwright** for end-to-end functional tests.
 
 ### 1. Setup
 
-Create a dedicated test database:
-
-```bash
-psql -U postgres -c "CREATE DATABASE hotel_tracker_test;"
-```
-
-Add the test database URL to your `.env` file:
+Add a dedicated test database URL to your `.env` file. You do not need to create the database manually; Prisma will create it for you if it doesn't exist.
 
 ```
 DATABASE_URL_TEST="postgresql://postgres:postgres@localhost:5432/hotel_tracker_test"
@@ -135,11 +129,29 @@ DATABASE_URL_TEST="postgresql://postgres:postgres@localhost:5432/hotel_tracker_t
 
 ```bash
 npx playwright install  # Install browser engines (first time only)
-npm run test:e2e        # Run tests headlessly
+npm run test:e2e        # Run tests headlessly (AI/CI default)
+npm run test:e2e:show   # Run tests and open HTML report (Human default)
 npm run test:e2e:ui     # Run tests with interactive UI
 ```
 
 The E2E suite automatically resets and seeds the test database before running.
+
+### 3. Debugging Failures
+
+If a test fails, Playwright is configured to record a video and a "trace" (interactive debug log).
+
+#### Locally
+
+1. Run tests using `npm run test:e2e:show`.
+2. The browser will open the report automatically.
+3. Click on a failed test and scroll to the **Video** or **Traces** section.
+
+#### In CI (GitHub Actions)
+
+1. Go to the **Actions** tab in your GitHub repository.
+2. Click on the failed workflow run.
+3. Scroll down to the **Artifacts** section at the bottom.
+4. Download the `playwright-report` to view videos and interactive traces.
 
 ## Deploying to Vercel
 

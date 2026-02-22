@@ -97,6 +97,7 @@ Calculated server-side in the booking API and client-side in the booking form (u
 **Framework:** Vitest, React Testing Library (RTL), jsdom, Playwright (E2E)
 
 **Commands:**
+
 - `npm test`: Unit tests
 - `npm run test:e2e`: Functional E2E tests (requires `DATABASE_URL_TEST`)
 
