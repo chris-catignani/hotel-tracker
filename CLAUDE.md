@@ -103,6 +103,7 @@ Calculated server-side in the booking API and client-side in the booking form (u
 
 ### Standards
 
+- **Test Coverage:** ALWAYS write both unit tests (Vitest/RTL) and E2E tests (Playwright) for every new feature or bug fix.
 - **Functional Tests:** Located in `e2e/`. Use Playwright for critical user flows. Ensure tests are isolated and idempotent.
 - **Precise Selectors:** ALWAYS use `data-testid` attributes on React components for specific values or elements to be tested (e.g., `data-testid="stat-value-total-bookings"`). This avoids ambiguity and ensures tests are robust against formatting changes.
 - **Pure Logic:** Extract core business logic into pure functions (as seen in `promotion-matching.ts`) to allow for simple unit testing without mocking complex Prisma objects.
