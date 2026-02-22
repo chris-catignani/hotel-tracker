@@ -115,3 +115,32 @@ export interface Booking {
   otaAgencyId: number | null;
   benefits: BookingBenefit[];
 }
+
+export interface BookingFormData {
+  hotelChainId: number;
+  hotelChainSubBrandId: number | null;
+  propertyName: string;
+  checkIn: string;
+  checkOut: string;
+  numNights: number;
+  pretaxCost: number;
+  taxAmount: number;
+  totalCost: number;
+  currency: string;
+  originalAmount: number | null;
+  pointsRedeemed: number | null;
+  certificates: string[];
+  creditCardId: number | null;
+  shoppingPortalId: number | null;
+  portalCashbackRate: number | null;
+  portalCashbackOnTotal: boolean;
+  loyaltyPointsEarned: number | null;
+  bookingSource: string | null;
+  otaAgencyId: number | null;
+  benefits: {
+    benefitType: string;
+    label: string | null;
+    dollarValue: number | null;
+  }[];
+  notes: string | null;
+}
