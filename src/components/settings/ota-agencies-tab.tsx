@@ -104,7 +104,7 @@ export function OtaAgenciesTab() {
         <h2 className="text-lg font-semibold">OTA Agencies</h2>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button>Add Agency</Button>
+            <Button data-testid="add-agency-button">Add Agency</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>

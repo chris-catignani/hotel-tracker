@@ -126,7 +126,7 @@ export function CreditCardsTab() {
         <h2 className="text-lg font-semibold">Credit Cards</h2>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button>Add Credit Card</Button>
+            <Button data-testid="add-credit-card-button">Add Credit Card</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>

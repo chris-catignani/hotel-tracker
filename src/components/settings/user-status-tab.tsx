@@ -67,7 +67,7 @@ export function UserStatusTab() {
         calculations.
       </p>
 
-      <Table>
+      <Table data-testid="user-status-table">
         <TableHeader>
           <TableRow>
             <TableHead>Hotel Chain</TableHead>

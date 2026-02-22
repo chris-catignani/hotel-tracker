@@ -173,7 +173,7 @@ export function HotelChainsTab() {
         <h2 className="text-lg font-semibold">Hotel Chains</h2>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button>Add Hotel Chain</Button>
+            <Button data-testid="add-hotel-chain-button">Add Hotel Chain</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>

@@ -127,7 +127,7 @@ export function PointTypesTab() {
         <h2 className="text-lg font-semibold">Point Types</h2>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button>Add Point Type</Button>
+            <Button data-testid="add-point-type-button">Add Point Type</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
