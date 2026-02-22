@@ -123,7 +123,7 @@ export function ShoppingPortalsTab() {
         <h2 className="text-lg font-semibold">Shopping Portals</h2>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button>Add Portal</Button>
+            <Button data-testid="add-portal-button">Add Portal</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>

@@ -12,7 +12,10 @@ export function ErrorBanner({ error, onDismiss }: ErrorBannerProps) {
   if (!error) return null;
 
   return (
-    <div className="rounded-md border border-red-300 bg-red-50 p-4 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">
+    <div
+      data-testid="error-banner"
+      className="rounded-md border border-red-300 bg-red-50 p-4 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200"
+    >
       <div className="flex items-start gap-3">
         <AlertCircle className="h-5 w-5 shrink-0 text-red-500" />
         <div className="flex-1">

@@ -21,22 +21,22 @@ export default function SettingsPage() {
           <TabsTrigger value="portals">Shopping Portals</TabsTrigger>
           <TabsTrigger value="ota-agencies">OTA Agencies</TabsTrigger>
         </TabsList>
-        <TabsContent value="my-status">
+        <TabsContent value="my-status" data-testid="tab-my-status">
           <UserStatusTab />
         </TabsContent>
-        <TabsContent value="point-types">
+        <TabsContent value="point-types" data-testid="tab-point-types">
           <PointTypesTab />
         </TabsContent>
-        <TabsContent value="hotels">
+        <TabsContent value="hotels" data-testid="tab-hotels">
           <HotelChainsTab />
         </TabsContent>
-        <TabsContent value="credit-cards">
+        <TabsContent value="credit-cards" data-testid="tab-credit-cards">
           <CreditCardsTab />
         </TabsContent>
-        <TabsContent value="portals">
+        <TabsContent value="portals" data-testid="tab-portals">
           <ShoppingPortalsTab />
         </TabsContent>
-        <TabsContent value="ota-agencies">
+        <TabsContent value="ota-agencies" data-testid="tab-ota-agencies">
           <OtaAgenciesTab />
         </TabsContent>
       </Tabs>
