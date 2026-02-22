@@ -31,7 +31,7 @@ import {
 import { extractApiError } from "@/lib/client-error";
 import { CATEGORY_LABELS } from "@/lib/constants";
 import { PointType } from "@/lib/types";
-import { ErrorBanner } from "./error-banner";
+import { ErrorBanner } from "@/components/ui/error-banner";
 
 export function PointTypesTab() {
   const [pointTypes, setPointTypes] = useState<PointType[]>([]);

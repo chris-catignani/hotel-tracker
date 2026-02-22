@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/table";
 import { extractApiError } from "@/lib/client-error";
 import { HotelChain, UserStatus } from "@/lib/types";
-import { ErrorBanner } from "./error-banner";
+import { ErrorBanner } from "@/components/ui/error-banner";
 
 export function UserStatusTab() {
   const [userStatuses, setUserStatuses] = useState<UserStatus[]>([]);

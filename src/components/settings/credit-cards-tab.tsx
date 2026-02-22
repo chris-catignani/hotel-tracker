@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/table";
 import { extractApiError } from "@/lib/client-error";
 import { CreditCard, PointType } from "@/lib/types";
-import { ErrorBanner } from "./error-banner";
+import { ErrorBanner } from "@/components/ui/error-banner";
 
 export function CreditCardsTab() {
   const [cards, setCards] = useState<CreditCard[]>([]);
