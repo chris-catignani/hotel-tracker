@@ -370,6 +370,7 @@ async function main() {
   ]);
 
   // Seed UserStatus
+  await upsertUserStatus(HOTEL_ID.ACCOR, "Platinum");
   await upsertUserStatus(HOTEL_ID.MARRIOTT, "Titanium");
   await upsertUserStatus(HOTEL_ID.HYATT, "Globalist");
   await upsertUserStatus(HOTEL_ID.HILTON, "Diamond");
