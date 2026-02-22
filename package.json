@@ -13,7 +13,7 @@
     "db:push": "prisma db push && rm -rf .next",
     "db:seed": "npx tsx prisma/seed.ts",
     "postinstall": "prisma generate",
-    "test": "vitest"
+    "test": "vitest run"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
