@@ -1,7 +1,15 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useCallback, useEffect, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,15 +21,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
   Table,
   TableBody,
   TableCell,
@@ -29,7 +28,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { extractApiError } from "@/lib/client-error";
+import { CATEGORY_LABELS } from "@/lib/constants";
+import {
+  CreditCard,
+  HotelChain,
+  HotelChainSubBrand,
+  PointType,
+  ShoppingPortal,
+  UserStatus,
+} from "@/lib/types";
 
 // ---------------------------------------------------------------------------
 // Error Banner
@@ -51,74 +61,6 @@ function ErrorBanner({ error, onDismiss }: { error: string | null; onDismiss: ()
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-interface PointType {
-  id: number;
-  name: string;
-  category: "hotel" | "airline" | "transferable";
-  centsPerPoint: string | number;
-}
-
-interface HotelChainSubBrand {
-  id: number;
-  hotelChainId: number;
-  name: string;
-  basePointRate: number | null;
-}
-
-interface HotelChainEliteStatus {
-  id: number;
-  name: string;
-  bonusPercentage: number | null;
-  fixedRate: number | null;
-  isFixed: boolean;
-}
-
-interface UserStatus {
-  id: number;
-  hotelChainId: number;
-  eliteStatusId: number | null;
-  eliteStatus: HotelChainEliteStatus | null;
-}
-
-interface HotelChain {
-  id: number;
-  name: string;
-  loyaltyProgram: string | null;
-  basePointRate: number | null;
-  pointTypeId: number | null;
-  pointType: PointType | null;
-  hotelChainSubBrands: HotelChainSubBrand[];
-  eliteStatuses: HotelChainEliteStatus[];
-  userStatus: UserStatus | null;
-}
-
-interface CreditCard {
-  id: number;
-  name: string;
-  rewardType: string;
-  rewardRate: number;
-  pointTypeId: number | null;
-  pointType: PointType | null;
-}
-
-interface ShoppingPortal {
-  id: number;
-  name: string;
-  rewardType: string;
-  pointTypeId: number | null;
-  pointType: PointType | null;
-}
-
-const CATEGORY_LABELS: Record<string, string> = {
-  hotel: "Hotel",
-  airline: "Airline",
-  transferable: "Transferable",
-};
 
 // ---------------------------------------------------------------------------
 // User Status Tab
