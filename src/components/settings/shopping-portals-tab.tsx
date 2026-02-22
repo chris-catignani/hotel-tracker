@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/table";
 import { extractApiError } from "@/lib/client-error";
 import { PointType, ShoppingPortal } from "@/lib/types";
-import { ErrorBanner } from "./error-banner";
+import { ErrorBanner } from "@/components/ui/error-banner";
 
 export function ShoppingPortalsTab() {
   const [portals, setPortals] = useState<ShoppingPortal[]>([]);
