@@ -18,141 +18,21 @@ import { CERT_TYPE_OPTIONS } from "@/lib/cert-types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { calculatePointsFromChain } from "@/lib/loyalty-utils";
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
+import {
+  CURRENCIES,
+  PAYMENT_TYPES,
+  BOOKING_SOURCE_OPTIONS,
+  BENEFIT_TYPE_OPTIONS,
+} from "@/lib/constants";
 
-const CURRENCIES = [
-  "USD",
-  "EUR",
-  "GBP",
-  "CAD",
-  "AUD",
-  "JPY",
-  "CHF",
-  "MXN",
-  "SGD",
-  "HKD",
-  "MYR",
-  "NTD",
-  "THB",
-  "IDR",
-  "NZD",
-];
-
-const PAYMENT_TYPES = [
-  { value: "cash", label: "Cash" },
-  { value: "points", label: "Points (Award Stay)" },
-  { value: "cert", label: "Certificate(s) (Free Night)" },
-  { value: "points_cert", label: "Points + Certificate(s)" },
-  { value: "cash_points", label: "Cash + Points" },
-  { value: "cash_cert", label: "Cash + Certificate(s)" },
-  { value: "cash_points_cert", label: "Cash + Points + Certificate(s)" },
-] as const;
-
-type PaymentType = (typeof PAYMENT_TYPES)[number]["value"];
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-interface HotelChainEliteStatus {
-  id: number;
-  name: string;
-  bonusPercentage: number | null;
-  fixedRate: number | null;
-  isFixed: boolean;
-}
-
-interface UserStatus {
-  id: number;
-  hotelChainId: number;
-  eliteStatusId: number | null;
-  eliteStatus: HotelChainEliteStatus | null;
-}
-
-interface HotelChainSubBrand {
-  id: number;
-  name: string;
-  basePointRate: number | null;
-}
-
-interface HotelChain {
-  id: number;
-  name: string;
-  loyaltyProgram: string | null;
-  basePointRate: number | null;
-  hotelChainSubBrands: HotelChainSubBrand[];
-  eliteStatuses: HotelChainEliteStatus[];
-  userStatus: UserStatus | null;
-}
-
-interface CreditCard {
-  id: number;
-  name: string;
-  rewardType: string;
-  rewardRate: number;
-}
-
-interface ShoppingPortal {
-  id: number;
-  name: string;
-  rewardType: string;
-  pointType: { centsPerPoint: number } | null;
-}
-
-interface OtaAgency {
-  id: number;
-  name: string;
-}
-
-interface Booking {
-  id: number;
-  hotelChainId: number;
-  hotelChainSubBrandId: number | null;
-  propertyName: string;
-  checkIn: string;
-  checkOut: string;
-  numNights: number;
-  pretaxCost: string | number;
-  taxAmount: string | number;
-  totalCost: string | number;
-  currency: string;
-  originalAmount: string | number | null;
-  creditCardId: number | null;
-  shoppingPortalId: number | null;
-  portalCashbackRate: string | number | null;
-  portalCashbackOnTotal: boolean;
-  loyaltyPointsEarned: number | null;
-  pointsRedeemed: number | null;
-  notes: string | null;
-  certificates: { id: number; certType: string }[];
-  bookingSource: string | null;
-  otaAgencyId: number | null;
-  benefits: {
-    id: number;
-    benefitType: string;
-    label: string | null;
-    dollarValue: string | number | null;
-  }[];
-}
-
-const BOOKING_SOURCE_OPTIONS = [
-  { value: "direct_web", label: "Direct — Hotel Chain Website" },
-  { value: "direct_app", label: "Direct — Hotel Chain App" },
-  { value: "ota", label: "Online Travel Agency (OTA)" },
-  { value: "other", label: "Other" },
-];
-
-const BENEFIT_TYPE_OPTIONS = [
-  { value: "free_breakfast", label: "Free Breakfast" },
-  { value: "dining_credit", label: "Dining Credit" },
-  { value: "spa_credit", label: "Spa Credit" },
-  { value: "room_upgrade", label: "Room Upgrade" },
-  { value: "late_checkout", label: "Late Checkout" },
-  { value: "early_checkin", label: "Early Check-in" },
-  { value: "other", label: "Other" },
-];
+import {
+  HotelChain,
+  CreditCard,
+  ShoppingPortal,
+  OtaAgency,
+  Booking,
+  PaymentType,
+} from "@/lib/types";
 
 // ---------------------------------------------------------------------------
 // Helpers
