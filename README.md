@@ -108,8 +108,38 @@ npm run build        # Production build
 npm run db:push      # Push schema to database
 npm run db:seed      # Seed reference data
 npm run db:generate  # Regenerate Prisma client
+npm run test         # Run unit tests (Vitest)
+npm run test:e2e     # Run functional E2E tests (Playwright)
 npx prisma studio    # Open Prisma Studio (visual DB browser)
 ```
+
+## Functional Testing (E2E)
+
+We use **Playwright** for end-to-end functional tests.
+
+### 1. Setup
+
+Create a dedicated test database:
+
+```bash
+psql -U postgres -c "CREATE DATABASE hotel_tracker_test;"
+```
+
+Add the test database URL to your `.env` file:
+
+```
+DATABASE_URL_TEST="postgresql://postgres:postgres@localhost:5432/hotel_tracker_test"
+```
+
+### 2. Run Tests
+
+```bash
+npx playwright install  # Install browser engines (first time only)
+npm run test:e2e        # Run tests headlessly
+npm run test:e2e:ui     # Run tests with interactive UI
+```
+
+The E2E suite automatically resets and seeds the test database before running.
 
 ## Deploying to Vercel
 
