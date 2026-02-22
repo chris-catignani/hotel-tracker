@@ -17,7 +17,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     });
 
     if (!promotion) {
-      return NextResponse.json({ error: "Promotion not found" }, { status: 404 });
+      return apiError("Promotion not found", null, 404);
     }
 
     return NextResponse.json(promotion);
