@@ -191,16 +191,26 @@ export function PaymentTypeBreakdown({ bookings }: PaymentTypeBreakdownProps) {
         )}
 
         {total > 0 && (
-          <div className="mt-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-center sm:gap-4">
+          <div
+            className="mt-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-center sm:gap-4"
+            data-testid="payment-type-legend"
+          >
             {data.chartData.map((item) => (
-              <div key={item.name} className="flex items-center gap-2">
+              <div
+                key={item.name}
+                className="flex items-center gap-2"
+                data-testid={`legend-item-${item.name.toLowerCase()}`}
+              >
                 <div
                   className="w-3 h-3 rounded-full shrink-0"
                   style={{ backgroundColor: TYPE_COLORS[item.name] }}
                 />
                 <div className="flex flex-col sm:flex-row sm:gap-1.5 items-start sm:items-center">
                   <span className="text-xs font-medium">{item.name}</span>
-                  <span className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap">
+                  <span
+                    className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap"
+                    data-testid="legend-item-value"
+                  >
                     {item.value} ({((item.value / total) * 100).toFixed(0)}%)
                   </span>
                 </div>
