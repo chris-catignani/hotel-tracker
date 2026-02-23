@@ -29,6 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { extractApiError } from "@/lib/client-error";
 import { CATEGORY_LABELS } from "@/lib/constants";
 import { PointType } from "@/lib/types";
@@ -47,6 +48,9 @@ export function PointTypesTab() {
   const [editName, setEditName] = useState("");
   const [editCategory, setEditCategory] = useState<"hotel" | "airline" | "transferable">("hotel");
   const [editCentsPerPoint, setEditCentsPerPoint] = useState("");
+
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [ptToDelete, setPtToDelete] = useState<PointType | null>(null);
 
   const fetchPointTypes = useCallback(async () => {
     const res = await fetch("/api/point-types");
@@ -109,10 +113,18 @@ export function PointTypesTab() {
     }
   };
 
-  const handleDelete = async (pt: PointType) => {
+  const handleDeleteClick = (pt: PointType) => {
+    setPtToDelete(pt);
+    setDeleteOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!ptToDelete) return;
+    setDeleteOpen(false);
     setError(null);
-    const res = await fetch(`/api/point-types/${pt.id}`, { method: "DELETE" });
+    const res = await fetch(`/api/point-types/${ptToDelete.id}`, { method: "DELETE" });
     if (res.ok) {
+      setPtToDelete(null);
       fetchPointTypes();
     } else if (res.status === 409) {
       setError("Cannot delete: this point type is in use by hotel chains, cards, or portals.");
@@ -234,6 +246,19 @@ export function PointTypesTab() {
         </DialogContent>
       </Dialog>
 
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete Point Type?"
+        description={
+          ptToDelete
+            ? `Are you sure you want to delete "${ptToDelete.name}"? This cannot be undone.`
+            : ""
+        }
+        onConfirm={handleDeleteConfirm}
+      />
+
       {/* Mobile View: Cards */}
       <div className="grid grid-cols-1 gap-4 md:hidden" data-testid="point-types-mobile">
         {pointTypes.length === 0 ? (
@@ -275,7 +300,7 @@ export function PointTypesTab() {
                         variant="outline"
                         size="sm"
                         className="flex-1 text-destructive"
-                        onClick={() => handleDelete(pt)}
+                        onClick={() => handleDeleteClick(pt)}
                       >
                         Delete
                       </Button>
@@ -327,7 +352,7 @@ export function PointTypesTab() {
                           <Button variant="ghost" size="sm" onClick={() => handleEdit(pt)}>
                             Edit
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleDelete(pt)}>
+                          <Button variant="ghost" size="sm" onClick={() => handleDeleteClick(pt)}>
                             Delete
                           </Button>
                         </div>

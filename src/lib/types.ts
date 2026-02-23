@@ -50,6 +50,7 @@ export interface CreditCard {
   rewardRate: number;
   pointTypeId: number | null;
   pointType: PointType | null;
+  isDeleted: boolean;
 }
 
 export interface ShoppingPortal {

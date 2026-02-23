@@ -29,6 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { extractApiError } from "@/lib/client-error";
 import { CreditCard, PointType } from "@/lib/types";
 import { ErrorBanner } from "@/components/ui/error-banner";
@@ -49,6 +50,9 @@ export function CreditCardsTab() {
   const [editRewardType, setEditRewardType] = useState("points");
   const [editRewardRate, setEditRewardRate] = useState("");
   const [editPointTypeId, setEditPointTypeId] = useState("none");
+
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [cardToDelete, setCardToDelete] = useState<CreditCard | null>(null);
 
   const fetchData = useCallback(async () => {
     const [cardsRes, ptRes] = await Promise.all([
@@ -117,6 +121,24 @@ export function CreditCardsTab() {
       fetchData();
     } else {
       setError(await extractApiError(res, "Failed to update credit card."));
+    }
+  };
+
+  const handleDeleteClick = (card: CreditCard) => {
+    setCardToDelete(card);
+    setDeleteOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!cardToDelete) return;
+    setDeleteOpen(false);
+    setError(null);
+    const res = await fetch(`/api/credit-cards/${cardToDelete.id}`, { method: "DELETE" });
+    if (res.ok) {
+      setCardToDelete(null);
+      fetchData();
+    } else {
+      setError(await extractApiError(res, "Failed to delete credit card."));
     }
   };
 
@@ -258,6 +280,19 @@ export function CreditCardsTab() {
         </DialogContent>
       </Dialog>
 
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete Credit Card?"
+        description={
+          cardToDelete
+            ? `Are you sure you want to delete "${cardToDelete.name}"? This cannot be undone.`
+            : ""
+        }
+        onConfirm={handleDeleteConfirm}
+      />
+
       {/* Mobile View: Cards */}
       <div className="grid grid-cols-1 gap-4 md:hidden" data-testid="credit-cards-mobile">
         {cards.length === 0 ? (
@@ -282,14 +317,23 @@ export function CreditCardsTab() {
                   <span className="text-muted-foreground">Point Type</span>
                   <span className="font-medium">{card.pointType?.name ?? "—"}</span>
                 </div>
-                <div className="pt-2">
+                <div className="flex gap-2 pt-2">
                   <Button
                     variant="outline"
                     size="sm"
-                    className="w-full"
+                    className="flex-1"
                     onClick={() => handleEdit(card)}
                   >
                     Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 text-destructive"
+                    data-testid="delete-credit-card-button"
+                    onClick={() => handleDeleteClick(card)}
+                  >
+                    Delete
                   </Button>
                 </div>
               </CardContent>
@@ -327,9 +371,19 @@ export function CreditCardsTab() {
                   <TableCell>{card.rewardRate}</TableCell>
                   <TableCell>{card.pointType?.name ?? "—"}</TableCell>
                   <TableCell>
-                    <Button variant="ghost" size="sm" onClick={() => handleEdit(card)}>
-                      Edit
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(card)}>
+                        Edit
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        data-testid="delete-credit-card-button"
+                        onClick={() => handleDeleteClick(card)}
+                      >
+                        Delete
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))

@@ -25,3 +25,19 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return apiError("Failed to update credit card", error);
   }
 }
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    await prisma.creditCard.update({
+      where: { id: Number(id) },
+      data: { isDeleted: true },
+    });
+    return new NextResponse(null, { status: 204 });
+  } catch (error) {
+    return apiError("Failed to delete credit card", error);
+  }
+}

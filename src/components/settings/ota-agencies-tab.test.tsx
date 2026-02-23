@@ -1,6 +1,8 @@
-import { render, screen, act, within } from "@testing-library/react";
+import { render, screen, act, within, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { OtaAgenciesTab } from "./ota-agencies-tab";
+
+const mockAgencies = [{ id: 1, name: "Expedia" }];
 
 describe("OtaAgenciesTab", () => {
   beforeEach(() => {
@@ -23,7 +25,6 @@ describe("OtaAgenciesTab", () => {
   });
 
   it("shows fetched agencies", async () => {
-    const mockAgencies = [{ id: 1, name: "Expedia" }];
     vi.mocked(global.fetch).mockResolvedValue({
       ok: true,
       json: async () => mockAgencies,
@@ -35,5 +36,76 @@ describe("OtaAgenciesTab", () => {
 
     const desktopView = screen.getByTestId("agencies-desktop");
     expect(within(desktopView).getByText("Expedia")).toBeInTheDocument();
+  });
+
+  it("opens confirmation dialog when Delete is clicked", async () => {
+    vi.mocked(global.fetch).mockResolvedValue({
+      ok: true,
+      json: async () => mockAgencies,
+    } as Response);
+
+    await act(async () => {
+      render(<OtaAgenciesTab />);
+    });
+
+    // Find delete button in the desktop view table
+    const desktopView = screen.getByTestId("agencies-desktop");
+    const deleteBtn = within(desktopView).getByRole("button", { name: "Delete" });
+    await act(async () => {
+      fireEvent.click(deleteBtn);
+    });
+
+    expect(screen.getByText("Delete OTA Agency?")).toBeInTheDocument();
+    expect(screen.getByText(/Are you sure you want to delete "Expedia"/)).toBeInTheDocument();
+  });
+
+  it("calls DELETE API and refreshes list after confirming", async () => {
+    const fetchMock = vi
+      .mocked(global.fetch)
+      .mockImplementation((url: string, options?: RequestInit) => {
+        if (url === "/api/ota-agencies" && (!options || !options.method))
+          return Promise.resolve({ ok: true, json: async () => mockAgencies } as Response);
+        if (url === "/api/ota-agencies/1" && options?.method === "DELETE")
+          return Promise.resolve({ ok: true } as Response);
+        return Promise.reject(new Error(`Unknown: ${url}`));
+      });
+
+    await act(async () => {
+      render(<OtaAgenciesTab />);
+    });
+
+    const desktopView = screen.getByTestId("agencies-desktop");
+    const deleteBtn = within(desktopView).getByRole("button", { name: "Delete" });
+    await act(async () => {
+      fireEvent.click(deleteBtn);
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("confirm-dialog-confirm-button"));
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith("/api/ota-agencies/1", { method: "DELETE" });
+  });
+
+  it("does not call DELETE if dialog is cancelled", async () => {
+    const fetchMock = vi.mocked(global.fetch).mockResolvedValue({
+      ok: true,
+      json: async () => mockAgencies,
+    } as Response);
+
+    await act(async () => {
+      render(<OtaAgenciesTab />);
+    });
+
+    const desktopView = screen.getByTestId("agencies-desktop");
+    const deleteBtn = within(desktopView).getByRole("button", { name: "Delete" });
+    await act(async () => {
+      fireEvent.click(deleteBtn);
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+    const deleteCalls = fetchMock.mock.calls.filter(([, opts]) => opts?.method === "DELETE");
+    expect(deleteCalls.length).toBe(0);
   });
 });

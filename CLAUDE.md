@@ -73,6 +73,7 @@ Net Cost = totalCost - promotionSavings - portalCashback - cardReward - loyaltyP
 ```
 
 **Mandate:** Whenever adding new promotion types, portal reward options, or modifying loyalty logic, you **MUST**:
+
 1. Update the `getNetCostBreakdown` function in `src/lib/net-cost.ts` to include detailed, human-readable explanations (description and formula) for the new logic. These explanations must explicitly state whether the calculation is based on the **pre-tax cost** or the **total cost**.
 2. Update the `CostBreakdown` component (`src/components/cost-breakdown.tsx`) as necessary to accommodate any new breakdown items or calculation types.
 

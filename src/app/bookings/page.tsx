@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { calculateNetCost } from "@/lib/net-cost";
 import {
   Table,
@@ -113,6 +114,9 @@ function formatSourceColumn(booking: {
 export default function BookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [bookingToDelete, setBookingToDelete] = useState<number | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const fetchBookings = useCallback(async () => {
     setLoading(true);
@@ -128,11 +132,21 @@ export default function BookingsPage() {
     fetchBookings();
   }, [fetchBookings]);
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this booking?")) return;
-    const res = await fetch(`/api/bookings/${id}`, { method: "DELETE" });
+  const handleDeleteClick = (id: number) => {
+    setBookingToDelete(id);
+    setDeleteOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (bookingToDelete === null) return;
+    setDeleteOpen(false);
+    setDeleteError(null);
+    const res = await fetch(`/api/bookings/${bookingToDelete}`, { method: "DELETE" });
     if (res.ok) {
+      setBookingToDelete(null);
       fetchBookings();
+    } else {
+      setDeleteError("Failed to delete booking. Please try again.");
     }
   };
 
@@ -144,6 +158,20 @@ export default function BookingsPage() {
           <Button>Add Booking</Button>
         </Link>
       </div>
+
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete Booking?"
+        description="Are you sure you want to delete this booking? This cannot be undone."
+        onConfirm={handleDeleteConfirm}
+      />
+
+      {deleteError && (
+        <p className="text-sm text-destructive" data-testid="booking-delete-error">
+          {deleteError}
+        </p>
+      )}
 
       {loading ? (
         <p className="text-center text-muted-foreground py-8">Loading...</p>
@@ -157,7 +185,7 @@ export default function BookingsPage() {
               <BookingCard
                 key={booking.id}
                 booking={booking}
-                onDelete={handleDelete}
+                onDelete={handleDeleteClick}
                 showActions={true}
               />
             ))}
@@ -229,7 +257,7 @@ export default function BookingsPage() {
                           <Button
                             variant="destructive"
                             size="sm"
-                            onClick={() => handleDelete(booking.id)}
+                            onClick={() => handleDeleteClick(booking.id)}
                           >
                             Delete
                           </Button>
