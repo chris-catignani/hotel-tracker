@@ -39,6 +39,6 @@ describe("CreditCardsTab", () => {
       render(<CreditCardsTab />);
     });
 
-    expect(screen.getByText("Amex Platinum")).toBeInTheDocument();
+    expect(screen.getAllByText("Amex Platinum")[0]).toBeInTheDocument();
   });
 });

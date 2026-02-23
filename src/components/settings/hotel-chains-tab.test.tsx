@@ -47,6 +47,6 @@ describe("HotelChainsTab", () => {
       render(<HotelChainsTab />);
     });
 
-    expect(screen.getByText("Marriott")).toBeInTheDocument();
+    expect(screen.getAllByText("Marriott")[0]).toBeInTheDocument();
   });
 });

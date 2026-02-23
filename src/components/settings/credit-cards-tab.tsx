@@ -11,6 +11,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -257,40 +258,81 @@ export function CreditCardsTab() {
         </DialogContent>
       </Dialog>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Reward Type</TableHead>
-            <TableHead>Reward Rate</TableHead>
-            <TableHead>Point Type</TableHead>
-            <TableHead></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {cards.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={5} className="text-center text-muted-foreground">
-                No credit cards added yet.
-              </TableCell>
-            </TableRow>
-          ) : (
-            cards.map((card) => (
-              <TableRow key={card.id}>
-                <TableCell>{card.name}</TableCell>
-                <TableCell className="capitalize">{card.rewardType}</TableCell>
-                <TableCell>{card.rewardRate}</TableCell>
-                <TableCell>{card.pointType?.name ?? "—"}</TableCell>
-                <TableCell>
-                  <Button variant="ghost" size="sm" onClick={() => handleEdit(card)}>
+      {/* Mobile View: Cards */}
+      <div className="grid grid-cols-1 gap-4 md:hidden">
+        {cards.length === 0 ? (
+          <p className="text-center text-muted-foreground py-8">No credit cards added yet.</p>
+        ) : (
+          cards.map((card) => (
+            <Card key={card.id}>
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="font-bold">{card.name}</h3>
+                    <p className="text-sm text-muted-foreground capitalize">{card.rewardType}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium">Rate</p>
+                    <p className="text-lg font-bold">{card.rewardRate}</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Point Type</span>
+                  <span className="font-medium">{card.pointType?.name ?? "—"}</span>
+                </div>
+                <div className="pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => handleEdit(card)}
+                  >
                     Edit
                   </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+
+      {/* Desktop View: Table */}
+      <div className="hidden md:block">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Reward Type</TableHead>
+              <TableHead>Reward Rate</TableHead>
+              <TableHead>Point Type</TableHead>
+              <TableHead></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {cards.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center text-muted-foreground">
+                  No credit cards added yet.
                 </TableCell>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+            ) : (
+              cards.map((card) => (
+                <TableRow key={card.id}>
+                  <TableCell className="font-medium">{card.name}</TableCell>
+                  <TableCell className="capitalize">{card.rewardType}</TableCell>
+                  <TableCell>{card.rewardRate}</TableCell>
+                  <TableCell>{card.pointType?.name ?? "—"}</TableCell>
+                  <TableCell>
+                    <Button variant="ghost" size="sm" onClick={() => handleEdit(card)}>
+                      Edit
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }
