@@ -86,6 +86,17 @@ function calcTotalSavings(booking: BookingWithRelations): number {
   return promoSavings + portalCashback + cardReward + loyaltyPointsValue;
 }
 
+interface HotelChainSummary {
+  chain: string;
+  count: number;
+  totalNights: number;
+  totalSpend: number;
+  totalSavings: number;
+  totalNet: number;
+  pointsRedeemed: number;
+  certs: number;
+}
+
 export default function DashboardPage() {
   const [bookings, setBookings] = useState<BookingWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
@@ -99,6 +110,39 @@ export default function DashboardPage() {
       })
       .catch(() => setLoading(false));
   }, []);
+
+  const hotelChainSummaries = useMemo(() => {
+    const summaries = bookings.reduce(
+      (acc, b) => {
+        const chain = b.hotelChain.name;
+        if (!acc[chain]) {
+          acc[chain] = {
+            chain,
+            count: 0,
+            totalNights: 0,
+            totalSpend: 0,
+            totalSavings: 0,
+            totalNet: 0,
+            pointsRedeemed: 0,
+            certs: 0,
+          };
+        }
+        acc[chain].count++;
+        acc[chain].totalNights += b.numNights;
+        acc[chain].pointsRedeemed += b.pointsRedeemed ?? 0;
+        acc[chain].certs += b.certificates.length;
+        acc[chain].totalNet += calculateNetCost(b);
+        // Only cash bookings contribute to spend/savings
+        if (Number(b.totalCost) > 0) {
+          acc[chain].totalSpend += Number(b.totalCost);
+          acc[chain].totalSavings += calcTotalSavings(b);
+        }
+        return acc;
+      },
+      {} as Record<string, HotelChainSummary>
+    );
+    return Object.values(summaries);
+  }, [bookings]);
 
   if (loading) {
     return (
@@ -369,36 +413,7 @@ export default function DashboardPage() {
           <CardContent>
             {/* Mobile View: Cards */}
             <div className="flex flex-col gap-4 md:hidden" data-testid="hotel-chain-summary-mobile">
-              {Object.values(
-                bookings.reduce(
-                  (acc, b) => {
-                    const chain = b.hotelChain.name;
-                    if (!acc[chain]) {
-                      acc[chain] = {
-                        chain,
-                        count: 0,
-                        totalNights: 0,
-                        totalSpend: 0,
-                        totalSavings: 0,
-                        totalNet: 0,
-                        pointsRedeemed: 0,
-                        certs: 0,
-                      };
-                    }
-                    acc[chain].count++;
-                    acc[chain].totalNights += b.numNights;
-                    acc[chain].pointsRedeemed += b.pointsRedeemed ?? 0;
-                    acc[chain].certs += b.certificates.length;
-                    acc[chain].totalNet += calculateNetCost(b);
-                    if (Number(b.totalCost) > 0) {
-                      acc[chain].totalSpend += Number(b.totalCost);
-                      acc[chain].totalSavings += calcTotalSavings(b);
-                    }
-                    return acc;
-                  },
-                  {} as Record<string, any>
-                )
-              ).map((summary: any) => (
+              {hotelChainSummaries.map((summary) => (
                 <div key={summary.chain} className="flex flex-col p-4 border rounded-lg space-y-3">
                   <div className="flex justify-between items-start">
                     <Badge variant="outline" className="text-base">
@@ -406,7 +421,9 @@ export default function DashboardPage() {
                     </Badge>
                     <div className="text-right">
                       <div className="text-sm font-medium">{summary.count} Bookings</div>
-                      <div className="text-xs text-muted-foreground">{summary.totalNights} Nights</div>
+                      <div className="text-xs text-muted-foreground">
+                        {summary.totalNights} Nights
+                      </div>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4 pt-2 border-t">
@@ -472,49 +489,7 @@ export default function DashboardPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {Object.values(
-                    bookings.reduce(
-                      (acc, b) => {
-                        const chain = b.hotelChain.name;
-                        if (!acc[chain]) {
-                          acc[chain] = {
-                            chain,
-                            count: 0,
-                            totalNights: 0,
-                            totalSpend: 0,
-                            totalSavings: 0,
-                            totalNet: 0,
-                            pointsRedeemed: 0,
-                            certs: 0,
-                          };
-                        }
-                        acc[chain].count++;
-                        acc[chain].totalNights += b.numNights;
-                        acc[chain].pointsRedeemed += b.pointsRedeemed ?? 0;
-                        acc[chain].certs += b.certificates.length;
-                        acc[chain].totalNet += calculateNetCost(b);
-                        // Only cash bookings contribute to spend/savings
-                        if (Number(b.totalCost) > 0) {
-                          acc[chain].totalSpend += Number(b.totalCost);
-                          acc[chain].totalSavings += calcTotalSavings(b);
-                        }
-                        return acc;
-                      },
-                      {} as Record<
-                        string,
-                        {
-                          chain: string;
-                          count: number;
-                          totalNights: number;
-                          totalSpend: number;
-                          totalSavings: number;
-                          totalNet: number;
-                          pointsRedeemed: number;
-                          certs: number;
-                        }
-                      >
-                    )
-                  ).map((summary) => (
+                  {hotelChainSummaries.map((summary) => (
                     <TableRow key={summary.chain}>
                       <TableCell className="font-medium">
                         <Badge variant="outline">{summary.chain}</Badge>

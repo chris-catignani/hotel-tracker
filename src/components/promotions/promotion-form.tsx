@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, parseISO } from "date-fns";
+import { PromotionFormData, PromotionType, PromotionValueType } from "@/lib/types";
 
 interface HotelChainSubBrand {
   id: number;
@@ -37,21 +38,6 @@ interface ShoppingPortal {
   name: string;
 }
 
-export interface PromotionFormData {
-  name: string;
-  type: string;
-  valueType: string;
-  value: number;
-  hotelChainId?: number | null;
-  hotelChainSubBrandId?: number | null;
-  creditCardId?: number | null;
-  shoppingPortalId?: number | null;
-  minSpend?: number | null;
-  startDate?: string | null;
-  endDate?: string | null;
-  isActive: boolean;
-}
-
 interface PromotionFormProps {
   initialData?: Partial<PromotionFormData>;
   onSubmit: (data: PromotionFormData) => Promise<void>;
@@ -70,8 +56,12 @@ export function PromotionForm({
   submitLabel,
 }: PromotionFormProps) {
   const [name, setName] = useState(initialData?.name || "");
-  const [type, setType] = useState<string>(initialData?.type || "loyalty");
-  const [valueType, setValueType] = useState<string>(initialData?.valueType || "fixed");
+  const [type, setType] = useState<PromotionType>(
+    (initialData?.type as PromotionType) || "loyalty"
+  );
+  const [valueType, setValueType] = useState<PromotionValueType>(
+    (initialData?.valueType as PromotionValueType) || "fixed"
+  );
   const [value, setValue] = useState(initialData?.value ? String(initialData.value) : "");
   const [hotelChainId, setHotelChainId] = useState<string>(
     initialData?.hotelChainId ? String(initialData.hotelChainId) : ""
@@ -115,8 +105,9 @@ export function PromotionForm({
   useEffect(() => {
     if (initialData) {
       if (initialData.name !== undefined) setName(initialData.name);
-      if (initialData.type !== undefined) setType(initialData.type);
-      if (initialData.valueType !== undefined) setValueType(initialData.valueType);
+      if (initialData.type !== undefined) setType(initialData.type as PromotionType);
+      if (initialData.valueType !== undefined)
+        setValueType(initialData.valueType as PromotionValueType);
       if (initialData.value !== undefined) setValue(String(initialData.value));
       if (initialData.hotelChainId !== undefined)
         setHotelChainId(initialData.hotelChainId ? String(initialData.hotelChainId) : "");
@@ -127,7 +118,9 @@ export function PromotionForm({
       if (initialData.creditCardId !== undefined)
         setCreditCardId(initialData.creditCardId ? String(initialData.creditCardId) : "");
       if (initialData.shoppingPortalId !== undefined)
-        setShoppingPortalId(initialData.shoppingPortalId ? String(initialData.shoppingPortalId) : "");
+        setShoppingPortalId(
+          initialData.shoppingPortalId ? String(initialData.shoppingPortalId) : ""
+        );
       if (initialData.minSpend !== undefined)
         setMinSpend(initialData.minSpend ? String(initialData.minSpend) : "");
       if (initialData.startDate !== undefined) setStartDate(initialData.startDate || "");
@@ -212,7 +205,7 @@ export function PromotionForm({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Type</Label>
-              <Select value={type} onValueChange={setType}>
+              <Select value={type} onValueChange={(v) => setType(v as PromotionType)}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select type..." />
                 </SelectTrigger>
@@ -226,7 +219,10 @@ export function PromotionForm({
 
             <div className="space-y-2">
               <Label>Value Type</Label>
-              <Select value={valueType} onValueChange={setValueType}>
+              <Select
+                value={valueType}
+                onValueChange={(v) => setValueType(v as PromotionValueType)}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select value type..." />
                 </SelectTrigger>
