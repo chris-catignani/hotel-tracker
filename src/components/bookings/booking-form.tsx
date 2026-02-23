@@ -13,7 +13,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DatePicker } from "@/components/ui/date-picker";
 import { CERT_TYPE_OPTIONS } from "@/lib/cert-types";
+import { format, parseISO } from "date-fns";
 import { calculatePointsFromChain } from "@/lib/loyalty-utils";
 import {
   BENEFIT_TYPE_OPTIONS,
@@ -119,6 +121,17 @@ export function BookingForm({
     []
   );
   const [notes, setNotes] = useState("");
+
+  const handleCheckInChange = (date?: Date) => {
+    setCheckIn(date ? format(date, "yyyy-MM-dd") : "");
+  };
+
+  const handleCheckOutChange = (date?: Date) => {
+    setCheckOut(date ? format(date, "yyyy-MM-dd") : "");
+  };
+
+  const checkInDate = useMemo(() => (checkIn ? parseISO(checkIn) : undefined), [checkIn]);
+  const checkOutDate = useMemo(() => (checkOut ? parseISO(checkOut) : undefined), [checkOut]);
 
   // Populate from initialData if present
   useEffect(() => {
@@ -400,22 +413,20 @@ export function BookingForm({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="checkIn">Check-in Date *</Label>
-              <Input
+              <DatePicker
                 id="checkIn"
-                type="date"
-                value={checkIn}
-                onChange={(e) => setCheckIn(e.target.value)}
-                required
+                date={checkInDate}
+                setDate={handleCheckInChange}
+                placeholder="Select check-in"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="checkOut">Check-out Date *</Label>
-              <Input
+              <DatePicker
                 id="checkOut"
-                type="date"
-                value={checkOut}
-                onChange={(e) => setCheckOut(e.target.value)}
-                required
+                date={checkOutDate}
+                setDate={handleCheckOutChange}
+                placeholder="Select check-out"
               />
             </div>
             <div className="space-y-2">
@@ -727,11 +738,22 @@ export function BookingForm({
           </div>
 
           {/* Actions */}
-          <div className="flex gap-4">
-            <Button type="submit" disabled={!isValid || submitting}>
+          <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm p-4 -mx-6 -mb-6 border-t md:static md:bg-transparent md:p-0 md:m-0 md:border-none flex gap-4 z-10">
+            <Button
+              type="submit"
+              disabled={!isValid || submitting}
+              className="flex-1 md:flex-none"
+              data-testid="booking-form-submit"
+            >
               {submitting ? "Submitting..." : submitLabel}
             </Button>
-            <Button type="button" variant="outline" onClick={onCancel}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              className="flex-1 md:flex-none"
+              data-testid="booking-form-cancel"
+            >
               Cancel
             </Button>
           </div>
