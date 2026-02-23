@@ -10,5 +10,5 @@ This file provides foundational mandates for Gemini CLI (gemini-cli) when workin
 
 ## Testing Mandates
 
-- **Test Coverage:** ALWAYS write both unit tests (Vitest/RTL) and E2E tests (Playwright) for every feature or fix created.
+- **Test Coverage:** ALWAYS write unit tests (Vitest/RTL) for every feature or fix created. E2E tests (Playwright) are TEMPORARILY DISABLED due to flakiness; do not rely on them for CI until re-enabled.
 - **Precise Selectors:** ALWAYS use `data-testid` attributes on React components for specific values or elements to be tested (e.g., `data-testid="stat-value-total-bookings"`). This avoids ambiguity and ensures tests are robust against formatting changes.

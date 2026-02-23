@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { DashboardStats } from "@/components/dashboard-stats";
 import { PaymentTypeBreakdown } from "@/components/payment-type-breakdown";
@@ -86,6 +86,17 @@ function calcTotalSavings(booking: BookingWithRelations): number {
   return promoSavings + portalCashback + cardReward + loyaltyPointsValue;
 }
 
+interface HotelChainSummary {
+  chain: string;
+  count: number;
+  totalNights: number;
+  totalSpend: number;
+  totalSavings: number;
+  totalNet: number;
+  pointsRedeemed: number;
+  certs: number;
+}
+
 export default function DashboardPage() {
   const [bookings, setBookings] = useState<BookingWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
@@ -99,6 +110,39 @@ export default function DashboardPage() {
       })
       .catch(() => setLoading(false));
   }, []);
+
+  const hotelChainSummaries = useMemo(() => {
+    const summaries = bookings.reduce(
+      (acc, b) => {
+        const chain = b.hotelChain.name;
+        if (!acc[chain]) {
+          acc[chain] = {
+            chain,
+            count: 0,
+            totalNights: 0,
+            totalSpend: 0,
+            totalSavings: 0,
+            totalNet: 0,
+            pointsRedeemed: 0,
+            certs: 0,
+          };
+        }
+        acc[chain].count++;
+        acc[chain].totalNights += b.numNights;
+        acc[chain].pointsRedeemed += b.pointsRedeemed ?? 0;
+        acc[chain].certs += b.certificates.length;
+        acc[chain].totalNet += calculateNetCost(b);
+        // Only cash bookings contribute to spend/savings
+        if (Number(b.totalCost) > 0) {
+          acc[chain].totalSpend += Number(b.totalCost);
+          acc[chain].totalSavings += calcTotalSavings(b);
+        }
+        return acc;
+      },
+      {} as Record<string, HotelChainSummary>
+    );
+    return Object.values(summaries);
+  }, [bookings]);
 
   if (loading) {
     return (
@@ -367,96 +411,120 @@ export default function DashboardPage() {
             <CardTitle>Hotel Chain Summary</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Hotel Chain</TableHead>
-                  <TableHead className="text-right">Bookings</TableHead>
-                  <TableHead className="text-right">Nights</TableHead>
-                  <TableHead className="text-right">Cash Spent</TableHead>
-                  <TableHead className="text-right">Award Points Spent</TableHead>
-                  <TableHead className="text-right">Total Savings</TableHead>
-                  <TableHead className="text-right">Net/Night</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {Object.values(
-                  bookings.reduce(
-                    (acc, b) => {
-                      const chain = b.hotelChain.name;
-                      if (!acc[chain]) {
-                        acc[chain] = {
-                          chain,
-                          count: 0,
-                          totalNights: 0,
-                          totalSpend: 0,
-                          totalSavings: 0,
-                          totalNet: 0,
-                          pointsRedeemed: 0,
-                          certs: 0,
-                        };
-                      }
-                      acc[chain].count++;
-                      acc[chain].totalNights += b.numNights;
-                      acc[chain].pointsRedeemed += b.pointsRedeemed ?? 0;
-                      acc[chain].certs += b.certificates.length;
-                      acc[chain].totalNet += calculateNetCost(b);
-                      // Only cash bookings contribute to spend/savings
-                      if (Number(b.totalCost) > 0) {
-                        acc[chain].totalSpend += Number(b.totalCost);
-                        acc[chain].totalSavings += calcTotalSavings(b);
-                      }
-                      return acc;
-                    },
-                    {} as Record<
-                      string,
-                      {
-                        chain: string;
-                        count: number;
-                        totalNights: number;
-                        totalSpend: number;
-                        totalSavings: number;
-                        totalNet: number;
-                        pointsRedeemed: number;
-                        certs: number;
-                      }
-                    >
-                  )
-                ).map((summary) => (
-                  <TableRow key={summary.chain}>
-                    <TableCell className="font-medium">
-                      <Badge variant="outline">{summary.chain}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">{summary.count}</TableCell>
-                    <TableCell className="text-right">{summary.totalNights}</TableCell>
-                    <TableCell className="text-right">
-                      {formatDollars(summary.totalSpend)}
-                    </TableCell>
-                    <TableCell className="text-right text-sm">
-                      {(() => {
-                        const parts = [
-                          summary.pointsRedeemed > 0
-                            ? `${summary.pointsRedeemed.toLocaleString("en-US")} pts`
-                            : null,
-                          summary.certs > 0
-                            ? `${summary.certs} cert${summary.certs !== 1 ? "s" : ""}`
-                            : null,
-                        ].filter(Boolean);
-                        return parts.length > 0 ? parts.join(" · ") : "—";
-                      })()}
-                    </TableCell>
-                    <TableCell className="text-right text-green-600">
-                      {formatDollars(summary.totalSavings)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {summary.totalNights > 0
-                        ? formatDollars(summary.totalNet / summary.totalNights)
-                        : "—"}
-                    </TableCell>
+            {/* Mobile View: Cards */}
+            <div className="flex flex-col gap-4 md:hidden" data-testid="hotel-chain-summary-mobile">
+              {hotelChainSummaries.map((summary) => (
+                <div key={summary.chain} className="flex flex-col p-4 border rounded-lg space-y-3">
+                  <div className="flex justify-between items-start">
+                    <Badge variant="outline" className="text-base">
+                      {summary.chain}
+                    </Badge>
+                    <div className="text-right">
+                      <div className="text-sm font-medium">{summary.count} Bookings</div>
+                      <div className="text-xs text-muted-foreground">
+                        {summary.totalNights} Nights
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 pt-2 border-t">
+                    <div>
+                      <div className="text-xs text-muted-foreground uppercase tracking-wider">
+                        Cash Spent
+                      </div>
+                      <div className="text-sm font-medium">{formatDollars(summary.totalSpend)}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground uppercase tracking-wider">
+                        Total Savings
+                      </div>
+                      <div className="text-sm font-medium text-green-600">
+                        {formatDollars(summary.totalSavings)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground uppercase tracking-wider">
+                        Awards Used
+                      </div>
+                      <div className="text-sm font-medium">
+                        {(() => {
+                          const parts = [
+                            summary.pointsRedeemed > 0
+                              ? `${summary.pointsRedeemed.toLocaleString("en-US")} pts`
+                              : null,
+                            summary.certs > 0
+                              ? `${summary.certs} cert${summary.certs !== 1 ? "s" : ""}`
+                              : null,
+                          ].filter(Boolean);
+                          return parts.length > 0 ? parts.join(" · ") : "—";
+                        })()}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground uppercase tracking-wider">
+                        Net/Night
+                      </div>
+                      <div className="text-sm font-medium">
+                        {summary.totalNights > 0
+                          ? formatDollars(summary.totalNet / summary.totalNights)
+                          : "—"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop View: Table */}
+            <div className="hidden md:block" data-testid="hotel-chain-summary-desktop">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Hotel Chain</TableHead>
+                    <TableHead className="text-right">Bookings</TableHead>
+                    <TableHead className="text-right">Nights</TableHead>
+                    <TableHead className="text-right">Cash Spent</TableHead>
+                    <TableHead className="text-right">Award Points Spent</TableHead>
+                    <TableHead className="text-right">Total Savings</TableHead>
+                    <TableHead className="text-right">Net/Night</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {hotelChainSummaries.map((summary) => (
+                    <TableRow key={summary.chain}>
+                      <TableCell className="font-medium">
+                        <Badge variant="outline">{summary.chain}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right">{summary.count}</TableCell>
+                      <TableCell className="text-right">{summary.totalNights}</TableCell>
+                      <TableCell className="text-right">
+                        {formatDollars(summary.totalSpend)}
+                      </TableCell>
+                      <TableCell className="text-right text-sm">
+                        {(() => {
+                          const parts = [
+                            summary.pointsRedeemed > 0
+                              ? `${summary.pointsRedeemed.toLocaleString("en-US")} pts`
+                              : null,
+                            summary.certs > 0
+                              ? `${summary.certs} cert${summary.certs !== 1 ? "s" : ""}`
+                              : null,
+                          ].filter(Boolean);
+                          return parts.length > 0 ? parts.join(" · ") : "—";
+                        })()}
+                      </TableCell>
+                      <TableCell className="text-right text-green-600">
+                        {formatDollars(summary.totalSavings)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {summary.totalNights > 0
+                          ? formatDollars(summary.totalNet / summary.totalNights)
+                          : "—"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       )}

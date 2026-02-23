@@ -66,6 +66,44 @@ export interface OtaAgency {
 }
 
 // ---------------------------------------------------------------------------
+// Promotion Related Types
+// ---------------------------------------------------------------------------
+
+export type PromotionType = "credit_card" | "portal" | "loyalty";
+export type PromotionValueType = "fixed" | "percentage" | "points_multiplier";
+
+export interface Promotion {
+  id: number;
+  name: string;
+  type: PromotionType;
+  valueType: PromotionValueType;
+  value: string | number;
+  hotelChainId: number | null;
+  hotelChainSubBrandId: number | null;
+  creditCardId: number | null;
+  shoppingPortalId: number | null;
+  minSpend: string | number | null;
+  startDate: string | null;
+  endDate: string | null;
+  isActive: boolean;
+}
+
+export interface PromotionFormData {
+  name: string;
+  type: PromotionType;
+  valueType: PromotionValueType;
+  value: number;
+  hotelChainId?: number | null;
+  hotelChainSubBrandId?: number | null;
+  creditCardId?: number | null;
+  shoppingPortalId?: number | null;
+  minSpend?: number | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  isActive: boolean;
+}
+
+// ---------------------------------------------------------------------------
 // Booking Related Types
 // ---------------------------------------------------------------------------
 

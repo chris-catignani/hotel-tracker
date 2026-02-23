@@ -5,8 +5,22 @@ async function createBooking(page: Page, name: string, chain: string, cost: stri
   await page.getByText(/Select hotel chain.../i).click();
   await page.getByRole("option", { name: chain }).click();
   await page.getByLabel(/Property Name/i).fill(name);
-  await page.getByLabel(/Check-in/i).fill("2026-05-01");
-  await page.getByLabel(/Check-out/i).fill("2026-05-03");
+
+  // Check-in Date
+  await page.getByTestId("date-picker-trigger-checkIn").click();
+  const calendar = page.locator('[data-slot="popover-content"]');
+  await expect(calendar).toBeVisible();
+  // Select day 10 from the grid
+  await calendar.getByRole("button", { name: "10", exact: true }).first().click();
+  await expect(calendar).not.toBeVisible();
+
+  // Check-out Date
+  await page.getByTestId("date-picker-trigger-checkOut").click();
+  await expect(calendar).toBeVisible();
+  // Select day 15
+  await calendar.getByRole("button", { name: "15", exact: true }).first().click();
+  await expect(calendar).not.toBeVisible();
+
   await page.getByLabel(/Pre-tax Cost/i).fill(cost);
   await page.getByLabel(/Total Cost/i).fill((Number(cost) * 1.2).toString());
   await page.getByRole("button", { name: /Create Booking/i }).click();
@@ -100,6 +114,17 @@ test.describe("Mobile Layout & Responsive Components", () => {
       // On mobile, they should be vertically stacked
       expect(valueTypeBox.y).toBeGreaterThan(typeBox.y);
     }
+  });
+
+  test("should have a sticky action bar in the booking form on mobile", async ({ page }) => {
+    await page.goto("/bookings/new");
+    const actions = page.getByTestId("booking-form-submit").locator("..");
+    await expect(actions).toBeVisible();
+
+    // Verify it has sticky class or check its position during scroll if possible
+    // For now, we check if it's visible at the bottom of the viewport
+    await expect(actions).toHaveClass(/sticky/);
+    await expect(actions).toHaveClass(/bottom-0/);
   });
 });
 

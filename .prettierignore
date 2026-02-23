@@ -6,3 +6,5 @@ package-lock.json
 prisma/schema.prisma
 dist/
 build/
+playwright-report/
+test-results/

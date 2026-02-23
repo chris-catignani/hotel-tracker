@@ -9,6 +9,35 @@ vi.mock("@/lib/loyalty-utils", () => ({
   calculatePointsFromChain: vi.fn(() => 1000),
 }));
 
+vi.mock("@/components/ui/date-picker", () => ({
+  DatePicker: ({
+    setDate,
+    id,
+    date,
+  }: {
+    setDate: (date?: Date) => void;
+    id?: string;
+    date?: Date;
+  }) => (
+    <input
+      id={id}
+      type="date"
+      value={date ? date.toISOString().split("T")[0] : ""}
+      onChange={(e) => {
+        const val = e.target.value;
+        if (val) {
+          const d = new Date(val);
+          // Set to noon to avoid timezone issues during testing
+          d.setHours(12, 0, 0, 0);
+          setDate(d);
+        } else {
+          setDate(undefined);
+        }
+      }}
+    />
+  ),
+}));
+
 const mockHotelChains: HotelChain[] = [
   {
     id: 1,
