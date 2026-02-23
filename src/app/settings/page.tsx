@@ -12,15 +12,17 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Settings</h1>
-      <Tabs defaultValue="my-status">
-        <TabsList>
-          <TabsTrigger value="my-status">My Status</TabsTrigger>
-          <TabsTrigger value="point-types">Point Types</TabsTrigger>
-          <TabsTrigger value="hotels">Hotel Chains</TabsTrigger>
-          <TabsTrigger value="credit-cards">Credit Cards</TabsTrigger>
-          <TabsTrigger value="portals">Shopping Portals</TabsTrigger>
-          <TabsTrigger value="ota-agencies">OTA Agencies</TabsTrigger>
-        </TabsList>
+      <Tabs defaultValue="my-status" className="w-full">
+        <div className="overflow-x-auto pb-1 scrollbar-hide">
+          <TabsList className="w-full justify-start md:w-auto md:inline-flex min-w-max">
+            <TabsTrigger value="my-status">My Status</TabsTrigger>
+            <TabsTrigger value="point-types">Point Types</TabsTrigger>
+            <TabsTrigger value="hotels">Hotel Chains</TabsTrigger>
+            <TabsTrigger value="credit-cards">Credit Cards</TabsTrigger>
+            <TabsTrigger value="portals">Shopping Portals</TabsTrigger>
+            <TabsTrigger value="ota-agencies">OTA Agencies</TabsTrigger>
+          </TabsList>
+        </div>
         <TabsContent value="my-status" data-testid="tab-my-status">
           <UserStatusTab />
         </TabsContent>
