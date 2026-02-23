@@ -23,6 +23,7 @@ export function NavItemsList({ onItemClick }: NavItemsListProps) {
             key={item.href}
             href={item.href}
             onClick={onItemClick}
+            data-testid={`nav-item-${item.label.toLowerCase()}`}
             className={cn(
               "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
               "hover:bg-accent hover:text-accent-foreground",
