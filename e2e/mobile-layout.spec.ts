@@ -65,6 +65,42 @@ test.describe("Mobile Layout & Responsive Components", () => {
     // We don't strictly check for hotelName here because it might be pushed out
     // of the 'top 5' by other parallel tests, but we verified it on the Bookings page.
   });
+
+  test("should have horizontally scrollable tabs on Settings page", async ({ page }) => {
+    await page.goto("/settings");
+    const tabsList = page.getByRole("tablist");
+    await expect(tabsList).toBeVisible();
+
+    // Check that the container has overflow-x-auto
+    const scrollContainer = page.locator("div.overflow-x-auto").filter({ has: tabsList });
+    await expect(scrollContainer).toBeVisible();
+    await expect(scrollContainer).toHaveCSS("overflow-x", "auto");
+  });
+
+  test("should display promotion form in a single column on mobile", async ({ page }) => {
+    await page.goto("/promotions/new");
+
+    // The grid should have 1 column on mobile (grid-cols-1)
+    const firstGrid = page.locator("form div.grid").first();
+    await expect(firstGrid).toBeVisible();
+    await expect(firstGrid).toHaveClass(/grid-cols-1/);
+
+    // Verify stacking by checking the bounding box of two adjacent elements
+    // Using labels from the grid
+    const typeLabel = page.getByText("Type", { exact: true });
+    const valueTypeLabel = page.getByText("Value Type", { exact: true });
+
+    await expect(typeLabel).toBeVisible();
+    await expect(valueTypeLabel).toBeVisible();
+
+    const typeBox = await typeLabel.boundingBox();
+    const valueTypeBox = await valueTypeLabel.boundingBox();
+
+    if (typeBox && valueTypeBox) {
+      // On mobile, they should be vertically stacked
+      expect(valueTypeBox.y).toBeGreaterThan(typeBox.y);
+    }
+  });
 });
 
 test.describe("Desktop Layout (Verification)", () => {

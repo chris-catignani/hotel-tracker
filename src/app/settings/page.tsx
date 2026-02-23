@@ -13,7 +13,7 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Settings</h1>
       <Tabs defaultValue="my-status" className="w-full">
-        <div className="overflow-x-auto pb-1 scrollbar-hide">
+        <div className="overflow-x-auto pb-1">
           <TabsList className="w-full justify-start md:w-auto md:inline-flex min-w-max">
             <TabsTrigger value="my-status">My Status</TabsTrigger>
             <TabsTrigger value="point-types">Point Types</TabsTrigger>
