@@ -53,11 +53,11 @@ jobs:
           DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/hotel_tracker_test"
           NEXT_PUBLIC_DEBUG: "false"
 
-      # - name: Install Playwright Browsers
-      #   run: npx playwright install --with-deps chromium
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
 
-      # - name: Run E2E Tests
-      #   run: npx playwright test --project=chromium
-      #   env:
-      #     DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/hotel_tracker_test"
-      #     DATABASE_URL_TEST: "postgresql://postgres:postgres@localhost:5432/hotel_tracker_test"
+      - name: Run E2E Tests
+        run: npx playwright test --project=chromium
+        env:
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/hotel_tracker_test"
+          DATABASE_URL_TEST: "postgresql://postgres:postgres@localhost:5432/hotel_tracker_test"

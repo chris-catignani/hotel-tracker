@@ -1,31 +1,4 @@
-import { test, expect, Page } from "@playwright/test";
-
-async function createBooking(page: Page, name: string, chain: string, cost: string) {
-  await page.goto("/bookings/new");
-  await page.getByText(/Select hotel chain.../i).click();
-  await page.getByRole("option", { name: chain }).click();
-  await page.getByLabel(/Property Name/i).fill(name);
-
-  // Check-in Date
-  await page.getByTestId("date-picker-trigger-checkIn").click();
-  const calendar = page.locator('[data-slot="popover-content"]');
-  await expect(calendar).toBeVisible();
-  // Select day 10 from the grid
-  await calendar.getByRole("button", { name: "10", exact: true }).first().click();
-  await expect(calendar).not.toBeVisible();
-
-  // Check-out Date
-  await page.getByTestId("date-picker-trigger-checkOut").click();
-  await expect(calendar).toBeVisible();
-  // Select day 15
-  await calendar.getByRole("button", { name: "15", exact: true }).first().click();
-  await expect(calendar).not.toBeVisible();
-
-  await page.getByLabel(/Pre-tax Cost/i).fill(cost);
-  await page.getByLabel(/Total Cost/i).fill((Number(cost) * 1.2).toString());
-  await page.getByRole("button", { name: /Create Booking/i }).click();
-  await page.waitForURL("/bookings");
-}
+import { test, expect } from "./fixtures";
 
 test.describe("Mobile Layout & Responsive Components", () => {
   test.use({ viewport: { width: 375, height: 667 } }); // iPhone SE size
@@ -61,23 +34,19 @@ test.describe("Mobile Layout & Responsive Components", () => {
     await expect(page.url()).toContain("/bookings");
   });
 
-  test("should display booking card view instead of tables", async ({ page }) => {
-    const hotelName = `Mobile Hotel ${Date.now()}`;
-    await createBooking(page, hotelName, "Hilton", "200");
+  test("should display booking card view instead of tables", async ({ page, testBooking }) => {
+    await page.goto("/bookings");
 
-    // 2. On Bookings page, should show mobile card view
     const cardList = page.getByTestId("bookings-list-mobile");
     await expect(cardList).toBeVisible();
     await expect(page.getByTestId("bookings-list-desktop")).not.toBeVisible();
-    await expect(cardList.getByText(hotelName)).toBeVisible();
+    await expect(cardList.getByText(testBooking.propertyName)).toBeVisible();
 
-    // 3. On Dashboard, should show mobile card view for recent bookings
+    // On Dashboard, should show mobile card view for recent bookings
     await page.goto("/");
     const recentCards = page.getByTestId("recent-bookings-mobile");
     await expect(recentCards).toBeVisible();
     await expect(page.getByTestId("recent-bookings-desktop")).not.toBeVisible();
-    // We don't strictly check for hotelName here because it might be pushed out
-    // of the 'top 5' by other parallel tests, but we verified it on the Bookings page.
   });
 
   test("should have horizontally scrollable tabs on Settings page", async ({ page }) => {
@@ -100,7 +69,6 @@ test.describe("Mobile Layout & Responsive Components", () => {
     await expect(firstGrid).toHaveClass(/grid-cols-1/);
 
     // Verify stacking by checking the bounding box of two adjacent elements
-    // Using labels from the grid
     const typeLabel = page.getByText("Type", { exact: true });
     const valueTypeLabel = page.getByText("Value Type", { exact: true });
 
@@ -121,8 +89,6 @@ test.describe("Mobile Layout & Responsive Components", () => {
     const actions = page.getByTestId("booking-form-submit").locator("..");
     await expect(actions).toBeVisible();
 
-    // Verify it has sticky class or check its position during scroll if possible
-    // For now, we check if it's visible at the bottom of the viewport
     await expect(actions).toHaveClass(/sticky/);
     await expect(actions).toHaveClass(/bottom-0/);
   });
@@ -142,16 +108,14 @@ test.describe("Desktop Layout (Verification)", () => {
     await expect(page.getByTestId("mobile-nav-toggle")).not.toBeVisible();
   });
 
-  test("should display table view on desktop", async ({ page }) => {
-    const hotelName = `Desktop Hotel ${Date.now()}`;
-    await createBooking(page, hotelName, "Marriott", "300");
+  test("should display table view on desktop", async ({ page, testBooking }) => {
+    await page.goto("/bookings");
 
-    // 2. On Bookings page, should show table
     await expect(page.getByTestId("bookings-list-desktop")).toBeVisible();
     await expect(page.getByTestId("bookings-list-mobile")).not.toBeVisible();
-    await expect(page.getByRole("cell", { name: hotelName })).toBeVisible();
+    await expect(page.getByRole("cell", { name: testBooking.propertyName })).toBeVisible();
 
-    // 3. On Dashboard, should show table
+    // On Dashboard, should show table
     await page.goto("/");
     await expect(page.getByTestId("recent-bookings-desktop")).toBeVisible();
     await expect(page.getByTestId("recent-bookings-mobile")).not.toBeVisible();

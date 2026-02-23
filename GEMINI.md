@@ -10,5 +10,24 @@ This file provides foundational mandates for Gemini CLI (gemini-cli) when workin
 
 ## Testing Mandates
 
-- **Test Coverage:** ALWAYS write unit tests (Vitest/RTL) for every feature or fix created. E2E tests (Playwright) are TEMPORARILY DISABLED due to flakiness; do not rely on them for CI until re-enabled.
+- **Test Coverage:** ALWAYS write unit tests (Vitest/RTL) for every feature or fix created. ALWAYS write E2E tests (Playwright) for features that involve UI flows. E2E tests run in CI.
 - **Precise Selectors:** ALWAYS use `data-testid` attributes on React components for specific values or elements to be tested (e.g., `data-testid="stat-value-total-bookings"`). This avoids ambiguity and ensures tests are robust against formatting changes.
+
+### E2E Test Design
+
+**Isolation strategy:** Each test that needs data creates it via direct API calls and deletes it afterward. Tests MUST NOT create data through the UI — UI form navigation is slow and timing-sensitive (especially the date picker).
+
+**Fixtures:** `e2e/fixtures.ts` exports a custom `test` object with reusable fixtures:
+
+- `testBooking` — creates a booking via `POST /api/bookings` with a UUID-unique property name, yields it to the test, then deletes it via `DELETE /api/bookings/:id` after the test.
+
+Always import `test` and `expect` from `./fixtures` (not from `@playwright/test`) in spec files.
+
+**Reference data** (hotel chains, credit cards, portals) is seeded once in `e2e/global-setup.ts` and treated as read-only.
+
+## GitHub CLI
+
+- **Do NOT use `gh pr view --comments`** — it queries the deprecated Projects (classic) GraphQL API and returns exit code 1.
+- To read PR review comments use: `gh api repos/{owner}/{repo}/pulls/{pr}/comments`
+- To read general PR/issue comments use: `gh api repos/{owner}/{repo}/issues/{pr}/comments`
+- To read review summaries use: `gh api repos/{owner}/{repo}/pulls/{pr}/reviews`

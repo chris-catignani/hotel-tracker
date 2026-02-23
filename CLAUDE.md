@@ -136,9 +136,30 @@ The app is fully responsive with a mobile-first approach:
 
 ### Standards
 
-- **Test Coverage:** ALWAYS write unit tests (Vitest/RTL) for every new feature or bug fix. E2E tests (Playwright) are **temporarily disabled** in CI due to flakiness — do not rely on them for CI until re-enabled (see Issue #63), but do write them for critical user flows when feasible.
+- **Test Coverage:** ALWAYS write unit tests (Vitest/RTL) for every new feature or bug fix. ALWAYS write E2E tests (Playwright) for features that involve UI flows.
 - **Functional Tests:** Located in `e2e/`. Use Playwright for critical user flows. Ensure tests are isolated and idempotent.
 - **Precise Selectors:** ALWAYS use `data-testid` attributes on React components for specific values or elements to be tested (e.g., `data-testid="stat-value-total-bookings"`). This avoids ambiguity and ensures tests are robust against formatting changes.
 - **Pure Logic:** Extract core business logic into pure functions (as seen in `promotion-matching.ts`) to allow for simple unit testing without mocking complex Prisma objects.
 - **Mocking:** Mock large or browser-only dependencies in tests (e.g., `recharts`) to avoid issues with `jsdom` and keep tests fast.
 - **Cost Basis:** When testing cost calculations, always verify that the description/formula explicitly states the cost basis (pre-tax vs total) per the project mandate.
+
+### E2E Test Design
+
+**Isolation strategy:** Each test that needs data creates it via direct API calls and deletes it afterward. Tests MUST NOT create data through the UI — UI form navigation is slow and timing-sensitive (especially the date picker).
+
+**Fixtures:** `e2e/fixtures.ts` exports a custom `test` object (extended from Playwright base) with reusable fixtures:
+
+- `testBooking` — creates a booking via `POST /api/bookings` with a UUID-unique property name, yields it to the test, then deletes it via `DELETE /api/bookings/:id` after the test completes.
+
+Always import `test` and `expect` from `./fixtures` (not from `@playwright/test`) in spec files so fixtures are available.
+
+**Reference data** (hotel chains, credit cards, portals) is seeded once in `e2e/global-setup.ts` and treated as read-only by all tests.
+
+**ESLint note:** Playwright fixtures use a `use` callback parameter that triggers a false positive from `react-hooks/rules-of-hooks`. The `eslint.config.mjs` has an `e2e/**` override that disables this rule — do not add per-line `eslint-disable` comments in E2E files.
+
+### GitHub CLI
+
+- **Do NOT use `gh pr view --comments`** — it queries the deprecated Projects (classic) GraphQL API and returns exit code 1.
+- To read PR review comments use: `gh api repos/{owner}/{repo}/pulls/{pr}/comments`
+- To read general PR/issue comments use: `gh api repos/{owner}/{repo}/issues/{pr}/comments`
+- To read review summaries use: `gh api repos/{owner}/{repo}/pulls/{pr}/reviews`
