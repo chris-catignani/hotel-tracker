@@ -5,6 +5,7 @@ import { apiError } from "@/lib/api-error";
 export async function GET() {
   try {
     const creditCards = await prisma.creditCard.findMany({
+      where: { isDeleted: false },
       include: { pointType: true },
       orderBy: { name: "asc" },
     });

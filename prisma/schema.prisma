@@ -113,6 +113,7 @@ model CreditCard {
   rewardRate  Decimal     @map("reward_rate") @db.Decimal(10, 4) // e.g. 0.05 for 5x
   pointTypeId Int?        @map("point_type_id")
   pointType   PointType?  @relation(fields: [pointTypeId], references: [id])
+  isDeleted   Boolean     @default(false) @map("is_deleted")
   bookings    Booking[]
   promotions  Promotion[]
 

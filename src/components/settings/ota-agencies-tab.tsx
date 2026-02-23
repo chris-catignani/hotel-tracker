@@ -22,6 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { extractApiError } from "@/lib/client-error";
 import { OtaAgency } from "@/lib/types";
 import { ErrorBanner } from "@/components/ui/error-banner";
@@ -35,6 +36,9 @@ export function OtaAgenciesTab() {
   const [editOpen, setEditOpen] = useState(false);
   const [editAgency, setEditAgency] = useState<OtaAgency | null>(null);
   const [editName, setEditName] = useState("");
+
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [agencyToDelete, setAgencyToDelete] = useState<OtaAgency | null>(null);
 
   const fetchAgencies = useCallback(async () => {
     const res = await fetch("/api/ota-agencies");
@@ -86,10 +90,18 @@ export function OtaAgenciesTab() {
     }
   };
 
-  const handleDelete = async (agency: OtaAgency) => {
+  const handleDeleteClick = (agency: OtaAgency) => {
+    setAgencyToDelete(agency);
+    setDeleteOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!agencyToDelete) return;
+    setDeleteOpen(false);
     setError(null);
-    const res = await fetch(`/api/ota-agencies/${agency.id}`, { method: "DELETE" });
+    const res = await fetch(`/api/ota-agencies/${agencyToDelete.id}`, { method: "DELETE" });
     if (res.ok) {
+      setAgencyToDelete(null);
       fetchAgencies();
     } else if (res.status === 409) {
       setError("Cannot delete: this agency is referenced by existing bookings.");
@@ -160,6 +172,19 @@ export function OtaAgenciesTab() {
         </DialogContent>
       </Dialog>
 
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete OTA Agency?"
+        description={
+          agencyToDelete
+            ? `Are you sure you want to delete "${agencyToDelete.name}"? This cannot be undone.`
+            : ""
+        }
+        onConfirm={handleDeleteConfirm}
+      />
+
       {/* Mobile View: Cards */}
       <div className="grid grid-cols-1 gap-4 md:hidden" data-testid="agencies-mobile">
         {agencies.length === 0 ? (
@@ -184,7 +209,7 @@ export function OtaAgenciesTab() {
                     variant="outline"
                     size="sm"
                     className="flex-1 text-destructive"
-                    onClick={() => handleDelete(agency)}
+                    onClick={() => handleDeleteClick(agency)}
                   >
                     Delete
                   </Button>
@@ -220,7 +245,7 @@ export function OtaAgenciesTab() {
                       <Button variant="ghost" size="sm" onClick={() => handleEdit(agency)}>
                         Edit
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleDelete(agency)}>
+                      <Button variant="ghost" size="sm" onClick={() => handleDeleteClick(agency)}>
                         Delete
                       </Button>
                     </div>

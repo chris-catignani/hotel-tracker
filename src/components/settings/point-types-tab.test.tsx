@@ -1,6 +1,8 @@
-import { render, screen, act, within } from "@testing-library/react";
+import { render, screen, act, within, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { PointTypesTab } from "./point-types-tab";
+
+const mockPt = [{ id: 1, name: "Marriott Points", category: "hotel", centsPerPoint: 0.007 }];
 
 describe("PointTypesTab", () => {
   beforeEach(() => {
@@ -41,7 +43,6 @@ describe("PointTypesTab", () => {
   });
 
   it("renders fetched point types", async () => {
-    const mockPt = [{ id: 1, name: "Marriott Points", category: "hotel", centsPerPoint: 0.007 }];
     vi.mocked(global.fetch).mockResolvedValue({
       ok: true,
       json: async () => mockPt,
@@ -57,5 +58,77 @@ describe("PointTypesTab", () => {
 
     expect(within(mobileView).getByText("Marriott Points")).toBeInTheDocument();
     expect(within(desktopView).getByText("Marriott Points")).toBeInTheDocument();
+  });
+
+  it("opens confirmation dialog when Delete is clicked", async () => {
+    vi.mocked(global.fetch).mockResolvedValue({
+      ok: true,
+      json: async () => mockPt,
+    } as Response);
+
+    await act(async () => {
+      render(<PointTypesTab />);
+    });
+
+    const desktopView = screen.getByTestId("point-types-desktop");
+    const deleteBtn = within(desktopView).getByRole("button", { name: "Delete" });
+    await act(async () => {
+      fireEvent.click(deleteBtn);
+    });
+
+    expect(screen.getByText("Delete Point Type?")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Are you sure you want to delete "Marriott Points"/)
+    ).toBeInTheDocument();
+  });
+
+  it("calls DELETE API and refreshes list after confirming", async () => {
+    const fetchMock = vi
+      .mocked(global.fetch)
+      .mockImplementation((url: string, options?: RequestInit) => {
+        if (url === "/api/point-types" && (!options || !options.method))
+          return Promise.resolve({ ok: true, json: async () => mockPt } as Response);
+        if (url === "/api/point-types/1" && options?.method === "DELETE")
+          return Promise.resolve({ ok: true } as Response);
+        return Promise.reject(new Error(`Unknown: ${url}`));
+      });
+
+    await act(async () => {
+      render(<PointTypesTab />);
+    });
+
+    const desktopView = screen.getByTestId("point-types-desktop");
+    const deleteBtn = within(desktopView).getByRole("button", { name: "Delete" });
+    await act(async () => {
+      fireEvent.click(deleteBtn);
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("confirm-dialog-confirm-button"));
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith("/api/point-types/1", { method: "DELETE" });
+  });
+
+  it("does not call DELETE if dialog is cancelled", async () => {
+    const fetchMock = vi.mocked(global.fetch).mockResolvedValue({
+      ok: true,
+      json: async () => mockPt,
+    } as Response);
+
+    await act(async () => {
+      render(<PointTypesTab />);
+    });
+
+    const desktopView = screen.getByTestId("point-types-desktop");
+    const deleteBtn = within(desktopView).getByRole("button", { name: "Delete" });
+    await act(async () => {
+      fireEvent.click(deleteBtn);
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+    const deleteCalls = fetchMock.mock.calls.filter(([, opts]) => opts?.method === "DELETE");
+    expect(deleteCalls.length).toBe(0);
   });
 });
