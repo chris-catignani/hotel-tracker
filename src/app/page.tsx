@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { DashboardStats } from "@/components/dashboard-stats";
 import { PaymentTypeBreakdown } from "@/components/payment-type-breakdown";

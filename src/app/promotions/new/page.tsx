@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { PromotionForm, PromotionFormData } from "@/components/promotions/promotion-form";
+import { PromotionForm } from "@/components/promotions/promotion-form";
+import { PromotionFormData } from "@/lib/types";
 
 export default function NewPromotionPage() {
   const router = useRouter();
