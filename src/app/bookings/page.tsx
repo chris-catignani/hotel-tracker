@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { certTypeLabel } from "@/lib/cert-types";
 import { calculateNetCost } from "@/lib/net-cost";
 import {
   Table,
@@ -13,6 +12,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { BookingCard } from "@/components/bookings/booking-card";
+import { formatCurrency, formatDate, formatCerts } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -88,21 +89,6 @@ interface Booking {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
-  const day = String(date.getUTCDate()).padStart(2, "0");
-  const year = date.getUTCFullYear();
-  return `${month}/${day}/${year}`;
-}
-
-function formatCurrency(amount: number): string {
-  return `$${amount.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-}
-
 function formatSourceColumn(booking: {
   bookingSource: string | null;
   otaAgency: { name: string } | null;
@@ -118,18 +104,6 @@ function formatSourceColumn(booking: {
     default:
       return "—";
   }
-}
-
-function formatCerts(certificates: { id: number; certType: string }[]): string {
-  if (certificates.length === 0) return "—";
-  const counts: Record<string, number> = {};
-  for (const cert of certificates) {
-    const label = certTypeLabel(cert.certType);
-    counts[label] = (counts[label] || 0) + 1;
-  }
-  return Object.entries(counts)
-    .map(([desc, count]) => (count > 1 ? `${count} × ${desc}` : desc))
-    .join(", ");
 }
 
 // ---------------------------------------------------------------------------
@@ -171,95 +145,104 @@ export default function BookingsPage() {
         </Link>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Property</TableHead>
-            <TableHead>Hotel Chain</TableHead>
-            <TableHead>Check-in</TableHead>
-            <TableHead>Check-out</TableHead>
-            <TableHead>Nights</TableHead>
-            <TableHead className="hidden sm:table-cell">Source</TableHead>
-            <TableHead className="text-right">Cash</TableHead>
-            <TableHead className="text-right">Points</TableHead>
-            <TableHead className="text-right">Certs</TableHead>
-            <TableHead className="text-right">Net/Night</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {loading ? (
-            <TableRow>
-              <TableCell colSpan={11} className="text-center text-muted-foreground">
-                Loading...
-              </TableCell>
-            </TableRow>
-          ) : bookings.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={11} className="text-center text-muted-foreground">
-                No bookings yet.
-              </TableCell>
-            </TableRow>
-          ) : (
-            bookings.map((booking) => {
-              const totalCost = Number(booking.totalCost);
-              const netCost = calculateNetCost(booking);
+      {loading ? (
+        <p className="text-center text-muted-foreground py-8">Loading...</p>
+      ) : bookings.length === 0 ? (
+        <p className="text-center text-muted-foreground py-8">No bookings yet.</p>
+      ) : (
+        <>
+          {/* Mobile View: Cards */}
+          <div className="flex flex-col gap-4 md:hidden" data-testid="bookings-list-mobile">
+            {bookings.map((booking) => (
+              <BookingCard
+                key={booking.id}
+                booking={booking}
+                onDelete={handleDelete}
+                showActions={true}
+              />
+            ))}
+          </div>
 
-              return (
-                <TableRow key={booking.id}>
-                  <TableCell>
-                    <div>{booking.propertyName}</div>
-                    {booking.hotelChainSubBrand && (
-                      <div className="text-xs text-muted-foreground">
-                        {booking.hotelChainSubBrand.name}
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>{booking.hotelChain.name}</TableCell>
-                  <TableCell>{formatDate(booking.checkIn)}</TableCell>
-                  <TableCell>{formatDate(booking.checkOut)}</TableCell>
-                  <TableCell>{booking.numNights}</TableCell>
-                  <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">
-                    {formatSourceColumn(booking)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {totalCost > 0 ? formatCurrency(totalCost) : "—"}
-                  </TableCell>
-                  <TableCell className="text-right text-sm">
-                    {booking.pointsRedeemed
-                      ? `${booking.pointsRedeemed.toLocaleString("en-US")} pts`
-                      : "—"}
-                  </TableCell>
-                  <TableCell className="text-right text-sm">
-                    {formatCerts(booking.certificates)}
-                  </TableCell>
-                  <TableCell
-                    className={`text-right font-medium ${netCost < totalCost ? "text-green-600" : ""}`}
-                  >
-                    {formatCurrency(netCost / booking.numNights)}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Link href={`/bookings/${booking.id}`}>
-                        <Button variant="outline" size="sm">
-                          View
-                        </Button>
-                      </Link>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDelete(booking.id)}
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  </TableCell>
+          {/* Desktop View: Table */}
+          <div className="hidden md:block" data-testid="bookings-list-desktop">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Property</TableHead>
+                  <TableHead>Hotel Chain</TableHead>
+                  <TableHead>Check-in</TableHead>
+                  <TableHead>Check-out</TableHead>
+                  <TableHead>Nights</TableHead>
+                  <TableHead className="hidden sm:table-cell">Source</TableHead>
+                  <TableHead className="text-right">Cash</TableHead>
+                  <TableHead className="text-right">Points</TableHead>
+                  <TableHead className="text-right">Certs</TableHead>
+                  <TableHead className="text-right">Net/Night</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              );
-            })
-          )}
-        </TableBody>
-      </Table>
+              </TableHeader>
+              <TableBody>
+                {bookings.map((booking) => {
+                  const totalCost = Number(booking.totalCost);
+                  const netCost = calculateNetCost(booking);
+
+                  return (
+                    <TableRow key={booking.id}>
+                      <TableCell>
+                        <div>{booking.propertyName}</div>
+                        {booking.hotelChainSubBrand && (
+                          <div className="text-xs text-muted-foreground">
+                            {booking.hotelChainSubBrand.name}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell>{booking.hotelChain.name}</TableCell>
+                      <TableCell>{formatDate(booking.checkIn)}</TableCell>
+                      <TableCell>{formatDate(booking.checkOut)}</TableCell>
+                      <TableCell>{booking.numNights}</TableCell>
+                      <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">
+                        {formatSourceColumn(booking)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {totalCost > 0 ? formatCurrency(totalCost) : "—"}
+                      </TableCell>
+                      <TableCell className="text-right text-sm">
+                        {booking.pointsRedeemed
+                          ? `${booking.pointsRedeemed.toLocaleString("en-US")} pts`
+                          : "—"}
+                      </TableCell>
+                      <TableCell className="text-right text-sm">
+                        {formatCerts(booking.certificates, true)}
+                      </TableCell>
+                      <TableCell
+                        className={`text-right font-medium ${netCost < totalCost ? "text-green-600" : ""}`}
+                      >
+                        {formatCurrency(netCost / booking.numNights)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Link href={`/bookings/${booking.id}`}>
+                            <Button variant="outline" size="sm">
+                              View
+                            </Button>
+                          </Link>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDelete(booking.id)}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </>
+      )}
     </div>
   );
 }
