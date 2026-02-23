@@ -104,6 +104,7 @@ export function PromotionForm({
   // Update form if initialData changes (for Edit mode after fetch)
   useEffect(() => {
     if (initialData) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (initialData.name !== undefined) setName(initialData.name);
       if (initialData.type !== undefined) setType(initialData.type as PromotionType);
       if (initialData.valueType !== undefined)
