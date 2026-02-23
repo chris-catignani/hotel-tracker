@@ -17,6 +17,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { BookingCard } from "@/components/bookings/booking-card";
+import { formatCurrency as formatDollars, formatDate, formatCerts } from "@/lib/utils";
 
 interface BookingCertificate {
   id: number;
@@ -79,38 +81,10 @@ interface BookingWithRelations {
   certificates: BookingCertificate[];
 }
 
-function formatDollars(amount: number) {
-  return `$${amount.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-}
-
-function formatDate(dateStr: string) {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
 function calcTotalSavings(booking: BookingWithRelations): number {
   const { promoSavings, portalCashback, cardReward, loyaltyPointsValue } =
     getNetCostBreakdown(booking);
   return promoSavings + portalCashback + cardReward + loyaltyPointsValue;
-}
-
-function formatCerts(certificates: { id: number; certType: string }[]): string {
-  if (certificates.length === 0) return "—";
-  const counts: Record<string, number> = {};
-  for (const cert of certificates) {
-    const label = certTypeShortLabel(cert.certType);
-    counts[label] = (counts[label] || 0) + 1;
-  }
-  return Object.entries(counts)
-    .map(([desc, count]) => (count > 1 ? `${count} × ${desc}` : desc))
-    .join(", ");
 }
 
 export default function DashboardPage() {
@@ -192,64 +166,76 @@ export default function DashboardPage() {
                 </Link>
               </p>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Property</TableHead>
-                    <TableHead>Dates</TableHead>
-                    <TableHead className="text-right">Cash</TableHead>
-                    <TableHead className="text-right">Points</TableHead>
-                    <TableHead className="text-right">Certs</TableHead>
-                    <TableHead className="text-right">Net/Night</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {recentBookings.map((booking) => {
-                    const netCost = calculateNetCost(booking);
-                    const total = Number(booking.totalCost);
-                    return (
-                      <TableRow key={booking.id}>
-                        <TableCell>
-                          <Link
-                            href={`/bookings/${booking.id}`}
-                            className="font-medium hover:underline"
-                          >
-                            {booking.propertyName}
-                          </Link>
-                          <div className="text-xs text-muted-foreground mt-0.5">
-                            {booking.hotelChain.name}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          {formatDate(booking.checkIn)}
-                          <div className="text-xs text-muted-foreground">
-                            {booking.numNights} night
-                            {booking.numNights !== 1 ? "s" : ""}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {total > 0 ? formatDollars(total) : "—"}
-                        </TableCell>
-                        <TableCell className="text-right text-sm">
-                          {booking.pointsRedeemed
-                            ? `${booking.pointsRedeemed.toLocaleString("en-US")} pts`
-                            : "—"}
-                        </TableCell>
-                        <TableCell className="text-right text-sm">
-                          {formatCerts(booking.certificates)}
-                        </TableCell>
-                        <TableCell
-                          className={`text-right font-medium ${
-                            netCost < total ? "text-green-600" : ""
-                          }`}
-                        >
-                          {formatDollars(netCost / booking.numNights)}
-                        </TableCell>
+              <>
+                {/* Mobile View: Cards */}
+                <div className="flex flex-col gap-4 md:hidden" data-testid="recent-bookings-mobile">
+                  {recentBookings.map((booking) => (
+                    <BookingCard key={booking.id} booking={booking} />
+                  ))}
+                </div>
+
+                {/* Desktop View: Table */}
+                <div className="hidden md:block" data-testid="recent-bookings-desktop">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Property</TableHead>
+                        <TableHead>Dates</TableHead>
+                        <TableHead className="text-right">Cash</TableHead>
+                        <TableHead className="text-right">Points</TableHead>
+                        <TableHead className="text-right">Certs</TableHead>
+                        <TableHead className="text-right">Net/Night</TableHead>
                       </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {recentBookings.map((booking) => {
+                        const netCost = calculateNetCost(booking);
+                        const total = Number(booking.totalCost);
+                        return (
+                          <TableRow key={booking.id}>
+                            <TableCell>
+                              <Link
+                                href={`/bookings/${booking.id}`}
+                                className="font-medium hover:underline"
+                              >
+                                {booking.propertyName}
+                              </Link>
+                              <div className="text-xs text-muted-foreground mt-0.5">
+                                {booking.hotelChain.name}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {formatDate(booking.checkIn)}
+                              <div className="text-xs text-muted-foreground">
+                                {booking.numNights} night
+                                {booking.numNights !== 1 ? "s" : ""}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {total > 0 ? formatDollars(total) : "—"}
+                            </TableCell>
+                            <TableCell className="text-right text-sm">
+                              {booking.pointsRedeemed
+                                ? `${booking.pointsRedeemed.toLocaleString("en-US")} pts`
+                                : "—"}
+                            </TableCell>
+                            <TableCell className="text-right text-sm">
+                              {formatCerts(booking.certificates, true)}
+                            </TableCell>
+                            <TableCell
+                              className={`text-right font-medium ${
+                                netCost < total ? "text-green-600" : ""
+                              }`}
+                            >
+                              {formatDollars(netCost / booking.numNights)}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
