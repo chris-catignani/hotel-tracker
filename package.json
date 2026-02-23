@@ -13,7 +13,7 @@
     "db:push": "prisma db push && rm -rf .next",
     "db:seed": "npx tsx prisma/seed.ts",
     "postinstall": "prisma generate",
-    "test": "vitest",
+    "test": "vitest run",
     "test:e2e": "playwright test",
     "test:e2e:show": "playwright test --reporter=html",
     "test:e2e:ui": "playwright test --ui"

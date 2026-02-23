@@ -11,6 +11,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -307,29 +308,31 @@ export function HotelChainsTab() {
               Manage sub-brands with optional point rate overrides (blank = inherit from chain).
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3 py-2">
-            {!sbHotelChain || sbHotelChain.hotelChainSubBrands.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No sub-brands yet.</p>
-            ) : (
-              sbHotelChain.hotelChainSubBrands.map((sb) => (
-                <div key={sb.id} className="flex items-center gap-2 border-b pb-2 last:border-0">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{sb.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Base Rate: {sb.basePointRate ?? "Inherit"}
-                    </p>
+          <div className="space-y-4 py-2">
+            <div className="max-h-[300px] overflow-y-auto pr-2 space-y-3">
+              {!sbHotelChain || sbHotelChain.hotelChainSubBrands.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No sub-brands yet.</p>
+              ) : (
+                sbHotelChain.hotelChainSubBrands.map((sb) => (
+                  <div key={sb.id} className="flex items-center gap-2 border-b pb-2 last:border-0">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{sb.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Base Rate: {sb.basePointRate ?? "Inherit"}
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive"
+                      onClick={() => handleDeleteSubBrand(sb.id)}
+                    >
+                      &times;
+                    </Button>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-destructive"
-                    onClick={() => handleDeleteSubBrand(sb.id)}
-                  >
-                    &times;
-                  </Button>
-                </div>
-              ))
-            )}
+                ))
+              )}
+            </div>
             <div className="border-t pt-3 space-y-2">
               <p className="text-sm font-medium">Add Sub-brand</p>
               <div className="space-y-2">
@@ -362,45 +365,95 @@ export function HotelChainsTab() {
         </DialogContent>
       </Dialog>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Loyalty Program</TableHead>
-            <TableHead>Base Rate</TableHead>
-            <TableHead>Point Type</TableHead>
-            <TableHead></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {hotelChains.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={5} className="text-center text-muted-foreground">
-                No hotel chains added yet.
-              </TableCell>
-            </TableRow>
-          ) : (
-            hotelChains.map((hotelChain) => (
-              <TableRow key={hotelChain.id}>
-                <TableCell>{hotelChain.name}</TableCell>
-                <TableCell>{hotelChain.loyaltyProgram ?? "-"}</TableCell>
-                <TableCell>{hotelChain.basePointRate ?? "-"}</TableCell>
-                <TableCell>{hotelChain.pointType?.name ?? "—"}</TableCell>
-                <TableCell>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => openSubBrands(hotelChain)}>
-                      Sub-brands
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleEdit(hotelChain)}>
-                      Edit
-                    </Button>
+      {/* Mobile View: Cards */}
+      <div className="grid grid-cols-1 gap-4 md:hidden" data-testid="hotel-chains-mobile">
+        {hotelChains.length === 0 ? (
+          <p className="text-center text-muted-foreground py-8">No hotel chains added yet.</p>
+        ) : (
+          hotelChains.map((hotelChain) => (
+            <Card key={hotelChain.id} data-testid="hotel-chain-card">
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="font-bold" data-testid="hotel-chain-card-name">
+                      {hotelChain.name}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {hotelChain.loyaltyProgram || "No loyalty program"}
+                    </p>
                   </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium">Base Rate</p>
+                    <p className="text-lg font-bold">{hotelChain.basePointRate ?? "-"}</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Point Type</span>
+                  <span className="font-medium">{hotelChain.pointType?.name ?? "—"}</span>
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => openSubBrands(hotelChain)}
+                  >
+                    Sub-brands
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => handleEdit(hotelChain)}>
+                    Edit
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+
+      {/* Desktop View: Table */}
+      <div className="hidden md:block" data-testid="hotel-chains-desktop">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Loyalty Program</TableHead>
+              <TableHead>Base Rate</TableHead>
+              <TableHead>Point Type</TableHead>
+              <TableHead></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {hotelChains.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center text-muted-foreground">
+                  No hotel chains added yet.
                 </TableCell>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+            ) : (
+              hotelChains.map((hotelChain) => (
+                <TableRow key={hotelChain.id} data-testid="hotel-chain-table-row">
+                  <TableCell className="font-medium" data-testid="hotel-chain-table-name">
+                    {hotelChain.name}
+                  </TableCell>
+                  <TableCell>{hotelChain.loyaltyProgram ?? "-"}</TableCell>
+                  <TableCell>{hotelChain.basePointRate ?? "-"}</TableCell>
+                  <TableCell>{hotelChain.pointType?.name ?? "—"}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button variant="ghost" size="sm" onClick={() => openSubBrands(hotelChain)}>
+                        Sub-brands
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(hotelChain)}>
+                        Edit
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }
