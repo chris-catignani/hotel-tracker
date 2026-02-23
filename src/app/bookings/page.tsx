@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { certTypeLabel } from "@/lib/cert-types";
 import { calculateNetCost } from "@/lib/net-cost";
 import {
   Table,

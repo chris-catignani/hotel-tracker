@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { DashboardStats } from "@/components/dashboard-stats";
 import { PaymentTypeBreakdown } from "@/components/payment-type-breakdown";
-import { certTypeShortLabel } from "@/lib/cert-types";
 import { calculateNetCost, getNetCostBreakdown } from "@/lib/net-cost";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

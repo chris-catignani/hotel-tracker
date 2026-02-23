@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { calculateNetCost, NetCostBooking } from "@/lib/net-cost";
 import { formatCurrency, formatDate, formatCerts } from "@/lib/utils";
-import { CalendarDays, Building2, Wallet, Coins, ScrollText } from "lucide-react";
+import { CalendarDays, Wallet, Coins, ScrollText } from "lucide-react";
 
 interface BookingCardProps {
   booking: NetCostBooking & {

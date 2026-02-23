@@ -1,4 +1,17 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, Page } from "@playwright/test";
+
+async function createBooking(page: Page, name: string, chain: string, cost: string) {
+  await page.goto("/bookings/new");
+  await page.getByText(/Select hotel chain.../i).click();
+  await page.getByRole("option", { name: chain }).click();
+  await page.getByLabel(/Property Name/i).fill(name);
+  await page.getByLabel(/Check-in/i).fill("2026-05-01");
+  await page.getByLabel(/Check-out/i).fill("2026-05-03");
+  await page.getByLabel(/Pre-tax Cost/i).fill(cost);
+  await page.getByLabel(/Total Cost/i).fill((Number(cost) * 1.2).toString());
+  await page.getByRole("button", { name: /Create Booking/i }).click();
+  await page.waitForURL("/bookings");
+}
 
 test.describe("Mobile Layout & Responsive Components", () => {
   test.use({ viewport: { width: 375, height: 667 } }); // iPhone SE size
@@ -36,21 +49,7 @@ test.describe("Mobile Layout & Responsive Components", () => {
 
   test("should display booking card view instead of tables", async ({ page }) => {
     const hotelName = `Mobile Hotel ${Date.now()}`;
-    // 1. Create a booking first so we have data to display
-    await page.goto("/bookings/new");
-    
-    // Select Hotel Chain
-    await page.getByText(/Select hotel chain.../i).click();
-    await page.getByRole("option", { name: /Hilton/i }).click();
-
-    await page.getByLabel(/Property Name/i).fill(hotelName);
-    await page.getByLabel(/Check-in/i).fill("2026-05-01");
-    await page.getByLabel(/Check-out/i).fill("2026-05-03");
-    await page.getByLabel(/Pre-tax Cost/i).fill("200");
-    await page.getByLabel(/Total Cost/i).fill("240");
-    await page.getByRole("button", { name: /Create Booking/i }).click();
-
-    await page.waitForURL("/bookings");
+    await createBooking(page, hotelName, "Hilton", "200");
 
     // 2. On Bookings page, should show mobile card view
     const cardList = page.getByTestId("bookings-list-mobile");
@@ -63,7 +62,7 @@ test.describe("Mobile Layout & Responsive Components", () => {
     const recentCards = page.getByTestId("recent-bookings-mobile");
     await expect(recentCards).toBeVisible();
     await expect(page.getByTestId("recent-bookings-desktop")).not.toBeVisible();
-    // We don't strictly check for hotelName here because it might be pushed out 
+    // We don't strictly check for hotelName here because it might be pushed out
     // of the 'top 5' by other parallel tests, but we verified it on the Bookings page.
   });
 });
@@ -84,21 +83,7 @@ test.describe("Desktop Layout (Verification)", () => {
 
   test("should display table view on desktop", async ({ page }) => {
     const hotelName = `Desktop Hotel ${Date.now()}`;
-    // 1. Create a booking first
-    await page.goto("/bookings/new");
-
-    // Select Hotel Chain
-    await page.getByText(/Select hotel chain.../i).click();
-    await page.getByRole("option", { name: /Marriott/i }).click();
-
-    await page.getByLabel(/Property Name/i).fill(hotelName);
-    await page.getByLabel(/Check-in/i).fill("2026-06-01");
-    await page.getByLabel(/Check-out/i).fill("2026-06-03");
-    await page.getByLabel(/Pre-tax Cost/i).fill("300");
-    await page.getByLabel(/Total Cost/i).fill("350");
-    await page.getByRole("button", { name: /Create Booking/i }).click();
-
-    await page.waitForURL("/bookings");
+    await createBooking(page, hotelName, "Marriott", "300");
 
     // 2. On Bookings page, should show table
     await expect(page.getByTestId("bookings-list-desktop")).toBeVisible();
