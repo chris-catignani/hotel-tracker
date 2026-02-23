@@ -2,23 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { PromotionForm, PromotionFormData } from "@/components/promotions/promotion-form";
-
-interface Promotion {
-  id: number;
-  name: string;
-  type: string;
-  valueType: string;
-  value: string;
-  hotelChainId: number | null;
-  hotelChainSubBrandId: number | null;
-  creditCardId: number | null;
-  shoppingPortalId: number | null;
-  minSpend: string | null;
-  startDate: string | null;
-  endDate: string | null;
-  isActive: boolean;
-}
+import { PromotionForm } from "@/components/promotions/promotion-form";
+import { Promotion, PromotionFormData, PromotionType, PromotionValueType } from "@/lib/types";
 
 function toDateInputValue(dateStr: string | null): string {
   if (!dateStr) return "";
@@ -46,14 +31,14 @@ export default function EditPromotionPage() {
       .then((promo: Promotion) => {
         setInitialData({
           name: promo.name,
-          type: promo.type,
-          valueType: promo.valueType,
-          value: parseFloat(promo.value),
+          type: promo.type as PromotionType,
+          valueType: promo.valueType as PromotionValueType,
+          value: parseFloat(String(promo.value)),
           hotelChainId: promo.hotelChainId,
           hotelChainSubBrandId: promo.hotelChainSubBrandId,
           creditCardId: promo.creditCardId,
           shoppingPortalId: promo.shoppingPortalId,
-          minSpend: promo.minSpend ? parseFloat(promo.minSpend) : null,
+          minSpend: promo.minSpend ? parseFloat(String(promo.minSpend)) : null,
           startDate: toDateInputValue(promo.startDate),
           endDate: toDateInputValue(promo.endDate),
           isActive: promo.isActive,
