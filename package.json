@@ -23,7 +23,8 @@
     "seed": "npx tsx prisma/seed.ts"
   },
   "lint-staged": {
-    "*.{ts,tsx,js,jsx,json,css,md}": "prettier --write"
+    "*.{ts,tsx,js,jsx,json,css,md}": "prettier --write",
+    "*.{ts,tsx,js,jsx}": "eslint --cache"
   },
   "dependencies": {
     "@prisma/client": "^6.19.2",
