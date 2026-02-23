@@ -39,6 +39,8 @@ describe("CreditCardsTab", () => {
       render(<CreditCardsTab />);
     });
 
-    expect(screen.getAllByText("Amex Platinum")[0]).toBeInTheDocument();
+    // Check that it's present in both mobile and desktop views
+    expect(screen.getByTestId("credit-card-card-name")).toHaveTextContent("Amex Platinum");
+    expect(screen.getByTestId("credit-card-table-name")).toHaveTextContent("Amex Platinum");
   });
 });

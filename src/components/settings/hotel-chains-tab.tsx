@@ -366,16 +366,18 @@ export function HotelChainsTab() {
       </Dialog>
 
       {/* Mobile View: Cards */}
-      <div className="grid grid-cols-1 gap-4 md:hidden">
+      <div className="grid grid-cols-1 gap-4 md:hidden" data-testid="hotel-chains-mobile">
         {hotelChains.length === 0 ? (
           <p className="text-center text-muted-foreground py-8">No hotel chains added yet.</p>
         ) : (
           hotelChains.map((hotelChain) => (
-            <Card key={hotelChain.id}>
+            <Card key={hotelChain.id} data-testid="hotel-chain-card">
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="font-bold">{hotelChain.name}</h3>
+                    <h3 className="font-bold" data-testid="hotel-chain-card-name">
+                      {hotelChain.name}
+                    </h3>
                     <p className="text-sm text-muted-foreground">
                       {hotelChain.loyaltyProgram || "No loyalty program"}
                     </p>
@@ -409,7 +411,7 @@ export function HotelChainsTab() {
       </div>
 
       {/* Desktop View: Table */}
-      <div className="hidden md:block">
+      <div className="hidden md:block" data-testid="hotel-chains-desktop">
         <Table>
           <TableHeader>
             <TableRow>
@@ -429,8 +431,10 @@ export function HotelChainsTab() {
               </TableRow>
             ) : (
               hotelChains.map((hotelChain) => (
-                <TableRow key={hotelChain.id}>
-                  <TableCell className="font-medium">{hotelChain.name}</TableCell>
+                <TableRow key={hotelChain.id} data-testid="hotel-chain-table-row">
+                  <TableCell className="font-medium" data-testid="hotel-chain-table-name">
+                    {hotelChain.name}
+                  </TableCell>
                   <TableCell>{hotelChain.loyaltyProgram ?? "-"}</TableCell>
                   <TableCell>{hotelChain.basePointRate ?? "-"}</TableCell>
                   <TableCell>{hotelChain.pointType?.name ?? "—"}</TableCell>

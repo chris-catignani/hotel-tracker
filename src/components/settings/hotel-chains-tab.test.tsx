@@ -47,6 +47,8 @@ describe("HotelChainsTab", () => {
       render(<HotelChainsTab />);
     });
 
-    expect(screen.getAllByText("Marriott")[0]).toBeInTheDocument();
+    // Check that it's present in both mobile and desktop views using specific test IDs
+    expect(screen.getByTestId("hotel-chain-card-name")).toHaveTextContent("Marriott");
+    expect(screen.getByTestId("hotel-chain-table-name")).toHaveTextContent("Marriott");
   });
 });
