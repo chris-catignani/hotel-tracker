@@ -16,10 +16,15 @@
     "test": "vitest run",
     "test:e2e": "echo 'E2E tests are temporarily disabled due to flakiness'",
     "test:e2e:show": "playwright test --reporter=html",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "prepare": "husky"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,json,css,md}": "prettier --write",
+    "*.{ts,tsx,js,jsx}": "eslint --cache"
   },
   "dependencies": {
     "@prisma/client": "^6.19.2",
@@ -51,7 +56,9 @@
     "eslint-config-next": "16.1.6",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",
+    "husky": "^9.1.7",
     "jsdom": "^28.1.0",
+    "lint-staged": "^16.2.7",
     "prettier": "^3.8.1",
     "shadcn": "^3.8.4",
     "tailwindcss": "^4",
