@@ -1,4 +1,4 @@
-import { render, screen, act } from "@testing-library/react";
+import { render, screen, act, within } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { OtaAgenciesTab } from "./ota-agencies-tab";
 
@@ -33,6 +33,7 @@ describe("OtaAgenciesTab", () => {
       render(<OtaAgenciesTab />);
     });
 
-    expect(screen.getByText("Expedia")).toBeInTheDocument();
+    const desktopView = screen.getByTestId("agencies-desktop");
+    expect(within(desktopView).getByText("Expedia")).toBeInTheDocument();
   });
 });

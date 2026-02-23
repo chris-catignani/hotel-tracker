@@ -1,4 +1,4 @@
-import { render, screen, act } from "@testing-library/react";
+import { render, screen, act, within } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ShoppingPortalsTab } from "./shopping-portals-tab";
 
@@ -39,6 +39,7 @@ describe("ShoppingPortalsTab", () => {
       render(<ShoppingPortalsTab />);
     });
 
-    expect(screen.getByText("Rakuten")).toBeInTheDocument();
+    const desktopView = screen.getByTestId("portals-desktop");
+    expect(within(desktopView).getByText("Rakuten")).toBeInTheDocument();
   });
 });

@@ -11,6 +11,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -159,39 +160,77 @@ export function OtaAgenciesTab() {
         </DialogContent>
       </Dialog>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {agencies.length === 0 ? (
+      {/* Mobile View: Cards */}
+      <div className="grid grid-cols-1 gap-4 md:hidden" data-testid="agencies-mobile">
+        {agencies.length === 0 ? (
+          <p className="text-center text-muted-foreground py-8">No OTA agencies added yet.</p>
+        ) : (
+          agencies.map((agency) => (
+            <Card key={agency.id} data-testid="agency-card">
+              <CardContent className="p-4 space-y-3">
+                <h4 className="font-bold" data-testid="agency-name">
+                  {agency.name}
+                </h4>
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => handleEdit(agency)}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 text-destructive"
+                    onClick={() => handleDelete(agency)}
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+
+      {/* Desktop View: Table */}
+      <div className="hidden md:block" data-testid="agencies-desktop">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell colSpan={2} className="text-center text-muted-foreground">
-                No OTA agencies added yet.
-              </TableCell>
+              <TableHead>Name</TableHead>
+              <TableHead></TableHead>
             </TableRow>
-          ) : (
-            agencies.map((agency) => (
-              <TableRow key={agency.id}>
-                <TableCell>{agency.name}</TableCell>
-                <TableCell>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => handleEdit(agency)}>
-                      Edit
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleDelete(agency)}>
-                      Delete
-                    </Button>
-                  </div>
+          </TableHeader>
+          <TableBody>
+            {agencies.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={2} className="text-center text-muted-foreground">
+                  No OTA agencies added yet.
                 </TableCell>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+            ) : (
+              agencies.map((agency) => (
+                <TableRow key={agency.id} data-testid="agency-row">
+                  <TableCell data-testid="agency-name">{agency.name}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(agency)}>
+                        Edit
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleDelete(agency)}>
+                        Delete
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }
