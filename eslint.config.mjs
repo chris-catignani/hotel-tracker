@@ -33,6 +33,14 @@ const eslintConfig = defineConfig([
     },
   },
   prettierConfig,
+  {
+    // Playwright fixtures use a `use` callback that triggers a false positive
+    // from react-hooks/rules-of-hooks. Disable it for E2E test files.
+    files: ["e2e/**"],
+    rules: {
+      "react-hooks/rules-of-hooks": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

@@ -25,7 +25,6 @@ export const test = base.extend<TestFixtures>({
       },
     });
     const booking = await res.json();
-    // eslint-disable-next-line react-hooks/rules-of-hooks
     await use({ id: booking.id, propertyName: uniqueName, hotelChainName: chain.name });
     await request.delete(`/api/bookings/${booking.id}`);
   },
