@@ -5,6 +5,7 @@ import { InfoIcon, ChevronDown, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { NetCostBreakdown, CalculationDetail } from "@/lib/net-cost";
 import { formatCurrency } from "@/lib/utils";
 
@@ -15,25 +16,55 @@ interface CostBreakdownProps {
 function CalculationInfo({ calc }: { calc: CalculationDetail | undefined }) {
   if (!calc) return null;
 
+  const content = (
+    <div className="space-y-3">
+      <div>
+        <h4 className="font-semibold text-sm mb-1 hidden md:block">{calc.label}</h4>
+        <p className="text-xs text-muted-foreground leading-relaxed">{calc.description}</p>
+      </div>
+      <div className="rounded-md bg-muted p-2 font-mono text-[10px] break-all">{calc.formula}</div>
+    </div>
+  );
+
+  const testId = `calc-info-${calc.label.toLowerCase().replace(/\s+/g, "-")}`;
+
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground hover:text-foreground transition-colors cursor-help">
-          <InfoIcon className="h-3 w-3" />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent className="w-80">
-        <div className="space-y-3">
-          <div>
-            <h4 className="font-semibold text-sm mb-1">{calc.label}</h4>
-            <p className="text-xs text-muted-foreground leading-relaxed">{calc.description}</p>
-          </div>
-          <div className="rounded-md bg-muted p-2 font-mono text-[10px] break-all">
-            {calc.formula}
-          </div>
-        </div>
-      </PopoverContent>
-    </Popover>
+    <>
+      {/* Desktop: Popover */}
+      <div className="hidden md:block">
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              data-testid={`${testId}-desktop`}
+              className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground hover:text-foreground transition-colors cursor-help"
+            >
+              <InfoIcon className="h-3 w-3" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80">{content}</PopoverContent>
+        </Popover>
+      </div>
+
+      {/* Mobile: Bottom Sheet */}
+      <div className="md:hidden">
+        <Sheet>
+          <SheetTrigger asChild>
+            <button
+              data-testid={`${testId}-mobile`}
+              className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground hover:text-foreground transition-colors cursor-help"
+            >
+              <InfoIcon className="h-3 w-3" />
+            </button>
+          </SheetTrigger>
+          <SheetContent side="bottom" className="rounded-t-xl p-6">
+            <SheetHeader className="text-left border-b pb-3 mb-4">
+              <SheetTitle>{calc.label}</SheetTitle>
+            </SheetHeader>
+            {content}
+          </SheetContent>
+        </Sheet>
+      </div>
+    </>
   );
 }
 
@@ -65,7 +96,7 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
       <CardContent className="space-y-3">
         <div className="flex items-center justify-between text-sm">
           <span>Cash Cost</span>
-          <span>{formatCurrency(totalCost)}</span>
+          <span data-testid="breakdown-cash-cost">{formatCurrency(totalCost)}</span>
         </div>
 
         {pointsRedeemedValue > 0 && (
@@ -74,7 +105,7 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
               <span>Award Points (value)</span>
               <CalculationInfo calc={pointsRedeemedCalc} />
             </div>
-            <span>+{formatCurrency(pointsRedeemedValue)}</span>
+            <span data-testid="breakdown-points-value">+{formatCurrency(pointsRedeemedValue)}</span>
           </div>
         )}
 
@@ -84,7 +115,7 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
               <span>Certificates (value)</span>
               <CalculationInfo calc={certsCalc} />
             </div>
-            <span>+{formatCurrency(certsValue)}</span>
+            <span data-testid="breakdown-certs-value">+{formatCurrency(certsValue)}</span>
           </div>
         )}
 
@@ -94,7 +125,9 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
               <span>Portal Cashback</span>
               <CalculationInfo calc={portalCashbackCalc} />
             </div>
-            <span className="text-green-600">-{formatCurrency(portalCashback)}</span>
+            <span data-testid="breakdown-portal-cashback" className="text-green-600">
+              -{formatCurrency(portalCashback)}
+            </span>
           </div>
         )}
 
@@ -104,7 +137,9 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
               <span>Card Reward</span>
               <CalculationInfo calc={cardRewardCalc} />
             </div>
-            <span className="text-green-600">-{formatCurrency(cardReward)}</span>
+            <span data-testid="breakdown-card-reward" className="text-green-600">
+              -{formatCurrency(cardReward)}
+            </span>
           </div>
         )}
 
@@ -114,7 +149,9 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
               <span>Loyalty Points Value</span>
               <CalculationInfo calc={loyaltyPointsCalc} />
             </div>
-            <span className="text-green-600">-{formatCurrency(loyaltyPointsValue)}</span>
+            <span data-testid="breakdown-loyalty-value" className="text-green-600">
+              -{formatCurrency(loyaltyPointsValue)}
+            </span>
           </div>
         )}
 
@@ -123,6 +160,7 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
             <button
               className="flex w-full items-center justify-between text-sm hover:bg-muted/50 py-0.5 rounded transition-colors group"
               onClick={() => setIsPromosExpanded(!isPromosExpanded)}
+              data-testid="breakdown-promos-toggle"
             >
               <div className="flex items-center gap-1.5">
                 <span>Promotion Savings</span>
@@ -132,18 +170,25 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
                   <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
                 )}
               </div>
-              <span className="text-green-600">-{formatCurrency(promoSavings)}</span>
+              <span data-testid="breakdown-promo-savings" className="text-green-600">
+                -{formatCurrency(promoSavings)}
+              </span>
             </button>
 
             {isPromosExpanded && (
-              <div className="ml-5 space-y-2 border-l pl-3 py-1">
+              <div
+                className="ml-5 space-y-2 border-l pl-3 py-1"
+                data-testid="breakdown-promos-list"
+              >
                 {promotions.map((p) => (
                   <div key={p.id} className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-1.5">
                       <span className="text-muted-foreground">{p.name}</span>
                       <CalculationInfo calc={p} />
                     </div>
-                    <span className="text-green-600">-{formatCurrency(p.appliedValue)}</span>
+                    <span data-testid={`breakdown-promo-item-${p.id}`} className="text-green-600">
+                      -{formatCurrency(p.appliedValue)}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -154,7 +199,7 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
         <Separator />
         <div className="flex items-center justify-between font-bold">
           <span>Net Cost</span>
-          <span>{formatCurrency(netCost)}</span>
+          <span data-testid="breakdown-net-cost">{formatCurrency(netCost)}</span>
         </div>
       </CardContent>
     </Card>

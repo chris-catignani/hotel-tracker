@@ -11,6 +11,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -238,38 +239,77 @@ export function ShoppingPortalsTab() {
         </DialogContent>
       </Dialog>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Reward Type</TableHead>
-            <TableHead>Point Type</TableHead>
-            <TableHead></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {portals.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={4} className="text-center text-muted-foreground">
-                No shopping portals added yet.
-              </TableCell>
-            </TableRow>
-          ) : (
-            portals.map((portal) => (
-              <TableRow key={portal.id}>
-                <TableCell>{portal.name}</TableCell>
-                <TableCell className="capitalize">{portal.rewardType}</TableCell>
-                <TableCell>{portal.pointType?.name ?? "—"}</TableCell>
-                <TableCell>
-                  <Button variant="ghost" size="sm" onClick={() => handleEdit(portal)}>
+      {/* Mobile View: Cards */}
+      <div className="grid grid-cols-1 gap-4 md:hidden" data-testid="portals-mobile">
+        {portals.length === 0 ? (
+          <p className="text-center text-muted-foreground py-8">No shopping portals added yet.</p>
+        ) : (
+          portals.map((portal) => (
+            <Card key={portal.id} data-testid="portal-card">
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h4 className="font-bold" data-testid="portal-name">
+                      {portal.name}
+                    </h4>
+                    <p className="text-sm text-muted-foreground capitalize">{portal.rewardType}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground">Point Type</p>
+                    <p className="font-medium">{portal.pointType?.name ?? "—"}</p>
+                  </div>
+                </div>
+                <div className="pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => handleEdit(portal)}
+                  >
                     Edit
                   </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+
+      {/* Desktop View: Table */}
+      <div className="hidden md:block" data-testid="portals-desktop">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Reward Type</TableHead>
+              <TableHead>Point Type</TableHead>
+              <TableHead></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {portals.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center text-muted-foreground">
+                  No shopping portals added yet.
                 </TableCell>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+            ) : (
+              portals.map((portal) => (
+                <TableRow key={portal.id} data-testid="portal-row">
+                  <TableCell data-testid="portal-name">{portal.name}</TableCell>
+                  <TableCell className="capitalize">{portal.rewardType}</TableCell>
+                  <TableCell>{portal.pointType?.name ?? "—"}</TableCell>
+                  <TableCell>
+                    <Button variant="ghost" size="sm" onClick={() => handleEdit(portal)}>
+                      Edit
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

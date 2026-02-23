@@ -1,4 +1,4 @@
-import { render, screen, act } from "@testing-library/react";
+import { render, screen, act, within } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { PointTypesTab } from "./point-types-tab";
 
@@ -32,7 +32,12 @@ describe("PointTypesTab", () => {
       render(<PointTypesTab />);
     });
 
-    expect(screen.getByText(/No point types added yet/i)).toBeInTheDocument();
+    // Check both mobile and desktop views for empty state
+    const mobileView = screen.getByTestId("point-types-mobile");
+    const desktopView = screen.getByTestId("point-types-desktop");
+
+    expect(within(mobileView).getByText(/No point types added yet/i)).toBeInTheDocument();
+    expect(within(desktopView).getByText(/No point types added yet/i)).toBeInTheDocument();
   });
 
   it("renders fetched point types", async () => {
@@ -46,6 +51,11 @@ describe("PointTypesTab", () => {
       render(<PointTypesTab />);
     });
 
-    expect(screen.getByText("Marriott Points")).toBeInTheDocument();
+    // Verify it appears in both views
+    const mobileView = screen.getByTestId("point-types-mobile");
+    const desktopView = screen.getByTestId("point-types-desktop");
+
+    expect(within(mobileView).getByText("Marriott Points")).toBeInTheDocument();
+    expect(within(desktopView).getByText("Marriott Points")).toBeInTheDocument();
   });
 });

@@ -11,6 +11,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -233,55 +234,112 @@ export function PointTypesTab() {
         </DialogContent>
       </Dialog>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Value/Point</TableHead>
-            <TableHead></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {pointTypes.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={3} className="text-center text-muted-foreground">
-                No point types added yet.
-              </TableCell>
-            </TableRow>
-          ) : (
-            (["hotel", "airline", "transferable"] as const).flatMap((category) => {
-              const group = pointTypes.filter((pt) => pt.category === category);
-              if (group.length === 0) return [];
-              return [
-                <TableRow key={`header-${category}`}>
-                  <TableCell
-                    colSpan={3}
-                    className="text-muted-foreground text-xs font-semibold uppercase tracking-wide bg-muted/30 py-1.5"
-                  >
-                    {CATEGORY_LABELS[category]}
-                  </TableCell>
-                </TableRow>,
-                ...group.map((pt) => (
-                  <TableRow key={pt.id}>
-                    <TableCell>{pt.name}</TableCell>
-                    <TableCell>${parseFloat(Number(pt.centsPerPoint).toFixed(6))}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => handleEdit(pt)}>
-                          Edit
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDelete(pt)}>
-                          Delete
-                        </Button>
+      {/* Mobile View: Cards */}
+      <div className="grid grid-cols-1 gap-4 md:hidden" data-testid="point-types-mobile">
+        {pointTypes.length === 0 ? (
+          <p className="text-center text-muted-foreground py-8">No point types added yet.</p>
+        ) : (
+          (["hotel", "airline", "transferable"] as const).flatMap((category) => {
+            const group = pointTypes.filter((pt) => pt.category === category);
+            if (group.length === 0) return [];
+            return [
+              <div key={`header-mobile-${category}`} className="pt-2">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted/30 px-2 py-1 rounded">
+                  {CATEGORY_LABELS[category]}
+                </h3>
+              </div>,
+              ...group.map((pt) => (
+                <Card key={pt.id} data-testid="point-type-card">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-start justify-between">
+                      <h4 className="font-bold" data-testid="point-type-name">
+                        {pt.name}
+                      </h4>
+                      <div className="text-right">
+                        <p className="text-xs text-muted-foreground">Value/Point</p>
+                        <p className="font-medium">
+                          ${parseFloat(Number(pt.centsPerPoint).toFixed(6))}
+                        </p>
                       </div>
+                    </div>
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleEdit(pt)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 text-destructive"
+                        onClick={() => handleDelete(pt)}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )),
+            ];
+          })
+        )}
+      </div>
+
+      {/* Desktop View: Table */}
+      <div className="hidden md:block" data-testid="point-types-desktop">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Value/Point</TableHead>
+              <TableHead></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {pointTypes.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={3} className="text-center text-muted-foreground">
+                  No point types added yet.
+                </TableCell>
+              </TableRow>
+            ) : (
+              (["hotel", "airline", "transferable"] as const).flatMap((category) => {
+                const group = pointTypes.filter((pt) => pt.category === category);
+                if (group.length === 0) return [];
+                return [
+                  <TableRow key={`header-${category}`}>
+                    <TableCell
+                      colSpan={3}
+                      className="text-muted-foreground text-xs font-semibold uppercase tracking-wide bg-muted/30 py-1.5"
+                    >
+                      {CATEGORY_LABELS[category]}
                     </TableCell>
-                  </TableRow>
-                )),
-              ];
-            })
-          )}
-        </TableBody>
-      </Table>
+                  </TableRow>,
+                  ...group.map((pt) => (
+                    <TableRow key={pt.id} data-testid="point-type-row">
+                      <TableCell data-testid="point-type-name">{pt.name}</TableCell>
+                      <TableCell>${parseFloat(Number(pt.centsPerPoint).toFixed(6))}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button variant="ghost" size="sm" onClick={() => handleEdit(pt)}>
+                            Edit
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleDelete(pt)}>
+                            Delete
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )),
+                ];
+              })
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

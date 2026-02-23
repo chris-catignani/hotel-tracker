@@ -379,42 +379,106 @@ export default function BookingDetailPage() {
             <CardTitle>Applied Promotions</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Promotion Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Applied Value</TableHead>
-                  <TableHead>Auto-applied</TableHead>
-                  <TableHead>Verified</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {booking.bookingPromotions.map((bp) => (
-                  <TableRow key={bp.id}>
-                    <TableCell>{bp.promotion.name}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{bp.promotion.type}</Badge>
-                    </TableCell>
-                    <TableCell>{formatCurrency(Number(bp.appliedValue))}</TableCell>
-                    <TableCell>
-                      <Badge variant={bp.autoApplied ? "default" : "outline"}>
-                        {bp.autoApplied ? "Yes" : "No"}
+            {/* Mobile View: Cards */}
+            <div className="flex flex-col gap-4 md:hidden" data-testid="applied-promos-mobile">
+              {booking.bookingPromotions.map((bp) => (
+                <div
+                  key={bp.id}
+                  className="flex flex-col p-4 border rounded-lg space-y-3"
+                  data-testid={`applied-promo-card-${bp.id}`}
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-bold" data-testid="promo-name">
+                        {bp.promotion.name}
+                      </p>
+                      <Badge variant="secondary" className="mt-1" data-testid="promo-type">
+                        {bp.promotion.type}
                       </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant={bp.verified ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => toggleVerified(bp)}
+                    </div>
+                    <div className="text-right">
+                      <p
+                        className="text-lg font-bold text-green-600"
+                        data-testid="promo-applied-value"
                       >
-                        {bp.verified ? "Verified" : "Mark Verified"}
-                      </Button>
-                    </TableCell>
+                        {formatCurrency(Number(bp.appliedValue))}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between pt-2 border-t">
+                    <div className="flex gap-2">
+                      <Badge
+                        variant={bp.autoApplied ? "default" : "outline"}
+                        data-testid="promo-auto-applied"
+                      >
+                        {bp.autoApplied ? "Auto" : "Manual"}
+                      </Badge>
+                      {bp.verified && (
+                        <Badge variant="default" data-testid="promo-verified-badge">
+                          Verified
+                        </Badge>
+                      )}
+                    </div>
+                    <Button
+                      variant={bp.verified ? "secondary" : "outline"}
+                      size="sm"
+                      onClick={() => toggleVerified(bp)}
+                      data-testid="promo-verify-button"
+                    >
+                      {bp.verified ? "Unverify" : "Mark Verified"}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop View: Table */}
+            <div className="hidden md:block" data-testid="applied-promos-desktop">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Promotion Name</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Applied Value</TableHead>
+                    <TableHead>Auto-applied</TableHead>
+                    <TableHead>Verified</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {booking.bookingPromotions.map((bp) => (
+                    <TableRow key={bp.id} data-testid={`applied-promo-row-${bp.id}`}>
+                      <TableCell data-testid="promo-name">{bp.promotion.name}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" data-testid="promo-type">
+                          {bp.promotion.type}
+                        </Badge>
+                      </TableCell>
+                      <TableCell data-testid="promo-applied-value">
+                        {formatCurrency(Number(bp.appliedValue))}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={bp.autoApplied ? "default" : "outline"}
+                          data-testid="promo-auto-applied"
+                        >
+                          {bp.autoApplied ? "Yes" : "No"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant={bp.verified ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => toggleVerified(bp)}
+                          data-testid="promo-verify-button"
+                        >
+                          {bp.verified ? "Verified" : "Mark Verified"}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       )}

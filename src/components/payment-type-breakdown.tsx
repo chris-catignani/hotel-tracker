@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
@@ -185,11 +185,40 @@ export function PaymentTypeBreakdown({ bookings }: PaymentTypeBreakdownProps) {
                   }}
                   itemStyle={{ fontSize: "12px" }}
                 />
-                <Legend verticalAlign="bottom" height={36} />
               </PieChart>
             </ResponsiveContainer>
           </div>
         )}
+
+        {total > 0 && (
+          <div
+            className="mt-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-center sm:gap-4"
+            data-testid="payment-type-legend"
+          >
+            {data.chartData.map((item) => (
+              <div
+                key={item.name}
+                className="flex items-center gap-2"
+                data-testid={`legend-item-${item.name.toLowerCase()}`}
+              >
+                <div
+                  className="w-3 h-3 rounded-full shrink-0"
+                  style={{ backgroundColor: TYPE_COLORS[item.name] }}
+                />
+                <div className="flex flex-col sm:flex-row sm:gap-1.5 items-start sm:items-center">
+                  <span className="text-xs font-medium">{item.name}</span>
+                  <span
+                    className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap"
+                    data-testid="legend-item-value"
+                  >
+                    {item.value} ({((item.value / total) * 100).toFixed(0)}%)
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         {mode === "nights" && data.ignoredCount > 0 && (
           <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-md flex items-start gap-2 text-amber-800">
             <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
