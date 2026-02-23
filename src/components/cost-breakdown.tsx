@@ -5,6 +5,7 @@ import { InfoIcon, ChevronDown, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { NetCostBreakdown, CalculationDetail } from "@/lib/net-cost";
 import { formatCurrency } from "@/lib/utils";
 
@@ -15,25 +16,47 @@ interface CostBreakdownProps {
 function CalculationInfo({ calc }: { calc: CalculationDetail | undefined }) {
   if (!calc) return null;
 
+  const content = (
+    <div className="space-y-3">
+      <div>
+        <h4 className="font-semibold text-sm mb-1 hidden md:block">{calc.label}</h4>
+        <p className="text-xs text-muted-foreground leading-relaxed">{calc.description}</p>
+      </div>
+      <div className="rounded-md bg-muted p-2 font-mono text-[10px] break-all">{calc.formula}</div>
+    </div>
+  );
+
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground hover:text-foreground transition-colors cursor-help">
-          <InfoIcon className="h-3 w-3" />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent className="w-80">
-        <div className="space-y-3">
-          <div>
-            <h4 className="font-semibold text-sm mb-1">{calc.label}</h4>
-            <p className="text-xs text-muted-foreground leading-relaxed">{calc.description}</p>
-          </div>
-          <div className="rounded-md bg-muted p-2 font-mono text-[10px] break-all">
-            {calc.formula}
-          </div>
-        </div>
-      </PopoverContent>
-    </Popover>
+    <>
+      {/* Desktop: Popover */}
+      <div className="hidden md:block">
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground hover:text-foreground transition-colors cursor-help">
+              <InfoIcon className="h-3 w-3" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80">{content}</PopoverContent>
+        </Popover>
+      </div>
+
+      {/* Mobile: Bottom Sheet */}
+      <div className="md:hidden">
+        <Sheet>
+          <SheetTrigger asChild>
+            <button className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground hover:text-foreground transition-colors cursor-help">
+              <InfoIcon className="h-3 w-3" />
+            </button>
+          </SheetTrigger>
+          <SheetContent side="bottom" className="rounded-t-xl p-6">
+            <SheetHeader className="text-left border-b pb-3 mb-4">
+              <SheetTitle>{calc.label}</SheetTitle>
+            </SheetHeader>
+            {content}
+          </SheetContent>
+        </Sheet>
+      </div>
+    </>
   );
 }
 
