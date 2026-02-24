@@ -8,6 +8,8 @@ import { calculateNetCost, getNetCostBreakdown } from "@/lib/net-cost";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { CalendarDays, Wallet } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -202,12 +204,16 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             {recentBookings.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">
-                No bookings yet.{" "}
-                <Link href="/bookings/new" className="underline">
-                  Add your first booking
-                </Link>
-              </p>
+              <EmptyState
+                icon={CalendarDays}
+                title="No bookings yet"
+                description="Start tracking your hotel stays and savings by adding your first booking."
+                action={{
+                  label: "Add Booking",
+                  href: "/bookings/new",
+                }}
+                data-testid="recent-bookings-empty"
+              />
             ) : (
               <>
                 {/* Mobile View: Cards */}
@@ -290,7 +296,13 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               {cashBookings.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">No data to display yet</p>
+                <EmptyState
+                  icon={Wallet}
+                  title="No savings data"
+                  description="Savings from promotions, portals, and credit cards will appear here once you add bookings."
+                  className="py-6"
+                  data-testid="savings-breakdown-empty"
+                />
               ) : (
                 <div className="space-y-4">
                   {(() => {

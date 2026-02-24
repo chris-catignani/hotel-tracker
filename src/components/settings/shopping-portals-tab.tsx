@@ -32,6 +32,8 @@ import {
 import { extractApiError } from "@/lib/client-error";
 import { PointType, ShoppingPortal } from "@/lib/types";
 import { ErrorBanner } from "@/components/ui/error-banner";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Globe } from "lucide-react";
 
 export function ShoppingPortalsTab() {
   const [portals, setPortals] = useState<ShoppingPortal[]>([]);
@@ -239,77 +241,82 @@ export function ShoppingPortalsTab() {
         </DialogContent>
       </Dialog>
 
-      {/* Mobile View: Cards */}
-      <div className="grid grid-cols-1 gap-4 md:hidden" data-testid="portals-mobile">
-        {portals.length === 0 ? (
-          <p className="text-center text-muted-foreground py-8">No shopping portals added yet.</p>
-        ) : (
-          portals.map((portal) => (
-            <Card key={portal.id} data-testid="portal-card">
-              <CardContent className="p-4 space-y-3">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h4 className="font-bold" data-testid="portal-name">
-                      {portal.name}
-                    </h4>
-                    <p className="text-sm text-muted-foreground capitalize">{portal.rewardType}</p>
+      {portals.length === 0 ? (
+        <EmptyState
+          icon={Globe}
+          title="No shopping portals"
+          description="Add portals like Rakuten or TopCashback to track extra rewards on your bookings."
+          action={{
+            label: "Add Portal",
+            onClick: () => setOpen(true),
+          }}
+          data-testid="portals-empty"
+        />
+      ) : (
+        <>
+          {/* Mobile View: Cards */}
+          <div className="grid grid-cols-1 gap-4 md:hidden" data-testid="portals-mobile">
+            {portals.map((portal) => (
+              <Card key={portal.id} data-testid="portal-card">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="font-bold" data-testid="portal-name">
+                        {portal.name}
+                      </h4>
+                      <p className="text-sm text-muted-foreground capitalize">
+                        {portal.rewardType}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-muted-foreground">Point Type</p>
+                      <p className="font-medium">{portal.pointType?.name ?? "—"}</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-xs text-muted-foreground">Point Type</p>
-                    <p className="font-medium">{portal.pointType?.name ?? "—"}</p>
-                  </div>
-                </div>
-                <div className="pt-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => handleEdit(portal)}
-                  >
-                    Edit
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
-
-      {/* Desktop View: Table */}
-      <div className="hidden md:block" data-testid="portals-desktop">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Reward Type</TableHead>
-              <TableHead>Point Type</TableHead>
-              <TableHead></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {portals.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground">
-                  No shopping portals added yet.
-                </TableCell>
-              </TableRow>
-            ) : (
-              portals.map((portal) => (
-                <TableRow key={portal.id} data-testid="portal-row">
-                  <TableCell data-testid="portal-name">{portal.name}</TableCell>
-                  <TableCell className="capitalize">{portal.rewardType}</TableCell>
-                  <TableCell>{portal.pointType?.name ?? "—"}</TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="sm" onClick={() => handleEdit(portal)}>
+                  <div className="pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => handleEdit(portal)}
+                    >
                       Edit
                     </Button>
-                  </TableCell>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Desktop View: Table */}
+          <div className="hidden md:block" data-testid="portals-desktop">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Reward Type</TableHead>
+                  <TableHead>Point Type</TableHead>
+                  <TableHead></TableHead>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              </TableHeader>
+              <TableBody>
+                {portals.map((portal) => (
+                  <TableRow key={portal.id} data-testid="portal-row">
+                    <TableCell data-testid="portal-name">{portal.name}</TableCell>
+                    <TableCell className="capitalize">{portal.rewardType}</TableCell>
+                    <TableCell>{portal.pointType?.name ?? "—"}</TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(portal)}>
+                        Edit
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -33,6 +33,8 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { extractApiError } from "@/lib/client-error";
 import { CreditCard, PointType } from "@/lib/types";
 import { ErrorBanner } from "@/components/ui/error-banner";
+import { EmptyState } from "@/components/ui/empty-state";
+import { CreditCard as CreditCardIcon } from "lucide-react";
 
 export function CreditCardsTab() {
   const [cards, setCards] = useState<CreditCard[]>([]);
@@ -293,104 +295,107 @@ export function CreditCardsTab() {
         onConfirm={handleDeleteConfirm}
       />
 
-      {/* Mobile View: Cards */}
-      <div className="grid grid-cols-1 gap-4 md:hidden" data-testid="credit-cards-mobile">
-        {cards.length === 0 ? (
-          <p className="text-center text-muted-foreground py-8">No credit cards added yet.</p>
-        ) : (
-          cards.map((card) => (
-            <Card key={card.id} data-testid="credit-card-card">
-              <CardContent className="p-4 space-y-3">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-bold" data-testid="credit-card-card-name">
-                      {card.name}
-                    </h3>
-                    <p className="text-sm text-muted-foreground capitalize">{card.rewardType}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium">Rate</p>
-                    <p className="text-lg font-bold">{card.rewardRate}</p>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Point Type</span>
-                  <span className="font-medium">{card.pointType?.name ?? "—"}</span>
-                </div>
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => handleEdit(card)}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 text-destructive"
-                    data-testid="delete-credit-card-button"
-                    onClick={() => handleDeleteClick(card)}
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
-
-      {/* Desktop View: Table */}
-      <div className="hidden md:block" data-testid="credit-cards-desktop">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Reward Type</TableHead>
-              <TableHead>Reward Rate</TableHead>
-              <TableHead>Point Type</TableHead>
-              <TableHead></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {cards.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
-                  No credit cards added yet.
-                </TableCell>
-              </TableRow>
-            ) : (
-              cards.map((card) => (
-                <TableRow key={card.id} data-testid="credit-card-table-row">
-                  <TableCell className="font-medium" data-testid="credit-card-table-name">
-                    {card.name}
-                  </TableCell>
-                  <TableCell className="capitalize">{card.rewardType}</TableCell>
-                  <TableCell>{card.rewardRate}</TableCell>
-                  <TableCell>{card.pointType?.name ?? "—"}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => handleEdit(card)}>
-                        Edit
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        data-testid="delete-credit-card-button"
-                        onClick={() => handleDeleteClick(card)}
-                      >
-                        Delete
-                      </Button>
+      {cards.length === 0 ? (
+        <EmptyState
+          icon={CreditCardIcon}
+          title="No credit cards"
+          description="Add credit cards to track rewards and cashback on your bookings."
+          action={{
+            label: "Add Credit Card",
+            onClick: () => setOpen(true),
+          }}
+          data-testid="credit-cards-empty"
+        />
+      ) : (
+        <>
+          {/* Mobile View: Cards */}
+          <div className="grid grid-cols-1 gap-4 md:hidden" data-testid="credit-cards-mobile">
+            {cards.map((card) => (
+              <Card key={card.id} data-testid="credit-card-card">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-bold" data-testid="credit-card-card-name">
+                        {card.name}
+                      </h3>
+                      <p className="text-sm text-muted-foreground capitalize">{card.rewardType}</p>
                     </div>
-                  </TableCell>
+                    <div className="text-right">
+                      <p className="text-sm font-medium">Rate</p>
+                      <p className="text-lg font-bold">{card.rewardRate}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Point Type</span>
+                    <span className="font-medium">{card.pointType?.name ?? "—"}</span>
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handleEdit(card)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 text-destructive"
+                      data-testid="delete-credit-card-button"
+                      onClick={() => handleDeleteClick(card)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Desktop View: Table */}
+          <div className="hidden md:block" data-testid="credit-cards-desktop">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Reward Type</TableHead>
+                  <TableHead>Reward Rate</TableHead>
+                  <TableHead>Point Type</TableHead>
+                  <TableHead></TableHead>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              </TableHeader>
+              <TableBody>
+                {cards.map((card) => (
+                  <TableRow key={card.id} data-testid="credit-card-table-row">
+                    <TableCell className="font-medium" data-testid="credit-card-table-name">
+                      {card.name}
+                    </TableCell>
+                    <TableCell className="capitalize">{card.rewardType}</TableCell>
+                    <TableCell>{card.rewardRate}</TableCell>
+                    <TableCell>{card.pointType?.name ?? "—"}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => handleEdit(card)}>
+                          Edit
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          data-testid="delete-credit-card-button"
+                          onClick={() => handleDeleteClick(card)}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </>
+      )}
     </div>
   );
 }

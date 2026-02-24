@@ -26,6 +26,8 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { extractApiError } from "@/lib/client-error";
 import { OtaAgency } from "@/lib/types";
 import { ErrorBanner } from "@/components/ui/error-banner";
+import { EmptyState } from "@/components/ui/empty-state";
+import { ScrollText } from "lucide-react";
 
 export function OtaAgenciesTab() {
   const [agencies, setAgencies] = useState<OtaAgency[]>([]);
@@ -185,77 +187,80 @@ export function OtaAgenciesTab() {
         onConfirm={handleDeleteConfirm}
       />
 
-      {/* Mobile View: Cards */}
-      <div className="grid grid-cols-1 gap-4 md:hidden" data-testid="agencies-mobile">
-        {agencies.length === 0 ? (
-          <p className="text-center text-muted-foreground py-8">No OTA agencies added yet.</p>
-        ) : (
-          agencies.map((agency) => (
-            <Card key={agency.id} data-testid="agency-card">
-              <CardContent className="p-4 space-y-3">
-                <h4 className="font-bold" data-testid="agency-name">
-                  {agency.name}
-                </h4>
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => handleEdit(agency)}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 text-destructive"
-                    onClick={() => handleDeleteClick(agency)}
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
+      {agencies.length === 0 ? (
+        <EmptyState
+          icon={ScrollText}
+          title="No OTA agencies"
+          description="Add agencies like Expedia or Chase Travel to track where you book."
+          action={{
+            label: "Add Agency",
+            onClick: () => setOpen(true),
+          }}
+          data-testid="ota-agencies-empty"
+        />
+      ) : (
+        <>
+          {/* Mobile View: Cards */}
+          <div className="grid grid-cols-1 gap-4 md:hidden" data-testid="agencies-mobile">
+            {agencies.map((agency) => (
+              <Card key={agency.id} data-testid="agency-card">
+                <CardContent className="p-4 space-y-3">
+                  <h4 className="font-bold" data-testid="agency-name">
+                    {agency.name}
+                  </h4>
+                  <div className="flex gap-2 pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handleEdit(agency)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 text-destructive"
+                      onClick={() => handleDeleteClick(agency)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
 
-      {/* Desktop View: Table */}
-      <div className="hidden md:block" data-testid="agencies-desktop">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {agencies.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={2} className="text-center text-muted-foreground">
-                  No OTA agencies added yet.
-                </TableCell>
-              </TableRow>
-            ) : (
-              agencies.map((agency) => (
-                <TableRow key={agency.id} data-testid="agency-row">
-                  <TableCell data-testid="agency-name">{agency.name}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => handleEdit(agency)}>
-                        Edit
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleDeleteClick(agency)}>
-                        Delete
-                      </Button>
-                    </div>
-                  </TableCell>
+          {/* Desktop View: Table */}
+          <div className="hidden md:block" data-testid="agencies-desktop">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead></TableHead>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              </TableHeader>
+              <TableBody>
+                {agencies.map((agency) => (
+                  <TableRow key={agency.id} data-testid="agency-row">
+                    <TableCell data-testid="agency-name">{agency.name}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => handleEdit(agency)}>
+                          Edit
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDeleteClick(agency)}>
+                          Delete
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </>
+      )}
     </div>
   );
 }

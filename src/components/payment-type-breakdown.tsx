@@ -4,7 +4,8 @@ import { useState, useMemo } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, PieChart as PieChartIcon } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface BookingCertificate {
   id: number;
@@ -157,9 +158,13 @@ export function PaymentTypeBreakdown({ bookings }: PaymentTypeBreakdownProps) {
       </CardHeader>
       <CardContent className="flex-1 flex flex-col justify-center pt-0">
         {total === 0 ? (
-          <div className="h-64 flex items-center justify-center text-muted-foreground text-sm">
-            No data to display
-          </div>
+          <EmptyState
+            icon={PieChartIcon}
+            title="No data"
+            description="Payment breakdown will appear once you add bookings."
+            className="border-none bg-transparent"
+            data-testid="payment-type-empty"
+          />
         ) : (
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">

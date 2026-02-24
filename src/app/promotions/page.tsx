@@ -13,7 +13,8 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Plus, Tag } from "lucide-react";
 
 interface PromotionBenefit {
   rewardType: string;
@@ -178,7 +179,24 @@ export default function PromotionsPage() {
           {loading ? (
             <p className="text-muted-foreground py-8 text-center text-sm">Loading promotions...</p>
           ) : filteredPromotions.length === 0 ? (
-            <p className="text-muted-foreground py-8 text-center text-sm">No promotions found.</p>
+            <EmptyState
+              icon={Tag}
+              title="No promotions found"
+              description={
+                activeTab === "all"
+                  ? "Track extra savings and rewards by adding your first promotion."
+                  : `No ${typeLabel(activeTab).toLowerCase()} promotions found.`
+              }
+              action={
+                activeTab === "all"
+                  ? {
+                      label: "Add Promotion",
+                      href: "/promotions/new",
+                    }
+                  : undefined
+              }
+              data-testid="promotions-empty"
+            />
           ) : (
             <Table>
               <TableHeader>
