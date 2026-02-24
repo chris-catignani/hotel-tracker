@@ -33,7 +33,7 @@ async function main() {
     {
       id: 16,
       hotelChainId: 2,
-      hotelChainSubBrandId: 31,
+      hotelChainSubBrandId: 2004, // Autograph Collection
       propertyName: "Duxton Reserve Singapore",
       checkIn: "2026-03-02T00:00:00.000Z",
       checkOut: "2026-03-05T00:00:00.000Z",
@@ -62,7 +62,7 @@ async function main() {
     {
       id: 17,
       hotelChainId: 3,
-      hotelChainSubBrandId: 52,
+      hotelChainSubBrandId: 3022, // Park Hyatt
       propertyName: "Park Hyatt Kuala Lumpur",
       checkIn: "2026-03-06T00:00:00.000Z",
       checkOut: "2026-03-07T00:00:00.000Z",
@@ -87,7 +87,7 @@ async function main() {
     {
       id: 18,
       hotelChainId: 4,
-      hotelChainSubBrandId: 72,
+      hotelChainSubBrandId: 4008, // Holiday Inn Express
       propertyName: "Holiday Inn Express KL City Centre",
       checkIn: "2026-03-06T00:00:00.000Z",
       checkOut: "2026-03-07T00:00:00.000Z",
@@ -112,7 +112,7 @@ async function main() {
     {
       id: 19,
       hotelChainId: 4,
-      hotelChainSubBrandId: 69,
+      hotelChainSubBrandId: 4010, // Hotel Indigo
       propertyName: "Hotel Indigo Kuala Lumpur",
       checkIn: "2026-03-07T00:00:00.000Z",
       checkOut: "2026-03-13T00:00:00.000Z",
@@ -137,7 +137,7 @@ async function main() {
     {
       id: 20,
       hotelChainId: 3,
-      hotelChainSubBrandId: 56,
+      hotelChainSubBrandId: 3010, // Hyatt Centric
       propertyName: "Hyatt Centric Kuala Lumpur",
       checkIn: "2026-03-13T00:00:00.000Z",
       checkOut: "2026-03-20T00:00:00.000Z",
@@ -162,7 +162,7 @@ async function main() {
     {
       id: 21,
       hotelChainId: 5,
-      hotelChainSubBrandId: 227,
+      hotelChainSubBrandId: 5046, // Sunway
       propertyName: "Sunway Velocity Hotel",
       checkIn: "2026-03-20T00:00:00.000Z",
       checkOut: "2026-03-22T00:00:00.000Z",
@@ -187,7 +187,7 @@ async function main() {
     {
       id: 22,
       hotelChainId: 5,
-      hotelChainSubBrandId: 82,
+      hotelChainSubBrandId: 5038, // PARKROYAL
       propertyName: "Park Royal Serviced Suites KL",
       checkIn: "2026-03-22T00:00:00.000Z",
       checkOut: "2026-03-24T00:00:00.000Z",
@@ -212,7 +212,7 @@ async function main() {
     {
       id: 23,
       hotelChainId: 5,
-      hotelChainSubBrandId: 215,
+      hotelChainSubBrandId: 5037, // PARKROYAL COLLECTION
       propertyName: "Park Royal Collection KL",
       checkIn: "2026-03-24T00:00:00.000Z",
       checkOut: "2026-03-26T00:00:00.000Z",
@@ -237,7 +237,7 @@ async function main() {
     {
       id: 24,
       hotelChainId: 2,
-      hotelChainSubBrandId: 683,
+      hotelChainSubBrandId: 2007, // citizenM
       propertyName: "citizenM Kuala Lumpur",
       checkIn: "2026-03-26T00:00:00.000Z",
       checkOut: "2026-03-27T00:00:00.000Z",
@@ -262,7 +262,7 @@ async function main() {
     {
       id: 25,
       hotelChainId: 3,
-      hotelChainSubBrandId: 56,
+      hotelChainSubBrandId: 3010, // Hyatt Centric
       propertyName: "Hyatt Centric Kuala Lumpur",
       checkIn: "2026-03-27T00:00:00.000Z",
       checkOut: "2026-04-03T00:00:00.000Z",
@@ -287,7 +287,7 @@ async function main() {
     {
       id: 26,
       hotelChainId: 3,
-      hotelChainSubBrandId: 58,
+      hotelChainSubBrandId: 3012, // Hyatt Place
       propertyName: "Hyatt Place Bukit Jalil",
       checkIn: "2026-04-03T00:00:00.000Z",
       checkOut: "2026-04-10T00:00:00.000Z",
@@ -312,7 +312,7 @@ async function main() {
     {
       id: 27,
       hotelChainId: 2,
-      hotelChainSubBrandId: 40,
+      hotelChainSubBrandId: 2025, // Moxy
       propertyName: "Moxy KL Chinatown",
       checkIn: "2026-04-10T00:00:00.000Z",
       checkOut: "2026-04-14T00:00:00.000Z",
@@ -337,7 +337,7 @@ async function main() {
     {
       id: 28,
       hotelChainId: 2,
-      hotelChainSubBrandId: 288,
+      hotelChainSubBrandId: 2037, // Tribute Portfolio
       propertyName: "The Serangoon House Little India",
       checkIn: "2026-04-14T00:00:00.000Z",
       checkOut: "2026-04-15T00:00:00.000Z",
@@ -365,7 +365,7 @@ async function main() {
     {
       id: 29,
       hotelChainId: 6,
-      hotelChainSubBrandId: 96,
+      hotelChainSubBrandId: 6016, // ibis Styles
       propertyName: "ibis Styles Ambassador ICN",
       checkIn: "2026-04-15T00:00:00.000Z",
       checkOut: "2026-04-16T00:00:00.000Z",
