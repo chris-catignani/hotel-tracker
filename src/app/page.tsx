@@ -265,7 +265,7 @@ export default function DashboardPage() {
         totalCertificates={totalCertificates}
       />
 
-      <div className="grid gap-6 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 items-start">
+      <div className="grid gap-6 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
         <Card className="lg:col-span-2 xl:col-span-2">
           <CardHeader>
             <div className="flex items-center justify-between">
