@@ -11,9 +11,11 @@ const mockBooking: MatchingBooking = {
   hotelChainId: 3,
   hotelChainSubBrandId: 4,
   checkIn: new Date("2026-06-01"),
+  pretaxCost: 80,
   totalCost: 100,
   loyaltyPointsEarned: 1000,
   hotelChain: {
+    basePointRate: 10,
     pointType: { centsPerPoint: 0.015 }, // non-default
   },
   creditCard: {
@@ -41,6 +43,7 @@ function makePromo(overrides: Partial<TestPromotion> = {}): TestPromotion {
         valueType: PromotionBenefitValueType.fixed,
         value: new Prisma.Decimal(10),
         certType: null,
+        pointsMultiplierBasis: null,
         sortOrder: 0,
       },
     ],
@@ -112,6 +115,7 @@ describe("promotion-matching", () => {
           valueType: PromotionBenefitValueType.percentage,
           value: new Prisma.Decimal(15),
           certType: null,
+          pointsMultiplierBasis: null,
           sortOrder: 0,
         },
       ],
@@ -130,6 +134,7 @@ describe("promotion-matching", () => {
           valueType: PromotionBenefitValueType.multiplier,
           value: new Prisma.Decimal(3),
           certType: null,
+          pointsMultiplierBasis: "base_and_elite",
           sortOrder: 0,
         },
       ],
@@ -149,6 +154,7 @@ describe("promotion-matching", () => {
           valueType: PromotionBenefitValueType.fixed,
           value: new Prisma.Decimal(2000),
           certType: null,
+          pointsMultiplierBasis: null,
           sortOrder: 0,
         },
       ],
@@ -168,6 +174,7 @@ describe("promotion-matching", () => {
           valueType: PromotionBenefitValueType.fixed,
           value: new Prisma.Decimal(1),
           certType: "marriott_35k",
+          pointsMultiplierBasis: null,
           sortOrder: 0,
         },
         {
@@ -176,6 +183,7 @@ describe("promotion-matching", () => {
           valueType: PromotionBenefitValueType.fixed,
           value: new Prisma.Decimal(1),
           certType: null,
+          pointsMultiplierBasis: null,
           sortOrder: 1,
         },
       ],
@@ -195,6 +203,7 @@ describe("promotion-matching", () => {
           valueType: PromotionBenefitValueType.fixed,
           value: new Prisma.Decimal(10),
           certType: null,
+          pointsMultiplierBasis: null,
           sortOrder: 0,
         },
         {
@@ -203,6 +212,7 @@ describe("promotion-matching", () => {
           valueType: PromotionBenefitValueType.fixed,
           value: new Prisma.Decimal(1000),
           certType: null,
+          pointsMultiplierBasis: null,
           sortOrder: 1,
         },
       ],
@@ -213,5 +223,68 @@ describe("promotion-matching", () => {
     expect(matched[0].benefitApplications).toHaveLength(2);
     expect(matched[0].benefitApplications[0].appliedValue).toBe(10);
     expect(matched[0].benefitApplications[1].appliedValue).toBe(15);
+  });
+
+  it("should calculate points multiplier with base_only basis", () => {
+    const promo = makePromo({
+      benefits: [
+        {
+          id: 10,
+          rewardType: PromotionRewardType.points,
+          valueType: PromotionBenefitValueType.multiplier,
+          value: new Prisma.Decimal(3),
+          certType: null,
+          pointsMultiplierBasis: "base_only",
+          sortOrder: 0,
+        },
+      ],
+    });
+    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    // basePoints = 80 (pretaxCost) * 10 (basePointRate) = 800
+    // 800 pts * (3-1) * 0.015 $/pt = 24
+    expect(matched[0].appliedValue).toBe(24);
+    expect(matched[0].benefitApplications[0].appliedValue).toBe(24);
+  });
+
+  it("should calculate points multiplier with base_and_elite basis", () => {
+    const promo = makePromo({
+      benefits: [
+        {
+          id: 10,
+          rewardType: PromotionRewardType.points,
+          valueType: PromotionBenefitValueType.multiplier,
+          value: new Prisma.Decimal(3),
+          certType: null,
+          pointsMultiplierBasis: "base_and_elite",
+          sortOrder: 0,
+        },
+      ],
+    });
+    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    // Uses full loyaltyPointsEarned = 1000
+    // 1000 pts * (3-1) * 0.015 $/pt = 30
+    expect(matched[0].appliedValue).toBe(30);
+    expect(matched[0].benefitApplications[0].appliedValue).toBe(30);
+  });
+
+  it("should default to base_only when pointsMultiplierBasis is null", () => {
+    const promo = makePromo({
+      benefits: [
+        {
+          id: 10,
+          rewardType: PromotionRewardType.points,
+          valueType: PromotionBenefitValueType.multiplier,
+          value: new Prisma.Decimal(3),
+          certType: null,
+          pointsMultiplierBasis: null,
+          sortOrder: 0,
+        },
+      ],
+    });
+    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    // basePoints = 80 * 10 = 800
+    // 800 * (3-1) * 0.015 = 24
+    expect(matched[0].appliedValue).toBe(24);
+    expect(matched[0].benefitApplications[0].appliedValue).toBe(24);
   });
 });

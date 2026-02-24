@@ -82,7 +82,7 @@ describe("net-cost", () => {
     expect(result.promotions[0].formula).toContain("$100.00 (total cost) × 20% = $20.00");
   });
 
-  it("should apply points multiplier promotions", () => {
+  it("should apply points multiplier promotions (base_and_elite)", () => {
     const booking: NetCostBooking = {
       ...mockBaseBooking,
       loyaltyPointsEarned: 1000,
@@ -98,6 +98,7 @@ describe("net-cost", () => {
                 valueType: "multiplier",
                 value: 2,
                 certType: null,
+                pointsMultiplierBasis: "base_and_elite",
               },
             },
           ],
@@ -109,9 +110,9 @@ describe("net-cost", () => {
     expect(result.promoSavings).toBe(15);
     expect(result.netCost).toBe(70);
     expect(result.promotions[0].formula).toContain(
-      "1,000 pts (from pre-tax cost) × (2 - 1) × 1.5¢ = $15.00"
+      "1,000 pts (incl. elite bonus) × (2 - 1) × 1.5¢ = $15.00"
     );
-    expect(result.promotions[0].description).toContain("pre-tax cost");
+    expect(result.promotions[0].description).toContain("elite bonus");
   });
 
   it("should apply fixed points promotions", () => {
@@ -314,5 +315,39 @@ describe("net-cost", () => {
     expect(result.certsValue).toBe(525);
     expect(result.netCost).toBe(625);
     expect(result.certsCalc?.formula).toContain("35,000 pts × 1.5¢ = $525.00");
+  });
+
+  it("should apply points multiplier with base_only basis", () => {
+    const booking: NetCostBooking = {
+      ...mockBaseBooking,
+      loyaltyPointsEarned: 800,
+      bookingPromotions: [
+        {
+          appliedValue: 24,
+          promotion: { name: "3x multiplier (base only)", benefits: [] },
+          benefitApplications: [
+            {
+              appliedValue: 24,
+              promotionBenefit: {
+                rewardType: "points",
+                valueType: "multiplier",
+                value: 3,
+                certType: null,
+                pointsMultiplierBasis: "base_only",
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const result = getNetCostBreakdown(booking);
+    // basePoints = 80 (pretaxCost) * 10 (basePointRate) = 800
+    // 800 pts * (3-1) * 0.015 = 24 (promo savings)
+    // loyaltyPointsEarned = 800 * 0.015 = 12 (loyalty value)
+    // netCost = 100 - 24 - 12 = 64
+    expect(result.promoSavings).toBe(24);
+    expect(result.netCost).toBe(64);
+    expect(result.promotions[0].formula).toContain("(base rate only)");
+    expect(result.promotions[0].description).toContain("base-rate points only");
   });
 });
