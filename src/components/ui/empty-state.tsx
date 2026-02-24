@@ -3,6 +3,7 @@
 import { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 interface EmptyStateProps {
   icon: LucideIcon;
@@ -27,7 +28,10 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <div
-      className={`flex flex-col items-center justify-center py-12 px-4 text-center border-2 border-dashed rounded-lg bg-muted/30 ${className}`}
+      className={cn(
+        "flex flex-col items-center justify-center py-12 px-4 text-center border-2 border-dashed rounded-lg bg-muted/30",
+        className
+      )}
       data-testid={testId || "empty-state"}
     >
       <div className="bg-muted p-4 rounded-full mb-4">
@@ -38,11 +42,9 @@ export function EmptyState({
       {action && (
         <>
           {action.href ? (
-            <Link href={action.href}>
-              <Button variant="outline" data-testid={`${testId || "empty-state"}-action`}>
-                {action.label}
-              </Button>
-            </Link>
+            <Button asChild variant="outline" data-testid={`${testId || "empty-state"}-action`}>
+              <Link href={action.href}>{action.label}</Link>
+            </Button>
           ) : (
             <Button
               onClick={action.onClick}
