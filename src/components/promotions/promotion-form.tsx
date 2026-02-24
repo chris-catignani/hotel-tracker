@@ -131,6 +131,7 @@ function BenefitRow({ benefit, index, canRemove, onChange, onRemove }: BenefitRo
             value={benefit.rewardType}
             onValueChange={(v) => handleRewardTypeChange(v as PromotionRewardType)}
             options={[...BENEFIT_REWARD_TYPE_OPTIONS]}
+            data-testid={`benefit-reward-type-${index}`}
           />
         </div>
 
@@ -153,6 +154,7 @@ function BenefitRow({ benefit, index, canRemove, onChange, onRemove }: BenefitRo
                       { label: "Percentage (%)", value: "percentage" },
                     ]
               }
+              data-testid={`benefit-value-type-${index}`}
             />
           </div>
         )}
@@ -180,6 +182,7 @@ function BenefitRow({ benefit, index, canRemove, onChange, onRemove }: BenefitRo
               onValueChange={(v) => onChange(index, { ...benefit, certType: v || null })}
               options={[...CERT_OPTIONS]}
               placeholder="Select certificate type..."
+              data-testid={`benefit-cert-type-${index}`}
             />
           </div>
         )}
@@ -197,6 +200,7 @@ function BenefitRow({ benefit, index, canRemove, onChange, onRemove }: BenefitRo
                 { label: "Base + Elite Bonus", value: "base_and_elite" },
               ]}
               placeholder="Select basis..."
+              data-testid={`benefit-multiplier-basis-${index}`}
             />
           </div>
         )}
@@ -392,6 +396,7 @@ export function PromotionForm({
                 { label: "Loyalty", value: "loyalty" },
               ]}
               placeholder="Select type..."
+              data-testid="promotion-type-select"
             />
           </div>
 
@@ -434,6 +439,7 @@ export function PromotionForm({
                   value: String(chain.id),
                 }))}
                 placeholder="Select hotel chain..."
+                data-testid="hotel-chain-select"
               />
             </div>
           )}
@@ -457,6 +463,7 @@ export function PromotionForm({
                       })) || []),
                   ]}
                   placeholder="Select sub-brand..."
+                  data-testid="sub-brand-select"
                 />
               </div>
             )}
@@ -472,6 +479,7 @@ export function PromotionForm({
                   value: String(card.id),
                 }))}
                 placeholder="Select credit card..."
+                data-testid="credit-card-select"
               />
             </div>
           )}
@@ -487,6 +495,7 @@ export function PromotionForm({
                   value: String(portal.id),
                 }))}
                 placeholder="Select portal..."
+                data-testid="shopping-portal-select"
               />
             </div>
           )}

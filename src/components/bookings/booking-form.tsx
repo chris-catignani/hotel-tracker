@@ -318,6 +318,7 @@ export function BookingForm({
                   value: String(chain.id),
                 }))}
                 placeholder="Select hotel chain..."
+                data-testid="hotel-chain-select"
               />
             </div>
             <div className="space-y-2">
@@ -349,6 +350,7 @@ export function BookingForm({
                     })) || []),
                 ]}
                 placeholder="Select sub-brand..."
+                data-testid="sub-brand-select"
               />
             </div>
           ) : null}
@@ -364,6 +366,7 @@ export function BookingForm({
               }}
               options={[{ label: "Not specified", value: "none" }, ...BOOKING_SOURCE_OPTIONS]}
               placeholder="Where was this booked? (optional)"
+              data-testid="booking-source-select"
             />
           </div>
 
@@ -381,6 +384,7 @@ export function BookingForm({
                   })),
                 ]}
                 placeholder="Select agency..."
+                data-testid="ota-agency-select"
               />
             </div>
           )}
@@ -425,6 +429,7 @@ export function BookingForm({
               value={paymentType}
               onValueChange={(v) => handlePaymentTypeChange(v as PaymentType)}
               options={[...PAYMENT_TYPES]}
+              data-testid="payment-type-select"
             />
           </div>
 
@@ -469,6 +474,7 @@ export function BookingForm({
                   value={currency}
                   onValueChange={setCurrency}
                   options={CURRENCIES.map((c) => ({ label: c, value: c }))}
+                  data-testid="currency-select"
                 />
               </div>
               {currency !== "USD" && (
@@ -520,6 +526,7 @@ export function BookingForm({
                     )}
                     placeholder="Select certificate type..."
                     className="flex-1"
+                    data-testid={`certificate-select-${idx}`}
                   />
                   <Button
                     type="button"
@@ -552,6 +559,7 @@ export function BookingForm({
                   })),
                 ]}
                 placeholder="Select credit card..."
+                data-testid="credit-card-select"
               />
             </div>
             <div className="space-y-2">
@@ -567,6 +575,7 @@ export function BookingForm({
                   })),
                 ]}
                 placeholder="Select portal..."
+                data-testid="shopping-portal-select"
               />
             </div>
           </div>
@@ -635,6 +644,7 @@ export function BookingForm({
                   options={[{ label: "Select type...", value: "none" }, ...BENEFIT_TYPE_OPTIONS]}
                   placeholder="Select type..."
                   className="w-48"
+                  data-testid={`benefit-type-select-${idx}`}
                 />
                 {benefit.type === "other" && (
                   <Input

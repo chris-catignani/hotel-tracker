@@ -366,36 +366,34 @@ async function main() {
   for (const b of bookings) {
     const { certificates, benefits, ...bookingData } = b;
 
+    const payload = {
+      ...bookingData,
+      bookingSource: bookingData.bookingSource as BookingSourceType,
+      certificates: {
+        create: certificates.map((c) => ({ certType: c.certType as CertType })),
+      },
+      benefits: {
+        create: benefits.map((b) => ({
+          benefitType: b.benefitType as BenefitType,
+          dollarValue: b.dollarValue ? Number(b.dollarValue) : null,
+        })),
+      },
+    };
+
     await prisma.booking.upsert({
       where: { id: b.id },
       update: {
-        ...bookingData,
-        bookingSource: bookingData.bookingSource as BookingSourceType,
+        ...payload,
         certificates: {
           deleteMany: {},
-          create: certificates.map((c) => ({ certType: c.certType as CertType })),
+          ...payload.certificates,
         },
         benefits: {
           deleteMany: {},
-          create: benefits.map((b) => ({
-            benefitType: b.benefitType as BenefitType,
-            dollarValue: b.dollarValue,
-          })),
+          ...payload.benefits,
         },
       },
-      create: {
-        ...bookingData,
-        bookingSource: bookingData.bookingSource as BookingSourceType,
-        certificates: {
-          create: certificates.map((c) => ({ certType: c.certType as CertType })),
-        },
-        benefits: {
-          create: benefits.map((b) => ({
-            benefitType: b.benefitType as BenefitType,
-            dollarValue: b.dollarValue,
-          })),
-        },
-      },
+      create: payload,
     });
   }
 

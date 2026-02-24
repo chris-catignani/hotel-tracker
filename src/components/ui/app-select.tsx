@@ -6,27 +6,19 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 export interface AppSelectOption {
   label: string;
   value: string;
 }
 
-interface AppSelectProps {
+interface AppSelectProps extends React.HTMLAttributes<HTMLButtonElement> {
   value: string;
   onValueChange: (value: string) => void;
   options: AppSelectOption[];
   placeholder?: string;
   searchPlaceholder?: string;
   emptyMessage?: string;
-  className?: string;
   disabled?: boolean;
 }
 
@@ -39,6 +31,7 @@ export function AppSelect({
   emptyMessage = "No item found.",
   className,
   disabled,
+  ...props
 }: AppSelectProps) {
   const [open, setOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
@@ -69,24 +62,6 @@ export function AppSelect({
 
   const showSearch = options.length > 10;
 
-  // Fallback for tests: Radix Popover/Command often times out in jsdom/Vitest
-  if (process.env.NODE_ENV === "test") {
-    return (
-      <Select value={value} onValueChange={onValueChange} disabled={disabled}>
-        <SelectTrigger className={className}>
-          <SelectValue placeholder={placeholder} />
-        </SelectTrigger>
-        <SelectContent>
-          {sortedOptions.map((opt) => (
-            <SelectItem key={opt.value} value={opt.value}>
-              {opt.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    );
-  }
-
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -96,6 +71,7 @@ export function AppSelect({
           aria-expanded={open}
           className={cn("w-full justify-between font-normal", className)}
           disabled={disabled}
+          {...props}
         >
           <span className="truncate">{selectedOption ? selectedOption.label : placeholder}</span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -121,6 +97,8 @@ export function AppSelect({
               filteredOptions.map((option) => (
                 <div
                   key={option.value}
+                  role="option"
+                  aria-selected={value === option.value}
                   className={cn(
                     "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
                     value === option.value && "bg-accent text-accent-foreground"
