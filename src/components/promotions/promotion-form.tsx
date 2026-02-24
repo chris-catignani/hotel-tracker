@@ -619,11 +619,11 @@ export function PromotionForm({
                         type="number"
                         step="1"
                         min="1"
-                        value={tier.minStays}
+                        value={tier.minStays || ""}
                         onChange={(e) =>
                           handleTierChange(tierIndex, {
                             ...tier,
-                            minStays: parseInt(e.target.value) || 1,
+                            minStays: parseInt(e.target.value, 10) || 0,
                           })
                         }
                         data-testid={`tier-min-stays-${tierIndex}`}
