@@ -7,6 +7,9 @@ import {
   Prisma,
 } from "@prisma/client";
 
+export type PromotionUsage = { count: number; totalValue: number; totalBonusPoints: number };
+export type PromotionUsageMap = Map<number, PromotionUsage>;
+
 const BOOKING_INCLUDE = {
   hotelChain: { include: { pointType: true } },
   hotelChainSubBrand: true,
@@ -24,6 +27,8 @@ export interface MatchingBooking {
   hotelChainId: number | null;
   hotelChainSubBrandId: number | null;
   checkIn: Date | string;
+  createdAt: Date | string;
+  numNights: number;
   pretaxCost: string | number | Prisma.Decimal;
   totalCost: string | number | Prisma.Decimal;
   loyaltyPointsEarned: number | null;
@@ -51,6 +56,13 @@ interface MatchingPromotion {
   endDate: Date | null;
   minSpend: Prisma.Decimal | null;
   isActive: boolean;
+  isSingleUse: boolean;
+  maxRedemptionCount: number | null;
+  maxRedemptionValue: Prisma.Decimal | null;
+  maxTotalBonusPoints: number | null;
+  minNightsRequired: number | null;
+  nightsStackable: boolean;
+  bookByDate: Date | null;
   benefits: {
     id: number;
     rewardType: PromotionRewardType;
@@ -67,18 +79,22 @@ interface BenefitApplication {
   appliedValue: number;
 }
 
+interface MatchedPromotion {
+  promotionId: number;
+  appliedValue: number;
+  bonusPointsApplied: number;
+  benefitApplications: BenefitApplication[];
+}
+
 /**
  * Calculates which promotions match a given booking without side effects.
  */
 export function calculateMatchedPromotions(
   booking: MatchingBooking,
-  activePromotions: MatchingPromotion[]
+  activePromotions: MatchingPromotion[],
+  priorUsage?: PromotionUsageMap
 ) {
-  const matched: {
-    promotionId: number;
-    appliedValue: number;
-    benefitApplications: BenefitApplication[];
-  }[] = [];
+  const matched: MatchedPromotion[] = [];
 
   for (const promo of activePromotions) {
     let typeMatches = false;
@@ -120,6 +136,22 @@ export function calculateMatchedPromotions(
       continue;
     }
 
+    // Redemption constraint checks
+    const usage = priorUsage?.get(promo.id);
+    if (promo.isSingleUse && usage && usage.count >= 1) continue;
+    if (promo.maxRedemptionCount && usage && usage.count >= promo.maxRedemptionCount) continue;
+
+    // Book-by-date check
+    if (promo.bookByDate) {
+      const bookingCreatedDate = new Date(booking.createdAt);
+      if (bookingCreatedDate > new Date(promo.bookByDate)) continue;
+    }
+
+    // Minimum nights check
+    if (promo.minNightsRequired && booking.numNights < promo.minNightsRequired) {
+      continue;
+    }
+
     // Calculate applied value per benefit
     const centsPerPoint = booking.hotelChain?.pointType?.centsPerPoint
       ? Number(booking.hotelChain.pointType.centsPerPoint)
@@ -127,10 +159,12 @@ export function calculateMatchedPromotions(
 
     const benefitApplications: BenefitApplication[] = [];
     let totalAppliedValue = 0;
+    let totalBonusPoints = 0;
 
     for (const benefit of promo.benefits) {
       const benefitValue = Number(benefit.value);
       let appliedValue = 0;
+      let benefitBonusPoints = 0;
 
       switch (benefit.rewardType) {
         case PromotionRewardType.cashback:
@@ -150,8 +184,10 @@ export function calculateMatchedPromotions(
                 ? Number(booking.pretaxCost) * Number(baseRate)
                 : Number(booking.loyaltyPointsEarned || 0);
             appliedValue = basisPoints * (benefitValue - 1) * centsPerPoint;
+            benefitBonusPoints = Math.round(basisPoints * (benefitValue - 1));
           } else {
             appliedValue = benefitValue * centsPerPoint;
+            benefitBonusPoints = Math.round(benefitValue);
           }
           break;
         case PromotionRewardType.certificate:
@@ -165,11 +201,41 @@ export function calculateMatchedPromotions(
         appliedValue,
       });
       totalAppliedValue += appliedValue;
+      totalBonusPoints += benefitBonusPoints;
+    }
+
+    // Apply nightsStackable multiplier
+    if (promo.nightsStackable && promo.minNightsRequired && promo.minNightsRequired > 0) {
+      const multiplier = Math.floor(booking.numNights / promo.minNightsRequired);
+      totalAppliedValue *= multiplier;
+      totalBonusPoints *= multiplier;
+    }
+
+    // Apply maxRedemptionValue cap
+    if (promo.maxRedemptionValue) {
+      const maxValue = Number(promo.maxRedemptionValue);
+      const priorValue = usage?.totalValue ?? 0;
+      const remainingCapacity = Math.max(0, maxValue - priorValue);
+      if (remainingCapacity <= 0) continue;
+      totalAppliedValue = Math.min(totalAppliedValue, remainingCapacity);
+    }
+
+    // Apply maxTotalBonusPoints cap
+    if (promo.maxTotalBonusPoints) {
+      const priorPoints = usage?.totalBonusPoints ?? 0;
+      const remainingPoints = Math.max(0, promo.maxTotalBonusPoints - priorPoints);
+      if (remainingPoints <= 0) continue;
+      if (totalBonusPoints > remainingPoints) {
+        const ratio = remainingPoints / totalBonusPoints;
+        totalAppliedValue = totalAppliedValue * ratio;
+        totalBonusPoints = remainingPoints;
+      }
     }
 
     matched.push({
       promotionId: promo.id,
       appliedValue: totalAppliedValue,
+      bonusPointsApplied: totalBonusPoints,
       benefitApplications,
     });
   }
@@ -182,11 +248,7 @@ export function calculateMatchedPromotions(
  */
 async function applyMatchedPromotions(
   bookingId: number,
-  matched: {
-    promotionId: number;
-    appliedValue: number;
-    benefitApplications: BenefitApplication[];
-  }[]
+  matched: MatchedPromotion[]
 ): Promise<BookingPromotion[]> {
   // Delete existing auto-applied BookingPromotions for this booking
   await prisma.bookingPromotion.deleteMany({
@@ -204,6 +266,7 @@ async function applyMatchedPromotions(
         bookingId,
         promotionId: match.promotionId,
         appliedValue: match.appliedValue,
+        bonusPointsApplied: match.bonusPointsApplied > 0 ? match.bonusPointsApplied : null,
         autoApplied: true,
         benefitApplications: {
           create: match.benefitApplications.map((ba) => ({
@@ -220,8 +283,56 @@ async function applyMatchedPromotions(
 }
 
 /**
- * Re-evaluates and applies promotions for a list of booking IDs.
- * Minimizes database calls by fetching active promotions once.
+ * Fetches prior usage statistics for promotions with redemption constraints.
+ */
+async function fetchPromotionUsage(
+  promotionIds: number[],
+  excludeBookingId?: number
+): Promise<PromotionUsageMap> {
+  const usageMap: PromotionUsageMap = new Map();
+
+  if (promotionIds.length === 0) return usageMap;
+
+  // Get count and totalValue for each promotion
+  const countAndValue = await prisma.bookingPromotion.groupBy({
+    by: ["promotionId"],
+    where: {
+      promotionId: { in: promotionIds },
+      ...(excludeBookingId ? { bookingId: { not: excludeBookingId } } : {}),
+    },
+    _count: { id: true },
+    _sum: { appliedValue: true },
+  });
+
+  // Get totalBonusPoints for each promotion
+  const bonusPoints = await prisma.bookingPromotion.findMany({
+    where: {
+      promotionId: { in: promotionIds },
+      ...(excludeBookingId ? { bookingId: { not: excludeBookingId } } : {}),
+    },
+    select: { promotionId: true, bonusPointsApplied: true },
+  });
+
+  const bonusPointsByPromo = new Map<number, number>();
+  for (const bp of bonusPoints) {
+    const current = bonusPointsByPromo.get(bp.promotionId) ?? 0;
+    bonusPointsByPromo.set(bp.promotionId, current + (bp.bonusPointsApplied ?? 0));
+  }
+
+  for (const row of countAndValue) {
+    usageMap.set(row.promotionId, {
+      count: row._count.id,
+      totalValue: Number(row._sum.appliedValue ?? 0),
+      totalBonusPoints: bonusPointsByPromo.get(row.promotionId) ?? 0,
+    });
+  }
+
+  return usageMap;
+}
+
+/**
+ * Re-evaluates and applies promotions for a list of booking IDs sequentially.
+ * Processes bookings one at a time to ensure accurate redemption constraint checks.
  */
 export async function reevaluateBookings(bookingIds: number[]): Promise<void> {
   if (bookingIds.length === 0) return;
@@ -236,12 +347,19 @@ export async function reevaluateBookings(bookingIds: number[]): Promise<void> {
     include: BOOKING_INCLUDE,
   });
 
-  await Promise.all(
-    bookings.map((booking) => {
-      const matched = calculateMatchedPromotions(booking, activePromotions);
-      return applyMatchedPromotions(booking.id, matched);
-    })
-  );
+  // Get all promotion IDs with constraints
+  const constrainedPromoIds = activePromotions
+    .filter(
+      (p) => p.isSingleUse || p.maxRedemptionCount || p.maxRedemptionValue || p.maxTotalBonusPoints
+    )
+    .map((p) => p.id);
+
+  // Process sequentially to ensure accurate constraint checks
+  for (const booking of bookings) {
+    const priorUsage = await fetchPromotionUsage(constrainedPromoIds, booking.id);
+    const matched = calculateMatchedPromotions(booking, activePromotions, priorUsage);
+    await applyMatchedPromotions(booking.id, matched);
+  }
 }
 
 /**
@@ -262,7 +380,17 @@ export async function matchPromotionsForBooking(bookingId: number): Promise<Book
     include: PROMOTIONS_INCLUDE,
   });
 
-  const matched = calculateMatchedPromotions(booking, activePromotions);
+  // Get all promotion IDs with constraints
+  const constrainedPromoIds = activePromotions
+    .filter(
+      (p) => p.isSingleUse || p.maxRedemptionCount || p.maxRedemptionValue || p.maxTotalBonusPoints
+    )
+    .map((p) => p.id);
+
+  // Fetch prior usage excluding current booking
+  const priorUsage = await fetchPromotionUsage(constrainedPromoIds, bookingId);
+
+  const matched = calculateMatchedPromotions(booking, activePromotions, priorUsage);
   return applyMatchedPromotions(bookingId, matched);
 }
 

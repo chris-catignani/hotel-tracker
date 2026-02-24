@@ -44,6 +44,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       startDate,
       endDate,
       isActive,
+      isSingleUse,
+      maxRedemptionCount,
+      maxRedemptionValue,
+      maxTotalBonusPoints,
+      minNightsRequired,
+      nightsStackable,
+      bookByDate,
     } = body;
 
     const data: Record<string, unknown> = {};
@@ -59,6 +66,17 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (startDate !== undefined) data.startDate = startDate ? new Date(startDate) : null;
     if (endDate !== undefined) data.endDate = endDate ? new Date(endDate) : null;
     if (isActive !== undefined) data.isActive = isActive;
+    if (isSingleUse !== undefined) data.isSingleUse = isSingleUse;
+    if (maxRedemptionCount !== undefined)
+      data.maxRedemptionCount = maxRedemptionCount != null ? Number(maxRedemptionCount) : null;
+    if (maxRedemptionValue !== undefined)
+      data.maxRedemptionValue = maxRedemptionValue != null ? Number(maxRedemptionValue) : null;
+    if (maxTotalBonusPoints !== undefined)
+      data.maxTotalBonusPoints = maxTotalBonusPoints != null ? Number(maxTotalBonusPoints) : null;
+    if (minNightsRequired !== undefined)
+      data.minNightsRequired = minNightsRequired != null ? Number(minNightsRequired) : null;
+    if (nightsStackable !== undefined) data.nightsStackable = nightsStackable;
+    if (bookByDate !== undefined) data.bookByDate = bookByDate ? new Date(bookByDate) : null;
 
     // Replace benefits wholesale inside a transaction: delete all then recreate
     if (benefits !== undefined) {
@@ -68,6 +86,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
           valueType: b.valueType,
           value: Number(b.value),
           certType: b.certType || null,
+          pointsMultiplierBasis: b.pointsMultiplierBasis || null,
           sortOrder: b.sortOrder ?? i,
         })),
       };

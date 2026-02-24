@@ -47,6 +47,13 @@ export async function POST(request: NextRequest) {
       startDate,
       endDate,
       isActive,
+      isSingleUse,
+      maxRedemptionCount,
+      maxRedemptionValue,
+      maxTotalBonusPoints,
+      minNightsRequired,
+      nightsStackable,
+      bookByDate,
     } = body;
 
     const promotion = await prisma.promotion.create({
@@ -61,12 +68,20 @@ export async function POST(request: NextRequest) {
         startDate: startDate ? new Date(startDate) : null,
         endDate: endDate ? new Date(endDate) : null,
         isActive: isActive !== undefined ? isActive : true,
+        isSingleUse: isSingleUse ?? false,
+        maxRedemptionCount: maxRedemptionCount != null ? Number(maxRedemptionCount) : null,
+        maxRedemptionValue: maxRedemptionValue != null ? Number(maxRedemptionValue) : null,
+        maxTotalBonusPoints: maxTotalBonusPoints != null ? Number(maxTotalBonusPoints) : null,
+        minNightsRequired: minNightsRequired != null ? Number(minNightsRequired) : null,
+        nightsStackable: nightsStackable ?? false,
+        bookByDate: bookByDate ? new Date(bookByDate) : null,
         benefits: {
           create: ((benefits as PromotionBenefitFormData[]) || []).map((b, i) => ({
             rewardType: b.rewardType,
             valueType: b.valueType,
             value: Number(b.value),
             certType: b.certType || null,
+            pointsMultiplierBasis: b.pointsMultiplierBasis || null,
             sortOrder: b.sortOrder ?? i,
           })),
         },
