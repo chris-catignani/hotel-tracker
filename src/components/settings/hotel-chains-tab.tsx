@@ -14,7 +14,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AppSelect } from "@/components/ui/app-select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -209,18 +215,19 @@ export function HotelChainsTab() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="hotel-point-type">Point Type</Label>
-                <AppSelect
-                  value={pointTypeId}
-                  onValueChange={setPointTypeId}
-                  options={[
-                    { label: "None", value: "none" },
-                    ...pointTypes.map((pt) => ({
-                      label: pt.name,
-                      value: String(pt.id),
-                    })),
-                  ]}
-                  placeholder="Select point type..."
-                />
+                <Select value={pointTypeId} onValueChange={setPointTypeId}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select point type..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {pointTypes.map((pt) => (
+                      <SelectItem key={pt.id} value={String(pt.id)}>
+                        {pt.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <DialogFooter>
@@ -271,18 +278,19 @@ export function HotelChainsTab() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-hotel-point-type">Point Type</Label>
-              <AppSelect
-                value={editPointTypeId}
-                onValueChange={setEditPointTypeId}
-                options={[
-                  { label: "None", value: "none" },
-                  ...pointTypes.map((pt) => ({
-                    label: pt.name,
-                    value: String(pt.id),
-                  })),
-                ]}
-                placeholder="Select point type..."
-              />
+              <Select value={editPointTypeId} onValueChange={setEditPointTypeId}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select point type..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  {pointTypes.map((pt) => (
+                    <SelectItem key={pt.id} value={String(pt.id)}>
+                      {pt.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>
