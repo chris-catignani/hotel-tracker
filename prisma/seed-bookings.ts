@@ -2,8 +2,34 @@ import { PrismaClient, BookingSourceType, CertType, BenefitType } from "@prisma/
 
 const prisma = new PrismaClient();
 
+interface BookingSeedData {
+  id: number;
+  hotelChainId: number;
+  hotelChainSubBrandId: number | null;
+  propertyName: string;
+  checkIn: string;
+  checkOut: string;
+  numNights: number;
+  pretaxCost: string;
+  taxAmount: string;
+  totalCost: string;
+  creditCardId: number | null;
+  shoppingPortalId: number | null;
+  portalCashbackRate: string | null;
+  portalCashbackOnTotal: boolean;
+  loyaltyPointsEarned: number | null;
+  pointsRedeemed: number | null;
+  currency: string;
+  originalAmount: string | null;
+  bookingSource: string | null;
+  otaAgencyId: number | null;
+  notes: string | null;
+  certificates: { certType: string }[];
+  benefits: { benefitType: string; dollarValue?: number | string | null }[];
+}
+
 async function main() {
-  const bookings = [
+  const bookings: BookingSeedData[] = [
     {
       id: 16,
       hotelChainId: 2,
