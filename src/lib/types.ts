@@ -71,12 +71,7 @@ export interface OtaAgency {
 // ---------------------------------------------------------------------------
 
 export type PromotionType = "credit_card" | "portal" | "loyalty";
-export type PromotionRewardType =
-  | "points_multiplier"
-  | "fixed_points"
-  | "cashback"
-  | "certificate"
-  | "eqn";
+export type PromotionRewardType = "points" | "cashback" | "certificate" | "eqn";
 export type PromotionBenefitValueType = "fixed" | "percentage" | "multiplier";
 
 export interface PromotionBenefit {

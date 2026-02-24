@@ -202,8 +202,7 @@ enum PromotionType {
 }
 
 enum PromotionRewardType {
-  points_multiplier
-  fixed_points
+  points
   cashback
   certificate
   eqn

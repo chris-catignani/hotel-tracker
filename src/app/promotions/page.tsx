@@ -47,10 +47,8 @@ function formatBenefit(benefit: PromotionBenefit): string {
       return benefit.valueType === "percentage"
         ? `${num}% cashback`
         : `$${num.toFixed(2)} cashback`;
-    case "points_multiplier":
-      return `${num}x points`;
-    case "fixed_points":
-      return `${num.toLocaleString()} pts`;
+    case "points":
+      return benefit.valueType === "multiplier" ? `${num}x points` : `${num.toLocaleString()} pts`;
     case "certificate":
       return `${num} cert${num !== 1 ? "s" : ""}`;
     case "eqn":

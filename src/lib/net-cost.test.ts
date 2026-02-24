@@ -94,7 +94,7 @@ describe("net-cost", () => {
             {
               appliedValue: 15,
               promotionBenefit: {
-                rewardType: "points_multiplier",
+                rewardType: "points",
                 valueType: "multiplier",
                 value: 2,
                 certType: null,
@@ -114,7 +114,7 @@ describe("net-cost", () => {
     expect(result.promotions[0].description).toContain("pre-tax cost");
   });
 
-  it("should apply fixed_points promotions", () => {
+  it("should apply fixed points promotions", () => {
     const booking: NetCostBooking = {
       ...mockBaseBooking,
       bookingPromotions: [
@@ -125,7 +125,7 @@ describe("net-cost", () => {
             {
               appliedValue: 15,
               promotionBenefit: {
-                rewardType: "fixed_points",
+                rewardType: "points",
                 valueType: "fixed",
                 value: 1000,
                 certType: null,
@@ -189,7 +189,7 @@ describe("net-cost", () => {
             {
               appliedValue: 15,
               promotionBenefit: {
-                rewardType: "fixed_points",
+                rewardType: "points",
                 valueType: "fixed",
                 value: 1000,
                 certType: null,

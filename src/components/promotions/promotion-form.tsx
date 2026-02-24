@@ -59,23 +59,15 @@ interface PromotionFormProps {
   submitLabel: string;
 }
 
-function getDefaultValueType(rewardType: PromotionRewardType): PromotionBenefitValueType {
-  switch (rewardType) {
-    case "cashback":
-      return "fixed";
-    case "points_multiplier":
-      return "multiplier";
-    default:
-      return "fixed";
-  }
+function getDefaultValueType(_rewardType: PromotionRewardType): PromotionBenefitValueType {
+  return "fixed";
 }
 
 function getValuePlaceholder(
   rewardType: PromotionRewardType,
   valueType: PromotionBenefitValueType
 ): string {
-  if (rewardType === "points_multiplier") return "e.g. 2";
-  if (rewardType === "fixed_points") return "e.g. 1000";
+  if (rewardType === "points") return valueType === "multiplier" ? "e.g. 2" : "e.g. 1000";
   if (rewardType === "certificate") return "e.g. 1";
   if (rewardType === "eqn") return "e.g. 1";
   // cashback
@@ -87,8 +79,7 @@ function getValueLabel(
   rewardType: PromotionRewardType,
   valueType: PromotionBenefitValueType
 ): string {
-  if (rewardType === "points_multiplier") return "Multiplier (x)";
-  if (rewardType === "fixed_points") return "Points";
+  if (rewardType === "points") return valueType === "multiplier" ? "Multiplier (x)" : "Points";
   if (rewardType === "certificate") return "Number of Certificates";
   if (rewardType === "eqn") return "Bonus EQNs";
   // cashback
@@ -105,7 +96,7 @@ interface BenefitRowProps {
 }
 
 function BenefitRow({ benefit, index, canRemove, onChange, onRemove }: BenefitRowProps) {
-  const showValueType = benefit.rewardType === "cashback";
+  const showValueType = benefit.rewardType === "cashback" || benefit.rewardType === "points";
   const showCertType = benefit.rewardType === "certificate";
   const valuePlaceholder = getValuePlaceholder(benefit.rewardType, benefit.valueType);
   const valueLabel = getValueLabel(benefit.rewardType, benefit.valueType);
@@ -169,8 +160,17 @@ function BenefitRow({ benefit, index, canRemove, onChange, onRemove }: BenefitRo
                 <SelectValue placeholder="Select value type..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="fixed">Fixed ($)</SelectItem>
-                <SelectItem value="percentage">Percentage (%)</SelectItem>
+                {benefit.rewardType === "points" ? (
+                  <>
+                    <SelectItem value="fixed">Fixed (pts)</SelectItem>
+                    <SelectItem value="multiplier">Multiplier (x)</SelectItem>
+                  </>
+                ) : (
+                  <>
+                    <SelectItem value="fixed">Fixed ($)</SelectItem>
+                    <SelectItem value="percentage">Percentage (%)</SelectItem>
+                  </>
+                )}
               </SelectContent>
             </Select>
           </div>

@@ -88,7 +88,7 @@ test.describe("Promotions multi-benefit via API", () => {
         benefits: [
           { rewardType: "cashback", valueType: "fixed", value: 10, certType: null, sortOrder: 0 },
           {
-            rewardType: "fixed_points",
+            rewardType: "points",
             valueType: "fixed",
             value: 500,
             certType: null,
@@ -108,7 +108,7 @@ test.describe("Promotions multi-benefit via API", () => {
     expect(promo.benefits[0].rewardType).toBe("cashback");
     expect(promo.benefits[0].valueType).toBe("fixed");
     expect(Number(promo.benefits[0].value)).toBe(10);
-    expect(promo.benefits[1].rewardType).toBe("fixed_points");
+    expect(promo.benefits[1].rewardType).toBe("points");
     expect(Number(promo.benefits[1].value)).toBe(500);
     expect(promo.benefits[2].rewardType).toBe("eqn");
     expect(Number(promo.benefits[2].value)).toBe(1);
@@ -146,7 +146,7 @@ test.describe("Promotions multi-benefit via API", () => {
             sortOrder: 0,
           },
           {
-            rewardType: "fixed_points",
+            rewardType: "points",
             valueType: "fixed",
             value: 1000,
             certType: null,
@@ -165,7 +165,7 @@ test.describe("Promotions multi-benefit via API", () => {
     expect(updated.benefits[0].rewardType).toBe("cashback");
     expect(updated.benefits[0].valueType).toBe("percentage");
     expect(Number(updated.benefits[0].value)).toBe(10);
-    expect(updated.benefits[1].rewardType).toBe("fixed_points");
+    expect(updated.benefits[1].rewardType).toBe("points");
 
     // Cleanup
     await request.delete(`/api/promotions/${created.id}`);

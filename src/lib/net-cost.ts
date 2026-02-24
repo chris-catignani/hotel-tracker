@@ -142,24 +142,23 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
             descriptionLines.push(`A ${bValue}% cashback on the total cost of the booking.`);
           }
           break;
-        case "points_multiplier": {
+        case "points": {
           const centsStr = formatCents(hotelCentsPerPoint);
-          formulaLines.push(
-            `${(booking.loyaltyPointsEarned || 0).toLocaleString()} pts (from pre-tax cost) × (${bValue} - 1) × ${centsStr}¢ = ${formatCurrency(bApplied)}`
-          );
-          descriptionLines.push(
-            `A ${bValue}x points multiplier on earned loyalty points (based on pre-tax cost), valued at ${centsStr}¢ each.`
-          );
-          break;
-        }
-        case "fixed_points": {
-          const centsStr = formatCents(hotelCentsPerPoint);
-          formulaLines.push(
-            `${bValue.toLocaleString()} bonus pts × ${centsStr}¢ = ${formatCurrency(bApplied)}`
-          );
-          descriptionLines.push(
-            `${bValue.toLocaleString()} fixed bonus points, valued at ${centsStr}¢ each.`
-          );
+          if (b.valueType === "multiplier") {
+            formulaLines.push(
+              `${(booking.loyaltyPointsEarned || 0).toLocaleString()} pts (from pre-tax cost) × (${bValue} - 1) × ${centsStr}¢ = ${formatCurrency(bApplied)}`
+            );
+            descriptionLines.push(
+              `A ${bValue}x points multiplier on earned loyalty points (based on pre-tax cost), valued at ${centsStr}¢ each.`
+            );
+          } else {
+            formulaLines.push(
+              `${bValue.toLocaleString()} bonus pts × ${centsStr}¢ = ${formatCurrency(bApplied)}`
+            );
+            descriptionLines.push(
+              `${bValue.toLocaleString()} fixed bonus points, valued at ${centsStr}¢ each.`
+            );
+          }
           break;
         }
         case "certificate":

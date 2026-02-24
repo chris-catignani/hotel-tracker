@@ -137,12 +137,13 @@ export function calculateMatchedPromotions(
             appliedValue = (Number(booking.totalCost) * benefitValue) / 100;
           }
           break;
-        case PromotionRewardType.points_multiplier:
-          appliedValue =
-            Number(booking.loyaltyPointsEarned || 0) * (benefitValue - 1) * centsPerPoint;
-          break;
-        case PromotionRewardType.fixed_points:
-          appliedValue = benefitValue * centsPerPoint;
+        case PromotionRewardType.points:
+          if (benefit.valueType === PromotionBenefitValueType.multiplier) {
+            appliedValue =
+              Number(booking.loyaltyPointsEarned || 0) * (benefitValue - 1) * centsPerPoint;
+          } else {
+            appliedValue = benefitValue * centsPerPoint;
+          }
           break;
         case PromotionRewardType.certificate:
         case PromotionRewardType.eqn:

@@ -60,8 +60,7 @@ export const CATEGORY_LABELS: Record<string, string> = {
 
 export const BENEFIT_REWARD_TYPE_OPTIONS = [
   { value: "cashback", label: "Cashback" },
-  { value: "fixed_points", label: "Fixed Points" },
-  { value: "points_multiplier", label: "Points Multiplier" },
+  { value: "points", label: "Points" },
   { value: "certificate", label: "Certificate" },
   { value: "eqn", label: "Bonus EQNs" },
 ] as const;

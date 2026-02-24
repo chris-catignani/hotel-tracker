@@ -126,7 +126,7 @@ describe("promotion-matching", () => {
       benefits: [
         {
           id: 10,
-          rewardType: PromotionRewardType.points_multiplier,
+          rewardType: PromotionRewardType.points,
           valueType: PromotionBenefitValueType.multiplier,
           value: new Prisma.Decimal(3),
           certType: null,
@@ -140,12 +140,12 @@ describe("promotion-matching", () => {
     expect(matched[0].benefitApplications[0].appliedValue).toBe(30);
   });
 
-  it("should calculate fixed_points value correctly", () => {
+  it("should calculate fixed points value correctly", () => {
     const promo = makePromo({
       benefits: [
         {
           id: 10,
-          rewardType: PromotionRewardType.fixed_points,
+          rewardType: PromotionRewardType.points,
           valueType: PromotionBenefitValueType.fixed,
           value: new Prisma.Decimal(2000),
           certType: null,
@@ -199,7 +199,7 @@ describe("promotion-matching", () => {
         },
         {
           id: 11,
-          rewardType: PromotionRewardType.fixed_points,
+          rewardType: PromotionRewardType.points,
           valueType: PromotionBenefitValueType.fixed,
           value: new Prisma.Decimal(1000),
           certType: null,
