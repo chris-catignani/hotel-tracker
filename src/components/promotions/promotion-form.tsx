@@ -375,8 +375,8 @@ export function PromotionForm({
 
   const handleAddTier = () => {
     setTiers((prev) => {
-      const lastMax = prev[prev.length - 1]?.maxStays;
-      const nextMin = lastMax != null ? lastMax + 1 : (prev[prev.length - 1]?.minStays ?? 0) + 1;
+      const last = prev[prev.length - 1];
+      const nextMin = last != null ? (last.maxStays ?? last.minStays) + 1 : 1;
       return [...prev, { minStays: nextMin, maxStays: null, benefits: [{ ...DEFAULT_BENEFIT }] }];
     });
   };
@@ -419,17 +419,17 @@ export function PromotionForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const withSortOrder = (bs: PromotionBenefitFormData[]) =>
+      bs.map((b, i) => ({ ...b, sortOrder: i }));
+
     const body: PromotionFormData = {
       name,
       type,
-      benefits: isTiered ? [] : benefits.map((b, i) => ({ ...b, sortOrder: i })),
+      benefits: isTiered ? [] : withSortOrder(benefits),
       tiers: isTiered
         ? [...tiers]
             .sort((a, b) => a.minStays - b.minStays)
-            .map((tier) => ({
-              ...tier,
-              benefits: tier.benefits.map((b, i) => ({ ...b, sortOrder: i })),
-            }))
+            .map((tier) => ({ ...tier, benefits: withSortOrder(tier.benefits) }))
         : [],
       isActive,
     };
