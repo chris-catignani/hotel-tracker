@@ -246,7 +246,7 @@ export default function DashboardPage() {
     return sum + Number(b.totalCost) + pointsRedeemedValue + certsValue;
   }, 0);
 
-  const recentBookings = bookings.slice(0, 10);
+  const recentBookings = bookings.slice(0, 5);
 
   return (
     <div className="space-y-6">
