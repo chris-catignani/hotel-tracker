@@ -117,7 +117,18 @@ export function BookingForm({
   const [notes, setNotes] = useState("");
 
   const handleCheckInChange = (date?: Date) => {
-    setCheckIn(date ? format(date, "yyyy-MM-dd") : "");
+    const newCheckInStr = date ? format(date, "yyyy-MM-dd") : "";
+    setCheckIn(newCheckInStr);
+
+    if (date) {
+      const currentCheckOut = checkOut ? new Date(checkOut) : null;
+      const minCheckOut = new Date(date);
+      minCheckOut.setDate(minCheckOut.getDate() + 1);
+
+      if (!currentCheckOut || currentCheckOut <= date) {
+        setCheckOut(format(minCheckOut, "yyyy-MM-dd"));
+      }
+    }
   };
 
   const handleCheckOutChange = (date?: Date) => {

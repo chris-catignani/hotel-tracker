@@ -68,7 +68,7 @@ describe("BookingForm", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(calculatePointsFromChain).mockReturnValue(1000);
+    vi.mocked(calculatePointsFromChain).mockReturnValue("1000");
     // Mock global fetch
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -101,6 +101,7 @@ describe("BookingForm", () => {
 
     await act(async () => {
       await user.type(checkInInput, "2026-03-01");
+      await user.clear(checkOutInput);
       await user.type(checkOutInput, "2026-03-05");
     });
 
