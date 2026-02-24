@@ -42,16 +42,24 @@ export function SubBrandBreakdown({ bookings }: SubBrandBreakdownProps) {
     const counts: Record<string, number> = {};
 
     bookings.forEach((booking) => {
-      const subBrandName = booking.hotelChainSubBrand?.name || "Other / Independent";
+      const subBrandName = booking.hotelChainSubBrand?.name || "Other";
       const value = mode === "stays" ? 1 : booking.numNights;
       counts[subBrandName] = (counts[subBrandName] || 0) + value;
     });
 
-    const chartData = Object.entries(counts)
+    const sortedEntries = Object.entries(counts)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value);
 
-    return chartData;
+    if (sortedEntries.length <= 10) {
+      return sortedEntries;
+    }
+
+    const top9 = sortedEntries.slice(0, 9);
+    const others = sortedEntries.slice(9);
+    const othersValue = others.reduce((sum, item) => sum + item.value, 0);
+
+    return [...top9, { name: "Other", value: othersValue }];
   }, [bookings, mode]);
 
   const total = data.reduce((sum, item) => sum + item.value, 0);

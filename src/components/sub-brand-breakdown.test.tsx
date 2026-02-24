@@ -52,9 +52,7 @@ describe("SubBrandBreakdown", () => {
     // Default mode is "stays"
     expect(screen.getByTestId("pie-slice-courtyard")).toHaveTextContent("Courtyard: 2");
     expect(screen.getByTestId("pie-slice-residence-inn")).toHaveTextContent("Residence Inn: 1");
-    expect(screen.getByTestId("pie-slice-other-/-independent")).toHaveTextContent(
-      "Other / Independent: 1"
-    );
+    expect(screen.getByTestId("pie-slice-other")).toHaveTextContent("Other: 1");
   });
 
   it("calculates nights breakdown correctly", async () => {
@@ -68,9 +66,23 @@ describe("SubBrandBreakdown", () => {
 
     expect(screen.getByTestId("pie-slice-courtyard")).toHaveTextContent("Courtyard: 4");
     expect(screen.getByTestId("pie-slice-residence-inn")).toHaveTextContent("Residence Inn: 2");
-    expect(screen.getByTestId("pie-slice-other-/-independent")).toHaveTextContent(
-      "Other / Independent: 1"
-    );
+    expect(screen.getByTestId("pie-slice-other")).toHaveTextContent("Other: 1");
+  });
+
+  it("limits to 10 items and groups remaining into 'Other'", async () => {
+    const manyBookings = Array.from({ length: 15 }, (_, i) => ({
+      id: i,
+      numNights: 1,
+      hotelChainSubBrand: { id: i, name: `Brand ${i + 1}` },
+    }));
+
+    await act(async () => {
+      render(<SubBrandBreakdown bookings={manyBookings} />);
+    });
+
+    const slices = screen.getAllByTestId(/pie-slice-/);
+    expect(slices).toHaveLength(10);
+    expect(screen.getByTestId("pie-slice-other")).toHaveTextContent("Other: 6");
   });
 
   it("shows empty state when no bookings", async () => {
