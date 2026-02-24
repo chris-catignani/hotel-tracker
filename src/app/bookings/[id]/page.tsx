@@ -24,6 +24,16 @@ import { CostBreakdown } from "@/components/cost-breakdown";
 // Types
 // ---------------------------------------------------------------------------
 
+interface BookingPromotionBenefit {
+  appliedValue: string | number;
+  promotionBenefit: {
+    rewardType: string;
+    valueType: string;
+    value: string | number;
+    certType: string | null;
+  };
+}
+
 interface BookingPromotion {
   id: number;
   bookingId: number;
@@ -32,12 +42,16 @@ interface BookingPromotion {
   autoApplied: boolean;
   verified: boolean;
   promotion: {
-    id: number;
     name: string;
     type: string;
-    valueType: string;
-    value: string | number;
+    benefits: {
+      rewardType: string;
+      valueType: string;
+      value: string | number;
+      certType: string | null;
+    }[];
   };
+  benefitApplications: BookingPromotionBenefit[];
 }
 
 interface BookingCertificate {
@@ -53,7 +67,7 @@ interface BookingBenefit {
 }
 
 // Ensure Booking interface matches NetCostBooking for the breakdown logic
-interface Booking extends NetCostBooking {
+interface Booking extends Omit<NetCostBooking, "bookingPromotions"> {
   id: number;
   hotelChainId: number;
   hotelChainSubBrand: { id: number; name: string } | null;
@@ -71,6 +85,7 @@ interface Booking extends NetCostBooking {
   otaAgency: { id: number; name: string } | null;
   certificates: BookingCertificate[];
   benefits: BookingBenefit[];
+  bookingPromotions: BookingPromotion[];
 }
 
 // ---------------------------------------------------------------------------

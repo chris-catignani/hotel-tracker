@@ -20,6 +20,8 @@ npm run test:e2e     # Run functional E2E tests (Playwright)
 
 After schema changes: restart the dev server to pick up the new Prisma client.
 
+**Schema change workflow:** When a task requires Prisma schema changes, always show the proposed schema diff to the user for review and approval _before_ implementing the rest of the code (API routes, types, UI, tests). This prevents rework when the design needs adjustment.
+
 ## Architecture
 
 **Framework:** Next.js 16 App Router, TypeScript, Prisma 6, PostgreSQL, Tailwind CSS 4, shadcn/ui

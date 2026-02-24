@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { PromotionType } from "@prisma/client";
 import { apiError } from "@/lib/api-error";
 import { matchPromotionsForAffectedBookings } from "@/lib/promotion-matching";
+import { PromotionBenefitFormData } from "@/lib/types";
 
 export async function GET(request: NextRequest) {
   try {
@@ -21,6 +22,7 @@ export async function GET(request: NextRequest) {
         hotelChainSubBrand: true,
         creditCard: true,
         shoppingPortal: true,
+        benefits: { orderBy: { sortOrder: "asc" } },
       },
     });
 
@@ -36,8 +38,7 @@ export async function POST(request: NextRequest) {
     const {
       name,
       type,
-      valueType,
-      value,
+      benefits,
       hotelChainId,
       hotelChainSubBrandId,
       creditCardId,
@@ -52,8 +53,6 @@ export async function POST(request: NextRequest) {
       data: {
         name,
         type,
-        valueType,
-        value: Number(value),
         hotelChainId: hotelChainId ? Number(hotelChainId) : null,
         hotelChainSubBrandId: hotelChainSubBrandId ? Number(hotelChainSubBrandId) : null,
         creditCardId: creditCardId ? Number(creditCardId) : null,
@@ -62,6 +61,18 @@ export async function POST(request: NextRequest) {
         startDate: startDate ? new Date(startDate) : null,
         endDate: endDate ? new Date(endDate) : null,
         isActive: isActive !== undefined ? isActive : true,
+        benefits: {
+          create: ((benefits as PromotionBenefitFormData[]) || []).map((b, i) => ({
+            rewardType: b.rewardType,
+            valueType: b.valueType,
+            value: Number(b.value),
+            certType: b.certType || null,
+            sortOrder: b.sortOrder ?? i,
+          })),
+        },
+      },
+      include: {
+        benefits: { orderBy: { sortOrder: "asc" } },
       },
     });
 

@@ -15,12 +15,18 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 
+interface PromotionBenefit {
+  rewardType: string;
+  valueType: string;
+  value: string;
+  certType: string | null;
+}
+
 interface Promotion {
   id: number;
   name: string;
   type: "credit_card" | "portal" | "loyalty";
-  valueType: "fixed" | "percentage" | "points_multiplier";
-  value: string;
+  benefits: PromotionBenefit[];
   hotelChainId: number | null;
   creditCardId: number | null;
   shoppingPortalId: number | null;
@@ -34,18 +40,27 @@ interface Promotion {
   shoppingPortal: { id: number; name: string } | null;
 }
 
-function formatValue(valueType: string, value: string): string {
-  const num = parseFloat(value);
-  switch (valueType) {
-    case "fixed":
-      return `$${num.toFixed(2)}`;
-    case "percentage":
-      return `${num}%`;
-    case "points_multiplier":
-      return `${num}x`;
+function formatBenefit(benefit: PromotionBenefit): string {
+  const num = parseFloat(benefit.value);
+  switch (benefit.rewardType) {
+    case "cashback":
+      return benefit.valueType === "percentage"
+        ? `${num}% cashback`
+        : `$${num.toFixed(2)} cashback`;
+    case "points":
+      return benefit.valueType === "multiplier" ? `${num}x points` : `${num.toLocaleString()} pts`;
+    case "certificate":
+      return `${num} cert${num !== 1 ? "s" : ""}`;
+    case "eqn":
+      return `${num} EQN${num !== 1 ? "s" : ""}`;
     default:
       return String(num);
   }
+}
+
+function formatBenefits(benefits: PromotionBenefit[]): string {
+  if (!benefits || benefits.length === 0) return "—";
+  return benefits.map(formatBenefit).join(", ");
 }
 
 function formatDateRange(startDate: string | null, endDate: string | null): string {
@@ -184,7 +199,7 @@ export default function PromotionsPage() {
                     <TableCell>
                       <Badge variant={typeBadgeVariant(promo.type)}>{typeLabel(promo.type)}</Badge>
                     </TableCell>
-                    <TableCell>{formatValue(promo.valueType, promo.value)}</TableCell>
+                    <TableCell>{formatBenefits(promo.benefits)}</TableCell>
                     <TableCell>{getLinkedName(promo)}</TableCell>
                     <TableCell>{formatDateRange(promo.startDate, promo.endDate)}</TableCell>
                     <TableCell>

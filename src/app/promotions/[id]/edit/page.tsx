@@ -3,7 +3,13 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { PromotionForm } from "@/components/promotions/promotion-form";
-import { Promotion, PromotionFormData, PromotionType, PromotionValueType } from "@/lib/types";
+import {
+  Promotion,
+  PromotionFormData,
+  PromotionType,
+  PromotionRewardType,
+  PromotionBenefitValueType,
+} from "@/lib/types";
 
 function toDateInputValue(dateStr: string | null): string {
   if (!dateStr) return "";
@@ -32,8 +38,13 @@ export default function EditPromotionPage() {
         setInitialData({
           name: promo.name,
           type: promo.type as PromotionType,
-          valueType: promo.valueType as PromotionValueType,
-          value: parseFloat(String(promo.value)),
+          benefits: (promo.benefits || []).map((b, i) => ({
+            rewardType: b.rewardType as PromotionRewardType,
+            valueType: b.valueType as PromotionBenefitValueType,
+            value: parseFloat(String(b.value)),
+            certType: b.certType,
+            sortOrder: b.sortOrder ?? i,
+          })),
           hotelChainId: promo.hotelChainId,
           hotelChainSubBrandId: promo.hotelChainSubBrandId,
           creditCardId: promo.creditCardId,

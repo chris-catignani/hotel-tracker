@@ -71,14 +71,32 @@ export interface OtaAgency {
 // ---------------------------------------------------------------------------
 
 export type PromotionType = "credit_card" | "portal" | "loyalty";
-export type PromotionValueType = "fixed" | "percentage" | "points_multiplier";
+export type PromotionRewardType = "points" | "cashback" | "certificate" | "eqn";
+export type PromotionBenefitValueType = "fixed" | "percentage" | "multiplier";
+
+export interface PromotionBenefit {
+  id: number;
+  promotionId: number;
+  rewardType: PromotionRewardType;
+  valueType: PromotionBenefitValueType;
+  value: string | number;
+  certType: string | null;
+  sortOrder: number;
+}
+
+export interface PromotionBenefitFormData {
+  rewardType: PromotionRewardType;
+  valueType: PromotionBenefitValueType;
+  value: number;
+  certType: string | null;
+  sortOrder: number;
+}
 
 export interface Promotion {
   id: number;
   name: string;
   type: PromotionType;
-  valueType: PromotionValueType;
-  value: string | number;
+  benefits: PromotionBenefit[];
   hotelChainId: number | null;
   hotelChainSubBrandId: number | null;
   creditCardId: number | null;
@@ -92,8 +110,7 @@ export interface Promotion {
 export interface PromotionFormData {
   name: string;
   type: PromotionType;
-  valueType: PromotionValueType;
-  value: number;
+  benefits: PromotionBenefitFormData[];
   hotelChainId?: number | null;
   hotelChainSubBrandId?: number | null;
   creditCardId?: number | null;

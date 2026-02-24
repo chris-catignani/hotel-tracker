@@ -57,3 +57,10 @@ export const CATEGORY_LABELS: Record<string, string> = {
   airline: "Airline",
   transferable: "Transferable",
 };
+
+export const BENEFIT_REWARD_TYPE_OPTIONS = [
+  { value: "cashback", label: "Cashback" },
+  { value: "points", label: "Points" },
+  { value: "certificate", label: "Certificate" },
+  { value: "eqn", label: "Bonus EQNs" },
+] as const;

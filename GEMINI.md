@@ -2,6 +2,10 @@
 
 This file provides foundational mandates for Gemini CLI (gemini-cli) when working in this repository.
 
+## Schema Change Workflow
+
+**When a task requires Prisma schema changes, always show the proposed schema diff to the user for review and approval _before_ implementing the rest of the code** (API routes, types, UI, tests). This prevents rework when the design needs adjustment.
+
 ## Engineering Mandates
 
 - **Savings Explanations:** When adding new promotion types, portal reward options, or modifying loyalty logic, you **MUST** update the `getNetCostBreakdown` function in `src/lib/net-cost.ts` to include detailed, human-readable explanations (description and formula) for the new logic.

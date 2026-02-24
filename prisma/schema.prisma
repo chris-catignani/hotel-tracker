@@ -201,18 +201,23 @@ enum PromotionType {
   loyalty
 }
 
-enum ValueType {
+enum PromotionRewardType {
+  points
+  cashback
+  certificate
+  eqn
+}
+
+enum PromotionBenefitValueType {
   fixed
   percentage
-  points_multiplier
+  multiplier
 }
 
 model Promotion {
   id                   Int                 @id @default(autoincrement())
   name                 String
   type                 PromotionType
-  valueType            ValueType           @map("value_type")
-  value                Decimal             @db.Decimal(10, 4)
   hotelChainId         Int?                @map("hotel_chain_id")
   hotelChain           HotelChain?         @relation(fields: [hotelChainId], references: [id])
   hotelChainSubBrandId Int?                @map("hotel_chain_sub_brand_id")
@@ -226,20 +231,48 @@ model Promotion {
   endDate              DateTime?           @map("end_date") @db.Date
   isActive             Boolean             @default(true) @map("is_active")
   createdAt            DateTime            @default(now()) @map("created_at")
+  benefits             PromotionBenefit[]
   bookingPromotions    BookingPromotion[]
 
   @@map("promotions")
 }
 
+model PromotionBenefit {
+  id                       Int                        @id @default(autoincrement())
+  promotionId              Int                        @map("promotion_id")
+  promotion                Promotion                  @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  rewardType               PromotionRewardType        @map("reward_type")
+  valueType                PromotionBenefitValueType  @map("value_type")
+  value                    Decimal                    @db.Decimal(10, 4)
+  certType                 String?                    @map("cert_type")
+  sortOrder                Int                        @default(0) @map("sort_order")
+  createdAt                DateTime                   @default(now()) @map("created_at")
+  bookingPromotionBenefits BookingPromotionBenefit[]
+
+  @@map("promotion_benefits")
+}
+
 model BookingPromotion {
-  id           Int       @id @default(autoincrement())
-  bookingId    Int       @map("booking_id")
-  booking      Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  promotionId  Int       @map("promotion_id")
-  promotion    Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
-  appliedValue Decimal   @map("applied_value") @db.Decimal(10, 2)
-  autoApplied  Boolean   @default(true) @map("auto_applied")
-  verified     Boolean   @default(false)
+  id                  Int                       @id @default(autoincrement())
+  bookingId           Int                       @map("booking_id")
+  booking             Booking                   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  promotionId         Int                       @map("promotion_id")
+  promotion           Promotion                 @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  appliedValue        Decimal                   @map("applied_value") @db.Decimal(10, 2)
+  autoApplied         Boolean                   @default(true) @map("auto_applied")
+  verified            Boolean                   @default(false)
+  benefitApplications BookingPromotionBenefit[]
 
   @@map("booking_promotions")
+}
+
+model BookingPromotionBenefit {
+  id                 Int              @id @default(autoincrement())
+  bookingPromotionId Int              @map("booking_promotion_id")
+  bookingPromotion   BookingPromotion @relation(fields: [bookingPromotionId], references: [id], onDelete: Cascade)
+  promotionBenefitId Int              @map("promotion_benefit_id")
+  promotionBenefit   PromotionBenefit @relation(fields: [promotionBenefitId], references: [id], onDelete: Cascade)
+  appliedValue       Decimal          @map("applied_value") @db.Decimal(10, 2)
+
+  @@map("booking_promotion_benefits")
 }

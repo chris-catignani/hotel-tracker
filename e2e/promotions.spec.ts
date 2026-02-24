@@ -1,0 +1,237 @@
+import { test, expect } from "./fixtures";
+
+test.describe("Promotions CRUD", () => {
+  test("should display promotions page with Add Promotion button", async ({ page }) => {
+    await page.goto("/promotions");
+    await expect(page.getByRole("heading", { name: /Promotions/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Add Promotion/i })).toBeVisible();
+  });
+
+  test("should show a created promotion in the list", async ({ page, testPromotion }) => {
+    await page.goto("/promotions");
+    await expect(page.getByText(testPromotion.name)).toBeVisible();
+  });
+
+  test("should show benefit value in promotions list", async ({ page, testPromotion }) => {
+    await page.goto("/promotions");
+    // The fixture creates a $25.00 fixed cashback benefit for this promotion
+    const row = page.getByRole("row").filter({ hasText: testPromotion.name });
+    await expect(row.getByText("$25.00 cashback")).toBeVisible();
+  });
+
+  test("should navigate to edit promotion page", async ({ page, testPromotion }) => {
+    await page.goto("/promotions");
+
+    // Find the row with the test promotion and click Edit
+    const row = page.getByRole("row").filter({ hasText: testPromotion.name });
+    await row.getByRole("link", { name: "Edit" }).click();
+
+    await expect(page).toHaveURL(/\/promotions\/\d+\/edit/);
+    await expect(page.getByRole("heading", { name: /Edit Promotion/i })).toBeVisible();
+  });
+
+  test("should pre-populate edit form with existing benefit data", async ({
+    page,
+    testPromotion,
+  }) => {
+    await page.goto(`/promotions`);
+
+    // Navigate to edit
+    const row = page.getByRole("row").filter({ hasText: testPromotion.name });
+    await row.getByRole("link", { name: "Edit" }).click();
+
+    // Wait for form to load
+    await expect(page.getByTestId("benefit-row-0")).toBeVisible();
+
+    // Verify the benefit value is pre-populated ($25 cashback)
+    const valueInput = page.getByTestId("benefit-value-0");
+    await expect(valueInput).toHaveValue("25");
+  });
+
+  test("should delete a promotion", async ({ request, page }) => {
+    const uniqueName = `Delete Test Promo ${crypto.randomUUID()}`;
+    const res = await request.post("/api/promotions", {
+      data: {
+        name: uniqueName,
+        type: "loyalty",
+        benefits: [
+          { rewardType: "cashback", valueType: "fixed", value: 10, certType: null, sortOrder: 0 },
+        ],
+        isActive: true,
+      },
+    });
+    const promo = await res.json();
+
+    await page.goto("/promotions");
+    await expect(page.getByText(uniqueName)).toBeVisible();
+
+    // Delete the promotion
+    const row = page.getByRole("row").filter({ hasText: uniqueName });
+    page.once("dialog", (dialog) => dialog.accept());
+    await row.getByRole("button", { name: "Delete" }).click();
+
+    // Verify the promotion is gone
+    await expect(page.getByText(uniqueName)).not.toBeVisible();
+
+    // Cleanup (in case delete failed)
+    await request.delete(`/api/promotions/${promo.id}`).catch(() => {});
+  });
+});
+
+test.describe("Promotions multi-benefit via API", () => {
+  test("should create a promotion with multiple benefits via API", async ({ request }) => {
+    const name = `Multi-benefit Promo ${crypto.randomUUID()}`;
+    const res = await request.post("/api/promotions", {
+      data: {
+        name,
+        type: "loyalty",
+        benefits: [
+          { rewardType: "cashback", valueType: "fixed", value: 10, certType: null, sortOrder: 0 },
+          {
+            rewardType: "points",
+            valueType: "fixed",
+            value: 500,
+            certType: null,
+            sortOrder: 1,
+          },
+          { rewardType: "eqn", valueType: "fixed", value: 1, certType: null, sortOrder: 2 },
+        ],
+        isActive: true,
+      },
+    });
+
+    expect(res.ok()).toBeTruthy();
+    const promo = await res.json();
+
+    expect(promo.id).toBeDefined();
+    expect(promo.benefits).toHaveLength(3);
+    expect(promo.benefits[0].rewardType).toBe("cashback");
+    expect(promo.benefits[0].valueType).toBe("fixed");
+    expect(Number(promo.benefits[0].value)).toBe(10);
+    expect(promo.benefits[1].rewardType).toBe("points");
+    expect(Number(promo.benefits[1].value)).toBe(500);
+    expect(promo.benefits[2].rewardType).toBe("eqn");
+    expect(Number(promo.benefits[2].value)).toBe(1);
+
+    // Cleanup
+    await request.delete(`/api/promotions/${promo.id}`);
+  });
+
+  test("should update promotion benefits via PUT and replace them", async ({ request }) => {
+    // Create initial promotion
+    const name = `Update Benefit Promo ${crypto.randomUUID()}`;
+    const createRes = await request.post("/api/promotions", {
+      data: {
+        name,
+        type: "loyalty",
+        benefits: [
+          { rewardType: "cashback", valueType: "fixed", value: 50, certType: null, sortOrder: 0 },
+        ],
+        isActive: true,
+      },
+    });
+    const created = await createRes.json();
+
+    // Update with different benefits
+    const updateRes = await request.put(`/api/promotions/${created.id}`, {
+      data: {
+        name,
+        type: "loyalty",
+        benefits: [
+          {
+            rewardType: "cashback",
+            valueType: "percentage",
+            value: 10,
+            certType: null,
+            sortOrder: 0,
+          },
+          {
+            rewardType: "points",
+            valueType: "fixed",
+            value: 1000,
+            certType: null,
+            sortOrder: 1,
+          },
+        ],
+        isActive: true,
+      },
+    });
+
+    expect(updateRes.ok()).toBeTruthy();
+    const updated = await updateRes.json();
+
+    // Should have exactly 2 benefits now (old one replaced)
+    expect(updated.benefits).toHaveLength(2);
+    expect(updated.benefits[0].rewardType).toBe("cashback");
+    expect(updated.benefits[0].valueType).toBe("percentage");
+    expect(Number(updated.benefits[0].value)).toBe(10);
+    expect(updated.benefits[1].rewardType).toBe("points");
+
+    // Cleanup
+    await request.delete(`/api/promotions/${created.id}`);
+  });
+
+  test("should apply multi-benefit promotion to matching booking", async ({ request }) => {
+    // Get a hotel chain to link the promotion and booking
+    const chainsRes = await request.get("/api/hotel-chains");
+    const chain = (await chainsRes.json())[0];
+
+    // Create a promotion for this chain
+    const promoRes = await request.post("/api/promotions", {
+      data: {
+        name: `Matching Promo ${crypto.randomUUID()}`,
+        type: "loyalty",
+        hotelChainId: chain.id,
+        benefits: [
+          { rewardType: "cashback", valueType: "fixed", value: 20, certType: null, sortOrder: 0 },
+          { rewardType: "eqn", valueType: "fixed", value: 2, certType: null, sortOrder: 1 },
+        ],
+        isActive: true,
+      },
+    });
+    const promo = await promoRes.json();
+
+    // Create a booking for the same chain
+    const bookingRes = await request.post("/api/bookings", {
+      data: {
+        hotelChainId: chain.id,
+        propertyName: `Match Test ${crypto.randomUUID()}`,
+        checkIn: "2025-06-01",
+        checkOut: "2025-06-03",
+        numNights: 2,
+        pretaxCost: 200,
+        taxAmount: 30,
+        totalCost: 230,
+        currency: "USD",
+      },
+    });
+    const booking = await bookingRes.json();
+
+    // Fetch full booking to check promotions
+    const fullRes = await request.get(`/api/bookings/${booking.id}`);
+    const full = await fullRes.json();
+
+    // Should have the promotion applied
+    const appliedPromo = full.bookingPromotions.find(
+      (bp: { promotionId: number }) => bp.promotionId === promo.id
+    );
+    expect(appliedPromo).toBeDefined();
+    // $20 cashback + $0 EQN = $20 total
+    expect(Number(appliedPromo.appliedValue)).toBe(20);
+    // Should have 2 benefit applications
+    expect(appliedPromo.benefitApplications).toHaveLength(2);
+    const cashbackBenefit = appliedPromo.benefitApplications.find(
+      (ba: { promotionBenefit: { rewardType: string } }) =>
+        ba.promotionBenefit.rewardType === "cashback"
+    );
+    expect(Number(cashbackBenefit.appliedValue)).toBe(20);
+    const eqnBenefit = appliedPromo.benefitApplications.find(
+      (ba: { promotionBenefit: { rewardType: string } }) => ba.promotionBenefit.rewardType === "eqn"
+    );
+    expect(Number(eqnBenefit.appliedValue)).toBe(0);
+
+    // Cleanup
+    await request.delete(`/api/bookings/${booking.id}`);
+    await request.delete(`/api/promotions/${promo.id}`);
+  });
+});

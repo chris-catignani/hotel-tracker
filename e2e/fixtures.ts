@@ -2,6 +2,7 @@ import { test as base } from "@playwright/test";
 
 type TestFixtures = {
   testBooking: { id: number; propertyName: string; hotelChainName: string };
+  testPromotion: { id: number; name: string };
 };
 
 export const test = base.extend<TestFixtures>({
@@ -27,6 +28,29 @@ export const test = base.extend<TestFixtures>({
     const booking = await res.json();
     await use({ id: booking.id, propertyName: uniqueName, hotelChainName: chain.name });
     await request.delete(`/api/bookings/${booking.id}`);
+  },
+
+  testPromotion: async ({ request }, use) => {
+    const uniqueName = `Test Promo ${crypto.randomUUID()}`;
+    const res = await request.post("/api/promotions", {
+      data: {
+        name: uniqueName,
+        type: "loyalty",
+        benefits: [
+          {
+            rewardType: "cashback",
+            valueType: "fixed",
+            value: 25,
+            certType: null,
+            sortOrder: 0,
+          },
+        ],
+        isActive: true,
+      },
+    });
+    const promotion = await res.json();
+    await use({ id: promotion.id, name: uniqueName });
+    await request.delete(`/api/promotions/${promotion.id}`);
   },
 });
 
