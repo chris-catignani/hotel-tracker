@@ -1,5 +1,5 @@
-import { render, screen } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
+import { render, screen, act } from "@testing-library/react";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import SettingsPage from "@/app/settings/page";
 
 // Mock the components inside the tabs to avoid deep rendering complexity
@@ -23,8 +23,14 @@ vi.mock("./ota-agencies-tab", () => ({
 }));
 
 describe("SettingsPage Tabs", () => {
-  it("renders all tab contents with correct data-testids", () => {
-    render(<SettingsPage />);
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("renders all tab contents with correct data-testids", async () => {
+    await act(async () => {
+      render(<SettingsPage />);
+    });
 
     expect(screen.getByTestId("tab-my-status")).toBeInTheDocument();
     expect(screen.getByTestId("tab-point-types")).toBeInTheDocument();
@@ -34,8 +40,10 @@ describe("SettingsPage Tabs", () => {
     expect(screen.getByTestId("tab-ota-agencies")).toBeInTheDocument();
   });
 
-  it("initially shows the my-status tab content", () => {
-    render(<SettingsPage />);
+  it("initially shows the my-status tab content", async () => {
+    await act(async () => {
+      render(<SettingsPage />);
+    });
     expect(screen.getByTestId("mock-user-status")).toBeInTheDocument();
   });
 });

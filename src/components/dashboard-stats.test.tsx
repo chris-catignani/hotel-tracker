@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, act } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import { DashboardStats } from "./dashboard-stats";
 
@@ -13,8 +13,10 @@ describe("DashboardStats", () => {
     totalCertificates: 2,
   };
 
-  it("renders all summary statistics with correct formatting", () => {
-    render(<DashboardStats {...defaultProps} />);
+  it("renders all summary statistics with correct formatting", async () => {
+    await act(async () => {
+      render(<DashboardStats {...defaultProps} />);
+    });
 
     // Precise value checks using data-testid
     expect(screen.getByTestId("stat-value-total-bookings")).toHaveTextContent("5");
@@ -30,7 +32,7 @@ describe("DashboardStats", () => {
     expect(screen.getByTestId("stat-value-certs")).toHaveTextContent("2 certs");
   });
 
-  it("handles zero values and empty states correctly", () => {
+  it("handles zero values and empty states correctly", async () => {
     const zeroProps = {
       totalBookings: 0,
       totalSpend: 0,
@@ -40,7 +42,9 @@ describe("DashboardStats", () => {
       totalPointsRedeemed: 0,
       totalCertificates: 0,
     };
-    render(<DashboardStats {...zeroProps} />);
+    await act(async () => {
+      render(<DashboardStats {...zeroProps} />);
+    });
 
     // Basic counts show "0", currency shows "$0.00"
     expect(screen.getByTestId("stat-value-total-bookings")).toHaveTextContent("0");
@@ -54,16 +58,20 @@ describe("DashboardStats", () => {
     expect(screen.getByTestId("stat-value-certs")).toHaveTextContent("—");
   });
 
-  it("handles singular certificate correctly", () => {
-    render(<DashboardStats {...defaultProps} totalCertificates={1} />);
+  it("handles singular certificate correctly", async () => {
+    await act(async () => {
+      render(<DashboardStats {...defaultProps} totalCertificates={1} />);
+    });
     expect(screen.getByText("1 cert")).toBeInTheDocument();
     expect(screen.queryByText("1 certs")).not.toBeInTheDocument();
   });
 
-  it("formats large numbers with commas", () => {
-    render(
-      <DashboardStats {...defaultProps} totalSpend={1000000.49} totalPointsRedeemed={1250000} />
-    );
+  it("formats large numbers with commas", async () => {
+    await act(async () => {
+      render(
+        <DashboardStats {...defaultProps} totalSpend={1000000.49} totalPointsRedeemed={1250000} />
+      );
+    });
     expect(screen.getByText("$1,000,000")).toBeInTheDocument();
     expect(screen.getByText("1,250,000 pts")).toBeInTheDocument();
   });

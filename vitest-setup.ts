@@ -22,3 +22,17 @@ global.ResizeObserver = class ResizeObserver {
   unobserve() {}
   disconnect() {}
 };
+
+// Global style to disable animations and transitions for testing
+if (typeof document !== "undefined") {
+  const style = document.createElement("style");
+  style.innerHTML = `
+    * {
+      transition: none !important;
+      animation: none !important;
+      animation-duration: 0s !important;
+      transition-duration: 0s !important;
+    }
+  `;
+  document.head.appendChild(style);
+}

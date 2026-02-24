@@ -1,5 +1,6 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, act } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { MobileHeader } from "./mobile-header";
 import { usePathname } from "next/navigation";
 
@@ -13,45 +14,46 @@ describe("MobileHeader", () => {
     vi.mocked(usePathname).mockReturnValue("/");
   });
 
-  it("renders the header and title", () => {
-    render(<MobileHeader />);
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("renders the header and title", async () => {
+    await act(async () => {
+      render(<MobileHeader />);
+    });
     expect(screen.getByTestId("mobile-header-title")).toHaveTextContent("Hotel Tracker");
     expect(screen.getByTestId("mobile-nav-toggle")).toBeInTheDocument();
   });
 
   it("opens the navigation menu when the toggle is clicked", async () => {
-    render(<MobileHeader />);
-
-    const toggle = screen.getByTestId("mobile-nav-toggle");
-    fireEvent.click(toggle);
-
-    // Wait for SheetContent to appear (it should have data-testid="mobile-nav-content")
-    await waitFor(() => {
-      expect(screen.getByTestId("mobile-nav-content")).toBeInTheDocument();
+    const user = userEvent.setup();
+    await act(async () => {
+      render(<MobileHeader />);
     });
 
-    // Verify NavItemsList is rendered inside
+    const toggle = screen.getByTestId("mobile-nav-toggle");
+    await user.click(toggle);
+
+    // Verify SheetContent and NavItemsList are rendered
+    expect(screen.getByTestId("mobile-nav-content")).toBeInTheDocument();
     expect(screen.getByTestId("nav-item-dashboard")).toBeInTheDocument();
   });
 
   it("closes the navigation menu when a link is clicked", async () => {
-    render(<MobileHeader />);
+    const user = userEvent.setup();
+    await act(async () => {
+      render(<MobileHeader />);
+    });
 
     // Open menu
-    fireEvent.click(screen.getByTestId("mobile-nav-toggle"));
-
-    await waitFor(() => {
-      expect(screen.getByTestId("mobile-nav-content")).toBeInTheDocument();
-    });
+    await user.click(screen.getByTestId("mobile-nav-toggle"));
+    expect(screen.getByTestId("mobile-nav-content")).toBeInTheDocument();
 
     // Click a nav item
-    fireEvent.click(screen.getByTestId("nav-item-bookings"));
+    await user.click(screen.getByTestId("nav-item-bookings"));
 
-    // Sheet should close (Radix UI might take a moment to unmount or apply state)
-    // We check if the state 'open' in Sheet changes.
-    // Usually we can wait for the content to disappear.
-    await waitFor(() => {
-      expect(screen.queryByTestId("mobile-nav-content")).not.toBeInTheDocument();
-    });
+    // Sheet should close immediately with animations disabled
+    expect(screen.queryByTestId("mobile-nav-content")).not.toBeInTheDocument();
   });
 });

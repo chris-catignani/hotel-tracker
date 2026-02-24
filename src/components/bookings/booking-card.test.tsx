@@ -1,4 +1,5 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, act } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi } from "vitest";
 import { BookingCard } from "./booking-card";
 
@@ -36,8 +37,10 @@ describe("BookingCard", () => {
     bookingPromotions: [],
   };
 
-  it("renders booking information correctly", () => {
-    render(<BookingCard booking={mockBooking} />);
+  it("renders booking information correctly", async () => {
+    await act(async () => {
+      render(<BookingCard booking={mockBooking} />);
+    });
 
     expect(screen.getByTestId("booking-card-property")).toHaveTextContent("Grand Hyatt New York");
     expect(screen.getByText("Hyatt")).toBeInTheDocument();
@@ -48,19 +51,24 @@ describe("BookingCard", () => {
     expect(screen.getByText("$900.00")).toBeInTheDocument();
   });
 
-  it("shows delete button when showActions and onDelete are provided", () => {
+  it("shows delete button when showActions and onDelete are provided", async () => {
+    const user = userEvent.setup();
     const onDelete = vi.fn();
-    render(<BookingCard booking={mockBooking} showActions={true} onDelete={onDelete} />);
+    await act(async () => {
+      render(<BookingCard booking={mockBooking} showActions={true} onDelete={onDelete} />);
+    });
 
     const deleteBtn = screen.getByTestId("booking-card-delete");
     expect(deleteBtn).toBeInTheDocument();
 
-    fireEvent.click(deleteBtn);
+    await user.click(deleteBtn);
     expect(onDelete).toHaveBeenCalledWith(1);
   });
 
-  it("calculates and displays the correct net cost per night", () => {
-    render(<BookingCard booking={mockBooking} />);
+  it("calculates and displays the correct net cost per night", async () => {
+    await act(async () => {
+      render(<BookingCard booking={mockBooking} />);
+    });
 
     // Total Cost = 900
     // Portal Cashback = 900 * 0.05 = 45

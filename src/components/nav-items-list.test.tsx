@@ -1,5 +1,6 @@
-import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, act } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { NavItemsList } from "./nav-items-list";
 import { usePathname } from "next/navigation";
 
@@ -13,8 +14,14 @@ describe("NavItemsList", () => {
     vi.mocked(usePathname).mockReturnValue("/");
   });
 
-  it("renders all navigation items", () => {
-    render(<NavItemsList />);
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("renders all navigation items", async () => {
+    await act(async () => {
+      render(<NavItemsList />);
+    });
 
     expect(screen.getByTestId("nav-item-dashboard")).toBeInTheDocument();
     expect(screen.getByTestId("nav-item-bookings")).toBeInTheDocument();
@@ -22,10 +29,12 @@ describe("NavItemsList", () => {
     expect(screen.getByTestId("nav-item-settings")).toBeInTheDocument();
   });
 
-  it("highlights the active item based on pathname", () => {
+  it("highlights the active item based on pathname", async () => {
     vi.mocked(usePathname).mockReturnValue("/bookings");
 
-    render(<NavItemsList />);
+    await act(async () => {
+      render(<NavItemsList />);
+    });
 
     const bookingsItem = screen.getByTestId("nav-item-bookings");
     const dashboardItem = screen.getByTestId("nav-item-dashboard");
@@ -35,11 +44,14 @@ describe("NavItemsList", () => {
     expect(dashboardItem).not.toHaveClass("bg-accent", "text-accent-foreground");
   });
 
-  it("calls onItemClick when an item is clicked", () => {
+  it("calls onItemClick when an item is clicked", async () => {
+    const user = userEvent.setup();
     const onItemClick = vi.fn();
-    render(<NavItemsList onItemClick={onItemClick} />);
+    await act(async () => {
+      render(<NavItemsList onItemClick={onItemClick} />);
+    });
 
-    fireEvent.click(screen.getByTestId("nav-item-bookings"));
+    await user.click(screen.getByTestId("nav-item-bookings"));
     expect(onItemClick).toHaveBeenCalledTimes(1);
   });
 });

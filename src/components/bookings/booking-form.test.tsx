@@ -1,12 +1,13 @@
-import { render, screen, waitFor, act } from "@testing-library/react";
+import { render, screen, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { BookingForm } from "./booking-form";
 import { HotelChain } from "@/lib/types";
+import { calculatePointsFromChain } from "@/lib/loyalty-utils";
 
 // Mock the external dependencies
 vi.mock("@/lib/loyalty-utils", () => ({
-  calculatePointsFromChain: vi.fn(() => 1000),
+  calculatePointsFromChain: vi.fn(),
 }));
 
 vi.mock("@/components/ui/date-picker", () => ({
@@ -67,11 +68,16 @@ describe("BookingForm", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(calculatePointsFromChain).mockReturnValue(1000);
     // Mock global fetch
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => [],
     });
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
   });
 
   it("renders correctly with basic fields", async () => {
@@ -98,9 +104,7 @@ describe("BookingForm", () => {
       await user.type(checkOutInput, "2026-03-05");
     });
 
-    await waitFor(() => {
-      expect(numNightsInput.value).toBe("4");
-    });
+    expect(numNightsInput.value).toBe("4");
   });
 
   it("calls onCancel when cancel button is clicked", async () => {

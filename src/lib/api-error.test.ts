@@ -1,18 +1,26 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { apiError } from "./api-error";
+import { NextResponse } from "next/server";
 
 // Mock NextResponse.json since it's a static method
 vi.mock("next/server", () => ({
   NextResponse: {
-    json: vi.fn((body, init) => ({
-      json: async () => body,
-      status: init?.status ?? 200,
-    })),
+    json: vi.fn(),
   },
 }));
 
 describe("apiError", () => {
   const originalEnv = process.env.NODE_ENV;
+
+  beforeEach(() => {
+    vi.mocked(NextResponse.json).mockImplementation(
+      (body, init) =>
+        ({
+          json: async () => body,
+          status: init?.status ?? 200,
+        }) as unknown as Response
+    );
+  });
 
   afterEach(() => {
     process.env.NODE_ENV = originalEnv;

@@ -1,4 +1,5 @@
-import { render, screen, act, within, fireEvent } from "@testing-library/react";
+import { render, screen, act, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { PointTypesTab } from "./point-types-tab";
 
@@ -61,6 +62,7 @@ describe("PointTypesTab", () => {
   });
 
   it("opens confirmation dialog when Delete is clicked", async () => {
+    const user = userEvent.setup();
     vi.mocked(global.fetch).mockResolvedValue({
       ok: true,
       json: async () => mockPt,
@@ -72,9 +74,7 @@ describe("PointTypesTab", () => {
 
     const desktopView = screen.getByTestId("point-types-desktop");
     const deleteBtn = within(desktopView).getByRole("button", { name: "Delete" });
-    await act(async () => {
-      fireEvent.click(deleteBtn);
-    });
+    await user.click(deleteBtn);
 
     expect(screen.getByText("Delete Point Type?")).toBeInTheDocument();
     expect(
@@ -83,6 +83,7 @@ describe("PointTypesTab", () => {
   });
 
   it("calls DELETE API and refreshes list after confirming", async () => {
+    const user = userEvent.setup();
     const fetchMock = vi
       .mocked(global.fetch)
       .mockImplementation((url: string, options?: RequestInit) => {
@@ -99,18 +100,15 @@ describe("PointTypesTab", () => {
 
     const desktopView = screen.getByTestId("point-types-desktop");
     const deleteBtn = within(desktopView).getByRole("button", { name: "Delete" });
-    await act(async () => {
-      fireEvent.click(deleteBtn);
-    });
+    await user.click(deleteBtn);
 
-    await act(async () => {
-      fireEvent.click(screen.getByTestId("confirm-dialog-confirm-button"));
-    });
+    await user.click(screen.getByTestId("confirm-dialog-confirm-button"));
 
     expect(fetchMock).toHaveBeenCalledWith("/api/point-types/1", { method: "DELETE" });
   });
 
   it("does not call DELETE if dialog is cancelled", async () => {
+    const user = userEvent.setup();
     const fetchMock = vi.mocked(global.fetch).mockResolvedValue({
       ok: true,
       json: async () => mockPt,
@@ -122,11 +120,9 @@ describe("PointTypesTab", () => {
 
     const desktopView = screen.getByTestId("point-types-desktop");
     const deleteBtn = within(desktopView).getByRole("button", { name: "Delete" });
-    await act(async () => {
-      fireEvent.click(deleteBtn);
-    });
+    await user.click(deleteBtn);
 
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
 
     const deleteCalls = fetchMock.mock.calls.filter(([, opts]) => opts?.method === "DELETE");
     expect(deleteCalls.length).toBe(0);

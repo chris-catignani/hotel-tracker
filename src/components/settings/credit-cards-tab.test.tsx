@@ -1,4 +1,5 @@
-import { render, screen, act, fireEvent, within } from "@testing-library/react";
+import { render, screen, act, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CreditCardsTab } from "./credit-cards-tab";
 
@@ -84,6 +85,7 @@ describe("CreditCardsTab", () => {
   });
 
   it("opens confirmation dialog when Delete is clicked", async () => {
+    const user = userEvent.setup();
     vi.mocked(global.fetch).mockImplementation((url: string) => {
       if (url.includes("/api/credit-cards"))
         return Promise.resolve({ ok: true, json: async () => [mockCards[0]] } as Response);
@@ -98,15 +100,14 @@ describe("CreditCardsTab", () => {
 
     // Click first delete button (mobile view)
     const deleteButtons = screen.getAllByTestId("delete-credit-card-button");
-    await act(async () => {
-      fireEvent.click(deleteButtons[0]);
-    });
+    await user.click(deleteButtons[0]);
 
     expect(screen.getByText("Delete Credit Card?")).toBeInTheDocument();
     expect(screen.getByText(/Are you sure you want to delete "Amex Platinum"/)).toBeInTheDocument();
   });
 
   it("calls DELETE API and refreshes list after confirming deletion", async () => {
+    const user = userEvent.setup();
     const fetchMock = vi
       .mocked(global.fetch)
       .mockImplementation((url: string, options?: RequestInit) => {
@@ -128,14 +129,10 @@ describe("CreditCardsTab", () => {
 
     // Open delete dialog
     const deleteButtons = screen.getAllByTestId("delete-credit-card-button");
-    await act(async () => {
-      fireEvent.click(deleteButtons[0]);
-    });
+    await user.click(deleteButtons[0]);
 
     // Confirm deletion
-    await act(async () => {
-      fireEvent.click(screen.getByTestId("confirm-dialog-confirm-button"));
-    });
+    await user.click(screen.getByTestId("confirm-dialog-confirm-button"));
 
     // Verify DELETE was called
     expect(fetchMock).toHaveBeenCalledWith("/api/credit-cards/1", { method: "DELETE" });
@@ -148,6 +145,7 @@ describe("CreditCardsTab", () => {
   });
 
   it("shows error if deletion fails", async () => {
+    const user = userEvent.setup();
     vi.mocked(global.fetch).mockImplementation((url: string, options?: RequestInit) => {
       if (url === "/api/credit-cards" && (!options || !options.method || options.method === "GET"))
         return Promise.resolve({ ok: true, json: async () => [mockCards[0]] } as Response);
@@ -167,18 +165,15 @@ describe("CreditCardsTab", () => {
     });
 
     const deleteButtons = screen.getAllByTestId("delete-credit-card-button");
-    await act(async () => {
-      fireEvent.click(deleteButtons[0]);
-    });
+    await user.click(deleteButtons[0]);
 
-    await act(async () => {
-      fireEvent.click(screen.getByTestId("confirm-dialog-confirm-button"));
-    });
+    await user.click(screen.getByTestId("confirm-dialog-confirm-button"));
 
     expect(screen.getByText(/Failed to delete credit card/i)).toBeInTheDocument();
   });
 
   it("does not call DELETE if dialog is cancelled", async () => {
+    const user = userEvent.setup();
     const fetchMock = vi.mocked(global.fetch).mockImplementation((url: string) => {
       if (url.includes("/api/credit-cards"))
         return Promise.resolve({ ok: true, json: async () => [mockCards[0]] } as Response);
@@ -192,12 +187,10 @@ describe("CreditCardsTab", () => {
     });
 
     const deleteButtons = screen.getAllByTestId("delete-credit-card-button");
-    await act(async () => {
-      fireEvent.click(deleteButtons[0]);
-    });
+    await user.click(deleteButtons[0]);
 
     // Cancel the dialog
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
 
     const deleteCalls = fetchMock.mock.calls.filter(([, opts]) => opts?.method === "DELETE");
     expect(deleteCalls.length).toBe(0);
