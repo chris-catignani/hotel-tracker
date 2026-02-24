@@ -271,7 +271,7 @@ model BookingPromotionBenefit {
   bookingPromotionId Int              @map("booking_promotion_id")
   bookingPromotion   BookingPromotion @relation(fields: [bookingPromotionId], references: [id], onDelete: Cascade)
   promotionBenefitId Int              @map("promotion_benefit_id")
-  promotionBenefit   PromotionBenefit @relation(fields: [promotionBenefitId], references: [id])
+  promotionBenefit   PromotionBenefit @relation(fields: [promotionBenefitId], references: [id], onDelete: Cascade)
   appliedValue       Decimal          @map("applied_value") @db.Decimal(10, 2)
 
   @@map("booking_promotion_benefits")

@@ -60,9 +60,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (endDate !== undefined) data.endDate = endDate ? new Date(endDate) : null;
     if (isActive !== undefined) data.isActive = isActive;
 
-    // Replace benefits wholesale: delete all then recreate
+    // Replace benefits wholesale inside a transaction: delete all then recreate
     if (benefits !== undefined) {
-      await prisma.promotionBenefit.deleteMany({ where: { promotionId: Number(id) } });
       data.benefits = {
         create: ((benefits as PromotionBenefitFormData[]) || []).map((b, i) => ({
           rewardType: b.rewardType,
@@ -74,12 +73,17 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       };
     }
 
-    const promotion = await prisma.promotion.update({
-      where: { id: Number(id) },
-      data,
-      include: {
-        benefits: { orderBy: { sortOrder: "asc" } },
-      },
+    const promotion = await prisma.$transaction(async (tx) => {
+      if (benefits !== undefined) {
+        await tx.promotionBenefit.deleteMany({ where: { promotionId: Number(id) } });
+      }
+      return tx.promotion.update({
+        where: { id: Number(id) },
+        data,
+        include: {
+          benefits: { orderBy: { sortOrder: "asc" } },
+        },
+      });
     });
 
     await matchPromotionsForAffectedBookings(promotion.id);

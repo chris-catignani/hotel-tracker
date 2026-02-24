@@ -177,10 +177,14 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
     }
 
     // Fall back to applied value if no benefit applications (e.g. manually verified promos)
-    const formula =
-      formulaLines.length > 0
-        ? formulaLines.join("; ") + ` = ${formatCurrency(appliedValue)} total`
-        : `${formatCurrency(appliedValue)}`;
+    let formula: string;
+    if (formulaLines.length > 1) {
+      formula = formulaLines.join("; ") + ` = ${formatCurrency(appliedValue)} total`;
+    } else if (formulaLines.length === 1) {
+      formula = formulaLines[0];
+    } else {
+      formula = `${formatCurrency(appliedValue)}`;
+    }
     const description =
       descriptionLines.length > 0
         ? descriptionLines.join(" ")
