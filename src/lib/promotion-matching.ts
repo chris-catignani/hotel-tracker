@@ -24,9 +24,11 @@ export interface MatchingBooking {
   hotelChainId: number | null;
   hotelChainSubBrandId: number | null;
   checkIn: Date | string;
+  pretaxCost: string | number | Prisma.Decimal;
   totalCost: string | number | Prisma.Decimal;
   loyaltyPointsEarned: number | null;
   hotelChain?: {
+    basePointRate?: string | number | Prisma.Decimal | null;
     pointType?: {
       centsPerPoint: string | number | Prisma.Decimal | null;
     } | null;
@@ -55,6 +57,7 @@ interface MatchingPromotion {
     valueType: PromotionBenefitValueType;
     value: Prisma.Decimal;
     certType: string | null;
+    pointsMultiplierBasis: string | null;
     sortOrder: number;
   }[];
 }
@@ -139,8 +142,14 @@ export function calculateMatchedPromotions(
           break;
         case PromotionRewardType.points:
           if (benefit.valueType === PromotionBenefitValueType.multiplier) {
-            appliedValue =
-              Number(booking.loyaltyPointsEarned || 0) * (benefitValue - 1) * centsPerPoint;
+            const isBaseOnly =
+              !benefit.pointsMultiplierBasis || benefit.pointsMultiplierBasis === "base_only";
+            const baseRate = booking.hotelChain?.basePointRate;
+            const basisPoints =
+              isBaseOnly && baseRate != null
+                ? Number(booking.pretaxCost) * Number(baseRate)
+                : Number(booking.loyaltyPointsEarned || 0);
+            appliedValue = basisPoints * (benefitValue - 1) * centsPerPoint;
           } else {
             appliedValue = benefitValue * centsPerPoint;
           }

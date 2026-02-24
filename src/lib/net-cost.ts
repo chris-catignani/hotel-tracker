@@ -16,6 +16,7 @@ export interface NetCostBookingPromotionBenefit {
     valueType: string;
     value: string | number;
     certType: string | null;
+    pointsMultiplierBasis?: string | null;
   };
 }
 
@@ -145,11 +146,23 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
         case "points": {
           const centsStr = formatCents(hotelCentsPerPoint);
           if (b.valueType === "multiplier") {
+            const isBaseOnly = !b.pointsMultiplierBasis || b.pointsMultiplierBasis === "base_only";
+            const baseRate = booking.hotelChain.basePointRate
+              ? Number(booking.hotelChain.basePointRate)
+              : 0;
+            const basisPoints =
+              isBaseOnly && baseRate > 0
+                ? Math.round(pretaxCost * baseRate)
+                : booking.loyaltyPointsEarned || 0;
+            const basisLabel = isBaseOnly ? "(base rate only)" : "(incl. elite bonus)";
             formulaLines.push(
-              `${(booking.loyaltyPointsEarned || 0).toLocaleString()} pts (from pre-tax cost) × (${bValue} - 1) × ${centsStr}¢ = ${formatCurrency(bApplied)}`
+              `${basisPoints.toLocaleString()} pts ${basisLabel} × (${bValue} - 1) × ${centsStr}¢ = ${formatCurrency(bApplied)}`
             );
+            const basisDesc = isBaseOnly
+              ? `applies to base-rate points only, not including elite bonus`
+              : `applies to full earned points including elite bonus`;
             descriptionLines.push(
-              `A ${bValue}x points multiplier on earned loyalty points (based on pre-tax cost), valued at ${centsStr}¢ each.`
+              `A ${bValue}x points multiplier on ${basisLabel} loyalty points, valued at ${centsStr}¢ each. This ${basisDesc}.`
             );
           } else {
             formulaLines.push(

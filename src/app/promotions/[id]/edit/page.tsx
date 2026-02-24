@@ -43,6 +43,7 @@ export default function EditPromotionPage() {
             valueType: b.valueType as PromotionBenefitValueType,
             value: parseFloat(String(b.value)),
             certType: b.certType,
+            pointsMultiplierBasis: b.pointsMultiplierBasis,
             sortOrder: b.sortOrder ?? i,
           })),
           hotelChainId: promo.hotelChainId,

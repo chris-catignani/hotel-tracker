@@ -214,6 +214,11 @@ enum PromotionBenefitValueType {
   multiplier
 }
 
+enum PointsMultiplierBasis {
+  base_only
+  base_and_elite
+}
+
 model Promotion {
   id                   Int                 @id @default(autoincrement())
   name                 String
@@ -245,6 +250,7 @@ model PromotionBenefit {
   valueType                PromotionBenefitValueType  @map("value_type")
   value                    Decimal                    @db.Decimal(10, 4)
   certType                 String?                    @map("cert_type")
+  pointsMultiplierBasis    PointsMultiplierBasis?     @default(base_only) @map("points_multiplier_basis")
   sortOrder                Int                        @default(0) @map("sort_order")
   createdAt                DateTime                   @default(now()) @map("created_at")
   bookingPromotionBenefits BookingPromotionBenefit[]

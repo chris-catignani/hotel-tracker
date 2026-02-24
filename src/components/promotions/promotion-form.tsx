@@ -22,6 +22,7 @@ import {
   PromotionRewardType,
   PromotionBenefitValueType,
   PromotionBenefitFormData,
+  PointsMultiplierBasis,
 } from "@/lib/types";
 import { BENEFIT_REWARD_TYPE_OPTIONS } from "@/lib/constants";
 import { CERT_TYPE_OPTIONS } from "@/lib/cert-types";
@@ -98,6 +99,7 @@ interface BenefitRowProps {
 function BenefitRow({ benefit, index, canRemove, onChange, onRemove }: BenefitRowProps) {
   const showValueType = benefit.rewardType === "cashback" || benefit.rewardType === "points";
   const showCertType = benefit.rewardType === "certificate";
+  const showMultiplierBasis = benefit.rewardType === "points" && benefit.valueType === "multiplier";
   const valuePlaceholder = getValuePlaceholder(benefit.rewardType, benefit.valueType);
   const valueLabel = getValueLabel(benefit.rewardType, benefit.valueType);
 
@@ -107,6 +109,7 @@ function BenefitRow({ benefit, index, canRemove, onChange, onRemove }: BenefitRo
       rewardType,
       valueType: getDefaultValueType(rewardType),
       certType: rewardType === "certificate" ? (benefit.certType ?? null) : null,
+      pointsMultiplierBasis: undefined,
     });
   };
 
@@ -211,6 +214,26 @@ function BenefitRow({ benefit, index, canRemove, onChange, onRemove }: BenefitRo
             </Select>
           </div>
         )}
+
+        {showMultiplierBasis && (
+          <div className="space-y-2">
+            <Label>Multiplier Basis</Label>
+            <Select
+              value={benefit.pointsMultiplierBasis || "base_only"}
+              onValueChange={(v) =>
+                onChange(index, { ...benefit, pointsMultiplierBasis: v as PointsMultiplierBasis })
+              }
+            >
+              <SelectTrigger className="w-full" data-testid={`benefit-multiplier-basis-${index}`}>
+                <SelectValue placeholder="Select basis..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="base_only">Base Rate Only</SelectItem>
+                <SelectItem value="base_and_elite">Base + Elite Bonus</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -221,6 +244,7 @@ const DEFAULT_BENEFIT: PromotionBenefitFormData = {
   valueType: "fixed",
   value: 0,
   certType: null,
+  pointsMultiplierBasis: "base_only",
   sortOrder: 0,
 };
 

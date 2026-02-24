@@ -73,6 +73,7 @@ export interface OtaAgency {
 export type PromotionType = "credit_card" | "portal" | "loyalty";
 export type PromotionRewardType = "points" | "cashback" | "certificate" | "eqn";
 export type PromotionBenefitValueType = "fixed" | "percentage" | "multiplier";
+export type PointsMultiplierBasis = "base_only" | "base_and_elite";
 
 export interface PromotionBenefit {
   id: number;
@@ -81,6 +82,7 @@ export interface PromotionBenefit {
   valueType: PromotionBenefitValueType;
   value: string | number;
   certType: string | null;
+  pointsMultiplierBasis?: PointsMultiplierBasis | null;
   sortOrder: number;
 }
 
@@ -89,6 +91,7 @@ export interface PromotionBenefitFormData {
   valueType: PromotionBenefitValueType;
   value: number;
   certType: string | null;
+  pointsMultiplierBasis?: PointsMultiplierBasis | null;
   sortOrder: number;
 }
 
