@@ -4,12 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { DashboardStats } from "@/components/dashboard-stats";
 import { PaymentTypeBreakdown } from "@/components/payment-type-breakdown";
+import { SubBrandBreakdown } from "@/components/sub-brand-breakdown";
 import { calculateNetCost, getNetCostBreakdown } from "@/lib/net-cost";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { CalendarDays, Wallet } from "lucide-react";
+import { CalendarDays, Wallet, ChevronUp, ChevronDown } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -99,9 +99,48 @@ interface HotelChainSummary {
   certs: number;
 }
 
+const SortHeader = ({
+  column,
+  label,
+  className = "",
+  sortConfig,
+  onSort,
+}: {
+  column: keyof HotelChainSummary;
+  label: string;
+  className?: string;
+  sortConfig: { key: keyof HotelChainSummary; direction: "asc" | "desc" };
+  onSort: (key: keyof HotelChainSummary) => void;
+}) => (
+  <TableHead
+    className={`cursor-pointer hover:bg-muted/50 transition-colors ${className}`}
+    onClick={() => onSort(column)}
+  >
+    <div
+      className={`flex items-center gap-1 ${className.includes("text-right") ? "justify-end" : ""}`}
+    >
+      {label}
+      {sortConfig.key === column ? (
+        sortConfig.direction === "desc" ? (
+          <ChevronDown className="h-4 w-4" />
+        ) : (
+          <ChevronUp className="h-4 w-4" />
+        )
+      ) : null}
+    </div>
+  </TableHead>
+);
+
 export default function DashboardPage() {
   const [bookings, setBookings] = useState<BookingWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortConfig, setSortConfig] = useState<{
+    key: keyof HotelChainSummary;
+    direction: "asc" | "desc";
+  }>({
+    key: "count",
+    direction: "desc",
+  });
 
   useEffect(() => {
     fetch("/api/bookings")
@@ -146,6 +185,42 @@ export default function DashboardPage() {
     return Object.values(summaries);
   }, [bookings]);
 
+  const sortedHotelChainSummaries = useMemo(() => {
+    return [...hotelChainSummaries].sort((a, b) => {
+      let aValue: string | number = a[sortConfig.key];
+      let bValue: string | number = b[sortConfig.key];
+
+      // Handle special sorting for calculated columns
+      if (sortConfig.key === "totalNet") {
+        // Sort by Net/Night average
+        aValue = a.totalNights > 0 ? a.totalNet / a.totalNights : 0;
+        bValue = b.totalNights > 0 ? b.totalNet / b.totalNights : 0;
+      } else if (sortConfig.key === "pointsRedeemed") {
+        // Sort by total award "impact" (points + certs)
+        // This is a heuristic, but better than just points
+        aValue = a.pointsRedeemed + a.certs * 20000; // Assume cert ~20k pts for sorting
+        bValue = b.pointsRedeemed + b.certs * 20000;
+      }
+
+      if (typeof aValue === "string" && typeof bValue === "string") {
+        return sortConfig.direction === "asc"
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+
+      return sortConfig.direction === "asc"
+        ? (aValue as number) - (bValue as number)
+        : (bValue as number) - (aValue as number);
+    });
+  }, [hotelChainSummaries, sortConfig]);
+
+  const toggleSort = (key: keyof HotelChainSummary) => {
+    setSortConfig((prev) => ({
+      key,
+      direction: prev.key === key && prev.direction === "desc" ? "asc" : "desc",
+    }));
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -171,7 +246,7 @@ export default function DashboardPage() {
     return sum + Number(b.totalCost) + pointsRedeemedValue + certsValue;
   }, 0);
 
-  const recentBookings = bookings.slice(0, 5);
+  const recentBookings = bookings.slice(0, 10);
 
   return (
     <div className="space-y-6">
@@ -414,6 +489,7 @@ export default function DashboardPage() {
           </Card>
 
           <PaymentTypeBreakdown bookings={bookings} />
+          <SubBrandBreakdown bookings={bookings} />
         </div>
       </div>
 
@@ -425,12 +501,10 @@ export default function DashboardPage() {
           <CardContent>
             {/* Mobile View: Cards */}
             <div className="flex flex-col gap-4 md:hidden" data-testid="hotel-chain-summary-mobile">
-              {hotelChainSummaries.map((summary) => (
+              {sortedHotelChainSummaries.map((summary) => (
                 <div key={summary.chain} className="flex flex-col p-4 border rounded-lg space-y-3">
                   <div className="flex justify-between items-start">
-                    <Badge variant="outline" className="text-base">
-                      {summary.chain}
-                    </Badge>
+                    <span className="text-base font-semibold">{summary.chain}</span>
                     <div className="text-right">
                       <div className="text-sm font-medium">{summary.count} Bookings</div>
                       <div className="text-xs text-muted-foreground">
@@ -491,21 +565,60 @@ export default function DashboardPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Hotel Chain</TableHead>
-                    <TableHead className="text-right">Bookings</TableHead>
-                    <TableHead className="text-right">Nights</TableHead>
-                    <TableHead className="text-right">Cash Spent</TableHead>
-                    <TableHead className="text-right">Award Points Spent</TableHead>
-                    <TableHead className="text-right">Total Savings</TableHead>
-                    <TableHead className="text-right">Net/Night</TableHead>
+                    <SortHeader
+                      column="chain"
+                      label="Hotel Chain"
+                      sortConfig={sortConfig}
+                      onSort={toggleSort}
+                    />
+                    <SortHeader
+                      column="count"
+                      label="Bookings"
+                      className="text-right"
+                      sortConfig={sortConfig}
+                      onSort={toggleSort}
+                    />
+                    <SortHeader
+                      column="totalNights"
+                      label="Nights"
+                      className="text-right"
+                      sortConfig={sortConfig}
+                      onSort={toggleSort}
+                    />
+                    <SortHeader
+                      column="totalSpend"
+                      label="Cash Spent"
+                      className="text-right"
+                      sortConfig={sortConfig}
+                      onSort={toggleSort}
+                    />
+                    <SortHeader
+                      column="pointsRedeemed"
+                      label="Award Points Spent"
+                      className="text-right"
+                      sortConfig={sortConfig}
+                      onSort={toggleSort}
+                    />
+                    <SortHeader
+                      column="totalSavings"
+                      label="Total Savings"
+                      className="text-right"
+                      sortConfig={sortConfig}
+                      onSort={toggleSort}
+                    />
+                    <SortHeader
+                      column="totalNet"
+                      label="Net/Night"
+                      className="text-right"
+                      sortConfig={sortConfig}
+                      onSort={toggleSort}
+                    />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {hotelChainSummaries.map((summary) => (
+                  {sortedHotelChainSummaries.map((summary) => (
                     <TableRow key={summary.chain}>
-                      <TableCell className="font-medium">
-                        <Badge variant="outline">{summary.chain}</Badge>
-                      </TableCell>
+                      <TableCell className="font-medium">{summary.chain}</TableCell>
                       <TableCell className="text-right">{summary.count}</TableCell>
                       <TableCell className="text-right">{summary.totalNights}</TableCell>
                       <TableCell className="text-right">
