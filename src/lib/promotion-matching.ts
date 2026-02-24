@@ -217,7 +217,14 @@ export function calculateMatchedPromotions(
       const priorValue = usage?.totalValue ?? 0;
       const remainingCapacity = Math.max(0, maxValue - priorValue);
       if (remainingCapacity <= 0) continue;
-      totalAppliedValue = Math.min(totalAppliedValue, remainingCapacity);
+      if (totalAppliedValue > remainingCapacity) {
+        const ratio = remainingCapacity / totalAppliedValue;
+        // Scale down each benefit application proportionally
+        for (const benefit of benefitApplications) {
+          benefit.appliedValue *= ratio;
+        }
+        totalAppliedValue = remainingCapacity;
+      }
     }
 
     // Apply maxTotalBonusPoints cap
@@ -227,6 +234,10 @@ export function calculateMatchedPromotions(
       if (remainingPoints <= 0) continue;
       if (totalBonusPoints > remainingPoints) {
         const ratio = remainingPoints / totalBonusPoints;
+        // Scale down each benefit application proportionally
+        for (const benefit of benefitApplications) {
+          benefit.appliedValue *= ratio;
+        }
         totalAppliedValue = totalAppliedValue * ratio;
         totalBonusPoints = remainingPoints;
       }
@@ -293,37 +304,22 @@ async function fetchPromotionUsage(
 
   if (promotionIds.length === 0) return usageMap;
 
-  // Get count and totalValue for each promotion
-  const countAndValue = await prisma.bookingPromotion.groupBy({
+  // Single aggregation query to get count, totalValue, and totalBonusPoints
+  const usage = await prisma.bookingPromotion.groupBy({
     by: ["promotionId"],
     where: {
       promotionId: { in: promotionIds },
       ...(excludeBookingId ? { bookingId: { not: excludeBookingId } } : {}),
     },
     _count: { id: true },
-    _sum: { appliedValue: true },
+    _sum: { appliedValue: true, bonusPointsApplied: true },
   });
 
-  // Get totalBonusPoints for each promotion
-  const bonusPoints = await prisma.bookingPromotion.findMany({
-    where: {
-      promotionId: { in: promotionIds },
-      ...(excludeBookingId ? { bookingId: { not: excludeBookingId } } : {}),
-    },
-    select: { promotionId: true, bonusPointsApplied: true },
-  });
-
-  const bonusPointsByPromo = new Map<number, number>();
-  for (const bp of bonusPoints) {
-    const current = bonusPointsByPromo.get(bp.promotionId) ?? 0;
-    bonusPointsByPromo.set(bp.promotionId, current + (bp.bonusPointsApplied ?? 0));
-  }
-
-  for (const row of countAndValue) {
+  for (const row of usage) {
     usageMap.set(row.promotionId, {
       count: row._count.id,
       totalValue: Number(row._sum.appliedValue ?? 0),
-      totalBonusPoints: bonusPointsByPromo.get(row.promotionId) ?? 0,
+      totalBonusPoints: row._sum.bonusPointsApplied ?? 0,
     });
   }
 
