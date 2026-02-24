@@ -52,17 +52,23 @@ export interface NetCostBooking {
     pointType: { name: string; centsPerPoint: string | number } | null;
   } | null;
   bookingPromotions: {
+    id?: number;
+    bookingId?: number;
+    promotionId?: number;
     appliedValue: string | number;
+    autoApplied?: boolean;
+    verified?: boolean;
     promotion: {
       name: string;
-      benefits: {
+      type?: string;
+      benefits?: {
         rewardType: string;
         valueType: string;
         value: string | number;
         certType: string | null;
       }[];
     };
-    benefitApplications: NetCostBookingPromotionBenefit[];
+    benefitApplications?: NetCostBookingPromotionBenefit[];
   }[];
 }
 
@@ -111,7 +117,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
 
   const promotions: PromotionBreakdown[] = booking.bookingPromotions.map((bp, index) => {
     const appliedValue = Number(bp.appliedValue);
-    const benefits = bp.benefitApplications;
+    const benefits = bp.benefitApplications ?? [];
 
     // Build per-benefit formula lines
     const formulaLines: string[] = [];
