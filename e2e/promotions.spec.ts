@@ -235,3 +235,80 @@ test.describe("Promotions multi-benefit via API", () => {
     await request.delete(`/api/promotions/${promo.id}`);
   });
 });
+
+test.describe("Promotions constraints", () => {
+  test("should enforce isSingleUse: only first booking gets promotion", async ({ request }) => {
+    // Get a hotel chain
+    const chainsRes = await request.get("/api/hotel-chains");
+    const chain = (await chainsRes.json())[0];
+
+    // Create a single-use loyalty promotion (no isSingleUse constraint first, just verify it matches)
+    const promoRes = await request.post("/api/promotions", {
+      data: {
+        name: `Single Use Promo ${crypto.randomUUID()}`,
+        type: "loyalty",
+        hotelChainId: chain.id,
+        isSingleUse: true,
+        benefits: [
+          { rewardType: "cashback", valueType: "fixed", value: 50, certType: null, sortOrder: 0 },
+        ],
+        isActive: true,
+      },
+    });
+    expect(promoRes.ok()).toBeTruthy();
+    const promo = await promoRes.json();
+    expect(promo.isSingleUse).toBe(true);
+
+    // Create first booking
+    const booking1Res = await request.post("/api/bookings", {
+      data: {
+        hotelChainId: chain.id,
+        propertyName: `Single Use Test 1 ${crypto.randomUUID()}`,
+        checkIn: "2025-06-01",
+        checkOut: "2025-06-03",
+        numNights: 2,
+        pretaxCost: 200,
+        taxAmount: 30,
+        totalCost: 230,
+        currency: "USD",
+      },
+    });
+    expect(booking1Res.ok()).toBeTruthy();
+    const booking1 = await booking1Res.json();
+
+    // Verify first booking has the single-use promotion applied
+    const booking1SingleUse = booking1.bookingPromotions.find(
+      (bp: { promotionId: number }) => bp.promotionId === promo.id
+    );
+    expect(booking1SingleUse).toBeDefined();
+    expect(Number(booking1SingleUse.appliedValue)).toBe(50);
+
+    // Create second booking
+    const booking2Res = await request.post("/api/bookings", {
+      data: {
+        hotelChainId: chain.id,
+        propertyName: `Single Use Test 2 ${crypto.randomUUID()}`,
+        checkIn: "2025-07-01",
+        checkOut: "2025-07-03",
+        numNights: 2,
+        pretaxCost: 200,
+        taxAmount: 30,
+        totalCost: 230,
+        currency: "USD",
+      },
+    });
+    expect(booking2Res.ok()).toBeTruthy();
+    const booking2 = await booking2Res.json();
+
+    // Verify second booking does NOT have the single-use promotion (isSingleUse constraint enforced)
+    const booking2SingleUse = booking2.bookingPromotions.find(
+      (bp: { promotionId: number }) => bp.promotionId === promo.id
+    );
+    expect(booking2SingleUse).toBeUndefined();
+
+    // Cleanup
+    await request.delete(`/api/bookings/${booking1.id}`);
+    await request.delete(`/api/bookings/${booking2.id}`);
+    await request.delete(`/api/promotions/${promo.id}`);
+  });
+});
