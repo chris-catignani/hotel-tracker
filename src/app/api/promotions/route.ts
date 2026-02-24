@@ -54,6 +54,8 @@ export async function POST(request: NextRequest) {
       minNightsRequired,
       nightsStackable,
       bookByDate,
+      requiredStayNumber,
+      oncePerSubBrand,
     } = body;
 
     const promotion = await prisma.promotion.create({
@@ -75,6 +77,8 @@ export async function POST(request: NextRequest) {
         minNightsRequired: minNightsRequired != null ? Number(minNightsRequired) : null,
         nightsStackable: nightsStackable ?? false,
         bookByDate: bookByDate ? new Date(bookByDate) : null,
+        requiredStayNumber: requiredStayNumber != null ? Number(requiredStayNumber) : null,
+        oncePerSubBrand: oncePerSubBrand ?? false,
         benefits: {
           create: ((benefits as PromotionBenefitFormData[]) || []).map((b, i) => ({
             rewardType: b.rewardType,

@@ -51,6 +51,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       minNightsRequired,
       nightsStackable,
       bookByDate,
+      requiredStayNumber,
+      oncePerSubBrand,
     } = body;
 
     const data: Record<string, unknown> = {};
@@ -77,6 +79,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       data.minNightsRequired = minNightsRequired != null ? Number(minNightsRequired) : null;
     if (nightsStackable !== undefined) data.nightsStackable = nightsStackable;
     if (bookByDate !== undefined) data.bookByDate = bookByDate ? new Date(bookByDate) : null;
+    if (requiredStayNumber !== undefined)
+      data.requiredStayNumber = requiredStayNumber != null ? Number(requiredStayNumber) : null;
+    if (oncePerSubBrand !== undefined) data.oncePerSubBrand = oncePerSubBrand;
 
     // Replace benefits wholesale inside a transaction: delete all then recreate
     if (benefits !== undefined) {

@@ -268,6 +268,10 @@ export function PromotionForm({
   );
   const [nightsStackable, setNightsStackable] = useState(initialData?.nightsStackable ?? false);
   const [bookByDate, setBookByDate] = useState(initialData?.bookByDate || "");
+  const [requiredStayNumber, setRequiredStayNumber] = useState(
+    initialData?.requiredStayNumber ? String(initialData.requiredStayNumber) : ""
+  );
+  const [oncePerSubBrand, setOncePerSubBrand] = useState(initialData?.oncePerSubBrand ?? false);
 
   const [hotelChains, setHotelChains] = useState<HotelChain[]>([]);
   const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
@@ -333,6 +337,12 @@ export function PromotionForm({
       if (initialData.nightsStackable !== undefined)
         setNightsStackable(initialData.nightsStackable);
       if (initialData.bookByDate !== undefined) setBookByDate(initialData.bookByDate || "");
+      if (initialData.requiredStayNumber !== undefined)
+        setRequiredStayNumber(
+          initialData.requiredStayNumber ? String(initialData.requiredStayNumber) : ""
+        );
+      if (initialData.oncePerSubBrand !== undefined)
+        setOncePerSubBrand(initialData.oncePerSubBrand);
     }
   }, [initialData]);
 
@@ -410,6 +420,8 @@ export function PromotionForm({
     }
     body.nightsStackable = nightsStackable;
     body.bookByDate = bookByDate || null;
+    body.requiredStayNumber = requiredStayNumber ? parseInt(requiredStayNumber, 10) : null;
+    body.oncePerSubBrand = oncePerSubBrand;
 
     await onSubmit(body);
   };
@@ -699,6 +711,40 @@ export function PromotionForm({
                 placeholder="Select book by date"
                 data-testid="promotion-book-by-date"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="requiredStayNumber">Required Stay #</Label>
+              <Input
+                id="requiredStayNumber"
+                type="number"
+                step="1"
+                min="1"
+                value={requiredStayNumber}
+                onChange={(e) => setRequiredStayNumber(e.target.value)}
+                placeholder="Optional (e.g. 2)"
+                data-testid="promotion-required-stay-number"
+              />
+              <p className="text-xs text-muted-foreground">
+                Promotion applies starting on the Nth eligible stay within the promo period.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                id="oncePerSubBrand"
+                type="checkbox"
+                checked={oncePerSubBrand}
+                onChange={(e) => setOncePerSubBrand(e.target.checked)}
+                className="size-4 rounded border-gray-300"
+                data-testid="promotion-once-per-sub-brand"
+              />
+              <div>
+                <Label htmlFor="oncePerSubBrand">Once Per Sub-Brand</Label>
+                <p className="text-xs text-muted-foreground">
+                  Promotion can only apply once per hotel sub-brand within the promo period.
+                </p>
+              </div>
             </div>
           </div>
 

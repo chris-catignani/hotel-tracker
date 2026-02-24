@@ -115,6 +115,8 @@ export interface Promotion {
   minNightsRequired: number | null;
   nightsStackable: boolean;
   bookByDate: string | null;
+  requiredStayNumber: number | null;
+  oncePerSubBrand: boolean;
 }
 
 export interface PromotionFormData {
@@ -136,6 +138,8 @@ export interface PromotionFormData {
   minNightsRequired?: number | null;
   nightsStackable?: boolean;
   bookByDate?: string | null;
+  requiredStayNumber?: number | null;
+  oncePerSubBrand?: boolean;
 }
 
 // ---------------------------------------------------------------------------

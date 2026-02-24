@@ -45,6 +45,8 @@ function makePromo(overrides: Partial<TestPromotion> = {}): TestPromotion {
     minNightsRequired: null,
     nightsStackable: false,
     bookByDate: null,
+    requiredStayNumber: null,
+    oncePerSubBrand: false,
     benefits: [
       {
         id: 10,
@@ -449,6 +451,135 @@ describe("promotion-matching", () => {
     });
     const priorUsage = new Map([[promo.id, { count: 0, totalValue: 0, totalBonusPoints: 50 }]]);
     const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
+    expect(matched).toHaveLength(0);
+  });
+
+  // requiredStayNumber tests
+  it("should skip when requiredStayNumber=2 and this is stay #1 (eligibleStayCount=0)", () => {
+    const promo = makePromo({ requiredStayNumber: 2 });
+    const priorUsage = new Map([
+      [promo.id, { count: 0, totalValue: 0, totalBonusPoints: 0, eligibleStayCount: 0 }],
+    ]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
+    expect(matched).toHaveLength(0);
+  });
+
+  it("should apply when requiredStayNumber=2 and this is stay #2 (eligibleStayCount=1)", () => {
+    const promo = makePromo({ requiredStayNumber: 2 });
+    const priorUsage = new Map([
+      [promo.id, { count: 0, totalValue: 0, totalBonusPoints: 0, eligibleStayCount: 1 }],
+    ]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
+    expect(matched).toHaveLength(1);
+  });
+
+  it("should apply when requiredStayNumber=2 and this is stay #3 (eligibleStayCount=2)", () => {
+    const promo = makePromo({ requiredStayNumber: 2 });
+    const priorUsage = new Map([
+      [promo.id, { count: 0, totalValue: 0, totalBonusPoints: 0, eligibleStayCount: 2 }],
+    ]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
+    expect(matched).toHaveLength(1);
+  });
+
+  it("should always apply when requiredStayNumber is null (no constraint)", () => {
+    const promo = makePromo({ requiredStayNumber: null });
+    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    expect(matched).toHaveLength(1);
+  });
+
+  it("should skip when requiredStayNumber=2 but no priorUsage entry (treats as eligibleStayCount=0 → stay #1, skips)", () => {
+    const promo = makePromo({ requiredStayNumber: 2 });
+    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    expect(matched).toHaveLength(0);
+  });
+
+  // oncePerSubBrand tests
+  it("should apply when oncePerSubBrand=true and appliedSubBrandIds is empty", () => {
+    const promo = makePromo({ oncePerSubBrand: true });
+    const priorUsage = new Map([
+      [
+        promo.id,
+        {
+          count: 0,
+          totalValue: 0,
+          totalBonusPoints: 0,
+          appliedSubBrandIds: new Set<number | null>(),
+        },
+      ],
+    ]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
+    expect(matched).toHaveLength(1);
+  });
+
+  it("should skip when oncePerSubBrand=true and booking sub-brand already in appliedSubBrandIds", () => {
+    const promo = makePromo({ oncePerSubBrand: true });
+    // mockBooking has hotelChainSubBrandId: 4
+    const priorUsage = new Map([
+      [
+        promo.id,
+        {
+          count: 1,
+          totalValue: 10,
+          totalBonusPoints: 0,
+          appliedSubBrandIds: new Set<number | null>([4]),
+        },
+      ],
+    ]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
+    expect(matched).toHaveLength(0);
+  });
+
+  it("should apply when oncePerSubBrand=true and booking sub-brand is different from already-applied ones", () => {
+    const promo = makePromo({ oncePerSubBrand: true });
+    // mockBooking has hotelChainSubBrandId: 4, appliedSubBrandIds has 5
+    const priorUsage = new Map([
+      [
+        promo.id,
+        {
+          count: 1,
+          totalValue: 10,
+          totalBonusPoints: 0,
+          appliedSubBrandIds: new Set<number | null>([5]),
+        },
+      ],
+    ]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
+    expect(matched).toHaveLength(1);
+  });
+
+  it("should always apply when oncePerSubBrand=false", () => {
+    const promo = makePromo({ oncePerSubBrand: false });
+    const priorUsage = new Map([
+      [
+        promo.id,
+        {
+          count: 1,
+          totalValue: 10,
+          totalBonusPoints: 0,
+          appliedSubBrandIds: new Set<number | null>([4]),
+        },
+      ],
+    ]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
+    expect(matched).toHaveLength(1);
+  });
+
+  it("should skip when oncePerSubBrand=true, booking has null sub-brand, and null is in appliedSubBrandIds", () => {
+    const promo = makePromo({ oncePerSubBrand: true });
+    const bookingNoSubBrand = { ...mockBooking, hotelChainSubBrandId: null };
+    const priorUsage = new Map([
+      [
+        promo.id,
+        {
+          count: 1,
+          totalValue: 10,
+          totalBonusPoints: 0,
+          appliedSubBrandIds: new Set<number | null>([null]),
+        },
+      ],
+    ]);
+    const matched = calculateMatchedPromotions(bookingNoSubBrand, [promo], priorUsage);
     expect(matched).toHaveLength(0);
   });
 });
