@@ -39,7 +39,7 @@ function useMediaQuery(query: string) {
 
 /**
  * Auto-formats numeric input into MM/DD/YYYY.
- * e.g. "022426" -> "02/24/2026", "02242026" -> "02/24/2026"
+ * e.g. "022426" -> "02/24/26", "02242026" -> "02/24/2026"
  */
 function formatInputString(value: string): string {
   const digits = value.replace(/\D/g, "").slice(0, 8);
@@ -47,7 +47,13 @@ function formatInputString(value: string): string {
   if (digits.length >= 3 && digits.length <= 4) {
     formatted = `${digits.slice(0, 2)}/${digits.slice(2)}`;
   } else if (digits.length >= 5) {
-    formatted = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+    if (digits.length <= 6) {
+      // MM/DD/YY
+      formatted = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+    } else {
+      // MM/DD/YYYY
+      formatted = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+    }
   }
   return formatted;
 }
@@ -55,13 +61,16 @@ function formatInputString(value: string): string {
 /**
  * Tries parsing several potential input formats.
  */
-function parseDateInput(value: string): Date | undefined {
-  if (value.length !== 8 && value.length !== 10) return undefined;
-  const formats = ["MM/dd/yyyy", "MM/dd/yy"];
+function parseDateInput(value: string, allowShortYear = false): Date | undefined {
+  const formats = allowShortYear ? ["MM/dd/yyyy", "MM/dd/yy"] : ["MM/dd/yyyy"];
+  // Only parse if it looks like a full date (8 chars for MM/DD/YY or 10 chars for MM/DD/YYYY)
+  if (value.length !== 10 && !(allowShortYear && value.length === 8)) {
+    return undefined;
+  }
+
   for (const f of formats) {
     const parsed = parse(value, f, new Date());
     if (isValid(parsed)) {
-      // Avoid partial dates being treated as current year incorrectly during typing
       if (parsed.getFullYear() > 1000) {
         return parsed;
       }
@@ -100,7 +109,16 @@ export function DatePicker({
       return;
     }
 
-    const parsedDate = parseDateInput(formatted);
+    // Only parse MMDDYYYY while typing (length 10)
+    const parsedDate = parseDateInput(formatted, false);
+    if (parsedDate) {
+      setDate(parsedDate);
+    }
+  };
+
+  const handleBlur = () => {
+    // On blur, allow parsing MMDDYY (length 8)
+    const parsedDate = parseDateInput(inputValue, true);
     if (parsedDate) {
       setDate(parsedDate);
     }
@@ -112,6 +130,7 @@ export function DatePicker({
         id={id}
         value={inputValue}
         onChange={handleInputChange}
+        onBlur={handleBlur}
         onFocus={() => setOpen(true)}
         onClick={() => setOpen(true)}
         placeholder="MM/DD/YYYY"

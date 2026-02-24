@@ -18,18 +18,18 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
-        month_caption: "flex justify-center pt-1 relative items-center mb-2",
-        caption_label: "text-sm sm:text-base font-medium px-10",
-        nav: "space-x-1 flex items-center",
+        month_caption: "flex justify-center pt-1 relative items-center mb-4",
+        caption_label: "text-sm sm:text-base font-medium",
+        nav: "absolute top-0 left-0 right-0 flex items-center justify-between px-2 pointer-events-none",
         button_previous: cn(
           buttonVariants({ variant: "outline" }),
           "h-8 w-8 sm:h-7 sm:w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
-          "absolute left-1"
+          "pointer-events-auto"
         ),
         button_next: cn(
           buttonVariants({ variant: "outline" }),
           "h-8 w-8 sm:h-7 sm:w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
-          "absolute right-1"
+          "pointer-events-auto"
         ),
         month_grid: "w-full border-collapse space-y-1",
         weekdays: "flex justify-between sm:justify-start",

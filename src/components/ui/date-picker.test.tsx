@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { DatePicker } from "./date-picker";
@@ -64,7 +64,7 @@ describe("DatePicker", () => {
     expect(format(calledDate, "yyyy-MM-dd")).toBe("2026-02-24");
   });
 
-  it("auto-formats MMDDYY typing", async () => {
+  it("does NOT parse MMDDYY typing WHILE typing", async () => {
     const user = userEvent.setup();
     render(<DatePicker date={undefined} setDate={mockSetDate} />);
 
@@ -72,9 +72,22 @@ describe("DatePicker", () => {
     await user.type(input, "022426");
 
     expect(input.value).toBe("02/24/26");
+    // Should NOT be called because it only parses length 10 while typing
+    expect(mockSetDate).not.toHaveBeenCalled();
+  });
+
+  it("parses MMDDYY on blur", async () => {
+    const user = userEvent.setup();
+    render(<DatePicker date={undefined} setDate={mockSetDate} />);
+
+    const input = screen.getByPlaceholderText("MM/DD/YYYY") as HTMLInputElement;
+    await user.type(input, "022426");
+
+    // Trigger blur
+    fireEvent.blur(input);
+
     expect(mockSetDate).toHaveBeenCalled();
-    const calledDate = mockSetDate.mock.calls[mockSetDate.mock.calls.length - 1][0];
-    // date-fns parse with 'yy' will assume current century
+    const calledDate = mockSetDate.mock.calls[0][0];
     expect(format(calledDate, "MM/dd/yy")).toBe("02/24/26");
   });
 
