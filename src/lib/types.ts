@@ -108,6 +108,13 @@ export interface Promotion {
   startDate: string | null;
   endDate: string | null;
   isActive: boolean;
+  isSingleUse: boolean;
+  maxRedemptionCount: number | null;
+  maxRedemptionValue: string | number | null;
+  maxTotalBonusPoints: number | null;
+  minNightsRequired: number | null;
+  nightsStackable: boolean;
+  bookByDate: string | null;
 }
 
 export interface PromotionFormData {
@@ -122,6 +129,13 @@ export interface PromotionFormData {
   startDate?: string | null;
   endDate?: string | null;
   isActive: boolean;
+  isSingleUse?: boolean;
+  maxRedemptionCount?: number | null;
+  maxRedemptionValue?: number | null;
+  maxTotalBonusPoints?: number | null;
+  minNightsRequired?: number | null;
+  nightsStackable?: boolean;
+  bookByDate?: string | null;
 }
 
 // ---------------------------------------------------------------------------

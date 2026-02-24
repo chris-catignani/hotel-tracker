@@ -235,6 +235,13 @@ model Promotion {
   startDate            DateTime?           @map("start_date") @db.Date
   endDate              DateTime?           @map("end_date") @db.Date
   isActive             Boolean             @default(true) @map("is_active")
+  isSingleUse          Boolean             @default(false) @map("is_single_use")
+  maxRedemptionCount   Int?                @map("max_redemption_count")
+  maxRedemptionValue   Decimal?            @map("max_redemption_value") @db.Decimal(10, 2)
+  maxTotalBonusPoints  Int?                @map("max_total_bonus_points")
+  minNightsRequired    Int?                @map("min_nights_required")
+  nightsStackable      Boolean             @default(false) @map("nights_stackable")
+  bookByDate           DateTime?           @map("book_by_date") @db.Date
   createdAt            DateTime            @default(now()) @map("created_at")
   benefits             PromotionBenefit[]
   bookingPromotions    BookingPromotion[]
@@ -265,6 +272,7 @@ model BookingPromotion {
   promotionId         Int                       @map("promotion_id")
   promotion           Promotion                 @relation(fields: [promotionId], references: [id], onDelete: Cascade)
   appliedValue        Decimal                   @map("applied_value") @db.Decimal(10, 2)
+  bonusPointsApplied  Int?                      @map("bonus_points_applied")
   autoApplied         Boolean                   @default(true) @map("auto_applied")
   verified            Boolean                   @default(false)
   benefitApplications BookingPromotionBenefit[]

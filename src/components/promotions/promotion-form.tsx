@@ -253,6 +253,21 @@ export function PromotionForm({
   const [startDate, setStartDate] = useState(initialData?.startDate || "");
   const [endDate, setEndDate] = useState(initialData?.endDate || "");
   const [isActive, setIsActive] = useState(initialData?.isActive ?? true);
+  const [isSingleUse, setIsSingleUse] = useState(initialData?.isSingleUse ?? false);
+  const [maxRedemptionCount, setMaxRedemptionCount] = useState(
+    initialData?.maxRedemptionCount ? String(initialData.maxRedemptionCount) : ""
+  );
+  const [maxRedemptionValue, setMaxRedemptionValue] = useState(
+    initialData?.maxRedemptionValue ? String(initialData.maxRedemptionValue) : ""
+  );
+  const [maxTotalBonusPoints, setMaxTotalBonusPoints] = useState(
+    initialData?.maxTotalBonusPoints ? String(initialData.maxTotalBonusPoints) : ""
+  );
+  const [minNightsRequired, setMinNightsRequired] = useState(
+    initialData?.minNightsRequired ? String(initialData.minNightsRequired) : ""
+  );
+  const [nightsStackable, setNightsStackable] = useState(initialData?.nightsStackable ?? false);
+  const [bookByDate, setBookByDate] = useState(initialData?.bookByDate || "");
 
   const [hotelChains, setHotelChains] = useState<HotelChain[]>([]);
   const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
@@ -298,6 +313,26 @@ export function PromotionForm({
       if (initialData.startDate !== undefined) setStartDate(initialData.startDate || "");
       if (initialData.endDate !== undefined) setEndDate(initialData.endDate || "");
       if (initialData.isActive !== undefined) setIsActive(initialData.isActive);
+      if (initialData.isSingleUse !== undefined) setIsSingleUse(initialData.isSingleUse);
+      if (initialData.maxRedemptionCount !== undefined)
+        setMaxRedemptionCount(
+          initialData.maxRedemptionCount ? String(initialData.maxRedemptionCount) : ""
+        );
+      if (initialData.maxRedemptionValue !== undefined)
+        setMaxRedemptionValue(
+          initialData.maxRedemptionValue ? String(initialData.maxRedemptionValue) : ""
+        );
+      if (initialData.maxTotalBonusPoints !== undefined)
+        setMaxTotalBonusPoints(
+          initialData.maxTotalBonusPoints ? String(initialData.maxTotalBonusPoints) : ""
+        );
+      if (initialData.minNightsRequired !== undefined)
+        setMinNightsRequired(
+          initialData.minNightsRequired ? String(initialData.minNightsRequired) : ""
+        );
+      if (initialData.nightsStackable !== undefined)
+        setNightsStackable(initialData.nightsStackable);
+      if (initialData.bookByDate !== undefined) setBookByDate(initialData.bookByDate || "");
     }
   }, [initialData]);
 
@@ -352,11 +387,36 @@ export function PromotionForm({
     body.startDate = startDate || null;
     body.endDate = endDate || null;
 
+    body.isSingleUse = isSingleUse;
+    if (maxRedemptionCount) {
+      body.maxRedemptionCount = parseInt(maxRedemptionCount);
+    } else {
+      body.maxRedemptionCount = null;
+    }
+    if (maxRedemptionValue) {
+      body.maxRedemptionValue = parseFloat(maxRedemptionValue);
+    } else {
+      body.maxRedemptionValue = null;
+    }
+    if (maxTotalBonusPoints) {
+      body.maxTotalBonusPoints = parseInt(maxTotalBonusPoints);
+    } else {
+      body.maxTotalBonusPoints = null;
+    }
+    if (minNightsRequired) {
+      body.minNightsRequired = parseInt(minNightsRequired);
+    } else {
+      body.minNightsRequired = null;
+    }
+    body.nightsStackable = nightsStackable;
+    body.bookByDate = bookByDate || null;
+
     await onSubmit(body);
   };
 
   const startDateObj = startDate ? parseISO(startDate) : undefined;
   const endDateObj = endDate ? parseISO(endDate) : undefined;
+  const bookByDateObj = bookByDate ? parseISO(bookByDate) : undefined;
 
   const handleStartDateChange = (date?: Date) => {
     setStartDate(date ? format(date, "yyyy-MM-dd") : "");
@@ -364,6 +424,10 @@ export function PromotionForm({
 
   const handleEndDateChange = (date?: Date) => {
     setEndDate(date ? format(date, "yyyy-MM-dd") : "");
+  };
+
+  const handleBookByDateChange = (date?: Date) => {
+    setBookByDate(date ? format(date, "yyyy-MM-dd") : "");
   };
 
   return (
@@ -542,6 +606,100 @@ export function PromotionForm({
               className="size-4 rounded border-gray-300"
             />
             <Label htmlFor="isActive">Active</Label>
+          </div>
+
+          {/* Redemption Constraints */}
+          <div className="space-y-4 border-t pt-4">
+            <h3 className="text-sm font-medium">Redemption Constraints</h3>
+
+            <div className="flex items-center gap-2">
+              <input
+                id="isSingleUse"
+                type="checkbox"
+                checked={isSingleUse}
+                onChange={(e) => setIsSingleUse(e.target.checked)}
+                className="size-4 rounded border-gray-300"
+                data-testid="promotion-single-use"
+              />
+              <Label htmlFor="isSingleUse">Single Use Only</Label>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="maxRedemptionCount">Max Redemption Count</Label>
+              <Input
+                id="maxRedemptionCount"
+                type="number"
+                step="1"
+                value={maxRedemptionCount}
+                onChange={(e) => setMaxRedemptionCount(e.target.value)}
+                placeholder="Optional (e.g. 3)"
+                data-testid="promotion-max-redemption-count"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="maxRedemptionValue">Max Redemption Value ($)</Label>
+              <Input
+                id="maxRedemptionValue"
+                type="number"
+                step="0.01"
+                value={maxRedemptionValue}
+                onChange={(e) => setMaxRedemptionValue(e.target.value)}
+                placeholder="Optional (e.g. 50.00)"
+                data-testid="promotion-max-redemption-value"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="maxTotalBonusPoints">Max Total Bonus Points</Label>
+              <Input
+                id="maxTotalBonusPoints"
+                type="number"
+                step="1"
+                value={maxTotalBonusPoints}
+                onChange={(e) => setMaxTotalBonusPoints(e.target.value)}
+                placeholder="Optional (e.g. 10000)"
+                data-testid="promotion-max-total-bonus-points"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="minNightsRequired">Min Nights Required</Label>
+              <Input
+                id="minNightsRequired"
+                type="number"
+                step="1"
+                value={minNightsRequired}
+                onChange={(e) => setMinNightsRequired(e.target.value)}
+                placeholder="Optional (e.g. 2)"
+                data-testid="promotion-min-nights-required"
+              />
+            </div>
+
+            {minNightsRequired && (
+              <div className="flex items-center gap-2">
+                <input
+                  id="nightsStackable"
+                  type="checkbox"
+                  checked={nightsStackable}
+                  onChange={(e) => setNightsStackable(e.target.checked)}
+                  className="size-4 rounded border-gray-300"
+                  data-testid="promotion-nights-stackable"
+                />
+                <Label htmlFor="nightsStackable">Stackable (multiply by number of stays)</Label>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="bookByDate">Book By Date</Label>
+              <DatePicker
+                id="bookByDate"
+                date={bookByDateObj}
+                setDate={handleBookByDateChange}
+                placeholder="Select book by date"
+                data-testid="promotion-book-by-date"
+              />
+            </div>
           </div>
 
           {/* Actions */}

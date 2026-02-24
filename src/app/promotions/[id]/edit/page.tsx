@@ -54,6 +54,15 @@ export default function EditPromotionPage() {
           startDate: toDateInputValue(promo.startDate),
           endDate: toDateInputValue(promo.endDate),
           isActive: promo.isActive,
+          isSingleUse: promo.isSingleUse,
+          maxRedemptionCount: promo.maxRedemptionCount,
+          maxRedemptionValue: promo.maxRedemptionValue
+            ? parseFloat(String(promo.maxRedemptionValue))
+            : null,
+          maxTotalBonusPoints: promo.maxTotalBonusPoints,
+          minNightsRequired: promo.minNightsRequired,
+          nightsStackable: promo.nightsStackable,
+          bookByDate: toDateInputValue(promo.bookByDate),
         });
         setLoading(false);
       })

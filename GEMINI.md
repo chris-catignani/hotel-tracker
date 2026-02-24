@@ -6,11 +6,16 @@ This file provides foundational mandates for Gemini CLI (gemini-cli) when workin
 
 **When a task requires Prisma schema changes, always show the proposed schema diff to the user for review and approval _before_ implementing the rest of the code** (API routes, types, UI, tests). This prevents rework when the design needs adjustment.
 
+## App Architecture
+
+- **Single-user bookings and promotions:** Each user has their own isolated bookings and promotions. Promotions and bookings are NOT shared across users. This means race conditions in redemption constraint checks are not a concern — no need to implement database-level serialization or row-level locking.
+
 ## Engineering Mandates
 
 - **Savings Explanations:** When adding new promotion types, portal reward options, or modifying loyalty logic, you **MUST** update the `getNetCostBreakdown` function in `src/lib/net-cost.ts` to include detailed, human-readable explanations (description and formula) for the new logic.
 - **Cost Basis:** All explanations must explicitly state whether the calculation is based on the **pre-tax cost** or the **total cost**.
 - **UI Consistency:** Ensure the `CostBreakdown` component (src/components/cost-breakdown.tsx) is updated as necessary to accommodate any new breakdown items or calculation types.
+- **Benefit Value Consistency:** When redemption constraints cap promotion values (e.g., `maxRedemptionValue`, `maxTotalBonusPoints`), the individual `appliedValue` on each `BenefitApplication` must be proportionally scaled to maintain consistency with the total capped `appliedValue`.
 
 ## Testing Mandates
 
