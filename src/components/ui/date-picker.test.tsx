@@ -40,7 +40,7 @@ describe("DatePicker", () => {
     const user = userEvent.setup();
     render(<DatePicker date={undefined} setDate={mockSetDate} />);
 
-    const input = screen.getByPlaceholderText("MM/DD/YYYY") as HTMLInputElement;
+    const input = screen.getByTestId("date-picker-input") as HTMLInputElement;
     expect(input).toBeInTheDocument();
 
     await user.type(input, "02/24/2026");
@@ -55,7 +55,7 @@ describe("DatePicker", () => {
     const user = userEvent.setup();
     render(<DatePicker date={undefined} setDate={mockSetDate} />);
 
-    const input = screen.getByPlaceholderText("MM/DD/YYYY") as HTMLInputElement;
+    const input = screen.getByTestId("date-picker-input") as HTMLInputElement;
     await user.type(input, "02242026");
 
     expect(input.value).toBe("02/24/2026");
@@ -68,7 +68,7 @@ describe("DatePicker", () => {
     const user = userEvent.setup();
     render(<DatePicker date={undefined} setDate={mockSetDate} />);
 
-    const input = screen.getByPlaceholderText("MM/DD/YYYY") as HTMLInputElement;
+    const input = screen.getByTestId("date-picker-input") as HTMLInputElement;
     await user.type(input, "022426");
 
     expect(input.value).toBe("02/24/26");
@@ -80,7 +80,7 @@ describe("DatePicker", () => {
     const user = userEvent.setup();
     render(<DatePicker date={undefined} setDate={mockSetDate} />);
 
-    const input = screen.getByPlaceholderText("MM/DD/YYYY") as HTMLInputElement;
+    const input = screen.getByTestId("date-picker-input") as HTMLInputElement;
     await user.type(input, "022426");
 
     // Trigger blur
@@ -106,8 +106,8 @@ describe("DatePicker", () => {
 
     render(<DatePicker date={undefined} setDate={mockSetDate} />);
 
-    expect(screen.queryByPlaceholderText("MM/DD/YYYY")).not.toBeInTheDocument();
-    expect(screen.getByRole("button")).toBeInTheDocument();
+    expect(screen.queryByTestId("date-picker-input")).not.toBeInTheDocument();
+    expect(screen.getByTestId("date-picker-trigger")).toBeInTheDocument();
   });
 
   it("clears the date when input is cleared", async () => {
@@ -115,7 +115,7 @@ describe("DatePicker", () => {
     const initialDate = new Date(2026, 1, 24);
     render(<DatePicker date={initialDate} setDate={mockSetDate} />);
 
-    const input = screen.getByDisplayValue("02/24/2026") as HTMLInputElement;
+    const input = screen.getByTestId("date-picker-input") as HTMLInputElement;
     await user.clear(input);
 
     expect(mockSetDate).toHaveBeenCalledWith(undefined);

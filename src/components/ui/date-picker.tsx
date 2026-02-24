@@ -47,13 +47,7 @@ function formatInputString(value: string): string {
   if (digits.length >= 3 && digits.length <= 4) {
     formatted = `${digits.slice(0, 2)}/${digits.slice(2)}`;
   } else if (digits.length >= 5) {
-    if (digits.length <= 6) {
-      // MM/DD/YY
-      formatted = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
-    } else {
-      // MM/DD/YYYY
-      formatted = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
-    }
+    formatted = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
   }
   return formatted;
 }
