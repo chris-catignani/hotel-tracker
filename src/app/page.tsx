@@ -265,8 +265,8 @@ export default function DashboardPage() {
         totalCertificates={totalCertificates}
       />
 
-      <div className="grid gap-6 lg:grid-cols-5 items-start">
-        <Card className="lg:col-span-3">
+      <div className="grid gap-6 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 items-start">
+        <Card className="lg:col-span-2 xl:col-span-2">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Recent Bookings</CardTitle>
@@ -364,133 +364,131 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <div className="lg:col-span-2 flex flex-col gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Savings Breakdown</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {cashBookings.length === 0 ? (
-                <EmptyState
-                  icon={Wallet}
-                  title="No savings data"
-                  description="Savings from promotions, portals, and credit cards will appear here once you add bookings."
-                  className="py-6"
-                  data-testid="savings-breakdown-empty"
-                />
-              ) : (
-                <div className="space-y-4">
-                  {(() => {
-                    const totalPromoSavings = cashBookings.reduce(
-                      (sum, b) =>
-                        sum + b.bookingPromotions.reduce((s, bp) => s + Number(bp.appliedValue), 0),
-                      0
-                    );
-                    const totalPortalCashback = cashBookings.reduce((sum, b) => {
-                      const portalBasis = b.portalCashbackOnTotal
-                        ? Number(b.totalCost)
-                        : Number(b.pretaxCost);
-                      const portalRate = Number(b.portalCashbackRate || 0);
-                      if (b.shoppingPortal?.rewardType === "points") {
-                        return (
-                          sum +
-                          portalRate *
-                            portalBasis *
-                            Number(b.shoppingPortal.pointType?.centsPerPoint ?? 0)
-                        );
-                      }
-                      return sum + portalRate * portalBasis;
-                    }, 0);
-                    const totalCardRewards = cashBookings.reduce(
-                      (sum, b) =>
+        <Card>
+          <CardHeader>
+            <CardTitle>Savings Breakdown</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {cashBookings.length === 0 ? (
+              <EmptyState
+                icon={Wallet}
+                title="No savings data"
+                description="Savings from promotions, portals, and credit cards will appear here once you add bookings."
+                className="py-6"
+                data-testid="savings-breakdown-empty"
+              />
+            ) : (
+              <div className="space-y-4">
+                {(() => {
+                  const totalPromoSavings = cashBookings.reduce(
+                    (sum, b) =>
+                      sum + b.bookingPromotions.reduce((s, bp) => s + Number(bp.appliedValue), 0),
+                    0
+                  );
+                  const totalPortalCashback = cashBookings.reduce((sum, b) => {
+                    const portalBasis = b.portalCashbackOnTotal
+                      ? Number(b.totalCost)
+                      : Number(b.pretaxCost);
+                    const portalRate = Number(b.portalCashbackRate || 0);
+                    if (b.shoppingPortal?.rewardType === "points") {
+                      return (
                         sum +
-                        (b.creditCard
-                          ? Number(b.totalCost) *
-                            Number(b.creditCard.rewardRate) *
-                            Number(b.creditCard.pointType?.centsPerPoint ?? 0)
-                          : 0),
-                      0
-                    );
-                    const totalLoyaltyPointsValue = cashBookings.reduce(
-                      (sum, b) =>
-                        sum +
-                        (b.loyaltyPointsEarned && b.hotelChain.pointType
-                          ? b.loyaltyPointsEarned * Number(b.hotelChain.pointType.centsPerPoint)
-                          : 0),
-                      0
-                    );
+                        portalRate *
+                          portalBasis *
+                          Number(b.shoppingPortal.pointType?.centsPerPoint ?? 0)
+                      );
+                    }
+                    return sum + portalRate * portalBasis;
+                  }, 0);
+                  const totalCardRewards = cashBookings.reduce(
+                    (sum, b) =>
+                      sum +
+                      (b.creditCard
+                        ? Number(b.totalCost) *
+                          Number(b.creditCard.rewardRate) *
+                          Number(b.creditCard.pointType?.centsPerPoint ?? 0)
+                        : 0),
+                    0
+                  );
+                  const totalLoyaltyPointsValue = cashBookings.reduce(
+                    (sum, b) =>
+                      sum +
+                      (b.loyaltyPointsEarned && b.hotelChain.pointType
+                        ? b.loyaltyPointsEarned * Number(b.hotelChain.pointType.centsPerPoint)
+                        : 0),
+                    0
+                  );
 
-                    const items = [
-                      {
-                        label: "Promotion Savings",
-                        value: totalPromoSavings,
-                        color: "bg-blue-500",
-                      },
-                      {
-                        label: "Portal Cashback",
-                        value: totalPortalCashback,
-                        color: "bg-green-500",
-                      },
-                      {
-                        label: "Card Rewards",
-                        value: totalCardRewards,
-                        color: "bg-purple-500",
-                      },
-                      {
-                        label: "Loyalty Points Value",
-                        value: totalLoyaltyPointsValue,
-                        color: "bg-orange-500",
-                      },
-                    ];
+                  const items = [
+                    {
+                      label: "Promotion Savings",
+                      value: totalPromoSavings,
+                      color: "bg-blue-500",
+                    },
+                    {
+                      label: "Portal Cashback",
+                      value: totalPortalCashback,
+                      color: "bg-green-500",
+                    },
+                    {
+                      label: "Card Rewards",
+                      value: totalCardRewards,
+                      color: "bg-purple-500",
+                    },
+                    {
+                      label: "Loyalty Points Value",
+                      value: totalLoyaltyPointsValue,
+                      color: "bg-orange-500",
+                    },
+                  ];
 
-                    const maxValue = Math.max(...items.map((i) => i.value), 1);
+                  const maxValue = Math.max(...items.map((i) => i.value), 1);
 
-                    return (
-                      <>
-                        {items.map((item) => (
-                          <div key={item.label} className="space-y-1">
-                            <div className="flex justify-between text-sm">
-                              <span>{item.label}</span>
-                              <span className="font-medium text-green-600">
-                                {formatDollars(item.value)}
-                              </span>
-                            </div>
-                            <div className="h-3 rounded-full bg-secondary">
-                              <div
-                                className={`h-3 rounded-full ${item.color}`}
-                                style={{
-                                  width: `${Math.max((item.value / maxValue) * 100, 0)}%`,
-                                }}
-                              />
-                            </div>
-                          </div>
-                        ))}
-                        <div className="pt-2 border-t">
-                          <div className="flex justify-between font-medium">
-                            <span>Total Savings</span>
-                            <span className="text-green-600">{formatDollars(totalSavings)}</span>
-                          </div>
-                          <div className="flex justify-between text-sm text-muted-foreground mt-1">
-                            <span>Effective Savings Rate</span>
-                            <span>
-                              {totalCombinedSpend > 0
-                                ? ((totalSavings / totalCombinedSpend) * 100).toFixed(1)
-                                : "0.0"}
-                              %
+                  return (
+                    <>
+                      {items.map((item) => (
+                        <div key={item.label} className="space-y-1">
+                          <div className="flex justify-between text-sm">
+                            <span>{item.label}</span>
+                            <span className="font-medium text-green-600">
+                              {formatDollars(item.value)}
                             </span>
                           </div>
+                          <div className="h-3 rounded-full bg-secondary">
+                            <div
+                              className={`h-3 rounded-full ${item.color}`}
+                              style={{
+                                width: `${Math.max((item.value / maxValue) * 100, 0)}%`,
+                              }}
+                            />
+                          </div>
                         </div>
-                      </>
-                    );
-                  })()}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                      ))}
+                      <div className="pt-2 border-t">
+                        <div className="flex justify-between font-medium">
+                          <span>Total Savings</span>
+                          <span className="text-green-600">{formatDollars(totalSavings)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm text-muted-foreground mt-1">
+                          <span>Effective Savings Rate</span>
+                          <span>
+                            {totalCombinedSpend > 0
+                              ? ((totalSavings / totalCombinedSpend) * 100).toFixed(1)
+                              : "0.0"}
+                            %
+                          </span>
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-          <PaymentTypeBreakdown bookings={bookings} />
-          <SubBrandBreakdown bookings={bookings} />
-        </div>
+        <PaymentTypeBreakdown bookings={bookings} />
+        <SubBrandBreakdown bookings={bookings} />
       </div>
 
       {bookings.length > 0 && (
