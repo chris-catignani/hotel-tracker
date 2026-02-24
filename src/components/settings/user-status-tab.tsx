@@ -1,13 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { AppSelect } from "@/components/ui/app-select";
 import {
   Table,
   TableBody,
@@ -81,24 +75,21 @@ export function UserStatusTab() {
               <TableRow key={chain.id}>
                 <TableCell className="font-medium">{chain.name}</TableCell>
                 <TableCell>
-                  <Select
+                  <AppSelect
                     value={
                       currentStatus?.eliteStatusId ? String(currentStatus.eliteStatusId) : "none"
                     }
                     onValueChange={(v) => handleStatusChange(chain.id, v)}
-                  >
-                    <SelectTrigger className="w-[200px]">
-                      <SelectValue placeholder="Select status..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Base Member / No Status</SelectItem>
-                      {chain.eliteStatuses?.map((status) => (
-                        <SelectItem key={status.id} value={String(status.id)}>
-                          {status.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    options={[
+                      { label: "Base Member / No Status", value: "none" },
+                      ...(chain.eliteStatuses?.map((status) => ({
+                        label: status.name,
+                        value: String(status.id),
+                      })) || []),
+                    ]}
+                    className="w-[200px]"
+                    placeholder="Select status..."
+                  />
                 </TableCell>
               </TableRow>
             );

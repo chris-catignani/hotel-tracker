@@ -6,13 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { AppSelect } from "@/components/ui/app-select";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, parseISO } from "date-fns";
 import { Trash2, Plus } from "lucide-react";
@@ -133,49 +127,35 @@ function BenefitRow({ benefit, index, canRemove, onChange, onRemove }: BenefitRo
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-2">
           <Label>Reward Type</Label>
-          <Select
+          <AppSelect
             value={benefit.rewardType}
             onValueChange={(v) => handleRewardTypeChange(v as PromotionRewardType)}
-          >
-            <SelectTrigger className="w-full" data-testid={`benefit-reward-type-${index}`}>
-              <SelectValue placeholder="Select reward type..." />
-            </SelectTrigger>
-            <SelectContent>
-              {BENEFIT_REWARD_TYPE_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            options={[...BENEFIT_REWARD_TYPE_OPTIONS]}
+            data-testid={`benefit-reward-type-${index}`}
+          />
         </div>
 
         {showValueType && (
           <div className="space-y-2">
             <Label>Value Type</Label>
-            <Select
+            <AppSelect
               value={benefit.valueType}
               onValueChange={(v) =>
                 onChange(index, { ...benefit, valueType: v as PromotionBenefitValueType })
               }
-            >
-              <SelectTrigger className="w-full" data-testid={`benefit-value-type-${index}`}>
-                <SelectValue placeholder="Select value type..." />
-              </SelectTrigger>
-              <SelectContent>
-                {benefit.rewardType === "points" ? (
-                  <>
-                    <SelectItem value="fixed">Fixed (pts)</SelectItem>
-                    <SelectItem value="multiplier">Multiplier (x)</SelectItem>
-                  </>
-                ) : (
-                  <>
-                    <SelectItem value="fixed">Fixed ($)</SelectItem>
-                    <SelectItem value="percentage">Percentage (%)</SelectItem>
-                  </>
-                )}
-              </SelectContent>
-            </Select>
+              options={
+                benefit.rewardType === "points"
+                  ? [
+                      { label: "Fixed (pts)", value: "fixed" },
+                      { label: "Multiplier (x)", value: "multiplier" },
+                    ]
+                  : [
+                      { label: "Fixed ($)", value: "fixed" },
+                      { label: "Percentage (%)", value: "percentage" },
+                    ]
+              }
+              data-testid={`benefit-value-type-${index}`}
+            />
           </div>
         )}
 
@@ -197,41 +177,31 @@ function BenefitRow({ benefit, index, canRemove, onChange, onRemove }: BenefitRo
         {showCertType && (
           <div className="space-y-2">
             <Label>Certificate Type</Label>
-            <Select
+            <AppSelect
               value={benefit.certType || ""}
               onValueChange={(v) => onChange(index, { ...benefit, certType: v || null })}
-            >
-              <SelectTrigger className="w-full" data-testid={`benefit-cert-type-${index}`}>
-                <SelectValue placeholder="Select certificate type..." />
-              </SelectTrigger>
-              <SelectContent>
-                {CERT_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              options={[...CERT_OPTIONS]}
+              placeholder="Select certificate type..."
+              data-testid={`benefit-cert-type-${index}`}
+            />
           </div>
         )}
 
         {showMultiplierBasis && (
           <div className="space-y-2">
             <Label>Multiplier Basis</Label>
-            <Select
+            <AppSelect
               value={benefit.pointsMultiplierBasis || "base_only"}
               onValueChange={(v) =>
                 onChange(index, { ...benefit, pointsMultiplierBasis: v as PointsMultiplierBasis })
               }
-            >
-              <SelectTrigger className="w-full" data-testid={`benefit-multiplier-basis-${index}`}>
-                <SelectValue placeholder="Select basis..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="base_only">Base Rate Only</SelectItem>
-                <SelectItem value="base_and_elite">Base + Elite Bonus</SelectItem>
-              </SelectContent>
-            </Select>
+              options={[
+                { label: "Base Rate Only", value: "base_only" },
+                { label: "Base + Elite Bonus", value: "base_and_elite" },
+              ]}
+              placeholder="Select basis..."
+              data-testid={`benefit-multiplier-basis-${index}`}
+            />
           </div>
         )}
       </div>
@@ -417,16 +387,17 @@ export function PromotionForm({
 
           <div className="space-y-2">
             <Label>Type</Label>
-            <Select value={type} onValueChange={(v) => setType(v as PromotionType)}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select type..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="credit_card">Credit Card</SelectItem>
-                <SelectItem value="portal">Portal</SelectItem>
-                <SelectItem value="loyalty">Loyalty</SelectItem>
-              </SelectContent>
-            </Select>
+            <AppSelect
+              value={type}
+              onValueChange={(v) => setType(v as PromotionType)}
+              options={[
+                { label: "Credit Card", value: "credit_card" },
+                { label: "Portal", value: "portal" },
+                { label: "Loyalty", value: "loyalty" },
+              ]}
+              placeholder="Select type..."
+              data-testid="promotion-type-select"
+            />
           </div>
 
           {/* Benefits */}
@@ -457,24 +428,19 @@ export function PromotionForm({
           {type === "loyalty" && (
             <div className="space-y-2">
               <Label>Hotel Chain</Label>
-              <Select
+              <AppSelect
                 value={hotelChainId}
                 onValueChange={(v) => {
                   setHotelChainId(v);
                   setHotelChainSubBrandId("");
                 }}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select hotel chain..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {hotelChains.map((chain) => (
-                    <SelectItem key={chain.id} value={String(chain.id)}>
-                      {chain.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                options={hotelChains.map((chain) => ({
+                  label: chain.name,
+                  value: String(chain.id),
+                }))}
+                placeholder="Select hotel chain..."
+                data-testid="hotel-chain-select"
+              />
             </div>
           )}
 
@@ -484,60 +450,53 @@ export function PromotionForm({
               0) > 0 && (
               <div className="space-y-2">
                 <Label>Sub-brand</Label>
-                <Select
+                <AppSelect
                   value={hotelChainSubBrandId || "all"}
                   onValueChange={(v) => setHotelChainSubBrandId(v === "all" ? "" : v)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select sub-brand..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All sub-brands (no filter)</SelectItem>
-                    {hotelChains
+                  options={[
+                    { label: "All sub-brands (no filter)", value: "all" },
+                    ...(hotelChains
                       .find((h) => h.id === Number(hotelChainId))
-                      ?.hotelChainSubBrands.map((sb) => (
-                        <SelectItem key={sb.id} value={String(sb.id)}>
-                          {sb.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
+                      ?.hotelChainSubBrands.map((sb) => ({
+                        label: sb.name,
+                        value: String(sb.id),
+                      })) || []),
+                  ]}
+                  placeholder="Select sub-brand..."
+                  data-testid="sub-brand-select"
+                />
               </div>
             )}
 
           {type === "credit_card" && (
             <div className="space-y-2">
               <Label>Credit Card</Label>
-              <Select value={creditCardId} onValueChange={setCreditCardId}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select credit card..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {creditCards.map((card) => (
-                    <SelectItem key={card.id} value={String(card.id)}>
-                      {card.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <AppSelect
+                value={creditCardId}
+                onValueChange={setCreditCardId}
+                options={creditCards.map((card) => ({
+                  label: card.name,
+                  value: String(card.id),
+                }))}
+                placeholder="Select credit card..."
+                data-testid="credit-card-select"
+              />
             </div>
           )}
 
           {type === "portal" && (
             <div className="space-y-2">
               <Label>Shopping Portal</Label>
-              <Select value={shoppingPortalId} onValueChange={setShoppingPortalId}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select portal..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {portals.map((portal) => (
-                    <SelectItem key={portal.id} value={String(portal.id)}>
-                      {portal.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <AppSelect
+                value={shoppingPortalId}
+                onValueChange={setShoppingPortalId}
+                options={portals.map((portal) => ({
+                  label: portal.name,
+                  value: String(portal.id),
+                }))}
+                placeholder="Select portal..."
+                data-testid="shopping-portal-select"
+              />
             </div>
           )}
 
