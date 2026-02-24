@@ -372,19 +372,31 @@ async function fetchPromotionUsage(
 
   // Fetch appliedSubBrandIds for oncePerSubBrand promotions
   const oncePerSubBrandPromos = promotions.filter((p) => p.oncePerSubBrand);
-  for (const promo of oncePerSubBrandPromos) {
+  if (oncePerSubBrandPromos.length > 0) {
+    const oncePerSubBrandPromoIds = oncePerSubBrandPromos.map((p) => p.id);
     const appliedBookings = await prisma.bookingPromotion.findMany({
       where: {
-        promotionId: promo.id,
+        promotionId: { in: oncePerSubBrandPromoIds },
         ...(excludeBookingId ? { bookingId: { not: excludeBookingId } } : {}),
       },
-      include: { booking: { select: { hotelChainSubBrandId: true } } },
+      select: {
+        promotionId: true,
+        booking: { select: { hotelChainSubBrandId: true } },
+      },
     });
-    const subBrandIds = new Set<number | null>(
-      appliedBookings.map((bp) => bp.booking.hotelChainSubBrandId)
-    );
-    const existing = usageMap.get(promo.id) ?? { count: 0, totalValue: 0, totalBonusPoints: 0 };
-    usageMap.set(promo.id, { ...existing, appliedSubBrandIds: subBrandIds });
+
+    const subBrandsByPromo = new Map<number, Set<number | null>>();
+    for (const promo of oncePerSubBrandPromos) {
+      subBrandsByPromo.set(promo.id, new Set());
+    }
+    for (const bp of appliedBookings) {
+      subBrandsByPromo.get(bp.promotionId)?.add(bp.booking.hotelChainSubBrandId);
+    }
+
+    for (const promo of oncePerSubBrandPromos) {
+      const existing = usageMap.get(promo.id) ?? { count: 0, totalValue: 0, totalBonusPoints: 0 };
+      usageMap.set(promo.id, { ...existing, appliedSubBrandIds: subBrandsByPromo.get(promo.id) });
+    }
   }
 
   return usageMap;

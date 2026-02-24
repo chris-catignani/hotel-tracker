@@ -420,11 +420,7 @@ export function PromotionForm({
     }
     body.nightsStackable = nightsStackable;
     body.bookByDate = bookByDate || null;
-    if (requiredStayNumber) {
-      body.requiredStayNumber = parseInt(requiredStayNumber);
-    } else {
-      body.requiredStayNumber = null;
-    }
+    body.requiredStayNumber = requiredStayNumber ? parseInt(requiredStayNumber, 10) : null;
     body.oncePerSubBrand = oncePerSubBrand;
 
     await onSubmit(body);

@@ -488,7 +488,7 @@ describe("promotion-matching", () => {
     expect(matched).toHaveLength(1);
   });
 
-  it("should apply when requiredStayNumber=2 but no priorUsage entry (treats as eligibleStayCount=0 → stay #1, skips)", () => {
+  it("should skip when requiredStayNumber=2 but no priorUsage entry (treats as eligibleStayCount=0 → stay #1, skips)", () => {
     const promo = makePromo({ requiredStayNumber: 2 });
     const matched = calculateMatchedPromotions(mockBooking, [promo]);
     expect(matched).toHaveLength(0);
