@@ -32,6 +32,8 @@ import {
 import { extractApiError } from "@/lib/client-error";
 import { HotelChain, PointType } from "@/lib/types";
 import { ErrorBanner } from "@/components/ui/error-banner";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Building2 } from "lucide-react";
 
 export function HotelChainsTab() {
   const [hotelChains, setHotelChains] = useState<HotelChain[]>([]);
@@ -311,7 +313,13 @@ export function HotelChainsTab() {
           <div className="space-y-4 py-2">
             <div className="max-h-[300px] overflow-y-auto pr-2 space-y-3">
               {!sbHotelChain || sbHotelChain.hotelChainSubBrands.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No sub-brands yet.</p>
+                <EmptyState
+                  icon={Building2}
+                  title="No sub-brands"
+                  description="Add sub-brands like Park Hyatt or Ritz-Carlton."
+                  className="py-6 border-none bg-transparent"
+                  data-testid="sub-brands-empty"
+                />
               ) : (
                 sbHotelChain.hotelChainSubBrands.map((sb) => (
                   <div key={sb.id} className="flex items-center gap-2 border-b pb-2 last:border-0">
@@ -365,95 +373,98 @@ export function HotelChainsTab() {
         </DialogContent>
       </Dialog>
 
-      {/* Mobile View: Cards */}
-      <div className="grid grid-cols-1 gap-4 md:hidden" data-testid="hotel-chains-mobile">
-        {hotelChains.length === 0 ? (
-          <p className="text-center text-muted-foreground py-8">No hotel chains added yet.</p>
-        ) : (
-          hotelChains.map((hotelChain) => (
-            <Card key={hotelChain.id} data-testid="hotel-chain-card">
-              <CardContent className="p-4 space-y-3">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-bold" data-testid="hotel-chain-card-name">
-                      {hotelChain.name}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {hotelChain.loyaltyProgram || "No loyalty program"}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium">Base Rate</p>
-                    <p className="text-lg font-bold">{hotelChain.basePointRate ?? "-"}</p>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Point Type</span>
-                  <span className="font-medium">{hotelChain.pointType?.name ?? "—"}</span>
-                </div>
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => openSubBrands(hotelChain)}
-                  >
-                    Sub-brands
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleEdit(hotelChain)}>
-                    Edit
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
-
-      {/* Desktop View: Table */}
-      <div className="hidden md:block" data-testid="hotel-chains-desktop">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Loyalty Program</TableHead>
-              <TableHead>Base Rate</TableHead>
-              <TableHead>Point Type</TableHead>
-              <TableHead></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {hotelChains.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
-                  No hotel chains added yet.
-                </TableCell>
-              </TableRow>
-            ) : (
-              hotelChains.map((hotelChain) => (
-                <TableRow key={hotelChain.id} data-testid="hotel-chain-table-row">
-                  <TableCell className="font-medium" data-testid="hotel-chain-table-name">
-                    {hotelChain.name}
-                  </TableCell>
-                  <TableCell>{hotelChain.loyaltyProgram ?? "-"}</TableCell>
-                  <TableCell>{hotelChain.basePointRate ?? "-"}</TableCell>
-                  <TableCell>{hotelChain.pointType?.name ?? "—"}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => openSubBrands(hotelChain)}>
-                        Sub-brands
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleEdit(hotelChain)}>
-                        Edit
-                      </Button>
+      {hotelChains.length === 0 ? (
+        <EmptyState
+          icon={Building2}
+          title="No hotel chains"
+          description="Add hotel chains like Marriott or Hilton to start tracking your stays."
+          action={{
+            label: "Add Hotel Chain",
+            onClick: () => setOpen(true),
+          }}
+          data-testid="hotel-chains-empty"
+        />
+      ) : (
+        <>
+          {/* Mobile View: Cards */}
+          <div className="grid grid-cols-1 gap-4 md:hidden" data-testid="hotel-chains-mobile">
+            {hotelChains.map((hotelChain) => (
+              <Card key={hotelChain.id} data-testid="hotel-chain-card">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-bold" data-testid="hotel-chain-card-name">
+                        {hotelChain.name}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {hotelChain.loyaltyProgram || "No loyalty program"}
+                      </p>
                     </div>
-                  </TableCell>
+                    <div className="text-right">
+                      <p className="text-sm font-medium">Base Rate</p>
+                      <p className="text-lg font-bold">{hotelChain.basePointRate ?? "-"}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Point Type</span>
+                    <span className="font-medium">{hotelChain.pointType?.name ?? "—"}</span>
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => openSubBrands(hotelChain)}
+                    >
+                      Sub-brands
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleEdit(hotelChain)}>
+                      Edit
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Desktop View: Table */}
+          <div className="hidden md:block" data-testid="hotel-chains-desktop">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Loyalty Program</TableHead>
+                  <TableHead>Base Rate</TableHead>
+                  <TableHead>Point Type</TableHead>
+                  <TableHead></TableHead>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              </TableHeader>
+              <TableBody>
+                {hotelChains.map((hotelChain) => (
+                  <TableRow key={hotelChain.id} data-testid="hotel-chain-table-row">
+                    <TableCell className="font-medium" data-testid="hotel-chain-table-name">
+                      {hotelChain.name}
+                    </TableCell>
+                    <TableCell>{hotelChain.loyaltyProgram ?? "-"}</TableCell>
+                    <TableCell>{hotelChain.basePointRate ?? "-"}</TableCell>
+                    <TableCell>{hotelChain.pointType?.name ?? "—"}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => openSubBrands(hotelChain)}>
+                          Sub-brands
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleEdit(hotelChain)}>
+                          Edit
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </>
+      )}
     </div>
   );
 }

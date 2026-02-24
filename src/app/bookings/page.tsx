@@ -3,6 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { CalendarDays } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { calculateNetCost } from "@/lib/net-cost";
 import {
@@ -176,7 +178,16 @@ export default function BookingsPage() {
       {loading ? (
         <p className="text-center text-muted-foreground py-8">Loading...</p>
       ) : bookings.length === 0 ? (
-        <p className="text-center text-muted-foreground py-8">No bookings yet.</p>
+        <EmptyState
+          icon={CalendarDays}
+          title="No bookings found"
+          description="You haven't added any bookings yet. Start by adding your first hotel stay."
+          action={{
+            label: "Add Booking",
+            href: "/bookings/new",
+          }}
+          data-testid="bookings-empty"
+        />
       ) : (
         <>
           {/* Mobile View: Cards */}

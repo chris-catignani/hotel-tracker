@@ -25,6 +25,24 @@ describe("ShoppingPortalsTab", () => {
     expect(screen.getByTestId("add-portal-button")).toBeInTheDocument();
   });
 
+  it("shows empty state message", async () => {
+    vi.mocked(global.fetch).mockImplementation((url: string) => {
+      if (url.includes("/api/portals"))
+        return Promise.resolve({ ok: true, json: async () => [] } as Response);
+      if (url.includes("/api/point-types"))
+        return Promise.resolve({ ok: true, json: async () => [] } as Response);
+      return Promise.reject(new Error("Unknown URL"));
+    });
+
+    await act(async () => {
+      render(<ShoppingPortalsTab />);
+    });
+
+    expect(screen.getByTestId("portals-empty")).toBeInTheDocument();
+    expect(screen.getByText(/No shopping portals/i)).toBeInTheDocument();
+    expect(screen.getByText(/Add portals like Rakuten/i)).toBeInTheDocument();
+  });
+
   it("shows fetched portals", async () => {
     const mockPortals = [{ id: 1, name: "Rakuten", rewardType: "cashback" }];
     vi.mocked(global.fetch).mockImplementation((url: string) => {

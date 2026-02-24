@@ -47,6 +47,24 @@ describe("CreditCardsTab", () => {
     expect(screen.getByTestId("add-credit-card-button")).toBeInTheDocument();
   });
 
+  it("shows empty state message", async () => {
+    vi.mocked(global.fetch).mockImplementation((url: string) => {
+      if (url.includes("/api/credit-cards"))
+        return Promise.resolve({ ok: true, json: async () => [] } as Response);
+      if (url.includes("/api/point-types"))
+        return Promise.resolve({ ok: true, json: async () => [] } as Response);
+      return Promise.reject(new Error("Unknown URL"));
+    });
+
+    await act(async () => {
+      render(<CreditCardsTab />);
+    });
+
+    expect(screen.getByTestId("credit-cards-empty")).toBeInTheDocument();
+    expect(screen.getByText(/No credit cards/i)).toBeInTheDocument();
+    expect(screen.getByText(/Add credit cards to track rewards/i)).toBeInTheDocument();
+  });
+
   it("shows fetched credit cards", async () => {
     vi.mocked(global.fetch).mockImplementation((url: string) => {
       if (url.includes("/api/credit-cards"))

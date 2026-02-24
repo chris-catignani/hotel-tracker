@@ -25,6 +25,21 @@ describe("OtaAgenciesTab", () => {
     expect(screen.getByTestId("add-agency-button")).toBeInTheDocument();
   });
 
+  it("shows empty state message", async () => {
+    vi.mocked(global.fetch).mockResolvedValue({
+      ok: true,
+      json: async () => [],
+    } as Response);
+
+    await act(async () => {
+      render(<OtaAgenciesTab />);
+    });
+
+    expect(screen.getByTestId("ota-agencies-empty")).toBeInTheDocument();
+    expect(screen.getByText(/No OTA agencies/i)).toBeInTheDocument();
+    expect(screen.getByText(/Add agencies like Expedia/i)).toBeInTheDocument();
+  });
+
   it("shows fetched agencies", async () => {
     vi.mocked(global.fetch).mockResolvedValue({
       ok: true,

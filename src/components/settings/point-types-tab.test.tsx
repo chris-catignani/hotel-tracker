@@ -35,12 +35,9 @@ describe("PointTypesTab", () => {
       render(<PointTypesTab />);
     });
 
-    // Check both mobile and desktop views for empty state
-    const mobileView = screen.getByTestId("point-types-mobile");
-    const desktopView = screen.getByTestId("point-types-desktop");
-
-    expect(within(mobileView).getByText(/No point types added yet/i)).toBeInTheDocument();
-    expect(within(desktopView).getByText(/No point types added yet/i)).toBeInTheDocument();
+    expect(screen.getByTestId("point-types-empty")).toBeInTheDocument();
+    expect(screen.getByText(/No point types/i)).toBeInTheDocument();
+    expect(screen.getByText(/Define point values/i)).toBeInTheDocument();
   });
 
   it("renders fetched point types", async () => {

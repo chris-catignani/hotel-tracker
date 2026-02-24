@@ -153,4 +153,14 @@ describe("PaymentTypeBreakdown", () => {
     expect(screen.getByTestId("pie-slice-Certificates")).toHaveTextContent("Certificates: 1");
     expect(screen.getByTestId("pie-slice-Cash")).toHaveTextContent("Cash: 2");
   });
+
+  it("shows empty state when no bookings", async () => {
+    await act(async () => {
+      render(<PaymentTypeBreakdown bookings={[]} />);
+    });
+
+    expect(screen.getByTestId("payment-type-empty")).toBeInTheDocument();
+    expect(screen.getByText(/No data/i)).toBeInTheDocument();
+    expect(screen.getByText(/Payment breakdown will appear/i)).toBeInTheDocument();
+  });
 });

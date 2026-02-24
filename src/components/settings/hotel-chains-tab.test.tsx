@@ -25,6 +25,24 @@ describe("HotelChainsTab", () => {
     expect(screen.getByTestId("add-hotel-chain-button")).toBeInTheDocument();
   });
 
+  it("shows empty state message", async () => {
+    vi.mocked(global.fetch).mockImplementation((url: string) => {
+      if (url.includes("/api/hotel-chains"))
+        return Promise.resolve({ ok: true, json: async () => [] } as Response);
+      if (url.includes("/api/point-types"))
+        return Promise.resolve({ ok: true, json: async () => [] } as Response);
+      return Promise.reject(new Error("Unknown URL"));
+    });
+
+    await act(async () => {
+      render(<HotelChainsTab />);
+    });
+
+    expect(screen.getByTestId("hotel-chains-empty")).toBeInTheDocument();
+    expect(screen.getByText(/No hotel chains/i)).toBeInTheDocument();
+    expect(screen.getByText(/Add hotel chains like Marriott/i)).toBeInTheDocument();
+  });
+
   it("shows fetched hotel chains", async () => {
     const mockChains = [
       {
