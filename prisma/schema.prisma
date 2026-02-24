@@ -242,6 +242,8 @@ model Promotion {
   minNightsRequired    Int?                @map("min_nights_required")
   nightsStackable      Boolean             @default(false) @map("nights_stackable")
   bookByDate           DateTime?           @map("book_by_date") @db.Date
+  requiredStayNumber   Int?                @map("required_stay_number")
+  oncePerSubBrand      Boolean             @default(false) @map("once_per_sub_brand")
   createdAt            DateTime            @default(now()) @map("created_at")
   benefits             PromotionBenefit[]
   bookingPromotions    BookingPromotion[]
