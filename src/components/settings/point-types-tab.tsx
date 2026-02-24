@@ -14,13 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { AppSelect } from "@/components/ui/app-select";
 import {
   Table,
   TableBody,
@@ -163,16 +157,16 @@ export function PointTypesTab() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="pt-category">Category</Label>
-                <Select value={category} onValueChange={(v) => setCategory(v as typeof category)}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="hotel">Hotel</SelectItem>
-                    <SelectItem value="airline">Airline</SelectItem>
-                    <SelectItem value="transferable">Transferable</SelectItem>
-                  </SelectContent>
-                </Select>
+                <AppSelect
+                  value={category}
+                  onValueChange={(v) => setCategory(v as typeof category)}
+                  options={[
+                    { label: "Hotel", value: "hotel" },
+                    { label: "Airline", value: "airline" },
+                    { label: "Transferable", value: "transferable" },
+                  ]}
+                  placeholder="Select category"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="pt-cpp">Value per Point ($)</Label>
@@ -214,19 +208,16 @@ export function PointTypesTab() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-pt-category">Category</Label>
-              <Select
+              <AppSelect
                 value={editCategory}
                 onValueChange={(v) => setEditCategory(v as typeof editCategory)}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="hotel">Hotel</SelectItem>
-                  <SelectItem value="airline">Airline</SelectItem>
-                  <SelectItem value="transferable">Transferable</SelectItem>
-                </SelectContent>
-              </Select>
+                options={[
+                  { label: "Hotel", value: "hotel" },
+                  { label: "Airline", value: "airline" },
+                  { label: "Transferable", value: "transferable" },
+                ]}
+                placeholder="Select category"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-pt-cpp">Value per Point ($)</Label>

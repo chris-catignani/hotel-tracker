@@ -14,13 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { AppSelect } from "@/components/ui/app-select";
 import {
   Table,
   TableBody,
@@ -170,15 +164,15 @@ export function CreditCardsTab() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="card-reward-type">Reward Type</Label>
-                <Select value={rewardType} onValueChange={setRewardType}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select reward type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="points">Points</SelectItem>
-                    <SelectItem value="cashback">Cashback</SelectItem>
-                  </SelectContent>
-                </Select>
+                <AppSelect
+                  value={rewardType}
+                  onValueChange={setRewardType}
+                  options={[
+                    { label: "Points", value: "points" },
+                    { label: "Cashback", value: "cashback" },
+                  ]}
+                  placeholder="Select reward type"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="card-reward-rate">Reward Rate</Label>
@@ -193,19 +187,18 @@ export function CreditCardsTab() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="card-point-type">Point Type</Label>
-                <Select value={pointTypeId} onValueChange={setPointTypeId}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select point type..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    {pointTypes.map((pt) => (
-                      <SelectItem key={pt.id} value={String(pt.id)}>
-                        {pt.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <AppSelect
+                  value={pointTypeId}
+                  onValueChange={setPointTypeId}
+                  options={[
+                    { label: "None", value: "none" },
+                    ...pointTypes.map((pt) => ({
+                      label: pt.name,
+                      value: String(pt.id),
+                    })),
+                  ]}
+                  placeholder="Select point type..."
+                />
               </div>
             </div>
             <DialogFooter>
@@ -236,15 +229,15 @@ export function CreditCardsTab() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-card-reward-type">Reward Type</Label>
-              <Select value={editRewardType} onValueChange={setEditRewardType}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select reward type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="points">Points</SelectItem>
-                  <SelectItem value="cashback">Cashback</SelectItem>
-                </SelectContent>
-              </Select>
+              <AppSelect
+                value={editRewardType}
+                onValueChange={setEditRewardType}
+                options={[
+                  { label: "Points", value: "points" },
+                  { label: "Cashback", value: "cashback" },
+                ]}
+                placeholder="Select reward type"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-card-reward-rate">Reward Rate</Label>
@@ -259,19 +252,18 @@ export function CreditCardsTab() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-card-point-type">Point Type</Label>
-              <Select value={editPointTypeId} onValueChange={setEditPointTypeId}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select point type..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  {pointTypes.map((pt) => (
-                    <SelectItem key={pt.id} value={String(pt.id)}>
-                      {pt.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <AppSelect
+                value={editPointTypeId}
+                onValueChange={setEditPointTypeId}
+                options={[
+                  { label: "None", value: "none" },
+                  ...pointTypes.map((pt) => ({
+                    label: pt.name,
+                    value: String(pt.id),
+                  })),
+                ]}
+                placeholder="Select point type..."
+              />
             </div>
           </div>
           <DialogFooter>

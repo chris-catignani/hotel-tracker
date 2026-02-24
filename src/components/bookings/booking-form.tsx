@@ -5,13 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { AppSelect } from "@/components/ui/app-select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
 import { CERT_TYPE_OPTIONS } from "@/lib/cert-types";
@@ -306,7 +300,7 @@ export function BookingForm({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="hotelChainId">Hotel Chain *</Label>
-              <Select
+              <AppSelect
                 value={hotelChainId}
                 onValueChange={(val) => {
                   setHotelChainId(val);
@@ -319,18 +313,12 @@ export function BookingForm({
                     })
                   );
                 }}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select hotel chain..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {hotelChains.map((chain) => (
-                    <SelectItem key={chain.id} value={String(chain.id)}>
-                      {chain.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                options={hotelChains.map((chain) => ({
+                  label: chain.name,
+                  value: String(chain.id),
+                }))}
+                placeholder="Select hotel chain..."
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="propertyName">Property Name *</Label>
@@ -348,64 +336,52 @@ export function BookingForm({
           {hotelChains.find((h) => h.id === Number(hotelChainId))?.hotelChainSubBrands.length ? (
             <div className="space-y-2">
               <Label htmlFor="hotelChainSubBrandId">Sub-brand</Label>
-              <Select value={hotelChainSubBrandId} onValueChange={setHotelChainSubBrandId}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select sub-brand..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None / Not applicable</SelectItem>
-                  {hotelChains
+              <AppSelect
+                value={hotelChainSubBrandId}
+                onValueChange={setHotelChainSubBrandId}
+                options={[
+                  { label: "None / Not applicable", value: "none" },
+                  ...(hotelChains
                     .find((h) => h.id === Number(hotelChainId))
-                    ?.hotelChainSubBrands.map((sb) => (
-                      <SelectItem key={sb.id} value={String(sb.id)}>
-                        {sb.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+                    ?.hotelChainSubBrands.map((sb) => ({
+                      label: sb.name,
+                      value: String(sb.id),
+                    })) || []),
+                ]}
+                placeholder="Select sub-brand..."
+              />
             </div>
           ) : null}
 
           {/* Booking Source */}
           <div className="space-y-2">
             <Label htmlFor="bookingSource">Booking Source</Label>
-            <Select
+            <AppSelect
               value={bookingSource || "none"}
               onValueChange={(v) => {
                 setBookingSource(v === "none" ? "" : v);
                 if (v !== "ota") setOtaAgencyId("none");
               }}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Where was this booked? (optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Not specified</SelectItem>
-                {BOOKING_SOURCE_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              options={[{ label: "Not specified", value: "none" }, ...BOOKING_SOURCE_OPTIONS]}
+              placeholder="Where was this booked? (optional)"
+            />
           </div>
 
           {bookingSource === "ota" && (
             <div className="space-y-2">
               <Label htmlFor="otaAgencyId">OTA Agency</Label>
-              <Select value={otaAgencyId} onValueChange={setOtaAgencyId}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select agency..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Not specified</SelectItem>
-                  {otaAgencies.map((a) => (
-                    <SelectItem key={a.id} value={String(a.id)}>
-                      {a.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <AppSelect
+                value={otaAgencyId}
+                onValueChange={setOtaAgencyId}
+                options={[
+                  { label: "Not specified", value: "none" },
+                  ...otaAgencies.map((a) => ({
+                    label: a.name,
+                    value: String(a.id),
+                  })),
+                ]}
+                placeholder="Select agency..."
+              />
             </div>
           )}
 
@@ -445,21 +421,11 @@ export function BookingForm({
           {/* Payment Type */}
           <div className="space-y-2">
             <Label htmlFor="paymentType">Payment Type</Label>
-            <Select
+            <AppSelect
               value={paymentType}
               onValueChange={(v) => handlePaymentTypeChange(v as PaymentType)}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PAYMENT_TYPES.map((pt) => (
-                  <SelectItem key={pt.value} value={pt.value}>
-                    {pt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              options={[...PAYMENT_TYPES]}
+            />
           </div>
 
           {/* Costs */}
@@ -499,18 +465,11 @@ export function BookingForm({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="currency">Currency</Label>
-                <Select value={currency} onValueChange={setCurrency}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CURRENCIES.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <AppSelect
+                  value={currency}
+                  onValueChange={setCurrency}
+                  options={CURRENCIES.map((c) => ({ label: c, value: c }))}
+                />
               </div>
               {currency !== "USD" && (
                 <div className="space-y-2">
@@ -553,20 +512,15 @@ export function BookingForm({
               <Label>Free Night Certificate(s)</Label>
               {certificates.map((cert, idx) => (
                 <div key={idx} className="flex items-center gap-2">
-                  <Select value={cert} onValueChange={(v) => updateCertificate(idx, v)}>
-                    <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="Select certificate type..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CERT_TYPE_OPTIONS.filter(
-                        (opt) => opt.hotelChainId === Number(hotelChainId)
-                      ).map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <AppSelect
+                    value={cert}
+                    onValueChange={(v) => updateCertificate(idx, v)}
+                    options={CERT_TYPE_OPTIONS.filter(
+                      (opt) => opt.hotelChainId === Number(hotelChainId)
+                    )}
+                    placeholder="Select certificate type..."
+                    className="flex-1"
+                  />
                   <Button
                     type="button"
                     variant="outline"
@@ -587,35 +541,33 @@ export function BookingForm({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="creditCardId">Credit Card</Label>
-              <Select value={creditCardId} onValueChange={setCreditCardId}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select credit card..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  {creditCards.map((card) => (
-                    <SelectItem key={card.id} value={String(card.id)}>
-                      {card.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <AppSelect
+                value={creditCardId}
+                onValueChange={setCreditCardId}
+                options={[
+                  { label: "None", value: "none" },
+                  ...creditCards.map((card) => ({
+                    label: card.name,
+                    value: String(card.id),
+                  })),
+                ]}
+                placeholder="Select credit card..."
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="shoppingPortalId">Shopping Portal</Label>
-              <Select value={shoppingPortalId} onValueChange={setShoppingPortalId}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select portal..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  {portals.map((portal) => (
-                    <SelectItem key={portal.id} value={String(portal.id)}>
-                      {portal.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <AppSelect
+                value={shoppingPortalId}
+                onValueChange={setShoppingPortalId}
+                options={[
+                  { label: "None", value: "none" },
+                  ...portals.map((portal) => ({
+                    label: portal.name,
+                    value: String(portal.id),
+                  })),
+                ]}
+                placeholder="Select portal..."
+              />
             </div>
           </div>
 
@@ -677,22 +629,13 @@ export function BookingForm({
             <Label>Booking Benefits</Label>
             {benefits.map((benefit, idx) => (
               <div key={idx} className="flex items-start gap-2">
-                <Select
+                <AppSelect
                   value={benefit.type || "none"}
                   onValueChange={(v) => updateBenefit(idx, "type", v === "none" ? "" : v)}
-                >
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Select type..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Select type...</SelectItem>
-                    {BENEFIT_TYPE_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  options={[{ label: "Select type...", value: "none" }, ...BENEFIT_TYPE_OPTIONS]}
+                  placeholder="Select type..."
+                  className="w-48"
+                />
                 {benefit.type === "other" && (
                   <Input
                     value={benefit.label}
