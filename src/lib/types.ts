@@ -77,13 +77,28 @@ export type PointsMultiplierBasis = "base_only" | "base_and_elite";
 
 export interface PromotionBenefit {
   id: number;
-  promotionId: number;
+  promotionId: number | null;
+  promotionTierId?: number | null;
   rewardType: PromotionRewardType;
   valueType: PromotionBenefitValueType;
   value: string | number;
   certType: string | null;
   pointsMultiplierBasis?: PointsMultiplierBasis | null;
   sortOrder: number;
+}
+
+export interface PromotionTier {
+  id: number;
+  promotionId: number;
+  minStays: number;
+  maxStays: number | null;
+  benefits: PromotionBenefit[];
+}
+
+export interface PromotionTierFormData {
+  minStays: number;
+  maxStays: number | null;
+  benefits: PromotionBenefitFormData[];
 }
 
 export interface PromotionBenefitFormData {
@@ -100,6 +115,7 @@ export interface Promotion {
   name: string;
   type: PromotionType;
   benefits: PromotionBenefit[];
+  tiers: PromotionTier[];
   hotelChainId: number | null;
   hotelChainSubBrandId: number | null;
   creditCardId: number | null;
@@ -115,7 +131,6 @@ export interface Promotion {
   minNightsRequired: number | null;
   nightsStackable: boolean;
   bookByDate: string | null;
-  requiredStayNumber: number | null;
   oncePerSubBrand: boolean;
 }
 
@@ -123,6 +138,7 @@ export interface PromotionFormData {
   name: string;
   type: PromotionType;
   benefits: PromotionBenefitFormData[];
+  tiers?: PromotionTierFormData[];
   hotelChainId?: number | null;
   hotelChainSubBrandId?: number | null;
   creditCardId?: number | null;
@@ -138,7 +154,6 @@ export interface PromotionFormData {
   minNightsRequired?: number | null;
   nightsStackable?: boolean;
   bookByDate?: string | null;
-  requiredStayNumber?: number | null;
   oncePerSubBrand?: boolean;
 }
 

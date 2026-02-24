@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma";
 import { PromotionType } from "@prisma/client";
 import { apiError } from "@/lib/api-error";
 import { matchPromotionsForAffectedBookings } from "@/lib/promotion-matching";
-import { PromotionBenefitFormData } from "@/lib/types";
+import { PromotionBenefitFormData, PromotionTierFormData } from "@/lib/types";
 
 export async function GET(request: NextRequest) {
   try {
@@ -23,6 +23,10 @@ export async function GET(request: NextRequest) {
         creditCard: true,
         shoppingPortal: true,
         benefits: { orderBy: { sortOrder: "asc" } },
+        tiers: {
+          orderBy: { minStays: "asc" },
+          include: { benefits: { orderBy: { sortOrder: "asc" } } },
+        },
       },
     });
 
@@ -39,6 +43,7 @@ export async function POST(request: NextRequest) {
       name,
       type,
       benefits,
+      tiers,
       hotelChainId,
       hotelChainSubBrandId,
       creditCardId,
@@ -54,9 +59,10 @@ export async function POST(request: NextRequest) {
       minNightsRequired,
       nightsStackable,
       bookByDate,
-      requiredStayNumber,
       oncePerSubBrand,
     } = body;
+
+    const hasTiers = Array.isArray(tiers) && tiers.length > 0;
 
     const promotion = await prisma.promotion.create({
       data: {
@@ -77,21 +83,45 @@ export async function POST(request: NextRequest) {
         minNightsRequired: minNightsRequired != null ? Number(minNightsRequired) : null,
         nightsStackable: nightsStackable ?? false,
         bookByDate: bookByDate ? new Date(bookByDate) : null,
-        requiredStayNumber: requiredStayNumber != null ? Number(requiredStayNumber) : null,
         oncePerSubBrand: oncePerSubBrand ?? false,
-        benefits: {
-          create: ((benefits as PromotionBenefitFormData[]) || []).map((b, i) => ({
-            rewardType: b.rewardType,
-            valueType: b.valueType,
-            value: Number(b.value),
-            certType: b.certType || null,
-            pointsMultiplierBasis: b.pointsMultiplierBasis || null,
-            sortOrder: b.sortOrder ?? i,
-          })),
-        },
+        ...(hasTiers
+          ? {
+              tiers: {
+                create: (tiers as PromotionTierFormData[]).map((tier) => ({
+                  minStays: tier.minStays,
+                  maxStays: tier.maxStays ?? null,
+                  benefits: {
+                    create: (tier.benefits || []).map((b: PromotionBenefitFormData, i: number) => ({
+                      rewardType: b.rewardType,
+                      valueType: b.valueType,
+                      value: Number(b.value),
+                      certType: b.certType || null,
+                      pointsMultiplierBasis: b.pointsMultiplierBasis || null,
+                      sortOrder: b.sortOrder ?? i,
+                    })),
+                  },
+                })),
+              },
+            }
+          : {
+              benefits: {
+                create: ((benefits as PromotionBenefitFormData[]) || []).map((b, i) => ({
+                  rewardType: b.rewardType,
+                  valueType: b.valueType,
+                  value: Number(b.value),
+                  certType: b.certType || null,
+                  pointsMultiplierBasis: b.pointsMultiplierBasis || null,
+                  sortOrder: b.sortOrder ?? i,
+                })),
+              },
+            }),
       },
       include: {
         benefits: { orderBy: { sortOrder: "asc" } },
+        tiers: {
+          orderBy: { minStays: "asc" },
+          include: { benefits: { orderBy: { sortOrder: "asc" } } },
+        },
       },
     });
 
