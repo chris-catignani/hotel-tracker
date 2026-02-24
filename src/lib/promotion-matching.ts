@@ -1,11 +1,21 @@
 import prisma from "@/lib/prisma";
-import { BookingPromotion, PromotionType, ValueType, Promotion, Prisma } from "@prisma/client";
+import {
+  BookingPromotion,
+  PromotionType,
+  PromotionRewardType,
+  PromotionBenefitValueType,
+  Prisma,
+} from "@prisma/client";
 
 const BOOKING_INCLUDE = {
   hotelChain: { include: { pointType: true } },
   hotelChainSubBrand: true,
   creditCard: { include: { pointType: true } },
   shoppingPortal: true,
+} as const;
+
+const PROMOTIONS_INCLUDE = {
+  benefits: { orderBy: { sortOrder: "asc" as const } },
 } as const;
 
 export interface MatchingBooking {
@@ -28,16 +38,43 @@ export interface MatchingBooking {
   } | null;
 }
 
+interface MatchingPromotion {
+  id: number;
+  type: PromotionType;
+  creditCardId: number | null;
+  shoppingPortalId: number | null;
+  hotelChainId: number | null;
+  hotelChainSubBrandId: number | null;
+  startDate: Date | null;
+  endDate: Date | null;
+  minSpend: Prisma.Decimal | null;
+  isActive: boolean;
+  benefits: {
+    id: number;
+    rewardType: PromotionRewardType;
+    valueType: PromotionBenefitValueType;
+    value: Prisma.Decimal;
+    certType: string | null;
+    sortOrder: number;
+  }[];
+}
+
+interface BenefitApplication {
+  promotionBenefitId: number;
+  appliedValue: number;
+}
+
 /**
  * Calculates which promotions match a given booking without side effects.
  */
 export function calculateMatchedPromotions(
   booking: MatchingBooking,
-  activePromotions: Promotion[]
+  activePromotions: MatchingPromotion[]
 ) {
   const matched: {
     promotionId: number;
     appliedValue: number;
+    benefitApplications: BenefitApplication[];
   }[] = [];
 
   for (const promo of activePromotions) {
@@ -80,28 +117,50 @@ export function calculateMatchedPromotions(
       continue;
     }
 
-    // Calculate applied value
-    let appliedValue = 0;
-    switch (promo.valueType) {
-      case ValueType.fixed:
-        appliedValue = Number(promo.value);
-        break;
-      case ValueType.percentage:
-        appliedValue = (Number(booking.totalCost) * Number(promo.value)) / 100;
-        break;
-      case ValueType.points_multiplier: {
-        const centsPerPoint = booking.hotelChain?.pointType?.centsPerPoint
-          ? Number(booking.hotelChain.pointType.centsPerPoint)
-          : 0.01;
-        appliedValue =
-          Number(booking.loyaltyPointsEarned || 0) * (Number(promo.value) - 1) * centsPerPoint;
-        break;
+    // Calculate applied value per benefit
+    const centsPerPoint = booking.hotelChain?.pointType?.centsPerPoint
+      ? Number(booking.hotelChain.pointType.centsPerPoint)
+      : 0.01;
+
+    const benefitApplications: BenefitApplication[] = [];
+    let totalAppliedValue = 0;
+
+    for (const benefit of promo.benefits) {
+      const benefitValue = Number(benefit.value);
+      let appliedValue = 0;
+
+      switch (benefit.rewardType) {
+        case PromotionRewardType.cashback:
+          if (benefit.valueType === PromotionBenefitValueType.fixed) {
+            appliedValue = benefitValue;
+          } else if (benefit.valueType === PromotionBenefitValueType.percentage) {
+            appliedValue = (Number(booking.totalCost) * benefitValue) / 100;
+          }
+          break;
+        case PromotionRewardType.points_multiplier:
+          appliedValue =
+            Number(booking.loyaltyPointsEarned || 0) * (benefitValue - 1) * centsPerPoint;
+          break;
+        case PromotionRewardType.fixed_points:
+          appliedValue = benefitValue * centsPerPoint;
+          break;
+        case PromotionRewardType.certificate:
+        case PromotionRewardType.eqn:
+          appliedValue = 0; // informational only
+          break;
       }
+
+      benefitApplications.push({
+        promotionBenefitId: benefit.id,
+        appliedValue,
+      });
+      totalAppliedValue += appliedValue;
     }
 
     matched.push({
       promotionId: promo.id,
-      appliedValue,
+      appliedValue: totalAppliedValue,
+      benefitApplications,
     });
   }
 
@@ -113,7 +172,11 @@ export function calculateMatchedPromotions(
  */
 async function applyMatchedPromotions(
   bookingId: number,
-  matched: { promotionId: number; appliedValue: number }[]
+  matched: {
+    promotionId: number;
+    appliedValue: number;
+    benefitApplications: BenefitApplication[];
+  }[]
 ): Promise<BookingPromotion[]> {
   // Delete existing auto-applied BookingPromotions for this booking
   await prisma.bookingPromotion.deleteMany({
@@ -123,7 +186,7 @@ async function applyMatchedPromotions(
     },
   });
 
-  // Create new BookingPromotion records
+  // Create new BookingPromotion records with benefit applications
   const createdRecords: BookingPromotion[] = [];
   for (const match of matched) {
     const record = await prisma.bookingPromotion.create({
@@ -132,6 +195,12 @@ async function applyMatchedPromotions(
         promotionId: match.promotionId,
         appliedValue: match.appliedValue,
         autoApplied: true,
+        benefitApplications: {
+          create: match.benefitApplications.map((ba) => ({
+            promotionBenefitId: ba.promotionBenefitId,
+            appliedValue: ba.appliedValue,
+          })),
+        },
       },
     });
     createdRecords.push(record);
@@ -149,6 +218,7 @@ export async function reevaluateBookings(bookingIds: number[]): Promise<void> {
 
   const activePromotions = await prisma.promotion.findMany({
     where: { isActive: true },
+    include: PROMOTIONS_INCLUDE,
   });
 
   const bookings = await prisma.booking.findMany({
@@ -179,6 +249,7 @@ export async function matchPromotionsForBooking(bookingId: number): Promise<Book
 
   const activePromotions = await prisma.promotion.findMany({
     where: { isActive: true },
+    include: PROMOTIONS_INCLUDE,
   });
 
   const matched = calculateMatchedPromotions(booking, activePromotions);

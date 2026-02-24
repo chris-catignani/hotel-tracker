@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { matchPromotionsForAffectedBookings, reevaluateBookings } from "@/lib/promotion-matching";
+import { PromotionBenefitFormData } from "@/lib/types";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -13,6 +14,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         hotelChainSubBrand: true,
         creditCard: true,
         shoppingPortal: true,
+        benefits: { orderBy: { sortOrder: "asc" } },
       },
     });
 
@@ -33,8 +35,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const {
       name,
       type,
-      valueType,
-      value,
+      benefits,
       hotelChainId,
       hotelChainSubBrandId,
       creditCardId,
@@ -48,8 +49,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const data: Record<string, unknown> = {};
     if (name !== undefined) data.name = name;
     if (type !== undefined) data.type = type;
-    if (valueType !== undefined) data.valueType = valueType;
-    if (value !== undefined) data.value = Number(value);
     if (hotelChainId !== undefined) data.hotelChainId = hotelChainId ? Number(hotelChainId) : null;
     if (hotelChainSubBrandId !== undefined)
       data.hotelChainSubBrandId = hotelChainSubBrandId ? Number(hotelChainSubBrandId) : null;
@@ -61,9 +60,26 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (endDate !== undefined) data.endDate = endDate ? new Date(endDate) : null;
     if (isActive !== undefined) data.isActive = isActive;
 
+    // Replace benefits wholesale: delete all then recreate
+    if (benefits !== undefined) {
+      await prisma.promotionBenefit.deleteMany({ where: { promotionId: Number(id) } });
+      data.benefits = {
+        create: ((benefits as PromotionBenefitFormData[]) || []).map((b, i) => ({
+          rewardType: b.rewardType,
+          valueType: b.valueType,
+          value: Number(b.value),
+          certType: b.certType || null,
+          sortOrder: b.sortOrder ?? i,
+        })),
+      };
+    }
+
     const promotion = await prisma.promotion.update({
       where: { id: Number(id) },
       data,
+      include: {
+        benefits: { orderBy: { sortOrder: "asc" } },
+      },
     });
 
     await matchPromotionsForAffectedBookings(promotion.id);

@@ -9,6 +9,16 @@ export interface CalculationDetail {
   description: string;
 }
 
+export interface NetCostBookingPromotionBenefit {
+  appliedValue: string | number;
+  promotionBenefit: {
+    rewardType: string;
+    valueType: string;
+    value: string | number;
+    certType: string | null;
+  };
+}
+
 export interface NetCostBooking {
   totalCost: string | number;
   pretaxCost: string | number;
@@ -42,19 +52,17 @@ export interface NetCostBooking {
     pointType: { name: string; centsPerPoint: string | number } | null;
   } | null;
   bookingPromotions: {
-    id: number;
-    bookingId: number;
-    promotionId: number;
     appliedValue: string | number;
-    autoApplied: boolean;
-    verified: boolean;
     promotion: {
-      id: number;
       name: string;
-      type: string;
-      value: string | number;
-      valueType: string;
+      benefits: {
+        rewardType: string;
+        valueType: string;
+        value: string | number;
+        certType: string | null;
+      }[];
     };
+    benefitApplications: NetCostBookingPromotionBenefit[];
   }[];
 }
 
@@ -97,26 +105,81 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
   const pretaxCost = Number(booking.pretaxCost);
 
   // 1. Promotions
-  const promotions: PromotionBreakdown[] = booking.bookingPromotions.map((bp, index) => {
-    const value = Number(bp.promotion.value);
-    const appliedValue = Number(bp.appliedValue);
-    let formula = "";
-    let description = "";
+  const hotelCentsPerPoint = booking.hotelChain.pointType?.centsPerPoint
+    ? Number(booking.hotelChain.pointType.centsPerPoint)
+    : DEFAULT_CENTS_PER_POINT;
 
-    if (bp.promotion.valueType === "percentage") {
-      formula = `${formatCurrency(totalCost)} (total cost) × ${value}% = ${formatCurrency(appliedValue)}`;
-      description = `This promotion offers a ${value}% discount on the total cost of the booking.`;
-    } else if (bp.promotion.valueType === "fixed") {
-      formula = `${formatCurrency(value)} = ${formatCurrency(appliedValue)}`;
-      description = `This is a fixed-value promotion of ${formatCurrency(value)}.`;
-    } else if (bp.promotion.valueType === "points_multiplier") {
-      const centsPerPoint = booking.hotelChain.pointType?.centsPerPoint
-        ? Number(booking.hotelChain.pointType.centsPerPoint)
-        : DEFAULT_CENTS_PER_POINT;
-      const centsStr = formatCents(centsPerPoint);
-      formula = `${(booking.loyaltyPointsEarned || 0).toLocaleString()} pts (from pre-tax cost) × (${value} - 1) × ${centsStr}¢ = ${formatCurrency(appliedValue)}`;
-      description = `This promotion is a ${value}x points multiplier on earned loyalty points, which are typically based on the pre-tax cost. We value these points at ${centsStr}¢ each.`;
+  const promotions: PromotionBreakdown[] = booking.bookingPromotions.map((bp, index) => {
+    const appliedValue = Number(bp.appliedValue);
+    const benefits = bp.benefitApplications;
+
+    // Build per-benefit formula lines
+    const formulaLines: string[] = [];
+    const descriptionLines: string[] = [];
+
+    for (const ba of benefits) {
+      const b = ba.promotionBenefit;
+      const bValue = Number(b.value);
+      const bApplied = Number(ba.appliedValue);
+
+      switch (b.rewardType) {
+        case "cashback":
+          if (b.valueType === "fixed") {
+            formulaLines.push(
+              `${formatCurrency(bValue)} fixed cashback = ${formatCurrency(bApplied)}`
+            );
+            descriptionLines.push(`A fixed cashback of ${formatCurrency(bValue)}.`);
+          } else if (b.valueType === "percentage") {
+            formulaLines.push(
+              `${formatCurrency(totalCost)} (total cost) × ${bValue}% = ${formatCurrency(bApplied)}`
+            );
+            descriptionLines.push(`A ${bValue}% cashback on the total cost of the booking.`);
+          }
+          break;
+        case "points_multiplier": {
+          const centsStr = formatCents(hotelCentsPerPoint);
+          formulaLines.push(
+            `${(booking.loyaltyPointsEarned || 0).toLocaleString()} pts (from pre-tax cost) × (${bValue} - 1) × ${centsStr}¢ = ${formatCurrency(bApplied)}`
+          );
+          descriptionLines.push(
+            `A ${bValue}x points multiplier on earned loyalty points (based on pre-tax cost), valued at ${centsStr}¢ each.`
+          );
+          break;
+        }
+        case "fixed_points": {
+          const centsStr = formatCents(hotelCentsPerPoint);
+          formulaLines.push(
+            `${bValue.toLocaleString()} bonus pts × ${centsStr}¢ = ${formatCurrency(bApplied)}`
+          );
+          descriptionLines.push(
+            `${bValue.toLocaleString()} fixed bonus points, valued at ${centsStr}¢ each.`
+          );
+          break;
+        }
+        case "certificate":
+          formulaLines.push(`${bValue.toLocaleString()} certificate(s) (informational)`);
+          descriptionLines.push(
+            `Earns ${bValue.toLocaleString()} certificate(s) — no cash value tracked.`
+          );
+          break;
+        case "eqn":
+          formulaLines.push(`${bValue.toLocaleString()} bonus EQN(s) (informational)`);
+          descriptionLines.push(
+            `Earns ${bValue.toLocaleString()} bonus Elite Qualifying Night(s) — no cash value tracked.`
+          );
+          break;
+      }
     }
+
+    // Fall back to applied value if no benefit applications (e.g. manually verified promos)
+    const formula =
+      formulaLines.length > 0
+        ? formulaLines.join("; ") + ` = ${formatCurrency(appliedValue)} total`
+        : `${formatCurrency(appliedValue)}`;
+    const description =
+      descriptionLines.length > 0
+        ? descriptionLines.join(" ")
+        : `Applied promotion value: ${formatCurrency(appliedValue)}.`;
 
     return {
       id: index,

@@ -21,7 +21,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         shoppingPortal: { include: { pointType: true } },
         bookingPromotions: {
           include: {
-            promotion: true,
+            promotion: { include: { benefits: { orderBy: { sortOrder: "asc" } } } },
+            benefitApplications: { include: { promotionBenefit: true } },
           },
         },
         certificates: true,
@@ -216,7 +217,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         shoppingPortal: { include: { pointType: true } },
         bookingPromotions: {
           include: {
-            promotion: true,
+            promotion: { include: { benefits: { orderBy: { sortOrder: "asc" } } } },
+            benefitApplications: { include: { promotionBenefit: true } },
           },
         },
         certificates: true,

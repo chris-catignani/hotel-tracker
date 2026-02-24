@@ -28,29 +28,51 @@ describe("net-cost", () => {
     expect(result.portalCashback).toBe(0);
   });
 
-  it("should apply fixed value promotions", () => {
+  it("should apply fixed cashback promotions", () => {
     const booking: NetCostBooking = {
       ...mockBaseBooking,
       bookingPromotions: [
         {
           appliedValue: 10,
-          promotion: { name: "Promo 1", value: 10, valueType: "fixed" },
+          promotion: { name: "Promo 1", benefits: [] },
+          benefitApplications: [
+            {
+              appliedValue: 10,
+              promotionBenefit: {
+                rewardType: "cashback",
+                valueType: "fixed",
+                value: 10,
+                certType: null,
+              },
+            },
+          ],
         },
       ],
     };
     const result = getNetCostBreakdown(booking);
     expect(result.promoSavings).toBe(10);
     expect(result.netCost).toBe(90);
-    expect(result.promotions[0].formula).toContain("$10.00 = $10.00");
+    expect(result.promotions[0].formula).toContain("$10.00 fixed cashback = $10.00");
   });
 
-  it("should apply percentage promotions", () => {
+  it("should apply percentage cashback promotions", () => {
     const booking: NetCostBooking = {
       ...mockBaseBooking,
       bookingPromotions: [
         {
           appliedValue: 20,
-          promotion: { name: "20% off", value: 20, valueType: "percentage" },
+          promotion: { name: "20% off", benefits: [] },
+          benefitApplications: [
+            {
+              appliedValue: 20,
+              promotionBenefit: {
+                rewardType: "cashback",
+                valueType: "percentage",
+                value: 20,
+                certType: null,
+              },
+            },
+          ],
         },
       ],
     };
@@ -67,7 +89,18 @@ describe("net-cost", () => {
       bookingPromotions: [
         {
           appliedValue: 15,
-          promotion: { name: "2x multiplier", value: 2, valueType: "points_multiplier" },
+          promotion: { name: "2x multiplier", benefits: [] },
+          benefitApplications: [
+            {
+              appliedValue: 15,
+              promotionBenefit: {
+                rewardType: "points_multiplier",
+                valueType: "multiplier",
+                value: 2,
+                certType: null,
+              },
+            },
+          ],
         },
       ],
     };
@@ -78,6 +111,101 @@ describe("net-cost", () => {
     expect(result.promotions[0].formula).toContain(
       "1,000 pts (from pre-tax cost) × (2 - 1) × 1.5¢ = $15.00"
     );
+    expect(result.promotions[0].description).toContain("pre-tax cost");
+  });
+
+  it("should apply fixed_points promotions", () => {
+    const booking: NetCostBooking = {
+      ...mockBaseBooking,
+      bookingPromotions: [
+        {
+          appliedValue: 15,
+          promotion: { name: "1000 bonus pts", benefits: [] },
+          benefitApplications: [
+            {
+              appliedValue: 15,
+              promotionBenefit: {
+                rewardType: "fixed_points",
+                valueType: "fixed",
+                value: 1000,
+                certType: null,
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const result = getNetCostBreakdown(booking);
+    // 1000 pts * 0.015 = $15.00
+    expect(result.promoSavings).toBe(15);
+    expect(result.netCost).toBe(85);
+    expect(result.promotions[0].formula).toContain("1,000 bonus pts × 1.5¢ = $15.00");
+  });
+
+  it("should handle certificate benefit as zero applied value", () => {
+    const booking: NetCostBooking = {
+      ...mockBaseBooking,
+      bookingPromotions: [
+        {
+          appliedValue: 0,
+          promotion: { name: "Free Night Cert", benefits: [] },
+          benefitApplications: [
+            {
+              appliedValue: 0,
+              promotionBenefit: {
+                rewardType: "certificate",
+                valueType: "fixed",
+                value: 1,
+                certType: "marriott_35k",
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const result = getNetCostBreakdown(booking);
+    expect(result.promoSavings).toBe(0);
+    expect(result.netCost).toBe(100);
+    expect(result.promotions[0].formula).toContain("cert");
+  });
+
+  it("should sum multiple benefits across a promotion", () => {
+    const booking: NetCostBooking = {
+      ...mockBaseBooking,
+      bookingPromotions: [
+        {
+          appliedValue: 25,
+          promotion: { name: "Multi-benefit promo", benefits: [] },
+          benefitApplications: [
+            {
+              appliedValue: 10,
+              promotionBenefit: {
+                rewardType: "cashback",
+                valueType: "fixed",
+                value: 10,
+                certType: null,
+              },
+            },
+            {
+              appliedValue: 15,
+              promotionBenefit: {
+                rewardType: "fixed_points",
+                valueType: "fixed",
+                value: 1000,
+                certType: null,
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const result = getNetCostBreakdown(booking);
+    expect(result.promoSavings).toBe(25);
+    expect(result.netCost).toBe(75);
+    // Formula should include both benefit lines
+    expect(result.promotions[0].formula).toContain("$10.00 fixed cashback");
+    expect(result.promotions[0].formula).toContain("1,000 bonus pts");
+    expect(result.promotions[0].formula).toContain("$25.00 total");
   });
 
   it("should calculate shopping portal cashback (pre-tax)", () => {
