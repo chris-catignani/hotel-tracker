@@ -503,34 +503,40 @@ describe("promotion-matching", () => {
     expect(matched[0].benefitApplications[0].promotionBenefitId).toBe(101);
   });
 
-  it("tiered: 1 prior matched stay → tier 2 benefits apply ($75)", () => {
+  it("tiered: 1 prior eligible stay → tier 2 benefits apply ($75)", () => {
     const promo = makeTieredPromo();
-    const priorUsage = new Map([[promo.id, { count: 1, totalValue: 50, totalBonusPoints: 0 }]]);
+    const priorUsage = new Map([
+      [promo.id, { count: 0, totalValue: 0, totalBonusPoints: 0, eligibleStayCount: 1 }],
+    ]);
     const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
     expect(matched).toHaveLength(1);
     expect(matched[0].appliedValue).toBe(75);
     expect(matched[0].benefitApplications[0].promotionBenefitId).toBe(102);
   });
 
-  it("tiered: 2 prior matched stays → tier 3 (maxStays=null) benefits apply ($100)", () => {
+  it("tiered: 2 prior eligible stays → tier 3 (maxStays=null) benefits apply ($100)", () => {
     const promo = makeTieredPromo();
-    const priorUsage = new Map([[promo.id, { count: 2, totalValue: 125, totalBonusPoints: 0 }]]);
+    const priorUsage = new Map([
+      [promo.id, { count: 1, totalValue: 50, totalBonusPoints: 0, eligibleStayCount: 2 }],
+    ]);
     const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
     expect(matched).toHaveLength(1);
     expect(matched[0].appliedValue).toBe(100);
     expect(matched[0].benefitApplications[0].promotionBenefitId).toBe(103);
   });
 
-  it("tiered: 5 prior matched stays → still tier 3 (no upper bound)", () => {
+  it("tiered: 5 prior eligible stays → still tier 3 (no upper bound)", () => {
     const promo = makeTieredPromo();
-    const priorUsage = new Map([[promo.id, { count: 5, totalValue: 500, totalBonusPoints: 0 }]]);
+    const priorUsage = new Map([
+      [promo.id, { count: 3, totalValue: 300, totalBonusPoints: 0, eligibleStayCount: 5 }],
+    ]);
     const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
     expect(matched).toHaveLength(1);
     expect(matched[0].appliedValue).toBe(100);
   });
 
-  it("tiered: no tier covers stay count → no match", () => {
-    // Tiers only cover stay #2+, so stay #1 has no match
+  it("tiered: no tier covers stay count → no match (stay #1 with minStays=2 tier)", () => {
+    // Tiers only cover stay #2+, so stay #1 (eligibleStayCount=0) has no match
     const promo = makePromo({
       benefits: [],
       tiers: [{ id: 1, minStays: 2, maxStays: null, benefits: [tier2Benefit] }],
@@ -539,12 +545,28 @@ describe("promotion-matching", () => {
     expect(matched).toHaveLength(0);
   });
 
+  it("tiered: stay #1 has no tier, stay #2 correctly advances via eligibleStayCount", () => {
+    // Tier only covers stay #2+; eligibleStayCount=1 means this is stay #2
+    const promo = makePromo({
+      benefits: [],
+      tiers: [{ id: 1, minStays: 2, maxStays: null, benefits: [tier2Benefit] }],
+    });
+    const priorUsage = new Map([
+      [promo.id, { count: 0, totalValue: 0, totalBonusPoints: 0, eligibleStayCount: 1 }],
+    ]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
+    expect(matched).toHaveLength(1);
+    expect(matched[0].appliedValue).toBe(75);
+  });
+
   it("tiered: maxStays boundary respected (stay at maxStays+1 → no match)", () => {
     const promo = makePromo({
       benefits: [],
       tiers: [{ id: 1, minStays: 1, maxStays: 2, benefits: [tier1Benefit] }],
     });
-    const priorUsage = new Map([[promo.id, { count: 2, totalValue: 0, totalBonusPoints: 0 }]]);
+    const priorUsage = new Map([
+      [promo.id, { count: 2, totalValue: 0, totalBonusPoints: 0, eligibleStayCount: 2 }],
+    ]);
     // currentStayNumber=3, tier maxStays=2 → no match
     const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
     expect(matched).toHaveLength(0);

@@ -11,6 +11,7 @@ export type PromotionUsage = {
   count: number;
   totalValue: number;
   totalBonusPoints: number;
+  eligibleStayCount?: number;
   appliedSubBrandIds?: Set<number | null>;
 };
 export type PromotionUsageMap = Map<number, PromotionUsage>;
@@ -174,7 +175,7 @@ export function calculateMatchedPromotions(
     // Determine which benefits to use: tier-based or flat
     let activeBenefits: MatchingBenefit[];
     if (promo.tiers.length > 0) {
-      const priorMatchedStays = usage?.count ?? 0;
+      const priorMatchedStays = usage?.eligibleStayCount ?? 0;
       const currentStayNumber = priorMatchedStays + 1;
       const applicableTier = promo.tiers.find(
         (tier) =>
@@ -333,6 +334,7 @@ async function applyMatchedPromotions(
  */
 async function fetchPromotionUsage(
   promotions: MatchingPromotion[],
+  booking: MatchingBooking,
   excludeBookingId?: number
 ): Promise<PromotionUsageMap> {
   const usageMap: PromotionUsageMap = new Map();
@@ -357,6 +359,33 @@ async function fetchPromotionUsage(
       totalValue: Number(row._sum.appliedValue ?? 0),
       totalBonusPoints: row._sum.bonusPointsApplied ?? 0,
     });
+  }
+
+  // Fetch eligibleStayCount for tiered promotions
+  // Counts all bookings matching criteria with checkIn before the current booking,
+  // regardless of whether the promotion was actually applied (so gaps in tiers don't
+  // break the stay number counter).
+  const tieredPromos = promotions.filter((p) => p.tiers.length > 0);
+  for (const promo of tieredPromos) {
+    const currentCheckIn = new Date(booking.checkIn);
+    const eligibleCount = await prisma.booking.count({
+      where: {
+        ...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
+        hotelChainId: promo.hotelChainId ?? undefined,
+        ...(promo.hotelChainSubBrandId !== null
+          ? { hotelChainSubBrandId: promo.hotelChainSubBrandId }
+          : {}),
+        ...(promo.creditCardId !== null ? { creditCardId: promo.creditCardId } : {}),
+        ...(promo.shoppingPortalId !== null ? { shoppingPortalId: promo.shoppingPortalId } : {}),
+        checkIn: {
+          ...(promo.startDate ? { gte: promo.startDate } : {}),
+          lt: currentCheckIn,
+          ...(promo.endDate ? { lte: promo.endDate } : {}),
+        },
+      },
+    });
+    const existing = usageMap.get(promo.id) ?? { count: 0, totalValue: 0, totalBonusPoints: 0 };
+    usageMap.set(promo.id, { ...existing, eligibleStayCount: eligibleCount });
   }
 
   // Fetch appliedSubBrandIds for oncePerSubBrand promotions
@@ -422,7 +451,7 @@ export async function reevaluateBookings(bookingIds: number[]): Promise<void> {
 
   // Process sequentially to ensure accurate constraint checks
   for (const booking of bookings) {
-    const priorUsage = await fetchPromotionUsage(constrainedPromos, booking.id);
+    const priorUsage = await fetchPromotionUsage(constrainedPromos, booking, booking.id);
     const matched = calculateMatchedPromotions(booking, activePromotions, priorUsage);
     await applyMatchedPromotions(booking.id, matched);
   }
@@ -458,7 +487,7 @@ export async function matchPromotionsForBooking(bookingId: number): Promise<Book
   );
 
   // Fetch prior usage excluding current booking
-  const priorUsage = await fetchPromotionUsage(constrainedPromos, bookingId);
+  const priorUsage = await fetchPromotionUsage(constrainedPromos, booking, bookingId);
 
   const matched = calculateMatchedPromotions(booking, activePromotions, priorUsage);
   return applyMatchedPromotions(bookingId, matched);
