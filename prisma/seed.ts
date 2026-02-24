@@ -34,19 +34,55 @@ async function upsertEliteStatuses(hotelChainId: number, statuses: EliteStatusDa
   }
 }
 
+/**
+ * Utility function used to generate the shortened names above.
+ * Kept here for future use when adding new brands to the seed data.
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function shortenName(name: string): string {
+  // 1. Specific Exceptions for collisions or specific branding
+  if (name === "Autograph Collection Hotels") return "Autograph Collection";
+  if (name === "PARKROYAL COLLECTION Hotels & Resorts") return "PARKROYAL COLLECTION";
+  if (name === "Hilton Club") return "Hilton Club";
+  if (name === "Hilton Vacation Club") return "Hilton Vacation Club";
+  if (name === "Holiday Inn Club Vacations") return "Holiday Inn Club";
+  if (name === "NH Hotels & Resorts") return "NH Hotels";
+
+  // 2. General Suffix Removals
+  return name
+    .replace(/\s+Resorts\s+&\s+Spas$/i, "")
+    .replace(/\s+Wellness\s+&\s+Spa\s+Resorts$/i, "")
+    .replace(/\s+Hotels\s+&\s+Resorts$/i, "")
+    .replace(/\s+by\s+Hilton$/i, "")
+    .replace(/\s+Resorts\s+&\s+Hotels$/i, "")
+    .replace(/\s+Hotels\s+&\s+Restaurants$/i, "")
+    .replace(/\s+Hotels\s+Resorts\s+Spas$/i, "")
+    .replace(/\s+Hotels,\s+Resorts\s+and\s+Suites$/i, "")
+    .replace(/\s+Collection\s+Hotels$/i, "")
+    .replace(/\s+Hotels$/i, "")
+    .replace(/\s+by\s+Marriott$/i, "")
+    .replace(/\s+by\s+Hyatt$/i, "")
+    .replace(/\s+by\s+Rotana$/i, "")
+    .trim();
+}
+
 async function upsertSubBrands(hotelChainId: number, subBrands: SubBrandData[]) {
-  for (const sb of subBrands) {
+  for (let i = 0; i < subBrands.length; i++) {
+    const sb = subBrands[i];
+    const fixedId = hotelChainId * 1000 + (i + 1);
+
     await prisma.hotelChainSubBrand.upsert({
-      where: {
-        hotelChainId_name: {
-          hotelChainId,
-          name: sb.name,
-        },
-      },
-      update: sb,
-      create: {
-        ...sb,
+      where: { id: fixedId },
+      update: {
+        name: sb.name,
         hotelChainId,
+        basePointRate: sb.basePointRate,
+      },
+      create: {
+        id: fixedId,
+        name: sb.name,
+        hotelChainId,
+        basePointRate: sb.basePointRate,
       },
     });
   }
@@ -147,30 +183,30 @@ async function main() {
     { name: "Diamond Reserve", bonusPercentage: 1.2, eliteTierLevel: 4 },
   ]);
   await upsertSubBrands(HOTEL_ID.HILTON, [
-    { name: "Apartment Collection by Hilton" },
-    { name: "Canopy by Hilton" },
-    { name: "Conrad Hotels & Resorts" },
-    { name: "Curio Collection by Hilton" },
-    { name: "DoubleTree by Hilton" },
-    { name: "Embassy Suites by Hilton" },
-    { name: "Graduate by Hilton" },
-    { name: "Hampton by Hilton" },
+    { name: "Apartment Collection" },
+    { name: "Canopy" },
+    { name: "Conrad" },
+    { name: "Curio Collection" },
+    { name: "DoubleTree" },
+    { name: "Embassy Suites" },
+    { name: "Graduate" },
+    { name: "Hampton" },
     { name: "Hilton Club" },
     { name: "Hilton Garden Inn" },
     { name: "Hilton Grand Vacations" },
-    { name: "Hilton Hotels & Resorts" },
+    { name: "Hilton" },
     { name: "Hilton Vacation Club" },
-    { name: "Home2 Suites by Hilton", basePointRate: 5 },
-    { name: "Homewood Suites by Hilton", basePointRate: 5 },
-    { name: "LivSmart Studios by Hilton", basePointRate: 5 },
-    { name: "LXR Hotels & Resorts" },
-    { name: "Motto by Hilton" },
-    { name: "NoMad Hotels" },
-    { name: "Signia by Hilton" },
-    { name: "Spark by Hilton", basePointRate: 5 },
-    { name: "Tapestry Collection by Hilton" },
-    { name: "Tempo by Hilton" },
-    { name: "Tru by Hilton", basePointRate: 5 },
+    { name: "Home2 Suites", basePointRate: 5 },
+    { name: "Homewood Suites", basePointRate: 5 },
+    { name: "LivSmart Studios", basePointRate: 5 },
+    { name: "LXR" },
+    { name: "Motto" },
+    { name: "NoMad" },
+    { name: "Signia" },
+    { name: "Spark", basePointRate: 5 },
+    { name: "Tapestry Collection" },
+    { name: "Tempo" },
+    { name: "Tru", basePointRate: 5 },
     { name: "Waldorf Astoria" },
   ]);
 
@@ -199,39 +235,39 @@ async function main() {
     { name: "Ambassador", bonusPercentage: 0.75, eliteTierLevel: 5 },
   ]);
   await upsertSubBrands(HOTEL_ID.MARRIOTT, [
-    { name: "AC Hotels by Marriott" },
-    { name: "Aloft Hotels" },
+    { name: "AC Hotels" },
+    { name: "Aloft" },
     { name: "Apartments by Marriott Bonvoy", basePointRate: 5 },
-    { name: "Autograph Collection Hotels" },
-    { name: "Bulgari Hotels & Resorts" },
-    { name: "City Express by Marriott", basePointRate: 5 },
+    { name: "Autograph Collection" },
+    { name: "Bulgari" },
+    { name: "City Express", basePointRate: 5 },
     { name: "citizenM" },
-    { name: "Courtyard by Marriott" },
-    { name: "Delta Hotels" },
-    { name: "Design Hotels" },
+    { name: "Courtyard" },
+    { name: "Delta" },
+    { name: "Design" },
     { name: "EDITION" },
-    { name: "Element by Westin", basePointRate: 5 },
-    { name: "Fairfield by Marriott" },
-    { name: "Four Points by Sheraton" },
-    { name: "Four Points Express by Sheraton", basePointRate: 5 },
-    { name: "Four Points Flex by Sheraton", basePointRate: 5 },
-    { name: "Gaylord Hotels" },
-    { name: "Homes & Villas by Marriott Bonvoy", basePointRate: 5 },
+    { name: "Element", basePointRate: 5 },
+    { name: "Fairfield" },
+    { name: "Four Points" },
+    { name: "Four Points Express", basePointRate: 5 },
+    { name: "Four Points Flex", basePointRate: 5 },
+    { name: "Gaylord" },
+    { name: "Homes & Villas", basePointRate: 5 },
     { name: "JW Marriott" },
     { name: "Le Meridien" },
     { name: "Marriott Executive Apartments", basePointRate: 5 },
-    { name: "Marriott Hotels" },
+    { name: "Marriott" },
     { name: "Marriott Vacation Club" },
-    { name: "MGM Collection with Marriott Bonvoy" },
-    { name: "Moxy Hotels" },
-    { name: "Protea Hotels by Marriott", basePointRate: 5 },
-    { name: "Renaissance Hotels" },
-    { name: "Residence Inn by Marriott", basePointRate: 5 },
+    { name: "MGM Collection" },
+    { name: "Moxy" },
+    { name: "Protea", basePointRate: 5 },
+    { name: "Renaissance" },
+    { name: "Residence Inn", basePointRate: 5 },
     { name: "Ritz-Carlton Reserve" },
     { name: "Sheraton" },
     { name: "SpringHill Suites" },
     { name: "St. Regis" },
-    { name: "StudioRes by Marriott", basePointRate: 5 },
+    { name: "StudioRes", basePointRate: 5 },
     { name: "The Luxury Collection" },
     { name: "The Ritz-Carlton" },
     { name: "TownePlace Suites", basePointRate: 5 },
@@ -259,13 +295,13 @@ async function main() {
   ]);
   await upsertSubBrands(HOTEL_ID.HYATT, [
     { name: "Alila" },
-    { name: "Alua Hotels & Resorts" },
+    { name: "Alua" },
     { name: "Andaz" },
-    { name: "Breathless Resorts & Spas" },
-    { name: "Caption by Hyatt" },
-    { name: "Destination by Hyatt" },
-    { name: "Dream Hotels" },
-    { name: "Dreams Resorts & Spas" },
+    { name: "Breathless" },
+    { name: "Caption" },
+    { name: "Destination" },
+    { name: "Dream" },
+    { name: "Dreams" },
     { name: "Grand Hyatt" },
     { name: "Hyatt Centric" },
     { name: "Hyatt House" },
@@ -273,18 +309,18 @@ async function main() {
     { name: "Hyatt Regency" },
     { name: "Hyatt Studios", basePointRate: 2.5 },
     { name: "Hyatt Vacation Club" },
-    { name: "Hyatt Vivid Hotels & Resorts" },
+    { name: "Hyatt Vivid" },
     { name: "Hyatt Zilara" },
     { name: "Hyatt Ziva" },
     { name: "Impression by Secrets" },
-    { name: "JdV by Hyatt" },
+    { name: "JdV" },
     { name: "Miraval" },
     { name: "Park Hyatt" },
-    { name: "Secrets Resorts & Spas" },
-    { name: "Sunscape Resorts & Spas" },
-    { name: "The Unbound Collection by Hyatt" },
-    { name: "Thompson Hotels" },
-    { name: "Zoetry Wellness & Spa Resorts" },
+    { name: "Secrets" },
+    { name: "Sunscape" },
+    { name: "The Unbound Collection" },
+    { name: "Thompson" },
+    { name: "Zoetry" },
   ]);
 
   // IHG
@@ -307,24 +343,24 @@ async function main() {
   ]);
   await upsertSubBrands(HOTEL_ID.IHG, [
     { name: "Atwell Suites" },
-    { name: "avid hotels" },
+    { name: "avid" },
     { name: "Candlewood Suites", basePointRate: 5 },
-    { name: "Crowne Plaza Hotels & Resorts" },
-    { name: "Even Hotels" },
-    { name: "Garner Hotels" },
+    { name: "Crowne Plaza" },
+    { name: "Even" },
+    { name: "Garner" },
     { name: "Holiday Inn Club Vacations" },
     { name: "Holiday Inn Express" },
-    { name: "Holiday Inn Hotels & Resorts" },
+    { name: "Holiday Inn" },
     { name: "Hotel Indigo" },
-    { name: "HUALUXE Hotels & Resorts" },
-    { name: "Iberostar Beachfront Resorts" },
-    { name: "InterContinental Hotels & Resorts" },
-    { name: "Kimpton Hotels & Restaurants" },
-    { name: "Regent Hotels & Resorts" },
-    { name: "Six Senses Hotels Resorts Spas" },
+    { name: "HUALUXE" },
+    { name: "Iberostar" },
+    { name: "InterContinental" },
+    { name: "Kimpton" },
+    { name: "Regent" },
+    { name: "Six Senses" },
     { name: "Staybridge Suites", basePointRate: 5 },
     { name: "Vignette Collection" },
-    { name: "voco Hotels" },
+    { name: "voco" },
   ]);
 
   // GHA Discovery
@@ -351,63 +387,63 @@ async function main() {
     { name: "Titanium", fixedRate: 7, isFixed: true, eliteTierLevel: 4 },
   ]);
   await upsertSubBrands(HOTEL_ID.GHA_DISCOVERY, [
-    { name: "Anantara Hotels & Resorts" },
+    { name: "Anantara" },
     { name: "Andronis" },
-    { name: "Araiya Hotels & Resorts" },
-    { name: "Arjaan Hotel Apartments by Rotana" },
-    { name: "ASMALLWORLD Hotels & Resorts" },
-    { name: "Avani Hotels & Resorts" },
-    { name: "Bristoria Hotels" },
-    { name: "Capella Hotels & Resorts" },
-    { name: "Centro by Rotana" },
+    { name: "Araiya" },
+    { name: "Arjaan" },
+    { name: "ASMALLWORLD" },
+    { name: "Avani" },
+    { name: "Bristoria" },
+    { name: "Capella" },
+    { name: "Centro" },
     { name: "Cheval Collection" },
-    { name: "Cinnamon Hotels & Resorts" },
-    { name: "Corinthia Hotels" },
-    { name: "Divani Collection Hotels" },
-    { name: "Edge by Rotana" },
+    { name: "Cinnamon" },
+    { name: "Corinthia" },
+    { name: "Divani Collection" },
+    { name: "Edge" },
     { name: "Elewana Collection" },
-    { name: "iclub Hotels" },
-    { name: "iStay Hotels" },
-    { name: "JA Resorts & Hotels" },
-    { name: "Kempinski Hotels" },
+    { name: "iclub" },
+    { name: "iStay" },
+    { name: "JA" },
+    { name: "Kempinski" },
     { name: "Lanson Place" },
     { name: "Lore Group" },
     { name: "Lungarno Collection" },
-    { name: "Maqo Hotels" },
-    { name: "Marco Polo Hotels" },
-    { name: "Minor Hotels" },
-    { name: "Mysk Hotels" },
-    { name: "NH Collection Hotels & Resorts" },
-    { name: "NH Hotels & Resorts" },
-    { name: "nhow Hotels" },
-    { name: "Niccolo Hotels" },
-    { name: "Nikki Beach Hotels & Resorts" },
-    { name: "NUO Hotels" },
-    { name: "Oaks Hotels, Resorts and Suites" },
-    { name: "OUTRIGGER Resorts & Hotels" },
-    { name: "Pan Pacific Hotels and Resorts" },
-    { name: "Paramount Hotels" },
-    { name: "PARKROYAL COLLECTION Hotels & Resorts" },
-    { name: "PARKROYAL Hotels & Resorts" },
-    { name: "Patina Hotels & Resorts" },
-    { name: "Rayhaan Hotels & Resorts by Rotana" },
-    { name: "Regal Hotels" },
-    { name: "Rotana Hotels & Resorts" },
-    { name: "SAii Hotels & Resorts" },
-    { name: "Shaza Hotels" },
+    { name: "Maqo" },
+    { name: "Marco Polo" },
+    { name: "Minor" },
+    { name: "Mysk" },
+    { name: "NH Collection" },
+    { name: "NH Hotels" },
+    { name: "nhow" },
+    { name: "Niccolo" },
+    { name: "Nikki Beach" },
+    { name: "NUO" },
+    { name: "Oaks" },
+    { name: "OUTRIGGER" },
+    { name: "Pan Pacific" },
+    { name: "Paramount" },
+    { name: "PARKROYAL COLLECTION" },
+    { name: "PARKROYAL" },
+    { name: "Patina" },
+    { name: "Rayhaan" },
+    { name: "Regal" },
+    { name: "Rotana" },
+    { name: "SAii" },
+    { name: "Shaza" },
     { name: "Sun International" },
-    { name: "Sunway Hotels & Resorts" },
+    { name: "Sunway" },
     { name: "TemptingPlaces" },
     { name: "The Doyle Collection" },
-    { name: "The Leela Palaces, Hotels and Resorts" },
+    { name: "The Leela" },
     { name: "The Residence by Cenizaro" },
     { name: "The Set Collection" },
-    { name: "The Sukhothai Hotels & Resorts" },
-    { name: "Tivoli Hotels & Resorts" },
+    { name: "The Sukhothai" },
+    { name: "Tivoli" },
     { name: "Ultratravel Collection" },
     { name: "Unike Hoteller" },
-    { name: "Verdi Hotels" },
-    { name: "Viceroy Hotels and Resorts" },
+    { name: "Verdi" },
+    { name: "Viceroy" },
   ]);
 
   // Accor
@@ -435,8 +471,8 @@ async function main() {
     { name: "Diamond", bonusPercentage: 0.76, eliteTierLevel: 4 },
   ]);
   await upsertSubBrands(HOTEL_ID.ACCOR, [
-    { name: "21c Museum Hotel" },
-    { name: "25hours Hotels" },
+    { name: "21c Museum" },
+    { name: "25hours" },
     { name: "Adagio", basePointRate: 10 / 12 },
     { name: "Adagio Access", basePointRate: 5 / 12 },
     { name: "Banyan Tree" },
@@ -453,7 +489,7 @@ async function main() {
     { name: "ibis Styles", basePointRate: 12.5 / 12 },
     { name: "Jo&Joe" },
     { name: "Mama Shelter" },
-    { name: "Mantis Collection" },
+    { name: "Mantis" },
     { name: "Mercure" },
     { name: "MGallery" },
     { name: "Mondrian" },
@@ -468,7 +504,7 @@ async function main() {
     { name: "Sofitel" },
     { name: "Sofitel Legend" },
     { name: "Swissôtel" },
-    { name: "The Hoxton" },
+    { name: "Hoxton" },
     { name: "The Sebel" },
     { name: "Tribe" },
   ]);
