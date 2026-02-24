@@ -7,7 +7,7 @@ import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 
@@ -37,6 +37,39 @@ function useMediaQuery(query: string) {
   return value;
 }
 
+/**
+ * Auto-formats numeric input into MM/DD/YYYY.
+ * e.g. "022426" -> "02/24/2026", "02242026" -> "02/24/2026"
+ */
+function formatInputString(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 8);
+  let formatted = digits;
+  if (digits.length >= 3 && digits.length <= 4) {
+    formatted = `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  } else if (digits.length >= 5) {
+    formatted = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+  }
+  return formatted;
+}
+
+/**
+ * Tries parsing several potential input formats.
+ */
+function parseDateInput(value: string): Date | undefined {
+  if (value.length !== 8 && value.length !== 10) return undefined;
+  const formats = ["MM/dd/yyyy", "MM/dd/yy"];
+  for (const f of formats) {
+    const parsed = parse(value, f, new Date());
+    if (isValid(parsed)) {
+      // Avoid partial dates being treated as current year incorrectly during typing
+      if (parsed.getFullYear() > 1000) {
+        return parsed;
+      }
+    }
+  }
+  return undefined;
+}
+
 export function DatePicker({
   date,
   setDate,
@@ -46,8 +79,9 @@ export function DatePicker({
 }: DatePickerProps) {
   const [open, setOpen] = React.useState(false);
   const isDesktop = useMediaQuery("(min-width: 768px)");
-  const [inputValue, setInputValue] = React.useState(date ? format(date, "MM/dd/yyyy") : "");
+  const [inputValue, setInputValue] = React.useState("");
 
+  // Sync state with prop
   React.useEffect(() => {
     if (date) {
       setInputValue(format(date, "MM/dd/yyyy"));
@@ -57,31 +91,29 @@ export function DatePicker({
   }, [date]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setInputValue(value);
+    const raw = e.target.value;
+    const formatted = formatInputString(raw);
+    setInputValue(formatted);
 
-    if (!value) {
+    if (!formatted) {
       setDate(undefined);
       return;
     }
 
-    // Try parsing the date in MM/dd/yyyy format
-    const parsedDate = parse(value, "MM/dd/yyyy", new Date());
-    if (isValid(parsedDate)) {
-      // Only set date if it's a reasonable year to avoid partial typing issues
-      if (parsedDate.getFullYear() > 1000) {
-        setDate(parsedDate);
-      }
+    const parsedDate = parseDateInput(formatted);
+    if (parsedDate) {
+      setDate(parsedDate);
     }
   };
 
-  const trigger = isDesktop ? (
+  const desktopTrigger = (
     <div className="relative w-full">
       <Input
         id={id}
         value={inputValue}
         onChange={handleInputChange}
         onFocus={() => setOpen(true)}
+        onClick={() => setOpen(true)}
         placeholder="MM/DD/YYYY"
         className={cn(
           "w-full justify-start text-left font-normal h-11 md:h-9 text-base md:text-sm pl-9",
@@ -90,9 +122,11 @@ export function DatePicker({
         )}
         data-testid={id ? `date-picker-input-${id}` : "date-picker-input"}
       />
-      <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-50" />
+      <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-50 pointer-events-none" />
     </div>
-  ) : (
+  );
+
+  const mobileTrigger = (
     <Button
       id={id}
       variant={"outline"}
@@ -124,7 +158,7 @@ export function DatePicker({
   if (isDesktop) {
     return (
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+        <PopoverAnchor asChild>{desktopTrigger}</PopoverAnchor>
         <PopoverContent
           className="w-auto p-0"
           align="start"
@@ -138,7 +172,7 @@ export function DatePicker({
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>{trigger}</SheetTrigger>
+      <SheetTrigger asChild>{mobileTrigger}</SheetTrigger>
       <SheetContent side="bottom" className="p-0">
         <SheetHeader className="px-4 pt-4 pb-2 border-b">
           <SheetTitle>{placeholder}</SheetTitle>

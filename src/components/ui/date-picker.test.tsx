@@ -46,9 +46,36 @@ describe("DatePicker", () => {
     await user.type(input, "02/24/2026");
     expect(mockSetDate).toHaveBeenCalled();
 
-    // Check if the date passed to setDate is correct
-    const calledDate = mockSetDate.mock.calls[0][0];
+    // Check if the final date passed to setDate is correct
+    const calledDate = mockSetDate.mock.calls[mockSetDate.mock.calls.length - 1][0];
     expect(format(calledDate, "yyyy-MM-dd")).toBe("2026-02-24");
+  });
+
+  it("auto-formats MMDDYYYY typing", async () => {
+    const user = userEvent.setup();
+    render(<DatePicker date={undefined} setDate={mockSetDate} />);
+
+    const input = screen.getByPlaceholderText("MM/DD/YYYY") as HTMLInputElement;
+    await user.type(input, "02242026");
+
+    expect(input.value).toBe("02/24/2026");
+    expect(mockSetDate).toHaveBeenCalled();
+    const calledDate = mockSetDate.mock.calls[mockSetDate.mock.calls.length - 1][0];
+    expect(format(calledDate, "yyyy-MM-dd")).toBe("2026-02-24");
+  });
+
+  it("auto-formats MMDDYY typing", async () => {
+    const user = userEvent.setup();
+    render(<DatePicker date={undefined} setDate={mockSetDate} />);
+
+    const input = screen.getByPlaceholderText("MM/DD/YYYY") as HTMLInputElement;
+    await user.type(input, "022426");
+
+    expect(input.value).toBe("02/24/26");
+    expect(mockSetDate).toHaveBeenCalled();
+    const calledDate = mockSetDate.mock.calls[mockSetDate.mock.calls.length - 1][0];
+    // date-fns parse with 'yy' will assume current century
+    expect(format(calledDate, "MM/dd/yy")).toBe("02/24/26");
   });
 
   it("renders a button on mobile", async () => {
