@@ -9,6 +9,7 @@ import {
   PromotionType,
   PromotionRewardType,
   PromotionBenefitValueType,
+  PromotionTierFormData,
 } from "@/lib/types";
 
 function toDateInputValue(dateStr: string | null): string {
@@ -46,6 +47,20 @@ export default function EditPromotionPage() {
             pointsMultiplierBasis: b.pointsMultiplierBasis,
             sortOrder: b.sortOrder ?? i,
           })),
+          tiers: (promo.tiers || []).map(
+            (tier): PromotionTierFormData => ({
+              minStays: tier.minStays,
+              maxStays: tier.maxStays,
+              benefits: (tier.benefits || []).map((b, i) => ({
+                rewardType: b.rewardType as PromotionRewardType,
+                valueType: b.valueType as PromotionBenefitValueType,
+                value: parseFloat(String(b.value)),
+                certType: b.certType,
+                pointsMultiplierBasis: b.pointsMultiplierBasis,
+                sortOrder: b.sortOrder ?? i,
+              })),
+            })
+          ),
           hotelChainId: promo.hotelChainId,
           hotelChainSubBrandId: promo.hotelChainSubBrandId,
           creditCardId: promo.creditCardId,
