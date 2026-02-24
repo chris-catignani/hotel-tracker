@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { matchPromotionsForAffectedBookings, reevaluateBookings } from "@/lib/promotion-matching";
-import { PromotionBenefitFormData } from "@/lib/types";
+import { PromotionBenefitFormData, PromotionTierFormData } from "@/lib/types";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -15,6 +15,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         creditCard: true,
         shoppingPortal: true,
         benefits: { orderBy: { sortOrder: "asc" } },
+        tiers: {
+          orderBy: { minStays: "asc" },
+          include: { benefits: { orderBy: { sortOrder: "asc" } } },
+        },
       },
     });
 
@@ -36,6 +40,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       name,
       type,
       benefits,
+      tiers,
       hotelChainId,
       hotelChainSubBrandId,
       creditCardId,
@@ -51,7 +56,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       minNightsRequired,
       nightsStackable,
       bookByDate,
-      requiredStayNumber,
       oncePerSubBrand,
     } = body;
 
@@ -79,33 +83,60 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       data.minNightsRequired = minNightsRequired != null ? Number(minNightsRequired) : null;
     if (nightsStackable !== undefined) data.nightsStackable = nightsStackable;
     if (bookByDate !== undefined) data.bookByDate = bookByDate ? new Date(bookByDate) : null;
-    if (requiredStayNumber !== undefined)
-      data.requiredStayNumber = requiredStayNumber != null ? Number(requiredStayNumber) : null;
     if (oncePerSubBrand !== undefined) data.oncePerSubBrand = oncePerSubBrand;
 
-    // Replace benefits wholesale inside a transaction: delete all then recreate
-    if (benefits !== undefined) {
-      data.benefits = {
-        create: ((benefits as PromotionBenefitFormData[]) || []).map((b, i) => ({
-          rewardType: b.rewardType,
-          valueType: b.valueType,
-          value: Number(b.value),
-          certType: b.certType || null,
-          pointsMultiplierBasis: b.pointsMultiplierBasis || null,
-          sortOrder: b.sortOrder ?? i,
-        })),
-      };
-    }
+    const hasTiers = benefits === undefined ? tiers !== undefined : false;
+    const replacingBenefitsOrTiers = benefits !== undefined || tiers !== undefined;
 
     const promotion = await prisma.$transaction(async (tx) => {
-      if (benefits !== undefined) {
+      if (replacingBenefitsOrTiers) {
+        // Delete flat benefits (those directly on the promotion)
         await tx.promotionBenefit.deleteMany({ where: { promotionId: Number(id) } });
+        // Delete all tiers (cascade will remove tier benefits)
+        await tx.promotionTier.deleteMany({ where: { promotionId: Number(id) } });
       }
+
+      if (tiers !== undefined && Array.isArray(tiers) && tiers.length > 0) {
+        // Create new tiers with nested benefits
+        data.tiers = {
+          create: (tiers as PromotionTierFormData[]).map((tier) => ({
+            minStays: tier.minStays,
+            maxStays: tier.maxStays ?? null,
+            benefits: {
+              create: (tier.benefits || []).map((b: PromotionBenefitFormData, i: number) => ({
+                rewardType: b.rewardType,
+                valueType: b.valueType,
+                value: Number(b.value),
+                certType: b.certType || null,
+                pointsMultiplierBasis: b.pointsMultiplierBasis || null,
+                sortOrder: b.sortOrder ?? i,
+              })),
+            },
+          })),
+        };
+      } else if (benefits !== undefined && !hasTiers) {
+        // Create flat benefits
+        data.benefits = {
+          create: ((benefits as PromotionBenefitFormData[]) || []).map((b, i) => ({
+            rewardType: b.rewardType,
+            valueType: b.valueType,
+            value: Number(b.value),
+            certType: b.certType || null,
+            pointsMultiplierBasis: b.pointsMultiplierBasis || null,
+            sortOrder: b.sortOrder ?? i,
+          })),
+        };
+      }
+
       return tx.promotion.update({
         where: { id: Number(id) },
         data,
         include: {
           benefits: { orderBy: { sortOrder: "asc" } },
+          tiers: {
+            orderBy: { minStays: "asc" },
+            include: { benefits: { orderBy: { sortOrder: "asc" } } },
+          },
         },
       });
     });

@@ -16,6 +16,7 @@ import {
   PromotionRewardType,
   PromotionBenefitValueType,
   PromotionBenefitFormData,
+  PromotionTierFormData,
   PointsMultiplierBasis,
 } from "@/lib/types";
 import { BENEFIT_REWARD_TYPE_OPTIONS } from "@/lib/constants";
@@ -268,10 +269,15 @@ export function PromotionForm({
   );
   const [nightsStackable, setNightsStackable] = useState(initialData?.nightsStackable ?? false);
   const [bookByDate, setBookByDate] = useState(initialData?.bookByDate || "");
-  const [requiredStayNumber, setRequiredStayNumber] = useState(
-    initialData?.requiredStayNumber ? String(initialData.requiredStayNumber) : ""
-  );
   const [oncePerSubBrand, setOncePerSubBrand] = useState(initialData?.oncePerSubBrand ?? false);
+  const [isTiered, setIsTiered] = useState(
+    () => (initialData?.tiers && initialData.tiers.length > 0) ?? false
+  );
+  const [tiers, setTiers] = useState<PromotionTierFormData[]>(
+    initialData?.tiers && initialData.tiers.length > 0
+      ? initialData.tiers
+      : [{ minStays: 1, maxStays: null, benefits: [{ ...DEFAULT_BENEFIT }] }]
+  );
 
   const [hotelChains, setHotelChains] = useState<HotelChain[]>([]);
   const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
@@ -337,12 +343,13 @@ export function PromotionForm({
       if (initialData.nightsStackable !== undefined)
         setNightsStackable(initialData.nightsStackable);
       if (initialData.bookByDate !== undefined) setBookByDate(initialData.bookByDate || "");
-      if (initialData.requiredStayNumber !== undefined)
-        setRequiredStayNumber(
-          initialData.requiredStayNumber ? String(initialData.requiredStayNumber) : ""
-        );
       if (initialData.oncePerSubBrand !== undefined)
         setOncePerSubBrand(initialData.oncePerSubBrand);
+      if (initialData.tiers !== undefined) {
+        const hasTiers = initialData.tiers.length > 0;
+        setIsTiered(hasTiers);
+        if (hasTiers) setTiers(initialData.tiers);
+      }
     }
   }, [initialData]);
 
@@ -358,13 +365,72 @@ export function PromotionForm({
     setBenefits((prev) => [...prev, { ...DEFAULT_BENEFIT, sortOrder: prev.length }]);
   };
 
+  const handleTierChange = (tierIndex: number, updated: PromotionTierFormData) => {
+    setTiers((prev) => prev.map((t, i) => (i === tierIndex ? updated : t)));
+  };
+
+  const handleTierRemove = (tierIndex: number) => {
+    setTiers((prev) => prev.filter((_, i) => i !== tierIndex));
+  };
+
+  const handleAddTier = () => {
+    setTiers((prev) => {
+      const last = prev[prev.length - 1];
+      const nextMin = last != null ? (last.maxStays ?? last.minStays) + 1 : 1;
+      return [...prev, { minStays: nextMin, maxStays: null, benefits: [{ ...DEFAULT_BENEFIT }] }];
+    });
+  };
+
+  const handleTierBenefitChange = (
+    tierIndex: number,
+    benefitIndex: number,
+    updated: PromotionBenefitFormData
+  ) => {
+    setTiers((prev) =>
+      prev.map((t, i) =>
+        i === tierIndex
+          ? { ...t, benefits: t.benefits.map((b, bi) => (bi === benefitIndex ? updated : b)) }
+          : t
+      )
+    );
+  };
+
+  const handleTierBenefitRemove = (tierIndex: number, benefitIndex: number) => {
+    setTiers((prev) =>
+      prev.map((t, i) =>
+        i === tierIndex ? { ...t, benefits: t.benefits.filter((_, bi) => bi !== benefitIndex) } : t
+      )
+    );
+  };
+
+  const handleTierAddBenefit = (tierIndex: number) => {
+    setTiers((prev) =>
+      prev.map((t, i) =>
+        i === tierIndex
+          ? {
+              ...t,
+              benefits: [...t.benefits, { ...DEFAULT_BENEFIT, sortOrder: t.benefits.length }],
+            }
+          : t
+      )
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const withSortOrder = (bs: PromotionBenefitFormData[]) =>
+      bs.map((b, i) => ({ ...b, sortOrder: i }));
 
     const body: PromotionFormData = {
       name,
       type,
-      benefits: benefits.map((b, i) => ({ ...b, sortOrder: i })),
+      benefits: isTiered ? [] : withSortOrder(benefits),
+      tiers: isTiered
+        ? [...tiers]
+            .sort((a, b) => a.minStays - b.minStays)
+            .map((tier) => ({ ...tier, benefits: withSortOrder(tier.benefits) }))
+        : [],
       isActive,
     };
 
@@ -420,7 +486,6 @@ export function PromotionForm({
     }
     body.nightsStackable = nightsStackable;
     body.bookByDate = bookByDate || null;
-    body.requiredStayNumber = requiredStayNumber ? parseInt(requiredStayNumber, 10) : null;
     body.oncePerSubBrand = oncePerSubBrand;
 
     await onSubmit(body);
@@ -476,30 +541,150 @@ export function PromotionForm({
             />
           </div>
 
-          {/* Benefits */}
-          <div className="space-y-3">
-            <Label>Benefits</Label>
-            {benefits.map((benefit, index) => (
-              <BenefitRow
-                key={index}
-                benefit={benefit}
-                index={index}
-                canRemove={benefits.length > 1}
-                onChange={handleBenefitChange}
-                onRemove={handleBenefitRemove}
-              />
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleAddBenefit}
-              data-testid="benefit-add"
-            >
-              <Plus className="size-4 mr-2" />
-              Add Benefit
-            </Button>
+          {/* Tiered Promotion toggle */}
+          <div className="flex items-center gap-2">
+            <input
+              id="isTiered"
+              type="checkbox"
+              checked={isTiered}
+              onChange={(e) => setIsTiered(e.target.checked)}
+              className="size-4 rounded border-gray-300"
+              data-testid="promotion-is-tiered"
+            />
+            <div>
+              <Label htmlFor="isTiered">Tiered Promotion</Label>
+              <p className="text-xs text-muted-foreground">
+                Different benefits apply based on how many stays the guest has accumulated.
+              </p>
+            </div>
           </div>
+
+          {/* Flat Benefits (shown when not tiered) */}
+          {!isTiered && (
+            <div className="space-y-3">
+              <Label>Benefits</Label>
+              {benefits.map((benefit, index) => (
+                <BenefitRow
+                  key={index}
+                  benefit={benefit}
+                  index={index}
+                  canRemove={benefits.length > 1}
+                  onChange={handleBenefitChange}
+                  onRemove={handleBenefitRemove}
+                />
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAddBenefit}
+                data-testid="benefit-add"
+              >
+                <Plus className="size-4 mr-2" />
+                Add Benefit
+              </Button>
+            </div>
+          )}
+
+          {/* Tiered Benefits (shown when tiered) */}
+          {isTiered && (
+            <div className="space-y-4">
+              <Label>Tiers</Label>
+              {tiers.map((tier, tierIndex) => (
+                <div
+                  key={tierIndex}
+                  className="rounded-lg border p-4 space-y-3"
+                  data-testid={`tier-${tierIndex}`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-muted-foreground">
+                      Tier {tierIndex + 1}
+                    </span>
+                    {tiers.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleTierRemove(tierIndex)}
+                        data-testid={`tier-remove-${tierIndex}`}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>Min Stay #</Label>
+                      <Input
+                        type="number"
+                        step="1"
+                        min="1"
+                        value={tier.minStays || ""}
+                        onChange={(e) =>
+                          handleTierChange(tierIndex, {
+                            ...tier,
+                            minStays: parseInt(e.target.value, 10) || 0,
+                          })
+                        }
+                        data-testid={`tier-min-stays-${tierIndex}`}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Max Stay # (optional)</Label>
+                      <Input
+                        type="number"
+                        step="1"
+                        min="1"
+                        value={tier.maxStays ?? ""}
+                        onChange={(e) =>
+                          handleTierChange(tierIndex, {
+                            ...tier,
+                            maxStays: e.target.value ? parseInt(e.target.value) : null,
+                          })
+                        }
+                        placeholder="No limit"
+                        data-testid={`tier-max-stays-${tierIndex}`}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Benefits for this tier</Label>
+                    {tier.benefits.map((benefit, benefitIndex) => (
+                      <BenefitRow
+                        key={benefitIndex}
+                        benefit={benefit}
+                        index={benefitIndex}
+                        canRemove={tier.benefits.length > 1}
+                        onChange={(bi, updated) => handleTierBenefitChange(tierIndex, bi, updated)}
+                        onRemove={(bi) => handleTierBenefitRemove(tierIndex, bi)}
+                      />
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleTierAddBenefit(tierIndex)}
+                      data-testid={`tier-add-benefit-${tierIndex}`}
+                    >
+                      <Plus className="size-4 mr-2" />
+                      Add Benefit
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAddTier}
+                data-testid="tier-add"
+              >
+                <Plus className="size-4 mr-2" />
+                Add Tier
+              </Button>
+            </div>
+          )}
 
           {type === "loyalty" && (
             <div className="space-y-2">
@@ -711,23 +896,6 @@ export function PromotionForm({
                 placeholder="Select book by date"
                 data-testid="promotion-book-by-date"
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="requiredStayNumber">Required Stay #</Label>
-              <Input
-                id="requiredStayNumber"
-                type="number"
-                step="1"
-                min="1"
-                value={requiredStayNumber}
-                onChange={(e) => setRequiredStayNumber(e.target.value)}
-                placeholder="Optional (e.g. 2)"
-                data-testid="promotion-required-stay-number"
-              />
-              <p className="text-xs text-muted-foreground">
-                Promotion applies starting on the Nth eligible stay within the promo period.
-              </p>
             </div>
 
             <div className="flex items-center gap-2">

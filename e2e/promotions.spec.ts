@@ -236,6 +236,106 @@ test.describe("Promotions multi-benefit via API", () => {
   });
 });
 
+test.describe("Promotions tiered", () => {
+  test("should apply correct tier benefit based on prior matched stays", async ({ request }) => {
+    const chainsRes = await request.get("/api/hotel-chains");
+    const chain = (await chainsRes.json())[0];
+
+    // Create a 2-tier promotion: $50 on stay #1, $75 on stay #2+
+    const promoRes = await request.post("/api/promotions", {
+      data: {
+        name: `Tiered Promo ${crypto.randomUUID()}`,
+        type: "loyalty",
+        hotelChainId: chain.id,
+        benefits: [],
+        tiers: [
+          {
+            minStays: 1,
+            maxStays: 1,
+            benefits: [
+              {
+                rewardType: "cashback",
+                valueType: "fixed",
+                value: 50,
+                certType: null,
+                sortOrder: 0,
+              },
+            ],
+          },
+          {
+            minStays: 2,
+            maxStays: null,
+            benefits: [
+              {
+                rewardType: "cashback",
+                valueType: "fixed",
+                value: 75,
+                certType: null,
+                sortOrder: 0,
+              },
+            ],
+          },
+        ],
+        isActive: true,
+      },
+    });
+    expect(promoRes.ok()).toBeTruthy();
+    const promo = await promoRes.json();
+    expect(promo.tiers).toHaveLength(2);
+
+    // First booking — should get tier 1 ($50)
+    const booking1Res = await request.post("/api/bookings", {
+      data: {
+        hotelChainId: chain.id,
+        propertyName: `Tiered Stay 1 ${crypto.randomUUID()}`,
+        checkIn: "2025-06-01",
+        checkOut: "2025-06-03",
+        numNights: 2,
+        pretaxCost: 200,
+        taxAmount: 30,
+        totalCost: 230,
+        currency: "USD",
+      },
+    });
+    expect(booking1Res.ok()).toBeTruthy();
+    const booking1 = await booking1Res.json();
+
+    const bp1 = booking1.bookingPromotions.find(
+      (bp: { promotionId: number }) => bp.promotionId === promo.id
+    );
+    expect(bp1).toBeDefined();
+    expect(Number(bp1.appliedValue)).toBe(50);
+
+    // Second booking — should get tier 2 ($75)
+    const booking2Res = await request.post("/api/bookings", {
+      data: {
+        hotelChainId: chain.id,
+        propertyName: `Tiered Stay 2 ${crypto.randomUUID()}`,
+        checkIn: "2025-07-01",
+        checkOut: "2025-07-03",
+        numNights: 2,
+        pretaxCost: 200,
+        taxAmount: 30,
+        totalCost: 230,
+        currency: "USD",
+      },
+    });
+    expect(booking2Res.ok()).toBeTruthy();
+    const booking2 = await booking2Res.json();
+
+    const bp2 = booking2.bookingPromotions.find(
+      (bp: { promotionId: number }) => bp.promotionId === promo.id
+    );
+    expect(bp2).toBeDefined();
+    expect(Number(bp2.appliedValue)).toBe(75);
+
+    // Cleanup
+    await request.delete(`/api/bookings/${booking1.id}`);
+    await request.delete(`/api/bookings/${booking2.id}`);
+    await request.delete(`/api/promotions/${promo.id}`);
+  });
+});
+
 test.describe("Promotions constraints", () => {
   test("should enforce isSingleUse: only first booking gets promotion", async ({ request }) => {
     // Get a hotel chain
