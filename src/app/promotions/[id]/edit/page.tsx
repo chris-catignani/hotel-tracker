@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { PromotionForm } from "@/components/promotions/promotion-form";
 import {
   Promotion,
+  PromotionExclusion,
   PromotionFormData,
   PromotionType,
   PromotionRewardType,
@@ -24,7 +25,9 @@ export default function EditPromotionPage() {
   const id = params.id as string;
 
   const [loading, setLoading] = useState(true);
-  const [initialData, setInitialData] = useState<Partial<PromotionFormData> | null>(null);
+  const [initialData, setInitialData] = useState<
+    (Partial<PromotionFormData> & { exclusions?: PromotionExclusion[] }) | null
+  >(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -78,6 +81,8 @@ export default function EditPromotionPage() {
           minNightsRequired: promo.minNightsRequired,
           nightsStackable: promo.nightsStackable,
           bookByDate: toDateInputValue(promo.bookByDate),
+          oncePerSubBrand: promo.oncePerSubBrand,
+          exclusions: promo.exclusions,
         });
         setLoading(false);
       })
