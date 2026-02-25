@@ -80,7 +80,6 @@ interface MatchingPromotion {
   endDate: Date | null;
   minSpend: Prisma.Decimal | null;
   isActive: boolean;
-  isSingleUse: boolean;
   maxRedemptionCount: number | null;
   maxRedemptionValue: Prisma.Decimal | null;
   maxTotalBonusPoints: number | null;
@@ -190,7 +189,6 @@ export function calculateMatchedPromotions(
 
     // Redemption constraint checks
     const usage = priorUsage?.get(promo.id);
-    if (promo.isSingleUse && usage && usage.count >= 1) continue;
     if (promo.maxRedemptionCount && usage && usage.count >= promo.maxRedemptionCount) continue;
 
     // Book-by-date check
@@ -496,7 +494,6 @@ export async function reevaluateBookings(bookingIds: string[]): Promise<void> {
   // Get all promotions with constraints (including tier-based stay counting)
   const constrainedPromos = activePromotions.filter(
     (p) =>
-      p.isSingleUse ||
       p.maxRedemptionCount ||
       p.maxRedemptionValue ||
       p.maxTotalBonusPoints ||
@@ -538,7 +535,6 @@ export async function matchPromotionsForBooking(bookingId: string): Promise<Book
   // Get all promotions with constraints (including tier-based stay counting)
   const constrainedPromos = activePromotions.filter(
     (p) =>
-      p.isSingleUse ||
       p.maxRedemptionCount ||
       p.maxRedemptionValue ||
       p.maxTotalBonusPoints ||

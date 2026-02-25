@@ -40,7 +40,6 @@ function makePromo(overrides: Partial<TestPromotion> = {}): TestPromotion {
     endDate: null,
     minSpend: null,
     isActive: true,
-    isSingleUse: false,
     maxRedemptionCount: null,
     maxRedemptionValue: null,
     maxTotalBonusPoints: null,
@@ -303,14 +302,8 @@ describe("promotion-matching", () => {
   });
 
   // Constraint tests
-  it("should respect isSingleUse: allow when no prior usage", () => {
-    const promo = makePromo({ isSingleUse: true });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
-    expect(matched).toHaveLength(1);
-  });
-
-  it("should respect isSingleUse: skip when already used", () => {
-    const promo = makePromo({ isSingleUse: true });
+  it("should respect maxRedemptionCount: 1 — skip when already used once", () => {
+    const promo = makePromo({ maxRedemptionCount: 1 });
     const priorUsage = new Map([[promo.id, { count: 1, totalValue: 10, totalBonusPoints: 0 }]]);
     const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
     expect(matched).toHaveLength(0);
