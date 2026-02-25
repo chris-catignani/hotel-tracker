@@ -238,8 +238,13 @@ test.describe("Promotions multi-benefit via API", () => {
 
 test.describe("Promotions tiered", () => {
   test("should apply correct tier benefit based on prior matched stays", async ({ request }) => {
-    const chainsRes = await request.get("/api/hotel-chains");
-    const chain = (await chainsRes.json())[0];
+    // Create a unique hotel chain for this test to avoid interference
+    const chainRes = await request.post("/api/hotel-chains", {
+      data: {
+        name: `Tiered Chain ${crypto.randomUUID()}`,
+      },
+    });
+    const chain = await chainRes.json();
 
     // Create a 2-tier promotion: $50 on stay #1, $75 on stay #2+
     const promoRes = await request.post("/api/promotions", {
@@ -338,9 +343,13 @@ test.describe("Promotions tiered", () => {
 
 test.describe("Promotions constraints", () => {
   test("should enforce isSingleUse: only first booking gets promotion", async ({ request }) => {
-    // Get a hotel chain
-    const chainsRes = await request.get("/api/hotel-chains");
-    const chain = (await chainsRes.json())[0];
+    // Create a unique hotel chain for this test to avoid interference
+    const chainRes = await request.post("/api/hotel-chains", {
+      data: {
+        name: `Single Use Chain ${crypto.randomUUID()}`,
+      },
+    });
+    const chain = await chainRes.json();
 
     // Create a single-use loyalty promotion (no isSingleUse constraint first, just verify it matches)
     const promoRes = await request.post("/api/promotions", {

@@ -1,20 +1,26 @@
 import { test, expect } from "./fixtures";
 
-// Reference data (seeded): Marriott chain ID=2, sub-brands: Marriott Vacation Club ID=2023, Courtyard ID=2008
-const MARRIOTT_CHAIN_ID = 2;
-const MVC_SUB_BRAND_ID = 2023; // excluded
-const COURTYARD_SUB_BRAND_ID = 2008; // not excluded
-
 test.describe("Promotion exclusions", () => {
   test("booking at excluded sub-brand does NOT get promotion applied", async ({ request }) => {
+    // Create a unique hotel chain and sub-brands for this test to avoid interference
+    const chainRes = await request.post("/api/hotel-chains", {
+      data: { name: `Chain ${crypto.randomUUID()}` },
+    });
+    const chain = await chainRes.json();
+    const subBrand1Res = await request.post(
+      `/api/hotel-chains/${chain.id}/hotel-chain-sub-brands`,
+      { data: { name: `Sub1 ${crypto.randomUUID()}` } }
+    );
+    const subBrand1 = await subBrand1Res.json();
+
     const promoName = `Exclusion Test ${crypto.randomUUID()}`;
-    // Create a loyalty promotion for Marriott that excludes Marriott Vacation Club
+    // Create a loyalty promotion for the unique chain that excludes Sub1
     const promoRes = await request.post("/api/promotions", {
       data: {
         name: promoName,
         type: "loyalty",
-        hotelChainId: MARRIOTT_CHAIN_ID,
-        exclusionSubBrandIds: [MVC_SUB_BRAND_ID],
+        hotelChainId: chain.id,
+        exclusionSubBrandIds: [subBrand1.id],
         benefits: [
           { rewardType: "cashback", valueType: "fixed", value: 50, certType: null, sortOrder: 0 },
         ],
@@ -24,12 +30,12 @@ test.describe("Promotion exclusions", () => {
     expect(promoRes.ok()).toBeTruthy();
     const promo = await promoRes.json();
 
-    // Create a booking at the excluded sub-brand (Marriott Vacation Club)
+    // Create a booking at the excluded sub-brand
     const bookingRes = await request.post("/api/bookings", {
       data: {
-        hotelChainId: MARRIOTT_CHAIN_ID,
-        hotelChainSubBrandId: MVC_SUB_BRAND_ID,
-        propertyName: `MVC Test ${crypto.randomUUID()}`,
+        hotelChainId: chain.id,
+        hotelChainSubBrandId: subBrand1.id,
+        propertyName: `Sub1 Test ${crypto.randomUUID()}`,
         checkIn: "2026-06-01",
         checkOut: "2026-06-03",
         numNights: 2,
@@ -57,14 +63,30 @@ test.describe("Promotion exclusions", () => {
   });
 
   test("booking at non-excluded sub-brand DOES get promotion applied", async ({ request }) => {
+    // Create a unique hotel chain and sub-brands for this test to avoid interference
+    const chainRes = await request.post("/api/hotel-chains", {
+      data: { name: `Chain ${crypto.randomUUID()}` },
+    });
+    const chain = await chainRes.json();
+    const subBrand1Res = await request.post(
+      `/api/hotel-chains/${chain.id}/hotel-chain-sub-brands`,
+      { data: { name: `Sub1 ${crypto.randomUUID()}` } }
+    );
+    const subBrand1 = await subBrand1Res.json();
+    const subBrand2Res = await request.post(
+      `/api/hotel-chains/${chain.id}/hotel-chain-sub-brands`,
+      { data: { name: `Sub2 ${crypto.randomUUID()}` } }
+    );
+    const subBrand2 = await subBrand2Res.json();
+
     const promoName = `Exclusion Test ${crypto.randomUUID()}`;
-    // Create a loyalty promotion for Marriott that excludes MVC (but not Courtyard)
+    // Create a loyalty promotion for the unique chain that excludes Sub1
     const promoRes = await request.post("/api/promotions", {
       data: {
         name: promoName,
         type: "loyalty",
-        hotelChainId: MARRIOTT_CHAIN_ID,
-        exclusionSubBrandIds: [MVC_SUB_BRAND_ID],
+        hotelChainId: chain.id,
+        exclusionSubBrandIds: [subBrand1.id],
         benefits: [
           { rewardType: "cashback", valueType: "fixed", value: 50, certType: null, sortOrder: 0 },
         ],
@@ -74,12 +96,12 @@ test.describe("Promotion exclusions", () => {
     expect(promoRes.ok()).toBeTruthy();
     const promo = await promoRes.json();
 
-    // Create a booking at Courtyard (not excluded)
+    // Create a booking at Sub2 (not excluded)
     const bookingRes = await request.post("/api/bookings", {
       data: {
-        hotelChainId: MARRIOTT_CHAIN_ID,
-        hotelChainSubBrandId: COURTYARD_SUB_BRAND_ID,
-        propertyName: `Courtyard Test ${crypto.randomUUID()}`,
+        hotelChainId: chain.id,
+        hotelChainSubBrandId: subBrand2.id,
+        propertyName: `Sub2 Test ${crypto.randomUUID()}`,
         checkIn: "2026-06-01",
         checkOut: "2026-06-03",
         numNights: 2,
@@ -110,14 +132,25 @@ test.describe("Promotion exclusions", () => {
   test("removing an exclusion causes previously-skipped booking to get promotion applied", async ({
     request,
   }) => {
+    // Create a unique hotel chain and sub-brands for this test to avoid interference
+    const chainRes = await request.post("/api/hotel-chains", {
+      data: { name: `Chain ${crypto.randomUUID()}` },
+    });
+    const chain = await chainRes.json();
+    const subBrand1Res = await request.post(
+      `/api/hotel-chains/${chain.id}/hotel-chain-sub-brands`,
+      { data: { name: `Sub1 ${crypto.randomUUID()}` } }
+    );
+    const subBrand1 = await subBrand1Res.json();
+
     const promoName = `Exclusion Remove Test ${crypto.randomUUID()}`;
-    // Create promotion excluding MVC
+    // Create promotion excluding Sub1
     const promoRes = await request.post("/api/promotions", {
       data: {
         name: promoName,
         type: "loyalty",
-        hotelChainId: MARRIOTT_CHAIN_ID,
-        exclusionSubBrandIds: [MVC_SUB_BRAND_ID],
+        hotelChainId: chain.id,
+        exclusionSubBrandIds: [subBrand1.id],
         benefits: [
           { rewardType: "cashback", valueType: "fixed", value: 50, certType: null, sortOrder: 0 },
         ],
@@ -130,9 +163,9 @@ test.describe("Promotion exclusions", () => {
     // Create booking at excluded sub-brand
     const bookingRes = await request.post("/api/bookings", {
       data: {
-        hotelChainId: MARRIOTT_CHAIN_ID,
-        hotelChainSubBrandId: MVC_SUB_BRAND_ID,
-        propertyName: `MVC Remove Test ${crypto.randomUUID()}`,
+        hotelChainId: chain.id,
+        hotelChainSubBrandId: subBrand1.id,
+        propertyName: `Sub1 Remove Test ${crypto.randomUUID()}`,
         checkIn: "2026-06-01",
         checkOut: "2026-06-03",
         numNights: 2,

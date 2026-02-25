@@ -597,6 +597,20 @@ async function main() {
   });
 
   console.log("Seed data created successfully");
+
+  // Reset sequences to prevent clashes with manual IDs
+  const tables = [
+    "point_types",
+    "hotel_chains",
+    "credit_cards",
+    "ota_agencies",
+    "shopping_portals",
+  ];
+  for (const table of tables) {
+    await prisma.$executeRawUnsafe(
+      `SELECT setval(pg_get_serial_sequence('"${table}"', 'id'), coalesce(max(id), 1)) FROM "${table}";`
+    );
+  }
 }
 
 main()
