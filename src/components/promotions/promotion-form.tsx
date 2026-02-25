@@ -304,8 +304,8 @@ export function PromotionForm({
   const [exclusionSubBrandIds, setExclusionSubBrandIds] = useState<number[]>(
     initialData?.exclusions?.map((e) => e.hotelChainSubBrandId) ?? []
   );
-  const [tieInCreditCardId, setTieInCreditCardId] = useState<string>(
-    initialData?.tieInCreditCardId ? String(initialData.tieInCreditCardId) : ""
+  const [tieInCreditCardIds, setTieInCreditCardIds] = useState<number[]>(
+    initialData?.tieInCreditCardIds ?? []
   );
   const [tieInRequiresPayment, setTieInRequiresPayment] = useState(
     initialData?.tieInRequiresPayment ?? false
@@ -387,10 +387,8 @@ export function PromotionForm({
         setOncePerSubBrand(initialData.oncePerSubBrand);
       if (initialData.exclusions !== undefined)
         setExclusionSubBrandIds(initialData.exclusions.map((e) => e.hotelChainSubBrandId));
-      if (initialData.tieInCreditCardId !== undefined)
-        setTieInCreditCardId(
-          initialData.tieInCreditCardId ? String(initialData.tieInCreditCardId) : ""
-        );
+      if (initialData.tieInCreditCardIds !== undefined)
+        setTieInCreditCardIds(initialData.tieInCreditCardIds);
       if (initialData.tieInRequiresPayment !== undefined)
         setTieInRequiresPayment(initialData.tieInRequiresPayment);
       if (initialData.tiers !== undefined) {
@@ -537,7 +535,7 @@ export function PromotionForm({
     body.nightsStackable = nightsStackable;
     body.bookByDate = bookByDate || null;
     body.oncePerSubBrand = oncePerSubBrand;
-    body.tieInCreditCardId = tieInCreditCardId ? parseInt(tieInCreditCardId) : null;
+    body.tieInCreditCardIds = tieInCreditCardIds;
     body.tieInRequiresPayment = tieInRequiresPayment;
 
     await onSubmit(body);
@@ -624,7 +622,7 @@ export function PromotionForm({
                   benefit={benefit}
                   index={index}
                   canRemove={benefits.length > 1}
-                  hasTieInCard={!!tieInCreditCardId}
+                  hasTieInCard={tieInCreditCardIds.length > 0}
                   onChange={handleBenefitChange}
                   onRemove={handleBenefitRemove}
                 />
@@ -712,7 +710,7 @@ export function PromotionForm({
                         benefit={benefit}
                         index={benefitIndex}
                         canRemove={tier.benefits.length > 1}
-                        hasTieInCard={!!tieInCreditCardId}
+                        hasTieInCard={tieInCreditCardIds.length > 0}
                         onChange={(bi, updated) => handleTierBenefitChange(tierIndex, bi, updated)}
                         onRemove={(bi) => handleTierBenefitRemove(tierIndex, bi)}
                       />
@@ -843,27 +841,35 @@ export function PromotionForm({
             </div>
           )}
 
-          {/* Tie-In Credit Card */}
+          {/* Tie-In Credit Cards */}
           <div className="space-y-3 border-t pt-4">
-            <h3 className="text-sm font-medium">Tie-In Credit Card (Optional)</h3>
+            <h3 className="text-sm font-medium">Tie-In Credit Cards (Optional)</h3>
             <p className="text-xs text-muted-foreground">
               If set, individual benefits can be marked as &ldquo;tie-in&rdquo; — they only apply
-              when the booking&apos;s payment card matches this card.
+              when the booking&apos;s payment card matches one of these cards.
             </p>
-            <AppSelect
-              value={tieInCreditCardId || "none"}
-              onValueChange={(v) => {
-                setTieInCreditCardId(v === "none" ? "" : v);
-                if (v === "none") setTieInRequiresPayment(false);
-              }}
-              options={[
-                { label: "No tie-in card", value: "none" },
-                ...creditCards.map((card) => ({ label: card.name, value: String(card.id) })),
-              ]}
-              placeholder="Select tie-in card..."
-              data-testid="tie-in-credit-card-select"
-            />
-            {tieInCreditCardId && (
+            <div className="flex flex-col gap-2" data-testid="tie-in-credit-cards">
+              {creditCards.map((card) => (
+                <label key={card.id} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="size-4 rounded border-gray-300"
+                    checked={tieInCreditCardIds.includes(card.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setTieInCreditCardIds((prev) => [...prev, card.id]);
+                      } else {
+                        setTieInCreditCardIds((prev) => prev.filter((id) => id !== card.id));
+                        if (tieInCreditCardIds.length === 1) setTieInRequiresPayment(false);
+                      }
+                    }}
+                    data-testid={`tie-in-credit-card-${card.id}`}
+                  />
+                  <span className="text-sm">{card.name}</span>
+                </label>
+              ))}
+            </div>
+            {tieInCreditCardIds.length > 0 && (
               <div className="flex items-center gap-2">
                 <input
                   id="tieInRequiresPayment"
@@ -877,8 +883,8 @@ export function PromotionForm({
                   <Label htmlFor="tieInRequiresPayment">Requires Payment with Card</Label>
                   <p className="text-xs text-muted-foreground">
                     {tieInRequiresPayment
-                      ? "Must pay with this card."
-                      : "Holding the card is sufficient."}
+                      ? "Must pay with one of these cards."
+                      : "Holding one of these cards is sufficient."}
                   </p>
                 </div>
               </div>

@@ -41,6 +41,7 @@ const PROMOTIONS_INCLUDE = {
     include: { benefits: { orderBy: { sortOrder: "asc" as const } } },
   },
   exclusions: true,
+  tieInCards: true,
 } as const;
 
 export interface MatchingBooking {
@@ -86,7 +87,7 @@ interface MatchingPromotion {
   nightsStackable: boolean;
   bookByDate: Date | null;
   oncePerSubBrand: boolean;
-  tieInCreditCardId: number | null;
+  tieInCards: { creditCardId: number }[];
   tieInRequiresPayment: boolean;
   benefits: MatchingBenefit[];
   tiers: { id: number; minStays: number; maxStays: number | null; benefits: MatchingBenefit[] }[];
@@ -203,7 +204,9 @@ export function calculateMatchedPromotions(
 
     // Determine if the booking satisfies the tie-in card condition
     const hasTieIn =
-      promo.tieInCreditCardId === null || booking.creditCardId === promo.tieInCreditCardId;
+      promo.tieInCards.length === 0 ||
+      (booking.creditCardId !== null &&
+        promo.tieInCards.some((c) => c.creditCardId === booking.creditCardId));
 
     // Filter benefits by tie-in eligibility
     const eligibleBenefits = activeBenefits.filter((b) => !b.isTieIn || hasTieIn);

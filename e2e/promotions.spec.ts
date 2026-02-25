@@ -350,7 +350,7 @@ test.describe("Promotions tie-in credit card", () => {
         name: `Tie-In Promo ${crypto.randomUUID()}`,
         type: "loyalty",
         hotelChainId: chain.id,
-        tieInCreditCardId: TIE_IN_CARD_ID,
+        tieInCreditCardIds: [TIE_IN_CARD_ID],
         tieInRequiresPayment: false,
         benefits: [
           {
@@ -375,7 +375,9 @@ test.describe("Promotions tie-in credit card", () => {
     });
     expect(promoRes.ok()).toBeTruthy();
     const promo = await promoRes.json();
-    expect(promo.tieInCreditCardId).toBe(TIE_IN_CARD_ID);
+    expect(promo.tieInCards.map((c: { creditCardId: number }) => c.creditCardId)).toContain(
+      TIE_IN_CARD_ID
+    );
     expect(promo.benefits).toHaveLength(2);
     expect(promo.benefits[0].isTieIn).toBe(false);
     expect(promo.benefits[1].isTieIn).toBe(true);
@@ -420,7 +422,7 @@ test.describe("Promotions tie-in credit card", () => {
         name: `Tie-In Promo No Card ${crypto.randomUUID()}`,
         type: "loyalty",
         hotelChainId: chain.id,
-        tieInCreditCardId: TIE_IN_CARD_ID,
+        tieInCreditCardIds: [TIE_IN_CARD_ID],
         tieInRequiresPayment: false,
         benefits: [
           {
@@ -489,7 +491,7 @@ test.describe("Promotions tie-in credit card", () => {
         name: `Tie-In Promo No Payment ${crypto.randomUUID()}`,
         type: "loyalty",
         hotelChainId: chain.id,
-        tieInCreditCardId: TIE_IN_CARD_ID,
+        tieInCreditCardIds: [TIE_IN_CARD_ID],
         tieInRequiresPayment: true,
         benefits: [
           {

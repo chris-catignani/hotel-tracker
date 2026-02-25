@@ -115,9 +115,9 @@ model CreditCard {
   pointTypeId     Int?        @map("point_type_id")
   pointType       PointType?  @relation(fields: [pointTypeId], references: [id])
   isDeleted       Boolean     @default(false) @map("is_deleted")
-  bookings        Booking[]
-  promotions      Promotion[] @relation("PromotionCreditCard")
-  tieInPromotions Promotion[] @relation("PromotionTieInCard")
+  bookings     Booking[]
+  promotions   Promotion[]          @relation("PromotionCreditCard")
+  tieInCards   PromotionTieInCard[]
 
   @@map("credit_cards")
 }
@@ -233,8 +233,6 @@ model Promotion {
   hotelChainSubBrand   HotelChainSubBrand? @relation(fields: [hotelChainSubBrandId], references: [id])
   creditCardId         Int?                @map("credit_card_id")
   creditCard           CreditCard?         @relation("PromotionCreditCard", fields: [creditCardId], references: [id])
-  tieInCreditCardId    Int?                @map("tie_in_credit_card_id")
-  tieInCreditCard      CreditCard?         @relation("PromotionTieInCard", fields: [tieInCreditCardId], references: [id])
   tieInRequiresPayment Boolean             @default(false) @map("tie_in_requires_payment")
   shoppingPortalId     Int?                @map("shopping_portal_id")
   shoppingPortal       ShoppingPortal?     @relation(fields: [shoppingPortalId], references: [id])
@@ -255,6 +253,7 @@ model Promotion {
   tiers                PromotionTier[]
   bookingPromotions    BookingPromotion[]
   exclusions           PromotionExclusion[]
+  tieInCards           PromotionTieInCard[]
 
   @@map("promotions")
 }
@@ -268,6 +267,17 @@ model PromotionExclusion {
 
   @@unique([promotionId, hotelChainSubBrandId])
   @@map("promotion_exclusions")
+}
+
+model PromotionTieInCard {
+  id           Int        @id @default(autoincrement())
+  promotionId  Int        @map("promotion_id")
+  promotion    Promotion  @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  creditCardId Int        @map("credit_card_id")
+  creditCard   CreditCard @relation(fields: [creditCardId], references: [id])
+
+  @@unique([promotionId, creditCardId])
+  @@map("promotion_tie_in_cards")
 }
 
 model PromotionTier {

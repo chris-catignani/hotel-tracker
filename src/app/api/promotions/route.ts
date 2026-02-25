@@ -5,6 +5,20 @@ import { apiError } from "@/lib/api-error";
 import { matchPromotionsForAffectedBookings } from "@/lib/promotion-matching";
 import { PromotionBenefitFormData, PromotionTierFormData, PromotionFormData } from "@/lib/types";
 
+const PROMOTION_INCLUDE = {
+  hotelChain: true,
+  hotelChainSubBrand: true,
+  creditCard: true,
+  tieInCards: { include: { creditCard: true } },
+  shoppingPortal: true,
+  benefits: { orderBy: { sortOrder: "asc" as const } },
+  tiers: {
+    orderBy: { minStays: "asc" as const },
+    include: { benefits: { orderBy: { sortOrder: "asc" as const } } },
+  },
+  exclusions: true,
+} as const;
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -17,19 +31,7 @@ export async function GET(request: NextRequest) {
 
     const promotions = await prisma.promotion.findMany({
       where,
-      include: {
-        hotelChain: true,
-        hotelChainSubBrand: true,
-        creditCard: true,
-        tieInCreditCard: true,
-        shoppingPortal: true,
-        benefits: { orderBy: { sortOrder: "asc" } },
-        tiers: {
-          orderBy: { minStays: "asc" },
-          include: { benefits: { orderBy: { sortOrder: "asc" } } },
-        },
-        exclusions: true,
-      },
+      include: PROMOTION_INCLUDE,
     });
 
     return NextResponse.json(promotions);
@@ -63,7 +65,7 @@ export async function POST(request: NextRequest) {
       bookByDate,
       oncePerSubBrand,
       exclusionSubBrandIds,
-      tieInCreditCardId,
+      tieInCreditCardIds,
       tieInRequiresPayment,
     } = body as PromotionFormData & { exclusionSubBrandIds?: number[] };
 
@@ -90,7 +92,6 @@ export async function POST(request: NextRequest) {
           nightsStackable: nightsStackable ?? false,
           bookByDate: bookByDate ? new Date(bookByDate) : null,
           oncePerSubBrand: oncePerSubBrand ?? false,
-          tieInCreditCardId: tieInCreditCardId ? Number(tieInCreditCardId) : null,
           tieInRequiresPayment: tieInRequiresPayment ?? false,
           ...(hasTiers
             ? {
@@ -128,15 +129,7 @@ export async function POST(request: NextRequest) {
                 },
               }),
         },
-        include: {
-          benefits: { orderBy: { sortOrder: "asc" } },
-          tiers: {
-            orderBy: { minStays: "asc" },
-            include: { benefits: { orderBy: { sortOrder: "asc" } } },
-          },
-          exclusions: true,
-          tieInCreditCard: true,
-        },
+        include: PROMOTION_INCLUDE,
       });
 
       if (Array.isArray(exclusionSubBrandIds) && exclusionSubBrandIds.length > 0) {
@@ -144,6 +137,15 @@ export async function POST(request: NextRequest) {
           data: exclusionSubBrandIds.map((subBrandId) => ({
             promotionId: created.id,
             hotelChainSubBrandId: subBrandId,
+          })),
+        });
+      }
+
+      if (Array.isArray(tieInCreditCardIds) && tieInCreditCardIds.length > 0) {
+        await tx.promotionTieInCard.createMany({
+          data: tieInCreditCardIds.map((cardId) => ({
+            promotionId: created.id,
+            creditCardId: Number(cardId),
           })),
         });
       }

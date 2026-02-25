@@ -4,24 +4,26 @@ import { apiError } from "@/lib/api-error";
 import { matchPromotionsForAffectedBookings, reevaluateBookings } from "@/lib/promotion-matching";
 import { PromotionBenefitFormData, PromotionTierFormData, PromotionFormData } from "@/lib/types";
 
+const PROMOTION_INCLUDE = {
+  hotelChain: true,
+  hotelChainSubBrand: true,
+  creditCard: true,
+  tieInCards: { include: { creditCard: true } },
+  shoppingPortal: true,
+  benefits: { orderBy: { sortOrder: "asc" as const } },
+  tiers: {
+    orderBy: { minStays: "asc" as const },
+    include: { benefits: { orderBy: { sortOrder: "asc" as const } } },
+  },
+  exclusions: true,
+} as const;
+
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const promotion = await prisma.promotion.findUnique({
       where: { id: Number(id) },
-      include: {
-        hotelChain: true,
-        hotelChainSubBrand: true,
-        creditCard: true,
-        tieInCreditCard: true,
-        shoppingPortal: true,
-        benefits: { orderBy: { sortOrder: "asc" } },
-        tiers: {
-          orderBy: { minStays: "asc" },
-          include: { benefits: { orderBy: { sortOrder: "asc" } } },
-        },
-        exclusions: true,
-      },
+      include: PROMOTION_INCLUDE,
     });
 
     if (!promotion) {
@@ -60,7 +62,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       bookByDate,
       oncePerSubBrand,
       exclusionSubBrandIds,
-      tieInCreditCardId,
+      tieInCreditCardIds,
       tieInRequiresPayment,
     } = body as PromotionFormData & { exclusionSubBrandIds?: number[] };
 
@@ -89,8 +91,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (nightsStackable !== undefined) data.nightsStackable = nightsStackable;
     if (bookByDate !== undefined) data.bookByDate = bookByDate ? new Date(bookByDate) : null;
     if (oncePerSubBrand !== undefined) data.oncePerSubBrand = oncePerSubBrand;
-    if (tieInCreditCardId !== undefined)
-      data.tieInCreditCardId = tieInCreditCardId ? Number(tieInCreditCardId) : null;
     if (tieInRequiresPayment !== undefined) data.tieInRequiresPayment = tieInRequiresPayment;
 
     const hasTiers = benefits === undefined ? tiers !== undefined : false;
@@ -98,14 +98,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     const promotion = await prisma.$transaction(async (tx) => {
       if (replacingBenefitsOrTiers) {
-        // Delete flat benefits (those directly on the promotion)
         await tx.promotionBenefit.deleteMany({ where: { promotionId: Number(id) } });
-        // Delete all tiers (cascade will remove tier benefits)
         await tx.promotionTier.deleteMany({ where: { promotionId: Number(id) } });
       }
 
       if (tiers !== undefined && Array.isArray(tiers) && tiers.length > 0) {
-        // Create new tiers with nested benefits
         data.tiers = {
           create: (tiers as PromotionTierFormData[]).map((tier) => ({
             minStays: tier.minStays,
@@ -124,7 +121,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
           })),
         };
       } else if (benefits !== undefined && !hasTiers) {
-        // Create flat benefits
         data.benefits = {
           create: ((benefits as PromotionBenefitFormData[]) || []).map((b, i) => ({
             rewardType: b.rewardType,
@@ -151,18 +147,23 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         }
       }
 
+      // Replace tie-in cards if provided
+      if (tieInCreditCardIds !== undefined) {
+        await tx.promotionTieInCard.deleteMany({ where: { promotionId: Number(id) } });
+        if (tieInCreditCardIds.length > 0) {
+          await tx.promotionTieInCard.createMany({
+            data: tieInCreditCardIds.map((cardId) => ({
+              promotionId: Number(id),
+              creditCardId: Number(cardId),
+            })),
+          });
+        }
+      }
+
       return tx.promotion.update({
         where: { id: Number(id) },
         data,
-        include: {
-          benefits: { orderBy: { sortOrder: "asc" } },
-          tiers: {
-            orderBy: { minStays: "asc" },
-            include: { benefits: { orderBy: { sortOrder: "asc" } } },
-          },
-          exclusions: true,
-          tieInCreditCard: true,
-        },
+        include: PROMOTION_INCLUDE,
       });
     });
 
@@ -182,24 +183,13 @@ export async function DELETE(
     const { id } = await params;
     const promotionId = Number(id);
 
-    // Find bookings that currently have this promotion applied
     const affectedBookings = await prisma.booking.findMany({
-      where: {
-        bookingPromotions: {
-          some: { promotionId },
-        },
-      },
+      where: { bookingPromotions: { some: { promotionId } } },
       select: { id: true },
     });
 
-    await prisma.promotion.delete({
-      where: { id: promotionId },
-    });
+    await prisma.promotion.delete({ where: { id: promotionId } });
 
-    // Re-evaluate affected bookings after deletion.
-    // Note: While Prisma cascade deletes will remove BookingPromotion records,
-    // we manually re-evaluate to ensure the bookings are correctly updated
-    // (e.g., if other promotions now apply or if summary totals need refresh).
     if (affectedBookings.length > 0) {
       await reevaluateBookings(affectedBookings.map((b) => b.id));
     }

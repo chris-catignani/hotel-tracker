@@ -34,7 +34,7 @@ function makePromo(overrides: Partial<TestPromotion> = {}): TestPromotion {
     shoppingPortalId: null,
     hotelChainId: null,
     hotelChainSubBrandId: null,
-    tieInCreditCardId: null,
+    tieInCards: [],
     tieInRequiresPayment: false,
     startDate: null,
     endDate: null,
@@ -721,7 +721,7 @@ describe("promotion-matching", () => {
   it("tie-in: card matches — all benefits (base + tie-in) apply", () => {
     // mockBooking has creditCardId: 1; tie-in requires card 1
     const promo = makePromo({
-      tieInCreditCardId: 1,
+      tieInCards: [{ creditCardId: 1 }],
       benefits: [baseBenefit, tieInBenefit],
     });
     const matched = calculateMatchedPromotions(mockBooking, [promo]);
@@ -736,7 +736,7 @@ describe("promotion-matching", () => {
   it("tie-in: card absent — only base benefits apply; tie-in benefits are skipped", () => {
     // mockBooking has creditCardId: 1; tie-in requires card 99
     const promo = makePromo({
-      tieInCreditCardId: 99,
+      tieInCards: [{ creditCardId: 99 }],
       benefits: [baseBenefit, tieInBenefit],
     });
     const matched = calculateMatchedPromotions(mockBooking, [promo]);
@@ -750,7 +750,7 @@ describe("promotion-matching", () => {
   it("tie-in: only tie-in benefits, card absent — promotion yields 0 and is skipped", () => {
     // No base benefits; tie-in card doesn't match
     const promo = makePromo({
-      tieInCreditCardId: 99,
+      tieInCards: [{ creditCardId: 99 }],
       benefits: [tieInBenefit],
     });
     const matched = calculateMatchedPromotions(mockBooking, [promo]);
@@ -760,7 +760,7 @@ describe("promotion-matching", () => {
   it("tie-in: only tie-in benefits, card present — promotion applies normally", () => {
     // No base benefits; tie-in card matches (card 1)
     const promo = makePromo({
-      tieInCreditCardId: 1,
+      tieInCards: [{ creditCardId: 1 }],
       benefits: [tieInBenefit],
     });
     const matched = calculateMatchedPromotions(mockBooking, [promo]);
@@ -770,14 +770,13 @@ describe("promotion-matching", () => {
     expect(matched[0].benefitApplications[0].appliedValue).toBe(15);
   });
 
-  it("tie-in: tieInCreditCardId=null — promotion matches regardless of booking card", () => {
-    // Promo type credit_card would need a matching creditCardId; use loyalty to isolate the null
-    // tieInCreditCardId behavior regardless of booking card
+  it("tie-in: empty tieInCards — promotion matches regardless of booking card", () => {
+    // No tie-in restriction; both benefits apply for any booking
     const loyaltyPromo = makePromo({
       type: PromotionType.loyalty,
       creditCardId: null,
       hotelChainId: 3,
-      tieInCreditCardId: null,
+      tieInCards: [],
       benefits: [baseBenefit, tieInBenefit],
     });
     const loyaltyMatched = calculateMatchedPromotions(mockBooking, [loyaltyPromo]);
@@ -787,15 +786,27 @@ describe("promotion-matching", () => {
     expect(loyaltyMatched[0].benefitApplications).toHaveLength(2);
   });
 
+  it("tie-in: booking card matches any card in the list — all benefits apply", () => {
+    // mockBooking has creditCardId: 1; list has cards 1 and 99
+    const promo = makePromo({
+      tieInCards: [{ creditCardId: 99 }, { creditCardId: 1 }],
+      benefits: [baseBenefit, tieInBenefit],
+    });
+    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    expect(matched).toHaveLength(1);
+    expect(matched[0].appliedValue).toBe(25); // $10 + $15
+    expect(matched[0].benefitApplications).toHaveLength(2);
+  });
+
   it("tie-in: tieInRequiresPayment=true produces same match result as false (semantic only)", () => {
     // tieInRequiresPayment only affects display; matching is the same either way
     const promoHold = makePromo({
-      tieInCreditCardId: 1,
+      tieInCards: [{ creditCardId: 1 }],
       tieInRequiresPayment: false,
       benefits: [baseBenefit, tieInBenefit],
     });
     const promoPay = makePromo({
-      tieInCreditCardId: 1,
+      tieInCards: [{ creditCardId: 1 }],
       tieInRequiresPayment: true,
       benefits: [baseBenefit, tieInBenefit],
     });

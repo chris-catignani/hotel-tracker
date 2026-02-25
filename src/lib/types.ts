@@ -128,7 +128,7 @@ export interface Promotion {
   hotelChainId: number | null;
   hotelChainSubBrandId: number | null;
   creditCardId: number | null;
-  tieInCreditCardId: number | null;
+  tieInCreditCardIds: number[];
   tieInRequiresPayment: boolean;
   shoppingPortalId: number | null;
   minSpend: string | number | null;
@@ -153,7 +153,7 @@ export interface PromotionFormData {
   hotelChainId?: number | null;
   hotelChainSubBrandId?: number | null;
   creditCardId?: number | null;
-  tieInCreditCardId?: number | null;
+  tieInCreditCardIds?: number[];
   tieInRequiresPayment?: boolean;
   shoppingPortalId?: number | null;
   minSpend?: number | null;
