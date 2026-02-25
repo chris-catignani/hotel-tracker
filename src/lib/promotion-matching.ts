@@ -517,20 +517,31 @@ export async function matchPromotionsForAffectedBookings(promotionId: number): P
   // Find bookings that match the promotion's core criteria or already have it applied
   const affectedBookings = await prisma.booking.findMany({
     where: {
-      OR: [
-        { hotelChainId: promotion.hotelChainId ?? undefined },
-        { creditCardId: promotion.creditCardId ?? undefined },
-        { shoppingPortalId: promotion.shoppingPortalId ?? undefined },
+      AND: [
         {
-          bookingPromotions: {
-            some: { promotionId: promotion.id },
+          OR: [
+            { hotelChainId: promotion.hotelChainId ?? undefined },
+            { creditCardId: promotion.creditCardId ?? undefined },
+            { shoppingPortalId: promotion.shoppingPortalId ?? undefined },
+            {
+              bookingPromotions: {
+                some: { promotionId: promotion.id },
+              },
+            },
+          ].filter((condition) => {
+            // Remove conditions that are undefined/null to avoid matching everything
+            const value = Object.values(condition)[0];
+            return value !== undefined && value !== null;
+          }),
+        },
+        // Date range filtering: only bookings that could potentially match the promotion
+        {
+          checkIn: {
+            gte: promotion.startDate ?? undefined,
+            lte: promotion.endDate ?? undefined,
           },
         },
-      ].filter((condition) => {
-        // Remove conditions that are undefined/null to avoid matching everything
-        const value = Object.values(condition)[0];
-        return value !== undefined && value !== null;
-      }),
+      ],
     },
     select: { id: true },
   });

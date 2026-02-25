@@ -42,3 +42,45 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return apiError("Failed to update hotel chain", error);
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const hotelChainId = Number(id);
+
+    // Check for existing bookings
+    const bookingCount = await prisma.booking.count({
+      where: { hotelChainId },
+    });
+
+    if (bookingCount > 0) {
+      return NextResponse.json(
+        { error: "Cannot delete hotel chain with existing bookings" },
+        { status: 409 }
+      );
+    }
+
+    // Check for existing sub-brands
+    const subBrandCount = await prisma.hotelChainSubBrand.count({
+      where: { hotelChainId },
+    });
+
+    if (subBrandCount > 0) {
+      return NextResponse.json(
+        { error: "Cannot delete hotel chain with existing sub-brands" },
+        { status: 409 }
+      );
+    }
+
+    await prisma.hotelChain.delete({
+      where: { id: hotelChainId },
+    });
+
+    return NextResponse.json({ message: "Hotel chain deleted" });
+  } catch (error) {
+    return apiError("Failed to delete hotel chain", error);
+  }
+}

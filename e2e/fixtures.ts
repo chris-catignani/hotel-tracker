@@ -3,9 +3,43 @@ import { test as base } from "@playwright/test";
 type TestFixtures = {
   testBooking: { id: number; propertyName: string; hotelChainName: string };
   testPromotion: { id: number; name: string };
+  testHotelChain: { id: number; name: string };
+  testSubBrand: (name?: string) => Promise<{ id: number; name: string; hotelChainId: number }>;
 };
 
 export const test = base.extend<TestFixtures>({
+  testHotelChain: async ({ request }, use) => {
+    const uniqueName = `Test Chain ${crypto.randomUUID()}`;
+    const res = await request.post("/api/hotel-chains", {
+      data: { name: uniqueName },
+    });
+    const chain = await res.json();
+    await use({ id: chain.id, name: uniqueName });
+    await request.delete(`/api/hotel-chains/${chain.id}`);
+  },
+
+  testSubBrand: async ({ request, testHotelChain }, use) => {
+    const subBrands: number[] = [];
+    const createSubBrand = async (name?: string) => {
+      const uniqueName = name || `Test SubBrand ${crypto.randomUUID()}`;
+      const res = await request.post(
+        `/api/hotel-chains/${testHotelChain.id}/hotel-chain-sub-brands`,
+        {
+          data: { name: uniqueName },
+        }
+      );
+      const subBrand = await res.json();
+      subBrands.push(subBrand.id);
+      return subBrand as { id: number; name: string; hotelChainId: number };
+    };
+
+    await use(createSubBrand);
+
+    for (const id of subBrands) {
+      await request.delete(`/api/hotel-chain-sub-brands/${id}`);
+    }
+  },
+
   testBooking: async ({ request }, use) => {
     const chains = await request.get("/api/hotel-chains");
     const chain = (await chains.json())[0];
