@@ -135,7 +135,6 @@ export interface Promotion {
   startDate: string | null;
   endDate: string | null;
   isActive: boolean;
-  isSingleUse: boolean;
   maxRedemptionCount: number | null;
   maxRedemptionValue: string | number | null;
   maxTotalBonusPoints: number | null;
@@ -169,7 +168,6 @@ export interface PromotionFormData {
   startDate?: string | null;
   endDate?: string | null;
   isActive: boolean;
-  isSingleUse?: boolean;
   maxRedemptionCount?: number | null;
   maxRedemptionValue?: number | null;
   maxTotalBonusPoints?: number | null;

@@ -548,17 +548,16 @@ test.describe("Promotions tie-in credit card", () => {
 });
 
 test.describe("Promotions constraints", () => {
-  test("should enforce isSingleUse: only first booking gets promotion", async ({
+  test("should enforce maxRedemptionCount: 1 — only first booking gets promotion", async ({
     request,
     testHotelChain,
   }) => {
-    // Create a single-use loyalty promotion (no isSingleUse constraint first, just verify it matches)
     const promoRes = await request.post("/api/promotions", {
       data: {
-        name: `Single Use Promo ${crypto.randomUUID()}`,
+        name: `Max Redemption 1 Promo ${crypto.randomUUID()}`,
         type: "loyalty",
         hotelChainId: testHotelChain.id,
-        isSingleUse: true,
+        maxRedemptionCount: 1,
         benefits: [
           { rewardType: "cashback", valueType: "fixed", value: 50, certType: null, sortOrder: 0 },
         ],
@@ -567,13 +566,13 @@ test.describe("Promotions constraints", () => {
     });
     expect(promoRes.ok()).toBeTruthy();
     const promo = await promoRes.json();
-    expect(promo.isSingleUse).toBe(true);
+    expect(promo.maxRedemptionCount).toBe(1);
 
     // Create first booking
     const booking1Res = await request.post("/api/bookings", {
       data: {
         hotelChainId: testHotelChain.id,
-        propertyName: `Single Use Test 1 ${crypto.randomUUID()}`,
+        propertyName: `Max Redemption Test 1 ${crypto.randomUUID()}`,
         checkIn: "2025-06-01",
         checkOut: "2025-06-03",
         numNights: 2,
@@ -586,18 +585,18 @@ test.describe("Promotions constraints", () => {
     expect(booking1Res.ok()).toBeTruthy();
     const booking1 = await booking1Res.json();
 
-    // Verify first booking has the single-use promotion applied
-    const booking1SingleUse = booking1.bookingPromotions.find(
+    // Verify first booking has the promotion applied
+    const bp1 = booking1.bookingPromotions.find(
       (bp: { promotionId: string }) => bp.promotionId === promo.id
     );
-    expect(booking1SingleUse).toBeDefined();
-    expect(Number(booking1SingleUse.appliedValue)).toBe(50);
+    expect(bp1).toBeDefined();
+    expect(Number(bp1.appliedValue)).toBe(50);
 
     // Create second booking
     const booking2Res = await request.post("/api/bookings", {
       data: {
         hotelChainId: testHotelChain.id,
-        propertyName: `Single Use Test 2 ${crypto.randomUUID()}`,
+        propertyName: `Max Redemption Test 2 ${crypto.randomUUID()}`,
         checkIn: "2025-07-01",
         checkOut: "2025-07-03",
         numNights: 2,
@@ -610,11 +609,11 @@ test.describe("Promotions constraints", () => {
     expect(booking2Res.ok()).toBeTruthy();
     const booking2 = await booking2Res.json();
 
-    // Verify second booking does NOT have the single-use promotion (isSingleUse constraint enforced)
-    const booking2SingleUse = booking2.bookingPromotions.find(
+    // Verify second booking does NOT have the promotion (maxRedemptionCount = 1 enforced)
+    const bp2 = booking2.bookingPromotions.find(
       (bp: { promotionId: string }) => bp.promotionId === promo.id
     );
-    expect(booking2SingleUse).toBeUndefined();
+    expect(bp2).toBeUndefined();
 
     // Cleanup
     await request.delete(`/api/bookings/${booking1.id}`);

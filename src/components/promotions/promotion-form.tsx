@@ -285,7 +285,6 @@ export function PromotionForm({
   const [startDate, setStartDate] = useState(initialData?.startDate || "");
   const [endDate, setEndDate] = useState(initialData?.endDate || "");
   const [isActive, setIsActive] = useState(initialData?.isActive ?? true);
-  const [isSingleUse, setIsSingleUse] = useState(initialData?.isSingleUse ?? false);
   const [maxRedemptionCount, setMaxRedemptionCount] = useState(
     initialData?.maxRedemptionCount ? String(initialData.maxRedemptionCount) : ""
   );
@@ -368,7 +367,6 @@ export function PromotionForm({
       if (initialData.startDate !== undefined) setStartDate(initialData.startDate || "");
       if (initialData.endDate !== undefined) setEndDate(initialData.endDate || "");
       if (initialData.isActive !== undefined) setIsActive(initialData.isActive);
-      if (initialData.isSingleUse !== undefined) setIsSingleUse(initialData.isSingleUse);
       if (initialData.maxRedemptionCount !== undefined)
         setMaxRedemptionCount(
           initialData.maxRedemptionCount ? String(initialData.maxRedemptionCount) : ""
@@ -526,7 +524,6 @@ export function PromotionForm({
     body.startDate = startDate || null;
     body.endDate = endDate || null;
 
-    body.isSingleUse = isSingleUse;
     if (maxRedemptionCount) {
       body.maxRedemptionCount = parseInt(maxRedemptionCount);
     } else {
@@ -969,18 +966,6 @@ export function PromotionForm({
           {/* Redemption Constraints */}
           <div className="space-y-4 border-t pt-4">
             <h3 className="text-sm font-medium">Redemption Constraints</h3>
-
-            <div className="flex items-center gap-2">
-              <input
-                id="isSingleUse"
-                type="checkbox"
-                checked={isSingleUse}
-                onChange={(e) => setIsSingleUse(e.target.checked)}
-                className="size-4 rounded border-gray-300"
-                data-testid="promotion-single-use"
-              />
-              <Label htmlFor="isSingleUse">Single Use Only</Label>
-            </div>
 
             <div className="space-y-2">
               <Label htmlFor="maxRedemptionCount">Max Redemption Count</Label>

@@ -114,7 +114,6 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
 
   // NOTE: Redemption Constraints
   // The appliedValue shown here already reflects any constraints enforced at matching time:
-  // - isSingleUse: promotion only applies once across all bookings
   // - maxRedemptionCount: limits how many times a promotion can be applied
   // - maxRedemptionValue: caps the total dollar value; appliedValue is reduced proportionally
   // - maxTotalBonusPoints: caps total bonus points earned; appliedValue is reduced proportionally

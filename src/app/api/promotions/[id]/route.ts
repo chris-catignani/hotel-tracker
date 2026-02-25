@@ -54,7 +54,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       startDate,
       endDate,
       isActive,
-      isSingleUse,
       maxRedemptionCount,
       maxRedemptionValue,
       maxTotalBonusPoints,
@@ -82,7 +81,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (startDate !== undefined) data.startDate = startDate ? new Date(startDate) : null;
     if (endDate !== undefined) data.endDate = endDate ? new Date(endDate) : null;
     if (isActive !== undefined) data.isActive = isActive;
-    if (isSingleUse !== undefined) data.isSingleUse = isSingleUse;
     if (maxRedemptionCount !== undefined)
       data.maxRedemptionCount = maxRedemptionCount != null ? Number(maxRedemptionCount) : null;
     if (maxRedemptionValue !== undefined)

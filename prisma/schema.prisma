@@ -240,7 +240,6 @@ model Promotion {
   startDate            DateTime?           @map("start_date") @db.Date
   endDate              DateTime?           @map("end_date") @db.Date
   isActive             Boolean             @default(true) @map("is_active")
-  isSingleUse          Boolean             @default(false) @map("is_single_use")
   maxRedemptionCount   Int?                @map("max_redemption_count")
   maxRedemptionValue   Decimal?            @map("max_redemption_value") @db.Decimal(10, 2)
   maxTotalBonusPoints  Int?                @map("max_total_bonus_points")
