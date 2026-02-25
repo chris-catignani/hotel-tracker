@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { matchPromotionsForAffectedBookings, reevaluateBookings } from "@/lib/promotion-matching";
-import { PromotionBenefitFormData, PromotionTierFormData } from "@/lib/types";
+import { PromotionBenefitFormData, PromotionTierFormData, PromotionFormData } from "@/lib/types";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -19,6 +19,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           orderBy: { minStays: "asc" },
           include: { benefits: { orderBy: { sortOrder: "asc" } } },
         },
+        exclusions: true,
       },
     });
 
@@ -57,7 +58,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       nightsStackable,
       bookByDate,
       oncePerSubBrand,
-    } = body;
+      exclusionSubBrandIds,
+    } = body as PromotionFormData & { exclusionSubBrandIds?: number[] };
 
     const data: Record<string, unknown> = {};
     if (name !== undefined) data.name = name;
@@ -128,6 +130,19 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         };
       }
 
+      // Replace exclusions if provided
+      if (exclusionSubBrandIds !== undefined) {
+        await tx.promotionExclusion.deleteMany({ where: { promotionId: Number(id) } });
+        if (exclusionSubBrandIds.length > 0) {
+          await tx.promotionExclusion.createMany({
+            data: exclusionSubBrandIds.map((subBrandId) => ({
+              promotionId: Number(id),
+              hotelChainSubBrandId: subBrandId,
+            })),
+          });
+        }
+      }
+
       return tx.promotion.update({
         where: { id: Number(id) },
         data,
@@ -137,6 +152,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
             orderBy: { minStays: "asc" },
             include: { benefits: { orderBy: { sortOrder: "asc" } } },
           },
+          exclusions: true,
         },
       });
     });

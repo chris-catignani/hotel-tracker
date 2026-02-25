@@ -46,6 +46,7 @@ function makePromo(overrides: Partial<TestPromotion> = {}): TestPromotion {
     nightsStackable: false,
     bookByDate: null,
     oncePerSubBrand: false,
+    exclusions: [],
     benefits: [
       {
         id: 10,
@@ -666,5 +667,30 @@ describe("promotion-matching", () => {
     ]);
     const matched = calculateMatchedPromotions(bookingNoSubBrand, [promo], priorUsage);
     expect(matched).toHaveLength(0);
+  });
+
+  // Exclusion tests
+  it("should apply promotion when booking sub-brand is not in exclusion list", () => {
+    // mockBooking has hotelChainSubBrandId: 4; exclude sub-brand 99
+    const promo = makePromo({ exclusions: [{ hotelChainSubBrandId: 99 }] });
+    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    expect(matched).toHaveLength(1);
+    expect(matched[0].appliedValue).toBe(10);
+  });
+
+  it("should skip promotion when booking sub-brand is in exclusion list", () => {
+    // mockBooking has hotelChainSubBrandId: 4; exclude sub-brand 4
+    const promo = makePromo({ exclusions: [{ hotelChainSubBrandId: 4 }] });
+    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    expect(matched).toHaveLength(0);
+  });
+
+  it("should apply promotion when booking has no sub-brand and exclusions exist", () => {
+    // Exclusion only blocks bookings at specific sub-brands; null sub-brand is not excluded
+    const bookingNoSubBrand = { ...mockBooking, hotelChainSubBrandId: null };
+    const promo = makePromo({ exclusions: [{ hotelChainSubBrandId: 4 }] });
+    const matched = calculateMatchedPromotions(bookingNoSubBrand, [promo]);
+    expect(matched).toHaveLength(1);
+    expect(matched[0].appliedValue).toBe(10);
   });
 });

@@ -75,6 +75,12 @@ export type PromotionRewardType = "points" | "cashback" | "certificate" | "eqn";
 export type PromotionBenefitValueType = "fixed" | "percentage" | "multiplier";
 export type PointsMultiplierBasis = "base_only" | "base_and_elite";
 
+export interface PromotionExclusion {
+  id: number;
+  promotionId: number;
+  hotelChainSubBrandId: number;
+}
+
 export interface PromotionBenefit {
   id: number;
   promotionId: number | null;
@@ -116,6 +122,7 @@ export interface Promotion {
   type: PromotionType;
   benefits: PromotionBenefit[];
   tiers: PromotionTier[];
+  exclusions: PromotionExclusion[];
   hotelChainId: number | null;
   hotelChainSubBrandId: number | null;
   creditCardId: number | null;
@@ -155,6 +162,7 @@ export interface PromotionFormData {
   nightsStackable?: boolean;
   bookByDate?: string | null;
   oncePerSubBrand?: boolean;
+  exclusionSubBrandIds?: number[];
 }
 
 // ---------------------------------------------------------------------------

@@ -74,8 +74,9 @@ model HotelChainSubBrand {
   hotelChain     HotelChain  @relation(fields: [hotelChainId], references: [id], onDelete: Cascade)
   name           String
   basePointRate  Decimal?    @map("base_point_rate") @db.Decimal(10, 4)
-  bookings       Booking[]
-  promotions     Promotion[]
+  bookings             Booking[]
+  promotions           Promotion[]
+  promotionExclusions  PromotionExclusion[]
 
   @@unique([hotelChainId, name])
   @@map("hotel_chain_sub_brands")
@@ -247,8 +248,20 @@ model Promotion {
   benefits             PromotionBenefit[]
   tiers                PromotionTier[]
   bookingPromotions    BookingPromotion[]
+  exclusions           PromotionExclusion[]
 
   @@map("promotions")
+}
+
+model PromotionExclusion {
+  id                   Int                @id @default(autoincrement())
+  promotionId          Int                @map("promotion_id")
+  hotelChainSubBrandId Int                @map("hotel_chain_sub_brand_id")
+  promotion            Promotion          @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  hotelChainSubBrand   HotelChainSubBrand @relation(fields: [hotelChainSubBrandId], references: [id])
+
+  @@unique([promotionId, hotelChainSubBrandId])
+  @@map("promotion_exclusions")
 }
 
 model PromotionTier {

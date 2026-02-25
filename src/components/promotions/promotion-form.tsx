@@ -18,6 +18,7 @@ import {
   PromotionBenefitFormData,
   PromotionTierFormData,
   PointsMultiplierBasis,
+  PromotionExclusion,
 } from "@/lib/types";
 import { BENEFIT_REWARD_TYPE_OPTIONS } from "@/lib/constants";
 import { CERT_TYPE_OPTIONS } from "@/lib/cert-types";
@@ -47,7 +48,7 @@ interface ShoppingPortal {
 }
 
 interface PromotionFormProps {
-  initialData?: Partial<PromotionFormData>;
+  initialData?: Partial<PromotionFormData> & { exclusions?: PromotionExclusion[] };
   onSubmit: (data: PromotionFormData) => Promise<void>;
   submitting: boolean;
   title: string;
@@ -270,6 +271,9 @@ export function PromotionForm({
   const [nightsStackable, setNightsStackable] = useState(initialData?.nightsStackable ?? false);
   const [bookByDate, setBookByDate] = useState(initialData?.bookByDate || "");
   const [oncePerSubBrand, setOncePerSubBrand] = useState(initialData?.oncePerSubBrand ?? false);
+  const [exclusionSubBrandIds, setExclusionSubBrandIds] = useState<number[]>(
+    initialData?.exclusions?.map((e) => e.hotelChainSubBrandId) ?? []
+  );
   const [isTiered, setIsTiered] = useState(
     () => (initialData?.tiers && initialData.tiers.length > 0) ?? false
   );
@@ -345,6 +349,8 @@ export function PromotionForm({
       if (initialData.bookByDate !== undefined) setBookByDate(initialData.bookByDate || "");
       if (initialData.oncePerSubBrand !== undefined)
         setOncePerSubBrand(initialData.oncePerSubBrand);
+      if (initialData.exclusions !== undefined)
+        setExclusionSubBrandIds(initialData.exclusions.map((e) => e.hotelChainSubBrandId));
       if (initialData.tiers !== undefined) {
         const hasTiers = initialData.tiers.length > 0;
         setIsTiered(hasTiers);
@@ -437,9 +443,11 @@ export function PromotionForm({
     if (type === "loyalty" && hotelChainId) {
       body.hotelChainId = parseInt(hotelChainId);
       body.hotelChainSubBrandId = hotelChainSubBrandId ? parseInt(hotelChainSubBrandId) : null;
+      body.exclusionSubBrandIds = exclusionSubBrandIds;
     } else {
       body.hotelChainId = null;
       body.hotelChainSubBrandId = null;
+      body.exclusionSubBrandIds = [];
     }
 
     if (type === "credit_card" && creditCardId) {
@@ -494,6 +502,9 @@ export function PromotionForm({
   const startDateObj = startDate ? parseISO(startDate) : undefined;
   const endDateObj = endDate ? parseISO(endDate) : undefined;
   const bookByDateObj = bookByDate ? parseISO(bookByDate) : undefined;
+
+  const selectedChainSubBrands =
+    hotelChains.find((h) => h.id === Number(hotelChainId))?.hotelChainSubBrands ?? [];
 
   const handleStartDateChange = (date?: Date) => {
     setStartDate(date ? format(date, "yyyy-MM-dd") : "");
@@ -694,6 +705,7 @@ export function PromotionForm({
                 onValueChange={(v) => {
                   setHotelChainId(v);
                   setHotelChainSubBrandId("");
+                  setExclusionSubBrandIds([]);
                 }}
                 options={hotelChains.map((chain) => ({
                   label: chain.name,
@@ -705,29 +717,53 @@ export function PromotionForm({
             </div>
           )}
 
-          {type === "loyalty" &&
-            hotelChainId &&
-            (hotelChains.find((h) => h.id === Number(hotelChainId))?.hotelChainSubBrands.length ??
-              0) > 0 && (
-              <div className="space-y-2">
-                <Label>Sub-brand</Label>
-                <AppSelect
-                  value={hotelChainSubBrandId || "all"}
-                  onValueChange={(v) => setHotelChainSubBrandId(v === "all" ? "" : v)}
-                  options={[
-                    { label: "All sub-brands (no filter)", value: "all" },
-                    ...(hotelChains
-                      .find((h) => h.id === Number(hotelChainId))
-                      ?.hotelChainSubBrands.map((sb) => ({
-                        label: sb.name,
-                        value: String(sb.id),
-                      })) || []),
-                  ]}
-                  placeholder="Select sub-brand..."
-                  data-testid="sub-brand-select"
-                />
+          {type === "loyalty" && hotelChainId && selectedChainSubBrands.length > 0 && (
+            <div className="space-y-2">
+              <Label>Sub-brand</Label>
+              <AppSelect
+                value={hotelChainSubBrandId || "all"}
+                onValueChange={(v) => setHotelChainSubBrandId(v === "all" ? "" : v)}
+                options={[
+                  { label: "All sub-brands (no filter)", value: "all" },
+                  ...selectedChainSubBrands.map((sb) => ({
+                    label: sb.name,
+                    value: String(sb.id),
+                  })),
+                ]}
+                placeholder="Select sub-brand..."
+                data-testid="sub-brand-select"
+              />
+            </div>
+          )}
+
+          {type === "loyalty" && hotelChainId && selectedChainSubBrands.length > 0 && (
+            <div className="space-y-2">
+              <Label>Excluded Sub-Brands</Label>
+              <p className="text-xs text-muted-foreground">
+                This promotion will not apply to bookings at the selected sub-brands.
+              </p>
+              <div className="flex flex-col gap-2" data-testid="exclusion-sub-brands">
+                {selectedChainSubBrands.map((sb) => (
+                  <label key={sb.id} className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="size-4 rounded border-gray-300"
+                      checked={exclusionSubBrandIds.includes(sb.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setExclusionSubBrandIds((prev) => [...prev, sb.id]);
+                        } else {
+                          setExclusionSubBrandIds((prev) => prev.filter((id) => id !== sb.id));
+                        }
+                      }}
+                      data-testid={`exclusion-sub-brand-${sb.id}`}
+                    />
+                    <span className="text-sm">{sb.name}</span>
+                  </label>
+                ))}
               </div>
-            )}
+            </div>
+          )}
 
           {type === "credit_card" && (
             <div className="space-y-2">

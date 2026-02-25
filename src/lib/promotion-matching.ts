@@ -39,6 +39,7 @@ const PROMOTIONS_INCLUDE = {
     orderBy: { minStays: "asc" as const },
     include: { benefits: { orderBy: { sortOrder: "asc" as const } } },
   },
+  exclusions: true,
 } as const;
 
 export interface MatchingBooking {
@@ -86,6 +87,7 @@ interface MatchingPromotion {
   oncePerSubBrand: boolean;
   benefits: MatchingBenefit[];
   tiers: { id: number; minStays: number; maxStays: number | null; benefits: MatchingBenefit[] }[];
+  exclusions: { hotelChainSubBrandId: number }[];
 }
 
 interface BenefitApplication {
@@ -131,6 +133,14 @@ export function calculateMatchedPromotions(
     if (
       promo.hotelChainSubBrandId !== null &&
       promo.hotelChainSubBrandId !== booking.hotelChainSubBrandId
+    )
+      continue;
+
+    // Exclusion check: if booking's sub-brand is in the exclusion list, skip
+    if (
+      promo.exclusions.length > 0 &&
+      booking.hotelChainSubBrandId != null &&
+      promo.exclusions.some((e) => e.hotelChainSubBrandId === booking.hotelChainSubBrandId)
     )
       continue;
 
