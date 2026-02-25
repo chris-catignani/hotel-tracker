@@ -150,7 +150,11 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      return created;
+      // Re-fetch to get all relations including the newly created ones
+      return tx.promotion.findUnique({
+        where: { id: created.id },
+        include: PROMOTION_INCLUDE,
+      }) as Promise<import("@prisma/client").Promotion>;
     });
 
     await matchPromotionsForAffectedBookings(promotion.id);

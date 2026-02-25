@@ -341,15 +341,15 @@ test.describe("Promotions tie-in credit card", () => {
   const TIE_IN_CARD_ID = 1; // Amex Platinum
   const OTHER_CARD_ID = 2; // Chase Sapphire Reserve
 
-  test("booking WITH tie-in card gets all benefits (base + tie-in)", async ({ request }) => {
-    const chainsRes = await request.get("/api/hotel-chains");
-    const chain = (await chainsRes.json())[0];
-
+  test("booking WITH tie-in card gets all benefits (base + tie-in)", async ({
+    request,
+    testHotelChain,
+  }) => {
     const promoRes = await request.post("/api/promotions", {
       data: {
         name: `Tie-In Promo ${crypto.randomUUID()}`,
         type: "loyalty",
-        hotelChainId: chain.id,
+        hotelChainId: testHotelChain.id,
         tieInCreditCardIds: [TIE_IN_CARD_ID],
         tieInRequiresPayment: false,
         benefits: [
@@ -385,7 +385,7 @@ test.describe("Promotions tie-in credit card", () => {
     // Create booking WITH the tie-in card
     const bookingRes = await request.post("/api/bookings", {
       data: {
-        hotelChainId: chain.id,
+        hotelChainId: testHotelChain.id,
         propertyName: `Tie-In With Card ${crypto.randomUUID()}`,
         checkIn: "2025-06-01",
         checkOut: "2025-06-03",
@@ -413,15 +413,15 @@ test.describe("Promotions tie-in credit card", () => {
     await request.delete(`/api/promotions/${promo.id}`);
   });
 
-  test("booking WITHOUT tie-in card gets only base benefits", async ({ request }) => {
-    const chainsRes = await request.get("/api/hotel-chains");
-    const chain = (await chainsRes.json())[0];
-
+  test("booking WITHOUT tie-in card gets only base benefits", async ({
+    request,
+    testHotelChain,
+  }) => {
     const promoRes = await request.post("/api/promotions", {
       data: {
         name: `Tie-In Promo No Card ${crypto.randomUUID()}`,
         type: "loyalty",
-        hotelChainId: chain.id,
+        hotelChainId: testHotelChain.id,
         tieInCreditCardIds: [TIE_IN_CARD_ID],
         tieInRequiresPayment: false,
         benefits: [
@@ -451,7 +451,7 @@ test.describe("Promotions tie-in credit card", () => {
     // Create booking with a DIFFERENT card (not the tie-in card)
     const bookingRes = await request.post("/api/bookings", {
       data: {
-        hotelChainId: chain.id,
+        hotelChainId: testHotelChain.id,
         propertyName: `Tie-In Without Card ${crypto.randomUUID()}`,
         checkIn: "2025-06-01",
         checkOut: "2025-06-03",
@@ -482,15 +482,13 @@ test.describe("Promotions tie-in credit card", () => {
 
   test("booking without any card gets only base benefits when tie-in card is set", async ({
     request,
+    testHotelChain,
   }) => {
-    const chainsRes = await request.get("/api/hotel-chains");
-    const chain = (await chainsRes.json())[0];
-
     const promoRes = await request.post("/api/promotions", {
       data: {
         name: `Tie-In Promo No Payment ${crypto.randomUUID()}`,
         type: "loyalty",
-        hotelChainId: chain.id,
+        hotelChainId: testHotelChain.id,
         tieInCreditCardIds: [TIE_IN_CARD_ID],
         tieInRequiresPayment: true,
         benefits: [
@@ -521,7 +519,7 @@ test.describe("Promotions tie-in credit card", () => {
     // Create booking with NO credit card
     const bookingRes = await request.post("/api/bookings", {
       data: {
-        hotelChainId: chain.id,
+        hotelChainId: testHotelChain.id,
         propertyName: `Tie-In No Payment ${crypto.randomUUID()}`,
         checkIn: "2025-06-01",
         checkOut: "2025-06-03",

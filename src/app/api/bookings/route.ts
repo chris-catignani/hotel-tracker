@@ -14,7 +14,8 @@ export async function GET() {
         shoppingPortal: { include: { pointType: true } },
         bookingPromotions: {
           include: {
-            promotion: true,
+            promotion: { include: { benefits: { orderBy: { sortOrder: "asc" } } } },
+            benefitApplications: { include: { promotionBenefit: true } },
           },
         },
         certificates: true,
@@ -157,7 +158,8 @@ export async function POST(request: NextRequest) {
         shoppingPortal: { include: { pointType: true } },
         bookingPromotions: {
           include: {
-            promotion: true,
+            promotion: { include: { benefits: { orderBy: { sortOrder: "asc" } } } },
+            benefitApplications: { include: { promotionBenefit: true } },
           },
         },
         certificates: true,
