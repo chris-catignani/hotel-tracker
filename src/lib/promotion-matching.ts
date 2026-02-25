@@ -155,26 +155,28 @@ export function calculateMatchedPromotions(
     // Date range check
     const checkInDate = new Date(booking.checkIn);
 
-    // Global start date check
-    if (promo.startDate && checkInDate < new Date(promo.startDate)) continue;
-
     // Registration deadline check: if user registered after deadline, promo is invalid
     if (promo.registrationDate && promo.registrationDeadline) {
       if (new Date(promo.registrationDate) > new Date(promo.registrationDeadline)) continue;
     }
 
-    // Registration-based duration check
-    if (promo.registrationDate && promo.validDaysAfterRegistration) {
+    if (promo.registrationDate) {
       const regDate = new Date(promo.registrationDate);
-      const effectiveEndDate = new Date(regDate);
-      effectiveEndDate.setDate(regDate.getDate() + promo.validDaysAfterRegistration);
-
-      // Promotion is valid from registration date until duration expires
+      // Promotion is only valid for stays on or after the registration date
       if (checkInDate < regDate) continue;
-      if (checkInDate > effectiveEndDate) continue;
-    } else if (promo.endDate) {
-      // Fallback to global end date if no registration-based duration is set
-      if (checkInDate > new Date(promo.endDate)) continue;
+
+      if (promo.validDaysAfterRegistration) {
+        const personalEndDate = new Date(regDate);
+        personalEndDate.setDate(regDate.getDate() + promo.validDaysAfterRegistration);
+        if (checkInDate > personalEndDate) continue;
+      } else if (promo.endDate) {
+        // Fallback to global end date if no registration-based duration is set
+        if (checkInDate > new Date(promo.endDate)) continue;
+      }
+    } else {
+      // Global start/end checks only apply if no registration date is set
+      if (promo.startDate && checkInDate < new Date(promo.startDate)) continue;
+      if (promo.endDate && checkInDate > new Date(promo.endDate)) continue;
     }
 
     // Min spend check for credit_card types

@@ -874,15 +874,26 @@ describe("promotion-matching", () => {
       expect(matched).toHaveLength(1);
     });
 
-    it("should respect global startDate even with registration date", () => {
+    it("should match if personal window extends beyond global endDate", () => {
       const promo = makePromo({
-        registrationDate: new Date("2026-05-01"),
-        validDaysAfterRegistration: 90,
-        startDate: new Date("2026-06-15"),
+        endDate: new Date("2026-05-31"), // global period ends
+        registrationDate: new Date("2026-05-20"),
+        validDaysAfterRegistration: 30, // valid until 2026-06-19
       });
-      // mockBooking.checkIn is 2026-06-01 (within personal window, but before global start)
+      // mockBooking.checkIn is 2026-06-01 (past global end, but within personal window)
       const matched = calculateMatchedPromotions(mockBooking, [promo]);
-      expect(matched).toHaveLength(0);
+      expect(matched).toHaveLength(1);
+    });
+
+    it("should ignore global startDate once user is registered", () => {
+      const promo = makePromo({
+        startDate: new Date("2026-06-15"), // global period hasn't started
+        registrationDate: new Date("2026-05-20"),
+        validDaysAfterRegistration: 90,
+      });
+      // mockBooking.checkIn is 2026-06-01 (before global start, but after registration)
+      const matched = calculateMatchedPromotions(mockBooking, [promo]);
+      expect(matched).toHaveLength(1);
     });
 
     it("should skip if registration date is after registration deadline", () => {
