@@ -14,7 +14,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (centsPerPoint !== undefined) data.centsPerPoint = Number(centsPerPoint);
 
     const pointType = await prisma.pointType.update({
-      where: { id: Number(id) },
+      where: { id: id },
       data,
     });
 
@@ -25,29 +25,23 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const numId = Number(id);
 
     // Check if in use
-    const hotelChainCount = await prisma.hotelChain.count({ where: { pointTypeId: numId } });
-    const cardCount = await prisma.creditCard.count({ where: { pointTypeId: numId } });
-    const portalCount = await prisma.shoppingPortal.count({ where: { pointTypeId: numId } });
+    const hotelChainCount = await prisma.hotelChain.count({ where: { pointTypeId: id } });
+    const creditCardCount = await prisma.creditCard.count({ where: { pointTypeId: id } });
+    const portalCount = await prisma.shoppingPortal.count({ where: { pointTypeId: id } });
 
-    if (hotelChainCount + cardCount + portalCount > 0) {
-      return apiError(
-        "Cannot delete: point type is in use by hotel chains, cards, or portals",
-        null,
-        409
-      );
+    if (hotelChainCount > 0 || creditCardCount > 0 || portalCount > 0) {
+      return apiError("Cannot delete point type that is in use by other records", null, 400);
     }
 
-    await prisma.pointType.delete({ where: { id: numId } });
-
-    return NextResponse.json({ message: "Point type deleted" });
+    await prisma.pointType.delete({ where: { id: id } });
+    return new NextResponse(null, { status: 204 });
   } catch (error) {
     return apiError("Failed to delete point type", error);
   }

@@ -10,14 +10,14 @@ import { CalendarDays, Wallet, Coins, ScrollText } from "lucide-react";
 
 interface BookingCardProps {
   booking: NetCostBooking & {
-    id: number;
+    id: string;
     propertyName: string;
     checkIn: string;
     checkOut: string;
     numNights: number;
     hotelChainSubBrand?: { name: string } | null;
   };
-  onDelete?: (id: number) => void;
+  onDelete?: (id: string) => void;
   showActions?: boolean;
 }
 

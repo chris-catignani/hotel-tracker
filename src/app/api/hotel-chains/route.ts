@@ -6,13 +6,28 @@ export async function GET() {
   try {
     const hotelChains = await prisma.hotelChain.findMany({
       include: {
-        hotelChainSubBrands: { orderBy: { name: "asc" } },
         pointType: true,
-        eliteStatuses: { orderBy: { eliteTierLevel: "asc" } },
-        userStatus: { include: { eliteStatus: true } },
+        hotelChainSubBrands: {
+          orderBy: {
+            name: "asc",
+          },
+        },
+        eliteStatuses: {
+          orderBy: {
+            eliteTierLevel: "asc",
+          },
+        },
+        userStatus: {
+          include: {
+            eliteStatus: true,
+          },
+        },
       },
-      orderBy: { name: "asc" },
+      orderBy: {
+        name: "asc",
+      },
     });
+
     return NextResponse.json(hotelChains);
   } catch (error) {
     return apiError("Failed to fetch hotel chains", error);
@@ -29,7 +44,7 @@ export async function POST(request: NextRequest) {
         name,
         loyaltyProgram,
         basePointRate: basePointRate != null ? Number(basePointRate) : null,
-        pointTypeId: pointTypeId ? Number(pointTypeId) : null,
+        pointTypeId: pointTypeId || null,
       },
       include: {
         pointType: true,

@@ -23,14 +23,14 @@ import { formatCurrency, formatDate, formatCerts } from "@/lib/utils";
 // ---------------------------------------------------------------------------
 
 interface BookingPromotion {
-  id: number;
-  bookingId: number;
-  promotionId: number;
+  id: string;
+  bookingId: string;
+  promotionId: string;
   appliedValue: string | number;
   autoApplied: boolean;
   verified: boolean;
   promotion: {
-    id: number;
+    id: string;
     name: string;
     type: string;
     valueType: string;
@@ -39,14 +39,14 @@ interface BookingPromotion {
 }
 
 interface BookingCertificate {
-  id: number;
+  id: string;
   certType: string;
 }
 
 interface Booking {
-  id: number;
-  hotelChainId: number;
-  hotelChainSubBrand: { id: number; name: string } | null;
+  id: string;
+  hotelChainId: string;
+  hotelChainSubBrand: { id: string; name: string } | null;
   propertyName: string;
   checkIn: string;
   checkOut: string;
@@ -54,8 +54,8 @@ interface Booking {
   pretaxCost: string | number;
   taxAmount: string | number;
   totalCost: string | number;
-  creditCardId: number | null;
-  shoppingPortalId: number | null;
+  creditCardId: string | null;
+  shoppingPortalId: string | null;
   portalCashbackRate: string | number | null;
   portalCashbackOnTotal: boolean;
   loyaltyPointsEarned: number | null;
@@ -63,23 +63,23 @@ interface Booking {
   notes: string | null;
   createdAt: string;
   bookingSource: string | null;
-  otaAgency: { id: number; name: string } | null;
+  otaAgency: { id: string; name: string } | null;
   hotelChain: {
-    id: number;
+    id: string;
     name: string;
     loyaltyProgram: string | null;
     basePointRate: string | number | null;
     pointType: { name: string; centsPerPoint: string | number } | null;
   };
   creditCard: {
-    id: number;
+    id: string;
     name: string;
     rewardType: string;
     rewardRate: string | number;
     pointType: { name: string; centsPerPoint: string | number } | null;
   } | null;
   shoppingPortal: {
-    id: number;
+    id: string;
     name: string;
     rewardType: string;
     pointType: { name: string; centsPerPoint: string | number } | null;
@@ -117,7 +117,7 @@ export default function BookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [bookingToDelete, setBookingToDelete] = useState<number | null>(null);
+  const [bookingToDelete, setBookingToDelete] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const fetchBookings = useCallback(async () => {
@@ -134,7 +134,7 @@ export default function BookingsPage() {
     fetchBookings();
   }, [fetchBookings]);
 
-  const handleDeleteClick = (id: number) => {
+  const handleDeleteClick = (id: string) => {
     setBookingToDelete(id);
     setDeleteOpen(true);
   };

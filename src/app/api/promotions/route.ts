@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
       registrationDeadline,
       validDaysAfterRegistration,
       registrationDate,
-    } = body as PromotionFormData & { exclusionSubBrandIds?: number[] };
+    } = body as PromotionFormData & { exclusionSubBrandIds?: string[] };
 
     const hasTiers = Array.isArray(tiers) && tiers.length > 0;
 
@@ -80,10 +80,10 @@ export async function POST(request: NextRequest) {
         data: {
           name,
           type,
-          hotelChainId: hotelChainId ? Number(hotelChainId) : null,
-          hotelChainSubBrandId: hotelChainSubBrandId ? Number(hotelChainSubBrandId) : null,
-          creditCardId: creditCardId ? Number(creditCardId) : null,
-          shoppingPortalId: shoppingPortalId ? Number(shoppingPortalId) : null,
+          hotelChainId: hotelChainId || null,
+          hotelChainSubBrandId: hotelChainSubBrandId || null,
+          creditCardId: creditCardId || null,
+          shoppingPortalId: shoppingPortalId || null,
           minSpend: minSpend != null ? Number(minSpend) : null,
           startDate: startDate ? new Date(startDate) : null,
           endDate: endDate ? new Date(endDate) : null,
@@ -161,7 +161,7 @@ export async function POST(request: NextRequest) {
         await tx.promotionTieInCard.createMany({
           data: tieInCreditCardIds.map((cardId) => ({
             promotionId: created.id,
-            creditCardId: Number(cardId),
+            creditCardId: cardId,
           })),
         });
       }

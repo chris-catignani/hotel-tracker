@@ -2,17 +2,30 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    const agency = await prisma.otaAgency.findUnique({
+      where: { id: id },
+    });
+    if (!agency) return apiError("Agency not found", null, 404);
+    return NextResponse.json(agency);
+  } catch (error) {
+    return apiError("Failed to fetch agency", error);
+  }
+}
+
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const { name } = await request.json();
     const agency = await prisma.otaAgency.update({
-      where: { id: Number(id) },
+      where: { id: id },
       data: { name },
     });
     return NextResponse.json(agency);
   } catch (error) {
-    return apiError("Failed to update OTA agency", error);
+    return apiError("Failed to update agency", error);
   }
 }
 
@@ -22,18 +35,17 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const bookingCount = await prisma.booking.count({
-      where: { otaAgencyId: Number(id) },
+    // Check if being used by any bookings
+    const count = await prisma.booking.count({
+      where: { otaAgencyId: id },
     });
-    if (bookingCount > 0) {
-      return NextResponse.json(
-        { error: "Cannot delete: agency is referenced by existing bookings." },
-        { status: 409 }
-      );
+    if (count > 0) {
+      return apiError("Cannot delete agency that is in use by bookings", null, 400);
     }
-    await prisma.otaAgency.delete({ where: { id: Number(id) } });
-    return NextResponse.json({ message: "OTA agency deleted" });
+
+    await prisma.otaAgency.delete({ where: { id: id } });
+    return new NextResponse(null, { status: 204 });
   } catch (error) {
-    return apiError("Failed to delete OTA agency", error);
+    return apiError("Failed to delete agency", error);
   }
 }

@@ -23,7 +23,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { id } = await params;
     const promotion = await prisma.promotion.findUnique({
-      where: { id: Number(id) },
+      where: { id: id },
       include: PROMOTION_INCLUDE,
     });
 
@@ -68,17 +68,16 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       registrationDeadline,
       validDaysAfterRegistration,
       registrationDate,
-    } = body as PromotionFormData & { exclusionSubBrandIds?: number[] };
+    } = body as PromotionFormData & { exclusionSubBrandIds?: string[] };
 
     const data: Record<string, unknown> = {};
     if (name !== undefined) data.name = name;
     if (type !== undefined) data.type = type;
-    if (hotelChainId !== undefined) data.hotelChainId = hotelChainId ? Number(hotelChainId) : null;
+    if (hotelChainId !== undefined) data.hotelChainId = hotelChainId || null;
     if (hotelChainSubBrandId !== undefined)
-      data.hotelChainSubBrandId = hotelChainSubBrandId ? Number(hotelChainSubBrandId) : null;
-    if (creditCardId !== undefined) data.creditCardId = creditCardId ? Number(creditCardId) : null;
-    if (shoppingPortalId !== undefined)
-      data.shoppingPortalId = shoppingPortalId ? Number(shoppingPortalId) : null;
+      data.hotelChainSubBrandId = hotelChainSubBrandId || null;
+    if (creditCardId !== undefined) data.creditCardId = creditCardId || null;
+    if (shoppingPortalId !== undefined) data.shoppingPortalId = shoppingPortalId || null;
     if (minSpend !== undefined) data.minSpend = minSpend != null ? Number(minSpend) : null;
     if (startDate !== undefined) data.startDate = startDate ? new Date(startDate) : null;
     if (endDate !== undefined) data.endDate = endDate ? new Date(endDate) : null;
@@ -108,9 +107,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const promotion = await prisma.$transaction(async (tx) => {
       if (replacingBenefitsOrTiers) {
         // Delete flat benefits (those directly on the promotion)
-        await tx.promotionBenefit.deleteMany({ where: { promotionId: Number(id) } });
+        await tx.promotionBenefit.deleteMany({ where: { promotionId: id } });
         // Delete all tiers (cascade will remove tier benefits)
-        await tx.promotionTier.deleteMany({ where: { promotionId: Number(id) } });
+        await tx.promotionTier.deleteMany({ where: { promotionId: id } });
       }
 
       if (tiers !== undefined && Array.isArray(tiers) && tiers.length > 0) {
@@ -147,11 +146,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
       // Replace exclusions if provided
       if (exclusionSubBrandIds !== undefined) {
-        await tx.promotionExclusion.deleteMany({ where: { promotionId: Number(id) } });
+        await tx.promotionExclusion.deleteMany({ where: { promotionId: id } });
         if (exclusionSubBrandIds.length > 0) {
           await tx.promotionExclusion.createMany({
             data: exclusionSubBrandIds.map((subBrandId) => ({
-              promotionId: Number(id),
+              promotionId: id,
               hotelChainSubBrandId: subBrandId,
             })),
           });
@@ -160,12 +159,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
       // Replace tie-in cards if provided
       if (tieInCreditCardIds !== undefined) {
-        await tx.promotionTieInCard.deleteMany({ where: { promotionId: Number(id) } });
+        await tx.promotionTieInCard.deleteMany({ where: { promotionId: id } });
         if (tieInCreditCardIds.length > 0) {
           await tx.promotionTieInCard.createMany({
             data: tieInCreditCardIds.map((cardId) => ({
-              promotionId: Number(id),
-              creditCardId: Number(cardId),
+              promotionId: id,
+              creditCardId: cardId,
             })),
           });
         }
@@ -175,17 +174,17 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       if (registrationDate !== undefined) {
         if (registrationDate) {
           await tx.userPromotion.upsert({
-            where: { promotionId: Number(id) },
+            where: { promotionId: id },
             update: { registrationDate: new Date(registrationDate) },
-            create: { promotionId: Number(id), registrationDate: new Date(registrationDate) },
+            create: { promotionId: id, registrationDate: new Date(registrationDate) },
           });
         } else {
-          await tx.userPromotion.deleteMany({ where: { promotionId: Number(id) } });
+          await tx.userPromotion.deleteMany({ where: { promotionId: id } });
         }
       }
 
       return tx.promotion.update({
-        where: { id: Number(id) },
+        where: { id: id },
         data,
         include: PROMOTION_INCLUDE,
       });
@@ -205,15 +204,14 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const promotionId = Number(id);
 
     // Find bookings that currently have this promotion applied
     const affectedBookings = await prisma.booking.findMany({
-      where: { bookingPromotions: { some: { promotionId } } },
+      where: { bookingPromotions: { some: { promotionId: id } } },
       select: { id: true },
     });
 
-    await prisma.promotion.delete({ where: { id: promotionId } });
+    await prisma.promotion.delete({ where: { id: id } });
 
     // Re-evaluate affected bookings after deletion.
     // Note: While Prisma cascade deletes will remove BookingPromotion records,

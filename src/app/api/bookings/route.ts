@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { matchPromotionsForBooking } from "@/lib/promotion-matching";
 import { apiError } from "@/lib/api-error";
 import { calculatePoints } from "@/lib/loyalty-utils";
+import { CertType, BenefitType } from "@prisma/client";
 
 export async function GET() {
   try {
@@ -67,14 +68,14 @@ export async function POST(request: NextRequest) {
     if (calculatedPoints == null && hotelChainId && pretaxCost) {
       // Fetch UserStatus for this chain
       const userStatus = await prisma.userStatus.findUnique({
-        where: { hotelChainId: Number(hotelChainId) },
+        where: { hotelChainId: hotelChainId },
         include: { eliteStatus: true },
       });
 
       let basePointRate: number | null = null;
       if (hotelChainSubBrandId) {
         const subBrand = await prisma.hotelChainSubBrand.findUnique({
-          where: { id: Number(hotelChainSubBrandId) },
+          where: { id: hotelChainSubBrandId },
         });
         if (subBrand?.basePointRate != null) {
           basePointRate = Number(subBrand.basePointRate);
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest) {
       }
       if (basePointRate == null) {
         const hotelChain = await prisma.hotelChain.findUnique({
-          where: { id: Number(hotelChainId) },
+          where: { id: hotelChainId },
         });
         if (hotelChain?.basePointRate != null) {
           basePointRate = Number(hotelChain.basePointRate);
@@ -104,8 +105,8 @@ export async function POST(request: NextRequest) {
 
     const booking = await prisma.booking.create({
       data: {
-        hotelChainId: Number(hotelChainId),
-        hotelChainSubBrandId: hotelChainSubBrandId ? Number(hotelChainSubBrandId) : null,
+        hotelChainId: hotelChainId,
+        hotelChainSubBrandId: hotelChainSubBrandId || null,
         propertyName,
         checkIn: new Date(checkIn),
         checkOut: new Date(checkOut),
@@ -113,8 +114,8 @@ export async function POST(request: NextRequest) {
         pretaxCost: Number(pretaxCost),
         taxAmount: Number(taxAmount),
         totalCost: Number(totalCost),
-        creditCardId: creditCardId ? Number(creditCardId) : null,
-        shoppingPortalId: shoppingPortalId ? Number(shoppingPortalId) : null,
+        creditCardId: creditCardId || null,
+        shoppingPortalId: shoppingPortalId || null,
         portalCashbackRate: portalCashbackRate ? Number(portalCashbackRate) : null,
         portalCashbackOnTotal: portalCashbackOnTotal ?? false,
         loyaltyPointsEarned: calculatedPoints,
@@ -123,11 +124,11 @@ export async function POST(request: NextRequest) {
         originalAmount: originalAmount ? Number(originalAmount) : null,
         notes: notes || null,
         bookingSource: bookingSource || null,
-        otaAgencyId: bookingSource === "ota" && otaAgencyId ? Number(otaAgencyId) : null,
+        otaAgencyId: bookingSource === "ota" && otaAgencyId ? otaAgencyId : null,
         certificates: certificates?.length
           ? {
               create: (certificates as string[]).map((v) => ({
-                certType: v as import("@prisma/client").CertType,
+                certType: v as CertType,
               })),
             }
           : undefined,
@@ -136,7 +137,7 @@ export async function POST(request: NextRequest) {
               create: (benefits as { benefitType: string; label?: string; dollarValue?: number }[])
                 .filter((b) => b.benefitType)
                 .map((b) => ({
-                  benefitType: b.benefitType as import("@prisma/client").BenefitType,
+                  benefitType: b.benefitType as BenefitType,
                   label: b.label || null,
                   dollarValue: b.dollarValue != null ? Number(b.dollarValue) : null,
                 })),

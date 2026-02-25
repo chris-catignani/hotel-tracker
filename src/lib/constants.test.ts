@@ -3,10 +3,11 @@ import { HOTEL_ID, CURRENCIES, PAYMENT_TYPES } from "./constants";
 
 describe("constants", () => {
   it("should have correct HOTEL_ID values", () => {
-    expect(HOTEL_ID.HILTON).toBe(1);
-    expect(HOTEL_ID.MARRIOTT).toBe(2);
-    expect(HOTEL_ID.HYATT).toBe(3);
-    expect(HOTEL_ID.IHG).toBe(4);
+    expect(typeof HOTEL_ID.HILTON).toBe("string");
+    expect(HOTEL_ID.HILTON).toBe("c1v12til5p1ebxu77368umx5z");
+    expect(HOTEL_ID.MARRIOTT).toBe("c9uc76fdp3v95dccffxsa3h31");
+    expect(HOTEL_ID.HYATT).toBe("cxjdwg32a8xf7by36md0mdvuu");
+    expect(HOTEL_ID.IHG).toBe("co5ll49okbgq0fbceti8p0dpd");
   });
 
   it("should have all expected currencies", () => {

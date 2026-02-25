@@ -24,21 +24,21 @@ interface PromotionBenefit {
 }
 
 interface Promotion {
-  id: number;
+  id: string;
   name: string;
   type: "credit_card" | "portal" | "loyalty";
   benefits: PromotionBenefit[];
-  hotelChainId: number | null;
-  creditCardId: number | null;
-  shoppingPortalId: number | null;
+  hotelChainId: string | null;
+  creditCardId: string | null;
+  shoppingPortalId: string | null;
   minSpend: string | null;
   startDate: string | null;
   endDate: string | null;
   isActive: boolean;
   createdAt: string;
-  hotelChain: { id: number; name: string } | null;
-  creditCard: { id: number; name: string } | null;
-  shoppingPortal: { id: number; name: string } | null;
+  hotelChain: { id: string; name: string } | null;
+  creditCard: { id: string; name: string } | null;
+  shoppingPortal: { id: string; name: string } | null;
 }
 
 function formatBenefit(benefit: PromotionBenefit): string {
@@ -140,7 +140,7 @@ export default function PromotionsPage() {
     fetchPromotions();
   }, []);
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this promotion?")) return;
     try {
       const res = await fetch(`/api/promotions/${id}`, { method: "DELETE" });

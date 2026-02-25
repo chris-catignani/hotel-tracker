@@ -12,9 +12,9 @@ export type PromotionUsage = {
   totalValue: number;
   totalBonusPoints: number;
   eligibleStayCount?: number;
-  appliedSubBrandIds?: Set<number | null>;
+  appliedSubBrandIds?: Set<string | null>;
 };
-export type PromotionUsageMap = Map<number, PromotionUsage>;
+export type PromotionUsageMap = Map<string, PromotionUsage>;
 
 const BOOKING_INCLUDE = {
   hotelChain: { include: { pointType: true } },
@@ -24,7 +24,7 @@ const BOOKING_INCLUDE = {
 } as const;
 
 type MatchingBenefit = {
-  id: number;
+  id: string;
   rewardType: PromotionRewardType;
   valueType: PromotionBenefitValueType;
   value: Prisma.Decimal;
@@ -46,10 +46,10 @@ const PROMOTIONS_INCLUDE = {
 } as const;
 
 export interface MatchingBooking {
-  creditCardId: number | null;
-  shoppingPortalId: number | null;
-  hotelChainId: number | null;
-  hotelChainSubBrandId: number | null;
+  creditCardId: string | null;
+  shoppingPortalId: string | null;
+  hotelChainId: string | null;
+  hotelChainSubBrandId: string | null;
   checkIn: Date | string;
   createdAt: Date | string;
   numNights: number;
@@ -70,12 +70,12 @@ export interface MatchingBooking {
 }
 
 interface MatchingPromotion {
-  id: number;
+  id: string;
   type: PromotionType;
-  creditCardId: number | null;
-  shoppingPortalId: number | null;
-  hotelChainId: number | null;
-  hotelChainSubBrandId: number | null;
+  creditCardId: string | null;
+  shoppingPortalId: string | null;
+  hotelChainId: string | null;
+  hotelChainSubBrandId: string | null;
   startDate: Date | null;
   endDate: Date | null;
   minSpend: Prisma.Decimal | null;
@@ -91,20 +91,20 @@ interface MatchingPromotion {
   registrationDeadline: Date | null;
   validDaysAfterRegistration: number | null;
   registrationDate?: Date | null;
-  tieInCards: { creditCardId: number }[];
+  tieInCards: { creditCardId: string }[];
   tieInRequiresPayment: boolean;
   benefits: MatchingBenefit[];
-  tiers: { id: number; minStays: number; maxStays: number | null; benefits: MatchingBenefit[] }[];
-  exclusions: { hotelChainSubBrandId: number }[];
+  tiers: { id: string; minStays: number; maxStays: number | null; benefits: MatchingBenefit[] }[];
+  exclusions: { hotelChainSubBrandId: string }[];
 }
 
 interface BenefitApplication {
-  promotionBenefitId: number;
+  promotionBenefitId: string;
   appliedValue: number;
 }
 
 interface MatchedPromotion {
-  promotionId: number;
+  promotionId: string;
   appliedValue: number;
   bonusPointsApplied: number;
   benefitApplications: BenefitApplication[];
@@ -344,7 +344,7 @@ export function calculateMatchedPromotions(
  * Persists matched promotions to a booking, replacing existing auto-applied ones.
  */
 async function applyMatchedPromotions(
-  bookingId: number,
+  bookingId: string,
   matched: MatchedPromotion[]
 ): Promise<BookingPromotion[]> {
   // Delete existing auto-applied BookingPromotions for this booking
@@ -385,7 +385,7 @@ async function applyMatchedPromotions(
 async function fetchPromotionUsage(
   promotions: MatchingPromotion[],
   booking: MatchingBooking,
-  excludeBookingId?: number
+  excludeBookingId?: string
 ): Promise<PromotionUsageMap> {
   const usageMap: PromotionUsageMap = new Map();
 
@@ -453,7 +453,7 @@ async function fetchPromotionUsage(
       },
     });
 
-    const subBrandsByPromo = new Map<number, Set<number | null>>();
+    const subBrandsByPromo = new Map<string, Set<string | null>>();
     for (const promo of oncePerSubBrandPromos) {
       subBrandsByPromo.set(promo.id, new Set());
     }
@@ -474,7 +474,7 @@ async function fetchPromotionUsage(
  * Re-evaluates and applies promotions for a list of booking IDs sequentially.
  * Processes bookings one at a time to ensure accurate redemption constraint checks.
  */
-export async function reevaluateBookings(bookingIds: number[]): Promise<void> {
+export async function reevaluateBookings(bookingIds: string[]): Promise<void> {
   if (bookingIds.length === 0) return;
 
   const activePromotions = (
@@ -515,7 +515,7 @@ export async function reevaluateBookings(bookingIds: number[]): Promise<void> {
 /**
  * Re-evaluates and applies promotions for a single booking.
  */
-export async function matchPromotionsForBooking(bookingId: number): Promise<BookingPromotion[]> {
+export async function matchPromotionsForBooking(bookingId: string): Promise<BookingPromotion[]> {
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
     include: BOOKING_INCLUDE,
@@ -557,7 +557,7 @@ export async function matchPromotionsForBooking(bookingId: number): Promise<Book
  * Re-evaluates and applies promotions for all bookings potentially affected by a promotion change.
  * Minimizes database calls by fetching active promotions once and processing bookings in parallel.
  */
-export async function matchPromotionsForAffectedBookings(promotionId: number): Promise<void> {
+export async function matchPromotionsForAffectedBookings(promotionId: string): Promise<void> {
   const promotion = await prisma.promotion.findUnique({
     where: { id: promotionId },
   });

@@ -49,7 +49,7 @@ test.describe("Promotion exclusions", () => {
     const detailRes = await request.get(`/api/bookings/${booking.id}`);
     const detail = await detailRes.json();
     const applied = (detail.bookingPromotions ?? []).find(
-      (bp: { promotionId: number }) => bp.promotionId === promo.id
+      (bp: { promotionId: string }) => bp.promotionId === promo.id
     );
     expect(applied).toBeUndefined();
 
@@ -107,7 +107,7 @@ test.describe("Promotion exclusions", () => {
     const detailRes = await request.get(`/api/bookings/${booking.id}`);
     const detail = await detailRes.json();
     const applied = (detail.bookingPromotions ?? []).find(
-      (bp: { promotionId: number }) => bp.promotionId === promo.id
+      (bp: { promotionId: string }) => bp.promotionId === promo.id
     );
     expect(applied).toBeDefined();
     expect(Number(applied.appliedValue)).toBe(50);
@@ -165,7 +165,7 @@ test.describe("Promotion exclusions", () => {
     const detailBeforeRes = await request.get(`/api/bookings/${booking.id}`);
     const detailBefore = await detailBeforeRes.json();
     const appliedBefore = (detailBefore.bookingPromotions ?? []).find(
-      (bp: { promotionId: number }) => bp.promotionId === promo.id
+      (bp: { promotionId: string }) => bp.promotionId === promo.id
     );
     expect(appliedBefore).toBeUndefined();
 
@@ -181,7 +181,7 @@ test.describe("Promotion exclusions", () => {
     const detailAfterRes = await request.get(`/api/bookings/${booking.id}`);
     const detailAfter = await detailAfterRes.json();
     const appliedAfter = (detailAfter.bookingPromotions ?? []).find(
-      (bp: { promotionId: number }) => bp.promotionId === promo.id
+      (bp: { promotionId: string }) => bp.promotionId === promo.id
     );
     expect(appliedAfter).toBeDefined();
     expect(Number(appliedAfter.appliedValue)).toBe(50);

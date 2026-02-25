@@ -35,9 +35,9 @@ interface BookingPromotionBenefit {
 }
 
 interface BookingPromotion {
-  id: number;
-  bookingId: number;
-  promotionId: number;
+  id: string;
+  bookingId: string;
+  promotionId: string;
   appliedValue: string | number;
   autoApplied: boolean;
   verified: boolean;
@@ -55,12 +55,12 @@ interface BookingPromotion {
 }
 
 interface BookingCertificate {
-  id: number;
+  id: string;
   certType: string;
 }
 
 interface BookingBenefit {
-  id: number;
+  id: string;
   benefitType: string;
   label: string | null;
   dollarValue: string | number | null;
@@ -68,21 +68,21 @@ interface BookingBenefit {
 
 // Ensure Booking interface matches NetCostBooking for the breakdown logic
 interface Booking extends Omit<NetCostBooking, "bookingPromotions"> {
-  id: number;
-  hotelChainId: number;
-  hotelChainSubBrand: { id: number; name: string } | null;
+  id: string;
+  hotelChainId: string;
+  hotelChainSubBrand: { id: string; name: string } | null;
   propertyName: string;
   checkIn: string;
   checkOut: string;
   numNights: number;
   currency: string;
   originalAmount: string | number | null;
-  creditCardId: number | null;
-  shoppingPortalId: number | null;
+  creditCardId: string | null;
+  shoppingPortalId: string | null;
   notes: string | null;
   createdAt: string;
   bookingSource: string | null;
-  otaAgency: { id: number; name: string } | null;
+  otaAgency: { id: string; name: string } | null;
   certificates: BookingCertificate[];
   benefits: BookingBenefit[];
   bookingPromotions: BookingPromotion[];
@@ -134,7 +134,7 @@ function formatBenefitType(type: string): string {
 function getBookingTypeBadge(booking: {
   totalCost: string | number;
   pointsRedeemed: number | null;
-  certificates: { id: number }[];
+  certificates: { id: string }[];
 }): string | null {
   const hasCash = Number(booking.totalCost) > 0;
   const hasPoints = !!booking.pointsRedeemed;

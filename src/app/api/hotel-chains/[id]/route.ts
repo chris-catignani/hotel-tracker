@@ -3,6 +3,25 @@ import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { recalculateLoyaltyForHotelChain } from "@/lib/loyalty-recalculation";
 
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    const hotelChain = await prisma.hotelChain.findUnique({
+      where: { id: id },
+      include: {
+        pointType: true,
+        hotelChainSubBrands: true,
+        eliteStatuses: true,
+        userStatus: { include: { eliteStatus: true } },
+      },
+    });
+    if (!hotelChain) return apiError("Hotel chain not found", null, 404);
+    return NextResponse.json(hotelChain);
+  } catch (error) {
+    return apiError("Failed to fetch hotel chain", error);
+  }
+}
+
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
@@ -11,7 +30,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     // Check if basePointRate is changing to avoid unnecessary recalculations
     const existing = await prisma.hotelChain.findUnique({
-      where: { id: Number(id) },
+      where: { id: id },
       select: { basePointRate: true },
     });
 
@@ -20,10 +39,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (loyaltyProgram !== undefined) data.loyaltyProgram = loyaltyProgram || null;
     if (basePointRate !== undefined)
       data.basePointRate = basePointRate != null ? Number(basePointRate) : null;
-    if (pointTypeId !== undefined) data.pointTypeId = pointTypeId ? Number(pointTypeId) : null;
+    if (pointTypeId !== undefined) data.pointTypeId = pointTypeId || null;
 
     const hotelChain = await prisma.hotelChain.update({
-      where: { id: Number(id) },
+      where: { id: id },
       data,
       include: {
         pointType: true,
@@ -34,7 +53,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     // Recalculate loyalty points if the base rate changed
     if (basePointRate !== undefined && Number(existing?.basePointRate) !== Number(basePointRate)) {
-      await recalculateLoyaltyForHotelChain(hotelChain.id);
+      await recalculateLoyaltyForHotelChain(id);
     }
 
     return NextResponse.json(hotelChain);
@@ -49,11 +68,10 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const hotelChainId = Number(id);
 
     // Check for existing bookings
     const bookingCount = await prisma.booking.count({
-      where: { hotelChainId },
+      where: { hotelChainId: id },
     });
 
     if (bookingCount > 0) {
@@ -65,7 +83,7 @@ export async function DELETE(
 
     // Check for existing sub-brands
     const subBrandCount = await prisma.hotelChainSubBrand.count({
-      where: { hotelChainId },
+      where: { hotelChainId: id },
     });
 
     if (subBrandCount > 0) {
@@ -76,10 +94,10 @@ export async function DELETE(
     }
 
     await prisma.hotelChain.delete({
-      where: { id: hotelChainId },
+      where: { id: id },
     });
 
-    return NextResponse.json({ message: "Hotel chain deleted" });
+    return new NextResponse(null, { status: 204 });
   } catch (error) {
     return apiError("Failed to delete hotel chain", error);
   }

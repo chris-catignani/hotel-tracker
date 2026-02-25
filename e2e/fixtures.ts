@@ -1,10 +1,10 @@
 import { test as base } from "@playwright/test";
 
 type TestFixtures = {
-  testBooking: { id: number; propertyName: string; hotelChainName: string };
-  testPromotion: { id: number; name: string };
-  testHotelChain: { id: number; name: string };
-  testSubBrand: (name?: string) => Promise<{ id: number; name: string; hotelChainId: number }>;
+  testBooking: { id: string; propertyName: string; hotelChainName: string };
+  testPromotion: { id: string; name: string };
+  testHotelChain: { id: string; name: string };
+  testSubBrand: (name?: string) => Promise<{ id: string; name: string; hotelChainId: string }>;
 };
 
 export const test = base.extend<TestFixtures>({
@@ -19,7 +19,7 @@ export const test = base.extend<TestFixtures>({
   },
 
   testSubBrand: async ({ request, testHotelChain }, use) => {
-    const subBrands: number[] = [];
+    const subBrands: string[] = [];
     const createSubBrand = async (name?: string) => {
       const uniqueName = name || `Test SubBrand ${crypto.randomUUID()}`;
       const res = await request.post(
@@ -30,7 +30,7 @@ export const test = base.extend<TestFixtures>({
       );
       const subBrand = await res.json();
       subBrands.push(subBrand.id);
-      return subBrand as { id: number; name: string; hotelChainId: number };
+      return subBrand as { id: string; name: string; hotelChainId: string };
     };
 
     await use(createSubBrand);

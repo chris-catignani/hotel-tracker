@@ -67,7 +67,7 @@ export function ShoppingPortalsTab() {
       body: JSON.stringify({
         name,
         rewardType,
-        pointTypeId: rewardType === "points" && pointTypeId !== "none" ? Number(pointTypeId) : null,
+        pointTypeId: rewardType === "points" && pointTypeId !== "none" ? pointTypeId : null,
       }),
     });
     if (res.ok) {
@@ -85,7 +85,7 @@ export function ShoppingPortalsTab() {
     setEditPortal(portal);
     setEditName(portal.name);
     setEditRewardType(portal.rewardType);
-    setEditPointTypeId(portal.pointTypeId != null ? String(portal.pointTypeId) : "none");
+    setEditPointTypeId(portal.pointTypeId != null ? portal.pointTypeId : "none");
     setEditOpen(true);
   };
 
@@ -99,9 +99,7 @@ export function ShoppingPortalsTab() {
         name: editName,
         rewardType: editRewardType,
         pointTypeId:
-          editRewardType === "points" && editPointTypeId !== "none"
-            ? Number(editPointTypeId)
-            : null,
+          editRewardType === "points" && editPointTypeId !== "none" ? editPointTypeId : null,
       }),
     });
     if (res.ok) {
@@ -162,7 +160,7 @@ export function ShoppingPortalsTab() {
                       { label: "None", value: "none" },
                       ...pointTypes.map((pt) => ({
                         label: pt.name,
-                        value: String(pt.id),
+                        value: pt.id,
                       })),
                     ]}
                     placeholder="Select point type..."
@@ -220,7 +218,7 @@ export function ShoppingPortalsTab() {
                     { label: "None", value: "none" },
                     ...pointTypes.map((pt) => ({
                       label: pt.name,
-                      value: String(pt.id),
+                      value: pt.id,
                     })),
                   ]}
                   placeholder="Select point type..."

@@ -12,10 +12,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (name !== undefined) data.name = name;
     if (rewardType !== undefined) data.rewardType = rewardType;
     if (rewardRate !== undefined) data.rewardRate = Number(rewardRate);
-    if (pointTypeId !== undefined) data.pointTypeId = pointTypeId ? Number(pointTypeId) : null;
+    if (pointTypeId !== undefined) data.pointTypeId = pointTypeId || null;
 
     const creditCard = await prisma.creditCard.update({
-      where: { id: Number(id) },
+      where: { id: id },
       data,
       include: { pointType: true },
     });
@@ -33,7 +33,7 @@ export async function DELETE(
   try {
     const { id } = await params;
     await prisma.creditCard.update({
-      where: { id: Number(id) },
+      where: { id: id },
       data: { isDeleted: true },
     });
     return new NextResponse(null, { status: 204 });

@@ -8,12 +8,12 @@ import { AlertTriangle, PieChart as PieChartIcon } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 
 interface BookingCertificate {
-  id: number;
+  id: string;
   certType: string;
 }
 
 interface Booking {
-  id: number;
+  id: string;
   numNights: number;
   totalCost: string | number;
   pointsRedeemed: number | null;
