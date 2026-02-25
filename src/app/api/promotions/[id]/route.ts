@@ -98,7 +98,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     const promotion = await prisma.$transaction(async (tx) => {
       if (replacingBenefitsOrTiers) {
+        // Delete flat benefits (those directly on the promotion)
         await tx.promotionBenefit.deleteMany({ where: { promotionId: Number(id) } });
+        // Delete all tiers (cascade will remove tier benefits)
         await tx.promotionTier.deleteMany({ where: { promotionId: Number(id) } });
       }
 
@@ -183,6 +185,7 @@ export async function DELETE(
     const { id } = await params;
     const promotionId = Number(id);
 
+    // Find bookings that currently have this promotion applied
     const affectedBookings = await prisma.booking.findMany({
       where: { bookingPromotions: { some: { promotionId } } },
       select: { id: true },
@@ -190,6 +193,10 @@ export async function DELETE(
 
     await prisma.promotion.delete({ where: { id: promotionId } });
 
+    // Re-evaluate affected bookings after deletion.
+    // Note: While Prisma cascade deletes will remove BookingPromotion records,
+    // we manually re-evaluate to ensure the bookings are correctly updated
+    // (e.g., if other promotions now apply or if summary totals need refresh).
     if (affectedBookings.length > 0) {
       await reevaluateBookings(affectedBookings.map((b) => b.id));
     }
