@@ -819,4 +819,112 @@ describe("promotion-matching", () => {
       matchedPay[0].benefitApplications.length
     );
   });
+
+  // Registration-based start dates tests
+  describe("registration-based start dates", () => {
+    it("should match if within personal validity window (registrationDate + validDaysAfterRegistration)", () => {
+      const promo = makePromo({
+        registrationDate: new Date("2026-05-20"),
+        validDaysAfterRegistration: 30, // valid until 2026-06-19
+      });
+      // mockBooking.checkIn is 2026-06-01 (within window)
+      const matched = calculateMatchedPromotions(mockBooking, [promo]);
+      expect(matched).toHaveLength(1);
+    });
+
+    it("should skip if before registration date", () => {
+      const promo = makePromo({
+        registrationDate: new Date("2026-06-10"),
+        validDaysAfterRegistration: 30,
+      });
+      // mockBooking.checkIn is 2026-06-01 (before registration)
+      const matched = calculateMatchedPromotions(mockBooking, [promo]);
+      expect(matched).toHaveLength(0);
+    });
+
+    it("should skip if after personal validity window", () => {
+      const promo = makePromo({
+        registrationDate: new Date("2026-04-01"),
+        validDaysAfterRegistration: 30, // valid until 2026-05-01
+      });
+      // mockBooking.checkIn is 2026-06-01 (after window)
+      const matched = calculateMatchedPromotions(mockBooking, [promo]);
+      expect(matched).toHaveLength(0);
+    });
+
+    it("should fallback to global endDate if validDaysAfterRegistration is missing", () => {
+      const promo = makePromo({
+        registrationDate: new Date("2026-05-01"),
+        validDaysAfterRegistration: null,
+        endDate: new Date("2026-07-01"),
+      });
+      // mockBooking.checkIn is 2026-06-01 (within global window)
+      const matched = calculateMatchedPromotions(mockBooking, [promo]);
+      expect(matched).toHaveLength(1);
+    });
+
+    it("should fallback to global endDate if registrationDate is missing", () => {
+      const promo = makePromo({
+        registrationDate: null,
+        validDaysAfterRegistration: 30,
+        endDate: new Date("2026-07-01"),
+      });
+      // mockBooking.checkIn is 2026-06-01 (within global window)
+      const matched = calculateMatchedPromotions(mockBooking, [promo]);
+      expect(matched).toHaveLength(1);
+    });
+
+    it("should match if personal window extends beyond global endDate", () => {
+      const promo = makePromo({
+        endDate: new Date("2026-05-31"), // global period ends
+        registrationDate: new Date("2026-05-20"),
+        validDaysAfterRegistration: 30, // valid until 2026-06-19
+      });
+      // mockBooking.checkIn is 2026-06-01 (past global end, but within personal window)
+      const matched = calculateMatchedPromotions(mockBooking, [promo]);
+      expect(matched).toHaveLength(1);
+    });
+
+    it("should ignore global startDate once user is registered", () => {
+      const promo = makePromo({
+        startDate: new Date("2026-06-15"), // global period hasn't started
+        registrationDate: new Date("2026-05-20"),
+        validDaysAfterRegistration: 90,
+      });
+      // mockBooking.checkIn is 2026-06-01 (before global start, but after registration)
+      const matched = calculateMatchedPromotions(mockBooking, [promo]);
+      expect(matched).toHaveLength(1);
+    });
+
+    it("should skip if registration date is after registration deadline", () => {
+      const promo = makePromo({
+        registrationDate: new Date("2026-06-01"),
+        registrationDeadline: new Date("2026-05-15"),
+        validDaysAfterRegistration: 30,
+      });
+      const matched = calculateMatchedPromotions(mockBooking, [promo]);
+      expect(matched).toHaveLength(0);
+    });
+
+    it("should respect global startDate if user is NOT registered", () => {
+      const promo = makePromo({
+        startDate: new Date("2026-06-15"),
+        registrationDate: null,
+      });
+      // mockBooking.checkIn is 2026-06-01 (before global start)
+      const matched = calculateMatchedPromotions(mockBooking, [promo]);
+      expect(matched).toHaveLength(0);
+    });
+
+    it("should match stays on/after registration if no duration or global endDate is set", () => {
+      const promo = makePromo({
+        registrationDate: new Date("2026-05-01"),
+        validDaysAfterRegistration: null,
+        endDate: null,
+      });
+      // mockBooking.checkIn is 2026-06-01 (after registration)
+      const matched = calculateMatchedPromotions(mockBooking, [promo]);
+      expect(matched).toHaveLength(1);
+    });
+  });
 });

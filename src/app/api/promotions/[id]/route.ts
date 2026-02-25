@@ -16,6 +16,7 @@ const PROMOTION_INCLUDE = {
     include: { benefits: { orderBy: { sortOrder: "asc" as const } } },
   },
   exclusions: true,
+  userPromotions: true,
 } as const;
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -64,6 +65,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       exclusionSubBrandIds,
       tieInCreditCardIds,
       tieInRequiresPayment,
+      registrationDeadline,
+      validDaysAfterRegistration,
+      registrationDate,
     } = body as PromotionFormData & { exclusionSubBrandIds?: number[] };
 
     const data: Record<string, unknown> = {};
@@ -92,6 +96,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (bookByDate !== undefined) data.bookByDate = bookByDate ? new Date(bookByDate) : null;
     if (oncePerSubBrand !== undefined) data.oncePerSubBrand = oncePerSubBrand;
     if (tieInRequiresPayment !== undefined) data.tieInRequiresPayment = tieInRequiresPayment;
+    if (registrationDeadline !== undefined)
+      data.registrationDeadline = registrationDeadline ? new Date(registrationDeadline) : null;
+    if (validDaysAfterRegistration !== undefined)
+      data.validDaysAfterRegistration =
+        validDaysAfterRegistration != null ? Number(validDaysAfterRegistration) : null;
 
     const hasTiers = benefits === undefined ? tiers !== undefined : false;
     const replacingBenefitsOrTiers = benefits !== undefined || tiers !== undefined;
@@ -159,6 +168,19 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
               creditCardId: Number(cardId),
             })),
           });
+        }
+      }
+
+      // Handle UserPromotion
+      if (registrationDate !== undefined) {
+        if (registrationDate) {
+          await tx.userPromotion.upsert({
+            where: { promotionId: Number(id) },
+            update: { registrationDate: new Date(registrationDate) },
+            create: { promotionId: Number(id), registrationDate: new Date(registrationDate) },
+          });
+        } else {
+          await tx.userPromotion.deleteMany({ where: { promotionId: Number(id) } });
         }
       }
 

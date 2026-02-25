@@ -86,6 +86,9 @@ export default function EditPromotionPage() {
           nightsStackable: promo.nightsStackable,
           bookByDate: toDateInputValue(promo.bookByDate),
           oncePerSubBrand: promo.oncePerSubBrand,
+          registrationDeadline: toDateInputValue(promo.registrationDeadline),
+          validDaysAfterRegistration: promo.validDaysAfterRegistration,
+          registrationDate: toDateInputValue(promo.userPromotions?.[0]?.registrationDate || null),
           exclusions: promo.exclusions,
         });
         setLoading(false);

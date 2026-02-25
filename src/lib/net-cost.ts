@@ -121,6 +121,8 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
   // - minNightsRequired: promotion only applies to stays of minimum length
   // - nightsStackable: benefit is multiplied by number of qualifying stay nights
   // - bookByDate: booking must be created before cutoff date
+  // - registrationDeadline: user must have registered by this date
+  // - validDaysAfterRegistration: personal validity window starting from the registration date
   // The final appliedValue shown below is the result after all constraints are applied.
 
   // 1. Promotions

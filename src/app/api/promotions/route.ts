@@ -17,6 +17,7 @@ const PROMOTION_INCLUDE = {
     include: { benefits: { orderBy: { sortOrder: "asc" as const } } },
   },
   exclusions: true,
+  userPromotions: true,
 } as const;
 
 export async function GET(request: NextRequest) {
@@ -67,6 +68,9 @@ export async function POST(request: NextRequest) {
       exclusionSubBrandIds,
       tieInCreditCardIds,
       tieInRequiresPayment,
+      registrationDeadline,
+      validDaysAfterRegistration,
+      registrationDate,
     } = body as PromotionFormData & { exclusionSubBrandIds?: number[] };
 
     const hasTiers = Array.isArray(tiers) && tiers.length > 0;
@@ -93,6 +97,9 @@ export async function POST(request: NextRequest) {
           bookByDate: bookByDate ? new Date(bookByDate) : null,
           oncePerSubBrand: oncePerSubBrand ?? false,
           tieInRequiresPayment: tieInRequiresPayment ?? false,
+          registrationDeadline: registrationDeadline ? new Date(registrationDeadline) : null,
+          validDaysAfterRegistration:
+            validDaysAfterRegistration != null ? Number(validDaysAfterRegistration) : null,
           ...(hasTiers
             ? {
                 tiers: {
@@ -131,6 +138,15 @@ export async function POST(request: NextRequest) {
         },
         include: PROMOTION_INCLUDE,
       });
+
+      if (registrationDate) {
+        await tx.userPromotion.create({
+          data: {
+            promotionId: created.id,
+            registrationDate: new Date(registrationDate),
+          },
+        });
+      }
 
       if (Array.isArray(exclusionSubBrandIds) && exclusionSubBrandIds.length > 0) {
         await tx.promotionExclusion.createMany({
