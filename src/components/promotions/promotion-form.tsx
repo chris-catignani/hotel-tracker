@@ -301,6 +301,13 @@ export function PromotionForm({
   const [nightsStackable, setNightsStackable] = useState(initialData?.nightsStackable ?? false);
   const [bookByDate, setBookByDate] = useState(initialData?.bookByDate || "");
   const [oncePerSubBrand, setOncePerSubBrand] = useState(initialData?.oncePerSubBrand ?? false);
+  const [registrationDeadline, setRegistrationDeadline] = useState(
+    initialData?.registrationDeadline || ""
+  );
+  const [validDaysAfterRegistration, setValidDaysAfterRegistration] = useState(
+    initialData?.validDaysAfterRegistration ? String(initialData.validDaysAfterRegistration) : ""
+  );
+  const [registrationDate, setRegistrationDate] = useState(initialData?.registrationDate || "");
   const [exclusionSubBrandIds, setExclusionSubBrandIds] = useState<number[]>(
     initialData?.exclusions?.map((e) => e.hotelChainSubBrandId) ?? []
   );
@@ -385,6 +392,16 @@ export function PromotionForm({
       if (initialData.bookByDate !== undefined) setBookByDate(initialData.bookByDate || "");
       if (initialData.oncePerSubBrand !== undefined)
         setOncePerSubBrand(initialData.oncePerSubBrand);
+      if (initialData.registrationDeadline !== undefined)
+        setRegistrationDeadline(initialData.registrationDeadline || "");
+      if (initialData.validDaysAfterRegistration !== undefined)
+        setValidDaysAfterRegistration(
+          initialData.validDaysAfterRegistration
+            ? String(initialData.validDaysAfterRegistration)
+            : ""
+        );
+      if (initialData.registrationDate !== undefined)
+        setRegistrationDate(initialData.registrationDate || "");
       if (initialData.exclusions !== undefined)
         setExclusionSubBrandIds(initialData.exclusions.map((e) => e.hotelChainSubBrandId));
       if (initialData.tieInCreditCardIds !== undefined)
@@ -535,6 +552,11 @@ export function PromotionForm({
     body.nightsStackable = nightsStackable;
     body.bookByDate = bookByDate || null;
     body.oncePerSubBrand = oncePerSubBrand;
+    body.registrationDeadline = registrationDeadline || null;
+    body.validDaysAfterRegistration = validDaysAfterRegistration
+      ? parseInt(validDaysAfterRegistration)
+      : null;
+    body.registrationDate = registrationDate || null;
     body.tieInCreditCardIds = tieInCreditCardIds;
     body.tieInRequiresPayment = tieInRequiresPayment;
 
@@ -544,6 +566,8 @@ export function PromotionForm({
   const startDateObj = startDate ? parseISO(startDate) : undefined;
   const endDateObj = endDate ? parseISO(endDate) : undefined;
   const bookByDateObj = bookByDate ? parseISO(bookByDate) : undefined;
+  const registrationDeadlineObj = registrationDeadline ? parseISO(registrationDeadline) : undefined;
+  const registrationDateObj = registrationDate ? parseISO(registrationDate) : undefined;
 
   const selectedChainSubBrands =
     hotelChains.find((h) => h.id === Number(hotelChainId))?.hotelChainSubBrands ?? [];
@@ -558,6 +582,14 @@ export function PromotionForm({
 
   const handleBookByDateChange = (date?: Date) => {
     setBookByDate(date ? format(date, "yyyy-MM-dd") : "");
+  };
+
+  const handleRegistrationDeadlineChange = (date?: Date) => {
+    setRegistrationDeadline(date ? format(date, "yyyy-MM-dd") : "");
+  };
+
+  const handleRegistrationDateChange = (date?: Date) => {
+    setRegistrationDate(date ? format(date, "yyyy-MM-dd") : "");
   };
 
   return (
@@ -1044,6 +1076,57 @@ export function PromotionForm({
                   Promotion can only apply once per hotel sub-brand within the promo period.
                 </p>
               </div>
+            </div>
+          </div>
+
+          {/* Registration & Validity */}
+          <div className="space-y-4 border-t pt-4">
+            <h3 className="text-sm font-medium">Registration & Validity</h3>
+            <p className="text-xs text-muted-foreground">
+              For promotions that require registration, specify the deadline and how long they stay
+              valid for.
+            </p>
+
+            <div className="space-y-2">
+              <Label htmlFor="registrationDeadline">Registration Deadline</Label>
+              <DatePicker
+                id="registrationDeadline"
+                date={registrationDeadlineObj}
+                setDate={handleRegistrationDeadlineChange}
+                placeholder="Last date to register"
+                data-testid="promotion-registration-deadline"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="validDaysAfterRegistration">Validity Duration (Days)</Label>
+              <Input
+                id="validDaysAfterRegistration"
+                type="number"
+                step="1"
+                value={validDaysAfterRegistration}
+                onChange={(e) => setValidDaysAfterRegistration(e.target.value)}
+                placeholder="Days valid from registration date"
+                data-testid="promotion-valid-days-after-registration"
+              />
+              <p className="text-[0.7rem] text-muted-foreground">
+                If set, matching logic will use Registration Date + Duration as the effective end
+                date.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="registrationDate">Your Registration Date</Label>
+              <DatePicker
+                id="registrationDate"
+                date={registrationDateObj}
+                setDate={handleRegistrationDateChange}
+                placeholder="When did you register?"
+                data-testid="promotion-registration-date"
+              />
+              <p className="text-[0.7rem] text-muted-foreground">
+                Recording your registration date activates the personal validity window.
+              </p>
             </div>
           </div>
 

@@ -143,6 +143,15 @@ export interface Promotion {
   nightsStackable: boolean;
   bookByDate: string | null;
   oncePerSubBrand: boolean;
+  registrationDeadline: string | null;
+  validDaysAfterRegistration: number | null;
+  userPromotions: UserPromotion[];
+}
+
+export interface UserPromotion {
+  id: number;
+  promotionId: number;
+  registrationDate: string;
 }
 
 export interface PromotionFormData {
@@ -169,6 +178,9 @@ export interface PromotionFormData {
   bookByDate?: string | null;
   oncePerSubBrand?: boolean;
   exclusionSubBrandIds?: number[];
+  registrationDeadline?: string | null;
+  validDaysAfterRegistration?: number | null;
+  registrationDate?: string | null; // For recording registration in the same form if needed
 }
 
 // ---------------------------------------------------------------------------

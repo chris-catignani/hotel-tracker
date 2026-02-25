@@ -42,6 +42,7 @@ const PROMOTIONS_INCLUDE = {
   },
   exclusions: true,
   tieInCards: true,
+  userPromotions: true,
 } as const;
 
 export interface MatchingBooking {
@@ -87,6 +88,9 @@ interface MatchingPromotion {
   nightsStackable: boolean;
   bookByDate: Date | null;
   oncePerSubBrand: boolean;
+  registrationDeadline: Date | null;
+  validDaysAfterRegistration: number | null;
+  registrationDate?: Date | null;
   tieInCards: { creditCardId: number }[];
   tieInRequiresPayment: boolean;
   benefits: MatchingBenefit[];
@@ -149,10 +153,28 @@ export function calculateMatchedPromotions(
       continue;
 
     // Date range check
-    if (promo.startDate || promo.endDate) {
-      const checkInDate = new Date(booking.checkIn);
-      if (promo.startDate && checkInDate < new Date(promo.startDate)) continue;
-      if (promo.endDate && checkInDate > new Date(promo.endDate)) continue;
+    const checkInDate = new Date(booking.checkIn);
+
+    // Global start date check
+    if (promo.startDate && checkInDate < new Date(promo.startDate)) continue;
+
+    // Registration deadline check: if user registered after deadline, promo is invalid
+    if (promo.registrationDate && promo.registrationDeadline) {
+      if (new Date(promo.registrationDate) > new Date(promo.registrationDeadline)) continue;
+    }
+
+    // Registration-based duration check
+    if (promo.registrationDate && promo.validDaysAfterRegistration) {
+      const regDate = new Date(promo.registrationDate);
+      const effectiveEndDate = new Date(regDate);
+      effectiveEndDate.setDate(regDate.getDate() + promo.validDaysAfterRegistration);
+
+      // Promotion is valid from registration date until duration expires
+      if (checkInDate < regDate) continue;
+      if (checkInDate > effectiveEndDate) continue;
+    } else if (promo.endDate) {
+      // Fallback to global end date if no registration-based duration is set
+      if (checkInDate > new Date(promo.endDate)) continue;
     }
 
     // Min spend check for credit_card types
@@ -453,10 +475,15 @@ async function fetchPromotionUsage(
 export async function reevaluateBookings(bookingIds: number[]): Promise<void> {
   if (bookingIds.length === 0) return;
 
-  const activePromotions = await prisma.promotion.findMany({
-    where: { isActive: true },
-    include: PROMOTIONS_INCLUDE,
-  });
+  const activePromotions = (
+    await prisma.promotion.findMany({
+      where: { isActive: true },
+      include: PROMOTIONS_INCLUDE,
+    })
+  ).map((p) => ({
+    ...p,
+    registrationDate: p.userPromotions[0]?.registrationDate ?? null,
+  }));
 
   const bookings = await prisma.booking.findMany({
     where: { id: { in: bookingIds } },
@@ -496,10 +523,15 @@ export async function matchPromotionsForBooking(bookingId: number): Promise<Book
     throw new Error(`Booking with id ${bookingId} not found`);
   }
 
-  const activePromotions = await prisma.promotion.findMany({
-    where: { isActive: true },
-    include: PROMOTIONS_INCLUDE,
-  });
+  const activePromotions = (
+    await prisma.promotion.findMany({
+      where: { isActive: true },
+      include: PROMOTIONS_INCLUDE,
+    })
+  ).map((p) => ({
+    ...p,
+    registrationDate: p.userPromotions[0]?.registrationDate ?? null,
+  }));
 
   // Get all promotions with constraints (including tier-based stay counting)
   const constrainedPromos = activePromotions.filter(

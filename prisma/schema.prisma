@@ -254,8 +254,21 @@ model Promotion {
   bookingPromotions    BookingPromotion[]
   exclusions           PromotionExclusion[]
   tieInCards           PromotionTieInCard[]
+  registrationDeadline DateTime?           @map("registration_deadline") @db.Date
+  validDaysAfterRegistration Int?          @map("valid_days_after_registration")
+  userPromotions       UserPromotion[]
 
   @@map("promotions")
+}
+
+model UserPromotion {
+  id               Int       @id @default(autoincrement())
+  promotionId      Int       @map("promotion_id")
+  registrationDate DateTime  @map("registration_date") @db.Date
+  promotion        Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+
+  @@unique([promotionId])
+  @@map("user_promotions")
 }
 
 model PromotionExclusion {
