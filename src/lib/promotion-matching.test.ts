@@ -34,6 +34,8 @@ function makePromo(overrides: Partial<TestPromotion> = {}): TestPromotion {
     shoppingPortalId: null,
     hotelChainId: null,
     hotelChainSubBrandId: null,
+    tieInCards: [],
+    tieInRequiresPayment: false,
     startDate: null,
     endDate: null,
     minSpend: null,
@@ -692,5 +694,129 @@ describe("promotion-matching", () => {
     const matched = calculateMatchedPromotions(bookingNoSubBrand, [promo]);
     expect(matched).toHaveLength(1);
     expect(matched[0].appliedValue).toBe(10);
+  });
+
+  // Tie-in credit card tests
+  const baseBenefit = {
+    id: 20,
+    rewardType: PromotionRewardType.cashback,
+    valueType: PromotionBenefitValueType.fixed,
+    value: new Prisma.Decimal(10),
+    certType: null,
+    pointsMultiplierBasis: null,
+    isTieIn: false,
+    sortOrder: 0,
+  };
+  const tieInBenefit = {
+    id: 21,
+    rewardType: PromotionRewardType.cashback,
+    valueType: PromotionBenefitValueType.fixed,
+    value: new Prisma.Decimal(15),
+    certType: null,
+    pointsMultiplierBasis: null,
+    isTieIn: true,
+    sortOrder: 1,
+  };
+
+  it("tie-in: card matches — all benefits (base + tie-in) apply", () => {
+    // mockBooking has creditCardId: 1; tie-in requires card 1
+    const promo = makePromo({
+      tieInCards: [{ creditCardId: 1 }],
+      benefits: [baseBenefit, tieInBenefit],
+    });
+    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    expect(matched).toHaveLength(1);
+    // $10 base + $15 tie-in = $25
+    expect(matched[0].appliedValue).toBe(25);
+    expect(matched[0].benefitApplications).toHaveLength(2);
+    expect(matched[0].benefitApplications[0].appliedValue).toBe(10);
+    expect(matched[0].benefitApplications[1].appliedValue).toBe(15);
+  });
+
+  it("tie-in: card absent — only base benefits apply; tie-in benefits are skipped", () => {
+    // mockBooking has creditCardId: 1; tie-in requires card 99
+    const promo = makePromo({
+      tieInCards: [{ creditCardId: 99 }],
+      benefits: [baseBenefit, tieInBenefit],
+    });
+    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    expect(matched).toHaveLength(1);
+    // Only $10 base benefit applies
+    expect(matched[0].appliedValue).toBe(10);
+    expect(matched[0].benefitApplications).toHaveLength(1);
+    expect(matched[0].benefitApplications[0].appliedValue).toBe(10);
+  });
+
+  it("tie-in: only tie-in benefits, card absent — promotion yields 0 and is skipped", () => {
+    // No base benefits; tie-in card doesn't match
+    const promo = makePromo({
+      tieInCards: [{ creditCardId: 99 }],
+      benefits: [tieInBenefit],
+    });
+    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    expect(matched).toHaveLength(0);
+  });
+
+  it("tie-in: only tie-in benefits, card present — promotion applies normally", () => {
+    // No base benefits; tie-in card matches (card 1)
+    const promo = makePromo({
+      tieInCards: [{ creditCardId: 1 }],
+      benefits: [tieInBenefit],
+    });
+    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    expect(matched).toHaveLength(1);
+    expect(matched[0].appliedValue).toBe(15);
+    expect(matched[0].benefitApplications).toHaveLength(1);
+    expect(matched[0].benefitApplications[0].appliedValue).toBe(15);
+  });
+
+  it("tie-in: empty tieInCards — promotion matches regardless of booking card", () => {
+    // No tie-in restriction; both benefits apply for any booking
+    const loyaltyPromo = makePromo({
+      type: PromotionType.loyalty,
+      creditCardId: null,
+      hotelChainId: 3,
+      tieInCards: [],
+      benefits: [baseBenefit, tieInBenefit],
+    });
+    const loyaltyMatched = calculateMatchedPromotions(mockBooking, [loyaltyPromo]);
+    expect(loyaltyMatched).toHaveLength(1);
+    // Both base and tie-in apply since tieInCreditCardId is null
+    expect(loyaltyMatched[0].appliedValue).toBe(25);
+    expect(loyaltyMatched[0].benefitApplications).toHaveLength(2);
+  });
+
+  it("tie-in: booking card matches any card in the list — all benefits apply", () => {
+    // mockBooking has creditCardId: 1; list has cards 1 and 99
+    const promo = makePromo({
+      tieInCards: [{ creditCardId: 99 }, { creditCardId: 1 }],
+      benefits: [baseBenefit, tieInBenefit],
+    });
+    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    expect(matched).toHaveLength(1);
+    expect(matched[0].appliedValue).toBe(25); // $10 + $15
+    expect(matched[0].benefitApplications).toHaveLength(2);
+  });
+
+  it("tie-in: tieInRequiresPayment=true produces same match result as false (semantic only)", () => {
+    // tieInRequiresPayment only affects display; matching is the same either way
+    const promoHold = makePromo({
+      tieInCards: [{ creditCardId: 1 }],
+      tieInRequiresPayment: false,
+      benefits: [baseBenefit, tieInBenefit],
+    });
+    const promoPay = makePromo({
+      tieInCards: [{ creditCardId: 1 }],
+      tieInRequiresPayment: true,
+      benefits: [baseBenefit, tieInBenefit],
+    });
+    const matchedHold = calculateMatchedPromotions(mockBooking, [promoHold]);
+    const matchedPay = calculateMatchedPromotions(mockBooking, [promoPay]);
+    expect(matchedHold).toHaveLength(1);
+    expect(matchedPay).toHaveLength(1);
+    expect(matchedHold[0].appliedValue).toBe(matchedPay[0].appliedValue);
+    expect(matchedHold[0].benefitApplications).toHaveLength(
+      matchedPay[0].benefitApplications.length
+    );
   });
 });

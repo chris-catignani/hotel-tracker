@@ -17,6 +17,7 @@ export interface NetCostBookingPromotionBenefit {
     value: string | number;
     certType: string | null;
     pointsMultiplierBasis?: string | null;
+    isTieIn?: boolean;
   };
 }
 
@@ -139,19 +140,22 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
       const b = ba.promotionBenefit;
       const bValue = Number(b.value);
       const bApplied = Number(ba.appliedValue);
+      const tieInSuffix = b.isTieIn ? " (tie-in benefit)" : "";
 
       switch (b.rewardType) {
         case "cashback":
           if (b.valueType === "fixed") {
             formulaLines.push(
-              `${formatCurrency(bValue)} fixed cashback = ${formatCurrency(bApplied)}`
+              `${formatCurrency(bValue)} fixed cashback = ${formatCurrency(bApplied)}${tieInSuffix}`
             );
-            descriptionLines.push(`A fixed cashback of ${formatCurrency(bValue)}.`);
+            descriptionLines.push(`A fixed cashback of ${formatCurrency(bValue)}.${tieInSuffix}`);
           } else if (b.valueType === "percentage") {
             formulaLines.push(
-              `${formatCurrency(totalCost)} (total cost) × ${bValue}% = ${formatCurrency(bApplied)}`
+              `${formatCurrency(totalCost)} (total cost) × ${bValue}% = ${formatCurrency(bApplied)}${tieInSuffix}`
             );
-            descriptionLines.push(`A ${bValue}% cashback on the total cost of the booking.`);
+            descriptionLines.push(
+              `A ${bValue}% cashback on the total cost of the booking.${tieInSuffix}`
+            );
           }
           break;
         case "points": {
@@ -167,34 +171,38 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
                 : booking.loyaltyPointsEarned || 0;
             const basisLabel = isBaseOnly ? "(base rate only)" : "(incl. elite bonus)";
             formulaLines.push(
-              `${basisPoints.toLocaleString()} pts ${basisLabel} × (${bValue} - 1) × ${centsStr}¢ = ${formatCurrency(bApplied)}`
+              `${basisPoints.toLocaleString()} pts ${basisLabel} × (${bValue} - 1) × ${centsStr}¢ = ${formatCurrency(bApplied)}${tieInSuffix}`
             );
             const basisDesc = isBaseOnly
               ? `applies to base-rate points only, not including elite bonus`
               : `applies to full earned points including elite bonus`;
             descriptionLines.push(
-              `A ${bValue}x points multiplier on ${basisLabel} loyalty points, valued at ${centsStr}¢ each. This ${basisDesc}.`
+              `A ${bValue}x points multiplier on ${basisLabel} loyalty points, valued at ${centsStr}¢ each. This ${basisDesc}.${tieInSuffix}`
             );
           } else {
             formulaLines.push(
-              `${bValue.toLocaleString()} bonus pts × ${centsStr}¢ = ${formatCurrency(bApplied)}`
+              `${bValue.toLocaleString()} bonus pts × ${centsStr}¢ = ${formatCurrency(bApplied)}${tieInSuffix}`
             );
             descriptionLines.push(
-              `${bValue.toLocaleString()} fixed bonus points, valued at ${centsStr}¢ each.`
+              `${bValue.toLocaleString()} fixed bonus points, valued at ${centsStr}¢ each.${tieInSuffix}`
             );
           }
           break;
         }
         case "certificate":
-          formulaLines.push(`${bValue.toLocaleString()} certificate(s) (informational)`);
+          formulaLines.push(
+            `${bValue.toLocaleString()} certificate(s) (informational)${tieInSuffix}`
+          );
           descriptionLines.push(
-            `Earns ${bValue.toLocaleString()} certificate(s) — no cash value tracked.`
+            `Earns ${bValue.toLocaleString()} certificate(s) — no cash value tracked.${tieInSuffix}`
           );
           break;
         case "eqn":
-          formulaLines.push(`${bValue.toLocaleString()} bonus EQN(s) (informational)`);
+          formulaLines.push(
+            `${bValue.toLocaleString()} bonus EQN(s) (informational)${tieInSuffix}`
+          );
           descriptionLines.push(
-            `Earns ${bValue.toLocaleString()} bonus Elite Qualifying Night(s) — no cash value tracked.`
+            `Earns ${bValue.toLocaleString()} bonus Elite Qualifying Night(s) — no cash value tracked.${tieInSuffix}`
           );
           break;
       }

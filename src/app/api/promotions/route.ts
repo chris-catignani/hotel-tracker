@@ -5,6 +5,20 @@ import { apiError } from "@/lib/api-error";
 import { matchPromotionsForAffectedBookings } from "@/lib/promotion-matching";
 import { PromotionBenefitFormData, PromotionTierFormData, PromotionFormData } from "@/lib/types";
 
+const PROMOTION_INCLUDE = {
+  hotelChain: true,
+  hotelChainSubBrand: true,
+  creditCard: true,
+  tieInCards: { include: { creditCard: true } },
+  shoppingPortal: true,
+  benefits: { orderBy: { sortOrder: "asc" as const } },
+  tiers: {
+    orderBy: { minStays: "asc" as const },
+    include: { benefits: { orderBy: { sortOrder: "asc" as const } } },
+  },
+  exclusions: true,
+} as const;
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -17,18 +31,7 @@ export async function GET(request: NextRequest) {
 
     const promotions = await prisma.promotion.findMany({
       where,
-      include: {
-        hotelChain: true,
-        hotelChainSubBrand: true,
-        creditCard: true,
-        shoppingPortal: true,
-        benefits: { orderBy: { sortOrder: "asc" } },
-        tiers: {
-          orderBy: { minStays: "asc" },
-          include: { benefits: { orderBy: { sortOrder: "asc" } } },
-        },
-        exclusions: true,
-      },
+      include: PROMOTION_INCLUDE,
     });
 
     return NextResponse.json(promotions);
@@ -62,6 +65,8 @@ export async function POST(request: NextRequest) {
       bookByDate,
       oncePerSubBrand,
       exclusionSubBrandIds,
+      tieInCreditCardIds,
+      tieInRequiresPayment,
     } = body as PromotionFormData & { exclusionSubBrandIds?: number[] };
 
     const hasTiers = Array.isArray(tiers) && tiers.length > 0;
@@ -87,6 +92,7 @@ export async function POST(request: NextRequest) {
           nightsStackable: nightsStackable ?? false,
           bookByDate: bookByDate ? new Date(bookByDate) : null,
           oncePerSubBrand: oncePerSubBrand ?? false,
+          tieInRequiresPayment: tieInRequiresPayment ?? false,
           ...(hasTiers
             ? {
                 tiers: {
@@ -101,6 +107,7 @@ export async function POST(request: NextRequest) {
                           value: Number(b.value),
                           certType: b.certType || null,
                           pointsMultiplierBasis: b.pointsMultiplierBasis || null,
+                          isTieIn: b.isTieIn ?? false,
                           sortOrder: b.sortOrder ?? i,
                         })
                       ),
@@ -116,19 +123,13 @@ export async function POST(request: NextRequest) {
                     value: Number(b.value),
                     certType: b.certType || null,
                     pointsMultiplierBasis: b.pointsMultiplierBasis || null,
+                    isTieIn: b.isTieIn ?? false,
                     sortOrder: b.sortOrder ?? i,
                   })),
                 },
               }),
         },
-        include: {
-          benefits: { orderBy: { sortOrder: "asc" } },
-          tiers: {
-            orderBy: { minStays: "asc" },
-            include: { benefits: { orderBy: { sortOrder: "asc" } } },
-          },
-          exclusions: true,
-        },
+        include: PROMOTION_INCLUDE,
       });
 
       if (Array.isArray(exclusionSubBrandIds) && exclusionSubBrandIds.length > 0) {
@@ -140,7 +141,20 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      return created;
+      if (Array.isArray(tieInCreditCardIds) && tieInCreditCardIds.length > 0) {
+        await tx.promotionTieInCard.createMany({
+          data: tieInCreditCardIds.map((cardId) => ({
+            promotionId: created.id,
+            creditCardId: Number(cardId),
+          })),
+        });
+      }
+
+      // Re-fetch to get all relations including the newly created ones
+      return tx.promotion.findUnique({
+        where: { id: created.id },
+        include: PROMOTION_INCLUDE,
+      }) as Promise<import("@prisma/client").Promotion>;
     });
 
     await matchPromotionsForAffectedBookings(promotion.id);
