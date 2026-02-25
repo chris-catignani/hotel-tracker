@@ -905,5 +905,26 @@ describe("promotion-matching", () => {
       const matched = calculateMatchedPromotions(mockBooking, [promo]);
       expect(matched).toHaveLength(0);
     });
+
+    it("should respect global startDate if user is NOT registered", () => {
+      const promo = makePromo({
+        startDate: new Date("2026-06-15"),
+        registrationDate: null,
+      });
+      // mockBooking.checkIn is 2026-06-01 (before global start)
+      const matched = calculateMatchedPromotions(mockBooking, [promo]);
+      expect(matched).toHaveLength(0);
+    });
+
+    it("should match stays on/after registration if no duration or global endDate is set", () => {
+      const promo = makePromo({
+        registrationDate: new Date("2026-05-01"),
+        validDaysAfterRegistration: null,
+        endDate: null,
+      });
+      // mockBooking.checkIn is 2026-06-01 (after registration)
+      const matched = calculateMatchedPromotions(mockBooking, [promo]);
+      expect(matched).toHaveLength(1);
+    });
   });
 });
