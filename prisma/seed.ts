@@ -607,9 +607,17 @@ async function main() {
     "shopping_portals",
   ];
   for (const table of tables) {
-    await prisma.$executeRawUnsafe(
-      `SELECT setval(pg_get_serial_sequence('"${table}"', 'id'), coalesce(max(id), 1)) FROM "${table}";`
-    );
+    try {
+      await prisma.$executeRawUnsafe(
+        `SELECT setval(pg_get_serial_sequence('"${table}"', 'id'), coalesce(max(id), 1), max(id) IS NOT NULL) FROM "${table}";`
+      );
+      console.log(`Reset sequence for ${table}`);
+    } catch (error) {
+      console.warn(
+        `Could not reset sequence for ${table} (might not be PostgreSQL or sequence doesn't exist):`,
+        error
+      );
+    }
   }
 }
 

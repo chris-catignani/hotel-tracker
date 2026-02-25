@@ -173,6 +173,8 @@ model Booking {
   certificates           BookingCertificate[]
   benefits               BookingBenefit[]
 
+  @@index([checkIn])
+  @@index([createdAt])
   @@map("bookings")
 }
 
