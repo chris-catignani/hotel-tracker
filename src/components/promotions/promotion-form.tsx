@@ -856,11 +856,12 @@ export function PromotionForm({
                     className="size-4 rounded border-gray-300"
                     checked={tieInCreditCardIds.includes(card.id)}
                     onChange={(e) => {
-                      if (e.target.checked) {
-                        setTieInCreditCardIds((prev) => [...prev, card.id]);
-                      } else {
-                        setTieInCreditCardIds((prev) => prev.filter((id) => id !== card.id));
-                        if (tieInCreditCardIds.length === 1) setTieInRequiresPayment(false);
+                      const newIds = e.target.checked
+                        ? [...tieInCreditCardIds, card.id]
+                        : tieInCreditCardIds.filter((id) => id !== card.id);
+                      setTieInCreditCardIds(newIds);
+                      if (newIds.length === 0) {
+                        setTieInRequiresPayment(false);
                       }
                     }}
                     data-testid={`tie-in-credit-card-${card.id}`}
