@@ -48,6 +48,7 @@ export default function EditPromotionPage() {
             value: parseFloat(String(b.value)),
             certType: b.certType,
             pointsMultiplierBasis: b.pointsMultiplierBasis,
+            isTieIn: b.isTieIn,
             sortOrder: b.sortOrder ?? i,
           })),
           tiers: (promo.tiers || []).map(
@@ -60,6 +61,7 @@ export default function EditPromotionPage() {
                 value: parseFloat(String(b.value)),
                 certType: b.certType,
                 pointsMultiplierBasis: b.pointsMultiplierBasis,
+                isTieIn: b.isTieIn,
                 sortOrder: b.sortOrder ?? i,
               })),
             })
@@ -67,6 +69,8 @@ export default function EditPromotionPage() {
           hotelChainId: promo.hotelChainId,
           hotelChainSubBrandId: promo.hotelChainSubBrandId,
           creditCardId: promo.creditCardId,
+          tieInCreditCardIds: promo.tieInCreditCardIds,
+          tieInRequiresPayment: promo.tieInRequiresPayment,
           shoppingPortalId: promo.shoppingPortalId,
           minSpend: promo.minSpend ? parseFloat(String(promo.minSpend)) : null,
           startDate: toDateInputValue(promo.startDate),
