@@ -23,24 +23,24 @@ vi.mock("recharts", () => ({
 describe("SubBrandBreakdown", () => {
   const mockBookings = [
     {
-      id: 1,
+      id: "1",
       numNights: 3,
-      hotelChainSubBrand: { id: 1, name: "Courtyard" },
+      hotelChainSubBrand: { id: "1", name: "Courtyard" },
     },
     {
-      id: 2,
+      id: "2",
       numNights: 2,
-      hotelChainSubBrand: { id: 2, name: "Residence Inn" },
+      hotelChainSubBrand: { id: "2", name: "Residence Inn" },
     },
     {
-      id: 3,
+      id: "3",
       numNights: 1,
       hotelChainSubBrand: null, // Should be "Other / Independent"
     },
     {
-      id: 4,
+      id: "4",
       numNights: 1,
-      hotelChainSubBrand: { id: 1, name: "Courtyard" },
+      hotelChainSubBrand: { id: "1", name: "Courtyard" },
     },
   ];
 
@@ -71,9 +71,9 @@ describe("SubBrandBreakdown", () => {
 
   it("limits to 10 items and groups remaining into 'Other'", async () => {
     const manyBookings = Array.from({ length: 15 }, (_, i) => ({
-      id: i,
+      id: String(i),
       numNights: 1,
-      hotelChainSubBrand: { id: i, name: `Brand ${i + 1}` },
+      hotelChainSubBrand: { id: String(i), name: `Brand ${i + 1}` },
     }));
 
     await act(async () => {
@@ -96,9 +96,9 @@ describe("SubBrandBreakdown", () => {
 
   it("sorts data by value descending", async () => {
     const skewedBookings = [
-      { id: 1, numNights: 1, hotelChainSubBrand: { id: 1, name: "Small" } },
-      { id: 2, numNights: 1, hotelChainSubBrand: { id: 2, name: "Large" } },
-      { id: 3, numNights: 1, hotelChainSubBrand: { id: 2, name: "Large" } },
+      { id: "1", numNights: 1, hotelChainSubBrand: { id: "1", name: "Small" } },
+      { id: "2", numNights: 1, hotelChainSubBrand: { id: "2", name: "Large" } },
+      { id: "3", numNights: 1, hotelChainSubBrand: { id: "2", name: "Large" } },
     ];
 
     await act(async () => {

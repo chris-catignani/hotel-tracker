@@ -1,5 +1,6 @@
 import { PrismaClient, BookingSourceType, CertType, BenefitType } from "@prisma/client";
 import { HOTEL_ID, SUB_BRAND_ID } from "../src/lib/constants";
+import { CREDIT_CARD_ID, SHOPPING_PORTAL_ID } from "./seed-ids";
 
 const prisma = new PrismaClient();
 
@@ -29,11 +30,11 @@ interface BookingSeedData {
   benefits: { benefitType: string; dollarValue?: number | string | null }[];
 }
 
-const CC_CHASE_ID = "cw4yg6ftdskwq651p3p8nrvnr";
-const CC_WF_ID = "cvn8tp6d6nae4s543nno1qc6p";
-const SP_TOPCASHBACK_ID = "cnj91ehnjvuu34xnsa8l9lem4";
-const SP_BA_ID = "cjh7oskumoc40su7j747thqig";
-const SP_RAKUTEN_ID = "cj774ttrj5g3wzk24foulu47x";
+const CC_CHASE_ID = CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE;
+const CC_WF_ID = CREDIT_CARD_ID.WELLS_FARGO_AUTOGRAPH;
+const SP_TOPCASHBACK_ID = SHOPPING_PORTAL_ID.TOPCASHBACK;
+const SP_BA_ID = SHOPPING_PORTAL_ID.BRITISH_AIRWAYS;
+const SP_RAKUTEN_ID = SHOPPING_PORTAL_ID.RAKUTEN;
 
 async function main() {
   const bookings: BookingSeedData[] = [

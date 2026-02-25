@@ -41,12 +41,12 @@ vi.mock("@/components/ui/date-picker", () => ({
 
 const mockHotelChains: HotelChain[] = [
   {
-    id: 1,
+    id: "1",
     name: "Marriott",
     loyaltyProgram: "Bonvoy",
     basePointRate: 10,
-    pointTypeId: 1,
-    pointType: { id: 1, name: "Points", category: "hotel", centsPerPoint: 0.01 },
+    pointTypeId: "1",
+    pointType: { id: "1", name: "Points", category: "hotel", centsPerPoint: 0.01 },
     hotelChainSubBrands: [],
     eliteStatuses: [],
     userStatus: null,

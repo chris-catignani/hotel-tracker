@@ -10,7 +10,7 @@ describe("CostBreakdown", () => {
     promoSavings: 10,
     promotions: [
       {
-        id: 1,
+        id: "1",
         name: "Promo 1",
         appliedValue: 10,
         label: "Promotion",
