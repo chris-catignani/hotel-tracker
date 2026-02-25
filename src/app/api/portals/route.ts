@@ -5,8 +5,12 @@ import { apiError } from "@/lib/api-error";
 export async function GET() {
   try {
     const portals = await prisma.shoppingPortal.findMany({
-      include: { pointType: true },
-      orderBy: { name: "asc" },
+      include: {
+        pointType: true,
+      },
+      orderBy: {
+        name: "asc",
+      },
     });
     return NextResponse.json(portals);
   } catch (error) {
@@ -16,16 +20,17 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { name, rewardType, pointTypeId } = body;
+    const { name, rewardType, pointTypeId } = await request.json();
 
     const portal = await prisma.shoppingPortal.create({
       data: {
         name,
-        rewardType: rewardType ?? "cashback",
-        pointTypeId: pointTypeId ? Number(pointTypeId) : null,
+        rewardType,
+        pointTypeId: pointTypeId || null,
       },
-      include: { pointType: true },
+      include: {
+        pointType: true,
+      },
     });
 
     return NextResponse.json(portal, { status: 201 });

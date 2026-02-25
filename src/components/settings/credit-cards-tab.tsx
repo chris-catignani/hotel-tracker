@@ -74,7 +74,7 @@ export function CreditCardsTab() {
         name,
         rewardType,
         rewardRate: Number(rewardRate),
-        pointTypeId: pointTypeId !== "none" ? Number(pointTypeId) : null,
+        pointTypeId: pointTypeId !== "none" ? pointTypeId : null,
       }),
     });
     if (res.ok) {
@@ -94,7 +94,7 @@ export function CreditCardsTab() {
     setEditName(card.name);
     setEditRewardType(card.rewardType);
     setEditRewardRate(String(card.rewardRate));
-    setEditPointTypeId(card.pointTypeId != null ? String(card.pointTypeId) : "none");
+    setEditPointTypeId(card.pointTypeId != null ? card.pointTypeId : "none");
     setEditOpen(true);
   };
 
@@ -108,7 +108,7 @@ export function CreditCardsTab() {
         name: editName,
         rewardType: editRewardType,
         rewardRate: Number(editRewardRate),
-        pointTypeId: editPointTypeId !== "none" ? Number(editPointTypeId) : null,
+        pointTypeId: editPointTypeId !== "none" ? editPointTypeId : null,
       }),
     });
     if (res.ok) {
@@ -195,7 +195,7 @@ export function CreditCardsTab() {
                     { label: "None", value: "none" },
                     ...pointTypes.map((pt) => ({
                       label: pt.name,
-                      value: String(pt.id),
+                      value: pt.id,
                     })),
                   ]}
                   placeholder="Select point type..."
@@ -262,7 +262,7 @@ export function CreditCardsTab() {
                   { label: "None", value: "none" },
                   ...pointTypes.map((pt) => ({
                     label: pt.name,
-                    value: String(pt.id),
+                    value: pt.id,
                   })),
                 ]}
                 placeholder="Select point type..."

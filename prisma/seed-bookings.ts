@@ -1,11 +1,13 @@
 import { PrismaClient, BookingSourceType, CertType, BenefitType } from "@prisma/client";
+import { HOTEL_ID, SUB_BRAND_ID } from "../src/lib/constants";
+import { CREDIT_CARD_ID, SHOPPING_PORTAL_ID } from "./seed-ids";
 
 const prisma = new PrismaClient();
 
 interface BookingSeedData {
-  id: number;
-  hotelChainId: number;
-  hotelChainSubBrandId: number | null;
+  id: string;
+  hotelChainId: string;
+  hotelChainSubBrandId: string | null;
   propertyName: string;
   checkIn: string;
   checkOut: string;
@@ -13,8 +15,8 @@ interface BookingSeedData {
   pretaxCost: string;
   taxAmount: string;
   totalCost: string;
-  creditCardId: number | null;
-  shoppingPortalId: number | null;
+  creditCardId: string | null;
+  shoppingPortalId: string | null;
   portalCashbackRate: string | null;
   portalCashbackOnTotal: boolean;
   loyaltyPointsEarned: number | null;
@@ -22,18 +24,24 @@ interface BookingSeedData {
   currency: string;
   originalAmount: string | null;
   bookingSource: string | null;
-  otaAgencyId: number | null;
+  otaAgencyId: string | null;
   notes: string | null;
   certificates: { certType: string }[];
   benefits: { benefitType: string; dollarValue?: number | string | null }[];
 }
 
+const CC_CHASE_ID = CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE;
+const CC_WF_ID = CREDIT_CARD_ID.WELLS_FARGO_AUTOGRAPH;
+const SP_TOPCASHBACK_ID = SHOPPING_PORTAL_ID.TOPCASHBACK;
+const SP_BA_ID = SHOPPING_PORTAL_ID.BRITISH_AIRWAYS;
+const SP_RAKUTEN_ID = SHOPPING_PORTAL_ID.RAKUTEN;
+
 async function main() {
   const bookings: BookingSeedData[] = [
     {
-      id: 16,
-      hotelChainId: 2,
-      hotelChainSubBrandId: 2004, // Autograph Collection
+      id: "clas2mljema779deuxi5mhuee",
+      hotelChainId: HOTEL_ID.MARRIOTT,
+      hotelChainSubBrandId: SUB_BRAND_ID.MARRIOTT.AUTOGRAPH_COLLECTION,
       propertyName: "Duxton Reserve Singapore",
       checkIn: "2026-03-02T00:00:00.000Z",
       checkOut: "2026-03-05T00:00:00.000Z",
@@ -60,9 +68,9 @@ async function main() {
       benefits: [],
     },
     {
-      id: 17,
-      hotelChainId: 3,
-      hotelChainSubBrandId: 3022, // Park Hyatt
+      id: "c83ak8zknu6pwcvqhbfhm7ekv",
+      hotelChainId: HOTEL_ID.HYATT,
+      hotelChainSubBrandId: SUB_BRAND_ID.HYATT.PARK_HYATT,
       propertyName: "Park Hyatt Kuala Lumpur",
       checkIn: "2026-03-06T00:00:00.000Z",
       checkOut: "2026-03-07T00:00:00.000Z",
@@ -85,9 +93,9 @@ async function main() {
       benefits: [],
     },
     {
-      id: 18,
-      hotelChainId: 4,
-      hotelChainSubBrandId: 4008, // Holiday Inn Express
+      id: "ct05t6xeejpm9q6dxgtvei3r8",
+      hotelChainId: HOTEL_ID.IHG,
+      hotelChainSubBrandId: SUB_BRAND_ID.IHG.HOLIDAY_INN_EXPRESS,
       propertyName: "Holiday Inn Express KL City Centre",
       checkIn: "2026-03-06T00:00:00.000Z",
       checkOut: "2026-03-07T00:00:00.000Z",
@@ -95,8 +103,8 @@ async function main() {
       pretaxCost: "58",
       taxAmount: "11",
       totalCost: "69",
-      creditCardId: 2,
-      shoppingPortalId: 2,
+      creditCardId: CC_CHASE_ID,
+      shoppingPortalId: SP_TOPCASHBACK_ID,
       portalCashbackRate: "0.24",
       portalCashbackOnTotal: false,
       loyaltyPointsEarned: 1160,
@@ -110,9 +118,9 @@ async function main() {
       benefits: [],
     },
     {
-      id: 19,
-      hotelChainId: 4,
-      hotelChainSubBrandId: 4010, // Hotel Indigo
+      id: "c4mv6rvmc0pln9mk7txqlshkm",
+      hotelChainId: HOTEL_ID.IHG,
+      hotelChainSubBrandId: SUB_BRAND_ID.IHG.HOTEL_INDIGO,
       propertyName: "Hotel Indigo Kuala Lumpur",
       checkIn: "2026-03-07T00:00:00.000Z",
       checkOut: "2026-03-13T00:00:00.000Z",
@@ -120,8 +128,8 @@ async function main() {
       pretaxCost: "528",
       taxAmount: "43",
       totalCost: "571",
-      creditCardId: 4,
-      shoppingPortalId: 2,
+      creditCardId: CC_WF_ID,
+      shoppingPortalId: SP_TOPCASHBACK_ID,
       portalCashbackRate: "0.12",
       portalCashbackOnTotal: false,
       loyaltyPointsEarned: 10560,
@@ -135,9 +143,9 @@ async function main() {
       benefits: [],
     },
     {
-      id: 20,
-      hotelChainId: 3,
-      hotelChainSubBrandId: 3010, // Hyatt Centric
+      id: "cufi5o67mbga7e8an9rvsb2vn",
+      hotelChainId: HOTEL_ID.HYATT,
+      hotelChainSubBrandId: SUB_BRAND_ID.HYATT.HYATT_CENTRIC,
       propertyName: "Hyatt Centric Kuala Lumpur",
       checkIn: "2026-03-13T00:00:00.000Z",
       checkOut: "2026-03-20T00:00:00.000Z",
@@ -160,9 +168,9 @@ async function main() {
       benefits: [],
     },
     {
-      id: 21,
-      hotelChainId: 5,
-      hotelChainSubBrandId: 5046, // Sunway
+      id: "ctshv1is5aacu6rwsrsebfyxi",
+      hotelChainId: HOTEL_ID.GHA_DISCOVERY,
+      hotelChainSubBrandId: SUB_BRAND_ID.GHA_DISCOVERY.SUNWAY,
       propertyName: "Sunway Velocity Hotel",
       checkIn: "2026-03-20T00:00:00.000Z",
       checkOut: "2026-03-22T00:00:00.000Z",
@@ -170,7 +178,7 @@ async function main() {
       pretaxCost: "150",
       taxAmount: "13",
       totalCost: "163",
-      creditCardId: 2,
+      creditCardId: CC_CHASE_ID,
       shoppingPortalId: null,
       portalCashbackRate: null,
       portalCashbackOnTotal: false,
@@ -185,9 +193,9 @@ async function main() {
       benefits: [],
     },
     {
-      id: 22,
-      hotelChainId: 5,
-      hotelChainSubBrandId: 5038, // PARKROYAL
+      id: "cnrxt78gdols3zb0bxsmaciaq",
+      hotelChainId: HOTEL_ID.GHA_DISCOVERY,
+      hotelChainSubBrandId: SUB_BRAND_ID.GHA_DISCOVERY.PARKROYAL,
       propertyName: "Park Royal Serviced Suites KL",
       checkIn: "2026-03-22T00:00:00.000Z",
       checkOut: "2026-03-24T00:00:00.000Z",
@@ -195,7 +203,7 @@ async function main() {
       pretaxCost: "166",
       taxAmount: "14",
       totalCost: "180",
-      creditCardId: 2,
+      creditCardId: CC_CHASE_ID,
       shoppingPortalId: null,
       portalCashbackRate: null,
       portalCashbackOnTotal: false,
@@ -210,9 +218,9 @@ async function main() {
       benefits: [],
     },
     {
-      id: 23,
-      hotelChainId: 5,
-      hotelChainSubBrandId: 5037, // PARKROYAL COLLECTION
+      id: "cwy9rm93feastnxmna5u75arp",
+      hotelChainId: HOTEL_ID.GHA_DISCOVERY,
+      hotelChainSubBrandId: SUB_BRAND_ID.GHA_DISCOVERY.PARKROYAL_COLLECTION,
       propertyName: "Park Royal Collection KL",
       checkIn: "2026-03-24T00:00:00.000Z",
       checkOut: "2026-03-26T00:00:00.000Z",
@@ -220,7 +228,7 @@ async function main() {
       pretaxCost: "299",
       taxAmount: "24",
       totalCost: "323",
-      creditCardId: 2,
+      creditCardId: CC_CHASE_ID,
       shoppingPortalId: null,
       portalCashbackRate: null,
       portalCashbackOnTotal: false,
@@ -235,9 +243,9 @@ async function main() {
       benefits: [],
     },
     {
-      id: 24,
-      hotelChainId: 2,
-      hotelChainSubBrandId: 2007, // citizenM
+      id: "cuj2d4xsen4rntp0ujp9gvjb0",
+      hotelChainId: HOTEL_ID.MARRIOTT,
+      hotelChainSubBrandId: SUB_BRAND_ID.MARRIOTT.CITIZENM,
       propertyName: "citizenM Kuala Lumpur",
       checkIn: "2026-03-26T00:00:00.000Z",
       checkOut: "2026-03-27T00:00:00.000Z",
@@ -245,8 +253,8 @@ async function main() {
       pretaxCost: "60",
       taxAmount: "4",
       totalCost: "64",
-      creditCardId: 2,
-      shoppingPortalId: 3,
+      creditCardId: CC_CHASE_ID,
+      shoppingPortalId: SP_BA_ID,
       portalCashbackRate: "6",
       portalCashbackOnTotal: false,
       loyaltyPointsEarned: 1050,
@@ -260,9 +268,9 @@ async function main() {
       benefits: [],
     },
     {
-      id: 25,
-      hotelChainId: 3,
-      hotelChainSubBrandId: 3010, // Hyatt Centric
+      id: "cscx18qakqticrsl6g6xvh7ha",
+      hotelChainId: HOTEL_ID.HYATT,
+      hotelChainSubBrandId: SUB_BRAND_ID.HYATT.HYATT_CENTRIC,
       propertyName: "Hyatt Centric Kuala Lumpur",
       checkIn: "2026-03-27T00:00:00.000Z",
       checkOut: "2026-04-03T00:00:00.000Z",
@@ -285,9 +293,9 @@ async function main() {
       benefits: [],
     },
     {
-      id: 26,
-      hotelChainId: 3,
-      hotelChainSubBrandId: 3012, // Hyatt Place
+      id: "cy58uq56kllc6feidriho04yh",
+      hotelChainId: HOTEL_ID.HYATT,
+      hotelChainSubBrandId: SUB_BRAND_ID.HYATT.HYATT_PLACE,
       propertyName: "Hyatt Place Bukit Jalil",
       checkIn: "2026-04-03T00:00:00.000Z",
       checkOut: "2026-04-10T00:00:00.000Z",
@@ -310,9 +318,9 @@ async function main() {
       benefits: [],
     },
     {
-      id: 27,
-      hotelChainId: 2,
-      hotelChainSubBrandId: 2025, // Moxy
+      id: "cc2gaeqcxn2mj300o28duzvd5",
+      hotelChainId: HOTEL_ID.MARRIOTT,
+      hotelChainSubBrandId: SUB_BRAND_ID.MARRIOTT.MOXY,
       propertyName: "Moxy KL Chinatown",
       checkIn: "2026-04-10T00:00:00.000Z",
       checkOut: "2026-04-14T00:00:00.000Z",
@@ -320,8 +328,8 @@ async function main() {
       pretaxCost: "257",
       taxAmount: "46",
       totalCost: "303",
-      creditCardId: 2,
-      shoppingPortalId: 3,
+      creditCardId: CC_CHASE_ID,
+      shoppingPortalId: SP_BA_ID,
       portalCashbackRate: "6",
       portalCashbackOnTotal: false,
       loyaltyPointsEarned: 4498,
@@ -335,9 +343,9 @@ async function main() {
       benefits: [{ benefitType: "free_breakfast" }],
     },
     {
-      id: 28,
-      hotelChainId: 2,
-      hotelChainSubBrandId: 2037, // Tribute Portfolio
+      id: "cpmpa0buq8jl85t5wcv13wvi8",
+      hotelChainId: HOTEL_ID.MARRIOTT,
+      hotelChainSubBrandId: SUB_BRAND_ID.MARRIOTT.TRIBUTE_PORTFOLIO,
       propertyName: "The Serangoon House Little India",
       checkIn: "2026-04-14T00:00:00.000Z",
       checkOut: "2026-04-15T00:00:00.000Z",
@@ -345,7 +353,7 @@ async function main() {
       pretaxCost: "186",
       taxAmount: "37",
       totalCost: "223",
-      creditCardId: 2,
+      creditCardId: CC_CHASE_ID,
       shoppingPortalId: null,
       portalCashbackRate: null,
       portalCashbackOnTotal: false,
@@ -363,9 +371,9 @@ async function main() {
       ],
     },
     {
-      id: 29,
-      hotelChainId: 6,
-      hotelChainSubBrandId: 6016, // ibis Styles
+      id: "cmgz12kjvzu90qvn5wxrki7ui",
+      hotelChainId: HOTEL_ID.ACCOR,
+      hotelChainSubBrandId: SUB_BRAND_ID.ACCOR.IBIS_STYLES,
       propertyName: "ibis Styles Ambassador ICN",
       checkIn: "2026-04-15T00:00:00.000Z",
       checkOut: "2026-04-16T00:00:00.000Z",
@@ -373,8 +381,8 @@ async function main() {
       pretaxCost: "82",
       taxAmount: "9",
       totalCost: "91",
-      creditCardId: 2,
-      shoppingPortalId: 1,
+      creditCardId: CC_CHASE_ID,
+      shoppingPortalId: SP_RAKUTEN_ID,
       portalCashbackRate: "2",
       portalCashbackOnTotal: false,
       loyaltyPointsEarned: 150,

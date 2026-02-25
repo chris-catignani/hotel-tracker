@@ -33,14 +33,14 @@ export function UserStatusTab() {
     fetchData();
   }, [fetchData]);
 
-  const handleStatusChange = async (hotelChainId: number, eliteStatusId: string) => {
+  const handleStatusChange = async (hotelChainId: string, eliteStatusId: string) => {
     setError(null);
     const res = await fetch("/api/user-statuses", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         hotelChainId,
-        eliteStatusId: eliteStatusId === "none" ? null : Number(eliteStatusId),
+        eliteStatusId: eliteStatusId === "none" ? null : eliteStatusId,
       }),
     });
     if (res.ok) {
@@ -76,15 +76,13 @@ export function UserStatusTab() {
                 <TableCell className="font-medium">{chain.name}</TableCell>
                 <TableCell>
                   <AppSelect
-                    value={
-                      currentStatus?.eliteStatusId ? String(currentStatus.eliteStatusId) : "none"
-                    }
+                    value={currentStatus?.eliteStatusId ? currentStatus.eliteStatusId : "none"}
                     onValueChange={(v) => handleStatusChange(chain.id, v)}
                     options={[
                       { label: "Base Member / No Status", value: "none" },
                       ...(chain.eliteStatuses?.map((status) => ({
                         label: status.name,
-                        value: String(status.id),
+                        value: status.id,
                       })) || []),
                     ]}
                     className="w-[200px]"

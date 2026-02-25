@@ -142,9 +142,9 @@ export function BookingForm({
   useEffect(() => {
     if (initialData && portals.length > 0) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setHotelChainId(String(initialData.hotelChainId));
+      setHotelChainId(initialData.hotelChainId);
       setHotelChainSubBrandId(
-        initialData.hotelChainSubBrandId ? String(initialData.hotelChainSubBrandId) : "none"
+        initialData.hotelChainSubBrandId ? initialData.hotelChainSubBrandId : "none"
       );
       setPropertyName(initialData.propertyName);
       setCheckIn(toDateInputValue(initialData.checkIn));
@@ -158,10 +158,8 @@ export function BookingForm({
       setOriginalAmount(
         initialData.originalAmount ? String(Number(initialData.originalAmount)) : ""
       );
-      setCreditCardId(initialData.creditCardId ? String(initialData.creditCardId) : "none");
-      setShoppingPortalId(
-        initialData.shoppingPortalId ? String(initialData.shoppingPortalId) : "none"
-      );
+      setCreditCardId(initialData.creditCardId ? initialData.creditCardId : "none");
+      setShoppingPortalId(initialData.shoppingPortalId ? initialData.shoppingPortalId : "none");
       const portalForBooking = initialData.shoppingPortalId
         ? portals.find((p) => p.id === initialData.shoppingPortalId)
         : null;
@@ -178,7 +176,7 @@ export function BookingForm({
       }
       setCertificates(initialData.certificates.map((c) => c.certType));
       setBookingSource(initialData.bookingSource || "");
-      setOtaAgencyId(initialData.otaAgencyId ? String(initialData.otaAgencyId) : "none");
+      setOtaAgencyId(initialData.otaAgencyId ? initialData.otaAgencyId : "none");
       setBenefits(
         initialData.benefits.map((b) => ({
           type: b.benefitType,
@@ -252,8 +250,8 @@ export function BookingForm({
     e.preventDefault();
 
     const body = {
-      hotelChainId: Number(hotelChainId),
-      hotelChainSubBrandId: hotelChainSubBrandId === "none" ? null : Number(hotelChainSubBrandId),
+      hotelChainId: hotelChainId,
+      hotelChainSubBrandId: hotelChainSubBrandId === "none" ? null : hotelChainSubBrandId,
       propertyName,
       checkIn,
       checkOut,
@@ -266,11 +264,11 @@ export function BookingForm({
         hasCash && currency !== "USD" && originalAmount ? Number(originalAmount) : null,
       pointsRedeemed: hasPoints && pointsRedeemed ? Number(pointsRedeemed) : null,
       certificates: hasCert ? certificates.filter((c) => c.trim()) : [],
-      creditCardId: creditCardId === "none" ? null : Number(creditCardId),
-      shoppingPortalId: shoppingPortalId === "none" ? null : Number(shoppingPortalId),
+      creditCardId: creditCardId === "none" ? null : creditCardId,
+      shoppingPortalId: shoppingPortalId === "none" ? null : shoppingPortalId,
       portalCashbackRate: (() => {
         if (shoppingPortalId === "none" || !portalCashbackRate) return null;
-        const portal = portals.find((p) => String(p.id) === shoppingPortalId);
+        const portal = portals.find((p) => p.id === shoppingPortalId);
         return portal?.rewardType === "points"
           ? Number(portalCashbackRate)
           : Number(portalCashbackRate) / 100;
@@ -278,7 +276,7 @@ export function BookingForm({
       portalCashbackOnTotal: shoppingPortalId !== "none" ? portalCashbackOnTotal : false,
       loyaltyPointsEarned: loyaltyPointsEarned ? Number(loyaltyPointsEarned) : null,
       bookingSource: bookingSource || null,
-      otaAgencyId: bookingSource === "ota" && otaAgencyId !== "none" ? Number(otaAgencyId) : null,
+      otaAgencyId: bookingSource === "ota" && otaAgencyId !== "none" ? otaAgencyId : null,
       benefits: benefits
         .filter((b) => b.type)
         .map((b) => ({
@@ -320,13 +318,13 @@ export function BookingForm({
                     prev.filter((cert) => {
                       if (!cert) return true;
                       const opt = CERT_TYPE_OPTIONS.find((o) => o.value === cert);
-                      return opt && opt.hotelChainId === Number(val);
+                      return opt && opt.hotelChainId === val;
                     })
                   );
                 }}
                 options={hotelChains.map((chain) => ({
                   label: chain.name,
-                  value: String(chain.id),
+                  value: chain.id,
                 }))}
                 placeholder="Select hotel chain..."
                 data-testid="hotel-chain-select"
@@ -345,7 +343,7 @@ export function BookingForm({
           </div>
 
           {/* Sub-brand selector */}
-          {hotelChains.find((h) => h.id === Number(hotelChainId))?.hotelChainSubBrands.length ? (
+          {hotelChains.find((h) => h.id === hotelChainId)?.hotelChainSubBrands.length ? (
             <div className="space-y-2">
               <Label htmlFor="hotelChainSubBrandId">Sub-brand</Label>
               <AppSelect
@@ -354,10 +352,10 @@ export function BookingForm({
                 options={[
                   { label: "None / Not applicable", value: "none" },
                   ...(hotelChains
-                    .find((h) => h.id === Number(hotelChainId))
+                    .find((h) => h.id === hotelChainId)
                     ?.hotelChainSubBrands.map((sb) => ({
                       label: sb.name,
-                      value: String(sb.id),
+                      value: sb.id,
                     })) || []),
                 ]}
                 placeholder="Select sub-brand..."
@@ -391,7 +389,7 @@ export function BookingForm({
                   { label: "Not specified", value: "none" },
                   ...otaAgencies.map((a) => ({
                     label: a.name,
-                    value: String(a.id),
+                    value: a.id,
                   })),
                 ]}
                 placeholder="Select agency..."
@@ -532,9 +530,7 @@ export function BookingForm({
                   <AppSelect
                     value={cert}
                     onValueChange={(v) => updateCertificate(idx, v)}
-                    options={CERT_TYPE_OPTIONS.filter(
-                      (opt) => opt.hotelChainId === Number(hotelChainId)
-                    )}
+                    options={CERT_TYPE_OPTIONS.filter((opt) => opt.hotelChainId === hotelChainId)}
                     placeholder="Select certificate type..."
                     className="flex-1"
                     data-testid={`certificate-select-${idx}`}
@@ -566,7 +562,7 @@ export function BookingForm({
                   { label: "None", value: "none" },
                   ...creditCards.map((card) => ({
                     label: card.name,
-                    value: String(card.id),
+                    value: card.id,
                   })),
                 ]}
                 placeholder="Select credit card..."
@@ -582,7 +578,7 @@ export function BookingForm({
                   { label: "None", value: "none" },
                   ...portals.map((portal) => ({
                     label: portal.name,
-                    value: String(portal.id),
+                    value: portal.id,
                   })),
                 ]}
                 placeholder="Select portal..."
@@ -595,7 +591,7 @@ export function BookingForm({
           {shoppingPortalId !== "none" && (
             <div className="space-y-2">
               {(() => {
-                const portal = portals.find((p) => String(p.id) === shoppingPortalId);
+                const portal = portals.find((p) => p.id === shoppingPortalId);
                 const isPoints = portal?.rewardType === "points";
                 return (
                   <Label htmlFor="portalCashbackRate">
@@ -611,7 +607,7 @@ export function BookingForm({
                 value={portalCashbackRate}
                 onChange={(e) => setPortalCashbackRate(e.target.value)}
                 placeholder={(() => {
-                  const portal = portals.find((p) => String(p.id) === shoppingPortalId);
+                  const portal = portals.find((p) => p.id === shoppingPortalId);
                   return portal?.rewardType === "points" ? "e.g. 5.0" : "e.g. 6.75";
                 })()}
               />

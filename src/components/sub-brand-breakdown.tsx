@@ -8,10 +8,10 @@ import { PieChart as PieChartIcon } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 
 interface Booking {
-  id: number;
+  id: string;
   numNights: number;
   hotelChainSubBrand?: {
-    id: number;
+    id: string;
     name: string;
   } | null;
 }

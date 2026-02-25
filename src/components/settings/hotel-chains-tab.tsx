@@ -48,7 +48,7 @@ export function HotelChainsTab() {
 
   // Hotel chain sub-brands management
   const [sbOpen, setSbOpen] = useState(false);
-  const [sbHotelChainId, setSbHotelChainId] = useState<number | null>(null);
+  const [sbHotelChainId, setSbHotelChainId] = useState<string | null>(null);
   const [sbName, setSbName] = useState("");
   const [sbBaseRate, setSbBaseRate] = useState("");
 
@@ -78,7 +78,7 @@ export function HotelChainsTab() {
         name,
         loyaltyProgram: loyaltyProgram || null,
         basePointRate: basePointRate ? Number(basePointRate) : null,
-        pointTypeId: pointTypeId !== "none" ? Number(pointTypeId) : null,
+        pointTypeId: pointTypeId !== "none" ? pointTypeId : null,
       }),
     });
     if (res.ok) {
@@ -98,7 +98,7 @@ export function HotelChainsTab() {
     setEditName(hotelChain.name);
     setEditLoyaltyProgram(hotelChain.loyaltyProgram || "");
     setEditBasePointRate(hotelChain.basePointRate != null ? String(hotelChain.basePointRate) : "");
-    setEditPointTypeId(hotelChain.pointTypeId != null ? String(hotelChain.pointTypeId) : "none");
+    setEditPointTypeId(hotelChain.pointTypeId != null ? hotelChain.pointTypeId : "none");
     setEditOpen(true);
   };
 
@@ -112,7 +112,7 @@ export function HotelChainsTab() {
         name: editName,
         loyaltyProgram: editLoyaltyProgram || null,
         basePointRate: editBasePointRate ? Number(editBasePointRate) : null,
-        pointTypeId: editPointTypeId !== "none" ? Number(editPointTypeId) : null,
+        pointTypeId: editPointTypeId !== "none" ? editPointTypeId : null,
       }),
     });
     if (res.ok) {
@@ -151,7 +151,7 @@ export function HotelChainsTab() {
     }
   };
 
-  const handleDeleteSubBrand = async (sbId: number) => {
+  const handleDeleteSubBrand = async (sbId: string) => {
     setError(null);
     const res = await fetch(`/api/hotel-chain-sub-brands/${sbId}`, { method: "DELETE" });
     if (res.ok) {
@@ -216,7 +216,7 @@ export function HotelChainsTab() {
                     { label: "None", value: "none" },
                     ...pointTypes.map((pt) => ({
                       label: pt.name,
-                      value: String(pt.id),
+                      value: pt.id,
                     })),
                   ]}
                   placeholder="Select point type..."
@@ -279,7 +279,7 @@ export function HotelChainsTab() {
                   { label: "None", value: "none" },
                   ...pointTypes.map((pt) => ({
                     label: pt.name,
-                    value: String(pt.id),
+                    value: pt.id,
                   })),
                 ]}
                 placeholder="Select point type..."

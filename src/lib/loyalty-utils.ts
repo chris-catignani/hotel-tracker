@@ -44,9 +44,9 @@ interface LoyaltyCalculationParams {
   hotelChainSubBrandId: string;
   pretaxCost: string;
   hotelChains: {
-    id: number;
+    id: string;
     basePointRate: number | null;
-    hotelChainSubBrands: { id: number; basePointRate: number | null }[];
+    hotelChainSubBrands: { id: string; basePointRate: number | null }[];
     userStatus: {
       eliteStatus: {
         isFixed: boolean;
@@ -69,12 +69,12 @@ export function calculatePointsFromChain({
 }: LoyaltyCalculationParams): string {
   if (!hotelChainId || !pretaxCost) return "";
 
-  const hotelChain = hotelChains.find((h) => h.id === Number(hotelChainId));
+  const hotelChain = hotelChains.find((h) => h.id === hotelChainId);
   if (!hotelChain) return "";
 
   const subBrand =
-    hotelChainSubBrandId !== "none"
-      ? hotelChain.hotelChainSubBrands.find((sb) => sb.id === Number(hotelChainSubBrandId))
+    hotelChainSubBrandId !== "none" && hotelChainSubBrandId
+      ? hotelChain.hotelChainSubBrands.find((sb) => sb.id === hotelChainSubBrandId)
       : null;
 
   const basePointRate = Number(subBrand?.basePointRate ?? hotelChain.basePointRate ?? null);

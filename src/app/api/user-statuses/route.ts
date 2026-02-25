@@ -28,16 +28,16 @@ export async function POST(request: NextRequest) {
 
     // Check if status is actually changing
     const existing = await prisma.userStatus.findUnique({
-      where: { hotelChainId: Number(hotelChainId) },
+      where: { hotelChainId: hotelChainId },
       select: { eliteStatusId: true },
     });
 
     // Validate that eliteStatusId belongs to hotelChainId
     if (eliteStatusId) {
       const eliteStatus = await prisma.hotelChainEliteStatus.findUnique({
-        where: { id: Number(eliteStatusId) },
+        where: { id: eliteStatusId },
       });
-      if (!eliteStatus || eliteStatus.hotelChainId !== Number(hotelChainId)) {
+      if (!eliteStatus || eliteStatus.hotelChainId !== hotelChainId) {
         return NextResponse.json(
           { error: "Elite status does not belong to the specified hotel chain" },
           { status: 400 }
@@ -46,11 +46,11 @@ export async function POST(request: NextRequest) {
     }
 
     const status = await prisma.userStatus.upsert({
-      where: { hotelChainId: Number(hotelChainId) },
-      update: { eliteStatusId: eliteStatusId ? Number(eliteStatusId) : null },
+      where: { hotelChainId: hotelChainId },
+      update: { eliteStatusId: eliteStatusId ? eliteStatusId : null },
       create: {
-        hotelChainId: Number(hotelChainId),
-        eliteStatusId: eliteStatusId ? Number(eliteStatusId) : null,
+        hotelChainId: hotelChainId,
+        eliteStatusId: eliteStatusId ? eliteStatusId : null,
       },
       include: {
         hotelChain: true,
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
 
     // Only recalculate if the elite status changed
     if (!existing || existing.eliteStatusId !== status.eliteStatusId) {
-      await recalculateLoyaltyForHotelChain(Number(hotelChainId));
+      await recalculateLoyaltyForHotelChain(hotelChainId);
     }
 
     return NextResponse.json(status);

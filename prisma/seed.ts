@@ -1,7 +1,23 @@
-import { PrismaClient } from "@prisma/client";
-import { HOTEL_ID } from "../src/lib/constants";
+import { PrismaClient, PointCategory } from "@prisma/client";
+import { HOTEL_ID, SUB_BRAND_ID } from "../src/lib/constants";
+import { CREDIT_CARD_ID, SHOPPING_PORTAL_ID, OTA_AGENCY_ID } from "./seed-ids";
 
 const prisma = new PrismaClient();
+
+const POINT_TYPE_ID = {
+  HILTON_HONORS: "cyh0r61a810u6qrgfj515tkid",
+  MARRIOTT_BONVOY: "ctv910qcpclvq0b9thpcw12x6",
+  WORLD_OF_HYATT: "cd0y4mrv3iwc2r2gwgwy722zk",
+  IHG_ONE_REWARDS: "cmcri5r30guyq8l8f2pvaqwr7",
+  DISCOVERY_DOLLARS: "c8wn8dzybdbymevuucmup1j96",
+  ACCOR_ALL: "coa03zp46q2v01c4l4knm1rcg",
+  MEMBERSHIP_REWARDS: "cc0pgnx83hbjbbwxi99qocq52",
+  ULTIMATE_REWARDS: "c8974es8z9vnwdgt934zrlare",
+  CAPITAL_ONE_MILES: "cwhd30omk2xajtvfa2iqmmgab",
+  AVIOS: "c4rk0idsjpnfriatk1qulswgx",
+  BILT: "cbuf26mcgjs61kr9bybazq95j",
+  WELLS_FARGO: "c0kuqb3diocim6kgaxo0b3w0r",
+};
 
 interface EliteStatusData {
   name: string;
@@ -16,27 +32,11 @@ interface SubBrandData {
   basePointRate?: number;
 }
 
-async function upsertEliteStatuses(hotelChainId: number, statuses: EliteStatusData[]) {
-  for (const status of statuses) {
-    await prisma.hotelChainEliteStatus.upsert({
-      where: {
-        hotelChainId_name: {
-          hotelChainId,
-          name: status.name,
-        },
-      },
-      update: status,
-      create: {
-        ...status,
-        hotelChainId,
-      },
-    });
-  }
-}
-
 /**
- * Utility function used to generate the shortened names above.
- * Kept here for future use when adding new brands to the seed data.
+ * Converts a hotel chain sub-brand name into a snake_case key.
+ * Used when adding new sub-brands to SUB_BRAND_ID in constants.ts —
+ * run this against the brand name to generate a consistent key.
+ * DO NOT DELETE: retained as a dev utility for future sub-brand additions.
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function shortenName(name: string): string {
@@ -66,20 +66,59 @@ function shortenName(name: string): string {
     .trim();
 }
 
-async function upsertSubBrands(hotelChainId: number, subBrands: SubBrandData[]) {
-  for (let i = 0; i < subBrands.length; i++) {
-    const sb = subBrands[i];
-    const fixedId = hotelChainId * 1000 + (i + 1);
+// Map sub-brand names to their stable IDs from constants.
+// Sub-brands not listed here receive an auto-generated CUID on first insert.
+const SUB_BRAND_MAP: Record<string, string> = {
+  "Autograph Collection": SUB_BRAND_ID.MARRIOTT.AUTOGRAPH_COLLECTION,
+  citizenM: SUB_BRAND_ID.MARRIOTT.CITIZENM,
+  Moxy: SUB_BRAND_ID.MARRIOTT.MOXY,
+  "Tribute Portfolio": SUB_BRAND_ID.MARRIOTT.TRIBUTE_PORTFOLIO,
+  "Park Hyatt": SUB_BRAND_ID.HYATT.PARK_HYATT,
+  "Hyatt Centric": SUB_BRAND_ID.HYATT.HYATT_CENTRIC,
+  "Hyatt Place": SUB_BRAND_ID.HYATT.HYATT_PLACE,
+  "Holiday Inn Express": SUB_BRAND_ID.IHG.HOLIDAY_INN_EXPRESS,
+  "Hotel Indigo": SUB_BRAND_ID.IHG.HOTEL_INDIGO,
+  Sunway: SUB_BRAND_ID.GHA_DISCOVERY.SUNWAY,
+  PARKROYAL: SUB_BRAND_ID.GHA_DISCOVERY.PARKROYAL,
+  "PARKROYAL COLLECTION": SUB_BRAND_ID.GHA_DISCOVERY.PARKROYAL_COLLECTION,
+  "ibis Styles": SUB_BRAND_ID.ACCOR.IBIS_STYLES,
+};
 
+async function upsertEliteStatuses(hotelChainId: string, statuses: EliteStatusData[]) {
+  for (const status of statuses) {
+    await prisma.hotelChainEliteStatus.upsert({
+      where: {
+        hotelChainId_name: {
+          hotelChainId,
+          name: status.name,
+        },
+      },
+      update: status,
+      create: {
+        ...status,
+        hotelChainId,
+      },
+    });
+  }
+}
+
+async function upsertSubBrands(hotelChainId: string, subBrands: SubBrandData[]) {
+  for (const sb of subBrands) {
+    const stableId = SUB_BRAND_MAP[sb.name];
     await prisma.hotelChainSubBrand.upsert({
-      where: { id: fixedId },
+      where: {
+        hotelChainId_name: {
+          hotelChainId,
+          name: sb.name,
+        },
+      },
       update: {
         name: sb.name,
         hotelChainId,
         basePointRate: sb.basePointRate,
       },
       create: {
-        id: fixedId,
+        ...(stableId ? { id: stableId } : {}),
         name: sb.name,
         hotelChainId,
         basePointRate: sb.basePointRate,
@@ -88,7 +127,7 @@ async function upsertSubBrands(hotelChainId: number, subBrands: SubBrandData[]) 
   }
 }
 
-async function upsertUserStatus(hotelChainId: number, statusName: string) {
+async function upsertUserStatus(hotelChainId: string, statusName: string) {
   const eliteStatus = await prisma.hotelChainEliteStatus.findFirst({
     where: { hotelChainId, name: statusName },
   });
@@ -103,77 +142,103 @@ async function upsertUserStatus(hotelChainId: number, statusName: string) {
 
 async function main() {
   // PointTypes
-  await prisma.pointType.upsert({
-    where: { id: 1 },
-    update: { name: "Hilton Honors Points", category: "hotel", centsPerPoint: 0.0045 },
-    create: { id: 1, name: "Hilton Honors Points", category: "hotel", centsPerPoint: 0.0045 },
-  });
-  await prisma.pointType.upsert({
-    where: { id: 2 },
-    update: { name: "Marriott Bonvoy Points", category: "hotel", centsPerPoint: 0.007 },
-    create: { id: 2, name: "Marriott Bonvoy Points", category: "hotel", centsPerPoint: 0.007 },
-  });
-  await prisma.pointType.upsert({
-    where: { id: 3 },
-    update: { name: "World of Hyatt Points", category: "hotel", centsPerPoint: 0.02 },
-    create: { id: 3, name: "World of Hyatt Points", category: "hotel", centsPerPoint: 0.02 },
-  });
-  await prisma.pointType.upsert({
-    where: { id: 4 },
-    update: { name: "IHG One Rewards", category: "hotel", centsPerPoint: 0.006 },
-    create: { id: 4, name: "IHG One Rewards", category: "hotel", centsPerPoint: 0.006 },
-  });
-  await prisma.pointType.upsert({
-    where: { id: 5 },
-    update: { name: "Discovery Dollars", category: "hotel", centsPerPoint: 0.01 },
-    create: { id: 5, name: "Discovery Dollars", category: "hotel", centsPerPoint: 0.01 },
-  });
-  await prisma.pointType.upsert({
-    where: { id: 6 },
-    update: { name: "ALL - Accor Live Limitless", category: "hotel", centsPerPoint: 0.022 },
-    create: { id: 6, name: "ALL - Accor Live Limitless", category: "hotel", centsPerPoint: 0.022 },
-  });
-  await prisma.pointType.upsert({
-    where: { id: 7 },
-    update: { name: "Membership Rewards", category: "transferable", centsPerPoint: 0.02 },
-    create: { id: 7, name: "Membership Rewards", category: "transferable", centsPerPoint: 0.02 },
-  });
-  await prisma.pointType.upsert({
-    where: { id: 8 },
-    update: { name: "Ultimate Rewards", category: "transferable", centsPerPoint: 0.02 },
-    create: { id: 8, name: "Ultimate Rewards", category: "transferable", centsPerPoint: 0.02 },
-  });
-  await prisma.pointType.upsert({
-    where: { id: 9 },
-    update: { name: "Capital One Miles", category: "transferable", centsPerPoint: 0.0175 },
-    create: { id: 9, name: "Capital One Miles", category: "transferable", centsPerPoint: 0.0175 },
-  });
-  await prisma.pointType.upsert({
-    where: { id: 10 },
-    update: { name: "Avios", category: "airline", centsPerPoint: 0.012 },
-    create: { id: 10, name: "Avios", category: "airline", centsPerPoint: 0.012 },
-  });
-  await prisma.pointType.upsert({
-    where: { id: 11 },
-    update: { name: "Bilt", category: "transferable", centsPerPoint: 0.02 },
-    create: { id: 11, name: "Bilt", category: "transferable", centsPerPoint: 0.02 },
-  });
-  await prisma.pointType.upsert({
-    where: { id: 12 },
-    update: { name: "Wells Fargo Rewards", category: "transferable", centsPerPoint: 0.015 },
-    create: { id: 12, name: "Wells Fargo Rewards", category: "transferable", centsPerPoint: 0.015 },
-  });
+  const pointTypeData = [
+    {
+      id: POINT_TYPE_ID.HILTON_HONORS,
+      name: "Hilton Honors Points",
+      category: "hotel",
+      centsPerPoint: 0.0045,
+    },
+    {
+      id: POINT_TYPE_ID.MARRIOTT_BONVOY,
+      name: "Marriott Bonvoy Points",
+      category: "hotel",
+      centsPerPoint: 0.007,
+    },
+    {
+      id: POINT_TYPE_ID.WORLD_OF_HYATT,
+      name: "World of Hyatt Points",
+      category: "hotel",
+      centsPerPoint: 0.02,
+    },
+    {
+      id: POINT_TYPE_ID.IHG_ONE_REWARDS,
+      name: "IHG One Rewards",
+      category: "hotel",
+      centsPerPoint: 0.006,
+    },
+    {
+      id: POINT_TYPE_ID.DISCOVERY_DOLLARS,
+      name: "Discovery Dollars",
+      category: "hotel",
+      centsPerPoint: 0.01,
+    },
+    {
+      id: POINT_TYPE_ID.ACCOR_ALL,
+      name: "ALL - Accor Live Limitless",
+      category: "hotel",
+      centsPerPoint: 0.022,
+    },
+    {
+      id: POINT_TYPE_ID.MEMBERSHIP_REWARDS,
+      name: "Membership Rewards",
+      category: "transferable",
+      centsPerPoint: 0.02,
+    },
+    {
+      id: POINT_TYPE_ID.ULTIMATE_REWARDS,
+      name: "Ultimate Rewards",
+      category: "transferable",
+      centsPerPoint: 0.02,
+    },
+    {
+      id: POINT_TYPE_ID.CAPITAL_ONE_MILES,
+      name: "Capital One Miles",
+      category: "transferable",
+      centsPerPoint: 0.0175,
+    },
+    { id: POINT_TYPE_ID.AVIOS, name: "Avios", category: "airline", centsPerPoint: 0.012 },
+    { id: POINT_TYPE_ID.BILT, name: "Bilt", category: "transferable", centsPerPoint: 0.02 },
+    {
+      id: POINT_TYPE_ID.WELLS_FARGO,
+      name: "Wells Fargo Rewards",
+      category: "transferable",
+      centsPerPoint: 0.015,
+    },
+  ];
+
+  for (const pt of pointTypeData) {
+    await prisma.pointType.upsert({
+      where: { id: pt.id },
+      update: {
+        name: pt.name,
+        category: pt.category as PointCategory,
+        centsPerPoint: pt.centsPerPoint,
+      },
+      create: {
+        id: pt.id,
+        name: pt.name,
+        category: pt.category as PointCategory,
+        centsPerPoint: pt.centsPerPoint,
+      },
+    });
+  }
 
   // Hilton
   await prisma.hotelChain.upsert({
     where: { id: HOTEL_ID.HILTON },
-    update: { name: "Hilton", loyaltyProgram: "Hilton Honors", basePointRate: 10, pointTypeId: 1 },
+    update: {
+      name: "Hilton",
+      loyaltyProgram: "Hilton Honors",
+      basePointRate: 10,
+      pointTypeId: POINT_TYPE_ID.HILTON_HONORS,
+    },
     create: {
       id: HOTEL_ID.HILTON,
       name: "Hilton",
       loyaltyProgram: "Hilton Honors",
       basePointRate: 10,
-      pointTypeId: 1,
+      pointTypeId: POINT_TYPE_ID.HILTON_HONORS,
     },
   });
   await upsertEliteStatuses(HOTEL_ID.HILTON, [
@@ -217,14 +282,14 @@ async function main() {
       name: "Marriott",
       loyaltyProgram: "Marriott Bonvoy",
       basePointRate: 10,
-      pointTypeId: 2,
+      pointTypeId: POINT_TYPE_ID.MARRIOTT_BONVOY,
     },
     create: {
       id: HOTEL_ID.MARRIOTT,
       name: "Marriott",
       loyaltyProgram: "Marriott Bonvoy",
       basePointRate: 10,
-      pointTypeId: 2,
+      pointTypeId: POINT_TYPE_ID.MARRIOTT_BONVOY,
     },
   });
   await upsertEliteStatuses(HOTEL_ID.MARRIOTT, [
@@ -279,13 +344,18 @@ async function main() {
   // Hyatt
   await prisma.hotelChain.upsert({
     where: { id: HOTEL_ID.HYATT },
-    update: { name: "Hyatt", loyaltyProgram: "World of Hyatt", basePointRate: 5, pointTypeId: 3 },
+    update: {
+      name: "Hyatt",
+      loyaltyProgram: "World of Hyatt",
+      basePointRate: 5,
+      pointTypeId: POINT_TYPE_ID.WORLD_OF_HYATT,
+    },
     create: {
       id: HOTEL_ID.HYATT,
       name: "Hyatt",
       loyaltyProgram: "World of Hyatt",
       basePointRate: 5,
-      pointTypeId: 3,
+      pointTypeId: POINT_TYPE_ID.WORLD_OF_HYATT,
     },
   });
   await upsertEliteStatuses(HOTEL_ID.HYATT, [
@@ -326,13 +396,18 @@ async function main() {
   // IHG
   await prisma.hotelChain.upsert({
     where: { id: HOTEL_ID.IHG },
-    update: { name: "IHG", loyaltyProgram: "IHG One Rewards", basePointRate: 10, pointTypeId: 4 },
+    update: {
+      name: "IHG",
+      loyaltyProgram: "IHG One Rewards",
+      basePointRate: 10,
+      pointTypeId: POINT_TYPE_ID.IHG_ONE_REWARDS,
+    },
     create: {
       id: HOTEL_ID.IHG,
       name: "IHG",
       loyaltyProgram: "IHG One Rewards",
       basePointRate: 10,
-      pointTypeId: 4,
+      pointTypeId: POINT_TYPE_ID.IHG_ONE_REWARDS,
     },
   });
   await upsertEliteStatuses(HOTEL_ID.IHG, [
@@ -370,14 +445,14 @@ async function main() {
       name: "GHA Discovery",
       loyaltyProgram: "GHA Discovery",
       basePointRate: 4,
-      pointTypeId: 5,
+      pointTypeId: POINT_TYPE_ID.DISCOVERY_DOLLARS,
     },
     create: {
       id: HOTEL_ID.GHA_DISCOVERY,
       name: "GHA Discovery",
       loyaltyProgram: "GHA Discovery",
       basePointRate: 4,
-      pointTypeId: 5,
+      pointTypeId: POINT_TYPE_ID.DISCOVERY_DOLLARS,
     },
   });
   await upsertEliteStatuses(HOTEL_ID.GHA_DISCOVERY, [
@@ -454,14 +529,14 @@ async function main() {
       name: "Accor",
       loyaltyProgram: "ALL - Accor Live Limitless",
       basePointRate: ACCOR_BASE_RATE,
-      pointTypeId: 6,
+      pointTypeId: POINT_TYPE_ID.ACCOR_ALL,
     },
     create: {
       id: HOTEL_ID.ACCOR,
       name: "Accor",
       loyaltyProgram: "ALL - Accor Live Limitless",
       basePointRate: ACCOR_BASE_RATE,
-      pointTypeId: 6,
+      pointTypeId: POINT_TYPE_ID.ACCOR_ALL,
     },
   });
   await upsertEliteStatuses(HOTEL_ID.ACCOR, [
@@ -519,106 +594,115 @@ async function main() {
 
   // Credit Cards
   await prisma.creditCard.upsert({
-    where: { id: 1 },
-    update: { name: "Amex Platinum", rewardType: "points", rewardRate: 1, pointTypeId: 7 },
-    create: { id: 1, name: "Amex Platinum", rewardType: "points", rewardRate: 1, pointTypeId: 7 },
+    where: { id: CREDIT_CARD_ID.AMEX_PLATINUM },
+    update: {
+      name: "Amex Platinum",
+      rewardType: "points",
+      rewardRate: 1,
+      pointTypeId: POINT_TYPE_ID.MEMBERSHIP_REWARDS,
+    },
+    create: {
+      id: CREDIT_CARD_ID.AMEX_PLATINUM,
+      name: "Amex Platinum",
+      rewardType: "points",
+      rewardRate: 1,
+      pointTypeId: POINT_TYPE_ID.MEMBERSHIP_REWARDS,
+    },
   });
   await prisma.creditCard.upsert({
-    where: { id: 2 },
-    update: { name: "Chase Sapphire Reserve", rewardType: "points", rewardRate: 4, pointTypeId: 8 },
-    create: {
-      id: 2,
+    where: { id: CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE },
+    update: {
       name: "Chase Sapphire Reserve",
       rewardType: "points",
       rewardRate: 4,
-      pointTypeId: 8,
+      pointTypeId: POINT_TYPE_ID.ULTIMATE_REWARDS,
+    },
+    create: {
+      id: CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE,
+      name: "Chase Sapphire Reserve",
+      rewardType: "points",
+      rewardRate: 4,
+      pointTypeId: POINT_TYPE_ID.ULTIMATE_REWARDS,
     },
   });
   await prisma.creditCard.upsert({
-    where: { id: 3 },
-    update: { name: "Capital One Venture X", rewardType: "points", rewardRate: 2, pointTypeId: 9 },
-    create: {
-      id: 3,
+    where: { id: CREDIT_CARD_ID.CAPITAL_ONE_VENTURE_X },
+    update: {
       name: "Capital One Venture X",
       rewardType: "points",
       rewardRate: 2,
-      pointTypeId: 9,
+      pointTypeId: POINT_TYPE_ID.CAPITAL_ONE_MILES,
+    },
+    create: {
+      id: CREDIT_CARD_ID.CAPITAL_ONE_VENTURE_X,
+      name: "Capital One Venture X",
+      rewardType: "points",
+      rewardRate: 2,
+      pointTypeId: POINT_TYPE_ID.CAPITAL_ONE_MILES,
     },
   });
   await prisma.creditCard.upsert({
-    where: { id: 4 },
+    where: { id: CREDIT_CARD_ID.WELLS_FARGO_AUTOGRAPH },
     update: {
       name: "Wells Fargo Autograph Journey",
       rewardType: "points",
       rewardRate: 5,
-      pointTypeId: 12,
+      pointTypeId: POINT_TYPE_ID.WELLS_FARGO,
     },
     create: {
-      id: 4,
+      id: CREDIT_CARD_ID.WELLS_FARGO_AUTOGRAPH,
       name: "Wells Fargo Autograph Journey",
       rewardType: "points",
       rewardRate: 5,
-      pointTypeId: 12,
+      pointTypeId: POINT_TYPE_ID.WELLS_FARGO,
     },
   });
 
   // OTA Agencies
   await prisma.otaAgency.upsert({
-    where: { id: 1 },
+    where: { id: OTA_AGENCY_ID.AMEX_FHR },
     update: { name: "AMEX FHR" },
-    create: { id: 1, name: "AMEX FHR" },
+    create: { id: OTA_AGENCY_ID.AMEX_FHR, name: "AMEX FHR" },
   });
   await prisma.otaAgency.upsert({
-    where: { id: 2 },
+    where: { id: OTA_AGENCY_ID.AMEX_THC },
     update: { name: "AMEX THC" },
-    create: { id: 2, name: "AMEX THC" },
+    create: { id: OTA_AGENCY_ID.AMEX_THC, name: "AMEX THC" },
   });
   await prisma.otaAgency.upsert({
-    where: { id: 3 },
+    where: { id: OTA_AGENCY_ID.CHASE_EDIT },
     update: { name: "Chase The Edit" },
-    create: { id: 3, name: "Chase The Edit" },
+    create: { id: OTA_AGENCY_ID.CHASE_EDIT, name: "Chase The Edit" },
   });
 
   // Shopping Portals
   await prisma.shoppingPortal.upsert({
-    where: { id: 1 },
-    update: { name: "Rakuten", rewardType: "points", pointTypeId: 11 },
-    create: { id: 1, name: "Rakuten", rewardType: "points", pointTypeId: 11 },
+    where: { id: SHOPPING_PORTAL_ID.RAKUTEN },
+    update: { name: "Rakuten", rewardType: "points", pointTypeId: POINT_TYPE_ID.BILT }, // Rakuten -> Bilt/MR
+    create: {
+      id: SHOPPING_PORTAL_ID.RAKUTEN,
+      name: "Rakuten",
+      rewardType: "points",
+      pointTypeId: POINT_TYPE_ID.BILT,
+    },
   });
   await prisma.shoppingPortal.upsert({
-    where: { id: 2 },
+    where: { id: SHOPPING_PORTAL_ID.TOPCASHBACK },
     update: { name: "TopCashback", rewardType: "cashback", pointTypeId: null },
-    create: { id: 2, name: "TopCashback", rewardType: "cashback" },
+    create: { id: SHOPPING_PORTAL_ID.TOPCASHBACK, name: "TopCashback", rewardType: "cashback" },
   });
   await prisma.shoppingPortal.upsert({
-    where: { id: 3 },
-    update: { name: "British Airways", rewardType: "points", pointTypeId: 10 },
-    create: { id: 3, name: "British Airways", rewardType: "points", pointTypeId: 10 },
+    where: { id: SHOPPING_PORTAL_ID.BRITISH_AIRWAYS },
+    update: { name: "British Airways", rewardType: "points", pointTypeId: POINT_TYPE_ID.AVIOS },
+    create: {
+      id: SHOPPING_PORTAL_ID.BRITISH_AIRWAYS,
+      name: "British Airways",
+      rewardType: "points",
+      pointTypeId: POINT_TYPE_ID.AVIOS,
+    },
   });
 
   console.log("Seed data created successfully");
-
-  // Reset sequences to prevent clashes with manual IDs
-  const tables = [
-    "point_types",
-    "hotel_chains",
-    "credit_cards",
-    "ota_agencies",
-    "shopping_portals",
-  ];
-  for (const table of tables) {
-    try {
-      await prisma.$executeRawUnsafe(
-        `SELECT setval(pg_get_serial_sequence('"${table}"', 'id'), coalesce(max(id), 1), max(id) IS NOT NULL) FROM "${table}";`
-      );
-      console.log(`Reset sequence for ${table}`);
-    } catch (error) {
-      console.warn(
-        `Could not reset sequence for ${table} (might not be PostgreSQL or sequence doesn't exist):`,
-        error
-      );
-    }
-  }
 }
 
 main()

@@ -3,14 +3,14 @@
 // ---------------------------------------------------------------------------
 
 export interface PointType {
-  id: number;
+  id: string;
   name: string;
   category: "hotel" | "airline" | "transferable";
   centsPerPoint: string | number;
 }
 
 export interface HotelChainEliteStatus {
-  id: number;
+  id: string;
   name: string;
   bonusPercentage: number | null;
   fixedRate: number | null;
@@ -18,25 +18,25 @@ export interface HotelChainEliteStatus {
 }
 
 export interface UserStatus {
-  id: number;
-  hotelChainId: number;
-  eliteStatusId: number | null;
+  id: string;
+  hotelChainId: string;
+  eliteStatusId: string | null;
   eliteStatus: HotelChainEliteStatus | null;
 }
 
 export interface HotelChainSubBrand {
-  id: number;
-  hotelChainId: number;
+  id: string;
+  hotelChainId: string;
   name: string;
   basePointRate: number | null;
 }
 
 export interface HotelChain {
-  id: number;
+  id: string;
   name: string;
   loyaltyProgram: string | null;
   basePointRate: number | null;
-  pointTypeId: number | null;
+  pointTypeId: string | null;
   pointType: PointType | null;
   hotelChainSubBrands: HotelChainSubBrand[];
   eliteStatuses: HotelChainEliteStatus[];
@@ -44,25 +44,25 @@ export interface HotelChain {
 }
 
 export interface CreditCard {
-  id: number;
+  id: string;
   name: string;
   rewardType: string;
   rewardRate: number;
-  pointTypeId: number | null;
+  pointTypeId: string | null;
   pointType: PointType | null;
   isDeleted: boolean;
 }
 
 export interface ShoppingPortal {
-  id: number;
+  id: string;
   name: string;
   rewardType: string;
-  pointTypeId: number | null;
+  pointTypeId: string | null;
   pointType: PointType | null;
 }
 
 export interface OtaAgency {
-  id: number;
+  id: string;
   name: string;
 }
 
@@ -76,15 +76,15 @@ export type PromotionBenefitValueType = "fixed" | "percentage" | "multiplier";
 export type PointsMultiplierBasis = "base_only" | "base_and_elite";
 
 export interface PromotionExclusion {
-  id: number;
-  promotionId: number;
-  hotelChainSubBrandId: number;
+  id: string;
+  promotionId: string;
+  hotelChainSubBrandId: string;
 }
 
 export interface PromotionBenefit {
-  id: number;
-  promotionId: number | null;
-  promotionTierId?: number | null;
+  id: string;
+  promotionId: string | null;
+  promotionTierId?: string | null;
   rewardType: PromotionRewardType;
   valueType: PromotionBenefitValueType;
   value: string | number;
@@ -95,8 +95,8 @@ export interface PromotionBenefit {
 }
 
 export interface PromotionTier {
-  id: number;
-  promotionId: number;
+  id: string;
+  promotionId: string;
   minStays: number;
   maxStays: number | null;
   benefits: PromotionBenefit[];
@@ -119,18 +119,18 @@ export interface PromotionBenefitFormData {
 }
 
 export interface Promotion {
-  id: number;
+  id: string;
   name: string;
   type: PromotionType;
   benefits: PromotionBenefit[];
   tiers: PromotionTier[];
   exclusions: PromotionExclusion[];
-  hotelChainId: number | null;
-  hotelChainSubBrandId: number | null;
-  creditCardId: number | null;
-  tieInCreditCardIds: number[];
+  hotelChainId: string | null;
+  hotelChainSubBrandId: string | null;
+  creditCardId: string | null;
+  tieInCreditCardIds: string[];
   tieInRequiresPayment: boolean;
-  shoppingPortalId: number | null;
+  shoppingPortalId: string | null;
   minSpend: string | number | null;
   startDate: string | null;
   endDate: string | null;
@@ -149,8 +149,8 @@ export interface Promotion {
 }
 
 export interface UserPromotion {
-  id: number;
-  promotionId: number;
+  id: string;
+  promotionId: string;
   registrationDate: string;
 }
 
@@ -159,12 +159,12 @@ export interface PromotionFormData {
   type: PromotionType;
   benefits: PromotionBenefitFormData[];
   tiers?: PromotionTierFormData[];
-  hotelChainId?: number | null;
-  hotelChainSubBrandId?: number | null;
-  creditCardId?: number | null;
-  tieInCreditCardIds?: number[];
+  hotelChainId?: string | null;
+  hotelChainSubBrandId?: string | null;
+  creditCardId?: string | null;
+  tieInCreditCardIds?: string[];
   tieInRequiresPayment?: boolean;
-  shoppingPortalId?: number | null;
+  shoppingPortalId?: string | null;
   minSpend?: number | null;
   startDate?: string | null;
   endDate?: string | null;
@@ -177,7 +177,7 @@ export interface PromotionFormData {
   nightsStackable?: boolean;
   bookByDate?: string | null;
   oncePerSubBrand?: boolean;
-  exclusionSubBrandIds?: number[];
+  exclusionSubBrandIds?: string[];
   registrationDeadline?: string | null;
   validDaysAfterRegistration?: number | null;
   registrationDate?: string | null; // For recording registration in the same form if needed
@@ -197,21 +197,21 @@ export type PaymentType =
   | "cash_points_cert";
 
 export interface BookingCertificate {
-  id: number;
+  id: string;
   certType: string;
 }
 
 export interface BookingBenefit {
-  id: number;
+  id: string;
   benefitType: string;
   label: string | null;
   dollarValue: string | number | null;
 }
 
 export interface Booking {
-  id: number;
-  hotelChainId: number;
-  hotelChainSubBrandId: number | null;
+  id: string;
+  hotelChainId: string;
+  hotelChainSubBrandId: string | null;
   propertyName: string;
   checkIn: string;
   checkOut: string;
@@ -221,8 +221,8 @@ export interface Booking {
   totalCost: string | number;
   currency: string;
   originalAmount: string | number | null;
-  creditCardId: number | null;
-  shoppingPortalId: number | null;
+  creditCardId: string | null;
+  shoppingPortalId: string | null;
   portalCashbackRate: string | number | null;
   portalCashbackOnTotal: boolean;
   loyaltyPointsEarned: number | null;
@@ -230,13 +230,13 @@ export interface Booking {
   notes: string | null;
   certificates: BookingCertificate[];
   bookingSource: string | null;
-  otaAgencyId: number | null;
+  otaAgencyId: string | null;
   benefits: BookingBenefit[];
 }
 
 export interface BookingFormData {
-  hotelChainId: number;
-  hotelChainSubBrandId: number | null;
+  hotelChainId: string;
+  hotelChainSubBrandId: string | null;
   propertyName: string;
   checkIn: string;
   checkOut: string;
@@ -248,13 +248,13 @@ export interface BookingFormData {
   originalAmount: number | null;
   pointsRedeemed: number | null;
   certificates: string[];
-  creditCardId: number | null;
-  shoppingPortalId: number | null;
+  creditCardId: string | null;
+  shoppingPortalId: string | null;
   portalCashbackRate: number | null;
   portalCashbackOnTotal: boolean;
   loyaltyPointsEarned: number | null;
   bookingSource: string | null;
-  otaAgencyId: number | null;
+  otaAgencyId: string | null;
   benefits: {
     benefitType: string;
     label: string | null;

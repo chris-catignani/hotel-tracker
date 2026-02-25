@@ -54,9 +54,9 @@ export interface NetCostBooking {
     pointType: { name: string; centsPerPoint: string | number } | null;
   } | null;
   bookingPromotions: {
-    id?: number;
-    bookingId?: number;
-    promotionId?: number;
+    id?: string;
+    bookingId?: string;
+    promotionId?: string;
     appliedValue: string | number;
     autoApplied?: boolean;
     verified?: boolean;
@@ -75,7 +75,7 @@ export interface NetCostBooking {
 }
 
 export interface PromotionBreakdown extends CalculationDetail {
-  id: number;
+  id: string;
   name: string;
   appliedValue: number;
 }
@@ -225,7 +225,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
         : `Applied promotion value: ${formatCurrency(appliedValue)}.`;
 
     return {
-      id: index,
+      id: String(index),
       name: bp.promotion.name,
       appliedValue,
       label: "Promotion",

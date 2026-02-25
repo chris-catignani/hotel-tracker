@@ -6,7 +6,7 @@ import { reevaluateBookings } from "./promotion-matching";
  * Re-calculates loyalty points for all upcoming bookings of a specific hotel chain.
  * This is triggered when the chain's base rate or the user's status for that chain changes.
  */
-export async function recalculateLoyaltyForHotelChain(hotelChainId: number): Promise<void> {
+export async function recalculateLoyaltyForHotelChain(hotelChainId: string): Promise<void> {
   // 1. Fetch chain and its current user status/elite details
   const hotelChain = await prisma.hotelChain.findUnique({
     where: { id: hotelChainId },

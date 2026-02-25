@@ -13,41 +13,39 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (basePointRate !== undefined)
       data.basePointRate = basePointRate != null ? Number(basePointRate) : null;
 
-    const hotelChainSubBrand = await prisma.hotelChainSubBrand.update({
-      where: { id: Number(id) },
+    const subBrand = await prisma.hotelChainSubBrand.update({
+      where: { id: id },
       data,
     });
 
-    return NextResponse.json(hotelChainSubBrand);
+    return NextResponse.json(subBrand);
   } catch (error) {
-    return apiError("Failed to update hotel chain sub-brand", error);
+    return apiError("Failed to update sub-brand", error);
   }
 }
 
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
 
+    // Check if sub-brand is in use
     const bookingCount = await prisma.booking.count({
-      where: { hotelChainSubBrandId: Number(id) },
+      where: { hotelChainSubBrandId: id },
     });
 
     if (bookingCount > 0) {
-      return NextResponse.json(
-        { error: "Cannot delete hotel chain sub-brand with existing bookings" },
-        { status: 409 }
-      );
+      return apiError("Cannot delete sub-brand that is in use by bookings", null, 400);
     }
 
     await prisma.hotelChainSubBrand.delete({
-      where: { id: Number(id) },
+      where: { id: id },
     });
 
-    return NextResponse.json({ message: "Hotel chain sub-brand deleted" });
+    return new NextResponse(null, { status: 204 });
   } catch (error) {
-    return apiError("Failed to delete hotel chain sub-brand", error);
+    return apiError("Failed to delete sub-brand", error);
   }
 }

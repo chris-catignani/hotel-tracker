@@ -26,7 +26,7 @@ test.describe("Promotions CRUD", () => {
     const row = page.getByRole("row").filter({ hasText: testPromotion.name });
     await row.getByRole("link", { name: "Edit" }).click();
 
-    await expect(page).toHaveURL(/\/promotions\/\d+\/edit/);
+    await expect(page).toHaveURL(/\/promotions\/[a-z0-9]+\/edit/);
     await expect(page.getByRole("heading", { name: /Edit Promotion/i })).toBeVisible();
   });
 
@@ -213,7 +213,7 @@ test.describe("Promotions multi-benefit via API", () => {
 
     // Should have the promotion applied
     const appliedPromo = full.bookingPromotions.find(
-      (bp: { promotionId: number }) => bp.promotionId === promo.id
+      (bp: { promotionId: string }) => bp.promotionId === promo.id
     );
     expect(appliedPromo).toBeDefined();
     // $20 cashback + $0 EQN = $20 total
@@ -301,7 +301,7 @@ test.describe("Promotions tiered", () => {
     const booking1 = await booking1Res.json();
 
     const bp1 = booking1.bookingPromotions.find(
-      (bp: { promotionId: number }) => bp.promotionId === promo.id
+      (bp: { promotionId: string }) => bp.promotionId === promo.id
     );
     expect(bp1).toBeDefined();
     expect(Number(bp1.appliedValue)).toBe(50);
@@ -324,7 +324,7 @@ test.describe("Promotions tiered", () => {
     const booking2 = await booking2Res.json();
 
     const bp2 = booking2.bookingPromotions.find(
-      (bp: { promotionId: number }) => bp.promotionId === promo.id
+      (bp: { promotionId: string }) => bp.promotionId === promo.id
     );
     expect(bp2).toBeDefined();
     expect(Number(bp2.appliedValue)).toBe(75);
@@ -337,9 +337,9 @@ test.describe("Promotions tiered", () => {
 });
 
 test.describe("Promotions tie-in credit card", () => {
-  // Seeded credit card IDs
-  const TIE_IN_CARD_ID = 1; // Amex Platinum
-  const OTHER_CARD_ID = 2; // Chase Sapphire Reserve
+  // Seeded credit card IDs (CUIDs)
+  const TIE_IN_CARD_ID = "cme8yfwy2hfqahb6ync8czd24"; // Amex Platinum
+  const OTHER_CARD_ID = "cw4yg6ftdskwq651p3p8nrvnr"; // Chase Sapphire Reserve
 
   test("booking WITH tie-in card gets all benefits (base + tie-in)", async ({
     request,
@@ -375,7 +375,7 @@ test.describe("Promotions tie-in credit card", () => {
     });
     expect(promoRes.ok()).toBeTruthy();
     const promo = await promoRes.json();
-    expect(promo.tieInCards.map((c: { creditCardId: number }) => c.creditCardId)).toContain(
+    expect(promo.tieInCards.map((c: { creditCardId: string }) => c.creditCardId)).toContain(
       TIE_IN_CARD_ID
     );
     expect(promo.benefits).toHaveLength(2);
@@ -401,7 +401,7 @@ test.describe("Promotions tie-in credit card", () => {
     const booking = await bookingRes.json();
 
     const appliedPromo = booking.bookingPromotions.find(
-      (bp: { promotionId: number }) => bp.promotionId === promo.id
+      (bp: { promotionId: string }) => bp.promotionId === promo.id
     );
     expect(appliedPromo).toBeDefined();
     // $20 base + $30 tie-in = $50 total
@@ -467,7 +467,7 @@ test.describe("Promotions tie-in credit card", () => {
     const booking = await bookingRes.json();
 
     const appliedPromo = booking.bookingPromotions.find(
-      (bp: { promotionId: number }) => bp.promotionId === promo.id
+      (bp: { promotionId: string }) => bp.promotionId === promo.id
     );
     expect(appliedPromo).toBeDefined();
     // Only $20 base benefit applies; tie-in benefit is skipped
@@ -534,7 +534,7 @@ test.describe("Promotions tie-in credit card", () => {
     const booking = await bookingRes.json();
 
     const appliedPromo = booking.bookingPromotions.find(
-      (bp: { promotionId: number }) => bp.promotionId === promo.id
+      (bp: { promotionId: string }) => bp.promotionId === promo.id
     );
     expect(appliedPromo).toBeDefined();
     // Only $20 base benefit applies; tie-in benefit is skipped (no card)
@@ -588,7 +588,7 @@ test.describe("Promotions constraints", () => {
 
     // Verify first booking has the single-use promotion applied
     const booking1SingleUse = booking1.bookingPromotions.find(
-      (bp: { promotionId: number }) => bp.promotionId === promo.id
+      (bp: { promotionId: string }) => bp.promotionId === promo.id
     );
     expect(booking1SingleUse).toBeDefined();
     expect(Number(booking1SingleUse.appliedValue)).toBe(50);
@@ -612,7 +612,7 @@ test.describe("Promotions constraints", () => {
 
     // Verify second booking does NOT have the single-use promotion (isSingleUse constraint enforced)
     const booking2SingleUse = booking2.bookingPromotions.find(
-      (bp: { promotionId: number }) => bp.promotionId === promo.id
+      (bp: { promotionId: string }) => bp.promotionId === promo.id
     );
     expect(booking2SingleUse).toBeUndefined();
 

@@ -24,25 +24,25 @@ vi.mock("recharts", () => ({
 describe("PaymentTypeBreakdown", () => {
   const mockBookings = [
     {
-      id: 1,
+      id: "1",
       numNights: 3,
       totalCost: 500,
       pointsRedeemed: 0,
       certificates: [],
     },
     {
-      id: 2,
+      id: "2",
       numNights: 2,
       totalCost: 0,
       pointsRedeemed: 20000,
       certificates: [],
     },
     {
-      id: 3,
+      id: "3",
       numNights: 1,
       totalCost: 0,
       pointsRedeemed: 0,
-      certificates: [{ id: 1, certType: "marriott_35k" }],
+      certificates: [{ id: "1", certType: "marriott_35k" }],
     },
   ];
 
@@ -75,7 +75,7 @@ describe("PaymentTypeBreakdown", () => {
     const user = userEvent.setup();
     const combinationBookings = [
       {
-        id: 4,
+        id: "4",
         numNights: 3, // Changed from 2 to 3
         totalCost: 100, // Cash
         pointsRedeemed: 10000, // Points
@@ -113,7 +113,7 @@ describe("PaymentTypeBreakdown", () => {
     const user = userEvent.setup();
     const incidentalBooking = [
       {
-        id: 5,
+        id: "5",
         numNights: 1,
         totalCost: 12.5, // Insignificant cash (< $20)
         pointsRedeemed: 15000, // Points
@@ -137,11 +137,11 @@ describe("PaymentTypeBreakdown", () => {
     const user = userEvent.setup();
     const certPlusCash = [
       {
-        id: 6,
+        id: "6",
         numNights: 3,
         totalCost: 200, // Significant cash
         pointsRedeemed: 0,
-        certificates: [{ id: 1, certType: "cat4" }], // 1 cert
+        certificates: [{ id: "1", certType: "cat4" }], // 1 cert
       },
     ];
     await act(async () => {

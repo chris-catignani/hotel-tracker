@@ -27,23 +27,23 @@ import { CERT_TYPE_OPTIONS } from "@/lib/cert-types";
 const CERT_OPTIONS = CERT_TYPE_OPTIONS.map((o) => ({ value: o.value, label: o.label }));
 
 interface HotelChainSubBrand {
-  id: number;
+  id: string;
   name: string;
 }
 
 interface HotelChain {
-  id: number;
+  id: string;
   name: string;
   hotelChainSubBrands: HotelChainSubBrand[];
 }
 
 interface CreditCard {
-  id: number;
+  id: string;
   name: string;
 }
 
 interface ShoppingPortal {
-  id: number;
+  id: string;
   name: string;
 }
 
@@ -268,16 +268,16 @@ export function PromotionForm({
       : [{ ...DEFAULT_BENEFIT }]
   );
   const [hotelChainId, setHotelChainId] = useState<string>(
-    initialData?.hotelChainId ? String(initialData.hotelChainId) : ""
+    initialData?.hotelChainId ? initialData.hotelChainId : ""
   );
   const [hotelChainSubBrandId, setHotelChainSubBrandId] = useState<string>(
-    initialData?.hotelChainSubBrandId ? String(initialData.hotelChainSubBrandId) : ""
+    initialData?.hotelChainSubBrandId ? initialData.hotelChainSubBrandId : ""
   );
   const [creditCardId, setCreditCardId] = useState<string>(
-    initialData?.creditCardId ? String(initialData.creditCardId) : ""
+    initialData?.creditCardId ? initialData.creditCardId : ""
   );
   const [shoppingPortalId, setShoppingPortalId] = useState<string>(
-    initialData?.shoppingPortalId ? String(initialData.shoppingPortalId) : ""
+    initialData?.shoppingPortalId ? initialData.shoppingPortalId : ""
   );
   const [minSpend, setMinSpend] = useState(
     initialData?.minSpend ? String(initialData.minSpend) : ""
@@ -308,10 +308,10 @@ export function PromotionForm({
     initialData?.validDaysAfterRegistration ? String(initialData.validDaysAfterRegistration) : ""
   );
   const [registrationDate, setRegistrationDate] = useState(initialData?.registrationDate || "");
-  const [exclusionSubBrandIds, setExclusionSubBrandIds] = useState<number[]>(
+  const [exclusionSubBrandIds, setExclusionSubBrandIds] = useState<string[]>(
     initialData?.exclusions?.map((e) => e.hotelChainSubBrandId) ?? []
   );
-  const [tieInCreditCardIds, setTieInCreditCardIds] = useState<number[]>(
+  const [tieInCreditCardIds, setTieInCreditCardIds] = useState<string[]>(
     initialData?.tieInCreditCardIds ?? []
   );
   const [tieInRequiresPayment, setTieInRequiresPayment] = useState(
@@ -354,17 +354,15 @@ export function PromotionForm({
       if (initialData.benefits !== undefined && initialData.benefits.length > 0)
         setBenefits(initialData.benefits);
       if (initialData.hotelChainId !== undefined)
-        setHotelChainId(initialData.hotelChainId ? String(initialData.hotelChainId) : "");
+        setHotelChainId(initialData.hotelChainId ? initialData.hotelChainId : "");
       if (initialData.hotelChainSubBrandId !== undefined)
         setHotelChainSubBrandId(
-          initialData.hotelChainSubBrandId ? String(initialData.hotelChainSubBrandId) : ""
+          initialData.hotelChainSubBrandId ? initialData.hotelChainSubBrandId : ""
         );
       if (initialData.creditCardId !== undefined)
-        setCreditCardId(initialData.creditCardId ? String(initialData.creditCardId) : "");
+        setCreditCardId(initialData.creditCardId ? initialData.creditCardId : "");
       if (initialData.shoppingPortalId !== undefined)
-        setShoppingPortalId(
-          initialData.shoppingPortalId ? String(initialData.shoppingPortalId) : ""
-        );
+        setShoppingPortalId(initialData.shoppingPortalId ? initialData.shoppingPortalId : "");
       if (initialData.minSpend !== undefined)
         setMinSpend(initialData.minSpend ? String(initialData.minSpend) : "");
       if (initialData.startDate !== undefined) setStartDate(initialData.startDate || "");
@@ -498,8 +496,8 @@ export function PromotionForm({
     };
 
     if (type === "loyalty" && hotelChainId) {
-      body.hotelChainId = parseInt(hotelChainId);
-      body.hotelChainSubBrandId = hotelChainSubBrandId ? parseInt(hotelChainSubBrandId) : null;
+      body.hotelChainId = hotelChainId;
+      body.hotelChainSubBrandId = hotelChainSubBrandId || null;
       body.exclusionSubBrandIds = exclusionSubBrandIds;
     } else {
       body.hotelChainId = null;
@@ -508,13 +506,13 @@ export function PromotionForm({
     }
 
     if (type === "credit_card" && creditCardId) {
-      body.creditCardId = parseInt(creditCardId);
+      body.creditCardId = creditCardId;
     } else {
       body.creditCardId = null;
     }
 
     if (type === "portal" && shoppingPortalId) {
-      body.shoppingPortalId = parseInt(shoppingPortalId);
+      body.shoppingPortalId = shoppingPortalId;
     } else {
       body.shoppingPortalId = null;
     }
@@ -570,7 +568,7 @@ export function PromotionForm({
   const registrationDateObj = registrationDate ? parseISO(registrationDate) : undefined;
 
   const selectedChainSubBrands =
-    hotelChains.find((h) => h.id === Number(hotelChainId))?.hotelChainSubBrands ?? [];
+    hotelChains.find((h) => h.id === hotelChainId)?.hotelChainSubBrands ?? [];
 
   const handleStartDateChange = (date?: Date) => {
     setStartDate(date ? format(date, "yyyy-MM-dd") : "");
@@ -785,7 +783,7 @@ export function PromotionForm({
                 }}
                 options={hotelChains.map((chain) => ({
                   label: chain.name,
-                  value: String(chain.id),
+                  value: chain.id,
                 }))}
                 placeholder="Select hotel chain..."
                 data-testid="hotel-chain-select"
@@ -803,7 +801,7 @@ export function PromotionForm({
                   { label: "All sub-brands (no filter)", value: "all" },
                   ...selectedChainSubBrands.map((sb) => ({
                     label: sb.name,
-                    value: String(sb.id),
+                    value: sb.id,
                   })),
                 ]}
                 placeholder="Select sub-brand..."
@@ -849,7 +847,7 @@ export function PromotionForm({
                 onValueChange={setCreditCardId}
                 options={creditCards.map((card) => ({
                   label: card.name,
-                  value: String(card.id),
+                  value: card.id,
                 }))}
                 placeholder="Select credit card..."
                 data-testid="credit-card-select"
@@ -865,7 +863,7 @@ export function PromotionForm({
                 onValueChange={setShoppingPortalId}
                 options={portals.map((portal) => ({
                   label: portal.name,
-                  value: String(portal.id),
+                  value: portal.id,
                 }))}
                 placeholder="Select portal..."
                 data-testid="shopping-portal-select"

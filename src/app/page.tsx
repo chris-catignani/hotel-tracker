@@ -22,12 +22,12 @@ import { BookingCard } from "@/components/bookings/booking-card";
 import { formatCurrency as formatDollars, formatDate, formatCerts } from "@/lib/utils";
 
 interface BookingCertificate {
-  id: number;
+  id: string;
   certType: string;
 }
 
 interface BookingWithRelations {
-  id: number;
+  id: string;
   propertyName: string;
   checkIn: string;
   checkOut: string;
@@ -41,38 +41,38 @@ interface BookingWithRelations {
   pointsRedeemed: number | null;
   notes: string | null;
   hotelChain: {
-    id: number;
+    id: string;
     name: string;
     loyaltyProgram: string | null;
     basePointRate: string | number | null;
     pointType: { name: string; centsPerPoint: string } | null;
   };
   hotelChainSubBrand?: {
-    id: number;
+    id: string;
     name: string;
   } | null;
   creditCard: {
-    id: number;
+    id: string;
     name: string;
     rewardType: string;
     rewardRate: string | number;
     pointType: { name: string; centsPerPoint: string } | null;
   } | null;
   shoppingPortal: {
-    id: number;
+    id: string;
     name: string;
     rewardType: string;
     pointType: { name: string; centsPerPoint: string } | null;
   } | null;
   bookingPromotions: {
-    id: number;
-    bookingId: number;
-    promotionId: number;
+    id: string;
+    bookingId: string;
+    promotionId: string;
     appliedValue: string;
     autoApplied: boolean;
     verified: boolean;
     promotion: {
-      id: number;
+      id: string;
       name: string;
       type: string;
       value: string | number;

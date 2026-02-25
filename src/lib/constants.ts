@@ -1,10 +1,36 @@
 export const HOTEL_ID = {
-  HILTON: 1,
-  MARRIOTT: 2,
-  HYATT: 3,
-  IHG: 4,
-  GHA_DISCOVERY: 5,
-  ACCOR: 6,
+  HILTON: "c1v12til5p1ebxu77368umx5z",
+  MARRIOTT: "c9uc76fdp3v95dccffxsa3h31",
+  HYATT: "cxjdwg32a8xf7by36md0mdvuu",
+  IHG: "co5ll49okbgq0fbceti8p0dpd",
+  GHA_DISCOVERY: "cwizlxi70wnbaq3qehma0fhbz",
+  ACCOR: "cv53wjloc78ambkei5wlnsvfn",
+} as const;
+
+export const SUB_BRAND_ID = {
+  MARRIOTT: {
+    AUTOGRAPH_COLLECTION: "chp49do4y7cqmn8hslv1mybao",
+    CITIZENM: "c6bbtoocrvncdrrbk132ja590",
+    MOXY: "c4bwgkazkhr249673vbyrssjq",
+    TRIBUTE_PORTFOLIO: "ceaflewyzoa8xcdfui5f510n0",
+  },
+  HYATT: {
+    PARK_HYATT: "cd7oxx4b5kfe0rq65x74ha3gu",
+    HYATT_CENTRIC: "c6b6y4o6u20bqlv0fjuvb9k6i",
+    HYATT_PLACE: "cwf3srsbp7rv61q9c9f9zbapb",
+  },
+  IHG: {
+    HOLIDAY_INN_EXPRESS: "cdfi8ldn9nllyjjrfqgeho0be",
+    HOTEL_INDIGO: "caugp7vwgq7oy52v7h22eoj7f",
+  },
+  GHA_DISCOVERY: {
+    SUNWAY: "c0qxg9nbkd2qzlaz7cl0ek05c",
+    PARKROYAL: "cj7yen4u5zazxezcgzore4e71",
+    PARKROYAL_COLLECTION: "clsi50jt27f0upikgefn4y84v",
+  },
+  ACCOR: {
+    IBIS_STYLES: "cv2toj341anbybixocwk8voaq",
+  },
 } as const;
 
 export const CURRENCIES = [
