@@ -30,6 +30,7 @@ type MatchingBenefit = {
   value: Prisma.Decimal;
   certType: string | null;
   pointsMultiplierBasis: string | null;
+  isTieIn?: boolean;
   sortOrder: number;
 };
 
@@ -85,6 +86,8 @@ interface MatchingPromotion {
   nightsStackable: boolean;
   bookByDate: Date | null;
   oncePerSubBrand: boolean;
+  tieInCreditCardId: number | null;
+  tieInRequiresPayment: boolean;
   benefits: MatchingBenefit[];
   tiers: { id: number; minStays: number; maxStays: number | null; benefits: MatchingBenefit[] }[];
   exclusions: { hotelChainSubBrandId: number }[];
@@ -198,6 +201,16 @@ export function calculateMatchedPromotions(
       activeBenefits = promo.benefits;
     }
 
+    // Determine if the booking satisfies the tie-in card condition
+    const hasTieIn =
+      promo.tieInCreditCardId === null || booking.creditCardId === promo.tieInCreditCardId;
+
+    // Filter benefits by tie-in eligibility
+    const eligibleBenefits = activeBenefits.filter((b) => !b.isTieIn || hasTieIn);
+
+    // If all benefits are tie-in and the booking doesn't have the tie-in card, skip
+    if (eligibleBenefits.length === 0) continue;
+
     // Calculate applied value per benefit
     const centsPerPoint = booking.hotelChain?.pointType?.centsPerPoint
       ? Number(booking.hotelChain.pointType.centsPerPoint)
@@ -207,7 +220,7 @@ export function calculateMatchedPromotions(
     let totalAppliedValue = 0;
     let totalBonusPoints = 0;
 
-    for (const benefit of activeBenefits) {
+    for (const benefit of eligibleBenefits) {
       const benefitValue = Number(benefit.value);
       let appliedValue = 0;
       let benefitBonusPoints = 0;

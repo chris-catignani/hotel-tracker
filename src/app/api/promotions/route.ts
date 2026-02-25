@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
         hotelChain: true,
         hotelChainSubBrand: true,
         creditCard: true,
+        tieInCreditCard: true,
         shoppingPortal: true,
         benefits: { orderBy: { sortOrder: "asc" } },
         tiers: {
@@ -62,6 +63,8 @@ export async function POST(request: NextRequest) {
       bookByDate,
       oncePerSubBrand,
       exclusionSubBrandIds,
+      tieInCreditCardId,
+      tieInRequiresPayment,
     } = body as PromotionFormData & { exclusionSubBrandIds?: number[] };
 
     const hasTiers = Array.isArray(tiers) && tiers.length > 0;
@@ -87,6 +90,8 @@ export async function POST(request: NextRequest) {
           nightsStackable: nightsStackable ?? false,
           bookByDate: bookByDate ? new Date(bookByDate) : null,
           oncePerSubBrand: oncePerSubBrand ?? false,
+          tieInCreditCardId: tieInCreditCardId ? Number(tieInCreditCardId) : null,
+          tieInRequiresPayment: tieInRequiresPayment ?? false,
           ...(hasTiers
             ? {
                 tiers: {
@@ -101,6 +106,7 @@ export async function POST(request: NextRequest) {
                           value: Number(b.value),
                           certType: b.certType || null,
                           pointsMultiplierBasis: b.pointsMultiplierBasis || null,
+                          isTieIn: b.isTieIn ?? false,
                           sortOrder: b.sortOrder ?? i,
                         })
                       ),
@@ -116,6 +122,7 @@ export async function POST(request: NextRequest) {
                     value: Number(b.value),
                     certType: b.certType || null,
                     pointsMultiplierBasis: b.pointsMultiplierBasis || null,
+                    isTieIn: b.isTieIn ?? false,
                     sortOrder: b.sortOrder ?? i,
                   })),
                 },
@@ -128,6 +135,7 @@ export async function POST(request: NextRequest) {
             include: { benefits: { orderBy: { sortOrder: "asc" } } },
           },
           exclusions: true,
+          tieInCreditCard: true,
         },
       });
 

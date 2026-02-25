@@ -336,6 +336,217 @@ test.describe("Promotions tiered", () => {
   });
 });
 
+test.describe("Promotions tie-in credit card", () => {
+  // Seeded credit card IDs
+  const TIE_IN_CARD_ID = 1; // Amex Platinum
+  const OTHER_CARD_ID = 2; // Chase Sapphire Reserve
+
+  test("booking WITH tie-in card gets all benefits (base + tie-in)", async ({ request }) => {
+    const chainsRes = await request.get("/api/hotel-chains");
+    const chain = (await chainsRes.json())[0];
+
+    const promoRes = await request.post("/api/promotions", {
+      data: {
+        name: `Tie-In Promo ${crypto.randomUUID()}`,
+        type: "loyalty",
+        hotelChainId: chain.id,
+        tieInCreditCardId: TIE_IN_CARD_ID,
+        tieInRequiresPayment: false,
+        benefits: [
+          {
+            rewardType: "cashback",
+            valueType: "fixed",
+            value: 20,
+            certType: null,
+            isTieIn: false,
+            sortOrder: 0,
+          },
+          {
+            rewardType: "cashback",
+            valueType: "fixed",
+            value: 30,
+            certType: null,
+            isTieIn: true,
+            sortOrder: 1,
+          },
+        ],
+        isActive: true,
+      },
+    });
+    expect(promoRes.ok()).toBeTruthy();
+    const promo = await promoRes.json();
+    expect(promo.tieInCreditCardId).toBe(TIE_IN_CARD_ID);
+    expect(promo.benefits).toHaveLength(2);
+    expect(promo.benefits[0].isTieIn).toBe(false);
+    expect(promo.benefits[1].isTieIn).toBe(true);
+
+    // Create booking WITH the tie-in card
+    const bookingRes = await request.post("/api/bookings", {
+      data: {
+        hotelChainId: chain.id,
+        propertyName: `Tie-In With Card ${crypto.randomUUID()}`,
+        checkIn: "2025-06-01",
+        checkOut: "2025-06-03",
+        numNights: 2,
+        pretaxCost: 200,
+        taxAmount: 30,
+        totalCost: 230,
+        currency: "USD",
+        creditCardId: TIE_IN_CARD_ID,
+      },
+    });
+    expect(bookingRes.ok()).toBeTruthy();
+    const booking = await bookingRes.json();
+
+    const appliedPromo = booking.bookingPromotions.find(
+      (bp: { promotionId: number }) => bp.promotionId === promo.id
+    );
+    expect(appliedPromo).toBeDefined();
+    // $20 base + $30 tie-in = $50 total
+    expect(Number(appliedPromo.appliedValue)).toBe(50);
+    expect(appliedPromo.benefitApplications).toHaveLength(2);
+
+    // Cleanup
+    await request.delete(`/api/bookings/${booking.id}`);
+    await request.delete(`/api/promotions/${promo.id}`);
+  });
+
+  test("booking WITHOUT tie-in card gets only base benefits", async ({ request }) => {
+    const chainsRes = await request.get("/api/hotel-chains");
+    const chain = (await chainsRes.json())[0];
+
+    const promoRes = await request.post("/api/promotions", {
+      data: {
+        name: `Tie-In Promo No Card ${crypto.randomUUID()}`,
+        type: "loyalty",
+        hotelChainId: chain.id,
+        tieInCreditCardId: TIE_IN_CARD_ID,
+        tieInRequiresPayment: false,
+        benefits: [
+          {
+            rewardType: "cashback",
+            valueType: "fixed",
+            value: 20,
+            certType: null,
+            isTieIn: false,
+            sortOrder: 0,
+          },
+          {
+            rewardType: "cashback",
+            valueType: "fixed",
+            value: 30,
+            certType: null,
+            isTieIn: true,
+            sortOrder: 1,
+          },
+        ],
+        isActive: true,
+      },
+    });
+    expect(promoRes.ok()).toBeTruthy();
+    const promo = await promoRes.json();
+
+    // Create booking with a DIFFERENT card (not the tie-in card)
+    const bookingRes = await request.post("/api/bookings", {
+      data: {
+        hotelChainId: chain.id,
+        propertyName: `Tie-In Without Card ${crypto.randomUUID()}`,
+        checkIn: "2025-06-01",
+        checkOut: "2025-06-03",
+        numNights: 2,
+        pretaxCost: 200,
+        taxAmount: 30,
+        totalCost: 230,
+        currency: "USD",
+        creditCardId: OTHER_CARD_ID,
+      },
+    });
+    expect(bookingRes.ok()).toBeTruthy();
+    const booking = await bookingRes.json();
+
+    const appliedPromo = booking.bookingPromotions.find(
+      (bp: { promotionId: number }) => bp.promotionId === promo.id
+    );
+    expect(appliedPromo).toBeDefined();
+    // Only $20 base benefit applies; tie-in benefit is skipped
+    expect(Number(appliedPromo.appliedValue)).toBe(20);
+    expect(appliedPromo.benefitApplications).toHaveLength(1);
+    expect(Number(appliedPromo.benefitApplications[0].appliedValue)).toBe(20);
+
+    // Cleanup
+    await request.delete(`/api/bookings/${booking.id}`);
+    await request.delete(`/api/promotions/${promo.id}`);
+  });
+
+  test("booking without any card gets only base benefits when tie-in card is set", async ({
+    request,
+  }) => {
+    const chainsRes = await request.get("/api/hotel-chains");
+    const chain = (await chainsRes.json())[0];
+
+    const promoRes = await request.post("/api/promotions", {
+      data: {
+        name: `Tie-In Promo No Payment ${crypto.randomUUID()}`,
+        type: "loyalty",
+        hotelChainId: chain.id,
+        tieInCreditCardId: TIE_IN_CARD_ID,
+        tieInRequiresPayment: true,
+        benefits: [
+          {
+            rewardType: "cashback",
+            valueType: "fixed",
+            value: 20,
+            certType: null,
+            isTieIn: false,
+            sortOrder: 0,
+          },
+          {
+            rewardType: "cashback",
+            valueType: "fixed",
+            value: 30,
+            certType: null,
+            isTieIn: true,
+            sortOrder: 1,
+          },
+        ],
+        isActive: true,
+      },
+    });
+    expect(promoRes.ok()).toBeTruthy();
+    const promo = await promoRes.json();
+    expect(promo.tieInRequiresPayment).toBe(true);
+
+    // Create booking with NO credit card
+    const bookingRes = await request.post("/api/bookings", {
+      data: {
+        hotelChainId: chain.id,
+        propertyName: `Tie-In No Payment ${crypto.randomUUID()}`,
+        checkIn: "2025-06-01",
+        checkOut: "2025-06-03",
+        numNights: 2,
+        pretaxCost: 200,
+        taxAmount: 30,
+        totalCost: 230,
+        currency: "USD",
+      },
+    });
+    expect(bookingRes.ok()).toBeTruthy();
+    const booking = await bookingRes.json();
+
+    const appliedPromo = booking.bookingPromotions.find(
+      (bp: { promotionId: number }) => bp.promotionId === promo.id
+    );
+    expect(appliedPromo).toBeDefined();
+    // Only $20 base benefit applies; tie-in benefit is skipped (no card)
+    expect(Number(appliedPromo.appliedValue)).toBe(20);
+    expect(appliedPromo.benefitApplications).toHaveLength(1);
+
+    // Cleanup
+    await request.delete(`/api/bookings/${booking.id}`);
+    await request.delete(`/api/promotions/${promo.id}`);
+  });
+});
+
 test.describe("Promotions constraints", () => {
   test("should enforce isSingleUse: only first booking gets promotion", async ({
     request,

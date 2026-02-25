@@ -13,6 +13,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         hotelChain: true,
         hotelChainSubBrand: true,
         creditCard: true,
+        tieInCreditCard: true,
         shoppingPortal: true,
         benefits: { orderBy: { sortOrder: "asc" } },
         tiers: {
@@ -59,6 +60,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       bookByDate,
       oncePerSubBrand,
       exclusionSubBrandIds,
+      tieInCreditCardId,
+      tieInRequiresPayment,
     } = body as PromotionFormData & { exclusionSubBrandIds?: number[] };
 
     const data: Record<string, unknown> = {};
@@ -86,6 +89,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (nightsStackable !== undefined) data.nightsStackable = nightsStackable;
     if (bookByDate !== undefined) data.bookByDate = bookByDate ? new Date(bookByDate) : null;
     if (oncePerSubBrand !== undefined) data.oncePerSubBrand = oncePerSubBrand;
+    if (tieInCreditCardId !== undefined)
+      data.tieInCreditCardId = tieInCreditCardId ? Number(tieInCreditCardId) : null;
+    if (tieInRequiresPayment !== undefined) data.tieInRequiresPayment = tieInRequiresPayment;
 
     const hasTiers = benefits === undefined ? tiers !== undefined : false;
     const replacingBenefitsOrTiers = benefits !== undefined || tiers !== undefined;
@@ -111,6 +117,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
                 value: Number(b.value),
                 certType: b.certType || null,
                 pointsMultiplierBasis: b.pointsMultiplierBasis || null,
+                isTieIn: b.isTieIn ?? false,
                 sortOrder: b.sortOrder ?? i,
               })),
             },
@@ -125,6 +132,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
             value: Number(b.value),
             certType: b.certType || null,
             pointsMultiplierBasis: b.pointsMultiplierBasis || null,
+            isTieIn: b.isTieIn ?? false,
             sortOrder: b.sortOrder ?? i,
           })),
         };
@@ -153,6 +161,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
             include: { benefits: { orderBy: { sortOrder: "asc" } } },
           },
           exclusions: true,
+          tieInCreditCard: true,
         },
       });
     });

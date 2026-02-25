@@ -90,6 +90,7 @@ export interface PromotionBenefit {
   value: string | number;
   certType: string | null;
   pointsMultiplierBasis?: PointsMultiplierBasis | null;
+  isTieIn: boolean;
   sortOrder: number;
 }
 
@@ -113,6 +114,7 @@ export interface PromotionBenefitFormData {
   value: number;
   certType: string | null;
   pointsMultiplierBasis?: PointsMultiplierBasis | null;
+  isTieIn: boolean;
   sortOrder: number;
 }
 
@@ -126,6 +128,8 @@ export interface Promotion {
   hotelChainId: number | null;
   hotelChainSubBrandId: number | null;
   creditCardId: number | null;
+  tieInCreditCardId: number | null;
+  tieInRequiresPayment: boolean;
   shoppingPortalId: number | null;
   minSpend: string | number | null;
   startDate: string | null;
@@ -149,6 +153,8 @@ export interface PromotionFormData {
   hotelChainId?: number | null;
   hotelChainSubBrandId?: number | null;
   creditCardId?: number | null;
+  tieInCreditCardId?: number | null;
+  tieInRequiresPayment?: boolean;
   shoppingPortalId?: number | null;
   minSpend?: number | null;
   startDate?: string | null;
