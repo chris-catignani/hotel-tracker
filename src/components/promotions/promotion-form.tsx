@@ -86,13 +86,13 @@ function mapApiRestrictionsToForm(
       r.validDaysAfterRegistration != null ? String(r.validDaysAfterRegistration) : "",
     registrationDate: "", // comes from userPromotions, set separately
     tieInRequiresPayment: r.tieInRequiresPayment ?? false,
-    subBrandIncludeIds: r.subBrandRestrictions
+    subBrandIncludeIds: (r.subBrandRestrictions ?? [])
       .filter((s) => s.mode === "include")
       .map((s) => s.hotelChainSubBrandId),
-    subBrandExcludeIds: r.subBrandRestrictions
+    subBrandExcludeIds: (r.subBrandRestrictions ?? [])
       .filter((s) => s.mode === "exclude")
       .map((s) => s.hotelChainSubBrandId),
-    tieInCreditCardIds: r.tieInCards.map((c) => c.creditCardId),
+    tieInCreditCardIds: (r.tieInCards ?? []).map((c) => c.creditCardId),
   };
 }
 
