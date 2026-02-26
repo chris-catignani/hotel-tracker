@@ -15,104 +15,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Plus, Tag } from "lucide-react";
-import { certTypeShortLabel } from "@/lib/cert-types";
 import { PromotionCard } from "@/components/promotions/promotion-card";
-import { Promotion, PromotionBenefit, PromotionTier } from "@/lib/types";
-
-function formatBenefit(benefit: PromotionBenefit): string {
-  const num = typeof benefit.value === "string" ? parseFloat(benefit.value) : Number(benefit.value);
-  switch (benefit.rewardType) {
-    case "cashback":
-      return benefit.valueType === "percentage"
-        ? `${num}% cashback`
-        : `$${num.toFixed(2)} cashback`;
-    case "points":
-      return benefit.valueType === "multiplier" ? `${num}x points` : `${num.toLocaleString()} pts`;
-    case "certificate":
-      const label = benefit.certType ? certTypeShortLabel(benefit.certType) : "";
-      return `${num} ${label} cert${num !== 1 ? "s" : ""}`.replace(/\s+/g, " ");
-    case "eqn":
-      return `${num} EQN${num !== 1 ? "s" : ""}`;
-    default:
-      return String(num);
-  }
-}
-
-function formatBenefits(benefits: PromotionBenefit[], tiers: PromotionTier[] = []): string {
-  if ((!benefits || benefits.length === 0) && (!tiers || tiers.length === 0)) return "—";
-
-  if (tiers && tiers.length > 0) {
-    // Collect all unique benefits across all tiers
-    const allTierBenefits: PromotionBenefit[] = [];
-    tiers.forEach((t) => allTierBenefits.push(...t.benefits));
-
-    if (allTierBenefits.length === 0) return "—";
-
-    // Format each unique benefit string
-    const formatted = Array.from(new Set(allTierBenefits.map((b) => formatBenefit(b))));
-
-    // If only one tier, don't show "Multiple tiers" prefix
-    if (tiers.length === 1) {
-      return formatted.join(", ");
-    }
-
-    return `Multiple tiers: ${formatted.join(", ")}`;
-  }
-
-  return benefits.map(formatBenefit).join(", ");
-}
-
-function formatDateRange(startDate: string | null, endDate: string | null): string {
-  if (!startDate && !endDate) return "Always";
-  const start = startDate
-    ? new Date(startDate).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })
-    : "No start date";
-  const end = endDate
-    ? new Date(endDate).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })
-    : "Ongoing";
-  return `${start} - ${end}`;
-}
-
-function getLinkedName(promo: Promotion): string {
-  if (promo.hotelChain) return promo.hotelChain.name;
-  if (promo.creditCard) return promo.creditCard.name;
-  if (promo.shoppingPortal) return promo.shoppingPortal.name;
-  return "-";
-}
-
-function typeBadgeVariant(type: string): "default" | "secondary" | "outline" | "destructive" {
-  switch (type) {
-    case "credit_card":
-      return "secondary";
-    case "portal":
-      return "outline";
-    case "loyalty":
-      return "default";
-    default:
-      return "secondary";
-  }
-}
-
-function typeLabel(type: string): string {
-  switch (type) {
-    case "credit_card":
-      return "Credit Card";
-    case "portal":
-      return "Portal";
-    case "loyalty":
-      return "Loyalty";
-    default:
-      return type;
-  }
-}
+import { Promotion } from "@/lib/types";
+import {
+  formatBenefits,
+  formatDateRange,
+  getLinkedName,
+  typeBadgeVariant,
+  typeLabel,
+} from "@/lib/promotion-utils";
 
 export default function PromotionsPage() {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
@@ -200,16 +111,7 @@ export default function PromotionsPage() {
               {/* Mobile View: Cards */}
               <div className="flex flex-col gap-4 md:hidden" data-testid="promotions-list-mobile">
                 {filteredPromotions.map((promo) => (
-                  <PromotionCard
-                    key={promo.id}
-                    promotion={promo}
-                    onDelete={handleDelete}
-                    formatBenefits={formatBenefits}
-                    formatDateRange={formatDateRange}
-                    typeBadgeVariant={typeBadgeVariant}
-                    typeLabel={typeLabel}
-                    getLinkedName={getLinkedName}
-                  />
+                  <PromotionCard key={promo.id} promotion={promo} onDelete={handleDelete} />
                 ))}
               </div>
 

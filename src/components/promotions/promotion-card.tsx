@@ -5,27 +5,21 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CalendarDays, Tag, Link2 } from "lucide-react";
-import { Promotion, PromotionBenefit, PromotionTier } from "@/lib/types";
+import { Promotion } from "@/lib/types";
+import {
+  formatBenefits,
+  formatDateRange,
+  getLinkedName,
+  typeBadgeVariant,
+  typeLabel,
+} from "@/lib/promotion-utils";
 
 interface PromotionCardProps {
   promotion: Promotion;
   onDelete?: (id: string) => void;
-  formatBenefits: (benefits: PromotionBenefit[], tiers?: PromotionTier[]) => string;
-  formatDateRange: (startDate: string | null, endDate: string | null) => string;
-  typeBadgeVariant: (type: string) => "default" | "secondary" | "outline" | "destructive";
-  typeLabel: (type: string) => string;
-  getLinkedName: (promo: Promotion) => string;
 }
 
-export function PromotionCard({
-  promotion,
-  onDelete,
-  formatBenefits,
-  formatDateRange,
-  typeBadgeVariant,
-  typeLabel,
-  getLinkedName,
-}: PromotionCardProps) {
+export function PromotionCard({ promotion, onDelete }: PromotionCardProps) {
   return (
     <Card className="overflow-hidden" data-testid={`promotion-card-${promotion.id}`}>
       <CardContent className="p-0">
