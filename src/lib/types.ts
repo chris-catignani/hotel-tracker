@@ -145,6 +145,10 @@ export interface Promotion {
   registrationDeadline: string | null;
   validDaysAfterRegistration: number | null;
   userPromotions: UserPromotion[];
+  createdAt: string;
+  hotelChain?: { id: string; name: string } | null;
+  creditCard?: { id: string; name: string } | null;
+  shoppingPortal?: { id: string; name: string } | null;
 }
 
 export interface UserPromotion {

@@ -16,34 +16,11 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Plus, Tag } from "lucide-react";
 import { certTypeShortLabel } from "@/lib/cert-types";
-
-interface PromotionBenefit {
-  rewardType: string;
-  valueType: string;
-  value: string;
-  certType: string | null;
-}
-
-interface Promotion {
-  id: string;
-  name: string;
-  type: "credit_card" | "portal" | "loyalty";
-  benefits: PromotionBenefit[];
-  hotelChainId: string | null;
-  creditCardId: string | null;
-  shoppingPortalId: string | null;
-  minSpend: string | null;
-  startDate: string | null;
-  endDate: string | null;
-  isActive: boolean;
-  createdAt: string;
-  hotelChain: { id: string; name: string } | null;
-  creditCard: { id: string; name: string } | null;
-  shoppingPortal: { id: string; name: string } | null;
-}
+import { PromotionCard } from "@/components/promotions/promotion-card";
+import { Promotion, PromotionBenefit, PromotionTier } from "@/lib/types";
 
 function formatBenefit(benefit: PromotionBenefit): string {
-  const num = parseFloat(benefit.value);
+  const num = typeof benefit.value === "string" ? parseFloat(benefit.value) : Number(benefit.value);
   switch (benefit.rewardType) {
     case "cashback":
       return benefit.valueType === "percentage"
@@ -61,8 +38,27 @@ function formatBenefit(benefit: PromotionBenefit): string {
   }
 }
 
-function formatBenefits(benefits: PromotionBenefit[]): string {
-  if (!benefits || benefits.length === 0) return "—";
+function formatBenefits(benefits: PromotionBenefit[], tiers: PromotionTier[] = []): string {
+  if ((!benefits || benefits.length === 0) && (!tiers || tiers.length === 0)) return "—";
+
+  if (tiers && tiers.length > 0) {
+    // Collect all unique benefits across all tiers
+    const allTierBenefits: PromotionBenefit[] = [];
+    tiers.forEach((t) => allTierBenefits.push(...t.benefits));
+
+    if (allTierBenefits.length === 0) return "—";
+
+    // Format each unique benefit string
+    const formatted = Array.from(new Set(allTierBenefits.map((b) => formatBenefit(b))));
+
+    // If only one tier, don't show "Multiple tiers" prefix
+    if (tiers.length === 1) {
+      return formatted.join(", ");
+    }
+
+    return `Multiple tiers: ${formatted.join(", ")}`;
+  }
+
   return benefits.map(formatBenefit).join(", ");
 }
 
@@ -74,14 +70,14 @@ function formatDateRange(startDate: string | null, endDate: string | null): stri
         day: "numeric",
         year: "numeric",
       })
-    : "...";
+    : "No start date";
   const end = endDate
     ? new Date(endDate).toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
         year: "numeric",
       })
-    : "...";
+    : "Ongoing";
   return `${start} - ${end}`;
 }
 
@@ -200,51 +196,74 @@ export default function PromotionsPage() {
               data-testid="promotions-empty"
             />
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Value</TableHead>
-                  <TableHead>Linked To</TableHead>
-                  <TableHead>Date Range</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              {/* Mobile View: Cards */}
+              <div className="flex flex-col gap-4 md:hidden" data-testid="promotions-list-mobile">
                 {filteredPromotions.map((promo) => (
-                  <TableRow key={promo.id}>
-                    <TableCell className="font-medium">{promo.name}</TableCell>
-                    <TableCell>
-                      <Badge variant={typeBadgeVariant(promo.type)}>{typeLabel(promo.type)}</Badge>
-                    </TableCell>
-                    <TableCell>{formatBenefits(promo.benefits)}</TableCell>
-                    <TableCell>{getLinkedName(promo)}</TableCell>
-                    <TableCell>{formatDateRange(promo.startDate, promo.endDate)}</TableCell>
-                    <TableCell>
-                      <Badge variant={promo.isActive ? "default" : "secondary"}>
-                        {promo.isActive ? "Active" : "Inactive"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button variant="outline" size="sm" asChild>
-                          <Link href={`/promotions/${promo.id}/edit`}>Edit</Link>
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDelete(promo.id)}
-                        >
-                          Delete
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                  <PromotionCard
+                    key={promo.id}
+                    promotion={promo}
+                    onDelete={handleDelete}
+                    formatBenefits={formatBenefits}
+                    formatDateRange={formatDateRange}
+                    typeBadgeVariant={typeBadgeVariant}
+                    typeLabel={typeLabel}
+                    getLinkedName={getLinkedName}
+                  />
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+
+              {/* Desktop View: Table */}
+              <div className="hidden md:block" data-testid="promotions-list-desktop">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Value</TableHead>
+                      <TableHead>Linked To</TableHead>
+                      <TableHead>Date Range</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredPromotions.map((promo) => (
+                      <TableRow key={promo.id}>
+                        <TableCell className="font-medium">{promo.name}</TableCell>
+                        <TableCell>
+                          <Badge variant={typeBadgeVariant(promo.type)}>
+                            {typeLabel(promo.type)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{formatBenefits(promo.benefits, promo.tiers)}</TableCell>
+                        <TableCell>{getLinkedName(promo)}</TableCell>
+                        <TableCell>{formatDateRange(promo.startDate, promo.endDate)}</TableCell>
+                        <TableCell>
+                          <Badge variant={promo.isActive ? "default" : "secondary"}>
+                            {promo.isActive ? "Active" : "Inactive"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button variant="outline" size="sm" asChild>
+                              <Link href={`/promotions/${promo.id}/edit`}>Edit</Link>
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDelete(promo.id)}
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </TabsContent>
       </Tabs>
