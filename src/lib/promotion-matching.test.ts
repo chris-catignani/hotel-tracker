@@ -178,7 +178,7 @@ describe("promotion-matching", () => {
     expect(matched[0].benefitApplications[0].appliedValue).toBe(30);
   });
 
-  it("should calculate certificate and eqn as zero applied value", () => {
+  it("should calculate certificate and eqn with hardcoded applied value", () => {
     const promo = makePromo({
       benefits: [
         {
@@ -202,9 +202,12 @@ describe("promotion-matching", () => {
       ],
     });
     const matched = calculateMatchedPromotions(mockBooking, [promo]);
-    expect(matched[0].appliedValue).toBe(0);
-    expect(matched[0].benefitApplications[0].appliedValue).toBe(0);
-    expect(matched[0].benefitApplications[1].appliedValue).toBe(0);
+    // Cert: 35000 pts * 0.015 $/pt * 0.7 = 367.5
+    // EQN: 1 * 10.0 = 10
+    // Total: 367.5 + 10 = 377.5
+    expect(matched[0].appliedValue).toBe(377.5);
+    expect(matched[0].benefitApplications[0].appliedValue).toBe(367.5);
+    expect(matched[0].benefitApplications[1].appliedValue).toBe(10);
   });
 
   it("should sum multiple benefits correctly", () => {

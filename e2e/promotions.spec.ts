@@ -216,8 +216,8 @@ test.describe("Promotions multi-benefit via API", () => {
       (bp: { promotionId: string }) => bp.promotionId === promo.id
     );
     expect(appliedPromo).toBeDefined();
-    // $20 cashback + $0 EQN = $20 total
-    expect(Number(appliedPromo.appliedValue)).toBe(20);
+    // $20 cashback + 2 * $10 EQN = $40 total
+    expect(Number(appliedPromo.appliedValue)).toBe(40);
     // Should have 2 benefit applications
     expect(appliedPromo.benefitApplications).toHaveLength(2);
     const cashbackBenefit = appliedPromo.benefitApplications.find(
@@ -228,7 +228,7 @@ test.describe("Promotions multi-benefit via API", () => {
     const eqnBenefit = appliedPromo.benefitApplications.find(
       (ba: { promotionBenefit: { rewardType: string } }) => ba.promotionBenefit.rewardType === "eqn"
     );
-    expect(Number(eqnBenefit.appliedValue)).toBe(0);
+    expect(Number(eqnBenefit.appliedValue)).toBe(20);
 
     // Cleanup
     await request.delete(`/api/bookings/${booking.id}`);

@@ -6,6 +6,8 @@ import {
   PromotionBenefitValueType,
   Prisma,
 } from "@prisma/client";
+import { DEFAULT_EQN_VALUE } from "./constants";
+import { certPointsValue } from "./cert-types";
 
 export type PromotionUsage = {
   count: number;
@@ -275,8 +277,12 @@ export function calculateMatchedPromotions(
           }
           break;
         case PromotionRewardType.certificate:
+          appliedValue = benefit.certType
+            ? certPointsValue(benefit.certType) * centsPerPoint * 0.7
+            : 0;
+          break;
         case PromotionRewardType.eqn:
-          appliedValue = 0; // informational only
+          appliedValue = benefitValue * DEFAULT_EQN_VALUE;
           break;
       }
 

@@ -1,5 +1,6 @@
 import { certPointsValue } from "@/lib/cert-types";
 import { formatCurrency } from "@/lib/utils";
+import { DEFAULT_EQN_VALUE } from "@/lib/constants";
 
 const DEFAULT_CENTS_PER_POINT = 0.01;
 
@@ -190,20 +191,23 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
           }
           break;
         }
-        case "certificate":
+        case "certificate": {
+          const centsStr = formatCents(hotelCentsPerPoint);
+          const points = b.certType ? certPointsValue(b.certType) : 0;
           formulaLines.push(
-            `${bValue.toLocaleString()} certificate(s) (informational)${tieInSuffix}`
+            `${bValue.toLocaleString()} cert(s) × ${points.toLocaleString()} pts × 70% × ${centsStr}¢ = ${formatCurrency(bApplied)}${tieInSuffix}`
           );
           descriptionLines.push(
-            `Earns ${bValue.toLocaleString()} certificate(s) — no cash value tracked.${tieInSuffix}`
+            `Earns ${bValue.toLocaleString()} free night certificate(s), valued at 70% of a max redemption (${points.toLocaleString()} pts) at ${centsStr}¢ per point. This valuation is fixed and not based on the booking's cost.${tieInSuffix}`
           );
           break;
+        }
         case "eqn":
           formulaLines.push(
-            `${bValue.toLocaleString()} bonus EQN(s) (informational)${tieInSuffix}`
+            `${bValue.toLocaleString()} bonus EQN(s) × ${formatCurrency(DEFAULT_EQN_VALUE)} = ${formatCurrency(bApplied)}${tieInSuffix}`
           );
           descriptionLines.push(
-            `Earns ${bValue.toLocaleString()} bonus Elite Qualifying Night(s) — no cash value tracked.${tieInSuffix}`
+            `Earns ${bValue.toLocaleString()} bonus Elite Qualifying Night(s), which we value at ${formatCurrency(DEFAULT_EQN_VALUE)} each. This valuation is fixed and not based on the booking's cost.${tieInSuffix}`
           );
           break;
       }

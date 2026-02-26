@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Plus, Tag } from "lucide-react";
+import { certTypeShortLabel } from "@/lib/cert-types";
 
 interface PromotionBenefit {
   rewardType: string;
@@ -51,7 +52,8 @@ function formatBenefit(benefit: PromotionBenefit): string {
     case "points":
       return benefit.valueType === "multiplier" ? `${num}x points` : `${num.toLocaleString()} pts`;
     case "certificate":
-      return `${num} cert${num !== 1 ? "s" : ""}`;
+      const label = benefit.certType ? certTypeShortLabel(benefit.certType) : "";
+      return `${num} ${label} cert${num !== 1 ? "s" : ""}`.replace(/\s+/g, " ");
     case "eqn":
       return `${num} EQN${num !== 1 ? "s" : ""}`;
     default:
