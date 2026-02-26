@@ -9,13 +9,15 @@ test.describe("Promotions CRUD", () => {
 
   test("should show a created promotion in the list", async ({ page, testPromotion }) => {
     await page.goto("/promotions");
-    await expect(page.getByText(testPromotion.name)).toBeVisible();
+    const desktopList = page.getByTestId("promotions-list-desktop");
+    await expect(desktopList.getByText(testPromotion.name)).toBeVisible();
   });
 
   test("should show benefit value in promotions list", async ({ page, testPromotion }) => {
     await page.goto("/promotions");
     // The fixture creates a $25.00 fixed cashback benefit for this promotion
-    const row = page.getByRole("row").filter({ hasText: testPromotion.name });
+    const desktopList = page.getByTestId("promotions-list-desktop");
+    const row = desktopList.getByRole("row").filter({ hasText: testPromotion.name });
     await expect(row.getByText("$25.00 cashback")).toBeVisible();
   });
 
@@ -23,7 +25,8 @@ test.describe("Promotions CRUD", () => {
     await page.goto("/promotions");
 
     // Find the row with the test promotion and click Edit
-    const row = page.getByRole("row").filter({ hasText: testPromotion.name });
+    const desktopList = page.getByTestId("promotions-list-desktop");
+    const row = desktopList.getByRole("row").filter({ hasText: testPromotion.name });
     await row.getByRole("link", { name: "Edit" }).click();
 
     await expect(page).toHaveURL(/\/promotions\/[a-z0-9]+\/edit/);
@@ -37,7 +40,8 @@ test.describe("Promotions CRUD", () => {
     await page.goto(`/promotions`);
 
     // Navigate to edit
-    const row = page.getByRole("row").filter({ hasText: testPromotion.name });
+    const desktopList = page.getByTestId("promotions-list-desktop");
+    const row = desktopList.getByRole("row").filter({ hasText: testPromotion.name });
     await row.getByRole("link", { name: "Edit" }).click();
 
     // Wait for form to load
@@ -63,15 +67,16 @@ test.describe("Promotions CRUD", () => {
     const promo = await res.json();
 
     await page.goto("/promotions");
-    await expect(page.getByText(uniqueName)).toBeVisible();
+    const desktopList = page.getByTestId("promotions-list-desktop");
+    await expect(desktopList.getByText(uniqueName)).toBeVisible();
 
     // Delete the promotion
-    const row = page.getByRole("row").filter({ hasText: uniqueName });
+    const row = desktopList.getByRole("row").filter({ hasText: uniqueName });
     page.once("dialog", (dialog) => dialog.accept());
     await row.getByRole("button", { name: "Delete" }).click();
 
     // Verify the promotion is gone
-    await expect(page.getByText(uniqueName)).not.toBeVisible();
+    await expect(page.getByText(uniqueName)).toHaveCount(0);
 
     // Cleanup (in case delete failed)
     await request.delete(`/api/promotions/${promo.id}`).catch(() => {});

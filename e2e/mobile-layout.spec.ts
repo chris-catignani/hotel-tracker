@@ -92,6 +92,15 @@ test.describe("Mobile Layout & Responsive Components", () => {
     await expect(actions).toHaveClass(/sticky/);
     await expect(actions).toHaveClass(/bottom-0/);
   });
+
+  test("should display promotion card view instead of tables", async ({ page, testPromotion }) => {
+    await page.goto("/promotions");
+
+    const mobileList = page.getByTestId("promotions-list-mobile");
+    await expect(mobileList).toBeVisible();
+    await expect(page.getByTestId("promotions-list-desktop")).not.toBeVisible();
+    await expect(mobileList.getByText(testPromotion.name)).toBeVisible();
+  });
 });
 
 test.describe("Desktop Layout (Verification)", () => {
@@ -119,5 +128,14 @@ test.describe("Desktop Layout (Verification)", () => {
     await page.goto("/");
     await expect(page.getByTestId("recent-bookings-desktop")).toBeVisible();
     await expect(page.getByTestId("recent-bookings-mobile")).not.toBeVisible();
+  });
+
+  test("should display promotion table view on desktop", async ({ page, testPromotion }) => {
+    await page.goto("/promotions");
+
+    const desktopList = page.getByTestId("promotions-list-desktop");
+    await expect(desktopList).toBeVisible();
+    await expect(page.getByTestId("promotions-list-mobile")).not.toBeVisible();
+    await expect(desktopList.getByRole("cell", { name: testPromotion.name })).toBeVisible();
   });
 });
