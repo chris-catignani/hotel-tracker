@@ -71,6 +71,14 @@ interface Booking {
     loyaltyProgram: string | null;
     basePointRate: string | number | null;
     pointType: { name: string; centsPerPoint: string | number } | null;
+    userStatus?: {
+      eliteStatus: {
+        name: string;
+        bonusPercentage: string | number | null;
+        fixedRate: string | number | null;
+        isFixed: boolean;
+      } | null;
+    } | null;
   };
   creditCard: {
     id: string;
@@ -78,6 +86,12 @@ interface Booking {
     rewardType: string;
     rewardRate: string | number;
     pointType: { name: string; centsPerPoint: string | number } | null;
+    rewardRules?: {
+      rewardType: string;
+      rewardValue: string | number;
+      hotelChainId: string | null;
+      otaAgencyId: string | null;
+    }[];
   } | null;
   shoppingPortal: {
     id: string;
@@ -227,7 +241,7 @@ export default function BookingsPage() {
                   const netCost = calculateNetCost(booking);
 
                   return (
-                    <TableRow key={booking.id}>
+                    <TableRow key={booking.id} data-testid={`booking-row-${booking.id}`}>
                       <TableCell>
                         <div>{booking.propertyName}</div>
                         {booking.hotelChainSubBrand && (
@@ -256,6 +270,7 @@ export default function BookingsPage() {
                       </TableCell>
                       <TableCell
                         className={`text-right font-medium ${netCost < totalCost ? "text-green-600" : ""}`}
+                        data-testid="booking-net-per-night"
                       >
                         {formatCurrency(netCost / booking.numNights)}
                       </TableCell>
