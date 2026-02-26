@@ -12,6 +12,7 @@ describe("net-cost", () => {
     pointsRedeemed: null,
     certificates: [],
     hotelChain: {
+      id: "test-hotel-id",
       name: "Test Hotel",
       loyaltyProgram: "Test Points",
       basePointRate: 10,
@@ -387,7 +388,7 @@ describe("net-cost", () => {
       hotelChain: {
         ...mockBaseBooking.hotelChain,
         id: "hyatt-id", // mock id
-      } as unknown as HotelChain,
+      } as HotelChain,
       creditCard: {
         name: "Chase Hyatt",
         rewardRate: 1,
@@ -440,7 +441,7 @@ describe("net-cost", () => {
       hotelChain: {
         ...mockBaseBooking.hotelChain,
         id: "marriott-id",
-      } as unknown as HotelChain,
+      } as HotelChain,
       creditCard: {
         name: "Marriott Bevy",
         rewardRate: 2,
@@ -470,7 +471,7 @@ describe("net-cost", () => {
       hotelChain: {
         ...mockBaseBooking.hotelChain,
         id: "marriott-id",
-      } as unknown as HotelChain,
+      } as HotelChain,
       creditCard: {
         name: "Marriott Bevy Boosted",
         rewardRate: 2,
@@ -509,7 +510,7 @@ describe("net-cost", () => {
       hotelChain: {
         ...mockBaseBooking.hotelChain,
         id: "marriott-id",
-      } as unknown as HotelChain,
+      } as HotelChain,
       creditCard: {
         name: "Marriott Card",
         rewardRate: 2,

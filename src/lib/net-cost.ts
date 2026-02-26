@@ -31,6 +31,7 @@ export interface NetCostBooking {
   pointsRedeemed: number | null;
   certificates: { certType: string }[];
   hotelChain: {
+    id: string;
     name: string;
     loyaltyProgram: string | null;
     basePointRate: string | number | null;
@@ -283,7 +284,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
   if (booking.creditCard) {
     const baseRate = Number(booking.creditCard.rewardRate);
     const rules = booking.creditCard.rewardRules || [];
-    const hotelId = (booking.hotelChain as { id: string } | null)?.id || booking.hotelChainId;
+    const hotelId = booking.hotelChain.id || booking.hotelChainId;
     const otaId = booking.otaAgencyId;
 
     // Strict rule selection: OTA bookings only allow OTA rules.
@@ -298,8 +299,11 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
     const multiplierRules = applicableRules.filter((r) => r.rewardType === "multiplier");
     const fixedRules = applicableRules.filter((r) => r.rewardType === "fixed");
 
-    // Best multiplier (OTA match or Hotel match depending on booking context)
-    const bestMultiplierRule = multiplierRules[0]; // Filter already handled context
+    // Best multiplier (OTA match or Hotel match depending on booking context).
+    // Pick the highest one if multiple match.
+    const bestMultiplierRule = multiplierRules.sort(
+      (a, b) => Number(b.rewardValue) - Number(a.rewardValue)
+    )[0];
 
     const rateToUse = bestMultiplierRule ? Number(bestMultiplierRule.rewardValue) : baseRate;
     const totalFixedBonus = fixedRules.reduce((sum, r) => sum + Number(r.rewardValue), 0);

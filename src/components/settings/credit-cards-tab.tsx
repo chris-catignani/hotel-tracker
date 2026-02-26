@@ -382,7 +382,9 @@ export function CreditCardsTab() {
                               <>
                                 {card.rewardRules[0].rewardType === "multiplier"
                                   ? `(${card.rewardRules[0].rewardValue}x at `
-                                  : `(+ ${Number(card.rewardRules[0].rewardValue).toLocaleString()} pts `}
+                                  : `(+ ${Number(
+                                      card.rewardRules[0].rewardValue
+                                    ).toLocaleString()} pts `}
                                 {card.rewardRules[0].hotelChain?.name ||
                                   card.rewardRules[0].otaAgency?.name ||
                                   ""}
@@ -451,7 +453,9 @@ export function CreditCardsTab() {
                             <>
                               {card.rewardRules[0].rewardType === "multiplier"
                                 ? `(${card.rewardRules[0].rewardValue}x at `
-                                : `(+ ${Number(card.rewardRules[0].rewardValue).toLocaleString()} pts `}
+                                : `(+ ${Number(
+                                    card.rewardRules[0].rewardValue
+                                  ).toLocaleString()} pts `}
                               {card.rewardRules[0].hotelChain?.name ||
                                 card.rewardRules[0].otaAgency?.name ||
                                 ""}
@@ -505,20 +509,21 @@ function RewardRulesSection({
     setRules([
       ...rules,
       {
+        id: crypto.randomUUID(),
         hotelChainId: null,
         otaAgencyId: null,
         rewardType: "multiplier",
-        rewardValue: "", // Start empty for placeholder
+        rewardValue: "",
       },
     ]);
   };
 
-  const removeRule = (index: number) => {
-    setRules(rules.filter((_, i) => i !== index));
+  const removeRule = (id?: string) => {
+    setRules(rules.filter((r) => r.id !== id));
   };
 
-  const updateRule = (index: number, updates: Partial<CreditCardRewardRuleFormData>) => {
-    setRules(rules.map((r, i) => (i === index ? { ...r, ...updates } : r)));
+  const updateRule = (id: string | undefined, updates: Partial<CreditCardRewardRuleFormData>) => {
+    setRules(rules.map((r) => (r.id === id ? { ...r, ...updates } : r)));
   };
 
   return (
@@ -540,7 +545,7 @@ function RewardRulesSection({
       ) : (
         <div className="space-y-4">
           {rules.map((rule, index) => (
-            <div key={index} className="space-y-3 rounded-lg border p-3 bg-muted/30">
+            <div key={rule.id} className="space-y-3 rounded-lg border p-3 bg-muted/30">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold">Rule #{index + 1}</span>
                 <Button
@@ -548,7 +553,7 @@ function RewardRulesSection({
                   variant="ghost"
                   size="sm"
                   className="h-6 w-6 p-0 text-destructive hover:bg-destructive/10"
-                  onClick={() => removeRule(index)}
+                  onClick={() => removeRule(rule.id)}
                 >
                   <Trash2 className="size-3" />
                 </Button>
@@ -567,14 +572,14 @@ function RewardRulesSection({
                     }
                     onValueChange={(val) => {
                       if (val === "none") {
-                        updateRule(index, { hotelChainId: null, otaAgencyId: null });
+                        updateRule(rule.id, { hotelChainId: null, otaAgencyId: null });
                       } else if (val.startsWith("hc:")) {
-                        updateRule(index, {
+                        updateRule(rule.id, {
                           hotelChainId: val.replace("hc:", ""),
                           otaAgencyId: null,
                         });
                       } else if (val.startsWith("ota:")) {
-                        updateRule(index, {
+                        updateRule(rule.id, {
                           otaAgencyId: val.replace("ota:", ""),
                           hotelChainId: null,
                         });
@@ -600,7 +605,7 @@ function RewardRulesSection({
                   <AppSelect
                     value={rule.rewardType}
                     onValueChange={(val) =>
-                      updateRule(index, {
+                      updateRule(rule.id, {
                         rewardType: val as CreditCardRewardRuleType,
                       })
                     }
@@ -619,7 +624,7 @@ function RewardRulesSection({
                     type="number"
                     value={rule.rewardValue}
                     onChange={(e) =>
-                      updateRule(index, {
+                      updateRule(rule.id, {
                         rewardValue: e.target.value === "" ? "" : Number(e.target.value),
                       })
                     }
