@@ -78,7 +78,11 @@ export function AppSelect({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-        <div className="flex flex-col">
+        <div
+          className="max-h-[300px] overflow-y-auto"
+          onWheel={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
           {showSearch && (
             <div className="flex items-center border-b px-3 sticky top-0 bg-popover z-10">
               <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
@@ -86,11 +90,11 @@ export function AppSelect({
                 placeholder={searchPlaceholder}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-9 border-0 focus-visible:ring-0 px-0 py-4 bg-transparent shadow-none"
+                className="h-9 border-0 focus-visible:ring-0 px-0 bg-transparent shadow-none"
               />
             </div>
           )}
-          <div className="max-h-[300px] overflow-y-auto p-1">
+          <div className="p-1">
             {filteredOptions.length === 0 ? (
               <div className="py-6 text-center text-sm text-muted-foreground">{emptyMessage}</div>
             ) : (
