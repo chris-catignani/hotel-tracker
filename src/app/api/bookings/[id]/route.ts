@@ -17,7 +17,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           },
         },
         hotelChainSubBrand: true,
-        creditCard: { include: { pointType: true } },
+        creditCard: { include: { pointType: true, rewardRules: true } },
         shoppingPortal: { include: { pointType: true } },
         bookingPromotions: {
           include: {
@@ -210,7 +210,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
           },
         },
         hotelChainSubBrand: true,
-        creditCard: { include: { pointType: true } },
+        creditCard: { include: { pointType: true, rewardRules: true } },
         shoppingPortal: { include: { pointType: true } },
         bookingPromotions: {
           include: {

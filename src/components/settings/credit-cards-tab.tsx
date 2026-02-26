@@ -25,19 +25,31 @@ import {
 } from "@/components/ui/table";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { extractApiError } from "@/lib/client-error";
-import { CreditCard, PointType } from "@/lib/types";
+import {
+  CreditCard,
+  CreditCardRewardRuleFormData,
+  HotelChain,
+  OtaAgency,
+  PointType,
+  CreditCardRewardRuleType,
+} from "@/lib/types";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { EmptyState } from "@/components/ui/empty-state";
-import { CreditCard as CreditCardIcon } from "lucide-react";
+import { CreditCard as CreditCardIcon, Plus, Trash2 } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
 export function CreditCardsTab() {
   const [cards, setCards] = useState<CreditCard[]>([]);
   const [pointTypes, setPointTypes] = useState<PointType[]>([]);
+  const [hotelChains, setHotelChains] = useState<HotelChain[]>([]);
+  const [otaAgencies, setOtaAgencies] = useState<OtaAgency[]>([]);
+
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [rewardType, setRewardType] = useState("points");
   const [rewardRate, setRewardRate] = useState("");
   const [pointTypeId, setPointTypeId] = useState("none");
+  const [rewardRules, setRewardRules] = useState<CreditCardRewardRuleFormData[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const [editOpen, setEditOpen] = useState(false);
@@ -46,18 +58,24 @@ export function CreditCardsTab() {
   const [editRewardType, setEditRewardType] = useState("points");
   const [editRewardRate, setEditRewardRate] = useState("");
   const [editPointTypeId, setEditPointTypeId] = useState("none");
+  const [editRewardRules, setEditRewardRules] = useState<CreditCardRewardRuleFormData[]>([]);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [cardToDelete, setCardToDelete] = useState<CreditCard | null>(null);
 
   const fetchData = useCallback(async () => {
-    const [cardsRes, ptRes] = await Promise.all([
+    const [cardsRes, ptRes, hcRes, otaRes] = await Promise.all([
       fetch("/api/credit-cards"),
       fetch("/api/point-types"),
+      fetch("/api/hotel-chains"),
+      fetch("/api/ota-agencies"),
     ]);
     if (cardsRes.ok) setCards(await cardsRes.json());
     else setError(await extractApiError(cardsRes, "Failed to load credit cards."));
+
     if (ptRes.ok) setPointTypes(await ptRes.json());
+    if (hcRes.ok) setHotelChains(await hcRes.json());
+    if (otaRes.ok) setOtaAgencies(await otaRes.json());
   }, []);
 
   useEffect(() => {
@@ -75,6 +93,7 @@ export function CreditCardsTab() {
         rewardType,
         rewardRate: Number(rewardRate),
         pointTypeId: pointTypeId !== "none" ? pointTypeId : null,
+        rewardRules,
       }),
     });
     if (res.ok) {
@@ -82,6 +101,7 @@ export function CreditCardsTab() {
       setRewardType("points");
       setRewardRate("");
       setPointTypeId("none");
+      setRewardRules([]);
       setOpen(false);
       fetchData();
     } else {
@@ -95,6 +115,15 @@ export function CreditCardsTab() {
     setEditRewardType(card.rewardType);
     setEditRewardRate(String(card.rewardRate));
     setEditPointTypeId(card.pointTypeId != null ? card.pointTypeId : "none");
+    setEditRewardRules(
+      (card.rewardRules || []).map((r) => ({
+        id: r.id,
+        hotelChainId: r.hotelChainId,
+        otaAgencyId: r.otaAgencyId,
+        rewardType: r.rewardType,
+        rewardValue: Number(r.rewardValue),
+      }))
+    );
     setEditOpen(true);
   };
 
@@ -109,6 +138,7 @@ export function CreditCardsTab() {
         rewardType: editRewardType,
         rewardRate: Number(editRewardRate),
         pointTypeId: editPointTypeId !== "none" ? editPointTypeId : null,
+        rewardRules: editRewardRules,
       }),
     });
     if (res.ok) {
@@ -147,63 +177,76 @@ export function CreditCardsTab() {
           <DialogTrigger asChild>
             <Button data-testid="add-credit-card-button">Add Credit Card</Button>
           </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
+          <DialogContent className="max-w-md max-h-[90vh] flex flex-col p-0">
+            <DialogHeader className="p-6 pb-2">
               <DialogTitle>Add Credit Card</DialogTitle>
               <DialogDescription>Add a credit card to track rewards.</DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-2">
-              <div className="space-y-2">
-                <Label htmlFor="card-name">Name</Label>
-                <Input
-                  id="card-name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Card name"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="card-reward-type">Reward Type</Label>
-                <AppSelect
-                  value={rewardType}
-                  onValueChange={setRewardType}
-                  options={[
-                    { label: "Points", value: "points" },
-                    { label: "Cashback", value: "cashback" },
-                  ]}
-                  placeholder="Select reward type"
-                  data-testid="card-reward-type-select"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="card-reward-rate">Reward Rate</Label>
-                <Input
-                  id="card-reward-rate"
-                  type="number"
-                  step="0.01"
-                  value={rewardRate}
-                  onChange={(e) => setRewardRate(e.target.value)}
-                  placeholder="e.g. 3"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="card-point-type">Point Type</Label>
-                <AppSelect
-                  value={pointTypeId}
-                  onValueChange={setPointTypeId}
-                  options={[
-                    { label: "None", value: "none" },
-                    ...pointTypes.map((pt) => ({
-                      label: pt.name,
-                      value: pt.id,
-                    })),
-                  ]}
-                  placeholder="Select point type..."
-                  data-testid="card-point-type-select"
+
+            <div className="flex-1 overflow-y-auto px-6 py-2 space-y-4 custom-scrollbar">
+              <div className="space-y-4 py-2">
+                <div className="space-y-2">
+                  <Label htmlFor="card-name">Name</Label>
+                  <Input
+                    id="card-name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Card name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="card-reward-type">Reward Type</Label>
+                  <AppSelect
+                    value={rewardType}
+                    onValueChange={setRewardType}
+                    options={[
+                      { label: "Points", value: "points" },
+                      { label: "Cashback", value: "cashback" },
+                    ]}
+                    placeholder="Select reward type"
+                    data-testid="card-reward-type-select"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="card-reward-rate">Reward Rate</Label>
+                  <Input
+                    id="card-reward-rate"
+                    type="number"
+                    step="0.01"
+                    value={rewardRate}
+                    onChange={(e) => setRewardRate(e.target.value)}
+                    placeholder="e.g. 3"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="card-point-type">Point Type</Label>
+                  <AppSelect
+                    value={pointTypeId}
+                    onValueChange={setPointTypeId}
+                    options={[
+                      { label: "None", value: "none" },
+                      ...pointTypes.map((pt) => ({
+                        label: pt.name,
+                        value: pt.id,
+                      })),
+                    ]}
+                    placeholder="Select point type..."
+                    data-testid="card-point-type-select"
+                  />
+                </div>
+
+                <Separator />
+
+                <RewardRulesSection
+                  rules={rewardRules}
+                  setRules={setRewardRules}
+                  hotelChains={hotelChains}
+                  otaAgencies={otaAgencies}
                 />
               </div>
             </div>
-            <DialogFooter>
+
+            <DialogFooter className="p-6 pt-2 border-t">
               <Button onClick={handleSubmit} disabled={!name.trim() || !rewardRate}>
                 Save
               </Button>
@@ -214,63 +257,76 @@ export function CreditCardsTab() {
 
       {/* Edit Dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent>
-          <DialogHeader>
+        <DialogContent className="max-w-md max-h-[90vh] flex flex-col p-0">
+          <DialogHeader className="p-6 pb-2">
             <DialogTitle>Edit Credit Card</DialogTitle>
             <DialogDescription>Update credit card details and reward rate.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label htmlFor="edit-card-name">Name</Label>
-              <Input
-                id="edit-card-name"
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                placeholder="Card name"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-card-reward-type">Reward Type</Label>
-              <AppSelect
-                value={editRewardType}
-                onValueChange={setEditRewardType}
-                options={[
-                  { label: "Points", value: "points" },
-                  { label: "Cashback", value: "cashback" },
-                ]}
-                placeholder="Select reward type"
-                data-testid="edit-card-reward-type-select"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-card-reward-rate">Reward Rate</Label>
-              <Input
-                id="edit-card-reward-rate"
-                type="number"
-                step="0.01"
-                value={editRewardRate}
-                onChange={(e) => setEditRewardRate(e.target.value)}
-                placeholder="e.g. 3"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-card-point-type">Point Type</Label>
-              <AppSelect
-                value={editPointTypeId}
-                onValueChange={setEditPointTypeId}
-                options={[
-                  { label: "None", value: "none" },
-                  ...pointTypes.map((pt) => ({
-                    label: pt.name,
-                    value: pt.id,
-                  })),
-                ]}
-                placeholder="Select point type..."
-                data-testid="edit-card-point-type-select"
+
+          <div className="flex-1 overflow-y-auto px-6 py-2 space-y-4 custom-scrollbar">
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label htmlFor="edit-card-name">Name</Label>
+                <Input
+                  id="edit-card-name"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder="Card name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-card-reward-type">Reward Type</Label>
+                <AppSelect
+                  value={editRewardType}
+                  onValueChange={setEditRewardType}
+                  options={[
+                    { label: "Points", value: "points" },
+                    { label: "Cashback", value: "cashback" },
+                  ]}
+                  placeholder="Select reward type"
+                  data-testid="edit-card-reward-type-select"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-card-reward-rate">Reward Rate</Label>
+                <Input
+                  id="edit-card-reward-rate"
+                  type="number"
+                  step="0.01"
+                  value={editRewardRate}
+                  onChange={(e) => setEditRewardRate(e.target.value)}
+                  placeholder="e.g. 3"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-card-point-type">Point Type</Label>
+                <AppSelect
+                  value={editPointTypeId}
+                  onValueChange={setEditPointTypeId}
+                  options={[
+                    { label: "None", value: "none" },
+                    ...pointTypes.map((pt) => ({
+                      label: pt.name,
+                      value: pt.id,
+                    })),
+                  ]}
+                  placeholder="Select point type..."
+                  data-testid="edit-card-point-type-select"
+                />
+              </div>
+
+              <Separator />
+
+              <RewardRulesSection
+                rules={editRewardRules}
+                setRules={setEditRewardRules}
+                hotelChains={hotelChains}
+                otaAgencies={otaAgencies}
               />
             </div>
           </div>
-          <DialogFooter>
+
+          <DialogFooter className="p-6 pt-2 border-t">
             <Button onClick={handleEditSubmit} disabled={!editName.trim() || !editRewardRate}>
               Save
             </Button>
@@ -318,7 +374,28 @@ export function CreditCardsTab() {
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-medium">Rate</p>
-                      <p className="text-lg font-bold">{card.rewardRate}</p>
+                      <div className="flex flex-col items-end">
+                        <p className="text-lg font-bold">{card.rewardRate}x</p>
+                        {card.rewardRules && card.rewardRules.length > 0 && (
+                          <span className="text-[10px] font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full mt-0.5">
+                            {card.rewardRules.length === 1 ? (
+                              <>
+                                {card.rewardRules[0].rewardType === "multiplier"
+                                  ? `(${card.rewardRules[0].rewardValue}x at `
+                                  : `(+ ${Number(
+                                      card.rewardRules[0].rewardValue
+                                    ).toLocaleString()} pts `}
+                                {card.rewardRules[0].hotelChain?.name ||
+                                  card.rewardRules[0].otaAgency?.name ||
+                                  ""}
+                                )
+                              </>
+                            ) : (
+                              `+ ${card.rewardRules.length} rules`
+                            )}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center justify-between text-sm">
@@ -368,7 +445,28 @@ export function CreditCardsTab() {
                       {card.name}
                     </TableCell>
                     <TableCell className="capitalize">{card.rewardType}</TableCell>
-                    <TableCell>{card.rewardRate}</TableCell>
+                    <TableCell>
+                      {card.rewardRate}x
+                      {card.rewardRules && card.rewardRules.length > 0 && (
+                        <div className="text-[10px] font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full inline-flex ml-1.5 align-middle">
+                          {card.rewardRules.length === 1 ? (
+                            <>
+                              {card.rewardRules[0].rewardType === "multiplier"
+                                ? `(${card.rewardRules[0].rewardValue}x at `
+                                : `(+ ${Number(
+                                    card.rewardRules[0].rewardValue
+                                  ).toLocaleString()} pts `}
+                              {card.rewardRules[0].hotelChain?.name ||
+                                card.rewardRules[0].otaAgency?.name ||
+                                ""}
+                              {card.rewardRules[0].rewardType === "multiplier" ? ")" : ")"}
+                            </>
+                          ) : (
+                            `+ ${card.rewardRules.length} rules`
+                          )}
+                        </div>
+                      )}
+                    </TableCell>
                     <TableCell>{card.pointType?.name ?? "—"}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
@@ -391,6 +489,152 @@ export function CreditCardsTab() {
             </Table>
           </div>
         </>
+      )}
+    </div>
+  );
+}
+
+function RewardRulesSection({
+  rules,
+  setRules,
+  hotelChains,
+  otaAgencies,
+}: {
+  rules: CreditCardRewardRuleFormData[];
+  setRules: React.Dispatch<React.SetStateAction<CreditCardRewardRuleFormData[]>>;
+  hotelChains: HotelChain[];
+  otaAgencies: OtaAgency[];
+}) {
+  const addRule = () => {
+    setRules([
+      ...rules,
+      {
+        id: crypto.randomUUID(),
+        hotelChainId: null,
+        otaAgencyId: null,
+        rewardType: "multiplier",
+        rewardValue: "",
+      },
+    ]);
+  };
+
+  const removeRule = (id?: string) => {
+    setRules(rules.filter((r) => r.id !== id));
+  };
+
+  const updateRule = (id: string | undefined, updates: Partial<CreditCardRewardRuleFormData>) => {
+    setRules(rules.map((r) => (r.id === id ? { ...r, ...updates } : r)));
+  };
+
+  return (
+    <div className="space-y-4 pt-2">
+      <div className="flex items-center justify-between">
+        <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+          Boosted Rates / Rules
+        </Label>
+        <Button type="button" variant="outline" size="sm" onClick={addRule}>
+          <Plus className="mr-1 size-3" />
+          Add Rule
+        </Button>
+      </div>
+
+      {rules.length === 0 ? (
+        <p className="py-2 text-center text-xs text-muted-foreground italic">
+          No custom rules defined. Card uses base rate everywhere.
+        </p>
+      ) : (
+        <div className="space-y-4">
+          {rules.map((rule, index) => (
+            <div key={rule.id} className="space-y-3 rounded-lg border p-3 bg-muted/30">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold">Rule #{index + 1}</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 text-destructive hover:bg-destructive/10"
+                  onClick={() => removeRule(rule.id)}
+                >
+                  <Trash2 className="size-3" />
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] uppercase">Link To</Label>
+                  <AppSelect
+                    value={
+                      rule.hotelChainId
+                        ? `hc:${rule.hotelChainId}`
+                        : rule.otaAgencyId
+                          ? `ota:${rule.otaAgencyId}`
+                          : "none"
+                    }
+                    onValueChange={(val) => {
+                      if (val === "none") {
+                        updateRule(rule.id, { hotelChainId: null, otaAgencyId: null });
+                      } else if (val.startsWith("hc:")) {
+                        updateRule(rule.id, {
+                          hotelChainId: val.replace("hc:", ""),
+                          otaAgencyId: null,
+                        });
+                      } else if (val.startsWith("ota:")) {
+                        updateRule(rule.id, {
+                          otaAgencyId: val.replace("ota:", ""),
+                          hotelChainId: null,
+                        });
+                      }
+                    }}
+                    options={[
+                      { label: "None", value: "none" },
+                      ...hotelChains.map((hc) => ({
+                        label: `Hotel: ${hc.name}`,
+                        value: `hc:${hc.id}`,
+                      })),
+                      ...otaAgencies.map((ota) => ({
+                        label: `OTA: ${ota.name}`,
+                        value: `ota:${ota.id}`,
+                      })),
+                    ]}
+                    placeholder="Select target..."
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] uppercase">Reward Type</Label>
+                  <AppSelect
+                    value={rule.rewardType}
+                    onValueChange={(val) =>
+                      updateRule(rule.id, {
+                        rewardType: val as CreditCardRewardRuleType,
+                      })
+                    }
+                    options={[
+                      { label: "Multiplier (x)", value: "multiplier" },
+                      { label: "Fixed Bonus (pts)", value: "fixed" },
+                    ]}
+                  />
+                </div>
+
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label className="text-[10px] uppercase">
+                    Value {rule.rewardType === "multiplier" ? "(e.g. 4 for 4x)" : "(points)"}
+                  </Label>
+                  <Input
+                    type="number"
+                    value={rule.rewardValue}
+                    onChange={(e) =>
+                      updateRule(rule.id, {
+                        rewardValue: e.target.value === "" ? "" : Number(e.target.value),
+                      })
+                    }
+                    placeholder={rule.rewardType === "multiplier" ? "4" : "1000"}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
