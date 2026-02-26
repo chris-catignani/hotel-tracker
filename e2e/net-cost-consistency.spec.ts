@@ -60,14 +60,16 @@ test.describe("Net Cost Consistency", () => {
 
     try {
       await page.goto("/");
-      await expect(page.locator(`tr:has-text("${propertyName}")`).locator("td").last()).toHaveText(
+      const dashboardRow = page.getByTestId(`booking-row-${booking.id}`);
+      await expect(dashboardRow).toBeVisible();
+      await expect(dashboardRow.getByTestId("booking-net-per-night")).toHaveText(
         expectedNetPerNight
       );
 
       await page.goto("/bookings");
-      await expect(page.locator(`tr:has-text("${propertyName}")`).locator("td").nth(-2)).toHaveText(
-        expectedNetPerNight
-      );
+      const listRow = page.getByTestId(`booking-row-${booking.id}`);
+      await expect(listRow).toBeVisible();
+      await expect(listRow.getByTestId("booking-net-per-night")).toHaveText(expectedNetPerNight);
 
       await page.goto(`/bookings/${booking.id}`);
       await expect(page.getByTestId("breakdown-net-cost")).toHaveText(expectedNetCost);
@@ -128,14 +130,16 @@ test.describe("Net Cost Consistency", () => {
 
     try {
       await page.goto("/");
-      await expect(page.locator(`tr:has-text("${propertyName}")`).locator("td").last()).toHaveText(
+      const dashboardRow = page.getByTestId(`booking-row-${booking.id}`);
+      await expect(dashboardRow).toBeVisible();
+      await expect(dashboardRow.getByTestId("booking-net-per-night")).toHaveText(
         expectedNetPerNight
       );
 
       await page.goto("/bookings");
-      await expect(page.locator(`tr:has-text("${propertyName}")`).locator("td").nth(-2)).toHaveText(
-        expectedNetPerNight
-      );
+      const listRow = page.getByTestId(`booking-row-${booking.id}`);
+      await expect(listRow).toBeVisible();
+      await expect(listRow.getByTestId("booking-net-per-night")).toHaveText(expectedNetPerNight);
 
       await page.goto(`/bookings/${booking.id}`);
       await expect(page.getByTestId("breakdown-net-cost")).toHaveText(expectedNetCost);
@@ -185,14 +189,16 @@ test.describe("Net Cost Consistency", () => {
 
     try {
       await page.goto("/");
-      await expect(page.locator(`tr:has-text("${propertyName}")`).locator("td").last()).toHaveText(
+      const dashboardRow = page.getByTestId(`booking-row-${booking.id}`);
+      await expect(dashboardRow).toBeVisible();
+      await expect(dashboardRow.getByTestId("booking-net-per-night")).toHaveText(
         expectedNetPerNight
       );
 
       await page.goto("/bookings");
-      await expect(page.locator(`tr:has-text("${propertyName}")`).locator("td").nth(-2)).toHaveText(
-        expectedNetPerNight
-      );
+      const listRow = page.getByTestId(`booking-row-${booking.id}`);
+      await expect(listRow).toBeVisible();
+      await expect(listRow.getByTestId("booking-net-per-night")).toHaveText(expectedNetPerNight);
 
       await page.goto(`/bookings/${booking.id}`);
       await expect(page.getByTestId("breakdown-net-cost")).toHaveText(expectedNetCost);
@@ -249,14 +255,16 @@ test.describe("Net Cost Consistency", () => {
 
     try {
       await page.goto("/");
-      await expect(page.locator(`tr:has-text("${propertyName}")`).locator("td").last()).toHaveText(
+      const dashboardRow = page.getByTestId(`booking-row-${booking.id}`);
+      await expect(dashboardRow).toBeVisible();
+      await expect(dashboardRow.getByTestId("booking-net-per-night")).toHaveText(
         expectedNetPerNight
       );
 
       await page.goto("/bookings");
-      await expect(page.locator(`tr:has-text("${propertyName}")`).locator("td").nth(-2)).toHaveText(
-        expectedNetPerNight
-      );
+      const listRow = page.getByTestId(`booking-row-${booking.id}`);
+      await expect(listRow).toBeVisible();
+      await expect(listRow.getByTestId("booking-net-per-night")).toHaveText(expectedNetPerNight);
 
       await page.goto(`/bookings/${booking.id}`);
       await expect(page.getByTestId("breakdown-net-cost")).toHaveText(expectedNetCost);

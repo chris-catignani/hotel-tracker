@@ -332,7 +332,7 @@ export default function DashboardPage() {
                         const netCost = calculateNetCost(booking);
                         const total = Number(booking.totalCost);
                         return (
-                          <TableRow key={booking.id}>
+                          <TableRow key={booking.id} data-testid={`booking-row-${booking.id}`}>
                             <TableCell>
                               <Link
                                 href={`/bookings/${booking.id}`}
@@ -366,6 +366,7 @@ export default function DashboardPage() {
                               className={`text-right font-medium ${
                                 netCost < total ? "text-green-600" : ""
                               }`}
+                              data-testid="booking-net-per-night"
                             >
                               {formatDollars(netCost / booking.numNights)}
                             </TableCell>

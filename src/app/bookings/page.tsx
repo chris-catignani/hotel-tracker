@@ -241,7 +241,7 @@ export default function BookingsPage() {
                   const netCost = calculateNetCost(booking);
 
                   return (
-                    <TableRow key={booking.id}>
+                    <TableRow key={booking.id} data-testid={`booking-row-${booking.id}`}>
                       <TableCell>
                         <div>{booking.propertyName}</div>
                         {booking.hotelChainSubBrand && (
@@ -270,6 +270,7 @@ export default function BookingsPage() {
                       </TableCell>
                       <TableCell
                         className={`text-right font-medium ${netCost < totalCost ? "text-green-600" : ""}`}
+                        data-testid="booking-net-per-night"
                       >
                         {formatCurrency(netCost / booking.numNights)}
                       </TableCell>
