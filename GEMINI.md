@@ -19,6 +19,7 @@ This file provides foundational mandates for Gemini CLI (gemini-cli) when workin
 
 ## Testing Mandates
 
+- **Verification:** ALWAYS run all unit tests (`npm test`) and E2E tests (`npm run test:e2e`) locally before creating or pushing updates to a Pull Request. A task is not considered ready for review until all local tests pass.
 - **Test Coverage:** ALWAYS write unit tests (Vitest/RTL) for every feature or fix created. ALWAYS write E2E tests (Playwright) for features that involve UI flows. E2E tests run in CI.
 - **Precise Selectors:** ALWAYS use `data-testid` attributes on React components for specific values or elements to be tested (e.g., `data-testid="stat-value-total-bookings"`). This avoids ambiguity and ensures tests are robust against formatting changes.
 
