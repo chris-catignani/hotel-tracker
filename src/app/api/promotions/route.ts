@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { PromotionType } from "@prisma/client";
+import { PromotionType, Prisma } from "@prisma/client";
 import { apiError } from "@/lib/api-error";
 import { matchPromotionsForAffectedBookings } from "@/lib/promotion-matching";
 import {
@@ -165,7 +165,7 @@ export async function POST(request: NextRequest) {
                   ),
                 },
               }),
-        },
+        } as unknown as Prisma.PromotionCreateInput,
         include: PROMOTION_INCLUDE,
       });
 

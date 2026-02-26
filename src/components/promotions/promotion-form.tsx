@@ -59,7 +59,9 @@ interface ShoppingPortal {
 }
 
 interface PromotionFormProps {
-  initialData?: Partial<PromotionFormData> & { restrictions?: PromotionRestrictionsData | null };
+  initialData?: Partial<PromotionFormData> & {
+    restrictions?: PromotionRestrictionsData | PromotionRestrictionsFormData | null;
+  };
   onSubmit: (data: PromotionFormData) => Promise<void>;
   submitting: boolean;
   title: string;
@@ -68,9 +70,11 @@ interface PromotionFormProps {
 }
 
 function mapApiRestrictionsToForm(
-  r: PromotionRestrictionsData | null | undefined
+  r: PromotionRestrictionsData | PromotionRestrictionsFormData | null | undefined
 ): PromotionRestrictionsFormData {
   if (!r) return { ...EMPTY_RESTRICTIONS };
+  // Short-circuit if already mapped to form data (edit page pre-maps before passing)
+  if ("subBrandIncludeIds" in r) return r as PromotionRestrictionsFormData;
   return {
     minSpend: r.minSpend != null ? String(r.minSpend) : "",
     minNightsRequired: r.minNightsRequired != null ? String(r.minNightsRequired) : "",
