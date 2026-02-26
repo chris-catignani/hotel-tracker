@@ -62,7 +62,8 @@ export function deriveActiveRestrictions(
     keys.add("redemption_caps");
   if (data.oncePerSubBrand === true) keys.add("once_per_sub_brand");
   if (data.tieInCreditCardIds && data.tieInCreditCardIds.length > 0) keys.add("tie_in_cards");
-  if (data.registrationDeadline) keys.add("registration");
+  if (data.registrationDeadline || data.validDaysAfterRegistration != null || data.registrationDate)
+    keys.add("registration");
   if (data.exclusions && data.exclusions.length > 0) keys.add("sub_brand_exclusions");
   return keys;
 }
