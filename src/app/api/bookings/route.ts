@@ -9,9 +9,14 @@ export async function GET() {
   try {
     const bookings = await prisma.booking.findMany({
       include: {
-        hotelChain: { include: { pointType: true } },
+        hotelChain: {
+          include: {
+            pointType: true,
+            userStatus: { include: { eliteStatus: true } },
+          },
+        },
         hotelChainSubBrand: true,
-        creditCard: { include: { pointType: true } },
+        creditCard: { include: { pointType: true, rewardRules: true } },
         shoppingPortal: { include: { pointType: true } },
         bookingPromotions: {
           include: {
@@ -63,7 +68,8 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Auto-calculate loyalty points from hotel/sub-brand rates if not explicitly provided
-    let calculatedPoints: number | null = loyaltyPointsEarned ? Number(loyaltyPointsEarned) : null;
+    let calculatedPoints: number | null =
+      loyaltyPointsEarned != null ? Number(loyaltyPointsEarned) : null;
 
     if (calculatedPoints == null && hotelChainId && pretaxCost) {
       // Fetch UserStatus for this chain
@@ -153,9 +159,14 @@ export async function POST(request: NextRequest) {
     const fullBooking = await prisma.booking.findUnique({
       where: { id: booking.id },
       include: {
-        hotelChain: { include: { pointType: true } },
+        hotelChain: {
+          include: {
+            pointType: true,
+            userStatus: { include: { eliteStatus: true } },
+          },
+        },
         hotelChainSubBrand: true,
-        creditCard: { include: { pointType: true } },
+        creditCard: { include: { pointType: true, rewardRules: true } },
         shoppingPortal: { include: { pointType: true } },
         bookingPromotions: {
           include: {

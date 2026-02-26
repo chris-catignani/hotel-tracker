@@ -48,6 +48,14 @@ interface BookingWithRelations {
     loyaltyProgram: string | null;
     basePointRate: string | number | null;
     pointType: { name: string; centsPerPoint: string } | null;
+    userStatus?: {
+      eliteStatus: {
+        name: string;
+        bonusPercentage: string | number | null;
+        fixedRate: string | number | null;
+        isFixed: boolean;
+      } | null;
+    } | null;
   };
   hotelChainSubBrand?: {
     id: string;
@@ -59,6 +67,12 @@ interface BookingWithRelations {
     rewardType: string;
     rewardRate: string | number;
     pointType: { name: string; centsPerPoint: string } | null;
+    rewardRules?: {
+      rewardType: string;
+      rewardValue: string | number;
+      hotelChainId: string | null;
+      otaAgencyId: string | null;
+    }[];
   } | null;
   shoppingPortal: {
     id: string;

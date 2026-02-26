@@ -71,6 +71,14 @@ interface Booking {
     loyaltyProgram: string | null;
     basePointRate: string | number | null;
     pointType: { name: string; centsPerPoint: string | number } | null;
+    userStatus?: {
+      eliteStatus: {
+        name: string;
+        bonusPercentage: string | number | null;
+        fixedRate: string | number | null;
+        isFixed: boolean;
+      } | null;
+    } | null;
   };
   creditCard: {
     id: string;
@@ -78,6 +86,12 @@ interface Booking {
     rewardType: string;
     rewardRate: string | number;
     pointType: { name: string; centsPerPoint: string | number } | null;
+    rewardRules?: {
+      rewardType: string;
+      rewardValue: string | number;
+      hotelChainId: string | null;
+      otaAgencyId: string | null;
+    }[];
   } | null;
   shoppingPortal: {
     id: string;
