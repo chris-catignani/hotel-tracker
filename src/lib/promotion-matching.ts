@@ -277,7 +277,9 @@ export function calculateMatchedPromotions(
           }
           break;
         case PromotionRewardType.certificate:
-          appliedValue = benefit.certType ? certPointsValue(benefit.certType) * centsPerPoint : 0;
+          appliedValue = benefit.certType
+            ? certPointsValue(benefit.certType) * centsPerPoint * 0.7
+            : 0;
           break;
         case PromotionRewardType.eqn:
           appliedValue = benefitValue * DEFAULT_EQN_VALUE;

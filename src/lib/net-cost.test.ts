@@ -148,11 +148,11 @@ describe("net-cost", () => {
       ...mockBaseBooking,
       bookingPromotions: [
         {
-          appliedValue: 525,
+          appliedValue: 367.5,
           promotion: { name: "Free Night Cert", benefits: [] },
           benefitApplications: [
             {
-              appliedValue: 525,
+              appliedValue: 367.5,
               promotionBenefit: {
                 rewardType: "certificate",
                 valueType: "fixed",
@@ -165,10 +165,10 @@ describe("net-cost", () => {
       ],
     };
     const result = getNetCostBreakdown(booking);
-    // marriott_35k = 35000 pts * 0.015 = 525
-    expect(result.promoSavings).toBe(525);
-    expect(result.netCost).toBe(-425); // 100 - 525
-    expect(result.promotions[0].formula).toContain("35,000 pts × 1.5¢ = $525.00");
+    // marriott_35k = 35000 pts * 0.015 * 0.7 = 367.5
+    expect(result.promoSavings).toBe(367.5);
+    expect(result.netCost).toBe(-267.5); // 100 - 367.5
+    expect(result.promotions[0].formula).toContain("35,000 pts × 70% × 1.5¢ = $367.50");
   });
 
   it("should handle EQN benefit with valuation", () => {
@@ -176,11 +176,11 @@ describe("net-cost", () => {
       ...mockBaseBooking,
       bookingPromotions: [
         {
-          appliedValue: 50,
+          appliedValue: 20,
           promotion: { name: "2 Bonus EQNs", benefits: [] },
           benefitApplications: [
             {
-              appliedValue: 50,
+              appliedValue: 20,
               promotionBenefit: {
                 rewardType: "eqn",
                 valueType: "fixed",
@@ -193,10 +193,10 @@ describe("net-cost", () => {
       ],
     };
     const result = getNetCostBreakdown(booking);
-    // 2 EQNs * $25.00 = $50.00
-    expect(result.promoSavings).toBe(50);
-    expect(result.netCost).toBe(50); // 100 - 50
-    expect(result.promotions[0].formula).toContain("2 bonus EQN(s) × $25.00 = $50.00");
+    // 2 EQNs * $10.00 = $20.00
+    expect(result.promoSavings).toBe(20);
+    expect(result.netCost).toBe(80); // 100 - 20
+    expect(result.promotions[0].formula).toContain("2 bonus EQN(s) × $10.00 = $20.00");
   });
 
   it("should sum multiple benefits across a promotion", () => {

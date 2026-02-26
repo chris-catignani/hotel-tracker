@@ -91,4 +91,4 @@ export const BENEFIT_REWARD_TYPE_OPTIONS = [
   { value: "eqn", label: "Bonus EQNs" },
 ] as const;
 
-export const DEFAULT_EQN_VALUE = 25.0;
+export const DEFAULT_EQN_VALUE = 10.0;

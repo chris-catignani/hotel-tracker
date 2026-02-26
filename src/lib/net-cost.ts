@@ -195,10 +195,10 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
           const centsStr = formatCents(hotelCentsPerPoint);
           const points = b.certType ? certPointsValue(b.certType) : 0;
           formulaLines.push(
-            `${bValue.toLocaleString()} cert(s) × ${points.toLocaleString()} pts × ${centsStr}¢ = ${formatCurrency(bApplied)}${tieInSuffix}`
+            `${bValue.toLocaleString()} cert(s) × ${points.toLocaleString()} pts × 70% × ${centsStr}¢ = ${formatCurrency(bApplied)}${tieInSuffix}`
           );
           descriptionLines.push(
-            `Earns ${bValue.toLocaleString()} free night certificate(s), valued based on a max redemption of ${points.toLocaleString()} points each at ${centsStr}¢ per point.${tieInSuffix}`
+            `Earns ${bValue.toLocaleString()} free night certificate(s), valued at 70% of a max redemption (${points.toLocaleString()} pts) at ${centsStr}¢ per point. This valuation is fixed and not based on the booking's cost.${tieInSuffix}`
           );
           break;
         }
@@ -207,7 +207,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
             `${bValue.toLocaleString()} bonus EQN(s) × ${formatCurrency(DEFAULT_EQN_VALUE)} = ${formatCurrency(bApplied)}${tieInSuffix}`
           );
           descriptionLines.push(
-            `Earns ${bValue.toLocaleString()} bonus Elite Qualifying Night(s), which we value at ${formatCurrency(DEFAULT_EQN_VALUE)} each.${tieInSuffix}`
+            `Earns ${bValue.toLocaleString()} bonus Elite Qualifying Night(s), which we value at ${formatCurrency(DEFAULT_EQN_VALUE)} each. This valuation is fixed and not based on the booking's cost.${tieInSuffix}`
           );
           break;
       }
