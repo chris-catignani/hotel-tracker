@@ -21,7 +21,7 @@ describe("PromotionForm", () => {
     });
   });
 
-  it("renders registration fields correctly", () => {
+  it("renders registration fields when restriction is added via picker", () => {
     render(
       <PromotionForm
         onSubmit={async () => {}}
@@ -31,6 +31,13 @@ describe("PromotionForm", () => {
         submitLabel="Submit"
       />
     );
+
+    // Registration fields should not be visible before adding the restriction
+    expect(screen.queryByLabelText(/Registration Deadline/i)).toBeNull();
+
+    // Open the picker and add Registration & Validity
+    fireEvent.click(screen.getByTestId("restriction-picker-button"));
+    fireEvent.click(screen.getByTestId("restriction-option-registration"));
 
     expect(screen.getByLabelText(/Registration Deadline/i)).toBeDefined();
     expect(screen.getByLabelText(/Validity Duration \(Days\)/i)).toBeDefined();
@@ -52,7 +59,11 @@ describe("PromotionForm", () => {
     // Fill in required fields
     fireEvent.change(screen.getByLabelText(/Name/i), { target: { value: "Summer Promo" } });
 
-    // Fill in the renamed field
+    // Open the picker and add Registration & Validity restriction
+    fireEvent.click(screen.getByTestId("restriction-picker-button"));
+    fireEvent.click(screen.getByTestId("restriction-option-registration"));
+
+    // Fill in the validity duration field
     const validityInput = screen.getByLabelText(/Validity Duration \(Days\)/i);
     fireEvent.change(validityInput, { target: { value: "90" } });
 
