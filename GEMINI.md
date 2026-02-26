@@ -36,7 +36,8 @@ Always import `test` and `expect` from `./fixtures` (not from `@playwright/test`
 
 ## Workflow Mandates
 
-- **Pull Requests:** ALWAYS create a feature branch and a Pull Request (PR) for any and all code changes. NEVER apply changes directly to the main branch unless specifically authorized for a one-off task. A task is not considered complete until the PR is created and linked to the relevant issue.
+- **Pull Requests:** ALWAYS create a feature branch for any and all code changes. After implementation, notify the user to test the changes locally. ONLY create a Pull Request (PR) after the user has confirmed they have tested and approved the work.
+- **Merging:** NEVER merge a PR or delete a feature branch until specifically instructed to do so by the user. NEVER apply changes directly to the main branch. A task is not considered complete until the PR is merged after user approval.
 
 ## GitHub CLI
 

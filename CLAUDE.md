@@ -161,7 +161,13 @@ Always import `test` and `expect` from `./fixtures` (not from `@playwright/test`
 
 ### GitHub CLI
 
-- **Sub-issue linking:** When creating sub-tasks or sub-issues for a parent GitHub issue, ALWAYS formally link them as children using the 'Sub-issues' feature (via GraphQL `addSubIssue` or equivalent) so they appear in the parent's dedicated "Sub-issues" area.
+- **Sub-issue linking:** When creating sub-tasks or sub-issues for a parent GitHub issue, ALWAYS formally link them as children using the 'Sub-issues' feature (via GraphQL `addSubIssue` or equivalent).
+- **Workflow Mandates:**
+  - ALWAYS create a feature branch for code changes.
+  - NOTIFY the user to test changes locally before creating a PR.
+  - ONLY create a PR after user approval.
+  - NEVER merge a PR or delete a branch until explicitly told to do so by the user.
+  - NEVER commit directly to the main branch.
 - **Do NOT use `gh pr view --comments`** — it queries the deprecated Projects (classic) GraphQL API and returns exit code 1.
 - To read PR review comments use: `gh api repos/{owner}/{repo}/pulls/{pr}/comments`
 - To read general PR/issue comments use: `gh api repos/{owner}/{repo}/issues/{pr}/comments`
