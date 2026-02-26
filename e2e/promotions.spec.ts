@@ -547,6 +547,103 @@ test.describe("Promotions tie-in credit card", () => {
   });
 });
 
+test.describe("Promotions restriction picker UX", () => {
+  test("should auto-populate restriction cards on edit when promotion has restrictions", async ({
+    page,
+    request,
+  }) => {
+    const uniqueName = `Restriction Edit Test ${crypto.randomUUID()}`;
+    const res = await request.post("/api/promotions", {
+      data: {
+        name: uniqueName,
+        type: "loyalty",
+        benefits: [
+          { rewardType: "cashback", valueType: "fixed", value: 25, certType: null, sortOrder: 0 },
+        ],
+        isActive: true,
+        minSpend: 200,
+        registrationDeadline: "2026-06-01",
+      },
+    });
+    expect(res.ok()).toBeTruthy();
+    const promo = await res.json();
+
+    await page.goto(`/promotions/${promo.id}/edit`);
+    await expect(page.getByTestId("benefit-row-0")).toBeVisible();
+
+    // Restriction cards for set fields should be visible
+    await expect(page.getByTestId("restriction-card-min_spend")).toBeVisible();
+    await expect(page.getByTestId("restriction-card-registration")).toBeVisible();
+
+    // Unset restriction cards should not be present
+    await expect(page.getByTestId("restriction-card-book_by_date")).not.toBeVisible();
+    await expect(page.getByTestId("restriction-card-redemption_caps")).not.toBeVisible();
+
+    await request.delete(`/api/promotions/${promo.id}`);
+  });
+
+  test("should remove a restriction card when its X button is clicked", async ({
+    page,
+    request,
+  }) => {
+    const uniqueName = `Restriction Remove Test ${crypto.randomUUID()}`;
+    const res = await request.post("/api/promotions", {
+      data: {
+        name: uniqueName,
+        type: "loyalty",
+        benefits: [
+          { rewardType: "cashback", valueType: "fixed", value: 25, certType: null, sortOrder: 0 },
+        ],
+        isActive: true,
+        minSpend: 100,
+      },
+    });
+    expect(res.ok()).toBeTruthy();
+    const promo = await res.json();
+
+    await page.goto(`/promotions/${promo.id}/edit`);
+    await expect(page.getByTestId("restriction-card-min_spend")).toBeVisible();
+
+    await page.getByTestId("restriction-remove-min_spend").click();
+    await expect(page.getByTestId("restriction-card-min_spend")).not.toBeVisible();
+
+    await request.delete(`/api/promotions/${promo.id}`);
+  });
+
+  test("should add a restriction card via the picker", async ({ page, request }) => {
+    const uniqueName = `Restriction Add Test ${crypto.randomUUID()}`;
+    const res = await request.post("/api/promotions", {
+      data: {
+        name: uniqueName,
+        type: "loyalty",
+        benefits: [
+          { rewardType: "cashback", valueType: "fixed", value: 25, certType: null, sortOrder: 0 },
+        ],
+        isActive: true,
+      },
+    });
+    expect(res.ok()).toBeTruthy();
+    const promo = await res.json();
+
+    await page.goto(`/promotions/${promo.id}/edit`);
+    await expect(page.getByTestId("benefit-row-0")).toBeVisible();
+
+    // No restriction cards present initially
+    await expect(page.getByTestId("restriction-card-min_spend")).not.toBeVisible();
+
+    // Open picker and add Min Spend
+    await page.getByTestId("restriction-picker-button").click();
+    await expect(page.getByTestId("restriction-option-min_spend")).toBeVisible();
+    await page.getByTestId("restriction-option-min_spend").click();
+
+    // Card should now be visible, picker should have closed
+    await expect(page.getByTestId("restriction-card-min_spend")).toBeVisible();
+    await expect(page.getByTestId("restriction-picker-popover")).not.toBeVisible();
+
+    await request.delete(`/api/promotions/${promo.id}`);
+  });
+});
+
 test.describe("Promotions constraints", () => {
   test("should enforce maxRedemptionCount: 1 — only first booking gets promotion", async ({
     request,

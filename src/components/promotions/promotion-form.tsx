@@ -8,23 +8,31 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { AppSelect } from "@/components/ui/app-select";
 import { DatePicker } from "@/components/ui/date-picker";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format, parseISO } from "date-fns";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, ChevronDown } from "lucide-react";
 import {
   PromotionFormData,
   PromotionType,
-  PromotionRewardType,
-  PromotionBenefitValueType,
   PromotionBenefitFormData,
   PromotionTierFormData,
-  PointsMultiplierBasis,
   PromotionExclusion,
 } from "@/lib/types";
-import { BENEFIT_REWARD_TYPE_OPTIONS } from "@/lib/constants";
-import { CERT_TYPE_OPTIONS } from "@/lib/cert-types";
-
-// Build cert type options from existing cert-types for use in the form
-const CERT_OPTIONS = CERT_TYPE_OPTIONS.map((o) => ({ value: o.value, label: o.label }));
+import { BenefitRow, DEFAULT_BENEFIT } from "./benefit-row";
+import {
+  RestrictionKey,
+  RESTRICTION_ORDER,
+  RESTRICTION_LABELS,
+  deriveActiveRestrictions,
+  MinSpendCard,
+  BookByDateCard,
+  MinNightsCard,
+  RedemptionCapsCard,
+  OncePerSubBrandCard,
+  TieInCardsCard,
+  RegistrationCard,
+  SubBrandExclusionsCard,
+} from "./restriction-cards";
 
 interface HotelChainSubBrand {
   id: string;
@@ -56,200 +64,6 @@ interface PromotionFormProps {
   submitLabel: string;
 }
 
-function getDefaultValueType(_rewardType: PromotionRewardType): PromotionBenefitValueType {
-  return "fixed";
-}
-
-function getValuePlaceholder(
-  rewardType: PromotionRewardType,
-  valueType: PromotionBenefitValueType
-): string {
-  if (rewardType === "points") return valueType === "multiplier" ? "e.g. 2" : "e.g. 1000";
-  if (rewardType === "certificate") return "e.g. 1";
-  if (rewardType === "eqn") return "e.g. 1";
-  // cashback
-  if (valueType === "percentage") return "e.g. 10";
-  return "e.g. 50";
-}
-
-function getValueLabel(
-  rewardType: PromotionRewardType,
-  valueType: PromotionBenefitValueType
-): string {
-  if (rewardType === "points") return valueType === "multiplier" ? "Multiplier (x)" : "Points";
-  if (rewardType === "certificate") return "Number of Certificates";
-  if (rewardType === "eqn") return "Bonus EQNs";
-  // cashback
-  if (valueType === "percentage") return "Percentage (%)";
-  return "Amount ($)";
-}
-
-interface BenefitRowProps {
-  benefit: PromotionBenefitFormData;
-  index: number;
-  canRemove: boolean;
-  hasTieInCard: boolean;
-  onChange: (index: number, updated: PromotionBenefitFormData) => void;
-  onRemove: (index: number) => void;
-}
-
-function BenefitRow({
-  benefit,
-  index,
-  canRemove,
-  hasTieInCard,
-  onChange,
-  onRemove,
-}: BenefitRowProps) {
-  const showValueType = benefit.rewardType === "cashback" || benefit.rewardType === "points";
-  const showCertType = benefit.rewardType === "certificate";
-  const showMultiplierBasis = benefit.rewardType === "points" && benefit.valueType === "multiplier";
-  const valuePlaceholder = getValuePlaceholder(benefit.rewardType, benefit.valueType);
-  const valueLabel = getValueLabel(benefit.rewardType, benefit.valueType);
-
-  const handleRewardTypeChange = (rewardType: PromotionRewardType) => {
-    onChange(index, {
-      ...benefit,
-      rewardType,
-      valueType: getDefaultValueType(rewardType),
-      certType: rewardType === "certificate" ? (benefit.certType ?? null) : null,
-      pointsMultiplierBasis: undefined,
-    });
-  };
-
-  return (
-    <div className="flex flex-col gap-3 rounded-lg border p-4" data-testid={`benefit-row-${index}`}>
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-muted-foreground">Benefit {index + 1}</span>
-        {canRemove && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => onRemove(index)}
-            data-testid={`benefit-remove-${index}`}
-          >
-            <Trash2 className="size-4" />
-          </Button>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label>Reward Type</Label>
-          <AppSelect
-            value={benefit.rewardType}
-            onValueChange={(v) => handleRewardTypeChange(v as PromotionRewardType)}
-            options={[...BENEFIT_REWARD_TYPE_OPTIONS]}
-            data-testid={`benefit-reward-type-${index}`}
-          />
-        </div>
-
-        {showValueType && (
-          <div className="space-y-2">
-            <Label>Value Type</Label>
-            <AppSelect
-              value={benefit.valueType}
-              onValueChange={(v) =>
-                onChange(index, { ...benefit, valueType: v as PromotionBenefitValueType })
-              }
-              options={
-                benefit.rewardType === "points"
-                  ? [
-                      { label: "Fixed (pts)", value: "fixed" },
-                      { label: "Multiplier (x)", value: "multiplier" },
-                    ]
-                  : [
-                      { label: "Fixed ($)", value: "fixed" },
-                      { label: "Percentage (%)", value: "percentage" },
-                    ]
-              }
-              data-testid={`benefit-value-type-${index}`}
-            />
-          </div>
-        )}
-
-        <div className="space-y-2">
-          <Label>{valueLabel}</Label>
-          <Input
-            type="number"
-            step="any"
-            value={benefit.value || ""}
-            onChange={(e) =>
-              onChange(index, { ...benefit, value: parseFloat(e.target.value) || 0 })
-            }
-            placeholder={valuePlaceholder}
-            data-testid={`benefit-value-${index}`}
-            required
-          />
-        </div>
-
-        {showCertType && (
-          <div className="space-y-2">
-            <Label>Certificate Type</Label>
-            <AppSelect
-              value={benefit.certType || ""}
-              onValueChange={(v) => onChange(index, { ...benefit, certType: v || null })}
-              options={[...CERT_OPTIONS]}
-              placeholder="Select certificate type..."
-              data-testid={`benefit-cert-type-${index}`}
-            />
-          </div>
-        )}
-
-        {showMultiplierBasis && (
-          <div className="space-y-2">
-            <Label>Multiplier Basis</Label>
-            <AppSelect
-              value={benefit.pointsMultiplierBasis || "base_only"}
-              onValueChange={(v) =>
-                onChange(index, { ...benefit, pointsMultiplierBasis: v as PointsMultiplierBasis })
-              }
-              options={[
-                { label: "Base Rate Only", value: "base_only" },
-                { label: "Base + Elite Bonus", value: "base_and_elite" },
-              ]}
-              placeholder="Select basis..."
-              data-testid={`benefit-multiplier-basis-${index}`}
-            />
-          </div>
-        )}
-      </div>
-
-      {hasTieInCard && (
-        <div className="flex items-center gap-2 pt-1">
-          <input
-            id={`benefit-is-tie-in-${index}`}
-            type="checkbox"
-            checked={benefit.isTieIn}
-            onChange={(e) => onChange(index, { ...benefit, isTieIn: e.target.checked })}
-            className="size-4 rounded border-gray-300"
-            data-testid={`benefit-is-tie-in-${index}`}
-          />
-          <div>
-            <Label htmlFor={`benefit-is-tie-in-${index}`} className="text-sm">
-              Tie-In Benefit (boosted)
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              Only applies when the tie-in card condition is met.
-            </p>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-const DEFAULT_BENEFIT: PromotionBenefitFormData = {
-  rewardType: "cashback",
-  valueType: "fixed",
-  value: 0,
-  certType: null,
-  pointsMultiplierBasis: "base_only",
-  isTieIn: false,
-  sortOrder: 0,
-};
-
 export function PromotionForm({
   initialData,
   onSubmit,
@@ -258,15 +72,14 @@ export function PromotionForm({
   description,
   submitLabel,
 }: PromotionFormProps) {
+  // ── Core fields ──────────────────────────────────────────────────────────────
   const [name, setName] = useState(initialData?.name || "");
   const [type, setType] = useState<PromotionType>(
     (initialData?.type as PromotionType) || "loyalty"
   );
-  const [benefits, setBenefits] = useState<PromotionBenefitFormData[]>(
-    initialData?.benefits && initialData.benefits.length > 0
-      ? initialData.benefits
-      : [{ ...DEFAULT_BENEFIT }]
-  );
+  const [isActive, setIsActive] = useState(initialData?.isActive ?? true);
+
+  // ── Type-specific linking ────────────────────────────────────────────────────
   const [hotelChainId, setHotelChainId] = useState<string>(
     initialData?.hotelChainId ? initialData.hotelChainId : ""
   );
@@ -279,42 +92,12 @@ export function PromotionForm({
   const [shoppingPortalId, setShoppingPortalId] = useState<string>(
     initialData?.shoppingPortalId ? initialData.shoppingPortalId : ""
   );
-  const [minSpend, setMinSpend] = useState(
-    initialData?.minSpend ? String(initialData.minSpend) : ""
-  );
-  const [startDate, setStartDate] = useState(initialData?.startDate || "");
-  const [endDate, setEndDate] = useState(initialData?.endDate || "");
-  const [isActive, setIsActive] = useState(initialData?.isActive ?? true);
-  const [maxRedemptionCount, setMaxRedemptionCount] = useState(
-    initialData?.maxRedemptionCount ? String(initialData.maxRedemptionCount) : ""
-  );
-  const [maxRedemptionValue, setMaxRedemptionValue] = useState(
-    initialData?.maxRedemptionValue ? String(initialData.maxRedemptionValue) : ""
-  );
-  const [maxTotalBonusPoints, setMaxTotalBonusPoints] = useState(
-    initialData?.maxTotalBonusPoints ? String(initialData.maxTotalBonusPoints) : ""
-  );
-  const [minNightsRequired, setMinNightsRequired] = useState(
-    initialData?.minNightsRequired ? String(initialData.minNightsRequired) : ""
-  );
-  const [nightsStackable, setNightsStackable] = useState(initialData?.nightsStackable ?? false);
-  const [bookByDate, setBookByDate] = useState(initialData?.bookByDate || "");
-  const [oncePerSubBrand, setOncePerSubBrand] = useState(initialData?.oncePerSubBrand ?? false);
-  const [registrationDeadline, setRegistrationDeadline] = useState(
-    initialData?.registrationDeadline || ""
-  );
-  const [validDaysAfterRegistration, setValidDaysAfterRegistration] = useState(
-    initialData?.validDaysAfterRegistration ? String(initialData.validDaysAfterRegistration) : ""
-  );
-  const [registrationDate, setRegistrationDate] = useState(initialData?.registrationDate || "");
-  const [exclusionSubBrandIds, setExclusionSubBrandIds] = useState<string[]>(
-    initialData?.exclusions?.map((e) => e.hotelChainSubBrandId) ?? []
-  );
-  const [tieInCreditCardIds, setTieInCreditCardIds] = useState<string[]>(
-    initialData?.tieInCreditCardIds ?? []
-  );
-  const [tieInRequiresPayment, setTieInRequiresPayment] = useState(
-    initialData?.tieInRequiresPayment ?? false
+
+  // ── Benefits ─────────────────────────────────────────────────────────────────
+  const [benefits, setBenefits] = useState<PromotionBenefitFormData[]>(
+    initialData?.benefits && initialData.benefits.length > 0
+      ? initialData.benefits
+      : [{ ...DEFAULT_BENEFIT }]
   );
   const [isTiered, setIsTiered] = useState(
     () => (initialData?.tiers && initialData.tiers.length > 0) ?? false
@@ -325,6 +108,52 @@ export function PromotionForm({
       : [{ minStays: 1, maxStays: null, benefits: [{ ...DEFAULT_BENEFIT }] }]
   );
 
+  // ── Date range ───────────────────────────────────────────────────────────────
+  const [startDate, setStartDate] = useState(initialData?.startDate || "");
+  const [endDate, setEndDate] = useState(initialData?.endDate || "");
+
+  // ── Restriction state ────────────────────────────────────────────────────────
+  const [minSpend, setMinSpend] = useState(
+    initialData?.minSpend ? String(initialData.minSpend) : ""
+  );
+  const [bookByDate, setBookByDate] = useState(initialData?.bookByDate || "");
+  const [minNightsRequired, setMinNightsRequired] = useState(
+    initialData?.minNightsRequired ? String(initialData.minNightsRequired) : ""
+  );
+  const [nightsStackable, setNightsStackable] = useState(initialData?.nightsStackable ?? false);
+  const [maxRedemptionCount, setMaxRedemptionCount] = useState(
+    initialData?.maxRedemptionCount ? String(initialData.maxRedemptionCount) : ""
+  );
+  const [maxRedemptionValue, setMaxRedemptionValue] = useState(
+    initialData?.maxRedemptionValue ? String(initialData.maxRedemptionValue) : ""
+  );
+  const [maxTotalBonusPoints, setMaxTotalBonusPoints] = useState(
+    initialData?.maxTotalBonusPoints ? String(initialData.maxTotalBonusPoints) : ""
+  );
+  const [tieInCreditCardIds, setTieInCreditCardIds] = useState<string[]>(
+    initialData?.tieInCreditCardIds ?? []
+  );
+  const [tieInRequiresPayment, setTieInRequiresPayment] = useState(
+    initialData?.tieInRequiresPayment ?? false
+  );
+  const [registrationDeadline, setRegistrationDeadline] = useState(
+    initialData?.registrationDeadline || ""
+  );
+  const [validDaysAfterRegistration, setValidDaysAfterRegistration] = useState(
+    initialData?.validDaysAfterRegistration ? String(initialData.validDaysAfterRegistration) : ""
+  );
+  const [registrationDate, setRegistrationDate] = useState(initialData?.registrationDate || "");
+  const [exclusionSubBrandIds, setExclusionSubBrandIds] = useState<string[]>(
+    initialData?.exclusions?.map((e) => e.hotelChainSubBrandId) ?? []
+  );
+
+  // ── Restriction picker state ─────────────────────────────────────────────────
+  const [activeRestrictions, setActiveRestrictions] = useState<Set<RestrictionKey>>(() =>
+    deriveActiveRestrictions(initialData)
+  );
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  // ── Reference data ───────────────────────────────────────────────────────────
   const [hotelChains, setHotelChains] = useState<HotelChain[]>([]);
   const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
   const [portals, setPortals] = useState<ShoppingPortal[]>([]);
@@ -344,14 +173,13 @@ export function PromotionForm({
       .catch(console.error);
   }, []);
 
-  // Update form if initialData changes (for Edit mode after fetch)
+  // Sync form state when initialData arrives (Edit mode — data fetched async)
   useEffect(() => {
     if (initialData) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       if (initialData.name !== undefined) setName(initialData.name);
       if (initialData.type !== undefined) setType(initialData.type as PromotionType);
-      if (initialData.benefits !== undefined && initialData.benefits.length > 0)
-        setBenefits(initialData.benefits);
+      if (initialData.isActive !== undefined) setIsActive(initialData.isActive);
       if (initialData.hotelChainId !== undefined)
         setHotelChainId(initialData.hotelChainId ? initialData.hotelChainId : "");
       if (initialData.hotelChainSubBrandId !== undefined)
@@ -362,11 +190,24 @@ export function PromotionForm({
         setCreditCardId(initialData.creditCardId ? initialData.creditCardId : "");
       if (initialData.shoppingPortalId !== undefined)
         setShoppingPortalId(initialData.shoppingPortalId ? initialData.shoppingPortalId : "");
-      if (initialData.minSpend !== undefined)
-        setMinSpend(initialData.minSpend ? String(initialData.minSpend) : "");
+      if (initialData.benefits !== undefined && initialData.benefits.length > 0)
+        setBenefits(initialData.benefits);
+      if (initialData.tiers !== undefined) {
+        const hasTiers = initialData.tiers.length > 0;
+        setIsTiered(hasTiers);
+        if (hasTiers) setTiers(initialData.tiers);
+      }
       if (initialData.startDate !== undefined) setStartDate(initialData.startDate || "");
       if (initialData.endDate !== undefined) setEndDate(initialData.endDate || "");
-      if (initialData.isActive !== undefined) setIsActive(initialData.isActive);
+      if (initialData.minSpend !== undefined)
+        setMinSpend(initialData.minSpend ? String(initialData.minSpend) : "");
+      if (initialData.bookByDate !== undefined) setBookByDate(initialData.bookByDate || "");
+      if (initialData.minNightsRequired !== undefined)
+        setMinNightsRequired(
+          initialData.minNightsRequired ? String(initialData.minNightsRequired) : ""
+        );
+      if (initialData.nightsStackable !== undefined)
+        setNightsStackable(initialData.nightsStackable);
       if (initialData.maxRedemptionCount !== undefined)
         setMaxRedemptionCount(
           initialData.maxRedemptionCount ? String(initialData.maxRedemptionCount) : ""
@@ -379,15 +220,10 @@ export function PromotionForm({
         setMaxTotalBonusPoints(
           initialData.maxTotalBonusPoints ? String(initialData.maxTotalBonusPoints) : ""
         );
-      if (initialData.minNightsRequired !== undefined)
-        setMinNightsRequired(
-          initialData.minNightsRequired ? String(initialData.minNightsRequired) : ""
-        );
-      if (initialData.nightsStackable !== undefined)
-        setNightsStackable(initialData.nightsStackable);
-      if (initialData.bookByDate !== undefined) setBookByDate(initialData.bookByDate || "");
-      if (initialData.oncePerSubBrand !== undefined)
-        setOncePerSubBrand(initialData.oncePerSubBrand);
+      if (initialData.tieInCreditCardIds !== undefined)
+        setTieInCreditCardIds(initialData.tieInCreditCardIds);
+      if (initialData.tieInRequiresPayment !== undefined)
+        setTieInRequiresPayment(initialData.tieInRequiresPayment);
       if (initialData.registrationDeadline !== undefined)
         setRegistrationDeadline(initialData.registrationDeadline || "");
       if (initialData.validDaysAfterRegistration !== undefined)
@@ -400,17 +236,55 @@ export function PromotionForm({
         setRegistrationDate(initialData.registrationDate || "");
       if (initialData.exclusions !== undefined)
         setExclusionSubBrandIds(initialData.exclusions.map((e) => e.hotelChainSubBrandId));
-      if (initialData.tieInCreditCardIds !== undefined)
-        setTieInCreditCardIds(initialData.tieInCreditCardIds);
-      if (initialData.tieInRequiresPayment !== undefined)
-        setTieInRequiresPayment(initialData.tieInRequiresPayment);
-      if (initialData.tiers !== undefined) {
-        const hasTiers = initialData.tiers.length > 0;
-        setIsTiered(hasTiers);
-        if (hasTiers) setTiers(initialData.tiers);
-      }
+      setActiveRestrictions(deriveActiveRestrictions(initialData));
     }
   }, [initialData]);
+
+  // ── Restriction helpers ──────────────────────────────────────────────────────
+
+  const addRestriction = (key: RestrictionKey) => {
+    setActiveRestrictions((prev) => new Set([...prev, key]));
+    setPickerOpen(false);
+  };
+
+  const removeRestriction = (key: RestrictionKey) => {
+    setActiveRestrictions((prev) => {
+      const next = new Set(prev);
+      next.delete(key);
+      return next;
+    });
+    switch (key) {
+      case "min_spend":
+        setMinSpend("");
+        break;
+      case "book_by_date":
+        setBookByDate("");
+        break;
+      case "min_nights":
+        setMinNightsRequired("");
+        setNightsStackable(false);
+        break;
+      case "redemption_caps":
+        setMaxRedemptionCount("");
+        setMaxRedemptionValue("");
+        setMaxTotalBonusPoints("");
+        break;
+      case "tie_in_cards":
+        setTieInCreditCardIds([]);
+        setTieInRequiresPayment(false);
+        break;
+      case "registration":
+        setRegistrationDeadline("");
+        setValidDaysAfterRegistration("");
+        setRegistrationDate("");
+        break;
+      case "sub_brand_exclusions":
+        setExclusionSubBrandIds([]);
+        break;
+    }
+  };
+
+  // ── Benefit handlers ─────────────────────────────────────────────────────────
 
   const handleBenefitChange = (index: number, updated: PromotionBenefitFormData) => {
     setBenefits((prev) => prev.map((b, i) => (i === index ? updated : b)));
@@ -423,6 +297,8 @@ export function PromotionForm({
   const handleAddBenefit = () => {
     setBenefits((prev) => [...prev, { ...DEFAULT_BENEFIT, sortOrder: prev.length }]);
   };
+
+  // ── Tier handlers ────────────────────────────────────────────────────────────
 
   const handleTierChange = (tierIndex: number, updated: PromotionTierFormData) => {
     setTiers((prev) => prev.map((t, i) => (i === tierIndex ? updated : t)));
@@ -475,6 +351,8 @@ export function PromotionForm({
     );
   };
 
+  // ── Submit ───────────────────────────────────────────────────────────────────
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -496,96 +374,79 @@ export function PromotionForm({
     if (type === "loyalty" && hotelChainId) {
       body.hotelChainId = hotelChainId;
       body.hotelChainSubBrandId = hotelChainSubBrandId || null;
-      body.exclusionSubBrandIds = exclusionSubBrandIds;
+      body.exclusionSubBrandIds = activeRestrictions.has("sub_brand_exclusions")
+        ? exclusionSubBrandIds
+        : [];
     } else {
       body.hotelChainId = null;
       body.hotelChainSubBrandId = null;
       body.exclusionSubBrandIds = [];
     }
 
-    if (type === "credit_card" && creditCardId) {
-      body.creditCardId = creditCardId;
-    } else {
-      body.creditCardId = null;
-    }
-
-    if (type === "portal" && shoppingPortalId) {
-      body.shoppingPortalId = shoppingPortalId;
-    } else {
-      body.shoppingPortalId = null;
-    }
-
-    if (minSpend) {
-      body.minSpend = parseFloat(minSpend);
-    } else {
-      body.minSpend = null;
-    }
+    body.creditCardId = type === "credit_card" && creditCardId ? creditCardId : null;
+    body.shoppingPortalId = type === "portal" && shoppingPortalId ? shoppingPortalId : null;
 
     body.startDate = startDate || null;
     body.endDate = endDate || null;
 
-    if (maxRedemptionCount) {
-      body.maxRedemptionCount = parseInt(maxRedemptionCount);
-    } else {
-      body.maxRedemptionCount = null;
-    }
-    if (maxRedemptionValue) {
-      body.maxRedemptionValue = parseFloat(maxRedemptionValue);
-    } else {
-      body.maxRedemptionValue = null;
-    }
-    if (maxTotalBonusPoints) {
-      body.maxTotalBonusPoints = parseInt(maxTotalBonusPoints);
-    } else {
-      body.maxTotalBonusPoints = null;
-    }
-    if (minNightsRequired) {
+    body.minSpend = activeRestrictions.has("min_spend") && minSpend ? parseFloat(minSpend) : null;
+    body.bookByDate = activeRestrictions.has("book_by_date") ? bookByDate || null : null;
+
+    if (activeRestrictions.has("min_nights") && minNightsRequired) {
       body.minNightsRequired = parseInt(minNightsRequired);
+      body.nightsStackable = nightsStackable;
     } else {
       body.minNightsRequired = null;
+      body.nightsStackable = false;
     }
-    body.nightsStackable = nightsStackable;
-    body.bookByDate = bookByDate || null;
-    body.oncePerSubBrand = oncePerSubBrand;
-    body.registrationDeadline = registrationDeadline || null;
-    body.validDaysAfterRegistration = validDaysAfterRegistration
-      ? parseInt(validDaysAfterRegistration)
-      : null;
-    body.registrationDate = registrationDate || null;
-    body.tieInCreditCardIds = tieInCreditCardIds;
-    body.tieInRequiresPayment = tieInRequiresPayment;
+
+    if (activeRestrictions.has("redemption_caps")) {
+      body.maxRedemptionCount = maxRedemptionCount ? parseInt(maxRedemptionCount) : null;
+      body.maxRedemptionValue = maxRedemptionValue ? parseFloat(maxRedemptionValue) : null;
+      body.maxTotalBonusPoints = maxTotalBonusPoints ? parseInt(maxTotalBonusPoints) : null;
+    } else {
+      body.maxRedemptionCount = null;
+      body.maxRedemptionValue = null;
+      body.maxTotalBonusPoints = null;
+    }
+
+    body.oncePerSubBrand = activeRestrictions.has("once_per_sub_brand");
+
+    if (activeRestrictions.has("tie_in_cards")) {
+      body.tieInCreditCardIds = tieInCreditCardIds;
+      body.tieInRequiresPayment = tieInRequiresPayment;
+    } else {
+      body.tieInCreditCardIds = [];
+      body.tieInRequiresPayment = false;
+    }
+
+    if (activeRestrictions.has("registration")) {
+      body.registrationDeadline = registrationDeadline || null;
+      body.validDaysAfterRegistration = validDaysAfterRegistration
+        ? parseInt(validDaysAfterRegistration)
+        : null;
+      body.registrationDate = registrationDate || null;
+    } else {
+      body.registrationDeadline = null;
+      body.validDaysAfterRegistration = null;
+      body.registrationDate = null;
+    }
 
     await onSubmit(body);
   };
 
+  // ── Derived values ───────────────────────────────────────────────────────────
+
   const startDateObj = startDate ? parseISO(startDate) : undefined;
   const endDateObj = endDate ? parseISO(endDate) : undefined;
-  const bookByDateObj = bookByDate ? parseISO(bookByDate) : undefined;
-  const registrationDeadlineObj = registrationDeadline ? parseISO(registrationDeadline) : undefined;
-  const registrationDateObj = registrationDate ? parseISO(registrationDate) : undefined;
 
   const selectedChainSubBrands =
     hotelChains.find((h) => h.id === hotelChainId)?.hotelChainSubBrands ?? [];
 
-  const handleStartDateChange = (date?: Date) => {
-    setStartDate(date ? format(date, "yyyy-MM-dd") : "");
-  };
+  const showSubBrandExclusionsOption =
+    type === "loyalty" && !!hotelChainId && selectedChainSubBrands.length > 0;
 
-  const handleEndDateChange = (date?: Date) => {
-    setEndDate(date ? format(date, "yyyy-MM-dd") : "");
-  };
-
-  const handleBookByDateChange = (date?: Date) => {
-    setBookByDate(date ? format(date, "yyyy-MM-dd") : "");
-  };
-
-  const handleRegistrationDeadlineChange = (date?: Date) => {
-    setRegistrationDeadline(date ? format(date, "yyyy-MM-dd") : "");
-  };
-
-  const handleRegistrationDateChange = (date?: Date) => {
-    setRegistrationDate(date ? format(date, "yyyy-MM-dd") : "");
-  };
+  // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
     <Card>
@@ -595,6 +456,7 @@ export function PromotionForm({
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Name */}
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>
             <Input
@@ -606,6 +468,7 @@ export function PromotionForm({
             />
           </div>
 
+          {/* Type */}
           <div className="space-y-2">
             <Label>Type</Label>
             <AppSelect
@@ -621,7 +484,79 @@ export function PromotionForm({
             />
           </div>
 
-          {/* Tiered Promotion toggle */}
+          {/* Active */}
+          <div className="flex items-center gap-2">
+            <input
+              id="isActive"
+              type="checkbox"
+              checked={isActive}
+              onChange={(e) => setIsActive(e.target.checked)}
+              className="size-4 rounded border-gray-300"
+            />
+            <Label htmlFor="isActive">Active</Label>
+          </div>
+
+          {/* Type-specific linking */}
+          {type === "loyalty" && (
+            <div className="space-y-2">
+              <Label>Hotel Chain</Label>
+              <AppSelect
+                value={hotelChainId}
+                onValueChange={(v) => {
+                  setHotelChainId(v);
+                  setHotelChainSubBrandId("");
+                  setExclusionSubBrandIds([]);
+                }}
+                options={hotelChains.map((chain) => ({ label: chain.name, value: chain.id }))}
+                placeholder="Select hotel chain..."
+                data-testid="hotel-chain-select"
+              />
+            </div>
+          )}
+
+          {type === "loyalty" && hotelChainId && selectedChainSubBrands.length > 0 && (
+            <div className="space-y-2">
+              <Label>Sub-brand</Label>
+              <AppSelect
+                value={hotelChainSubBrandId || "all"}
+                onValueChange={(v) => setHotelChainSubBrandId(v === "all" ? "" : v)}
+                options={[
+                  { label: "All sub-brands (no filter)", value: "all" },
+                  ...selectedChainSubBrands.map((sb) => ({ label: sb.name, value: sb.id })),
+                ]}
+                placeholder="Select sub-brand..."
+                data-testid="sub-brand-select"
+              />
+            </div>
+          )}
+
+          {type === "credit_card" && (
+            <div className="space-y-2">
+              <Label>Credit Card</Label>
+              <AppSelect
+                value={creditCardId}
+                onValueChange={setCreditCardId}
+                options={creditCards.map((card) => ({ label: card.name, value: card.id }))}
+                placeholder="Select credit card..."
+                data-testid="credit-card-select"
+              />
+            </div>
+          )}
+
+          {type === "portal" && (
+            <div className="space-y-2">
+              <Label>Shopping Portal</Label>
+              <AppSelect
+                value={shoppingPortalId}
+                onValueChange={setShoppingPortalId}
+                options={portals.map((portal) => ({ label: portal.name, value: portal.id }))}
+                placeholder="Select portal..."
+                data-testid="shopping-portal-select"
+              />
+            </div>
+          )}
+
+          {/* Tiered toggle */}
           <div className="flex items-center gap-2">
             <input
               id="isTiered"
@@ -639,7 +574,7 @@ export function PromotionForm({
             </div>
           </div>
 
-          {/* Flat Benefits (shown when not tiered) */}
+          {/* Flat benefits */}
           {!isTiered && (
             <div className="space-y-3">
               <Label>Benefits</Label>
@@ -667,7 +602,7 @@ export function PromotionForm({
             </div>
           )}
 
-          {/* Tiered Benefits (shown when tiered) */}
+          {/* Tiered benefits */}
           {isTiered && (
             <div className="space-y-4">
               <Label>Tiers</Label>
@@ -768,176 +703,14 @@ export function PromotionForm({
             </div>
           )}
 
-          {type === "loyalty" && (
-            <div className="space-y-2">
-              <Label>Hotel Chain</Label>
-              <AppSelect
-                value={hotelChainId}
-                onValueChange={(v) => {
-                  setHotelChainId(v);
-                  setHotelChainSubBrandId("");
-                  setExclusionSubBrandIds([]);
-                }}
-                options={hotelChains.map((chain) => ({
-                  label: chain.name,
-                  value: chain.id,
-                }))}
-                placeholder="Select hotel chain..."
-                data-testid="hotel-chain-select"
-              />
-            </div>
-          )}
-
-          {type === "loyalty" && hotelChainId && selectedChainSubBrands.length > 0 && (
-            <div className="space-y-2">
-              <Label>Sub-brand</Label>
-              <AppSelect
-                value={hotelChainSubBrandId || "all"}
-                onValueChange={(v) => setHotelChainSubBrandId(v === "all" ? "" : v)}
-                options={[
-                  { label: "All sub-brands (no filter)", value: "all" },
-                  ...selectedChainSubBrands.map((sb) => ({
-                    label: sb.name,
-                    value: sb.id,
-                  })),
-                ]}
-                placeholder="Select sub-brand..."
-                data-testid="sub-brand-select"
-              />
-            </div>
-          )}
-
-          {type === "loyalty" && hotelChainId && selectedChainSubBrands.length > 0 && (
-            <div className="space-y-2">
-              <Label>Excluded Sub-Brands</Label>
-              <p className="text-xs text-muted-foreground">
-                This promotion will not apply to bookings at the selected sub-brands.
-              </p>
-              <div className="flex flex-col gap-2" data-testid="exclusion-sub-brands">
-                {selectedChainSubBrands.map((sb) => (
-                  <label key={sb.id} className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="size-4 rounded border-gray-300"
-                      checked={exclusionSubBrandIds.includes(sb.id)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setExclusionSubBrandIds((prev) => [...prev, sb.id]);
-                        } else {
-                          setExclusionSubBrandIds((prev) => prev.filter((id) => id !== sb.id));
-                        }
-                      }}
-                      data-testid={`exclusion-sub-brand-${sb.id}`}
-                    />
-                    <span className="text-sm">{sb.name}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {type === "credit_card" && (
-            <div className="space-y-2">
-              <Label>Credit Card</Label>
-              <AppSelect
-                value={creditCardId}
-                onValueChange={setCreditCardId}
-                options={creditCards.map((card) => ({
-                  label: card.name,
-                  value: card.id,
-                }))}
-                placeholder="Select credit card..."
-                data-testid="credit-card-select"
-              />
-            </div>
-          )}
-
-          {type === "portal" && (
-            <div className="space-y-2">
-              <Label>Shopping Portal</Label>
-              <AppSelect
-                value={shoppingPortalId}
-                onValueChange={setShoppingPortalId}
-                options={portals.map((portal) => ({
-                  label: portal.name,
-                  value: portal.id,
-                }))}
-                placeholder="Select portal..."
-                data-testid="shopping-portal-select"
-              />
-            </div>
-          )}
-
-          {/* Tie-In Credit Cards */}
-          <div className="space-y-3 border-t pt-4">
-            <h3 className="text-sm font-medium">Tie-In Credit Cards (Optional)</h3>
-            <p className="text-xs text-muted-foreground">
-              If set, individual benefits can be marked as &ldquo;tie-in&rdquo; — they only apply
-              when the booking&apos;s payment card matches one of these cards.
-            </p>
-            <div className="flex flex-col gap-2" data-testid="tie-in-credit-cards">
-              {creditCards.map((card) => (
-                <label key={card.id} className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="size-4 rounded border-gray-300"
-                    checked={tieInCreditCardIds.includes(card.id)}
-                    onChange={(e) => {
-                      const newIds = e.target.checked
-                        ? [...tieInCreditCardIds, card.id]
-                        : tieInCreditCardIds.filter((id) => id !== card.id);
-                      setTieInCreditCardIds(newIds);
-                      if (newIds.length === 0) {
-                        setTieInRequiresPayment(false);
-                      }
-                    }}
-                    data-testid={`tie-in-credit-card-${card.id}`}
-                  />
-                  <span className="text-sm">{card.name}</span>
-                </label>
-              ))}
-            </div>
-            {tieInCreditCardIds.length > 0 && (
-              <div className="flex items-center gap-2">
-                <input
-                  id="tieInRequiresPayment"
-                  type="checkbox"
-                  checked={tieInRequiresPayment}
-                  onChange={(e) => setTieInRequiresPayment(e.target.checked)}
-                  className="size-4 rounded border-gray-300"
-                  data-testid="tie-in-requires-payment"
-                />
-                <div>
-                  <Label htmlFor="tieInRequiresPayment">Requires Payment with Card</Label>
-                  <p className="text-xs text-muted-foreground">
-                    {tieInRequiresPayment
-                      ? "Must pay with one of these cards."
-                      : "Holding one of these cards is sufficient."}
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="minSpend">Minimum Spend</Label>
-            <Input
-              id="minSpend"
-              type="number"
-              step="0.01"
-              value={minSpend}
-              onChange={(e) => setMinSpend(e.target.value)}
-              placeholder="Optional"
-            />
-          </div>
-
+          {/* Date range */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="startDate">Start Date</Label>
               <DatePicker
                 id="startDate"
                 date={startDateObj}
-                setDate={handleStartDateChange}
+                setDate={(date) => setStartDate(date ? format(date, "yyyy-MM-dd") : "")}
                 placeholder="Select start date"
               />
             </div>
@@ -946,171 +719,174 @@ export function PromotionForm({
               <DatePicker
                 id="endDate"
                 date={endDateObj}
-                setDate={handleEndDateChange}
+                setDate={(date) => setEndDate(date ? format(date, "yyyy-MM-dd") : "")}
                 placeholder="Select end date"
               />
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <input
-              id="isActive"
-              type="checkbox"
-              checked={isActive}
-              onChange={(e) => setIsActive(e.target.checked)}
-              className="size-4 rounded border-gray-300"
-            />
-            <Label htmlFor="isActive">Active</Label>
-          </div>
+          {/* Restriction picker + active restriction cards */}
+          <div className="space-y-3">
+            <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  data-testid="restriction-picker-button"
+                >
+                  <Plus className="size-4 mr-2" />
+                  Add Restriction
+                  <ChevronDown className="size-4 ml-2" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                align="start"
+                className="w-64 p-2"
+                data-testid="restriction-picker-popover"
+              >
+                <div className="flex flex-col gap-1">
+                  {RESTRICTION_ORDER.map((key) => {
+                    if (key === "sub_brand_exclusions" && !showSubBrandExclusionsOption)
+                      return null;
+                    const isActive = activeRestrictions.has(key);
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        disabled={isActive}
+                        onClick={() => addRestriction(key)}
+                        className={`text-left px-3 py-2 rounded text-sm transition-colors ${
+                          isActive
+                            ? "opacity-50 cursor-not-allowed"
+                            : "hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                        }`}
+                        data-testid={`restriction-option-${key}`}
+                      >
+                        {RESTRICTION_LABELS[key]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </PopoverContent>
+            </Popover>
 
-          {/* Redemption Constraints */}
-          <div className="space-y-4 border-t pt-4">
-            <h3 className="text-sm font-medium">Redemption Constraints</h3>
+            {/* Active restriction cards in canonical order */}
+            {RESTRICTION_ORDER.map((key) => {
+              if (!activeRestrictions.has(key)) return null;
 
-            <div className="space-y-2">
-              <Label htmlFor="maxRedemptionCount">Max Redemption Count</Label>
-              <Input
-                id="maxRedemptionCount"
-                type="number"
-                step="1"
-                value={maxRedemptionCount}
-                onChange={(e) => setMaxRedemptionCount(e.target.value)}
-                placeholder="Optional (e.g. 3)"
-                data-testid="promotion-max-redemption-count"
-              />
-            </div>
+              if (key === "min_spend")
+                return (
+                  <MinSpendCard
+                    key={key}
+                    minSpend={minSpend}
+                    onMinSpendChange={setMinSpend}
+                    onRemove={() => removeRestriction("min_spend")}
+                  />
+                );
 
-            <div className="space-y-2">
-              <Label htmlFor="maxRedemptionValue">Max Redemption Value ($)</Label>
-              <Input
-                id="maxRedemptionValue"
-                type="number"
-                step="0.01"
-                value={maxRedemptionValue}
-                onChange={(e) => setMaxRedemptionValue(e.target.value)}
-                placeholder="Optional (e.g. 50.00)"
-                data-testid="promotion-max-redemption-value"
-              />
-            </div>
+              if (key === "book_by_date")
+                return (
+                  <BookByDateCard
+                    key={key}
+                    bookByDate={bookByDate}
+                    onBookByDateChange={(date) =>
+                      setBookByDate(date ? format(date, "yyyy-MM-dd") : "")
+                    }
+                    onRemove={() => removeRestriction("book_by_date")}
+                  />
+                );
 
-            <div className="space-y-2">
-              <Label htmlFor="maxTotalBonusPoints">Max Total Bonus Points</Label>
-              <Input
-                id="maxTotalBonusPoints"
-                type="number"
-                step="1"
-                value={maxTotalBonusPoints}
-                onChange={(e) => setMaxTotalBonusPoints(e.target.value)}
-                placeholder="Optional (e.g. 10000)"
-                data-testid="promotion-max-total-bonus-points"
-              />
-            </div>
+              if (key === "min_nights")
+                return (
+                  <MinNightsCard
+                    key={key}
+                    minNightsRequired={minNightsRequired}
+                    nightsStackable={nightsStackable}
+                    onMinNightsChange={setMinNightsRequired}
+                    onNightsStackableChange={setNightsStackable}
+                    onRemove={() => removeRestriction("min_nights")}
+                  />
+                );
 
-            <div className="space-y-2">
-              <Label htmlFor="minNightsRequired">Min Nights Required</Label>
-              <Input
-                id="minNightsRequired"
-                type="number"
-                step="1"
-                value={minNightsRequired}
-                onChange={(e) => setMinNightsRequired(e.target.value)}
-                placeholder="Optional (e.g. 2)"
-                data-testid="promotion-min-nights-required"
-              />
-            </div>
+              if (key === "redemption_caps")
+                return (
+                  <RedemptionCapsCard
+                    key={key}
+                    maxRedemptionCount={maxRedemptionCount}
+                    maxRedemptionValue={maxRedemptionValue}
+                    maxTotalBonusPoints={maxTotalBonusPoints}
+                    onMaxRedemptionCountChange={setMaxRedemptionCount}
+                    onMaxRedemptionValueChange={setMaxRedemptionValue}
+                    onMaxTotalBonusPointsChange={setMaxTotalBonusPoints}
+                    onRemove={() => removeRestriction("redemption_caps")}
+                  />
+                );
 
-            {minNightsRequired && (
-              <div className="flex items-center gap-2">
-                <input
-                  id="nightsStackable"
-                  type="checkbox"
-                  checked={nightsStackable}
-                  onChange={(e) => setNightsStackable(e.target.checked)}
-                  className="size-4 rounded border-gray-300"
-                  data-testid="promotion-nights-stackable"
-                />
-                <Label htmlFor="nightsStackable">Stackable (multiply by number of stays)</Label>
-              </div>
-            )}
+              if (key === "once_per_sub_brand")
+                return (
+                  <OncePerSubBrandCard
+                    key={key}
+                    onRemove={() => removeRestriction("once_per_sub_brand")}
+                  />
+                );
 
-            <div className="space-y-2">
-              <Label htmlFor="bookByDate">Book By Date</Label>
-              <DatePicker
-                id="bookByDate"
-                date={bookByDateObj}
-                setDate={handleBookByDateChange}
-                placeholder="Select book by date"
-                data-testid="promotion-book-by-date"
-              />
-            </div>
+              if (key === "tie_in_cards")
+                return (
+                  <TieInCardsCard
+                    key={key}
+                    creditCards={creditCards}
+                    tieInCreditCardIds={tieInCreditCardIds}
+                    tieInRequiresPayment={tieInRequiresPayment}
+                    onTieInCardChange={(cardId, checked) => {
+                      const newIds = checked
+                        ? [...tieInCreditCardIds, cardId]
+                        : tieInCreditCardIds.filter((id) => id !== cardId);
+                      setTieInCreditCardIds(newIds);
+                      if (newIds.length === 0) setTieInRequiresPayment(false);
+                    }}
+                    onTieInRequiresPaymentChange={setTieInRequiresPayment}
+                    onRemove={() => removeRestriction("tie_in_cards")}
+                  />
+                );
 
-            <div className="flex items-center gap-2">
-              <input
-                id="oncePerSubBrand"
-                type="checkbox"
-                checked={oncePerSubBrand}
-                onChange={(e) => setOncePerSubBrand(e.target.checked)}
-                className="size-4 rounded border-gray-300"
-                data-testid="promotion-once-per-sub-brand"
-              />
-              <div>
-                <Label htmlFor="oncePerSubBrand">Once Per Sub-Brand</Label>
-                <p className="text-xs text-muted-foreground">
-                  Promotion can only apply once per hotel sub-brand within the promo period.
-                </p>
-              </div>
-            </div>
-          </div>
+              if (key === "registration")
+                return (
+                  <RegistrationCard
+                    key={key}
+                    registrationDeadline={registrationDeadline}
+                    validDaysAfterRegistration={validDaysAfterRegistration}
+                    registrationDate={registrationDate}
+                    onRegistrationDeadlineChange={(date) =>
+                      setRegistrationDeadline(date ? format(date, "yyyy-MM-dd") : "")
+                    }
+                    onValidDaysChange={setValidDaysAfterRegistration}
+                    onRegistrationDateChange={(date) =>
+                      setRegistrationDate(date ? format(date, "yyyy-MM-dd") : "")
+                    }
+                    onRemove={() => removeRestriction("registration")}
+                  />
+                );
 
-          {/* Registration & Validity */}
-          <div className="space-y-4 border-t pt-4">
-            <h3 className="text-sm font-medium">Registration & Validity</h3>
-            <p className="text-xs text-muted-foreground">
-              For promotions that require registration, specify the deadline and how long they stay
-              valid for.
-            </p>
+              if (key === "sub_brand_exclusions" && showSubBrandExclusionsOption)
+                return (
+                  <SubBrandExclusionsCard
+                    key={key}
+                    subBrands={selectedChainSubBrands}
+                    exclusionSubBrandIds={exclusionSubBrandIds}
+                    onExclusionChange={(subBrandId, checked) => {
+                      if (checked) {
+                        setExclusionSubBrandIds((prev) => [...prev, subBrandId]);
+                      } else {
+                        setExclusionSubBrandIds((prev) => prev.filter((id) => id !== subBrandId));
+                      }
+                    }}
+                    onRemove={() => removeRestriction("sub_brand_exclusions")}
+                  />
+                );
 
-            <div className="space-y-2">
-              <Label htmlFor="registrationDeadline">Registration Deadline</Label>
-              <DatePicker
-                id="registrationDeadline"
-                date={registrationDeadlineObj}
-                setDate={handleRegistrationDeadlineChange}
-                placeholder="Last date to register"
-                data-testid="promotion-registration-deadline"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="validDaysAfterRegistration">Validity Duration (Days)</Label>
-              <Input
-                id="validDaysAfterRegistration"
-                type="number"
-                step="1"
-                value={validDaysAfterRegistration}
-                onChange={(e) => setValidDaysAfterRegistration(e.target.value)}
-                placeholder="Days valid from registration date"
-                data-testid="promotion-valid-days-after-registration"
-              />
-              <p className="text-[0.7rem] text-muted-foreground">
-                If set, matching logic will use Registration Date + Duration as the effective end
-                date.
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="registrationDate">Your Registration Date</Label>
-              <DatePicker
-                id="registrationDate"
-                date={registrationDateObj}
-                setDate={handleRegistrationDateChange}
-                placeholder="When did you register?"
-                data-testid="promotion-registration-date"
-              />
-              <p className="text-[0.7rem] text-muted-foreground">
-                Recording your registration date activates the personal validity window.
-              </p>
-            </div>
+              return null;
+            })}
           </div>
 
           {/* Actions */}
