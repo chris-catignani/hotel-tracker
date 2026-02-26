@@ -9,6 +9,7 @@ import {
   PromotionFormData,
   PromotionRestrictionsFormData,
 } from "@/lib/types";
+import { buildRestrictionsCreateData, buildBenefitCreateData } from "@/lib/promotion-api-helpers";
 
 const PROMOTION_INCLUDE = {
   hotelChain: true,
@@ -36,55 +37,6 @@ const PROMOTION_INCLUDE = {
   },
   userPromotions: true,
 } as const;
-
-function buildRestrictionsCreateData(r: PromotionRestrictionsFormData) {
-  return {
-    minSpend: r.minSpend ? Number(r.minSpend) : null,
-    minNightsRequired: r.minNightsRequired ? Number(r.minNightsRequired) : null,
-    nightsStackable: r.nightsStackable ?? false,
-    maxRedemptionCount: r.maxRedemptionCount ? Number(r.maxRedemptionCount) : null,
-    maxRedemptionValue: r.maxRedemptionValue ? Number(r.maxRedemptionValue) : null,
-    maxTotalBonusPoints: r.maxTotalBonusPoints ? Number(r.maxTotalBonusPoints) : null,
-    oncePerSubBrand: r.oncePerSubBrand ?? false,
-    bookByDate: r.bookByDate ? new Date(r.bookByDate) : null,
-    registrationDeadline: r.registrationDeadline ? new Date(r.registrationDeadline) : null,
-    validDaysAfterRegistration: r.validDaysAfterRegistration
-      ? Number(r.validDaysAfterRegistration)
-      : null,
-    tieInRequiresPayment: r.tieInRequiresPayment ?? false,
-    allowedPaymentTypes: r.allowedPaymentTypes ?? [],
-    subBrandRestrictions: {
-      create: [
-        ...(r.subBrandIncludeIds ?? []).map((id) => ({
-          hotelChainSubBrandId: id,
-          mode: "include" as const,
-        })),
-        ...(r.subBrandExcludeIds ?? []).map((id) => ({
-          hotelChainSubBrandId: id,
-          mode: "exclude" as const,
-        })),
-      ],
-    },
-    tieInCards: {
-      create: (r.tieInCreditCardIds ?? []).map((id) => ({ creditCardId: id })),
-    },
-  };
-}
-
-function buildBenefitCreateData(b: PromotionBenefitFormData, i: number) {
-  const base = {
-    rewardType: b.rewardType,
-    valueType: b.valueType,
-    value: Number(b.value),
-    certType: b.certType || null,
-    pointsMultiplierBasis: b.pointsMultiplierBasis || null,
-    sortOrder: b.sortOrder ?? i,
-  };
-  if (b.restrictions) {
-    return { ...base, restrictions: { create: buildRestrictionsCreateData(b.restrictions) } };
-  }
-  return base;
-}
 
 export async function GET(request: NextRequest) {
   try {
