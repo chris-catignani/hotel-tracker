@@ -30,6 +30,8 @@ export interface NetCostBooking {
   loyaltyPointsEarned: number | null;
   pointsRedeemed: number | null;
   certificates: { certType: string }[];
+  hotelChainId: string | null;
+  otaAgencyId: string | null;
   hotelChain: {
     id: string;
     name: string;

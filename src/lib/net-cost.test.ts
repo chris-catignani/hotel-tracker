@@ -11,6 +11,8 @@ describe("net-cost", () => {
     loyaltyPointsEarned: null,
     pointsRedeemed: null,
     certificates: [],
+    hotelChainId: "test-hotel-id",
+    otaAgencyId: null,
     hotelChain: {
       id: "test-hotel-id",
       name: "Test Hotel",
