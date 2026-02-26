@@ -22,7 +22,9 @@ import {
   BENEFIT_RESTRICTION_ORDER,
   RESTRICTION_LABELS,
   deriveActiveRestrictions,
+  PaymentTypeCard,
   MinSpendCard,
+  MinNightsCard,
   RedemptionCapsCard,
   OncePerSubBrandCard,
   TieInCardsCard,
@@ -122,8 +124,14 @@ export function BenefitRow({
     const current = benefit.restrictions ?? { ...EMPTY_RESTRICTIONS };
     let updates: Partial<PromotionRestrictionsFormData> = {};
     switch (key) {
+      case "payment_type":
+        updates = { allowedPaymentTypes: [] };
+        break;
       case "min_spend":
         updates = { minSpend: "" };
+        break;
+      case "min_nights":
+        updates = { minNightsRequired: "", nightsStackable: false };
         break;
       case "redemption_caps":
         updates = { maxRedemptionCount: "", maxRedemptionValue: "", maxTotalBonusPoints: "" };
@@ -141,7 +149,9 @@ export function BenefitRow({
     const newRestrictions = { ...current, ...updates };
     // If all fields are empty/default, set restrictions to null
     const hasContent =
+      newRestrictions.allowedPaymentTypes.length > 0 ||
       newRestrictions.minSpend ||
+      newRestrictions.minNightsRequired ||
       newRestrictions.maxRedemptionCount ||
       newRestrictions.maxRedemptionValue ||
       newRestrictions.maxTotalBonusPoints ||
@@ -301,11 +311,29 @@ export function BenefitRow({
         {/* Active benefit restriction cards */}
         {visibleRestrictionKeys.size > 0 && (
           <div className="space-y-2">
+            {visibleRestrictionKeys.has("payment_type") && (
+              <PaymentTypeCard
+                allowedPaymentTypes={benefit.restrictions?.allowedPaymentTypes ?? []}
+                onAllowedPaymentTypesChange={(types) =>
+                  updateRestrictions({ allowedPaymentTypes: types })
+                }
+                onRemove={() => removeBenefitRestriction("payment_type")}
+              />
+            )}
             {visibleRestrictionKeys.has("min_spend") && (
               <MinSpendCard
                 minSpend={benefit.restrictions?.minSpend ?? ""}
                 onMinSpendChange={(v) => updateRestrictions({ minSpend: v })}
                 onRemove={() => removeBenefitRestriction("min_spend")}
+              />
+            )}
+            {visibleRestrictionKeys.has("min_nights") && (
+              <MinNightsCard
+                minNightsRequired={benefit.restrictions?.minNightsRequired ?? ""}
+                nightsStackable={benefit.restrictions?.nightsStackable ?? false}
+                onMinNightsChange={(v) => updateRestrictions({ minNightsRequired: v })}
+                onNightsStackableChange={(v) => updateRestrictions({ nightsStackable: v })}
+                onRemove={() => removeBenefitRestriction("min_nights")}
               />
             )}
             {visibleRestrictionKeys.has("redemption_caps") && (

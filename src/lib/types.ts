@@ -118,6 +118,7 @@ export interface PromotionRestrictionsData {
   registrationDeadline: string | null;
   validDaysAfterRegistration: number | null;
   tieInRequiresPayment: boolean;
+  allowedPaymentTypes: string[];
   subBrandRestrictions: SubBrandRestriction[];
   tieInCards: { creditCardId: string }[];
 }
@@ -135,6 +136,7 @@ export interface PromotionRestrictionsFormData {
   validDaysAfterRegistration: string;
   registrationDate: string; // form convenience; maps to UserPromotion on the promotion
   tieInRequiresPayment: boolean;
+  allowedPaymentTypes: string[];
   subBrandIncludeIds: string[];
   subBrandExcludeIds: string[];
   tieInCreditCardIds: string[];
@@ -153,6 +155,7 @@ export const EMPTY_RESTRICTIONS: PromotionRestrictionsFormData = {
   validDaysAfterRegistration: "",
   registrationDate: "",
   tieInRequiresPayment: false,
+  allowedPaymentTypes: [],
   subBrandIncludeIds: [],
   subBrandExcludeIds: [],
   tieInCreditCardIds: [],

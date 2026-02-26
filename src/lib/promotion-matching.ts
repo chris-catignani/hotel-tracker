@@ -23,6 +23,7 @@ const BOOKING_INCLUDE = {
   hotelChainSubBrand: true,
   creditCard: { include: { pointType: true } },
   shoppingPortal: true,
+  _count: { select: { certificates: true } },
 } as const;
 
 type MatchingRestrictions = {
@@ -37,6 +38,7 @@ type MatchingRestrictions = {
   registrationDeadline: Date | null;
   validDaysAfterRegistration: number | null;
   tieInRequiresPayment: boolean;
+  allowedPaymentTypes: string[];
   subBrandRestrictions: { hotelChainSubBrandId: string; mode: string }[];
   tieInCards: { creditCardId: string }[];
 } | null;
@@ -85,7 +87,9 @@ export interface MatchingBooking {
   numNights: number;
   pretaxCost: string | number | Prisma.Decimal;
   totalCost: string | number | Prisma.Decimal;
+  pointsRedeemed: number | null;
   loyaltyPointsEarned: number | null;
+  _count?: { certificates: number };
   hotelChain?: {
     basePointRate?: string | number | Prisma.Decimal | null;
     pointType?: {
@@ -146,6 +150,20 @@ function checkSubBrandRestrictions(
   return true;
 }
 
+function checkPaymentTypeRestriction(
+  allowedPaymentTypes: string[],
+  booking: MatchingBooking
+): boolean {
+  if (allowedPaymentTypes.length === 0) return true;
+  const hasCash = Number(booking.pretaxCost) > 0;
+  const hasPoints = (booking.pointsRedeemed ?? 0) > 0;
+  const hasCert = (booking._count?.certificates ?? 0) > 0;
+  if (hasCash && !allowedPaymentTypes.includes("cash")) return false;
+  if (hasPoints && !allowedPaymentTypes.includes("points")) return false;
+  if (hasCert && !allowedPaymentTypes.includes("cert")) return false;
+  return true;
+}
+
 /**
  * Calculates which promotions match a given booking without side effects.
  */
@@ -184,6 +202,13 @@ export function calculateMatchedPromotions(
         promo.restrictions.tieInCards.some((c) => c.creditCardId === booking.creditCardId);
       if (!cardMatches) continue;
     }
+
+    // Promotion-level payment type gate
+    if (
+      promo.restrictions?.allowedPaymentTypes &&
+      !checkPaymentTypeRestriction(promo.restrictions.allowedPaymentTypes, booking)
+    )
+      continue;
 
     // Date range check
     const checkInDate = new Date(booking.checkIn);
@@ -282,6 +307,10 @@ export function calculateMatchedPromotions(
         const appliedSubBrands = usage?.appliedSubBrandIds;
         if (appliedSubBrands?.has(booking.hotelChainSubBrandId ?? null)) return false;
       }
+
+      // Benefit-level payment type
+      if (br.allowedPaymentTypes && !checkPaymentTypeRestriction(br.allowedPaymentTypes, booking))
+        return false;
 
       return true;
     });

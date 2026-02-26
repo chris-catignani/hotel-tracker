@@ -41,6 +41,7 @@ function mapApiRestrictionsToForm(
       : "",
     registrationDate: "",
     tieInRequiresPayment: r.tieInRequiresPayment ?? false,
+    allowedPaymentTypes: r.allowedPaymentTypes ?? [],
     subBrandIncludeIds: (r.subBrandRestrictions ?? [])
       .filter((s) => s.mode === "include")
       .map((s) => s.hotelChainSubBrandId),

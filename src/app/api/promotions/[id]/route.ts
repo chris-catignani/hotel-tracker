@@ -51,6 +51,7 @@ function buildRestrictionsCreateData(r: PromotionRestrictionsFormData) {
       ? Number(r.validDaysAfterRegistration)
       : null,
     tieInRequiresPayment: r.tieInRequiresPayment ?? false,
+    allowedPaymentTypes: r.allowedPaymentTypes ?? [],
     subBrandRestrictions: {
       create: [
         ...(r.subBrandIncludeIds ?? []).map((id) => ({

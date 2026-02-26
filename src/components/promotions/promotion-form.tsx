@@ -26,6 +26,7 @@ import {
   RESTRICTION_ORDER,
   RESTRICTION_LABELS,
   deriveActiveRestrictions,
+  PaymentTypeCard,
   MinSpendCard,
   BookByDateCard,
   MinNightsCard,
@@ -86,6 +87,7 @@ function mapApiRestrictionsToForm(
       r.validDaysAfterRegistration != null ? String(r.validDaysAfterRegistration) : "",
     registrationDate: "", // comes from userPromotions, set separately
     tieInRequiresPayment: r.tieInRequiresPayment ?? false,
+    allowedPaymentTypes: r.allowedPaymentTypes ?? [],
     subBrandIncludeIds: (r.subBrandRestrictions ?? [])
       .filter((s) => s.mode === "include")
       .map((s) => s.hotelChainSubBrandId),
@@ -244,6 +246,9 @@ export function PromotionForm({
           registrationDate: "",
         });
         break;
+      case "payment_type":
+        updateRestrictions({ allowedPaymentTypes: [] });
+        break;
       case "sub_brand_scope":
         updateRestrictions({ subBrandIncludeIds: [], subBrandExcludeIds: [] });
         break;
@@ -352,6 +357,9 @@ export function PromotionForm({
           ? restrictions.maxTotalBonusPoints
           : "",
         oncePerSubBrand: activeRestrictions.has("once_per_sub_brand"),
+        allowedPaymentTypes: activeRestrictions.has("payment_type")
+          ? restrictions.allowedPaymentTypes
+          : [],
         tieInCreditCardIds: activeRestrictions.has("tie_in_cards")
           ? restrictions.tieInCreditCardIds
           : [],
@@ -727,6 +735,18 @@ export function PromotionForm({
             {/* Active restriction cards in canonical order */}
             {RESTRICTION_ORDER.map((key) => {
               if (!activeRestrictions.has(key)) return null;
+
+              if (key === "payment_type")
+                return (
+                  <PaymentTypeCard
+                    key={key}
+                    allowedPaymentTypes={restrictions.allowedPaymentTypes}
+                    onAllowedPaymentTypesChange={(types) =>
+                      updateRestrictions({ allowedPaymentTypes: types })
+                    }
+                    onRemove={() => removeRestriction("payment_type")}
+                  />
+                );
 
               if (key === "min_spend")
                 return (

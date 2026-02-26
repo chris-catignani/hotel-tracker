@@ -20,10 +20,12 @@ export type RestrictionKey =
   | "once_per_sub_brand"
   | "tie_in_cards"
   | "registration"
-  | "sub_brand_scope";
+  | "sub_brand_scope"
+  | "payment_type";
 
 /** Canonical display order — cards and picker options always follow this order. */
 export const RESTRICTION_ORDER: RestrictionKey[] = [
+  "payment_type",
   "min_spend",
   "book_by_date",
   "min_nights",
@@ -36,7 +38,9 @@ export const RESTRICTION_ORDER: RestrictionKey[] = [
 
 /** Restriction keys available at the benefit level (not all apply per-benefit). */
 export const BENEFIT_RESTRICTION_ORDER: RestrictionKey[] = [
+  "payment_type",
   "min_spend",
+  "min_nights",
   "redemption_caps",
   "once_per_sub_brand",
   "tie_in_cards",
@@ -44,6 +48,7 @@ export const BENEFIT_RESTRICTION_ORDER: RestrictionKey[] = [
 ];
 
 export const RESTRICTION_LABELS: Record<RestrictionKey, string> = {
+  payment_type: "Payment Type",
   min_spend: "Minimum Spend",
   book_by_date: "Book By Date",
   min_nights: "Min Nights Required",
@@ -61,6 +66,7 @@ export function deriveActiveRestrictions(
 ): Set<RestrictionKey> {
   const keys = new Set<RestrictionKey>();
   if (!r) return keys;
+  if (r.allowedPaymentTypes && r.allowedPaymentTypes.length > 0) keys.add("payment_type");
   if (r.minSpend) keys.add("min_spend");
   if (r.bookByDate) keys.add("book_by_date");
   if (r.minNightsRequired) keys.add("min_nights");
@@ -397,6 +403,61 @@ export function RegistrationCard({
           </p>
         </div>
       )}
+    </RestrictionCard>
+  );
+}
+
+const PAYMENT_TYPE_OPTIONS: { value: string; label: string; description: string }[] = [
+  { value: "cash", label: "Cash", description: "Bookings paid (at least partially) with cash" },
+  {
+    value: "points",
+    label: "Points",
+    description: "Bookings paid (at least partially) with points",
+  },
+  {
+    value: "cert",
+    label: "Certificates",
+    description: "Bookings paid (at least partially) with certificates",
+  },
+];
+
+export function PaymentTypeCard({
+  allowedPaymentTypes,
+  onAllowedPaymentTypesChange,
+  onRemove,
+}: {
+  allowedPaymentTypes: string[];
+  onAllowedPaymentTypesChange: (types: string[]) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <RestrictionCard title="Payment Type" testId="payment_type" onRemove={onRemove}>
+      <p className="text-xs text-muted-foreground">
+        Only applies to bookings that use the selected payment method(s). Unchecked methods are
+        excluded.
+      </p>
+      <div className="flex flex-col gap-2" data-testid="payment-type-options">
+        {PAYMENT_TYPE_OPTIONS.map((opt) => (
+          <label key={opt.value} className="flex items-start gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              className="size-4 rounded border-gray-300 mt-0.5"
+              checked={allowedPaymentTypes.includes(opt.value)}
+              onChange={(e) => {
+                const newTypes = e.target.checked
+                  ? [...allowedPaymentTypes, opt.value]
+                  : allowedPaymentTypes.filter((t) => t !== opt.value);
+                onAllowedPaymentTypesChange(newTypes);
+              }}
+              data-testid={`payment-type-${opt.value}`}
+            />
+            <div>
+              <span className="text-sm font-medium">{opt.label}</span>
+              <p className="text-xs text-muted-foreground">{opt.description}</p>
+            </div>
+          </label>
+        ))}
+      </div>
     </RestrictionCard>
   );
 }
