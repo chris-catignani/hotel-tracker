@@ -51,6 +51,29 @@ export interface CreditCard {
   pointTypeId: string | null;
   pointType: PointType | null;
   isDeleted: boolean;
+  rewardRules: CreditCardRewardRule[];
+}
+
+export type CreditCardRewardRuleType = "multiplier" | "fixed";
+
+export interface CreditCardRewardRule {
+  id: string;
+  creditCardId: string;
+  hotelChainId: string | null;
+  hotelChain?: HotelChain | null;
+  otaAgencyId: string | null;
+  otaAgency?: OtaAgency | null;
+  rewardType: CreditCardRewardRuleType;
+  rewardValue: string | number;
+  createdAt: string;
+}
+
+export interface CreditCardRewardRuleFormData {
+  id?: string;
+  hotelChainId: string | null;
+  otaAgencyId: string | null;
+  rewardType: CreditCardRewardRuleType;
+  rewardValue: number | string;
 }
 
 export interface ShoppingPortal {

@@ -1,14 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
+import { CreditCardRewardRuleFormData } from "@/lib/types";
+
+const CARD_INCLUDE = {
+  pointType: true,
+  rewardRules: {
+    include: {
+      hotelChain: true,
+      otaAgency: true,
+    },
+  },
+} as const;
 
 export async function GET() {
   try {
     const cards = await prisma.creditCard.findMany({
       where: { isDeleted: false },
-      include: {
-        pointType: true,
-      },
+      include: CARD_INCLUDE,
       orderBy: {
         name: "asc",
       },
@@ -21,18 +30,24 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, rewardType, rewardRate, pointTypeId } = await request.json();
+    const { name, rewardType, rewardRate, pointTypeId, rewardRules } = await request.json();
 
     const card = await prisma.creditCard.create({
       data: {
         name,
         rewardType,
         rewardRate: Number(rewardRate),
-        pointTypeId: pointTypeId || null,
+        pointType: pointTypeId ? { connect: { id: pointTypeId } } : undefined,
+        rewardRules: {
+          create: (rewardRules || []).map((rule: CreditCardRewardRuleFormData) => ({
+            hotelChainId: rule.hotelChainId,
+            otaAgencyId: rule.otaAgencyId,
+            rewardType: rule.rewardType,
+            rewardValue: Number(rule.rewardValue),
+          })),
+        },
       },
-      include: {
-        pointType: true,
-      },
+      include: CARD_INCLUDE,
     });
 
     return NextResponse.json(card, { status: 201 });

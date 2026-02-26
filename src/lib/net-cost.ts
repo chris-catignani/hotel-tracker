@@ -48,6 +48,12 @@ export interface NetCostBooking {
     name: string;
     rewardRate: string | number;
     pointType: { name: string; centsPerPoint: string | number } | null;
+    rewardRules?: {
+      rewardType: string;
+      rewardValue: string | number;
+      hotelChainId: string | null;
+      otaAgencyId: string | null;
+    }[];
   } | null;
   shoppingPortal: {
     name: string;
@@ -275,19 +281,69 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
   let cardReward = 0;
   let cardRewardCalc: CalculationDetail | undefined;
   if (booking.creditCard) {
-    const rate = Number(booking.creditCard.rewardRate);
+    const baseRate = Number(booking.creditCard.rewardRate);
+    const rules = booking.creditCard.rewardRules || [];
+    const hotelId = (booking.hotelChain as { id: string } | null)?.id || booking.hotelChainId;
+    const otaId = booking.otaAgencyId;
+
+    // Strict rule selection: OTA bookings only allow OTA rules.
+    // Direct bookings only allow Hotel Chain rules.
+    const applicableRules = rules.filter((r) => {
+      if (otaId) {
+        return r.otaAgencyId === otaId;
+      }
+      return r.hotelChainId === hotelId;
+    });
+
+    const multiplierRules = applicableRules.filter((r) => r.rewardType === "multiplier");
+    const fixedRules = applicableRules.filter((r) => r.rewardType === "fixed");
+
+    // Best multiplier (OTA match or Hotel match depending on booking context)
+    const bestMultiplierRule = multiplierRules[0]; // Filter already handled context
+
+    const rateToUse = bestMultiplierRule ? Number(bestMultiplierRule.rewardValue) : baseRate;
+    const totalFixedBonus = fixedRules.reduce((sum, r) => sum + Number(r.rewardValue), 0);
+
+    const pointName = booking.creditCard.pointType?.name || "points";
     const centsPerPoint = booking.creditCard.pointType
       ? Number(booking.creditCard.pointType.centsPerPoint)
       : DEFAULT_CENTS_PER_POINT;
-    const pointName = booking.creditCard.pointType?.name || "points";
     const centsStr = formatCents(centsPerPoint);
-    cardReward = totalCost * rate * centsPerPoint;
 
-    cardRewardCalc = {
-      label: "Card Reward",
-      formula: `${formatCurrency(totalCost)} (total cost) × ${rate}x × ${centsStr}¢ = ${formatCurrency(cardReward)}`,
-      description: `The ${booking.creditCard.name} earns ${rate}x ${pointName} per dollar spent on the total cost of the booking. We value ${pointName} at ${centsStr}¢ each.`,
-    };
+    const baseReward = totalCost * rateToUse * centsPerPoint;
+    const fixedReward = totalFixedBonus * centsPerPoint;
+    cardReward = baseReward + fixedReward;
+
+    // Build Explanation
+    const isBoosted = !!bestMultiplierRule;
+    const hasFixed = totalFixedBonus > 0;
+
+    if (isBoosted && hasFixed) {
+      cardRewardCalc = {
+        label: "Card Reward",
+        formula: `(${formatCurrency(totalCost)} × ${rateToUse}x) + ${totalFixedBonus.toLocaleString()} bonus pts × ${centsStr}¢ = ${formatCurrency(cardReward)}`,
+        description: `The ${booking.creditCard.name} earns a boosted ${rateToUse}x ${pointName} plus a fixed bonus of ${totalFixedBonus.toLocaleString()} ${pointName} for this stay. We value ${pointName} at ${centsStr}¢ each.`,
+      };
+    } else if (isBoosted) {
+      cardRewardCalc = {
+        label: "Card Reward",
+        formula: `${formatCurrency(totalCost)} (total cost) × ${rateToUse}x (boosted) × ${centsStr}¢ = ${formatCurrency(cardReward)}`,
+        description: `The ${booking.creditCard.name} earns a boosted total of ${rateToUse}x ${pointName} per dollar for this booking. We value ${pointName} at ${centsStr}¢ each.`,
+      };
+    } else if (hasFixed) {
+      cardRewardCalc = {
+        label: "Card Reward",
+        formula: `(${formatCurrency(totalCost)} × ${baseRate}x) + ${totalFixedBonus.toLocaleString()} bonus pts × ${centsStr}¢ = ${formatCurrency(cardReward)}`,
+        description: `The ${booking.creditCard.name} earns its base ${baseRate}x ${pointName} plus a fixed bonus of ${totalFixedBonus.toLocaleString()} ${pointName} for this stay. We value ${pointName} at ${centsStr}¢ each.`,
+      };
+    } else {
+      // Pure base rate
+      cardRewardCalc = {
+        label: "Card Reward",
+        formula: `${formatCurrency(totalCost)} (total cost) × ${baseRate}x × ${centsStr}¢ = ${formatCurrency(cardReward)}`,
+        description: `The ${booking.creditCard.name} earns ${baseRate}x ${pointName} per dollar spent on the total cost of the booking. We value ${pointName} at ${centsStr}¢ each.`,
+      };
+    }
   }
 
   // 4. Loyalty Points Earned

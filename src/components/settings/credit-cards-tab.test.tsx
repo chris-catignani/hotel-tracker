@@ -27,18 +27,20 @@ const mockCards = [
 describe("CreditCardsTab", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    global.fetch = vi.fn();
-  });
-
-  it("renders correctly", async () => {
-    vi.mocked(global.fetch).mockImplementation((url: string) => {
+    global.fetch = vi.fn().mockImplementation((url: string) => {
       if (url.includes("/api/credit-cards"))
         return Promise.resolve({ ok: true, json: async () => [] } as Response);
       if (url.includes("/api/point-types"))
         return Promise.resolve({ ok: true, json: async () => [] } as Response);
-      return Promise.reject(new Error("Unknown URL"));
+      if (url.includes("/api/hotel-chains"))
+        return Promise.resolve({ ok: true, json: async () => [] } as Response);
+      if (url.includes("/api/ota-agencies"))
+        return Promise.resolve({ ok: true, json: async () => [] } as Response);
+      return Promise.reject(new Error(`Unknown URL: ${url}`));
     });
+  });
 
+  it("renders correctly", async () => {
     await act(async () => {
       render(<CreditCardsTab />);
     });
@@ -48,14 +50,6 @@ describe("CreditCardsTab", () => {
   });
 
   it("shows empty state message", async () => {
-    vi.mocked(global.fetch).mockImplementation((url: string) => {
-      if (url.includes("/api/credit-cards"))
-        return Promise.resolve({ ok: true, json: async () => [] } as Response);
-      if (url.includes("/api/point-types"))
-        return Promise.resolve({ ok: true, json: async () => [] } as Response);
-      return Promise.reject(new Error("Unknown URL"));
-    });
-
     await act(async () => {
       render(<CreditCardsTab />);
     });
@@ -69,9 +63,7 @@ describe("CreditCardsTab", () => {
     vi.mocked(global.fetch).mockImplementation((url: string) => {
       if (url.includes("/api/credit-cards"))
         return Promise.resolve({ ok: true, json: async () => [mockCards[0]] } as Response);
-      if (url.includes("/api/point-types"))
-        return Promise.resolve({ ok: true, json: async () => [] } as Response);
-      return Promise.reject(new Error("Unknown URL"));
+      return Promise.resolve({ ok: true, json: async () => [] } as Response);
     });
 
     await act(async () => {
@@ -87,9 +79,7 @@ describe("CreditCardsTab", () => {
     vi.mocked(global.fetch).mockImplementation((url: string) => {
       if (url.includes("/api/credit-cards"))
         return Promise.resolve({ ok: true, json: async () => mockCards } as Response);
-      if (url.includes("/api/point-types"))
-        return Promise.resolve({ ok: true, json: async () => [] } as Response);
-      return Promise.reject(new Error("Unknown URL"));
+      return Promise.resolve({ ok: true, json: async () => [] } as Response);
     });
 
     await act(async () => {
@@ -107,9 +97,7 @@ describe("CreditCardsTab", () => {
     vi.mocked(global.fetch).mockImplementation((url: string) => {
       if (url.includes("/api/credit-cards"))
         return Promise.resolve({ ok: true, json: async () => [mockCards[0]] } as Response);
-      if (url.includes("/api/point-types"))
-        return Promise.resolve({ ok: true, json: async () => [] } as Response);
-      return Promise.reject(new Error("Unknown URL"));
+      return Promise.resolve({ ok: true, json: async () => [] } as Response);
     });
 
     await act(async () => {
@@ -134,11 +122,9 @@ describe("CreditCardsTab", () => {
           (!options || options.method === undefined || options.method === "GET")
         )
           return Promise.resolve({ ok: true, json: async () => [mockCards[0]] } as Response);
-        if (url.includes("/api/point-types"))
-          return Promise.resolve({ ok: true, json: async () => [] } as Response);
         if (url === "/api/credit-cards/1" && options?.method === "DELETE")
           return Promise.resolve({ ok: true } as Response);
-        return Promise.reject(new Error(`Unknown: ${url}`));
+        return Promise.resolve({ ok: true, json: async () => [] } as Response);
       });
 
     await act(async () => {
@@ -167,15 +153,13 @@ describe("CreditCardsTab", () => {
     vi.mocked(global.fetch).mockImplementation((url: string, options?: RequestInit) => {
       if (url === "/api/credit-cards" && (!options || !options.method || options.method === "GET"))
         return Promise.resolve({ ok: true, json: async () => [mockCards[0]] } as Response);
-      if (url.includes("/api/point-types"))
-        return Promise.resolve({ ok: true, json: async () => [] } as Response);
       if (url.includes("/api/credit-cards/1") && options?.method === "DELETE")
         return Promise.resolve({
           ok: false,
           status: 500,
           json: async () => ({}),
         } as Response);
-      return Promise.reject(new Error(`Unknown: ${url}`));
+      return Promise.resolve({ ok: true, json: async () => [] } as Response);
     });
 
     await act(async () => {
@@ -195,9 +179,7 @@ describe("CreditCardsTab", () => {
     const fetchMock = vi.mocked(global.fetch).mockImplementation((url: string) => {
       if (url.includes("/api/credit-cards"))
         return Promise.resolve({ ok: true, json: async () => [mockCards[0]] } as Response);
-      if (url.includes("/api/point-types"))
-        return Promise.resolve({ ok: true, json: async () => [] } as Response);
-      return Promise.reject(new Error("Unknown URL"));
+      return Promise.resolve({ ok: true, json: async () => [] } as Response);
     });
 
     await act(async () => {
@@ -218,9 +200,7 @@ describe("CreditCardsTab", () => {
     vi.mocked(global.fetch).mockImplementation((url: string) => {
       if (url.includes("/api/credit-cards"))
         return Promise.resolve({ ok: true, json: async () => [mockCards[0]] } as Response);
-      if (url.includes("/api/point-types"))
-        return Promise.resolve({ ok: true, json: async () => [] } as Response);
-      return Promise.reject(new Error("Unknown URL"));
+      return Promise.resolve({ ok: true, json: async () => [] } as Response);
     });
 
     await act(async () => {

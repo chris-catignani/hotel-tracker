@@ -69,7 +69,7 @@ describe("SubBrandBreakdown", () => {
     expect(screen.getByTestId("pie-slice-other")).toHaveTextContent("Other: 1");
   });
 
-  it("limits to 10 items and groups remaining into 'Other'", async () => {
+  it("limits to 10 items and groups remaining into 'Remaining'", async () => {
     const manyBookings = Array.from({ length: 15 }, (_, i) => ({
       id: String(i),
       numNights: 1,
@@ -82,7 +82,7 @@ describe("SubBrandBreakdown", () => {
 
     const slices = screen.getAllByTestId(/pie-slice-/);
     expect(slices).toHaveLength(10);
-    expect(screen.getByTestId("pie-slice-other")).toHaveTextContent("Other: 6");
+    expect(screen.getByTestId("pie-slice-remaining")).toHaveTextContent("Remaining: 6");
   });
 
   it("shows empty state when no bookings", async () => {

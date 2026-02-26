@@ -59,7 +59,7 @@ export function SubBrandBreakdown({ bookings }: SubBrandBreakdownProps) {
     const others = sortedEntries.slice(9);
     const othersValue = others.reduce((sum, item) => sum + item.value, 0);
 
-    return [...top9, { name: "Other", value: othersValue }];
+    return [...top9, { name: "Remaining", value: othersValue }];
   }, [bookings, mode]);
 
   const total = data.reduce((sum, item) => sum + item.value, 0);

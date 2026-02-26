@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { getNetCostBreakdown, NetCostBooking } from "./net-cost";
+import { HotelChain } from "./types";
 
 describe("net-cost", () => {
   const mockBaseBooking: NetCostBooking = {
@@ -378,5 +379,156 @@ describe("net-cost", () => {
     expect(result.netCost).toBe(64);
     expect(result.promotions[0].formula).toContain("(base rate only)");
     expect(result.promotions[0].description).toContain("base-rate points only");
+  });
+
+  it("should calculate boosted credit card rewards for specific hotel chain", () => {
+    const booking: NetCostBooking = {
+      ...mockBaseBooking,
+      hotelChain: {
+        ...mockBaseBooking.hotelChain,
+        id: "hyatt-id", // mock id
+      } as unknown as HotelChain,
+      creditCard: {
+        name: "Chase Hyatt",
+        rewardRate: 1,
+        pointType: { name: "Hyatt Pts", centsPerPoint: 0.015 },
+        rewardRules: [
+          {
+            rewardType: "multiplier",
+            rewardValue: 4,
+            hotelChainId: "hyatt-id",
+            otaAgencyId: null,
+          },
+        ],
+      },
+    };
+    const result = getNetCostBreakdown(booking);
+    // 100 total * 4x (boosted) * 0.015 $/pt = 6.00
+    expect(result.cardReward).toBe(6.0);
+    expect(result.cardRewardCalc?.formula).toContain("4x (boosted)");
+    expect(result.cardRewardCalc?.description).toContain("boosted total of 4x");
+  });
+
+  it("should calculate boosted credit card rewards for specific OTA", () => {
+    const booking: NetCostBooking = {
+      ...mockBaseBooking,
+      otaAgencyId: "chase-ota-id",
+      creditCard: {
+        name: "Chase Sapphire Reserve",
+        rewardRate: 4,
+        pointType: { name: "UR Pts", centsPerPoint: 0.015 },
+        rewardRules: [
+          {
+            rewardType: "multiplier",
+            rewardValue: 10,
+            hotelChainId: null,
+            otaAgencyId: "chase-ota-id",
+          },
+        ],
+      },
+    };
+    const result = getNetCostBreakdown(booking);
+    // 100 total * 10x (boosted) * 0.015 $/pt = 15.00
+    expect(result.cardReward).toBe(15.0);
+    expect(result.cardRewardCalc?.formula).toContain("10x (boosted)");
+    expect(result.cardRewardCalc?.description).toContain("boosted total of 10x");
+  });
+
+  it("should calculate fixed bonus credit card rewards", () => {
+    const booking: NetCostBooking = {
+      ...mockBaseBooking,
+      hotelChain: {
+        ...mockBaseBooking.hotelChain,
+        id: "marriott-id",
+      } as unknown as HotelChain,
+      creditCard: {
+        name: "Marriott Bevy",
+        rewardRate: 2,
+        pointType: { name: "Bonvoy Pts", centsPerPoint: 0.007 },
+        rewardRules: [
+          {
+            rewardType: "fixed",
+            rewardValue: 1000,
+            hotelChainId: "marriott-id",
+            otaAgencyId: null,
+          },
+        ],
+      },
+    };
+    const result = getNetCostBreakdown(booking);
+    // base: 100 total * 2x * 0.007 = 1.40
+    // bonus: 1000 pts * 0.007 = 7.00
+    // total: 1.40 + 7.00 = 8.40
+    expect(result.cardReward).toBeCloseTo(8.4, 2);
+    expect(result.cardRewardCalc?.formula).toContain("1,000 bonus pts × 0.7¢ = $8.40");
+    expect(result.cardRewardCalc?.description).toContain("plus a fixed bonus of 1,000");
+  });
+
+  it("should stack boosted multipliers and fixed bonuses", () => {
+    const booking: NetCostBooking = {
+      ...mockBaseBooking,
+      hotelChain: {
+        ...mockBaseBooking.hotelChain,
+        id: "marriott-id",
+      } as unknown as HotelChain,
+      creditCard: {
+        name: "Marriott Bevy Boosted",
+        rewardRate: 2,
+        pointType: { name: "Bonvoy Pts", centsPerPoint: 0.007 },
+        rewardRules: [
+          {
+            rewardType: "multiplier",
+            rewardValue: 6, // Boosted to 6x
+            hotelChainId: "marriott-id",
+            otaAgencyId: null,
+          },
+          {
+            rewardType: "fixed",
+            rewardValue: 1000, // Plus 1000 bonus
+            hotelChainId: "marriott-id",
+            otaAgencyId: null,
+          },
+        ],
+      },
+    };
+    const result = getNetCostBreakdown(booking);
+    // boosted base: 100 total * 6x * 0.007 = 4.20
+    // fixed bonus: 1000 pts * 0.007 = 7.00
+    // total: 4.20 + 7.00 = 11.20
+    expect(result.cardReward).toBeCloseTo(11.2, 2);
+    expect(result.cardRewardCalc?.formula).toContain("($100.00 × 6x) + 1,000 bonus pts");
+    expect(result.cardRewardCalc?.description).toContain(
+      "boosted 6x Bonvoy Pts plus a fixed bonus of 1,000"
+    );
+  });
+
+  it("should ignore hotel chain boost if booking is via a different OTA", () => {
+    const booking: NetCostBooking = {
+      ...mockBaseBooking,
+      otaAgencyId: "some-other-ota",
+      hotelChain: {
+        ...mockBaseBooking.hotelChain,
+        id: "marriott-id",
+      } as unknown as HotelChain,
+      creditCard: {
+        name: "Marriott Card",
+        rewardRate: 2,
+        pointType: { name: "Bonvoy Pts", centsPerPoint: 0.007 },
+        rewardRules: [
+          {
+            rewardType: "multiplier",
+            rewardValue: 6,
+            hotelChainId: "marriott-id",
+            otaAgencyId: null,
+          },
+        ],
+      },
+    };
+    const result = getNetCostBreakdown(booking);
+    // Should NOT get 6x because it's an OTA booking.
+    // Fallback to base 2x: 100 total * 2x * 0.007 = 1.40
+    expect(result.cardReward).toBeCloseTo(1.4, 2);
+    expect(result.cardRewardCalc?.formula).toContain("2x");
+    expect(result.cardRewardCalc?.formula).not.toContain("6x");
   });
 });
