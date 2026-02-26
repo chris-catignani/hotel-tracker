@@ -65,7 +65,7 @@ describe("BookingCard", () => {
     expect(deleteBtn).toBeInTheDocument();
 
     await user.click(deleteBtn);
-    expect(onDelete).toHaveBeenCalledWith(1);
+    expect(onDelete).toHaveBeenCalledWith("1");
   });
 
   it("calculates and displays the correct net cost per night", async () => {
