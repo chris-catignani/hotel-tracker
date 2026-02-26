@@ -40,6 +40,8 @@ interface BookingWithRelations {
   loyaltyPointsEarned: number | null;
   pointsRedeemed: number | null;
   notes: string | null;
+  hotelChainId: string;
+  otaAgencyId: string | null;
   hotelChain: {
     id: string;
     name: string;

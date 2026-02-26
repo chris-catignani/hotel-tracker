@@ -63,6 +63,7 @@ interface Booking {
   notes: string | null;
   createdAt: string;
   bookingSource: string | null;
+  otaAgencyId: string | null;
   otaAgency: { id: string; name: string } | null;
   hotelChain: {
     id: string;

@@ -27,7 +27,8 @@ const mockCards = [
 describe("CreditCardsTab", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    global.fetch = vi.fn().mockImplementation((url: string) => {
+    global.fetch = vi.fn().mockImplementation((input: string | Request | URL) => {
+      const url = typeof input === "string" ? input : input.url;
       if (url.includes("/api/credit-cards"))
         return Promise.resolve({ ok: true, json: async () => [] } as Response);
       if (url.includes("/api/point-types"))
@@ -60,7 +61,8 @@ describe("CreditCardsTab", () => {
   });
 
   it("shows fetched credit cards", async () => {
-    vi.mocked(global.fetch).mockImplementation((url: string) => {
+    vi.mocked(global.fetch).mockImplementation((input: string | Request | URL) => {
+      const url = typeof input === "string" ? input : input.url;
       if (url.includes("/api/credit-cards"))
         return Promise.resolve({ ok: true, json: async () => [mockCards[0]] } as Response);
       return Promise.resolve({ ok: true, json: async () => [] } as Response);
@@ -76,7 +78,8 @@ describe("CreditCardsTab", () => {
   });
 
   it("shows a Delete button for each credit card", async () => {
-    vi.mocked(global.fetch).mockImplementation((url: string) => {
+    vi.mocked(global.fetch).mockImplementation((input: string | Request | URL) => {
+      const url = typeof input === "string" ? input : input.url;
       if (url.includes("/api/credit-cards"))
         return Promise.resolve({ ok: true, json: async () => mockCards } as Response);
       return Promise.resolve({ ok: true, json: async () => [] } as Response);
@@ -94,7 +97,8 @@ describe("CreditCardsTab", () => {
 
   it("opens confirmation dialog when Delete is clicked", async () => {
     const user = userEvent.setup();
-    vi.mocked(global.fetch).mockImplementation((url: string) => {
+    vi.mocked(global.fetch).mockImplementation((input: string | Request | URL) => {
+      const url = typeof input === "string" ? input : input.url;
       if (url.includes("/api/credit-cards"))
         return Promise.resolve({ ok: true, json: async () => [mockCards[0]] } as Response);
       return Promise.resolve({ ok: true, json: async () => [] } as Response);
@@ -116,7 +120,8 @@ describe("CreditCardsTab", () => {
     const user = userEvent.setup();
     const fetchMock = vi
       .mocked(global.fetch)
-      .mockImplementation((url: string, options?: RequestInit) => {
+      .mockImplementation((input: string | Request | URL, options?: RequestInit) => {
+        const url = typeof input === "string" ? input : input.url;
         if (
           url === "/api/credit-cards" &&
           (!options || options.method === undefined || options.method === "GET")
@@ -150,17 +155,23 @@ describe("CreditCardsTab", () => {
 
   it("shows error if deletion fails", async () => {
     const user = userEvent.setup();
-    vi.mocked(global.fetch).mockImplementation((url: string, options?: RequestInit) => {
-      if (url === "/api/credit-cards" && (!options || !options.method || options.method === "GET"))
-        return Promise.resolve({ ok: true, json: async () => [mockCards[0]] } as Response);
-      if (url.includes("/api/credit-cards/1") && options?.method === "DELETE")
-        return Promise.resolve({
-          ok: false,
-          status: 500,
-          json: async () => ({}),
-        } as Response);
-      return Promise.resolve({ ok: true, json: async () => [] } as Response);
-    });
+    vi.mocked(global.fetch).mockImplementation(
+      (input: string | Request | URL, options?: RequestInit) => {
+        const url = typeof input === "string" ? input : input.url;
+        if (
+          url === "/api/credit-cards" &&
+          (!options || !options.method || options.method === "GET")
+        )
+          return Promise.resolve({ ok: true, json: async () => [mockCards[0]] } as Response);
+        if (url.includes("/api/credit-cards/1") && options?.method === "DELETE")
+          return Promise.resolve({
+            ok: false,
+            status: 500,
+            json: async () => ({}),
+          } as Response);
+        return Promise.resolve({ ok: true, json: async () => [] } as Response);
+      }
+    );
 
     await act(async () => {
       render(<CreditCardsTab />);
@@ -176,11 +187,14 @@ describe("CreditCardsTab", () => {
 
   it("does not call DELETE if dialog is cancelled", async () => {
     const user = userEvent.setup();
-    const fetchMock = vi.mocked(global.fetch).mockImplementation((url: string) => {
-      if (url.includes("/api/credit-cards"))
-        return Promise.resolve({ ok: true, json: async () => [mockCards[0]] } as Response);
-      return Promise.resolve({ ok: true, json: async () => [] } as Response);
-    });
+    const fetchMock = vi
+      .mocked(global.fetch)
+      .mockImplementation((input: string | Request | URL) => {
+        const url = typeof input === "string" ? input : input.url;
+        if (url.includes("/api/credit-cards"))
+          return Promise.resolve({ ok: true, json: async () => [mockCards[0]] } as Response);
+        return Promise.resolve({ ok: true, json: async () => [] } as Response);
+      });
 
     await act(async () => {
       render(<CreditCardsTab />);
@@ -197,7 +211,8 @@ describe("CreditCardsTab", () => {
   });
 
   it("shows desktop table delete button", async () => {
-    vi.mocked(global.fetch).mockImplementation((url: string) => {
+    vi.mocked(global.fetch).mockImplementation((input: string | Request | URL) => {
+      const url = typeof input === "string" ? input : input.url;
       if (url.includes("/api/credit-cards"))
         return Promise.resolve({ ok: true, json: async () => [mockCards[0]] } as Response);
       return Promise.resolve({ ok: true, json: async () => [] } as Response);

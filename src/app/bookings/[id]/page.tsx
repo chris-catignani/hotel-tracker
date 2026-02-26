@@ -82,6 +82,7 @@ interface Booking extends Omit<NetCostBooking, "bookingPromotions"> {
   notes: string | null;
   createdAt: string;
   bookingSource: string | null;
+  otaAgencyId: string | null;
   otaAgency: { id: string; name: string } | null;
   certificates: BookingCertificate[];
   benefits: BookingBenefit[];
