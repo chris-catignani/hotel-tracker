@@ -76,6 +76,6 @@ describe("PromotionForm", () => {
 
     expect(handleSubmit).toHaveBeenCalled();
     const submittedData = handleSubmit.mock.calls[0][0] as PromotionFormData;
-    expect(submittedData.validDaysAfterRegistration).toBe(90);
+    expect(submittedData.restrictions?.validDaysAfterRegistration).toBe("90");
   });
 });

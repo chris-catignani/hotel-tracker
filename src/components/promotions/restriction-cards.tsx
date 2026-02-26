@@ -1,13 +1,14 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DatePicker } from "@/components/ui/date-picker";
 import { parseISO } from "date-fns";
 import { X } from "lucide-react";
-import type { PromotionFormData, PromotionExclusion } from "@/lib/types";
+import type { PromotionRestrictionsFormData } from "@/lib/types";
 
 // ─── Types & constants ────────────────────────────────────────────────────────
 
@@ -19,7 +20,7 @@ export type RestrictionKey =
   | "once_per_sub_brand"
   | "tie_in_cards"
   | "registration"
-  | "sub_brand_exclusions";
+  | "sub_brand_scope";
 
 /** Canonical display order — cards and picker options always follow this order. */
 export const RESTRICTION_ORDER: RestrictionKey[] = [
@@ -30,7 +31,16 @@ export const RESTRICTION_ORDER: RestrictionKey[] = [
   "once_per_sub_brand",
   "tie_in_cards",
   "registration",
-  "sub_brand_exclusions",
+  "sub_brand_scope",
+];
+
+/** Restriction keys available at the benefit level (not all apply per-benefit). */
+export const BENEFIT_RESTRICTION_ORDER: RestrictionKey[] = [
+  "min_spend",
+  "redemption_caps",
+  "once_per_sub_brand",
+  "tie_in_cards",
+  "sub_brand_scope",
 ];
 
 export const RESTRICTION_LABELS: Record<RestrictionKey, string> = {
@@ -41,30 +51,27 @@ export const RESTRICTION_LABELS: Record<RestrictionKey, string> = {
   once_per_sub_brand: "Once Per Sub-Brand",
   tie_in_cards: "Tie-In Credit Cards",
   registration: "Registration & Validity",
-  sub_brand_exclusions: "Sub-Brand Exclusions",
+  sub_brand_scope: "Sub-Brand Scope",
 };
 
-// ─── Auto-detect active restrictions from saved promotion data ────────────────
+// ─── Auto-detect active restrictions from saved restrictions data ─────────────
 
 export function deriveActiveRestrictions(
-  data: (Partial<PromotionFormData> & { exclusions?: PromotionExclusion[] }) | undefined
+  r: PromotionRestrictionsFormData | null | undefined
 ): Set<RestrictionKey> {
   const keys = new Set<RestrictionKey>();
-  if (!data) return keys;
-  if (data.minSpend != null) keys.add("min_spend");
-  if (data.bookByDate) keys.add("book_by_date");
-  if (data.minNightsRequired != null) keys.add("min_nights");
-  if (
-    data.maxRedemptionCount != null ||
-    data.maxRedemptionValue != null ||
-    data.maxTotalBonusPoints != null
-  )
+  if (!r) return keys;
+  if (r.minSpend) keys.add("min_spend");
+  if (r.bookByDate) keys.add("book_by_date");
+  if (r.minNightsRequired) keys.add("min_nights");
+  if (r.maxRedemptionCount || r.maxRedemptionValue || r.maxTotalBonusPoints)
     keys.add("redemption_caps");
-  if (data.oncePerSubBrand === true) keys.add("once_per_sub_brand");
-  if (data.tieInCreditCardIds && data.tieInCreditCardIds.length > 0) keys.add("tie_in_cards");
-  if (data.registrationDeadline || data.validDaysAfterRegistration != null || data.registrationDate)
+  if (r.oncePerSubBrand === true) keys.add("once_per_sub_brand");
+  if (r.tieInCreditCardIds && r.tieInCreditCardIds.length > 0) keys.add("tie_in_cards");
+  if (r.registrationDeadline || r.validDaysAfterRegistration || r.registrationDate)
     keys.add("registration");
-  if (data.exclusions && data.exclusions.length > 0) keys.add("sub_brand_exclusions");
+  if (r.subBrandIncludeIds.length > 0 || r.subBrandExcludeIds.length > 0)
+    keys.add("sub_brand_scope");
   return keys;
 }
 
@@ -283,8 +290,7 @@ export function TieInCardsCard({
   return (
     <RestrictionCard title="Tie-In Credit Cards" testId="tie_in_cards" onRemove={onRemove}>
       <p className="text-xs text-muted-foreground">
-        Individual benefits can be marked as &ldquo;tie-in&rdquo; — they only apply when the
-        booking&apos;s payment card matches one of these cards.
+        This benefit only applies when the booking&apos;s payment card matches one of these cards.
       </p>
       <div className="flex flex-col gap-2" data-testid="tie-in-credit-cards">
         {creditCards.map((card) => (
@@ -332,6 +338,7 @@ export function RegistrationCard({
   onValidDaysChange,
   onRegistrationDateChange,
   onRemove,
+  showRegistrationDate = true,
 }: {
   registrationDeadline: string;
   validDaysAfterRegistration: string;
@@ -340,6 +347,7 @@ export function RegistrationCard({
   onValidDaysChange: (val: string) => void;
   onRegistrationDateChange: (date?: Date) => void;
   onRemove: () => void;
+  showRegistrationDate?: boolean;
 }) {
   const registrationDeadlineObj = registrationDeadline ? parseISO(registrationDeadline) : undefined;
   const registrationDateObj = registrationDate ? parseISO(registrationDate) : undefined;
@@ -374,48 +382,94 @@ export function RegistrationCard({
           If set, matching logic will use Registration Date + Duration as the effective end date.
         </p>
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="registrationDate">Your Registration Date</Label>
-        <DatePicker
-          id="registrationDate"
-          date={registrationDateObj}
-          setDate={onRegistrationDateChange}
-          placeholder="When did you register?"
-          data-testid="promotion-registration-date"
-        />
-        <p className="text-[0.7rem] text-muted-foreground">
-          Recording your registration date activates the personal validity window.
-        </p>
-      </div>
+      {showRegistrationDate && (
+        <div className="space-y-2">
+          <Label htmlFor="registrationDate">Your Registration Date</Label>
+          <DatePicker
+            id="registrationDate"
+            date={registrationDateObj}
+            setDate={onRegistrationDateChange}
+            placeholder="When did you register?"
+            data-testid="promotion-registration-date"
+          />
+          <p className="text-[0.7rem] text-muted-foreground">
+            Recording your registration date activates the personal validity window.
+          </p>
+        </div>
+      )}
     </RestrictionCard>
   );
 }
 
-export function SubBrandExclusionsCard({
+export function SubBrandScopeCard({
   subBrands,
-  exclusionSubBrandIds,
-  onExclusionChange,
+  subBrandIncludeIds,
+  subBrandExcludeIds,
+  onIncludeChange,
+  onExcludeChange,
   onRemove,
 }: {
   subBrands: Array<{ id: string; name: string }>;
-  exclusionSubBrandIds: string[];
-  onExclusionChange: (subBrandId: string, checked: boolean) => void;
+  subBrandIncludeIds: string[];
+  subBrandExcludeIds: string[];
+  onIncludeChange: (subBrandId: string, checked: boolean) => void;
+  onExcludeChange: (subBrandId: string, checked: boolean) => void;
   onRemove: () => void;
 }) {
+  const [mode, setMode] = useState<"include" | "exclude">(
+    subBrandIncludeIds.length > 0 ? "include" : "exclude"
+  );
+
   return (
-    <RestrictionCard title="Sub-Brand Exclusions" testId="sub_brand_exclusions" onRemove={onRemove}>
+    <RestrictionCard title="Sub-Brand Scope" testId="sub_brand_scope" onRemove={onRemove}>
+      <div className="flex gap-2 mb-2">
+        <button
+          type="button"
+          onClick={() => setMode("include")}
+          className={`px-3 py-1 rounded text-xs font-medium border transition-colors ${
+            mode === "include"
+              ? "bg-primary text-primary-foreground border-primary"
+              : "border-border hover:bg-accent"
+          }`}
+          data-testid="sub-brand-scope-mode-include"
+        >
+          Include only
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode("exclude")}
+          className={`px-3 py-1 rounded text-xs font-medium border transition-colors ${
+            mode === "exclude"
+              ? "bg-primary text-primary-foreground border-primary"
+              : "border-border hover:bg-accent"
+          }`}
+          data-testid="sub-brand-scope-mode-exclude"
+        >
+          Exclude
+        </button>
+      </div>
       <p className="text-xs text-muted-foreground">
-        This promotion will not apply to bookings at the selected sub-brands.
+        {mode === "include"
+          ? "Only applies to bookings at the selected sub-brands."
+          : "Applies to all sub-brands EXCEPT the selected ones."}
       </p>
-      <div className="flex flex-col gap-2" data-testid="exclusion-sub-brands">
+      <div className="flex flex-col gap-2" data-testid="sub-brand-scope-list">
         {subBrands.map((sb) => (
           <label key={sb.id} className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
               className="size-4 rounded border-gray-300"
-              checked={exclusionSubBrandIds.includes(sb.id)}
-              onChange={(e) => onExclusionChange(sb.id, e.target.checked)}
-              data-testid={`exclusion-sub-brand-${sb.id}`}
+              checked={
+                mode === "include"
+                  ? subBrandIncludeIds.includes(sb.id)
+                  : subBrandExcludeIds.includes(sb.id)
+              }
+              onChange={(e) =>
+                mode === "include"
+                  ? onIncludeChange(sb.id, e.target.checked)
+                  : onExcludeChange(sb.id, e.target.checked)
+              }
+              data-testid={`sub-brand-scope-${mode}-${sb.id}`}
             />
             <span className="text-sm">{sb.name}</span>
           </label>

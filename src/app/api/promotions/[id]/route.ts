@@ -2,22 +2,87 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { matchPromotionsForAffectedBookings, reevaluateBookings } from "@/lib/promotion-matching";
-import { PromotionBenefitFormData, PromotionTierFormData, PromotionFormData } from "@/lib/types";
+import {
+  PromotionBenefitFormData,
+  PromotionTierFormData,
+  PromotionFormData,
+  PromotionRestrictionsFormData,
+} from "@/lib/types";
 
 const PROMOTION_INCLUDE = {
   hotelChain: true,
-  hotelChainSubBrand: true,
   creditCard: true,
-  tieInCards: { include: { creditCard: true } },
   shoppingPortal: true,
-  benefits: { orderBy: { sortOrder: "asc" as const } },
+  restrictions: {
+    include: { subBrandRestrictions: true, tieInCards: true },
+  },
+  benefits: {
+    orderBy: { sortOrder: "asc" as const },
+    include: {
+      restrictions: { include: { subBrandRestrictions: true, tieInCards: true } },
+    },
+  },
   tiers: {
     orderBy: { minStays: "asc" as const },
-    include: { benefits: { orderBy: { sortOrder: "asc" as const } } },
+    include: {
+      benefits: {
+        orderBy: { sortOrder: "asc" as const },
+        include: {
+          restrictions: { include: { subBrandRestrictions: true, tieInCards: true } },
+        },
+      },
+    },
   },
-  exclusions: true,
   userPromotions: true,
 } as const;
+
+function buildRestrictionsCreateData(r: PromotionRestrictionsFormData) {
+  return {
+    minSpend: r.minSpend ? Number(r.minSpend) : null,
+    minNightsRequired: r.minNightsRequired ? Number(r.minNightsRequired) : null,
+    nightsStackable: r.nightsStackable ?? false,
+    maxRedemptionCount: r.maxRedemptionCount ? Number(r.maxRedemptionCount) : null,
+    maxRedemptionValue: r.maxRedemptionValue ? Number(r.maxRedemptionValue) : null,
+    maxTotalBonusPoints: r.maxTotalBonusPoints ? Number(r.maxTotalBonusPoints) : null,
+    oncePerSubBrand: r.oncePerSubBrand ?? false,
+    bookByDate: r.bookByDate ? new Date(r.bookByDate) : null,
+    registrationDeadline: r.registrationDeadline ? new Date(r.registrationDeadline) : null,
+    validDaysAfterRegistration: r.validDaysAfterRegistration
+      ? Number(r.validDaysAfterRegistration)
+      : null,
+    tieInRequiresPayment: r.tieInRequiresPayment ?? false,
+    subBrandRestrictions: {
+      create: [
+        ...(r.subBrandIncludeIds ?? []).map((id) => ({
+          hotelChainSubBrandId: id,
+          mode: "include" as const,
+        })),
+        ...(r.subBrandExcludeIds ?? []).map((id) => ({
+          hotelChainSubBrandId: id,
+          mode: "exclude" as const,
+        })),
+      ],
+    },
+    tieInCards: {
+      create: (r.tieInCreditCardIds ?? []).map((id) => ({ creditCardId: id })),
+    },
+  };
+}
+
+function buildBenefitCreateData(b: PromotionBenefitFormData, i: number) {
+  const base = {
+    rewardType: b.rewardType,
+    valueType: b.valueType,
+    value: Number(b.value),
+    certType: b.certType || null,
+    pointsMultiplierBasis: b.pointsMultiplierBasis || null,
+    sortOrder: b.sortOrder ?? i,
+  };
+  if (b.restrictions) {
+    return { ...base, restrictions: { create: buildRestrictionsCreateData(b.restrictions) } };
+  }
+  return base;
+}
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -47,66 +112,142 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       benefits,
       tiers,
       hotelChainId,
-      hotelChainSubBrandId,
       creditCardId,
       shoppingPortalId,
-      minSpend,
       startDate,
       endDate,
       isActive,
-      maxRedemptionCount,
-      maxRedemptionValue,
-      maxTotalBonusPoints,
-      minNightsRequired,
-      nightsStackable,
-      bookByDate,
-      oncePerSubBrand,
-      exclusionSubBrandIds,
-      tieInCreditCardIds,
-      tieInRequiresPayment,
-      registrationDeadline,
-      validDaysAfterRegistration,
-      registrationDate,
-    } = body as PromotionFormData & { exclusionSubBrandIds?: string[] };
+      restrictions,
+    } = body as PromotionFormData;
+
+    // registrationDate is stored in UserPromotion, extracted from restrictions
+    const registrationDate = (restrictions as PromotionRestrictionsFormData | null | undefined)
+      ?.registrationDate;
 
     const data: Record<string, unknown> = {};
     if (name !== undefined) data.name = name;
     if (type !== undefined) data.type = type;
     if (hotelChainId !== undefined) data.hotelChainId = hotelChainId || null;
-    if (hotelChainSubBrandId !== undefined)
-      data.hotelChainSubBrandId = hotelChainSubBrandId || null;
     if (creditCardId !== undefined) data.creditCardId = creditCardId || null;
     if (shoppingPortalId !== undefined) data.shoppingPortalId = shoppingPortalId || null;
-    if (minSpend !== undefined) data.minSpend = minSpend != null ? Number(minSpend) : null;
     if (startDate !== undefined) data.startDate = startDate ? new Date(startDate) : null;
     if (endDate !== undefined) data.endDate = endDate ? new Date(endDate) : null;
     if (isActive !== undefined) data.isActive = isActive;
-    if (maxRedemptionCount !== undefined)
-      data.maxRedemptionCount = maxRedemptionCount != null ? Number(maxRedemptionCount) : null;
-    if (maxRedemptionValue !== undefined)
-      data.maxRedemptionValue = maxRedemptionValue != null ? Number(maxRedemptionValue) : null;
-    if (maxTotalBonusPoints !== undefined)
-      data.maxTotalBonusPoints = maxTotalBonusPoints != null ? Number(maxTotalBonusPoints) : null;
-    if (minNightsRequired !== undefined)
-      data.minNightsRequired = minNightsRequired != null ? Number(minNightsRequired) : null;
-    if (nightsStackable !== undefined) data.nightsStackable = nightsStackable;
-    if (bookByDate !== undefined) data.bookByDate = bookByDate ? new Date(bookByDate) : null;
-    if (oncePerSubBrand !== undefined) data.oncePerSubBrand = oncePerSubBrand;
-    if (tieInRequiresPayment !== undefined) data.tieInRequiresPayment = tieInRequiresPayment;
-    if (registrationDeadline !== undefined)
-      data.registrationDeadline = registrationDeadline ? new Date(registrationDeadline) : null;
-    if (validDaysAfterRegistration !== undefined)
-      data.validDaysAfterRegistration =
-        validDaysAfterRegistration != null ? Number(validDaysAfterRegistration) : null;
 
     const hasTiers = benefits === undefined ? tiers !== undefined : false;
     const replacingBenefitsOrTiers = benefits !== undefined || tiers !== undefined;
 
     const promotion = await prisma.$transaction(async (tx) => {
+      // Handle restrictions upsert
+      if (restrictions !== undefined) {
+        // Fetch existing promotion to get restrictionsId
+        const existingPromo = await tx.promotion.findUnique({
+          where: { id },
+          select: { restrictionsId: true },
+        });
+
+        if (restrictions === null) {
+          // Clear restrictions: delete the existing record if present
+          if (existingPromo?.restrictionsId) {
+            // The cascade will clean up subBrandRestrictions and tieInCards
+            await tx.promotionRestrictions.delete({
+              where: { id: existingPromo.restrictionsId },
+            });
+            data.restrictionsId = null;
+          }
+        } else {
+          // Upsert restrictions
+          if (existingPromo?.restrictionsId) {
+            // Delete children and recreate
+            await tx.promotionSubBrandRestriction.deleteMany({
+              where: { promotionRestrictionsId: existingPromo.restrictionsId },
+            });
+            await tx.promotionRestrictionTieInCard.deleteMany({
+              where: { promotionRestrictionsId: existingPromo.restrictionsId },
+            });
+            // Update scalar fields and recreate children
+            await tx.promotionRestrictions.update({
+              where: { id: existingPromo.restrictionsId },
+              data: {
+                minSpend: restrictions.minSpend ? Number(restrictions.minSpend) : null,
+                minNightsRequired: restrictions.minNightsRequired
+                  ? Number(restrictions.minNightsRequired)
+                  : null,
+                nightsStackable: restrictions.nightsStackable ?? false,
+                maxRedemptionCount: restrictions.maxRedemptionCount
+                  ? Number(restrictions.maxRedemptionCount)
+                  : null,
+                maxRedemptionValue: restrictions.maxRedemptionValue
+                  ? Number(restrictions.maxRedemptionValue)
+                  : null,
+                maxTotalBonusPoints: restrictions.maxTotalBonusPoints
+                  ? Number(restrictions.maxTotalBonusPoints)
+                  : null,
+                oncePerSubBrand: restrictions.oncePerSubBrand ?? false,
+                bookByDate: restrictions.bookByDate ? new Date(restrictions.bookByDate) : null,
+                registrationDeadline: restrictions.registrationDeadline
+                  ? new Date(restrictions.registrationDeadline)
+                  : null,
+                validDaysAfterRegistration: restrictions.validDaysAfterRegistration
+                  ? Number(restrictions.validDaysAfterRegistration)
+                  : null,
+                tieInRequiresPayment: restrictions.tieInRequiresPayment ?? false,
+                subBrandRestrictions: {
+                  create: [
+                    ...(restrictions.subBrandIncludeIds ?? []).map((sbId) => ({
+                      hotelChainSubBrandId: sbId,
+                      mode: "include" as const,
+                    })),
+                    ...(restrictions.subBrandExcludeIds ?? []).map((sbId) => ({
+                      hotelChainSubBrandId: sbId,
+                      mode: "exclude" as const,
+                    })),
+                  ],
+                },
+                tieInCards: {
+                  create: (restrictions.tieInCreditCardIds ?? []).map((cardId) => ({
+                    creditCardId: cardId,
+                  })),
+                },
+              },
+            });
+            // restrictionsId stays the same
+          } else {
+            // Create new restrictions and link
+            const newRestrictions = await tx.promotionRestrictions.create({
+              data: buildRestrictionsCreateData(restrictions),
+            });
+            data.restrictionsId = newRestrictions.id;
+          }
+        }
+      }
+
       if (replacingBenefitsOrTiers) {
-        // Delete flat benefits (those directly on the promotion)
+        // Delete flat benefits (those directly on the promotion) along with their restrictions
+        const benefitsToDelete = await tx.promotionBenefit.findMany({
+          where: { promotionId: id },
+          select: { id: true, restrictionsId: true },
+        });
+        for (const b of benefitsToDelete) {
+          if (b.restrictionsId) {
+            await tx.promotionRestrictions.delete({ where: { id: b.restrictionsId } });
+          }
+        }
         await tx.promotionBenefit.deleteMany({ where: { promotionId: id } });
+
         // Delete all tiers (cascade will remove tier benefits)
+        // But we need to handle benefit restrictions first
+        const tiersToDelete = await tx.promotionTier.findMany({
+          where: { promotionId: id },
+          include: { benefits: { select: { id: true, restrictionsId: true } } },
+        });
+        for (const tier of tiersToDelete) {
+          for (const b of tier.benefits) {
+            if (b.restrictionsId) {
+              await tx.promotionRestrictions.delete({ where: { id: b.restrictionsId } });
+            }
+          }
+        }
         await tx.promotionTier.deleteMany({ where: { promotionId: id } });
       }
 
@@ -116,56 +257,18 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
             minStays: tier.minStays,
             maxStays: tier.maxStays ?? null,
             benefits: {
-              create: (tier.benefits || []).map((b: PromotionBenefitFormData, i: number) => ({
-                rewardType: b.rewardType,
-                valueType: b.valueType,
-                value: Number(b.value),
-                certType: b.certType || null,
-                pointsMultiplierBasis: b.pointsMultiplierBasis || null,
-                isTieIn: b.isTieIn ?? false,
-                sortOrder: b.sortOrder ?? i,
-              })),
+              create: (tier.benefits || []).map((b: PromotionBenefitFormData, i: number) =>
+                buildBenefitCreateData(b, i)
+              ),
             },
           })),
         };
       } else if (benefits !== undefined && !hasTiers) {
         data.benefits = {
-          create: ((benefits as PromotionBenefitFormData[]) || []).map((b, i) => ({
-            rewardType: b.rewardType,
-            valueType: b.valueType,
-            value: Number(b.value),
-            certType: b.certType || null,
-            pointsMultiplierBasis: b.pointsMultiplierBasis || null,
-            isTieIn: b.isTieIn ?? false,
-            sortOrder: b.sortOrder ?? i,
-          })),
+          create: ((benefits as PromotionBenefitFormData[]) || []).map((b, i) =>
+            buildBenefitCreateData(b, i)
+          ),
         };
-      }
-
-      // Replace exclusions if provided
-      if (exclusionSubBrandIds !== undefined) {
-        await tx.promotionExclusion.deleteMany({ where: { promotionId: id } });
-        if (exclusionSubBrandIds.length > 0) {
-          await tx.promotionExclusion.createMany({
-            data: exclusionSubBrandIds.map((subBrandId) => ({
-              promotionId: id,
-              hotelChainSubBrandId: subBrandId,
-            })),
-          });
-        }
-      }
-
-      // Replace tie-in cards if provided
-      if (tieInCreditCardIds !== undefined) {
-        await tx.promotionTieInCard.deleteMany({ where: { promotionId: id } });
-        if (tieInCreditCardIds.length > 0) {
-          await tx.promotionTieInCard.createMany({
-            data: tieInCreditCardIds.map((cardId) => ({
-              promotionId: id,
-              creditCardId: cardId,
-            })),
-          });
-        }
       }
 
       // Handle UserPromotion
@@ -209,12 +312,17 @@ export async function DELETE(
       select: { id: true },
     });
 
+    // Delete promotion-level restrictions if present
+    const promo = await prisma.promotion.findUnique({
+      where: { id },
+      select: { restrictionsId: true },
+    });
+    if (promo?.restrictionsId) {
+      await prisma.promotionRestrictions.delete({ where: { id: promo.restrictionsId } });
+    }
+
     await prisma.promotion.delete({ where: { id: id } });
 
-    // Re-evaluate affected bookings after deletion.
-    // Note: While Prisma cascade deletes will remove BookingPromotion records,
-    // we manually re-evaluate to ensure the bookings are correctly updated
-    // (e.g., if other promotions now apply or if summary totals need refresh).
     if (affectedBookings.length > 0) {
       await reevaluateBookings(affectedBookings.map((b) => b.id));
     }

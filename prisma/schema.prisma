@@ -45,6 +45,11 @@ enum CreditCardRewardRuleType {
   fixed
 }
 
+enum SubBrandRestrictionMode {
+  include
+  exclude
+}
+
 model PointType {
   id              String           @id @default(cuid())
   name            String
@@ -75,14 +80,13 @@ model HotelChain {
 }
 
 model HotelChainSubBrand {
-  id                  String               @id @default(cuid())
-  hotelChainId        String               @map("hotel_chain_id")
-  hotelChain          HotelChain           @relation(fields: [hotelChainId], references: [id], onDelete: Cascade)
-  name                String
-  basePointRate       Decimal?             @map("base_point_rate") @db.Decimal(10, 4)
-  bookings            Booking[]
-  promotions          Promotion[]
-  promotionExclusions PromotionExclusion[]
+  id                   String                        @id @default(cuid())
+  hotelChainId         String                        @map("hotel_chain_id")
+  hotelChain           HotelChain                    @relation(fields: [hotelChainId], references: [id], onDelete: Cascade)
+  name                 String
+  basePointRate        Decimal?                      @map("base_point_rate") @db.Decimal(10, 4)
+  bookings             Booking[]
+  subBrandRestrictions PromotionSubBrandRestriction[]
 
   @@unique([hotelChainId, name])
   @@map("hotel_chain_sub_brands")
@@ -114,17 +118,17 @@ model UserStatus {
 }
 
 model CreditCard {
-  id          String                 @id @default(cuid())
-  name        String
-  rewardType  String                 @map("reward_type") // "points" or "cashback"
-  rewardRate  Decimal                @map("reward_rate") @db.Decimal(10, 4) // e.g. 0.05 for 5x
-  pointTypeId String?                @map("point_type_id")
-  pointType   PointType?             @relation(fields: [pointTypeId], references: [id])
-  isDeleted   Boolean                @default(false) @map("is_deleted")
-  rewardRules CreditCardRewardRule[]
-  bookings    Booking[]
-  promotions  Promotion[]            @relation("PromotionCreditCard")
-  tieInCards  PromotionTieInCard[]
+  id                    String                        @id @default(cuid())
+  name                  String
+  rewardType            String                        @map("reward_type") // "points" or "cashback"
+  rewardRate            Decimal                       @map("reward_rate") @db.Decimal(10, 4) // e.g. 0.05 for 5x
+  pointTypeId           String?                       @map("point_type_id")
+  pointType             PointType?                    @relation(fields: [pointTypeId], references: [id])
+  isDeleted             Boolean                       @default(false) @map("is_deleted")
+  rewardRules           CreditCardRewardRule[]
+  bookings              Booking[]
+  promotions            Promotion[]                   @relation("PromotionCreditCard")
+  restrictionTieInCards PromotionRestrictionTieInCard[]
 
   @@map("credit_cards")
 }
@@ -231,39 +235,71 @@ enum PointsMultiplierBasis {
   base_and_elite
 }
 
+model PromotionRestrictions {
+  id                         String                        @id @default(cuid())
+  minSpend                   Decimal?                      @map("min_spend") @db.Decimal(10, 2)
+  minNightsRequired          Int?                          @map("min_nights_required")
+  nightsStackable            Boolean                       @default(false) @map("nights_stackable")
+  maxRedemptionCount         Int?                          @map("max_redemption_count")
+  maxRedemptionValue         Decimal?                      @map("max_redemption_value") @db.Decimal(10, 2)
+  maxTotalBonusPoints        Int?                          @map("max_total_bonus_points")
+  oncePerSubBrand            Boolean                       @default(false) @map("once_per_sub_brand")
+  bookByDate                 DateTime?                     @map("book_by_date") @db.Date
+  registrationDeadline       DateTime?                     @map("registration_deadline") @db.Date
+  validDaysAfterRegistration Int?                          @map("valid_days_after_registration")
+  tieInRequiresPayment       Boolean                       @default(false) @map("tie_in_requires_payment")
+  subBrandRestrictions       PromotionSubBrandRestriction[]
+  tieInCards                 PromotionRestrictionTieInCard[]
+  // Exactly one of these is set
+  promotion                  Promotion?
+  promotionBenefit           PromotionBenefit?
+
+  @@map("promotion_restrictions")
+}
+
+model PromotionSubBrandRestriction {
+  id                      String                  @id @default(cuid())
+  promotionRestrictionsId String                  @map("promotion_restrictions_id")
+  promotionRestrictions   PromotionRestrictions   @relation(fields: [promotionRestrictionsId], references: [id], onDelete: Cascade)
+  hotelChainSubBrandId    String                  @map("hotel_chain_sub_brand_id")
+  hotelChainSubBrand      HotelChainSubBrand      @relation(fields: [hotelChainSubBrandId], references: [id])
+  mode                    SubBrandRestrictionMode
+
+  @@unique([promotionRestrictionsId, hotelChainSubBrandId])
+  @@map("promotion_sub_brand_restrictions")
+}
+
+model PromotionRestrictionTieInCard {
+  id                      String                @id @default(cuid())
+  promotionRestrictionsId String                @map("promotion_restrictions_id")
+  promotionRestrictions   PromotionRestrictions @relation(fields: [promotionRestrictionsId], references: [id], onDelete: Cascade)
+  creditCardId            String                @map("credit_card_id")
+  creditCard              CreditCard            @relation(fields: [creditCardId], references: [id])
+
+  @@unique([promotionRestrictionsId, creditCardId])
+  @@map("promotion_restriction_tie_in_cards")
+}
+
 model Promotion {
-  id                         String               @id @default(cuid())
-  name                       String
-  type                       PromotionType
-  hotelChainId               String?              @map("hotel_chain_id")
-  hotelChain                 HotelChain?          @relation(fields: [hotelChainId], references: [id])
-  hotelChainSubBrandId       String?              @map("hotel_chain_sub_brand_id")
-  hotelChainSubBrand         HotelChainSubBrand?  @relation(fields: [hotelChainSubBrandId], references: [id])
-  creditCardId               String?              @map("credit_card_id")
-  creditCard                 CreditCard?          @relation("PromotionCreditCard", fields: [creditCardId], references: [id])
-  tieInRequiresPayment       Boolean              @default(false) @map("tie_in_requires_payment")
-  shoppingPortalId           String?              @map("shopping_portal_id")
-  shoppingPortal             ShoppingPortal?      @relation(fields: [shoppingPortalId], references: [id])
-  minSpend                   Decimal?             @map("min_spend") @db.Decimal(10, 2)
-  startDate                  DateTime?            @map("start_date") @db.Date
-  endDate                    DateTime?            @map("end_date") @db.Date
-  isActive                   Boolean              @default(true) @map("is_active")
-  maxRedemptionCount         Int?                 @map("max_redemption_count")
-  maxRedemptionValue         Decimal?             @map("max_redemption_value") @db.Decimal(10, 2)
-  maxTotalBonusPoints        Int?                 @map("max_total_bonus_points")
-  minNightsRequired          Int?                 @map("min_nights_required")
-  nightsStackable            Boolean              @default(false) @map("nights_stackable")
-  bookByDate                 DateTime?            @map("book_by_date") @db.Date
-  oncePerSubBrand            Boolean              @default(false) @map("once_per_sub_brand")
-  createdAt                  DateTime             @default(now()) @map("created_at")
-  benefits                   PromotionBenefit[]
-  tiers                      PromotionTier[]
-  bookingPromotions          BookingPromotion[]
-  exclusions                 PromotionExclusion[]
-  tieInCards                 PromotionTieInCard[]
-  registrationDeadline       DateTime?            @map("registration_deadline") @db.Date
-  validDaysAfterRegistration Int?                 @map("valid_days_after_registration")
-  userPromotions             UserPromotion[]
+  id               String                 @id @default(cuid())
+  name             String
+  type             PromotionType
+  hotelChainId     String?                @map("hotel_chain_id")
+  hotelChain       HotelChain?            @relation(fields: [hotelChainId], references: [id])
+  creditCardId     String?                @map("credit_card_id")
+  creditCard       CreditCard?            @relation("PromotionCreditCard", fields: [creditCardId], references: [id])
+  shoppingPortalId String?                @map("shopping_portal_id")
+  shoppingPortal   ShoppingPortal?        @relation(fields: [shoppingPortalId], references: [id])
+  startDate        DateTime?              @map("start_date") @db.Date
+  endDate          DateTime?              @map("end_date") @db.Date
+  isActive         Boolean                @default(true) @map("is_active")
+  createdAt        DateTime               @default(now()) @map("created_at")
+  restrictionsId   String?                @unique @map("restrictions_id")
+  restrictions     PromotionRestrictions? @relation(fields: [restrictionsId], references: [id])
+  benefits         PromotionBenefit[]
+  tiers            PromotionTier[]
+  bookingPromotions BookingPromotion[]
+  userPromotions   UserPromotion[]
 
   @@map("promotions")
 }
@@ -276,28 +312,6 @@ model UserPromotion {
 
   @@unique([promotionId])
   @@map("user_promotions")
-}
-
-model PromotionExclusion {
-  id                   String             @id @default(cuid())
-  promotionId          String             @map("promotion_id")
-  hotelChainSubBrandId String             @map("hotel_chain_sub_brand_id")
-  promotion            Promotion          @relation(fields: [promotionId], references: [id], onDelete: Cascade)
-  hotelChainSubBrand   HotelChainSubBrand @relation(fields: [hotelChainSubBrandId], references: [id])
-
-  @@unique([promotionId, hotelChainSubBrandId])
-  @@map("promotion_exclusions")
-}
-
-model PromotionTieInCard {
-  id           String     @id @default(cuid())
-  promotionId  String     @map("promotion_id")
-  promotion    Promotion  @relation(fields: [promotionId], references: [id], onDelete: Cascade)
-  creditCardId String     @map("credit_card_id")
-  creditCard   CreditCard @relation(fields: [creditCardId], references: [id])
-
-  @@unique([promotionId, creditCardId])
-  @@map("promotion_tie_in_cards")
 }
 
 model PromotionTier {
@@ -322,9 +336,10 @@ model PromotionBenefit {
   value                    Decimal                   @db.Decimal(10, 4)
   certType                 String?                   @map("cert_type")
   pointsMultiplierBasis    PointsMultiplierBasis?    @default(base_only) @map("points_multiplier_basis")
-  isTieIn                  Boolean                   @default(false) @map("is_tie_in")
   sortOrder                Int                       @default(0) @map("sort_order")
   createdAt                DateTime                  @default(now()) @map("created_at")
+  restrictionsId           String?                   @unique @map("restrictions_id")
+  restrictions             PromotionRestrictions?    @relation(fields: [restrictionsId], references: [id])
   bookingPromotionBenefits BookingPromotionBenefit[]
 
   @@map("promotion_benefits")

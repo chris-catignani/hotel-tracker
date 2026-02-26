@@ -16,7 +16,9 @@ import {
   PromotionType,
   PromotionBenefitFormData,
   PromotionTierFormData,
-  PromotionExclusion,
+  PromotionRestrictionsFormData,
+  PromotionRestrictionsData,
+  EMPTY_RESTRICTIONS,
 } from "@/lib/types";
 import { BenefitRow, DEFAULT_BENEFIT } from "./benefit-row";
 import {
@@ -31,7 +33,7 @@ import {
   OncePerSubBrandCard,
   TieInCardsCard,
   RegistrationCard,
-  SubBrandExclusionsCard,
+  SubBrandScopeCard,
 } from "./restriction-cards";
 
 interface HotelChainSubBrand {
@@ -56,12 +58,42 @@ interface ShoppingPortal {
 }
 
 interface PromotionFormProps {
-  initialData?: Partial<PromotionFormData> & { exclusions?: PromotionExclusion[] };
+  initialData?: Partial<PromotionFormData> & { restrictions?: PromotionRestrictionsData | null };
   onSubmit: (data: PromotionFormData) => Promise<void>;
   submitting: boolean;
   title: string;
   description: string;
   submitLabel: string;
+}
+
+function mapApiRestrictionsToForm(
+  r: PromotionRestrictionsData | null | undefined
+): PromotionRestrictionsFormData {
+  if (!r) return { ...EMPTY_RESTRICTIONS };
+  return {
+    minSpend: r.minSpend != null ? String(r.minSpend) : "",
+    minNightsRequired: r.minNightsRequired != null ? String(r.minNightsRequired) : "",
+    nightsStackable: r.nightsStackable ?? false,
+    maxRedemptionCount: r.maxRedemptionCount != null ? String(r.maxRedemptionCount) : "",
+    maxRedemptionValue: r.maxRedemptionValue != null ? String(r.maxRedemptionValue) : "",
+    maxTotalBonusPoints: r.maxTotalBonusPoints != null ? String(r.maxTotalBonusPoints) : "",
+    oncePerSubBrand: r.oncePerSubBrand ?? false,
+    bookByDate: r.bookByDate ? new Date(r.bookByDate).toISOString().split("T")[0] : "",
+    registrationDeadline: r.registrationDeadline
+      ? new Date(r.registrationDeadline).toISOString().split("T")[0]
+      : "",
+    validDaysAfterRegistration:
+      r.validDaysAfterRegistration != null ? String(r.validDaysAfterRegistration) : "",
+    registrationDate: "", // comes from userPromotions, set separately
+    tieInRequiresPayment: r.tieInRequiresPayment ?? false,
+    subBrandIncludeIds: r.subBrandRestrictions
+      .filter((s) => s.mode === "include")
+      .map((s) => s.hotelChainSubBrandId),
+    subBrandExcludeIds: r.subBrandRestrictions
+      .filter((s) => s.mode === "exclude")
+      .map((s) => s.hotelChainSubBrandId),
+    tieInCreditCardIds: r.tieInCards.map((c) => c.creditCardId),
+  };
 }
 
 export function PromotionForm({
@@ -82,9 +114,6 @@ export function PromotionForm({
   // ── Type-specific linking ────────────────────────────────────────────────────
   const [hotelChainId, setHotelChainId] = useState<string>(
     initialData?.hotelChainId ? initialData.hotelChainId : ""
-  );
-  const [hotelChainSubBrandId, setHotelChainSubBrandId] = useState<string>(
-    initialData?.hotelChainSubBrandId ? initialData.hotelChainSubBrandId : ""
   );
   const [creditCardId, setCreditCardId] = useState<string>(
     initialData?.creditCardId ? initialData.creditCardId : ""
@@ -112,44 +141,14 @@ export function PromotionForm({
   const [startDate, setStartDate] = useState(initialData?.startDate || "");
   const [endDate, setEndDate] = useState(initialData?.endDate || "");
 
-  // ── Restriction state ────────────────────────────────────────────────────────
-  const [minSpend, setMinSpend] = useState(
-    initialData?.minSpend ? String(initialData.minSpend) : ""
-  );
-  const [bookByDate, setBookByDate] = useState(initialData?.bookByDate || "");
-  const [minNightsRequired, setMinNightsRequired] = useState(
-    initialData?.minNightsRequired ? String(initialData.minNightsRequired) : ""
-  );
-  const [nightsStackable, setNightsStackable] = useState(initialData?.nightsStackable ?? false);
-  const [maxRedemptionCount, setMaxRedemptionCount] = useState(
-    initialData?.maxRedemptionCount ? String(initialData.maxRedemptionCount) : ""
-  );
-  const [maxRedemptionValue, setMaxRedemptionValue] = useState(
-    initialData?.maxRedemptionValue ? String(initialData.maxRedemptionValue) : ""
-  );
-  const [maxTotalBonusPoints, setMaxTotalBonusPoints] = useState(
-    initialData?.maxTotalBonusPoints ? String(initialData.maxTotalBonusPoints) : ""
-  );
-  const [tieInCreditCardIds, setTieInCreditCardIds] = useState<string[]>(
-    initialData?.tieInCreditCardIds ?? []
-  );
-  const [tieInRequiresPayment, setTieInRequiresPayment] = useState(
-    initialData?.tieInRequiresPayment ?? false
-  );
-  const [registrationDeadline, setRegistrationDeadline] = useState(
-    initialData?.registrationDeadline || ""
-  );
-  const [validDaysAfterRegistration, setValidDaysAfterRegistration] = useState(
-    initialData?.validDaysAfterRegistration ? String(initialData.validDaysAfterRegistration) : ""
-  );
-  const [registrationDate, setRegistrationDate] = useState(initialData?.registrationDate || "");
-  const [exclusionSubBrandIds, setExclusionSubBrandIds] = useState<string[]>(
-    initialData?.exclusions?.map((e) => e.hotelChainSubBrandId) ?? []
+  // ── Restrictions (single object) ─────────────────────────────────────────────
+  const [restrictions, setRestrictions] = useState<PromotionRestrictionsFormData>(() =>
+    mapApiRestrictionsToForm(initialData?.restrictions)
   );
 
   // ── Restriction picker state ─────────────────────────────────────────────────
   const [activeRestrictions, setActiveRestrictions] = useState<Set<RestrictionKey>>(() =>
-    deriveActiveRestrictions(initialData)
+    deriveActiveRestrictions(mapApiRestrictionsToForm(initialData?.restrictions))
   );
   const [pickerOpen, setPickerOpen] = useState(false);
 
@@ -182,10 +181,6 @@ export function PromotionForm({
       if (initialData.isActive !== undefined) setIsActive(initialData.isActive);
       if (initialData.hotelChainId !== undefined)
         setHotelChainId(initialData.hotelChainId ? initialData.hotelChainId : "");
-      if (initialData.hotelChainSubBrandId !== undefined)
-        setHotelChainSubBrandId(
-          initialData.hotelChainSubBrandId ? initialData.hotelChainSubBrandId : ""
-        );
       if (initialData.creditCardId !== undefined)
         setCreditCardId(initialData.creditCardId ? initialData.creditCardId : "");
       if (initialData.shoppingPortalId !== undefined)
@@ -199,48 +194,17 @@ export function PromotionForm({
       }
       if (initialData.startDate !== undefined) setStartDate(initialData.startDate || "");
       if (initialData.endDate !== undefined) setEndDate(initialData.endDate || "");
-      if (initialData.minSpend !== undefined)
-        setMinSpend(initialData.minSpend ? String(initialData.minSpend) : "");
-      if (initialData.bookByDate !== undefined) setBookByDate(initialData.bookByDate || "");
-      if (initialData.minNightsRequired !== undefined)
-        setMinNightsRequired(
-          initialData.minNightsRequired ? String(initialData.minNightsRequired) : ""
-        );
-      if (initialData.nightsStackable !== undefined)
-        setNightsStackable(initialData.nightsStackable);
-      if (initialData.maxRedemptionCount !== undefined)
-        setMaxRedemptionCount(
-          initialData.maxRedemptionCount ? String(initialData.maxRedemptionCount) : ""
-        );
-      if (initialData.maxRedemptionValue !== undefined)
-        setMaxRedemptionValue(
-          initialData.maxRedemptionValue ? String(initialData.maxRedemptionValue) : ""
-        );
-      if (initialData.maxTotalBonusPoints !== undefined)
-        setMaxTotalBonusPoints(
-          initialData.maxTotalBonusPoints ? String(initialData.maxTotalBonusPoints) : ""
-        );
-      if (initialData.tieInCreditCardIds !== undefined)
-        setTieInCreditCardIds(initialData.tieInCreditCardIds);
-      if (initialData.tieInRequiresPayment !== undefined)
-        setTieInRequiresPayment(initialData.tieInRequiresPayment);
-      if (initialData.registrationDeadline !== undefined)
-        setRegistrationDeadline(initialData.registrationDeadline || "");
-      if (initialData.validDaysAfterRegistration !== undefined)
-        setValidDaysAfterRegistration(
-          initialData.validDaysAfterRegistration
-            ? String(initialData.validDaysAfterRegistration)
-            : ""
-        );
-      if (initialData.registrationDate !== undefined)
-        setRegistrationDate(initialData.registrationDate || "");
-      if (initialData.exclusions !== undefined)
-        setExclusionSubBrandIds(initialData.exclusions.map((e) => e.hotelChainSubBrandId));
-      setActiveRestrictions(deriveActiveRestrictions(initialData));
+      const mappedRestrictions = mapApiRestrictionsToForm(initialData.restrictions);
+      setRestrictions(mappedRestrictions);
+      setActiveRestrictions(deriveActiveRestrictions(mappedRestrictions));
     }
   }, [initialData]);
 
   // ── Restriction helpers ──────────────────────────────────────────────────────
+
+  const updateRestrictions = (updates: Partial<PromotionRestrictionsFormData>) => {
+    setRestrictions((prev) => ({ ...prev, ...updates }));
+  };
 
   const addRestriction = (key: RestrictionKey) => {
     setActiveRestrictions((prev) => new Set([...prev, key]));
@@ -255,31 +219,33 @@ export function PromotionForm({
     });
     switch (key) {
       case "min_spend":
-        setMinSpend("");
+        updateRestrictions({ minSpend: "" });
         break;
       case "book_by_date":
-        setBookByDate("");
+        updateRestrictions({ bookByDate: "" });
         break;
       case "min_nights":
-        setMinNightsRequired("");
-        setNightsStackable(false);
+        updateRestrictions({ minNightsRequired: "", nightsStackable: false });
         break;
       case "redemption_caps":
-        setMaxRedemptionCount("");
-        setMaxRedemptionValue("");
-        setMaxTotalBonusPoints("");
+        updateRestrictions({
+          maxRedemptionCount: "",
+          maxRedemptionValue: "",
+          maxTotalBonusPoints: "",
+        });
         break;
       case "tie_in_cards":
-        setTieInCreditCardIds([]);
-        setTieInRequiresPayment(false);
+        updateRestrictions({ tieInCreditCardIds: [], tieInRequiresPayment: false });
         break;
       case "registration":
-        setRegistrationDeadline("");
-        setValidDaysAfterRegistration("");
-        setRegistrationDate("");
+        updateRestrictions({
+          registrationDeadline: "",
+          validDaysAfterRegistration: "",
+          registrationDate: "",
+        });
         break;
-      case "sub_brand_exclusions":
-        setExclusionSubBrandIds([]);
+      case "sub_brand_scope":
+        updateRestrictions({ subBrandIncludeIds: [], subBrandExcludeIds: [] });
         break;
     }
   };
@@ -359,6 +325,57 @@ export function PromotionForm({
     const withSortOrder = (bs: PromotionBenefitFormData[]) =>
       bs.map((b, i) => ({ ...b, sortOrder: i }));
 
+    // Build the restrictions payload (null if no restrictions are active)
+    let finalRestrictions: PromotionRestrictionsFormData | null = null;
+    const hasAnyRestriction =
+      activeRestrictions.size > 0 ||
+      restrictions.subBrandIncludeIds.length > 0 ||
+      restrictions.subBrandExcludeIds.length > 0;
+
+    if (hasAnyRestriction) {
+      finalRestrictions = {
+        minSpend: activeRestrictions.has("min_spend") ? restrictions.minSpend : "",
+        bookByDate: activeRestrictions.has("book_by_date") ? restrictions.bookByDate : "",
+        minNightsRequired: activeRestrictions.has("min_nights")
+          ? restrictions.minNightsRequired
+          : "",
+        nightsStackable: activeRestrictions.has("min_nights")
+          ? restrictions.nightsStackable
+          : false,
+        maxRedemptionCount: activeRestrictions.has("redemption_caps")
+          ? restrictions.maxRedemptionCount
+          : "",
+        maxRedemptionValue: activeRestrictions.has("redemption_caps")
+          ? restrictions.maxRedemptionValue
+          : "",
+        maxTotalBonusPoints: activeRestrictions.has("redemption_caps")
+          ? restrictions.maxTotalBonusPoints
+          : "",
+        oncePerSubBrand: activeRestrictions.has("once_per_sub_brand"),
+        tieInCreditCardIds: activeRestrictions.has("tie_in_cards")
+          ? restrictions.tieInCreditCardIds
+          : [],
+        tieInRequiresPayment: activeRestrictions.has("tie_in_cards")
+          ? restrictions.tieInRequiresPayment
+          : false,
+        registrationDeadline: activeRestrictions.has("registration")
+          ? restrictions.registrationDeadline
+          : "",
+        validDaysAfterRegistration: activeRestrictions.has("registration")
+          ? restrictions.validDaysAfterRegistration
+          : "",
+        registrationDate: activeRestrictions.has("registration")
+          ? restrictions.registrationDate
+          : "",
+        subBrandIncludeIds: activeRestrictions.has("sub_brand_scope")
+          ? restrictions.subBrandIncludeIds
+          : [],
+        subBrandExcludeIds: activeRestrictions.has("sub_brand_scope")
+          ? restrictions.subBrandExcludeIds
+          : [],
+      };
+    }
+
     const body: PromotionFormData = {
       name,
       type,
@@ -369,18 +386,13 @@ export function PromotionForm({
             .map((tier) => ({ ...tier, benefits: withSortOrder(tier.benefits) }))
         : [],
       isActive,
+      restrictions: finalRestrictions,
     };
 
     if (type === "loyalty" && hotelChainId) {
       body.hotelChainId = hotelChainId;
-      body.hotelChainSubBrandId = hotelChainSubBrandId || null;
-      body.exclusionSubBrandIds = activeRestrictions.has("sub_brand_exclusions")
-        ? exclusionSubBrandIds
-        : [];
     } else {
       body.hotelChainId = null;
-      body.hotelChainSubBrandId = null;
-      body.exclusionSubBrandIds = [];
     }
 
     body.creditCardId = type === "credit_card" && creditCardId ? creditCardId : null;
@@ -388,49 +400,6 @@ export function PromotionForm({
 
     body.startDate = startDate || null;
     body.endDate = endDate || null;
-
-    body.minSpend = activeRestrictions.has("min_spend") && minSpend ? parseFloat(minSpend) : null;
-    body.bookByDate = activeRestrictions.has("book_by_date") ? bookByDate || null : null;
-
-    if (activeRestrictions.has("min_nights") && minNightsRequired) {
-      body.minNightsRequired = parseInt(minNightsRequired);
-      body.nightsStackable = nightsStackable;
-    } else {
-      body.minNightsRequired = null;
-      body.nightsStackable = false;
-    }
-
-    if (activeRestrictions.has("redemption_caps")) {
-      body.maxRedemptionCount = maxRedemptionCount ? parseInt(maxRedemptionCount) : null;
-      body.maxRedemptionValue = maxRedemptionValue ? parseFloat(maxRedemptionValue) : null;
-      body.maxTotalBonusPoints = maxTotalBonusPoints ? parseInt(maxTotalBonusPoints) : null;
-    } else {
-      body.maxRedemptionCount = null;
-      body.maxRedemptionValue = null;
-      body.maxTotalBonusPoints = null;
-    }
-
-    body.oncePerSubBrand = activeRestrictions.has("once_per_sub_brand");
-
-    if (activeRestrictions.has("tie_in_cards")) {
-      body.tieInCreditCardIds = tieInCreditCardIds;
-      body.tieInRequiresPayment = tieInRequiresPayment;
-    } else {
-      body.tieInCreditCardIds = [];
-      body.tieInRequiresPayment = false;
-    }
-
-    if (activeRestrictions.has("registration")) {
-      body.registrationDeadline = registrationDeadline || null;
-      body.validDaysAfterRegistration = validDaysAfterRegistration
-        ? parseInt(validDaysAfterRegistration)
-        : null;
-      body.registrationDate = registrationDate || null;
-    } else {
-      body.registrationDeadline = null;
-      body.validDaysAfterRegistration = null;
-      body.registrationDate = null;
-    }
 
     await onSubmit(body);
   };
@@ -443,7 +412,7 @@ export function PromotionForm({
   const selectedChainSubBrands =
     hotelChains.find((h) => h.id === hotelChainId)?.hotelChainSubBrands ?? [];
 
-  const showSubBrandExclusionsOption =
+  const showSubBrandScopeOption =
     type === "loyalty" && !!hotelChainId && selectedChainSubBrands.length > 0;
 
   // ── Render ───────────────────────────────────────────────────────────────────
@@ -504,28 +473,11 @@ export function PromotionForm({
                 value={hotelChainId}
                 onValueChange={(v) => {
                   setHotelChainId(v);
-                  setHotelChainSubBrandId("");
-                  setExclusionSubBrandIds([]);
+                  updateRestrictions({ subBrandIncludeIds: [], subBrandExcludeIds: [] });
                 }}
                 options={hotelChains.map((chain) => ({ label: chain.name, value: chain.id }))}
                 placeholder="Select hotel chain..."
                 data-testid="hotel-chain-select"
-              />
-            </div>
-          )}
-
-          {type === "loyalty" && hotelChainId && selectedChainSubBrands.length > 0 && (
-            <div className="space-y-2">
-              <Label>Sub-brand</Label>
-              <AppSelect
-                value={hotelChainSubBrandId || "all"}
-                onValueChange={(v) => setHotelChainSubBrandId(v === "all" ? "" : v)}
-                options={[
-                  { label: "All sub-brands (no filter)", value: "all" },
-                  ...selectedChainSubBrands.map((sb) => ({ label: sb.name, value: sb.id })),
-                ]}
-                placeholder="Select sub-brand..."
-                data-testid="sub-brand-select"
               />
             </div>
           )}
@@ -584,7 +536,8 @@ export function PromotionForm({
                   benefit={benefit}
                   index={index}
                   canRemove={benefits.length > 1}
-                  hasTieInCard={tieInCreditCardIds.length > 0}
+                  subBrands={selectedChainSubBrands}
+                  creditCards={creditCards}
                   onChange={handleBenefitChange}
                   onRemove={handleBenefitRemove}
                 />
@@ -672,7 +625,8 @@ export function PromotionForm({
                         benefit={benefit}
                         index={benefitIndex}
                         canRemove={tier.benefits.length > 1}
-                        hasTieInCard={tieInCreditCardIds.length > 0}
+                        subBrands={selectedChainSubBrands}
+                        creditCards={creditCards}
                         onChange={(bi, updated) => handleTierBenefitChange(tierIndex, bi, updated)}
                         onRemove={(bi) => handleTierBenefitRemove(tierIndex, bi)}
                       />
@@ -747,8 +701,7 @@ export function PromotionForm({
               >
                 <div className="flex flex-col gap-1">
                   {RESTRICTION_ORDER.map((key) => {
-                    if (key === "sub_brand_exclusions" && !showSubBrandExclusionsOption)
-                      return null;
+                    if (key === "sub_brand_scope" && !showSubBrandScopeOption) return null;
                     const isActive = activeRestrictions.has(key);
                     return (
                       <button
@@ -779,8 +732,8 @@ export function PromotionForm({
                 return (
                   <MinSpendCard
                     key={key}
-                    minSpend={minSpend}
-                    onMinSpendChange={setMinSpend}
+                    minSpend={restrictions.minSpend}
+                    onMinSpendChange={(v) => updateRestrictions({ minSpend: v })}
                     onRemove={() => removeRestriction("min_spend")}
                   />
                 );
@@ -789,9 +742,9 @@ export function PromotionForm({
                 return (
                   <BookByDateCard
                     key={key}
-                    bookByDate={bookByDate}
+                    bookByDate={restrictions.bookByDate}
                     onBookByDateChange={(date) =>
-                      setBookByDate(date ? format(date, "yyyy-MM-dd") : "")
+                      updateRestrictions({ bookByDate: date ? format(date, "yyyy-MM-dd") : "" })
                     }
                     onRemove={() => removeRestriction("book_by_date")}
                   />
@@ -801,10 +754,10 @@ export function PromotionForm({
                 return (
                   <MinNightsCard
                     key={key}
-                    minNightsRequired={minNightsRequired}
-                    nightsStackable={nightsStackable}
-                    onMinNightsChange={setMinNightsRequired}
-                    onNightsStackableChange={setNightsStackable}
+                    minNightsRequired={restrictions.minNightsRequired}
+                    nightsStackable={restrictions.nightsStackable}
+                    onMinNightsChange={(v) => updateRestrictions({ minNightsRequired: v })}
+                    onNightsStackableChange={(v) => updateRestrictions({ nightsStackable: v })}
                     onRemove={() => removeRestriction("min_nights")}
                   />
                 );
@@ -813,12 +766,18 @@ export function PromotionForm({
                 return (
                   <RedemptionCapsCard
                     key={key}
-                    maxRedemptionCount={maxRedemptionCount}
-                    maxRedemptionValue={maxRedemptionValue}
-                    maxTotalBonusPoints={maxTotalBonusPoints}
-                    onMaxRedemptionCountChange={setMaxRedemptionCount}
-                    onMaxRedemptionValueChange={setMaxRedemptionValue}
-                    onMaxTotalBonusPointsChange={setMaxTotalBonusPoints}
+                    maxRedemptionCount={restrictions.maxRedemptionCount}
+                    maxRedemptionValue={restrictions.maxRedemptionValue}
+                    maxTotalBonusPoints={restrictions.maxTotalBonusPoints}
+                    onMaxRedemptionCountChange={(v) =>
+                      updateRestrictions({ maxRedemptionCount: v })
+                    }
+                    onMaxRedemptionValueChange={(v) =>
+                      updateRestrictions({ maxRedemptionValue: v })
+                    }
+                    onMaxTotalBonusPointsChange={(v) =>
+                      updateRestrictions({ maxTotalBonusPoints: v })
+                    }
                     onRemove={() => removeRestriction("redemption_caps")}
                   />
                 );
@@ -836,16 +795,21 @@ export function PromotionForm({
                   <TieInCardsCard
                     key={key}
                     creditCards={creditCards}
-                    tieInCreditCardIds={tieInCreditCardIds}
-                    tieInRequiresPayment={tieInRequiresPayment}
+                    tieInCreditCardIds={restrictions.tieInCreditCardIds}
+                    tieInRequiresPayment={restrictions.tieInRequiresPayment}
                     onTieInCardChange={(cardId, checked) => {
                       const newIds = checked
-                        ? [...tieInCreditCardIds, cardId]
-                        : tieInCreditCardIds.filter((id) => id !== cardId);
-                      setTieInCreditCardIds(newIds);
-                      if (newIds.length === 0) setTieInRequiresPayment(false);
+                        ? [...restrictions.tieInCreditCardIds, cardId]
+                        : restrictions.tieInCreditCardIds.filter((id) => id !== cardId);
+                      updateRestrictions({
+                        tieInCreditCardIds: newIds,
+                        tieInRequiresPayment:
+                          newIds.length === 0 ? false : restrictions.tieInRequiresPayment,
+                      });
                     }}
-                    onTieInRequiresPaymentChange={setTieInRequiresPayment}
+                    onTieInRequiresPaymentChange={(v) =>
+                      updateRestrictions({ tieInRequiresPayment: v })
+                    }
                     onRemove={() => removeRestriction("tie_in_cards")}
                   />
                 );
@@ -854,34 +818,44 @@ export function PromotionForm({
                 return (
                   <RegistrationCard
                     key={key}
-                    registrationDeadline={registrationDeadline}
-                    validDaysAfterRegistration={validDaysAfterRegistration}
-                    registrationDate={registrationDate}
+                    registrationDeadline={restrictions.registrationDeadline}
+                    validDaysAfterRegistration={restrictions.validDaysAfterRegistration}
+                    registrationDate={restrictions.registrationDate}
                     onRegistrationDeadlineChange={(date) =>
-                      setRegistrationDeadline(date ? format(date, "yyyy-MM-dd") : "")
+                      updateRestrictions({
+                        registrationDeadline: date ? format(date, "yyyy-MM-dd") : "",
+                      })
                     }
-                    onValidDaysChange={setValidDaysAfterRegistration}
+                    onValidDaysChange={(v) => updateRestrictions({ validDaysAfterRegistration: v })}
                     onRegistrationDateChange={(date) =>
-                      setRegistrationDate(date ? format(date, "yyyy-MM-dd") : "")
+                      updateRestrictions({
+                        registrationDate: date ? format(date, "yyyy-MM-dd") : "",
+                      })
                     }
                     onRemove={() => removeRestriction("registration")}
                   />
                 );
 
-              if (key === "sub_brand_exclusions" && showSubBrandExclusionsOption)
+              if (key === "sub_brand_scope" && showSubBrandScopeOption)
                 return (
-                  <SubBrandExclusionsCard
+                  <SubBrandScopeCard
                     key={key}
                     subBrands={selectedChainSubBrands}
-                    exclusionSubBrandIds={exclusionSubBrandIds}
-                    onExclusionChange={(subBrandId, checked) => {
-                      if (checked) {
-                        setExclusionSubBrandIds((prev) => [...prev, subBrandId]);
-                      } else {
-                        setExclusionSubBrandIds((prev) => prev.filter((id) => id !== subBrandId));
-                      }
+                    subBrandIncludeIds={restrictions.subBrandIncludeIds}
+                    subBrandExcludeIds={restrictions.subBrandExcludeIds}
+                    onIncludeChange={(subBrandId, checked) => {
+                      const newIds = checked
+                        ? [...restrictions.subBrandIncludeIds, subBrandId]
+                        : restrictions.subBrandIncludeIds.filter((id) => id !== subBrandId);
+                      updateRestrictions({ subBrandIncludeIds: newIds });
                     }}
-                    onRemove={() => removeRestriction("sub_brand_exclusions")}
+                    onExcludeChange={(subBrandId, checked) => {
+                      const newIds = checked
+                        ? [...restrictions.subBrandExcludeIds, subBrandId]
+                        : restrictions.subBrandExcludeIds.filter((id) => id !== subBrandId);
+                      updateRestrictions({ subBrandExcludeIds: newIds });
+                    }}
+                    onRemove={() => removeRestriction("sub_brand_scope")}
                   />
                 );
 

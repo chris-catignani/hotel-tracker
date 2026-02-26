@@ -97,12 +97,66 @@ export type PromotionType = "credit_card" | "portal" | "loyalty";
 export type PromotionRewardType = "points" | "cashback" | "certificate" | "eqn";
 export type PromotionBenefitValueType = "fixed" | "percentage" | "multiplier";
 export type PointsMultiplierBasis = "base_only" | "base_and_elite";
+export type SubBrandRestrictionMode = "include" | "exclude";
 
-export interface PromotionExclusion {
+export interface SubBrandRestriction {
   id: string;
-  promotionId: string;
   hotelChainSubBrandId: string;
+  mode: SubBrandRestrictionMode;
 }
+
+export interface PromotionRestrictionsData {
+  id: string;
+  minSpend: string | number | null;
+  minNightsRequired: number | null;
+  nightsStackable: boolean;
+  maxRedemptionCount: number | null;
+  maxRedemptionValue: string | number | null;
+  maxTotalBonusPoints: number | null;
+  oncePerSubBrand: boolean;
+  bookByDate: string | null;
+  registrationDeadline: string | null;
+  validDaysAfterRegistration: number | null;
+  tieInRequiresPayment: boolean;
+  subBrandRestrictions: SubBrandRestriction[];
+  tieInCards: { creditCardId: string }[];
+}
+
+export interface PromotionRestrictionsFormData {
+  minSpend: string;
+  minNightsRequired: string;
+  nightsStackable: boolean;
+  maxRedemptionCount: string;
+  maxRedemptionValue: string;
+  maxTotalBonusPoints: string;
+  oncePerSubBrand: boolean;
+  bookByDate: string;
+  registrationDeadline: string;
+  validDaysAfterRegistration: string;
+  registrationDate: string; // form convenience; maps to UserPromotion on the promotion
+  tieInRequiresPayment: boolean;
+  subBrandIncludeIds: string[];
+  subBrandExcludeIds: string[];
+  tieInCreditCardIds: string[];
+}
+
+export const EMPTY_RESTRICTIONS: PromotionRestrictionsFormData = {
+  minSpend: "",
+  minNightsRequired: "",
+  nightsStackable: false,
+  maxRedemptionCount: "",
+  maxRedemptionValue: "",
+  maxTotalBonusPoints: "",
+  oncePerSubBrand: false,
+  bookByDate: "",
+  registrationDeadline: "",
+  validDaysAfterRegistration: "",
+  registrationDate: "",
+  tieInRequiresPayment: false,
+  subBrandIncludeIds: [],
+  subBrandExcludeIds: [],
+  tieInCreditCardIds: [],
+};
 
 export interface PromotionBenefit {
   id: string;
@@ -113,8 +167,8 @@ export interface PromotionBenefit {
   value: string | number;
   certType: string | null;
   pointsMultiplierBasis?: PointsMultiplierBasis | null;
-  isTieIn: boolean;
   sortOrder: number;
+  restrictions: PromotionRestrictionsData | null;
 }
 
 export interface PromotionTier {
@@ -137,8 +191,8 @@ export interface PromotionBenefitFormData {
   value: number;
   certType: string | null;
   pointsMultiplierBasis?: PointsMultiplierBasis | null;
-  isTieIn: boolean;
   sortOrder: number;
+  restrictions: PromotionRestrictionsFormData | null;
 }
 
 export interface Promotion {
@@ -147,26 +201,13 @@ export interface Promotion {
   type: PromotionType;
   benefits: PromotionBenefit[];
   tiers: PromotionTier[];
-  exclusions: PromotionExclusion[];
   hotelChainId: string | null;
-  hotelChainSubBrandId: string | null;
   creditCardId: string | null;
-  tieInCreditCardIds: string[];
-  tieInRequiresPayment: boolean;
   shoppingPortalId: string | null;
-  minSpend: string | number | null;
   startDate: string | null;
   endDate: string | null;
   isActive: boolean;
-  maxRedemptionCount: number | null;
-  maxRedemptionValue: string | number | null;
-  maxTotalBonusPoints: number | null;
-  minNightsRequired: number | null;
-  nightsStackable: boolean;
-  bookByDate: string | null;
-  oncePerSubBrand: boolean;
-  registrationDeadline: string | null;
-  validDaysAfterRegistration: number | null;
+  restrictions: PromotionRestrictionsData | null;
   userPromotions: UserPromotion[];
   createdAt: string;
   hotelChain?: { id: string; name: string } | null;
@@ -186,26 +227,12 @@ export interface PromotionFormData {
   benefits: PromotionBenefitFormData[];
   tiers?: PromotionTierFormData[];
   hotelChainId?: string | null;
-  hotelChainSubBrandId?: string | null;
   creditCardId?: string | null;
-  tieInCreditCardIds?: string[];
-  tieInRequiresPayment?: boolean;
   shoppingPortalId?: string | null;
-  minSpend?: number | null;
   startDate?: string | null;
   endDate?: string | null;
   isActive: boolean;
-  maxRedemptionCount?: number | null;
-  maxRedemptionValue?: number | null;
-  maxTotalBonusPoints?: number | null;
-  minNightsRequired?: number | null;
-  nightsStackable?: boolean;
-  bookByDate?: string | null;
-  oncePerSubBrand?: boolean;
-  exclusionSubBrandIds?: string[];
-  registrationDeadline?: string | null;
-  validDaysAfterRegistration?: number | null;
-  registrationDate?: string | null; // For recording registration in the same form if needed
+  restrictions: PromotionRestrictionsFormData | null;
 }
 
 // ---------------------------------------------------------------------------
