@@ -161,6 +161,7 @@ Always import `test` and `expect` from `./fixtures` (not from `@playwright/test`
 
 ### GitHub CLI
 
+- **Sub-issue linking:** When creating sub-tasks or sub-issues for a parent GitHub issue, ALWAYS formally link them as children using the 'Sub-issues' feature (via GraphQL `addSubIssue` or equivalent) so they appear in the parent's dedicated "Sub-issues" area.
 - **Do NOT use `gh pr view --comments`** — it queries the deprecated Projects (classic) GraphQL API and returns exit code 1.
 - To read PR review comments use: `gh api repos/{owner}/{repo}/pulls/{pr}/comments`
 - To read general PR/issue comments use: `gh api repos/{owner}/{repo}/issues/{pr}/comments`

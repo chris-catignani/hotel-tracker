@@ -18,18 +18,16 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
-        month_caption: "flex justify-center pt-1 relative items-center mb-4",
+        month_caption: "flex justify-center pt-1 items-center mb-4",
         caption_label: "text-sm sm:text-base font-medium",
-        nav: "absolute top-0 left-0 right-0 flex items-center justify-between px-2 pointer-events-none",
+        nav: "flex items-center justify-between px-2",
         button_previous: cn(
           buttonVariants({ variant: "outline" }),
-          "h-8 w-8 sm:h-7 sm:w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
-          "pointer-events-auto"
+          "h-8 w-8 sm:h-7 sm:w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
         ),
         button_next: cn(
           buttonVariants({ variant: "outline" }),
-          "h-8 w-8 sm:h-7 sm:w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
-          "pointer-events-auto"
+          "h-8 w-8 sm:h-7 sm:w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
         ),
         month_grid: "w-full border-collapse space-y-1",
         weekdays: "flex justify-between sm:justify-start",
@@ -52,6 +50,10 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
         range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
         hidden: "invisible",
         ...classNames,
+      }}
+      labels={{
+        labelPrevious: () => "Go to previous month",
+        labelNext: () => "Go to next month",
       }}
       components={{
         Chevron: (props) => {
