@@ -34,8 +34,13 @@ Always import `test` and `expect` from `./fixtures` (not from `@playwright/test`
 
 **Reference data** (hotel chains, credit cards, portals) is seeded once in `e2e/global-setup.ts` and treated as read-only.
 
+## Workflow Mandates
+
+- **Pull Requests:** ALWAYS create a feature branch and a Pull Request (PR) for any and all code changes. NEVER apply changes directly to the main branch unless specifically authorized for a one-off task. A task is not considered complete until the PR is created and linked to the relevant issue.
+
 ## GitHub CLI
 
+- **Sub-issue linking:** When creating sub-tasks or sub-issues for a parent GitHub issue, ALWAYS formally link them as children using the 'Sub-issues' feature (via GraphQL `addSubIssue` or equivalent) so they appear in the parent's dedicated "Sub-issues" area.
 - **Do NOT use `gh pr view --comments`** — it queries the deprecated Projects (classic) GraphQL API and returns exit code 1.
 - To read PR review comments use: `gh api repos/{owner}/{repo}/pulls/{pr}/comments`
 - To read general PR/issue comments use: `gh api repos/{owner}/{repo}/issues/{pr}/comments`
