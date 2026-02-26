@@ -143,16 +143,16 @@ describe("net-cost", () => {
     expect(result.promotions[0].formula).toContain("1,000 bonus pts × 1.5¢ = $15.00");
   });
 
-  it("should handle certificate benefit as zero applied value", () => {
+  it("should handle certificate benefit with valuation", () => {
     const booking: NetCostBooking = {
       ...mockBaseBooking,
       bookingPromotions: [
         {
-          appliedValue: 0,
+          appliedValue: 525,
           promotion: { name: "Free Night Cert", benefits: [] },
           benefitApplications: [
             {
-              appliedValue: 0,
+              appliedValue: 525,
               promotionBenefit: {
                 rewardType: "certificate",
                 valueType: "fixed",
@@ -165,9 +165,38 @@ describe("net-cost", () => {
       ],
     };
     const result = getNetCostBreakdown(booking);
-    expect(result.promoSavings).toBe(0);
-    expect(result.netCost).toBe(100);
-    expect(result.promotions[0].formula).toContain("cert");
+    // marriott_35k = 35000 pts * 0.015 = 525
+    expect(result.promoSavings).toBe(525);
+    expect(result.netCost).toBe(-425); // 100 - 525
+    expect(result.promotions[0].formula).toContain("35,000 pts × 1.5¢ = $525.00");
+  });
+
+  it("should handle EQN benefit with valuation", () => {
+    const booking: NetCostBooking = {
+      ...mockBaseBooking,
+      bookingPromotions: [
+        {
+          appliedValue: 50,
+          promotion: { name: "2 Bonus EQNs", benefits: [] },
+          benefitApplications: [
+            {
+              appliedValue: 50,
+              promotionBenefit: {
+                rewardType: "eqn",
+                valueType: "fixed",
+                value: 2,
+                certType: null,
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const result = getNetCostBreakdown(booking);
+    // 2 EQNs * $25.00 = $50.00
+    expect(result.promoSavings).toBe(50);
+    expect(result.netCost).toBe(50); // 100 - 50
+    expect(result.promotions[0].formula).toContain("2 bonus EQN(s) × $25.00 = $50.00");
   });
 
   it("should sum multiple benefits across a promotion", () => {
