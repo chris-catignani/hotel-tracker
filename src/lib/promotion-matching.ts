@@ -573,9 +573,8 @@ async function fetchPromotionUsage(
   if (allBenefitIds.length > 0) {
     const benefitToPromoMap = new Map<string, string>();
     for (const p of promotions) {
-      for (const b of p.benefits) benefitToPromoMap.set(b.id, p.id);
-      for (const t of p.tiers) {
-        for (const b of t.benefits) benefitToPromoMap.set(b.id, p.id);
+      for (const b of [...p.benefits, ...p.tiers.flatMap((t) => t.benefits)]) {
+        benefitToPromoMap.set(b.id, p.id);
       }
     }
 
