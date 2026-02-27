@@ -136,6 +136,18 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
   const totalCost = Number(booking.totalCost);
   const pretaxCost = Number(booking.pretaxCost);
 
+  // NOTE: Redemption Constraints
+  // The appliedValue shown here already reflects any constraints enforced at matching time:
+  // - maxRedemptionCount: limits how many times a promotion can be applied
+  // - maxRedemptionValue: caps the total dollar value; appliedValue is reduced proportionally
+  // - maxTotalBonusPoints: caps total bonus points earned; appliedValue is reduced proportionally
+  // - minNightsRequired: promotion only applies to stays of minimum length
+  // - nightsStackable: benefit is multiplied by number of qualifying stay nights
+  // - bookByDate: booking must be created before cutoff date
+  // - registrationDeadline: user must have registered by this date
+  // - validDaysAfterRegistration: personal validity window starting from the registration date
+  // The final appliedValue shown below is the result after all constraints are applied.
+
   // 1. Promotions
   const hotelCentsPerPoint = booking.hotelChain.pointType?.centsPerPoint
     ? Number(booking.hotelChain.pointType.centsPerPoint)

@@ -631,4 +631,74 @@ describe("net-cost", () => {
       "This bonus is pending additional stays (1 of 3 nights required)"
     );
   });
+
+  it("should provide segments for a complex multi-night spanned stay", () => {
+    const booking: NetCostBooking = {
+      ...mockBaseBooking,
+      numNights: 4,
+      bookingPromotions: [
+        {
+          appliedValue: 40,
+          eligibleNightsAtBooking: 4,
+          promotion: {
+            name: "Spanned Promo",
+            restrictions: { minNightsRequired: 3, spanStays: true },
+            benefits: [],
+          },
+          benefitApplications: [
+            {
+              appliedValue: 40,
+              eligibleNightsAtBooking: 4,
+              promotionBenefit: {
+                rewardType: "cashback",
+                valueType: "fixed",
+                value: 30,
+                certType: null,
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const result = getNetCostBreakdown(booking);
+    const promo = result.promotions[0];
+
+    expect(promo.segments).toHaveLength(2);
+    expect(promo.segments![0].label).toBe("Full Reward Cycle (3/3 nights)");
+    expect(promo.segments![0].value).toBe(30);
+    expect(promo.segments![1].label).toBe("New Reward Cycle (1/3 nights)");
+    expect(promo.segments![1].value).toBe(10);
+    expect(promo.segments![1].formula).toContain("(pending)");
+  });
+
+  it("should provide segments for credit card rewards with hotel boost", () => {
+    const booking: NetCostBooking = {
+      ...mockBaseBooking,
+      hotelChain: {
+        ...mockBaseBooking.hotelChain,
+        id: "hyatt-id",
+      } as HotelChain,
+      creditCard: {
+        name: "Chase Hyatt",
+        rewardRate: 1,
+        pointType: { name: "Hyatt Pts", centsPerPoint: 0.015 },
+        rewardRules: [
+          {
+            rewardType: "multiplier",
+            rewardValue: 4,
+            hotelChainId: "hyatt-id",
+            otaAgencyId: null,
+          },
+        ],
+      },
+    };
+    const result = getNetCostBreakdown(booking);
+    const card = result.cardRewardCalc;
+
+    expect(card?.segments).toHaveLength(2);
+    expect(card?.segments![0].label).toBe("Base Card Earning");
+    expect(card?.segments![1].label).toBe("Hotel/Booking Boost");
+    expect(card?.segments![0].value).toBe(1.5); // 100 * 1 * 0.015
+    expect(card?.segments![1].value).toBe(4.5); // 100 * 3 * 0.015
+  });
 });

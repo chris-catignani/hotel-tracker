@@ -29,8 +29,8 @@ function CalculationInfo({ calc }: { calc: CalculationDetail | undefined }) {
             Breakdown Ledger
           </p>
           <div className="space-y-3 border-t pt-3">
-            {calc.segments.map((segment, idx) => (
-              <div key={idx} className="space-y-1.5">
+            {calc.segments.map((segment) => (
+              <div key={segment.label} className="space-y-1.5">
                 <div className="flex justify-between items-start gap-4">
                   <span className="text-xs font-semibold">{segment.label}</span>
                   <span className="text-xs font-mono font-bold whitespace-nowrap">
