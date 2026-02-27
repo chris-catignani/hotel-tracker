@@ -641,16 +641,16 @@ test.describe("Promotions restriction picker UX", () => {
 });
 
 test.describe("Promotions constraints", () => {
-  test("should enforce maxRedemptionCount: 1 — only first booking gets promotion", async ({
+  test("should enforce maxStayCount: 1 — only first booking gets promotion", async ({
     request,
     testHotelChain,
   }) => {
     const promoRes = await request.post("/api/promotions", {
       data: {
-        name: `Max Redemption 1 Promo ${crypto.randomUUID()}`,
+        name: `Max Stay 1 Promo ${crypto.randomUUID()}`,
         type: "loyalty",
         hotelChainId: testHotelChain.id,
-        restrictions: { maxRedemptionCount: 1 },
+        restrictions: { maxStayCount: 1 },
         benefits: [
           { rewardType: "cashback", valueType: "fixed", value: 50, certType: null, sortOrder: 0 },
         ],
@@ -659,13 +659,13 @@ test.describe("Promotions constraints", () => {
     });
     expect(promoRes.ok()).toBeTruthy();
     const promo = await promoRes.json();
-    expect(promo.restrictions?.maxRedemptionCount).toBe(1);
+    expect(promo.restrictions?.maxStayCount).toBe(1);
 
     // Create first booking
     const booking1Res = await request.post("/api/bookings", {
       data: {
         hotelChainId: testHotelChain.id,
-        propertyName: `Max Redemption Test 1 ${crypto.randomUUID()}`,
+        propertyName: `Max Stay Test 1 ${crypto.randomUUID()}`,
         checkIn: "2025-06-01",
         checkOut: "2025-06-03",
         numNights: 2,
@@ -689,7 +689,7 @@ test.describe("Promotions constraints", () => {
     const booking2Res = await request.post("/api/bookings", {
       data: {
         hotelChainId: testHotelChain.id,
-        propertyName: `Max Redemption Test 2 ${crypto.randomUUID()}`,
+        propertyName: `Max Stay Test 2 ${crypto.randomUUID()}`,
         checkIn: "2025-07-01",
         checkOut: "2025-07-03",
         numNights: 2,
@@ -702,7 +702,7 @@ test.describe("Promotions constraints", () => {
     expect(booking2Res.ok()).toBeTruthy();
     const booking2 = await booking2Res.json();
 
-    // Verify second booking does NOT have the promotion (maxRedemptionCount = 1 enforced)
+    // Verify second booking does NOT have the promotion (maxStayCount = 1 enforced)
     const bp2 = booking2.bookingPromotions.find(
       (bp: { promotionId: string }) => bp.promotionId === promo.id
     );
