@@ -5,18 +5,66 @@ import { useParams, useRouter } from "next/navigation";
 import { PromotionForm } from "@/components/promotions/promotion-form";
 import {
   Promotion,
-  PromotionExclusion,
   PromotionFormData,
   PromotionType,
   PromotionRewardType,
   PromotionBenefitValueType,
   PromotionTierFormData,
+  PromotionBenefitFormData,
+  PromotionRestrictionsData,
+  PromotionRestrictionsFormData,
+  EMPTY_RESTRICTIONS,
 } from "@/lib/types";
 
-function toDateInputValue(dateStr: string | null): string {
+function toDateInputValue(dateStr: string | null | undefined): string {
   if (!dateStr) return "";
   const d = new Date(dateStr);
   return d.toISOString().split("T")[0];
+}
+
+function mapApiRestrictionsToForm(
+  r: PromotionRestrictionsData | null | undefined
+): PromotionRestrictionsFormData {
+  if (!r) return { ...EMPTY_RESTRICTIONS };
+  return {
+    minSpend: r.minSpend ? String(r.minSpend) : "",
+    minNightsRequired: r.minNightsRequired ? String(r.minNightsRequired) : "",
+    nightsStackable: r.nightsStackable ?? false,
+    maxRedemptionCount: r.maxRedemptionCount ? String(r.maxRedemptionCount) : "",
+    maxRedemptionValue: r.maxRedemptionValue ? String(r.maxRedemptionValue) : "",
+    maxTotalBonusPoints: r.maxTotalBonusPoints ? String(r.maxTotalBonusPoints) : "",
+    oncePerSubBrand: r.oncePerSubBrand ?? false,
+    bookByDate: toDateInputValue(r.bookByDate),
+    registrationDeadline: toDateInputValue(r.registrationDeadline),
+    validDaysAfterRegistration: r.validDaysAfterRegistration
+      ? String(r.validDaysAfterRegistration)
+      : "",
+    registrationDate: "",
+    tieInRequiresPayment: r.tieInRequiresPayment ?? false,
+    allowedPaymentTypes: r.allowedPaymentTypes ?? [],
+    subBrandIncludeIds: (r.subBrandRestrictions ?? [])
+      .filter((s) => s.mode === "include")
+      .map((s) => s.hotelChainSubBrandId),
+    subBrandExcludeIds: (r.subBrandRestrictions ?? [])
+      .filter((s) => s.mode === "exclude")
+      .map((s) => s.hotelChainSubBrandId),
+    tieInCreditCardIds: (r.tieInCards ?? []).map((c) => c.creditCardId),
+  };
+}
+
+function mapApiBenefitToForm(
+  b: Promotion["benefits"][number],
+  i: number
+): PromotionBenefitFormData {
+  return {
+    rewardType: b.rewardType as PromotionRewardType,
+    valueType: b.valueType as PromotionBenefitValueType,
+    value: parseFloat(String(b.value)),
+    certType: b.certType,
+    pointsMultiplierBasis: b.pointsMultiplierBasis,
+    sortOrder: b.sortOrder ?? i,
+    restrictions: b.restrictions ? mapApiRestrictionsToForm(b.restrictions) : null,
+  };
 }
 
 export default function EditPromotionPage() {
@@ -25,9 +73,7 @@ export default function EditPromotionPage() {
   const id = params.id as string;
 
   const [loading, setLoading] = useState(true);
-  const [initialData, setInitialData] = useState<
-    (Partial<PromotionFormData> & { exclusions?: PromotionExclusion[] }) | null
-  >(null);
+  const [initialData, setInitialData] = useState<Partial<PromotionFormData> | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -39,56 +85,30 @@ export default function EditPromotionPage() {
         return res.json();
       })
       .then((promo: Promotion) => {
+        const restrictionsForm = mapApiRestrictionsToForm(promo.restrictions);
+        // registrationDate lives in userPromotions, not in restrictions
+        restrictionsForm.registrationDate = toDateInputValue(
+          promo.userPromotions?.[0]?.registrationDate || null
+        );
+
         setInitialData({
           name: promo.name,
           type: promo.type as PromotionType,
-          benefits: (promo.benefits || []).map((b, i) => ({
-            rewardType: b.rewardType as PromotionRewardType,
-            valueType: b.valueType as PromotionBenefitValueType,
-            value: parseFloat(String(b.value)),
-            certType: b.certType,
-            pointsMultiplierBasis: b.pointsMultiplierBasis,
-            isTieIn: b.isTieIn,
-            sortOrder: b.sortOrder ?? i,
-          })),
+          benefits: (promo.benefits || []).map((b, i) => mapApiBenefitToForm(b, i)),
           tiers: (promo.tiers || []).map(
             (tier): PromotionTierFormData => ({
               minStays: tier.minStays,
               maxStays: tier.maxStays,
-              benefits: (tier.benefits || []).map((b, i) => ({
-                rewardType: b.rewardType as PromotionRewardType,
-                valueType: b.valueType as PromotionBenefitValueType,
-                value: parseFloat(String(b.value)),
-                certType: b.certType,
-                pointsMultiplierBasis: b.pointsMultiplierBasis,
-                isTieIn: b.isTieIn,
-                sortOrder: b.sortOrder ?? i,
-              })),
+              benefits: (tier.benefits || []).map((b, i) => mapApiBenefitToForm(b, i)),
             })
           ),
           hotelChainId: promo.hotelChainId,
-          hotelChainSubBrandId: promo.hotelChainSubBrandId,
           creditCardId: promo.creditCardId,
-          tieInCreditCardIds: promo.tieInCreditCardIds,
-          tieInRequiresPayment: promo.tieInRequiresPayment,
           shoppingPortalId: promo.shoppingPortalId,
-          minSpend: promo.minSpend ? parseFloat(String(promo.minSpend)) : null,
           startDate: toDateInputValue(promo.startDate),
           endDate: toDateInputValue(promo.endDate),
           isActive: promo.isActive,
-          maxRedemptionCount: promo.maxRedemptionCount,
-          maxRedemptionValue: promo.maxRedemptionValue
-            ? parseFloat(String(promo.maxRedemptionValue))
-            : null,
-          maxTotalBonusPoints: promo.maxTotalBonusPoints,
-          minNightsRequired: promo.minNightsRequired,
-          nightsStackable: promo.nightsStackable,
-          bookByDate: toDateInputValue(promo.bookByDate),
-          oncePerSubBrand: promo.oncePerSubBrand,
-          registrationDeadline: toDateInputValue(promo.registrationDeadline),
-          validDaysAfterRegistration: promo.validDaysAfterRegistration,
-          registrationDate: toDateInputValue(promo.userPromotions?.[0]?.registrationDate || null),
-          exclusions: promo.exclusions,
+          restrictions: restrictionsForm,
         });
         setLoading(false);
       })

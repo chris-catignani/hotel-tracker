@@ -1,22 +1,20 @@
 import { test, expect } from "./fixtures";
 
-test.describe("Promotion exclusions", () => {
+test.describe("Promotion sub-brand scope (exclude)", () => {
   test("Promotion exclusion: booking at excluded sub-brand does NOT get promotion applied", async ({
     request,
     testHotelChain,
     testSubBrand,
   }) => {
-    // Create sub-brands for the unique chain to avoid interference
     const subBrand1 = await testSubBrand();
 
     const promoName = `Exclusion Test ${crypto.randomUUID()}`;
-    // Create a loyalty promotion for the unique chain that excludes Sub1
     const promoRes = await request.post("/api/promotions", {
       data: {
         name: promoName,
         type: "loyalty",
         hotelChainId: testHotelChain.id,
-        exclusionSubBrandIds: [subBrand1.id],
+        restrictions: { subBrandExcludeIds: [subBrand1.id] },
         benefits: [
           { rewardType: "cashback", valueType: "fixed", value: 50, certType: null, sortOrder: 0 },
         ],
@@ -63,18 +61,16 @@ test.describe("Promotion exclusions", () => {
     testHotelChain,
     testSubBrand,
   }) => {
-    // Create sub-brands for the unique chain to avoid interference
     const subBrand1 = await testSubBrand();
     const subBrand2 = await testSubBrand();
 
     const promoName = `Exclusion Test ${crypto.randomUUID()}`;
-    // Create a loyalty promotion for the unique chain that excludes Sub1
     const promoRes = await request.post("/api/promotions", {
       data: {
         name: promoName,
         type: "loyalty",
         hotelChainId: testHotelChain.id,
-        exclusionSubBrandIds: [subBrand1.id],
+        restrictions: { subBrandExcludeIds: [subBrand1.id] },
         benefits: [
           { rewardType: "cashback", valueType: "fixed", value: 50, certType: null, sortOrder: 0 },
         ],
@@ -122,17 +118,15 @@ test.describe("Promotion exclusions", () => {
     testHotelChain,
     testSubBrand,
   }) => {
-    // Create sub-brands for the unique chain to avoid interference
     const subBrand1 = await testSubBrand();
 
     const promoName = `Exclusion Remove Test ${crypto.randomUUID()}`;
-    // Create promotion excluding Sub1
     const promoRes = await request.post("/api/promotions", {
       data: {
         name: promoName,
         type: "loyalty",
         hotelChainId: testHotelChain.id,
-        exclusionSubBrandIds: [subBrand1.id],
+        restrictions: { subBrandExcludeIds: [subBrand1.id] },
         benefits: [
           { rewardType: "cashback", valueType: "fixed", value: 50, certType: null, sortOrder: 0 },
         ],
@@ -169,10 +163,10 @@ test.describe("Promotion exclusions", () => {
     );
     expect(appliedBefore).toBeUndefined();
 
-    // Remove the exclusion by updating promotion with empty exclusionSubBrandIds
+    // Remove the exclusion by updating promotion with empty subBrandExcludeIds
     const updateRes = await request.put(`/api/promotions/${promo.id}`, {
       data: {
-        exclusionSubBrandIds: [],
+        restrictions: { subBrandExcludeIds: [] },
       },
     });
     expect(updateRes.ok()).toBeTruthy();

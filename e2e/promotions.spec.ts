@@ -341,7 +341,7 @@ test.describe("Promotions tiered", () => {
   });
 });
 
-test.describe("Promotions tie-in credit card", () => {
+test.describe("Promotions tie-in credit card (benefit-level restrictions)", () => {
   // Seeded credit card IDs (CUIDs)
   const TIE_IN_CARD_ID = "cme8yfwy2hfqahb6ync8czd24"; // Amex Platinum
   const OTHER_CARD_ID = "cw4yg6ftdskwq651p3p8nrvnr"; // Chase Sapphire Reserve
@@ -350,29 +350,28 @@ test.describe("Promotions tie-in credit card", () => {
     request,
     testHotelChain,
   }) => {
+    // Base benefit has no restrictions; tie-in benefit is gated by card via benefit-level restrictions
     const promoRes = await request.post("/api/promotions", {
       data: {
         name: `Tie-In Promo ${crypto.randomUUID()}`,
         type: "loyalty",
         hotelChainId: testHotelChain.id,
-        tieInCreditCardIds: [TIE_IN_CARD_ID],
-        tieInRequiresPayment: false,
         benefits: [
           {
             rewardType: "cashback",
             valueType: "fixed",
             value: 20,
             certType: null,
-            isTieIn: false,
             sortOrder: 0,
+            restrictions: null,
           },
           {
             rewardType: "cashback",
             valueType: "fixed",
             value: 30,
             certType: null,
-            isTieIn: true,
             sortOrder: 1,
+            restrictions: { tieInCreditCardIds: [TIE_IN_CARD_ID], tieInRequiresPayment: false },
           },
         ],
         isActive: true,
@@ -380,12 +379,9 @@ test.describe("Promotions tie-in credit card", () => {
     });
     expect(promoRes.ok()).toBeTruthy();
     const promo = await promoRes.json();
-    expect(promo.tieInCards.map((c: { creditCardId: string }) => c.creditCardId)).toContain(
-      TIE_IN_CARD_ID
-    );
     expect(promo.benefits).toHaveLength(2);
-    expect(promo.benefits[0].isTieIn).toBe(false);
-    expect(promo.benefits[1].isTieIn).toBe(true);
+    expect(promo.benefits[1].restrictions?.tieInCards).toHaveLength(1);
+    expect(promo.benefits[1].restrictions.tieInCards[0].creditCardId).toBe(TIE_IN_CARD_ID);
 
     // Create booking WITH the tie-in card
     const bookingRes = await request.post("/api/bookings", {
@@ -427,24 +423,22 @@ test.describe("Promotions tie-in credit card", () => {
         name: `Tie-In Promo No Card ${crypto.randomUUID()}`,
         type: "loyalty",
         hotelChainId: testHotelChain.id,
-        tieInCreditCardIds: [TIE_IN_CARD_ID],
-        tieInRequiresPayment: false,
         benefits: [
           {
             rewardType: "cashback",
             valueType: "fixed",
             value: 20,
             certType: null,
-            isTieIn: false,
             sortOrder: 0,
+            restrictions: null,
           },
           {
             rewardType: "cashback",
             valueType: "fixed",
             value: 30,
             certType: null,
-            isTieIn: true,
             sortOrder: 1,
+            restrictions: { tieInCreditCardIds: [TIE_IN_CARD_ID] },
           },
         ],
         isActive: true,
@@ -485,7 +479,7 @@ test.describe("Promotions tie-in credit card", () => {
     await request.delete(`/api/promotions/${promo.id}`);
   });
 
-  test("booking without any card gets only base benefits when tie-in card is set", async ({
+  test("booking without any card gets only base benefits when benefit tie-in card is set", async ({
     request,
     testHotelChain,
   }) => {
@@ -494,24 +488,22 @@ test.describe("Promotions tie-in credit card", () => {
         name: `Tie-In Promo No Payment ${crypto.randomUUID()}`,
         type: "loyalty",
         hotelChainId: testHotelChain.id,
-        tieInCreditCardIds: [TIE_IN_CARD_ID],
-        tieInRequiresPayment: true,
         benefits: [
           {
             rewardType: "cashback",
             valueType: "fixed",
             value: 20,
             certType: null,
-            isTieIn: false,
             sortOrder: 0,
+            restrictions: null,
           },
           {
             rewardType: "cashback",
             valueType: "fixed",
             value: 30,
             certType: null,
-            isTieIn: true,
             sortOrder: 1,
+            restrictions: { tieInCreditCardIds: [TIE_IN_CARD_ID], tieInRequiresPayment: true },
           },
         ],
         isActive: true,
@@ -519,7 +511,7 @@ test.describe("Promotions tie-in credit card", () => {
     });
     expect(promoRes.ok()).toBeTruthy();
     const promo = await promoRes.json();
-    expect(promo.tieInRequiresPayment).toBe(true);
+    expect(promo.benefits[1].restrictions?.tieInRequiresPayment).toBe(true);
 
     // Create booking with NO credit card
     const bookingRes = await request.post("/api/bookings", {
@@ -566,8 +558,7 @@ test.describe("Promotions restriction picker UX", () => {
           { rewardType: "cashback", valueType: "fixed", value: 25, certType: null, sortOrder: 0 },
         ],
         isActive: true,
-        minSpend: 200,
-        registrationDeadline: "2026-06-01",
+        restrictions: { minSpend: "200", registrationDeadline: "2026-06-01" },
       },
     });
     expect(res.ok()).toBeTruthy();
@@ -600,7 +591,7 @@ test.describe("Promotions restriction picker UX", () => {
           { rewardType: "cashback", valueType: "fixed", value: 25, certType: null, sortOrder: 0 },
         ],
         isActive: true,
-        minSpend: 100,
+        restrictions: { minSpend: "100" },
       },
     });
     expect(res.ok()).toBeTruthy();
@@ -659,7 +650,7 @@ test.describe("Promotions constraints", () => {
         name: `Max Redemption 1 Promo ${crypto.randomUUID()}`,
         type: "loyalty",
         hotelChainId: testHotelChain.id,
-        maxRedemptionCount: 1,
+        restrictions: { maxRedemptionCount: 1 },
         benefits: [
           { rewardType: "cashback", valueType: "fixed", value: 50, certType: null, sortOrder: 0 },
         ],
@@ -668,7 +659,7 @@ test.describe("Promotions constraints", () => {
     });
     expect(promoRes.ok()).toBeTruthy();
     const promo = await promoRes.json();
-    expect(promo.maxRedemptionCount).toBe(1);
+    expect(promo.restrictions?.maxRedemptionCount).toBe(1);
 
     // Create first booking
     const booking1Res = await request.post("/api/bookings", {

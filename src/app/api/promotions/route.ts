@@ -1,22 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { PromotionType } from "@prisma/client";
+import { PromotionType, Prisma } from "@prisma/client";
 import { apiError } from "@/lib/api-error";
 import { matchPromotionsForAffectedBookings } from "@/lib/promotion-matching";
-import { PromotionBenefitFormData, PromotionTierFormData, PromotionFormData } from "@/lib/types";
+import {
+  PromotionBenefitFormData,
+  PromotionTierFormData,
+  PromotionFormData,
+  PromotionRestrictionsFormData,
+} from "@/lib/types";
+import { buildRestrictionsCreateData, buildBenefitCreateData } from "@/lib/promotion-api-helpers";
 
 const PROMOTION_INCLUDE = {
   hotelChain: true,
-  hotelChainSubBrand: true,
   creditCard: true,
-  tieInCards: { include: { creditCard: true } },
   shoppingPortal: true,
-  benefits: { orderBy: { sortOrder: "asc" as const } },
+  restrictions: {
+    include: { subBrandRestrictions: true, tieInCards: true },
+  },
+  benefits: {
+    orderBy: { sortOrder: "asc" as const },
+    include: {
+      restrictions: { include: { subBrandRestrictions: true, tieInCards: true } },
+    },
+  },
   tiers: {
     orderBy: { minStays: "asc" as const },
-    include: { benefits: { orderBy: { sortOrder: "asc" as const } } },
+    include: {
+      benefits: {
+        orderBy: { sortOrder: "asc" as const },
+        include: {
+          restrictions: { include: { subBrandRestrictions: true, tieInCards: true } },
+        },
+      },
+    },
   },
-  exclusions: true,
   userPromotions: true,
 } as const;
 
@@ -50,27 +68,17 @@ export async function POST(request: NextRequest) {
       benefits,
       tiers,
       hotelChainId,
-      hotelChainSubBrandId,
       creditCardId,
       shoppingPortalId,
-      minSpend,
       startDate,
       endDate,
       isActive,
-      maxRedemptionCount,
-      maxRedemptionValue,
-      maxTotalBonusPoints,
-      minNightsRequired,
-      nightsStackable,
-      bookByDate,
-      oncePerSubBrand,
-      exclusionSubBrandIds,
-      tieInCreditCardIds,
-      tieInRequiresPayment,
-      registrationDeadline,
-      validDaysAfterRegistration,
-      registrationDate,
-    } = body as PromotionFormData & { exclusionSubBrandIds?: string[] };
+      restrictions,
+    } = body as PromotionFormData;
+
+    // registrationDate is stored in UserPromotion, extracted from restrictions
+    const registrationDate = (restrictions as PromotionRestrictionsFormData | null)
+      ?.registrationDate;
 
     const hasTiers = Array.isArray(tiers) && tiers.length > 0;
 
@@ -79,25 +87,15 @@ export async function POST(request: NextRequest) {
         data: {
           name,
           type,
-          hotelChainId: hotelChainId || null,
-          hotelChainSubBrandId: hotelChainSubBrandId || null,
-          creditCardId: creditCardId || null,
-          shoppingPortalId: shoppingPortalId || null,
-          minSpend: minSpend != null ? Number(minSpend) : null,
+          hotelChain: hotelChainId ? { connect: { id: hotelChainId } } : undefined,
+          creditCard: creditCardId ? { connect: { id: creditCardId } } : undefined,
+          shoppingPortal: shoppingPortalId ? { connect: { id: shoppingPortalId } } : undefined,
           startDate: startDate ? new Date(startDate) : null,
           endDate: endDate ? new Date(endDate) : null,
           isActive: isActive !== undefined ? isActive : true,
-          maxRedemptionCount: maxRedemptionCount != null ? Number(maxRedemptionCount) : null,
-          maxRedemptionValue: maxRedemptionValue != null ? Number(maxRedemptionValue) : null,
-          maxTotalBonusPoints: maxTotalBonusPoints != null ? Number(maxTotalBonusPoints) : null,
-          minNightsRequired: minNightsRequired != null ? Number(minNightsRequired) : null,
-          nightsStackable: nightsStackable ?? false,
-          bookByDate: bookByDate ? new Date(bookByDate) : null,
-          oncePerSubBrand: oncePerSubBrand ?? false,
-          tieInRequiresPayment: tieInRequiresPayment ?? false,
-          registrationDeadline: registrationDeadline ? new Date(registrationDeadline) : null,
-          validDaysAfterRegistration:
-            validDaysAfterRegistration != null ? Number(validDaysAfterRegistration) : null,
+          ...(restrictions
+            ? { restrictions: { create: buildRestrictionsCreateData(restrictions) } }
+            : {}),
           ...(hasTiers
             ? {
                 tiers: {
@@ -105,16 +103,8 @@ export async function POST(request: NextRequest) {
                     minStays: tier.minStays,
                     maxStays: tier.maxStays ?? null,
                     benefits: {
-                      create: (tier.benefits || []).map(
-                        (b: PromotionBenefitFormData, i: number) => ({
-                          rewardType: b.rewardType,
-                          valueType: b.valueType,
-                          value: Number(b.value),
-                          certType: b.certType || null,
-                          pointsMultiplierBasis: b.pointsMultiplierBasis || null,
-                          isTieIn: b.isTieIn ?? false,
-                          sortOrder: b.sortOrder ?? i,
-                        })
+                      create: (tier.benefits || []).map((b: PromotionBenefitFormData, i: number) =>
+                        buildBenefitCreateData(b, i)
                       ),
                     },
                   })),
@@ -122,18 +112,12 @@ export async function POST(request: NextRequest) {
               }
             : {
                 benefits: {
-                  create: ((benefits as PromotionBenefitFormData[]) || []).map((b, i) => ({
-                    rewardType: b.rewardType,
-                    valueType: b.valueType,
-                    value: Number(b.value),
-                    certType: b.certType || null,
-                    pointsMultiplierBasis: b.pointsMultiplierBasis || null,
-                    isTieIn: b.isTieIn ?? false,
-                    sortOrder: b.sortOrder ?? i,
-                  })),
+                  create: ((benefits as PromotionBenefitFormData[]) || []).map((b, i) =>
+                    buildBenefitCreateData(b, i)
+                  ),
                 },
               }),
-        },
+        } as unknown as Prisma.PromotionCreateInput,
         include: PROMOTION_INCLUDE,
       });
 
@@ -143,24 +127,6 @@ export async function POST(request: NextRequest) {
             promotionId: created.id,
             registrationDate: new Date(registrationDate),
           },
-        });
-      }
-
-      if (Array.isArray(exclusionSubBrandIds) && exclusionSubBrandIds.length > 0) {
-        await tx.promotionExclusion.createMany({
-          data: exclusionSubBrandIds.map((subBrandId) => ({
-            promotionId: created.id,
-            hotelChainSubBrandId: subBrandId,
-          })),
-        });
-      }
-
-      if (Array.isArray(tieInCreditCardIds) && tieInCreditCardIds.length > 0) {
-        await tx.promotionTieInCard.createMany({
-          data: tieInCreditCardIds.map((cardId) => ({
-            promotionId: created.id,
-            creditCardId: cardId,
-          })),
         });
       }
 

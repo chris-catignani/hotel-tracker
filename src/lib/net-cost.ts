@@ -18,7 +18,6 @@ export interface NetCostBookingPromotionBenefit {
     value: string | number;
     certType: string | null;
     pointsMultiplierBasis?: string | null;
-    isTieIn?: boolean;
   };
 }
 
@@ -151,7 +150,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
       const b = ba.promotionBenefit;
       const bValue = Number(b.value);
       const bApplied = Number(ba.appliedValue);
-      const tieInSuffix = b.isTieIn ? " (tie-in benefit)" : "";
+      const tieInSuffix = "";
 
       switch (b.rewardType) {
         case "cashback":
