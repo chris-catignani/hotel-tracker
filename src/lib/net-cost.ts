@@ -245,7 +245,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
             `${multiplierPrefix}${bValue.toLocaleString()} cert(s) × ${points.toLocaleString()} pts × 70% × ${centsStr}¢${capSuffix} = ${formatCurrency(bApplied)}${tieInSuffix}`
           );
           descriptionLines.push(
-            `Earns ${appliedMultiplier > 1 ? Number(appliedMultiplier * bValue) : bValue.toLocaleString()} free night certificate(s), valued at 70% of a max redemption (${points.toLocaleString()} pts) at ${centsStr}¢ per point.${isCapped ? " This benefit was reduced by redemption caps." : ""}${tieInSuffix}`
+            `Earns ${appliedMultiplier > 1 ? (appliedMultiplier * bValue).toLocaleString() : bValue.toLocaleString()} free night certificate(s), valued at 70% of a max redemption (${points.toLocaleString()} pts) at ${centsStr}¢ per point.${isCapped ? " This benefit was reduced by redemption caps." : ""}${tieInSuffix}`
           );
           break;
         }
@@ -254,7 +254,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
             `${multiplierPrefix}${bValue.toLocaleString()} bonus EQN(s) × ${formatCurrency(DEFAULT_EQN_VALUE)}${capSuffix} = ${formatCurrency(bApplied)}${tieInSuffix}`
           );
           descriptionLines.push(
-            `Earns ${appliedMultiplier > 1 ? Number(appliedMultiplier * bValue) : bValue.toLocaleString()} bonus Elite Qualifying Night(s), valued at ${formatCurrency(DEFAULT_EQN_VALUE)} each.${isCapped ? " This benefit was reduced by redemption caps." : ""}${tieInSuffix}`
+            `Earns ${appliedMultiplier > 1 ? (appliedMultiplier * bValue).toLocaleString() : bValue.toLocaleString()} bonus Elite Qualifying Night(s), valued at ${formatCurrency(DEFAULT_EQN_VALUE)} each.${isCapped ? " This benefit was reduced by redemption caps." : ""}${tieInSuffix}`
           );
           break;
       }
