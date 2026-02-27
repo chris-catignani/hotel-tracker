@@ -328,6 +328,9 @@ export function calculateMatchedPromotions(
         if (appliedSubBrands?.has(booking.hotelChainSubBrandId ?? null)) return false;
       }
 
+      // TODO: Implement benefit-level maxRedemptionCount, maxRedemptionValue, and maxTotalBonusPoints.
+      // These require more granular usage tracking (per-benefit) than the current promotion-level aggregation.
+
       return true;
     });
 
