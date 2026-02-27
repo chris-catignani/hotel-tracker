@@ -1182,4 +1182,115 @@ describe("promotion-matching", () => {
       expect(matched).toHaveLength(1);
     });
   });
+
+  // Payment type restriction tests
+  describe("payment type restrictions", () => {
+    const cashBooking = {
+      ...mockBooking,
+      pretaxCost: 100,
+      pointsRedeemed: 0,
+      _count: { certificates: 0 },
+    };
+    const pointsBooking = {
+      ...mockBooking,
+      pretaxCost: 0,
+      pointsRedeemed: 10000,
+      _count: { certificates: 0 },
+    };
+    const certBooking = {
+      ...mockBooking,
+      pretaxCost: 0,
+      pointsRedeemed: 0,
+      _count: { certificates: 1 },
+    };
+    const mixedBooking = {
+      ...mockBooking,
+      pretaxCost: 50,
+      pointsRedeemed: 5000,
+      _count: { certificates: 0 },
+    };
+
+    it("empty allowedPaymentTypes: applies to everything", () => {
+      const promo = makePromo({
+        restrictions: makeRestrictions({ allowedPaymentTypes: [] }),
+      });
+      expect(calculateMatchedPromotions(cashBooking, [promo])).toHaveLength(1);
+      expect(calculateMatchedPromotions(pointsBooking, [promo])).toHaveLength(1);
+      expect(calculateMatchedPromotions(certBooking, [promo])).toHaveLength(1);
+      expect(calculateMatchedPromotions(mixedBooking, [promo])).toHaveLength(1);
+    });
+
+    it("allowedPaymentTypes=['cash']: applies only to cash, skips points/certs", () => {
+      const promo = makePromo({
+        restrictions: makeRestrictions({ allowedPaymentTypes: ["cash"] }),
+      });
+      expect(calculateMatchedPromotions(cashBooking, [promo])).toHaveLength(1);
+      expect(calculateMatchedPromotions(pointsBooking, [promo])).toHaveLength(0);
+      expect(calculateMatchedPromotions(certBooking, [promo])).toHaveLength(0);
+    });
+
+    it("allowedPaymentTypes=['points']: applies only to points, skips cash/certs", () => {
+      const promo = makePromo({
+        restrictions: makeRestrictions({ allowedPaymentTypes: ["points"] }),
+      });
+      expect(calculateMatchedPromotions(pointsBooking, [promo])).toHaveLength(1);
+      expect(calculateMatchedPromotions(cashBooking, [promo])).toHaveLength(0);
+      expect(calculateMatchedPromotions(certBooking, [promo])).toHaveLength(0);
+    });
+
+    it("allowedPaymentTypes=['cert']: applies only to certs, skips cash/points", () => {
+      const promo = makePromo({
+        restrictions: makeRestrictions({ allowedPaymentTypes: ["cert"] }),
+      });
+      expect(calculateMatchedPromotions(certBooking, [promo])).toHaveLength(1);
+      expect(calculateMatchedPromotions(cashBooking, [promo])).toHaveLength(0);
+      expect(calculateMatchedPromotions(pointsBooking, [promo])).toHaveLength(0);
+    });
+
+    it("allowedPaymentTypes=['cash', 'points']: applies to mixed cash+points booking", () => {
+      const promo = makePromo({
+        restrictions: makeRestrictions({ allowedPaymentTypes: ["cash", "points"] }),
+      });
+      expect(calculateMatchedPromotions(mixedBooking, [promo])).toHaveLength(1);
+    });
+
+    it("allowedPaymentTypes=['cash']: skips mixed cash+points booking because points are present but not allowed", () => {
+      const promo = makePromo({
+        restrictions: makeRestrictions({ allowedPaymentTypes: ["cash"] }),
+      });
+      expect(calculateMatchedPromotions(mixedBooking, [promo])).toHaveLength(0);
+    });
+
+    it("benefit-level payment restriction: only applicable benefits apply", () => {
+      const cashBenefit = {
+        ...baseBenefitDef,
+        id: "b-cash",
+        restrictions: makeRestrictions({ allowedPaymentTypes: ["cash"] }),
+      };
+      const pointsBenefit = {
+        ...baseBenefitDef,
+        id: "b-points",
+        restrictions: makeRestrictions({ allowedPaymentTypes: ["points"] }),
+      };
+      const promo = makePromo({
+        type: PromotionType.loyalty,
+        creditCardId: null,
+        hotelChainId: "chain-3",
+        benefits: [cashBenefit, pointsBenefit],
+      });
+
+      // Cash booking → only cashBenefit
+      const resCash = calculateMatchedPromotions(cashBooking, [promo]);
+      expect(resCash[0].benefitApplications).toHaveLength(1);
+      expect(resCash[0].benefitApplications[0].promotionBenefitId).toBe("b-cash");
+
+      // Points booking → only pointsBenefit
+      const resPoints = calculateMatchedPromotions(pointsBooking, [promo]);
+      expect(resPoints[0].benefitApplications).toHaveLength(1);
+      expect(resPoints[0].benefitApplications[0].promotionBenefitId).toBe("b-points");
+
+      // Mixed booking → none (both benefits restricted to single types)
+      expect(calculateMatchedPromotions(mixedBooking, [promo])).toHaveLength(0);
+    });
+  });
 });
