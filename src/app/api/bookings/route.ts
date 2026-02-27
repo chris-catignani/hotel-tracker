@@ -20,8 +20,21 @@ export async function GET(request: NextRequest) {
         shoppingPortal: { include: { pointType: true } },
         bookingPromotions: {
           include: {
-            promotion: { include: { benefits: { orderBy: { sortOrder: "asc" } } } },
-            benefitApplications: { include: { promotionBenefit: true } },
+            promotion: {
+              include: {
+                restrictions: true,
+                benefits: { orderBy: { sortOrder: "asc" } },
+              },
+            },
+            benefitApplications: {
+              include: {
+                promotionBenefit: {
+                  include: {
+                    restrictions: true,
+                  },
+                },
+              },
+            },
           },
         },
         certificates: true,
@@ -170,8 +183,21 @@ export async function POST(request: NextRequest) {
         shoppingPortal: { include: { pointType: true } },
         bookingPromotions: {
           include: {
-            promotion: { include: { benefits: { orderBy: { sortOrder: "asc" } } } },
-            benefitApplications: { include: { promotionBenefit: true } },
+            promotion: {
+              include: {
+                restrictions: true,
+                benefits: { orderBy: { sortOrder: "asc" } },
+              },
+            },
+            benefitApplications: {
+              include: {
+                promotionBenefit: {
+                  include: {
+                    restrictions: true,
+                  },
+                },
+              },
+            },
           },
         },
         certificates: true,

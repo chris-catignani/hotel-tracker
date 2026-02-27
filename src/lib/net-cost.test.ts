@@ -6,6 +6,7 @@ describe("net-cost", () => {
   const mockBaseBooking: NetCostBooking = {
     totalCost: 100,
     pretaxCost: 80,
+    numNights: 3,
     portalCashbackOnTotal: false,
     portalCashbackRate: null,
     loyaltyPointsEarned: null,
@@ -590,6 +591,7 @@ describe("net-cost", () => {
   it("should explain pending spanned promotion in the formula and description", () => {
     const booking: NetCostBooking = {
       ...mockBaseBooking,
+      numNights: 1,
       bookingPromotions: [
         {
           appliedValue: 10,
@@ -615,9 +617,11 @@ describe("net-cost", () => {
       ],
     };
     const result = getNetCostBreakdown(booking);
-    expect(result.promotions[0].formula).toContain("$30.00 fixed cashback (pending) = $10.00");
+    expect(result.promotions[0].formula).toContain(
+      "(1 of 3 nights) × $30.00 fixed cashback (pending) = $10.00"
+    );
     expect(result.promotions[0].description).toContain(
-      "pending additional stays (1 of 3 nights required)"
+      "This bonus is pending additional stays (1 of 3 nights required)"
     );
   });
 });

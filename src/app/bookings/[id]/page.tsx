@@ -26,11 +26,16 @@ import { CostBreakdown } from "@/components/cost-breakdown";
 
 interface BookingPromotionBenefit {
   appliedValue: string | number;
+  eligibleNightsAtBooking?: number | null;
   promotionBenefit: {
     rewardType: string;
     valueType: string;
     value: string | number;
     certType: string | null;
+    restrictions?: {
+      minNightsRequired?: number | null;
+      spanStays?: boolean;
+    } | null;
   };
 }
 
@@ -39,11 +44,16 @@ interface BookingPromotion {
   bookingId: string;
   promotionId: string;
   appliedValue: string | number;
+  eligibleNightsAtBooking?: number | null;
   autoApplied: boolean;
   verified: boolean;
   promotion: {
     name: string;
     type: string;
+    restrictions?: {
+      minNightsRequired?: number | null;
+      spanStays?: boolean;
+    } | null;
     benefits: {
       rewardType: string;
       valueType: string;
