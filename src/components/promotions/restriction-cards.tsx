@@ -70,7 +70,7 @@ export function deriveActiveRestrictions(
   if (r.minSpend) keys.add("min_spend");
   if (r.bookByDate) keys.add("book_by_date");
   if (r.minNightsRequired) keys.add("min_nights");
-  if (r.maxRedemptionCount || r.maxRedemptionValue || r.maxTotalBonusPoints)
+  if (r.maxStayCount || r.maxRewardCount || r.maxRedemptionValue || r.maxTotalBonusPoints)
     keys.add("redemption_caps");
   if (r.oncePerSubBrand === true) keys.add("once_per_sub_brand");
   if (r.tieInCreditCardIds && r.tieInCreditCardIds.length > 0) keys.add("tie_in_cards");

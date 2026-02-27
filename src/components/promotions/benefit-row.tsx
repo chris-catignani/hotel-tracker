@@ -134,7 +134,12 @@ export function BenefitRow({
         updates = { minNightsRequired: "", nightsStackable: false, spanStays: false };
         break;
       case "redemption_caps":
-        updates = { maxRedemptionCount: "", maxRedemptionValue: "", maxTotalBonusPoints: "" };
+        updates = {
+          maxStayCount: "",
+          maxRewardCount: "",
+          maxRedemptionValue: "",
+          maxTotalBonusPoints: "",
+        };
         break;
       case "once_per_sub_brand":
         updates = { oncePerSubBrand: false };
@@ -152,7 +157,8 @@ export function BenefitRow({
       newRestrictions.allowedPaymentTypes.length > 0 ||
       newRestrictions.minSpend ||
       newRestrictions.minNightsRequired ||
-      newRestrictions.maxRedemptionCount ||
+      newRestrictions.maxStayCount ||
+      newRestrictions.maxRewardCount ||
       newRestrictions.maxRedemptionValue ||
       newRestrictions.maxTotalBonusPoints ||
       newRestrictions.oncePerSubBrand ||
