@@ -117,7 +117,7 @@ describe("net-cost", () => {
     expect(result.promotions[0].formula).toContain(
       "1,000 pts (incl. elite bonus) × (2 - 1) × 1.5¢ = $15.00"
     );
-    expect(result.promotions[0].description).toContain("elite bonus");
+    expect(result.promotions[0].description).toContain("loyalty points");
   });
 
   it("should apply fixed points promotions", () => {
@@ -382,7 +382,7 @@ describe("net-cost", () => {
     expect(result.promoSavings).toBe(24);
     expect(result.netCost).toBe(64);
     expect(result.promotions[0].formula).toContain("(base rate only)");
-    expect(result.promotions[0].description).toContain("base-rate points only");
+    expect(result.promotions[0].description).toContain("base rate");
   });
 
   it("should calculate boosted credit card rewards for specific hotel chain", () => {
@@ -409,8 +409,13 @@ describe("net-cost", () => {
     const result = getNetCostBreakdown(booking);
     // 100 total * 4x (boosted) * 0.015 $/pt = 6.00
     expect(result.cardReward).toBe(6.0);
-    expect(result.cardRewardCalc?.formula).toContain("4x (boosted)");
-    expect(result.cardRewardCalc?.description).toContain("boosted total of 4x");
+    expect(result.cardRewardCalc?.formula).toContain("$100.00 (total cost) × 1x × 1.5¢ = $1.50");
+    expect(result.cardRewardCalc?.formula).toContain(
+      "$100.00 (total cost) × 3x boost × 1.5¢ = $4.50"
+    );
+    expect(result.cardRewardCalc?.description).toContain(
+      "Total rewards earned using your Chase Hyatt"
+    );
   });
 
   it("should calculate boosted credit card rewards for specific OTA", () => {
@@ -434,8 +439,10 @@ describe("net-cost", () => {
     const result = getNetCostBreakdown(booking);
     // 100 total * 10x (boosted) * 0.015 $/pt = 15.00
     expect(result.cardReward).toBe(15.0);
-    expect(result.cardRewardCalc?.formula).toContain("10x (boosted)");
-    expect(result.cardRewardCalc?.description).toContain("boosted total of 10x");
+    expect(result.cardRewardCalc?.formula).toContain("$100.00 (total cost) × 4x × 1.5¢ = $6.00");
+    expect(result.cardRewardCalc?.formula).toContain(
+      "$100.00 (total cost) × 6x boost × 1.5¢ = $9.00"
+    );
   });
 
   it("should calculate fixed bonus credit card rewards", () => {
@@ -464,8 +471,7 @@ describe("net-cost", () => {
     // bonus: 1000 pts * 0.007 = 7.00
     // total: 1.40 + 7.00 = 8.40
     expect(result.cardReward).toBeCloseTo(8.4, 2);
-    expect(result.cardRewardCalc?.formula).toContain("1,000 bonus pts × 0.7¢ = $8.40");
-    expect(result.cardRewardCalc?.description).toContain("plus a fixed bonus of 1,000");
+    expect(result.cardRewardCalc?.formula).toContain("1,000 bonus pts × 0.7¢ = $7.00");
   });
 
   it("should stack boosted multipliers and fixed bonuses", () => {
@@ -500,10 +506,11 @@ describe("net-cost", () => {
     // fixed bonus: 1000 pts * 0.007 = 7.00
     // total: 4.20 + 7.00 = 11.20
     expect(result.cardReward).toBeCloseTo(11.2, 2);
-    expect(result.cardRewardCalc?.formula).toContain("($100.00 × 6x) + 1,000 bonus pts");
-    expect(result.cardRewardCalc?.description).toContain(
-      "boosted 6x Bonvoy Pts plus a fixed bonus of 1,000"
+    expect(result.cardRewardCalc?.formula).toContain("$100.00 (total cost) × 2x × 0.7¢ = $1.40");
+    expect(result.cardRewardCalc?.formula).toContain(
+      "$100.00 (total cost) × 4x boost × 0.7¢ = $2.80"
     );
+    expect(result.cardRewardCalc?.formula).toContain("1,000 bonus pts × 0.7¢ = $7.00");
   });
 
   it("should ignore hotel chain boost if booking is via a different OTA", () => {
@@ -532,7 +539,7 @@ describe("net-cost", () => {
     // Should NOT get 6x because it's an OTA booking.
     // Fallback to base 2x: 100 total * 2x * 0.007 = 1.40
     expect(result.cardReward).toBeCloseTo(1.4, 2);
-    expect(result.cardRewardCalc?.formula).toContain("2x");
+    expect(result.cardRewardCalc?.formula).toContain("$100.00 (total cost) × 2x × 0.7¢ = $1.40");
     expect(result.cardRewardCalc?.formula).not.toContain("6x");
   });
 
@@ -585,7 +592,7 @@ describe("net-cost", () => {
     };
     const result = getNetCostBreakdown(booking);
     expect(result.promotions[0].formula).toContain("$20.00 fixed cashback (capped) = $15.00");
-    expect(result.promotions[0].description).toContain("reduced by redemption caps");
+    expect(result.promotions[0].description).toContain("Reduced by redemption caps");
   });
 
   it("should explain pending spanned promotion in the formula and description", () => {
@@ -618,10 +625,80 @@ describe("net-cost", () => {
     };
     const result = getNetCostBreakdown(booking);
     expect(result.promotions[0].formula).toContain(
-      "(1 of 3 nights) × $30.00 fixed cashback (pending) = $10.00"
+      "(1 of 3 nights) × $30.00 fixed cashback = $10.00 (pending)"
     );
     expect(result.promotions[0].description).toContain(
       "This bonus is pending additional stays (1 of 3 nights required)"
     );
+  });
+
+  it("should provide segments for a complex multi-night spanned stay", () => {
+    const booking: NetCostBooking = {
+      ...mockBaseBooking,
+      numNights: 4,
+      bookingPromotions: [
+        {
+          appliedValue: 40,
+          eligibleNightsAtBooking: 4,
+          promotion: {
+            name: "Spanned Promo",
+            restrictions: { minNightsRequired: 3, spanStays: true },
+            benefits: [],
+          },
+          benefitApplications: [
+            {
+              appliedValue: 40,
+              eligibleNightsAtBooking: 4,
+              promotionBenefit: {
+                rewardType: "cashback",
+                valueType: "fixed",
+                value: 30,
+                certType: null,
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const result = getNetCostBreakdown(booking);
+    const promo = result.promotions[0];
+
+    expect(promo.segments).toHaveLength(2);
+    expect(promo.segments![0].label).toBe("Full Reward Cycle (3/3 nights)");
+    expect(promo.segments![0].value).toBe(30);
+    expect(promo.segments![1].label).toBe("New Reward Cycle (1/3 nights)");
+    expect(promo.segments![1].value).toBe(10);
+    expect(promo.segments![1].formula).toContain("(pending)");
+  });
+
+  it("should provide segments for credit card rewards with hotel boost", () => {
+    const booking: NetCostBooking = {
+      ...mockBaseBooking,
+      hotelChain: {
+        ...mockBaseBooking.hotelChain,
+        id: "hyatt-id",
+      } as HotelChain,
+      creditCard: {
+        name: "Chase Hyatt",
+        rewardRate: 1,
+        pointType: { name: "Hyatt Pts", centsPerPoint: 0.015 },
+        rewardRules: [
+          {
+            rewardType: "multiplier",
+            rewardValue: 4,
+            hotelChainId: "hyatt-id",
+            otaAgencyId: null,
+          },
+        ],
+      },
+    };
+    const result = getNetCostBreakdown(booking);
+    const card = result.cardRewardCalc;
+
+    expect(card?.segments).toHaveLength(2);
+    expect(card?.segments![0].label).toBe("Base Card Earning");
+    expect(card?.segments![1].label).toBe("Hotel/Booking Boost");
+    expect(card?.segments![0].value).toBe(1.5); // 100 * 1 * 0.015
+    expect(card?.segments![1].value).toBe(4.5); // 100 * 3 * 0.015
   });
 });

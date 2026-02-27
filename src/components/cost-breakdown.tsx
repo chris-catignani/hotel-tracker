@@ -17,12 +17,47 @@ function CalculationInfo({ calc }: { calc: CalculationDetail | undefined }) {
   if (!calc) return null;
 
   const content = (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div>
         <h4 className="font-semibold text-sm mb-1 hidden md:block">{calc.label}</h4>
         <p className="text-xs text-muted-foreground leading-relaxed">{calc.description}</p>
       </div>
-      <div className="rounded-md bg-muted p-2 font-mono text-[10px] break-all">{calc.formula}</div>
+
+      {calc.segments && calc.segments.length > 0 ? (
+        <div className="space-y-3">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+            Breakdown Ledger
+          </p>
+          <div className="space-y-3 border-t pt-3">
+            {calc.segments.map((segment) => (
+              <div key={segment.label} className="space-y-1.5">
+                <div className="flex justify-between items-start gap-4">
+                  <span className="text-xs font-semibold">{segment.label}</span>
+                  <span className="text-xs font-mono font-bold whitespace-nowrap">
+                    {formatCurrency(segment.value)}
+                  </span>
+                </div>
+                <div className="text-[10px] text-muted-foreground leading-tight italic">
+                  {segment.description}
+                </div>
+                <div className="rounded bg-muted/50 px-1.5 py-1 font-mono text-[9px] text-muted-foreground border border-muted-foreground/10">
+                  {segment.formula}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="border-t pt-2 flex justify-between items-center bg-muted/30 px-2 py-1.5 rounded">
+            <span className="text-[10px] font-bold uppercase">Total Applied</span>
+            <span className="text-xs font-bold font-mono">
+              {formatCurrency(calc.segments.reduce((sum, s) => sum + s.value, 0))}
+            </span>
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-md bg-muted p-2 font-mono text-[10px] break-all">
+          {calc.formula}
+        </div>
+      )}
     </div>
   );
 
@@ -41,7 +76,7 @@ function CalculationInfo({ calc }: { calc: CalculationDetail | undefined }) {
               <InfoIcon className="h-3 w-3" />
             </button>
           </PopoverTrigger>
-          <PopoverContent className="w-80">{content}</PopoverContent>
+          <PopoverContent className="w-96 max-h-[80vh] overflow-y-auto">{content}</PopoverContent>
         </Popover>
       </div>
 
@@ -56,7 +91,7 @@ function CalculationInfo({ calc }: { calc: CalculationDetail | undefined }) {
               <InfoIcon className="h-3 w-3" />
             </button>
           </SheetTrigger>
-          <SheetContent side="bottom" className="rounded-t-xl p-6">
+          <SheetContent side="bottom" className="rounded-t-xl p-6 max-h-[90vh] overflow-y-auto">
             <SheetHeader className="text-left border-b pb-3 mb-4">
               <SheetTitle>{calc.label}</SheetTitle>
             </SheetHeader>
