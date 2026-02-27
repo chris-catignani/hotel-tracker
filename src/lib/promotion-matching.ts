@@ -317,6 +317,17 @@ export function calculateMatchedPromotions(
         return false;
       }
 
+      // Benefit-level min spend check
+      if (br.minSpend != null && Number(booking.totalCost) < Number(br.minSpend)) {
+        return false;
+      }
+
+      // Benefit-level once per sub-brand check
+      if (br.oncePerSubBrand) {
+        const appliedSubBrands = usage?.appliedSubBrandIds;
+        if (appliedSubBrands?.has(booking.hotelChainSubBrandId ?? null)) return false;
+      }
+
       return true;
     });
 
@@ -397,6 +408,11 @@ export function calculateMatchedPromotions(
       const multiplier = Math.floor(booking.numNights / r.minNightsRequired);
       totalAppliedValue *= multiplier;
       totalBonusPoints *= multiplier;
+
+      // Also scale individual benefit applications to maintain consistency
+      for (const ba of benefitApplications) {
+        ba.appliedValue *= multiplier;
+      }
     }
 
     // Apply maxRedemptionValue cap

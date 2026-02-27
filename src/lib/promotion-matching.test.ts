@@ -393,6 +393,7 @@ describe("promotion-matching", () => {
     const matched = calculateMatchedPromotions(booking, [promo]);
     expect(matched).toHaveLength(1);
     expect(matched[0].appliedValue).toBe(30); // 10 * 3
+    expect(matched[0].benefitApplications[0].appliedValue).toBe(30); // 10 * 3
   });
 
   it("should respect benefit-level minNightsRequired", () => {
