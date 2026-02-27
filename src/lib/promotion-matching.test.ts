@@ -1529,3 +1529,64 @@ describe("getConstrainedPromotions", () => {
     expect(getConstrainedPromotions([promo])).toHaveLength(0);
   });
 });
+
+describe("spanStays", () => {
+  const promo = makePromo({
+    restrictions: makeRestrictions({ minNightsRequired: 3, spanStays: true }),
+    benefits: [
+      {
+        id: "benefit-span",
+        rewardType: PromotionRewardType.points,
+        valueType: PromotionBenefitValueType.fixed,
+        value: new Prisma.Decimal(3000),
+        certType: null,
+        pointsMultiplierBasis: null,
+        sortOrder: 0,
+        restrictions: null,
+      },
+    ],
+  });
+
+  it("should apply proportional reward for a single stay below min nights", () => {
+    const booking = {
+      ...mockBooking,
+      numNights: 1,
+      loyaltyPointsEarned: 0,
+      hotelChain: {
+        ...mockBooking.hotelChain,
+        pointType: { centsPerPoint: 0.02 },
+      },
+    };
+    const matched = calculateMatchedPromotions(booking, [promo]);
+    expect(matched).toHaveLength(1);
+    expect(matched[0].appliedValue).toBe(20); // (1/3) * (3000 pts * 0.02 $/pt) = 20
+    expect(matched[0].bonusPointsApplied).toBe(1000); // (1/3) * 3000
+  });
+
+  it("should apply multiple rewards across stays spanning increments", () => {
+    // 1st stay: 2 nights
+    const booking1 = { ...mockBooking, numNights: 2 };
+    const matched1 = calculateMatchedPromotions(booking1, [promo]);
+    expect(matched1[0].bonusPointsApplied).toBe(2000);
+
+    // 2nd stay: 2 nights (total 4 nights)
+    const booking2 = { ...mockBooking, numNights: 2 };
+    // Prior usage has 2 nights
+    const priorUsage = new Map([
+      [
+        promo.id,
+        {
+          count: 1,
+          totalValue: 40,
+          totalBonusPoints: 2000,
+          eligibleStayNights: 2,
+          benefitUsage: new Map(),
+        },
+      ],
+    ]);
+
+    const matched2 = calculateMatchedPromotions(booking2, [promo], priorUsage);
+    expect(matched2[0].bonusPointsApplied).toBe(2000);
+    // Total bonus points across both stays = 4000 (for 4 nights @ 1000/night)
+  });
+});

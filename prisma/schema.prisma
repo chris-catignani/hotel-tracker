@@ -240,6 +240,7 @@ model PromotionRestrictions {
   minSpend                   Decimal?                      @map("min_spend") @db.Decimal(10, 2)
   minNightsRequired          Int?                          @map("min_nights_required")
   nightsStackable            Boolean                       @default(false) @map("nights_stackable")
+  spanStays                  Boolean                       @default(false) @map("span_stays")
   maxRedemptionCount         Int?                          @map("max_redemption_count")
   maxRedemptionValue         Decimal?                      @map("max_redemption_value") @db.Decimal(10, 2)
   maxTotalBonusPoints        Int?                          @map("max_total_bonus_points")

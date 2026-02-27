@@ -110,6 +110,7 @@ export interface PromotionRestrictionsData {
   minSpend: string | number | null;
   minNightsRequired: number | null;
   nightsStackable: boolean;
+  spanStays: boolean;
   maxRedemptionCount: number | null;
   maxRedemptionValue: string | number | null;
   maxTotalBonusPoints: number | null;
@@ -127,6 +128,7 @@ export interface PromotionRestrictionsFormData {
   minSpend: string;
   minNightsRequired: string;
   nightsStackable: boolean;
+  spanStays: boolean;
   maxRedemptionCount: string;
   maxRedemptionValue: string;
   maxTotalBonusPoints: string;
@@ -146,6 +148,7 @@ export const EMPTY_RESTRICTIONS: PromotionRestrictionsFormData = {
   minSpend: "",
   minNightsRequired: "",
   nightsStackable: false,
+  spanStays: false,
   maxRedemptionCount: "",
   maxRedemptionValue: "",
   maxTotalBonusPoints: "",
@@ -316,4 +319,26 @@ export interface BookingFormData {
     dollarValue: number | null;
   }[];
   notes: string | null;
+}
+
+export interface BookingPromotion {
+  id: string;
+  bookingId: string;
+  promotionId: string;
+  appliedValue: string | number;
+  bonusPointsApplied: number | null;
+  autoApplied: boolean;
+  verified: boolean;
+  eligibleNightsAtBooking?: number | null; // Cumulative nights including current stay
+  promotion: Promotion;
+  benefitApplications: BookingPromotionBenefit[];
+}
+
+export interface BookingPromotionBenefit {
+  id: string;
+  bookingPromotionId: string;
+  promotionBenefitId: string;
+  appliedValue: string | number;
+  eligibleNightsAtBooking?: number | null; // Cumulative nights including current stay
+  promotionBenefit: PromotionBenefit;
 }
