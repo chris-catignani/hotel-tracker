@@ -170,14 +170,18 @@ export function BookByDateCard({
 export function MinNightsCard({
   minNightsRequired,
   nightsStackable,
+  spanStays,
   onMinNightsChange,
   onNightsStackableChange,
+  onSpanStaysChange,
   onRemove,
 }: {
   minNightsRequired: string;
   nightsStackable: boolean;
+  spanStays: boolean;
   onMinNightsChange: (val: string) => void;
   onNightsStackableChange: (val: boolean) => void;
+  onSpanStaysChange: (val: boolean) => void;
   onRemove: () => void;
 }) {
   return (
@@ -204,6 +208,17 @@ export function MinNightsCard({
           data-testid="promotion-nights-stackable"
         />
         <Label htmlFor="nightsStackable">Stackable (multiply by number of stays)</Label>
+      </div>
+      <div className="flex items-center gap-2">
+        <input
+          id="spanStays"
+          type="checkbox"
+          checked={spanStays}
+          onChange={(e) => onSpanStaysChange(e.target.checked)}
+          className="size-4 rounded border-gray-300"
+          data-testid="promotion-span-stays"
+        />
+        <Label htmlFor="spanStays">Span Multiple Stays (proportional rewards)</Label>
       </div>
     </RestrictionCard>
   );

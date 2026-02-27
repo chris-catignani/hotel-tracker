@@ -79,6 +79,7 @@ function mapApiRestrictionsToForm(
     minSpend: r.minSpend != null ? String(r.minSpend) : "",
     minNightsRequired: r.minNightsRequired != null ? String(r.minNightsRequired) : "",
     nightsStackable: r.nightsStackable ?? false,
+    spanStays: r.spanStays ?? false,
     maxRedemptionCount: r.maxRedemptionCount != null ? String(r.maxRedemptionCount) : "",
     maxRedemptionValue: r.maxRedemptionValue != null ? String(r.maxRedemptionValue) : "",
     maxTotalBonusPoints: r.maxTotalBonusPoints != null ? String(r.maxTotalBonusPoints) : "",
@@ -231,7 +232,7 @@ export function PromotionForm({
         updateRestrictions({ bookByDate: "" });
         break;
       case "min_nights":
-        updateRestrictions({ minNightsRequired: "", nightsStackable: false });
+        updateRestrictions({ minNightsRequired: "", nightsStackable: false, spanStays: false });
         break;
       case "redemption_caps":
         updateRestrictions({
@@ -351,6 +352,7 @@ export function PromotionForm({
         nightsStackable: activeRestrictions.has("min_nights")
           ? restrictions.nightsStackable
           : false,
+        spanStays: activeRestrictions.has("min_nights") ? restrictions.spanStays : false,
         maxRedemptionCount: activeRestrictions.has("redemption_caps")
           ? restrictions.maxRedemptionCount
           : "",
@@ -780,8 +782,10 @@ export function PromotionForm({
                     key={key}
                     minNightsRequired={restrictions.minNightsRequired}
                     nightsStackable={restrictions.nightsStackable}
+                    spanStays={restrictions.spanStays}
                     onMinNightsChange={(v) => updateRestrictions({ minNightsRequired: v })}
                     onNightsStackableChange={(v) => updateRestrictions({ nightsStackable: v })}
+                    onSpanStaysChange={(v) => updateRestrictions({ spanStays: v })}
                     onRemove={() => removeRestriction("min_nights")}
                   />
                 );

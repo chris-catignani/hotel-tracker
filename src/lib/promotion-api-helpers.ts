@@ -5,6 +5,7 @@ export function buildRestrictionsCreateData(r: PromotionRestrictionsFormData) {
     minSpend: r.minSpend ? Number(r.minSpend) : null,
     minNightsRequired: r.minNightsRequired ? Number(r.minNightsRequired) : null,
     nightsStackable: r.nightsStackable ?? false,
+    spanStays: r.spanStays ?? false,
     maxRedemptionCount: r.maxRedemptionCount ? Number(r.maxRedemptionCount) : null,
     maxRedemptionValue: r.maxRedemptionValue ? Number(r.maxRedemptionValue) : null,
     maxTotalBonusPoints: r.maxTotalBonusPoints ? Number(r.maxTotalBonusPoints) : null,

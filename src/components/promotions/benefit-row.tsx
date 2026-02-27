@@ -131,7 +131,7 @@ export function BenefitRow({
         updates = { minSpend: "" };
         break;
       case "min_nights":
-        updates = { minNightsRequired: "", nightsStackable: false };
+        updates = { minNightsRequired: "", nightsStackable: false, spanStays: false };
         break;
       case "redemption_caps":
         updates = { maxRedemptionCount: "", maxRedemptionValue: "", maxTotalBonusPoints: "" };
@@ -331,8 +331,10 @@ export function BenefitRow({
               <MinNightsCard
                 minNightsRequired={benefit.restrictions?.minNightsRequired ?? ""}
                 nightsStackable={benefit.restrictions?.nightsStackable ?? false}
+                spanStays={benefit.restrictions?.spanStays ?? false}
                 onMinNightsChange={(v) => updateRestrictions({ minNightsRequired: v })}
                 onNightsStackableChange={(v) => updateRestrictions({ nightsStackable: v })}
+                onSpanStaysChange={(v) => updateRestrictions({ spanStays: v })}
                 onRemove={() => removeBenefitRestriction("min_nights")}
               />
             )}

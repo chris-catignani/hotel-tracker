@@ -240,6 +240,7 @@ model PromotionRestrictions {
   minSpend                   Decimal?                      @map("min_spend") @db.Decimal(10, 2)
   minNightsRequired          Int?                          @map("min_nights_required")
   nightsStackable            Boolean                       @default(false) @map("nights_stackable")
+  spanStays                  Boolean                       @default(false) @map("span_stays")
   maxRedemptionCount         Int?                          @map("max_redemption_count")
   maxRedemptionValue         Decimal?                      @map("max_redemption_value") @db.Decimal(10, 2)
   maxTotalBonusPoints        Int?                          @map("max_total_bonus_points")
@@ -356,6 +357,7 @@ model BookingPromotion {
   bonusPointsApplied  Int?                      @map("bonus_points_applied")
   autoApplied         Boolean                   @default(true) @map("auto_applied")
   verified            Boolean                   @default(false)
+  eligibleNightsAtBooking Int?                  @map("eligible_nights_at_booking")
   benefitApplications BookingPromotionBenefit[]
 
   @@map("booking_promotions")
@@ -368,6 +370,7 @@ model BookingPromotionBenefit {
   promotionBenefitId String           @map("promotion_benefit_id")
   promotionBenefit   PromotionBenefit @relation(fields: [promotionBenefitId], references: [id], onDelete: Cascade)
   appliedValue       Decimal          @map("applied_value") @db.Decimal(10, 2)
+  eligibleNightsAtBooking Int?        @map("eligible_nights_at_booking")
 
   @@map("booking_promotion_benefits")
 }

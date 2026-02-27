@@ -12,18 +12,24 @@ export interface CalculationDetail {
 
 export interface NetCostBookingPromotionBenefit {
   appliedValue: string | number;
+  eligibleNightsAtBooking?: number | null;
   promotionBenefit: {
     rewardType: string;
     valueType: string;
     value: string | number;
     certType: string | null;
     pointsMultiplierBasis?: string | null;
+    restrictions?: {
+      minNightsRequired?: number | null;
+      spanStays?: boolean;
+    } | null;
   };
 }
 
 export interface NetCostBooking {
   totalCost: string | number;
   pretaxCost: string | number;
+  numNights: number;
   portalCashbackOnTotal: boolean;
   portalCashbackRate: string | number | null;
   loyaltyPointsEarned: number | null;
@@ -69,9 +75,14 @@ export interface NetCostBooking {
     appliedValue: string | number;
     autoApplied?: boolean;
     verified?: boolean;
+    eligibleNightsAtBooking?: number | null;
     promotion: {
       name: string;
       type?: string;
+      restrictions?: {
+        minNightsRequired?: number | null;
+        spanStays?: boolean;
+      } | null;
       benefits?: {
         rewardType: string;
         valueType: string;
@@ -156,9 +167,35 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
       // We can infer the multiplier if we know the reward type
       let appliedMultiplier = 1;
       let isCapped = false;
+      let isPending = false;
+      let pendingRatio = "";
+      let spanNightsText = "";
 
-      // Note: PromotionBenefit in NetCostBooking doesn't include restrictions currently,
-      // but we can infer them from the ratio of bApplied vs bValue
+      const restrictions = b.restrictions || bp.promotion.restrictions;
+      if (restrictions?.spanStays && restrictions?.minNightsRequired) {
+        const minNights = restrictions.minNightsRequired;
+        const cumulativeAtEnd = ba.eligibleNightsAtBooking || bp.eligibleNightsAtBooking || 0;
+        const nightsInStay = booking.numNights;
+
+        // Calculate progress within the cycle
+        const endProgress = cumulativeAtEnd % minNights;
+        if (nightsInStay === 1) {
+          spanNightsText = `${endProgress === 0 ? minNights : endProgress} of ${minNights} nights`;
+        } else {
+          // Stay spans multiple nights
+          spanNightsText = `${nightsInStay} nights towards ${minNights}-night goal`;
+        }
+
+        if (endProgress !== 0) {
+          isPending = true;
+          pendingRatio = ` (${spanNightsText} required)`;
+        } else if (nightsInStay < minNights) {
+          // Completes a goal but is a short stay
+          pendingRatio = ` (completes ${minNights}-night goal)`;
+        }
+      }
+
+      // Note: PromotionBenefit in NetCostBooking doesn't include restrictions currently,      // but we can infer them from the ratio of bApplied vs bValue
       // This is a bit of a heuristic but works for display.
 
       switch (b.rewardType) {
@@ -167,7 +204,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
           if (b.valueType === "fixed") {
             if (bApplied % bValue === 0 && bApplied > bValue) {
               appliedMultiplier = bApplied / bValue;
-            } else if (bApplied < bValue) {
+            } else if (bApplied < bValue && !isPending) {
               isCapped = true;
             }
           }
@@ -179,7 +216,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
               appliedMultiplier = 1;
             } else if (bApplied > pointsValue && Math.abs(bApplied % pointsValue) < 0.001) {
               appliedMultiplier = Math.round(bApplied / pointsValue);
-            } else if (bApplied < pointsValue) {
+            } else if (bApplied < pointsValue && !isPending) {
               isCapped = true;
             }
           }
@@ -188,22 +225,28 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
 
       const multiplierPrefix = appliedMultiplier > 1 ? `${appliedMultiplier} × ` : "";
       const capSuffix = isCapped ? " (capped)" : "";
+      const pendingSuffix = isPending ? " (pending)" : "";
+      const proportionalSuffix = pendingRatio
+        ? ` This bonus is pending additional stays${pendingRatio}.`
+        : "";
 
       switch (b.rewardType) {
         case "cashback":
           if (b.valueType === "fixed") {
+            const formulaPrefix = spanNightsText ? `(${spanNightsText}) × ` : multiplierPrefix;
             formulaLines.push(
-              `${multiplierPrefix}${formatCurrency(bValue)} fixed cashback${capSuffix} = ${formatCurrency(bApplied)}${tieInSuffix}`
+              `${formulaPrefix}${formatCurrency(bValue)} fixed cashback${capSuffix}${pendingSuffix} = ${formatCurrency(bApplied)}${tieInSuffix}`
             );
             descriptionLines.push(
-              `${appliedMultiplier > 1 ? `Earning ${appliedMultiplier}x of a ` : "A "}fixed cashback of ${formatCurrency(bValue)}.${isCapped ? " This benefit was reduced by redemption caps." : ""}${tieInSuffix}`
+              `${appliedMultiplier > 1 ? `Earning ${appliedMultiplier}x of a ` : "A "}fixed cashback of ${formatCurrency(bValue)}.${isCapped ? " This benefit was reduced by redemption caps." : ""}${proportionalSuffix}${tieInSuffix}`
             );
           } else if (b.valueType === "percentage") {
+            const formulaPrefix = spanNightsText ? `(${spanNightsText}) × ` : "";
             formulaLines.push(
-              `${formatCurrency(totalCost)} (total cost) × ${bValue}%${capSuffix} = ${formatCurrency(bApplied)}${tieInSuffix}`
+              `${formulaPrefix}${formatCurrency(totalCost)} (total cost) × ${bValue}%${capSuffix}${pendingSuffix} = ${formatCurrency(bApplied)}${tieInSuffix}`
             );
             descriptionLines.push(
-              `A ${bValue}% cashback on the total cost of the booking.${isCapped ? " This benefit was reduced by redemption caps." : ""}${tieInSuffix}`
+              `A ${bValue}% cashback on the total cost of the booking.${isCapped ? " This benefit was reduced by redemption caps." : ""}${proportionalSuffix}${tieInSuffix}`
             );
           }
           break;
@@ -219,21 +262,23 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
                 ? Math.round(pretaxCost * baseRate)
                 : booking.loyaltyPointsEarned || 0;
             const basisLabel = isBaseOnly ? "(base rate only)" : "(incl. elite bonus)";
+            const formulaPrefix = spanNightsText ? `(${spanNightsText}) × ` : multiplierPrefix;
             formulaLines.push(
-              `${multiplierPrefix}${basisPoints.toLocaleString()} pts ${basisLabel} × (${bValue} - 1) × ${centsStr}¢${capSuffix} = ${formatCurrency(bApplied)}${tieInSuffix}`
+              `${formulaPrefix}${basisPoints.toLocaleString()} pts ${basisLabel} × (${bValue} - 1) × ${centsStr}¢${capSuffix}${pendingSuffix} = ${formatCurrency(bApplied)}${tieInSuffix}`
             );
             const basisDesc = isBaseOnly
               ? `applies to base-rate points only, not including elite bonus`
               : `applies to full earned points including elite bonus`;
             descriptionLines.push(
-              `A ${bValue}x points multiplier on ${basisLabel} loyalty points, valued at ${centsStr}¢ each. This ${basisDesc}.${isCapped ? " This benefit was reduced by redemption caps." : ""}${tieInSuffix}`
+              `A ${bValue}x points multiplier on ${basisLabel} loyalty points, valued at ${centsStr}¢ each. This ${basisDesc}.${isCapped ? " This benefit was reduced by redemption caps." : ""}${proportionalSuffix}${tieInSuffix}`
             );
           } else {
+            const formulaPrefix = spanNightsText ? `(${spanNightsText}) × ` : multiplierPrefix;
             formulaLines.push(
-              `${multiplierPrefix}${bValue.toLocaleString()} bonus pts × ${centsStr}¢${capSuffix} = ${formatCurrency(bApplied)}${tieInSuffix}`
+              `${formulaPrefix}${bValue.toLocaleString()} bonus pts × ${centsStr}¢${capSuffix}${pendingSuffix} = ${formatCurrency(bApplied)}${tieInSuffix}`
             );
             descriptionLines.push(
-              `${appliedMultiplier > 1 ? `Earning ${appliedMultiplier}x of ` : ""}${bValue.toLocaleString()} fixed bonus points, valued at ${centsStr}¢ each.${isCapped ? " This benefit was reduced by redemption caps." : ""}${tieInSuffix}`
+              `${appliedMultiplier > 1 ? `Earning ${appliedMultiplier}x of ` : ""}${bValue.toLocaleString()} fixed bonus points, valued at ${centsStr}¢ each.${isCapped ? " This benefit was reduced by redemption caps." : ""}${proportionalSuffix}${tieInSuffix}`
             );
           }
           break;
@@ -241,22 +286,25 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
         case "certificate": {
           const centsStr = formatCents(hotelCentsPerPoint);
           const points = b.certType ? certPointsValue(b.certType) : 0;
+          const formulaPrefix = spanNightsText ? `(${spanNightsText}) × ` : multiplierPrefix;
           formulaLines.push(
-            `${multiplierPrefix}${bValue.toLocaleString()} cert(s) × ${points.toLocaleString()} pts × 70% × ${centsStr}¢${capSuffix} = ${formatCurrency(bApplied)}${tieInSuffix}`
+            `${formulaPrefix}${bValue.toLocaleString()} cert(s) × ${points.toLocaleString()} pts × 70% × ${centsStr}¢${capSuffix}${pendingSuffix} = ${formatCurrency(bApplied)}${tieInSuffix}`
           );
           descriptionLines.push(
-            `Earns ${appliedMultiplier > 1 ? (appliedMultiplier * bValue).toLocaleString() : bValue.toLocaleString()} free night certificate(s), valued at 70% of a max redemption (${points.toLocaleString()} pts) at ${centsStr}¢ per point.${isCapped ? " This benefit was reduced by redemption caps." : ""}${tieInSuffix}`
+            `Earns ${appliedMultiplier > 1 ? (appliedMultiplier * bValue).toLocaleString() : bValue.toLocaleString()} free night certificate(s), valued at 70% of a max redemption (${points.toLocaleString()} pts) at ${centsStr}¢ per point.${isCapped ? " This benefit was reduced by redemption caps." : ""}${proportionalSuffix}${tieInSuffix}`
           );
           break;
         }
-        case "eqn":
+        case "eqn": {
+          const formulaPrefix = spanNightsText ? `(${spanNightsText}) × ` : multiplierPrefix;
           formulaLines.push(
-            `${multiplierPrefix}${bValue.toLocaleString()} bonus EQN(s) × ${formatCurrency(DEFAULT_EQN_VALUE)}${capSuffix} = ${formatCurrency(bApplied)}${tieInSuffix}`
+            `${formulaPrefix}${bValue.toLocaleString()} bonus EQN(s) × ${formatCurrency(DEFAULT_EQN_VALUE)}${capSuffix}${pendingSuffix} = ${formatCurrency(bApplied)}${tieInSuffix}`
           );
           descriptionLines.push(
-            `Earns ${appliedMultiplier > 1 ? (appliedMultiplier * bValue).toLocaleString() : bValue.toLocaleString()} bonus Elite Qualifying Night(s), valued at ${formatCurrency(DEFAULT_EQN_VALUE)} each.${isCapped ? " This benefit was reduced by redemption caps." : ""}${tieInSuffix}`
+            `Earns ${appliedMultiplier > 1 ? (appliedMultiplier * bValue).toLocaleString() : bValue.toLocaleString()} bonus Elite Qualifying Night(s), valued at ${formatCurrency(DEFAULT_EQN_VALUE)} each.${isCapped ? " This benefit was reduced by redemption caps." : ""}${proportionalSuffix}${tieInSuffix}`
           );
           break;
+        }
       }
     }
 

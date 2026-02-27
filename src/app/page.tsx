@@ -85,6 +85,7 @@ interface BookingWithRelations {
     bookingId: string;
     promotionId: string;
     appliedValue: string;
+    eligibleNightsAtBooking?: number | null;
     autoApplied: boolean;
     verified: boolean;
     promotion: {
@@ -93,7 +94,25 @@ interface BookingWithRelations {
       type: string;
       value: string | number;
       valueType: string;
+      restrictions?: {
+        minNightsRequired?: number | null;
+        spanStays?: boolean;
+      } | null;
     };
+    benefitApplications?: {
+      appliedValue: string | number;
+      eligibleNightsAtBooking?: number | null;
+      promotionBenefit: {
+        rewardType: string;
+        valueType: string;
+        value: string | number;
+        certType: string | null;
+        restrictions?: {
+          minNightsRequired?: number | null;
+          spanStays?: boolean;
+        } | null;
+      };
+    }[];
   }[];
   certificates: BookingCertificate[];
 }

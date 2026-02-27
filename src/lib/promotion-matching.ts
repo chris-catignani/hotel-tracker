@@ -14,8 +14,9 @@ export type PromotionUsage = {
   totalValue: number;
   totalBonusPoints: number;
   eligibleStayCount?: number;
+  eligibleStayNights?: number;
   appliedSubBrandIds?: Set<string | null>;
-  benefitUsage?: Map<string, { count: number; totalValue: number }>;
+  benefitUsage?: Map<string, { count: number; totalValue: number; eligibleNights?: number }>;
 };
 export type PromotionUsageMap = Map<string, PromotionUsage>;
 
@@ -25,12 +26,18 @@ const BOOKING_INCLUDE = {
   creditCard: { include: { pointType: true } },
   shoppingPortal: true,
   _count: { select: { certificates: true } },
+  bookingPromotions: {
+    include: {
+      benefitApplications: true,
+    },
+  },
 } as const;
 
 type MatchingRestrictions = {
   minSpend: Prisma.Decimal | null;
   minNightsRequired: number | null;
   nightsStackable: boolean;
+  spanStays: boolean;
   maxRedemptionCount: number | null;
   maxRedemptionValue: Prisma.Decimal | null;
   maxTotalBonusPoints: number | null;
@@ -122,12 +129,14 @@ interface MatchingPromotion {
 interface BenefitApplication {
   promotionBenefitId: string;
   appliedValue: number;
+  eligibleNightsAtBooking?: number;
 }
 
 interface MatchedPromotion {
   promotionId: string;
   appliedValue: number;
   bonusPointsApplied: number;
+  eligibleNightsAtBooking?: number;
   benefitApplications: BenefitApplication[];
 }
 
@@ -261,7 +270,7 @@ export function calculateMatchedPromotions(
     }
 
     // Minimum nights check
-    if (r?.minNightsRequired && booking.numNights < r.minNightsRequired) {
+    if (r?.minNightsRequired && booking.numNights < r.minNightsRequired && !r.spanStays) {
       continue;
     }
 
@@ -314,7 +323,11 @@ export function calculateMatchedPromotions(
         return false;
 
       // Benefit-level minimum nights check
-      if (br.minNightsRequired && booking.numNights < br.minNightsRequired) {
+      if (
+        br.minNightsRequired &&
+        booking.numNights < br.minNightsRequired &&
+        !br.spanStays // Skip per-stay check if we are spanning multiple stays
+      ) {
         return false;
       }
 
@@ -385,15 +398,25 @@ export function calculateMatchedPromotions(
       // Apply benefit-level nightsStackable multiplier
       // Skip if promotion-level multiplication will already be applied to all benefits
       const promoIsStacked = r?.nightsStackable && r?.minNightsRequired && r.minNightsRequired > 0;
+      const promoIsSpanned = r?.spanStays && r?.minNightsRequired && r.minNightsRequired > 0;
+
       if (
         !promoIsStacked &&
+        !promoIsSpanned && // Promotion level spanStays also handles multiplication proportionally
         benefit.restrictions?.nightsStackable &&
         benefit.restrictions?.minNightsRequired &&
         benefit.restrictions.minNightsRequired > 0
       ) {
-        const multiplier = Math.floor(booking.numNights / benefit.restrictions.minNightsRequired);
-        appliedValue *= multiplier;
-        benefitBonusPoints *= multiplier;
+        if (benefit.restrictions.spanStays) {
+          // Proportionally apply based on nights
+          const multiplier = booking.numNights / benefit.restrictions.minNightsRequired;
+          appliedValue *= multiplier;
+          benefitBonusPoints *= multiplier;
+        } else {
+          const multiplier = Math.floor(booking.numNights / benefit.restrictions.minNightsRequired);
+          appliedValue *= multiplier;
+          benefitBonusPoints *= multiplier;
+        }
       }
 
       // Apply benefit-level maxRedemptionValue cap
@@ -432,13 +455,28 @@ export function calculateMatchedPromotions(
       benefitApplications.push({
         promotionBenefitId: benefit.id,
         appliedValue,
+        eligibleNightsAtBooking:
+          (usage?.benefitUsage?.get(benefit.id)?.eligibleNights ?? 0) + booking.numNights,
       });
       totalAppliedValue += appliedValue;
       totalBonusPoints += benefitBonusPoints;
     }
 
-    // Apply nightsStackable multiplier
-    if (r?.nightsStackable && r?.minNightsRequired && r.minNightsRequired > 0) {
+    // Proportional scaling for spanStays
+    if (r?.spanStays && r?.minNightsRequired && r.minNightsRequired > 0) {
+      const multiplier = booking.numNights / r.minNightsRequired;
+      totalAppliedValue *= multiplier;
+      totalBonusPoints *= multiplier;
+
+      // Also scale individual benefit applications to maintain consistency
+      for (const ba of benefitApplications) {
+        ba.appliedValue *= multiplier;
+      }
+    }
+
+    // Apply nightsStackable multiplier (Standard floor-based stacking)
+    // Only if spanStays is NOT active (since spanStays already scaled proportionally)
+    if (!r?.spanStays && r?.nightsStackable && r?.minNightsRequired && r.minNightsRequired > 0) {
       const multiplier = Math.floor(booking.numNights / r.minNightsRequired);
       totalAppliedValue *= multiplier;
       totalBonusPoints *= multiplier;
@@ -485,6 +523,7 @@ export function calculateMatchedPromotions(
       promotionId: promo.id,
       appliedValue: totalAppliedValue,
       bonusPointsApplied: totalBonusPoints,
+      eligibleNightsAtBooking: (usage?.eligibleStayNights ?? 0) + booking.numNights,
       benefitApplications,
     });
   }
@@ -517,10 +556,12 @@ async function applyMatchedPromotions(
         appliedValue: match.appliedValue,
         bonusPointsApplied: match.bonusPointsApplied > 0 ? match.bonusPointsApplied : null,
         autoApplied: true,
+        eligibleNightsAtBooking: match.eligibleNightsAtBooking,
         benefitApplications: {
           create: match.benefitApplications.map((ba) => ({
             promotionBenefitId: ba.promotionBenefitId,
             appliedValue: ba.appliedValue,
+            eligibleNightsAtBooking: ba.eligibleNightsAtBooking,
           })),
         },
       },
@@ -588,6 +629,32 @@ async function fetchPromotionUsage(
       _sum: { appliedValue: true },
     });
 
+    // To get eligible nights, we need to join with Booking
+    // This is because numNights is on the booking, not the benefit application
+    const benefitNights = await prisma.bookingPromotionBenefit.findMany({
+      where: {
+        promotionBenefitId: { in: allBenefitIds },
+        ...(excludeBookingId ? { bookingPromotion: { bookingId: { not: excludeBookingId } } } : {}),
+      },
+      include: {
+        bookingPromotion: {
+          select: {
+            booking: {
+              select: {
+                numNights: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const nightsMap = new Map<string, number>();
+    for (const bn of benefitNights) {
+      const current = nightsMap.get(bn.promotionBenefitId) ?? 0;
+      nightsMap.set(bn.promotionBenefitId, current + bn.bookingPromotion.booking.numNights);
+    }
+
     for (const row of benefitUsage) {
       const promoId = benefitToPromoMap.get(row.promotionBenefitId);
       if (promoId) {
@@ -596,6 +663,7 @@ async function fetchPromotionUsage(
           usage.benefitUsage.set(row.promotionBenefitId, {
             count: row._count.id,
             totalValue: Number(row._sum.appliedValue ?? 0),
+            eligibleNights: nightsMap.get(row.promotionBenefitId) ?? 0,
           });
         }
       }
@@ -646,6 +714,36 @@ async function fetchPromotionUsage(
       benefitUsage: new Map(),
     };
     usageMap.set(promo.id, { ...existing, eligibleStayCount: eligibleCount });
+  }
+
+  // Fetch eligibleStayNights for spanStays promotions
+  const spanStaysPromos = promotions.filter((p) => p.restrictions?.spanStays);
+  if (spanStaysPromos.length > 0) {
+    const spanStaysPromoIds = spanStaysPromos.map((p) => p.id);
+    const bookingPromos = await prisma.bookingPromotion.findMany({
+      where: {
+        promotionId: { in: spanStaysPromoIds },
+        ...(excludeBookingId ? { bookingId: { not: excludeBookingId } } : {}),
+      },
+      include: { booking: { select: { numNights: true } } },
+    });
+
+    const nightsByPromo = new Map<string, number>();
+    for (const bp of bookingPromos) {
+      const current = nightsByPromo.get(bp.promotionId) ?? 0;
+      nightsByPromo.set(bp.promotionId, current + bp.booking.numNights);
+    }
+
+    for (const promo of spanStaysPromos) {
+      const nights = nightsByPromo.get(promo.id) ?? 0;
+      const existing = usageMap.get(promo.id) ?? {
+        count: 0,
+        totalValue: 0,
+        totalBonusPoints: 0,
+        benefitUsage: new Map(),
+      };
+      usageMap.set(promo.id, { ...existing, eligibleStayNights: nights });
+    }
   }
 
   // Fetch appliedSubBrandIds for oncePerSubBrand promotions
@@ -701,6 +799,7 @@ export function getConstrainedPromotions(promotions: MatchingPromotion[]): Match
       p.restrictions?.maxRedemptionCount ||
       p.restrictions?.maxRedemptionValue ||
       p.restrictions?.maxTotalBonusPoints ||
+      p.restrictions?.spanStays ||
       p.tiers.length > 0 ||
       p.restrictions?.oncePerSubBrand ||
       p.benefits.some(
@@ -708,7 +807,8 @@ export function getConstrainedPromotions(promotions: MatchingPromotion[]): Match
           b.restrictions?.oncePerSubBrand ||
           b.restrictions?.maxRedemptionCount ||
           b.restrictions?.maxRedemptionValue ||
-          b.restrictions?.maxTotalBonusPoints
+          b.restrictions?.maxTotalBonusPoints ||
+          b.restrictions?.spanStays
       ) ||
       p.tiers.some((t) =>
         t.benefits.some(
@@ -716,7 +816,8 @@ export function getConstrainedPromotions(promotions: MatchingPromotion[]): Match
             b.restrictions?.oncePerSubBrand ||
             b.restrictions?.maxRedemptionCount ||
             b.restrictions?.maxRedemptionValue ||
-            b.restrictions?.maxTotalBonusPoints
+            b.restrictions?.maxTotalBonusPoints ||
+            b.restrictions?.spanStays
         )
       )
   );
