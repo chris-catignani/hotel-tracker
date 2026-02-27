@@ -463,6 +463,57 @@ describe("promotion-matching", () => {
     expect(matched[0].appliedValue).toBe(15); // capped at 60 - 45 = 15
   });
 
+  it("should respect benefit-level minSpend", () => {
+    const promo = makePromo({
+      benefits: [
+        {
+          id: "benefit-min-spend",
+          rewardType: PromotionRewardType.cashback,
+          valueType: PromotionBenefitValueType.fixed,
+          value: new Prisma.Decimal(10),
+          certType: null,
+          pointsMultiplierBasis: null,
+          sortOrder: 0,
+          restrictions: makeRestrictions({ minSpend: new Prisma.Decimal(200) }),
+        },
+      ],
+    });
+    // mockBooking totalCost is 100, benefit requires 200
+    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    expect(matched).toHaveLength(0);
+  });
+
+  it("should respect benefit-level oncePerSubBrand", () => {
+    const promo = makePromo({
+      benefits: [
+        {
+          id: "benefit-once-subbrand",
+          rewardType: PromotionRewardType.cashback,
+          valueType: PromotionBenefitValueType.fixed,
+          value: new Prisma.Decimal(10),
+          certType: null,
+          pointsMultiplierBasis: null,
+          sortOrder: 0,
+          restrictions: makeRestrictions({ oncePerSubBrand: true }),
+        },
+      ],
+    });
+    const priorUsage = new Map([
+      [
+        promo.id,
+        {
+          count: 1,
+          totalValue: 10,
+          totalBonusPoints: 0,
+          benefitUsage: new Map([["benefit-once-subbrand", { count: 1, totalValue: 10 }]]),
+          appliedSubBrandIds: new Set(["brand-4"]), // mockBooking sub-brand is brand-4
+        },
+      ],
+    ]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
+    expect(matched).toHaveLength(0);
+  });
+
   it("should respect benefit-level minNightsRequired", () => {
     const promo = makePromo({
       restrictions: null,

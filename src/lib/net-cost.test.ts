@@ -534,4 +534,56 @@ describe("net-cost", () => {
     expect(result.cardRewardCalc?.formula).toContain("2x");
     expect(result.cardRewardCalc?.formula).not.toContain("6x");
   });
+
+  it("should explain benefit-level stacking (multiplier) in the formula", () => {
+    const booking: NetCostBooking = {
+      ...mockBaseBooking,
+      bookingPromotions: [
+        {
+          appliedValue: 20,
+          promotion: { name: "Stacked Promo", benefits: [] },
+          benefitApplications: [
+            {
+              appliedValue: 20,
+              promotionBenefit: {
+                rewardType: "cashback",
+                valueType: "fixed",
+                value: 10,
+                certType: null,
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const result = getNetCostBreakdown(booking);
+    expect(result.promotions[0].formula).toContain("2 × $10.00 fixed cashback = $20.00");
+    expect(result.promotions[0].description).toContain("Earning 2x of a fixed cashback");
+  });
+
+  it("should explain benefit-level capping in the formula", () => {
+    const booking: NetCostBooking = {
+      ...mockBaseBooking,
+      bookingPromotions: [
+        {
+          appliedValue: 15,
+          promotion: { name: "Capped Promo", benefits: [] },
+          benefitApplications: [
+            {
+              appliedValue: 15,
+              promotionBenefit: {
+                rewardType: "cashback",
+                valueType: "fixed",
+                value: 20,
+                certType: null,
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const result = getNetCostBreakdown(booking);
+    expect(result.promotions[0].formula).toContain("$20.00 fixed cashback (capped) = $15.00");
+    expect(result.promotions[0].description).toContain("reduced by redemption caps");
+  });
 });
