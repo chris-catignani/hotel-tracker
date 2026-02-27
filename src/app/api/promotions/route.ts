@@ -87,9 +87,9 @@ export async function POST(request: NextRequest) {
         data: {
           name,
           type,
-          hotelChainId: hotelChainId || null,
-          creditCardId: creditCardId || null,
-          shoppingPortalId: shoppingPortalId || null,
+          hotelChain: hotelChainId ? { connect: { id: hotelChainId } } : undefined,
+          creditCard: creditCardId ? { connect: { id: creditCardId } } : undefined,
+          shoppingPortal: shoppingPortalId ? { connect: { id: shoppingPortalId } } : undefined,
           startDate: startDate ? new Date(startDate) : null,
           endDate: endDate ? new Date(endDate) : null,
           isActive: isActive !== undefined ? isActive : true,

@@ -80,9 +80,17 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const data: Record<string, unknown> = {};
     if (name !== undefined) data.name = name;
     if (type !== undefined) data.type = type;
-    if (hotelChainId !== undefined) data.hotelChainId = hotelChainId || null;
-    if (creditCardId !== undefined) data.creditCardId = creditCardId || null;
-    if (shoppingPortalId !== undefined) data.shoppingPortalId = shoppingPortalId || null;
+    if (hotelChainId !== undefined) {
+      data.hotelChain = hotelChainId ? { connect: { id: hotelChainId } } : { disconnect: true };
+    }
+    if (creditCardId !== undefined) {
+      data.creditCard = creditCardId ? { connect: { id: creditCardId } } : { disconnect: true };
+    }
+    if (shoppingPortalId !== undefined) {
+      data.shoppingPortal = shoppingPortalId
+        ? { connect: { id: shoppingPortalId } }
+        : { disconnect: true };
+    }
     if (startDate !== undefined) data.startDate = startDate ? new Date(startDate) : null;
     if (endDate !== undefined) data.endDate = endDate ? new Date(endDate) : null;
     if (isActive !== undefined) data.isActive = isActive;
@@ -145,6 +153,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
                   ? Number(restrictions.validDaysAfterRegistration)
                   : null,
                 tieInRequiresPayment: restrictions.tieInRequiresPayment ?? false,
+                allowedPaymentTypes: restrictions.allowedPaymentTypes ?? [],
                 subBrandRestrictions: {
                   create: [
                     ...(restrictions.subBrandIncludeIds ?? []).map((sbId) => ({
