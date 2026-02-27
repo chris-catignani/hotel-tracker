@@ -4,10 +4,18 @@ import { DEFAULT_EQN_VALUE } from "@/lib/constants";
 
 const DEFAULT_CENTS_PER_POINT = 0.01;
 
+export interface CalculationSegment {
+  label: string;
+  value: number;
+  formula: string;
+  description: string;
+}
+
 export interface CalculationDetail {
   label: string;
   formula: string;
   description: string;
+  segments?: CalculationSegment[];
 }
 
 export interface NetCostBookingPromotionBenefit {
@@ -117,32 +125,16 @@ export interface NetCostBreakdown {
   netCost: number;
 }
 
-/**
- * Formats a point valuation (cents per point) for display.
- * Handles floating point precision issues by rounding to 4 decimal places.
- */
 function formatCents(centsPerPoint: number): string {
-  const cents = centsPerPoint * 100;
-  // Use toFixed and then parse back to number to remove trailing zeros
-  // This handles 0.7000000000000001 -> "0.7"
-  return parseFloat(cents.toFixed(4)).toString();
+  const c = centsPerPoint * 100;
+  if (Number.isInteger(c)) return c.toString();
+  // Use toPrecision or simply toString to avoid trailing zeros unless necessary
+  return parseFloat(c.toFixed(2)).toString();
 }
 
 export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
   const totalCost = Number(booking.totalCost);
   const pretaxCost = Number(booking.pretaxCost);
-
-  // NOTE: Redemption Constraints
-  // The appliedValue shown here already reflects any constraints enforced at matching time:
-  // - maxRedemptionCount: limits how many times a promotion can be applied
-  // - maxRedemptionValue: caps the total dollar value; appliedValue is reduced proportionally
-  // - maxTotalBonusPoints: caps total bonus points earned; appliedValue is reduced proportionally
-  // - minNightsRequired: promotion only applies to stays of minimum length
-  // - nightsStackable: benefit is multiplied by number of qualifying stay nights
-  // - bookByDate: booking must be created before cutoff date
-  // - registrationDeadline: user must have registered by this date
-  // - validDaysAfterRegistration: personal validity window starting from the registration date
-  // The final appliedValue shown below is the result after all constraints are applied.
 
   // 1. Promotions
   const hotelCentsPerPoint = booking.hotelChain.pointType?.centsPerPoint
@@ -153,104 +145,138 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
     const appliedValue = Number(bp.appliedValue);
     const benefits = bp.benefitApplications ?? [];
 
-    // Build per-benefit formula lines
-    const formulaLines: string[] = [];
     const descriptionLines: string[] = [];
+    const segments: CalculationSegment[] = [];
 
     for (const ba of benefits) {
       const b = ba.promotionBenefit;
       const bValue = Number(b.value);
-      const bApplied = Number(ba.appliedValue);
-      const tieInSuffix = "";
-
-      // Check for benefit-level stacking or capping
-      // We can infer the multiplier if we know the reward type
-      let appliedMultiplier = 1;
-      let isCapped = false;
-      let isPending = false;
-      let pendingRatio = "";
-      let spanNightsText = "";
+      const bApplied = ba.appliedValue != null ? Number(ba.appliedValue) : 0;
 
       const restrictions = b.restrictions || bp.promotion.restrictions;
-      if (restrictions?.spanStays && restrictions?.minNightsRequired) {
+      const isSpanned = !!(restrictions?.spanStays && restrictions?.minNightsRequired);
+
+      if (isSpanned && restrictions?.minNightsRequired) {
         const minNights = restrictions.minNightsRequired;
         const cumulativeAtEnd = ba.eligibleNightsAtBooking || bp.eligibleNightsAtBooking || 0;
         const nightsInStay = booking.numNights;
+        const cumulativeAtStart = Math.max(0, cumulativeAtEnd - nightsInStay);
 
-        // Calculate progress within the cycle
-        const endProgress = cumulativeAtEnd % minNights;
-        if (nightsInStay === 1) {
-          spanNightsText = `${endProgress === 0 ? minNights : endProgress} of ${minNights} nights`;
-        } else {
-          // Stay spans multiple nights
-          spanNightsText = `${nightsInStay} nights towards ${minNights}-night goal`;
-        }
+        let nightsAccountedFor = 0;
+        let currentStart = cumulativeAtStart;
 
-        if (endProgress !== 0) {
-          isPending = true;
-          pendingRatio = ` (${spanNightsText} required)`;
-        } else if (nightsInStay < minNights) {
-          // Completes a goal but is a short stay
-          pendingRatio = ` (completes ${minNights}-night goal)`;
-        }
-      }
+        while (nightsAccountedFor < nightsInStay) {
+          const progressInCurrentCycle = currentStart % minNights;
+          const nightsToCompleteCycle = minNights - progressInCurrentCycle;
+          const nightsInThisSegment = Math.min(
+            nightsInStay - nightsAccountedFor,
+            nightsToCompleteCycle
+          );
 
-      // Note: PromotionBenefit in NetCostBooking doesn't include restrictions currently,      // but we can infer them from the ratio of bApplied vs bValue
-      // This is a bit of a heuristic but works for display.
+          const segmentEndProgress = (currentStart + nightsInThisSegment) % minNights;
+          const isCycleFinished = segmentEndProgress === 0;
 
-      switch (b.rewardType) {
-        case "cashback":
-        case "eqn":
-          if (b.valueType === "fixed") {
-            if (bApplied % bValue === 0 && bApplied > bValue) {
-              appliedMultiplier = bApplied / bValue;
-            } else if (bApplied < bValue && !isPending) {
-              isCapped = true;
+          const segmentValue = (bApplied / nightsInStay) * nightsInThisSegment;
+
+          let label = "";
+          let description = "";
+
+          if (progressInCurrentCycle === 0) {
+            if (nightsInThisSegment === minNights) {
+              label = `Full Reward Cycle (${minNights}/${minNights} nights)`;
+              description = `A complete reward cycle finished within this stay.`;
+            } else {
+              label = `New Reward Cycle (${nightsInThisSegment}/${minNights} nights)`;
+              description = `Started a new reward cycle. Pending more nights to complete.`;
+            }
+          } else {
+            if (isCycleFinished) {
+              label = `Cycle Completion (${nightsInThisSegment} nights)`;
+              description = `Completed the reward cycle started in a previous stay.`;
+            } else {
+              label = `Cycle Progress (${nightsInThisSegment} nights)`;
+              description = `Continued the reward cycle started in a previous stay. Still pending.`;
             }
           }
-          break;
-        case "points":
-          if (b.valueType !== "multiplier") {
-            const pointsValue = bValue * hotelCentsPerPoint;
-            if (Math.abs(bApplied - pointsValue) < 0.001) {
-              appliedMultiplier = 1;
-            } else if (bApplied > pointsValue && Math.abs(bApplied % pointsValue) < 0.001) {
-              appliedMultiplier = Math.round(bApplied / pointsValue);
-            } else if (bApplied < pointsValue && !isPending) {
-              isCapped = true;
+
+          const nightProgressLabel =
+            nightsInThisSegment === 1
+              ? `${cumulativeAtStart + nightsAccountedFor + 1} of ${minNights} nights`
+              : `${nightsInThisSegment} nights towards ${minNights}-night goal`;
+
+          let nightFormula = "";
+          if (b.rewardType === "points") {
+            const centsStr = formatCents(hotelCentsPerPoint);
+            nightFormula = `(${nightProgressLabel}) × ${bValue.toLocaleString()} bonus pts × ${centsStr}¢ = ${formatCurrency(segmentValue)}`;
+          } else if (b.rewardType === "cashback") {
+            nightFormula = `(${nightProgressLabel}) × ${formatCurrency(bValue)} fixed cashback = ${formatCurrency(segmentValue)}`;
+          } else {
+            nightFormula = `(${nightProgressLabel}) × ${formatCurrency(bValue)} ${b.rewardType} = ${formatCurrency(segmentValue)}`;
+          }
+
+          segments.push({
+            label,
+            value: segmentValue,
+            formula: nightFormula + (isCycleFinished ? "" : " (pending)"),
+            description: description + (isCycleFinished ? " (Goal Met!)" : " (Pending)"),
+          });
+
+          nightsAccountedFor += nightsInThisSegment;
+          currentStart += nightsInThisSegment;
+        }
+
+        const pendingRatio =
+          cumulativeAtEnd % minNights !== 0
+            ? ` (${
+                nightsInStay === 1
+                  ? `${cumulativeAtEnd % minNights} of ${minNights} nights`
+                  : `${nightsInStay} nights towards ${minNights}-night goal`
+              } required)`
+            : "";
+
+        const proportionalSuffix = pendingRatio
+          ? ` This bonus is pending additional stays${pendingRatio}.`
+          : "";
+
+        descriptionLines.push(
+          `Earned proportional rewards for ${nightsInStay} nights towards a ${minNights}-night requirement.${proportionalSuffix}`
+        );
+      } else {
+        // Standard (Non-spanned) benefit logic
+        let appliedMultiplier = 1;
+        let isCapped = false;
+
+        switch (b.rewardType) {
+          case "cashback":
+          case "eqn":
+            if (b.valueType === "fixed") {
+              if (bApplied % bValue === 0 && bApplied > bValue) {
+                appliedMultiplier = bApplied / bValue;
+              } else if (bApplied < bValue) {
+                isCapped = true;
+              }
             }
-          }
-          break;
-      }
+            break;
+          case "points":
+            if (b.valueType !== "multiplier") {
+              const pointsValue = bValue * hotelCentsPerPoint;
+              if (Math.abs(bApplied - pointsValue) < 0.001) {
+                appliedMultiplier = 1;
+              } else if (bApplied > pointsValue && Math.abs(bApplied % pointsValue) < 0.001) {
+                appliedMultiplier = Math.round(bApplied / pointsValue);
+              } else if (bApplied < pointsValue) {
+                isCapped = true;
+              }
+            }
+            break;
+        }
 
-      const multiplierPrefix = appliedMultiplier > 1 ? `${appliedMultiplier} × ` : "";
-      const capSuffix = isCapped ? " (capped)" : "";
-      const pendingSuffix = isPending ? " (pending)" : "";
-      const proportionalSuffix = pendingRatio
-        ? ` This bonus is pending additional stays${pendingRatio}.`
-        : "";
+        const multiplierPrefix = appliedMultiplier > 1 ? `${appliedMultiplier} × ` : "";
+        const capSuffix = isCapped ? " (capped)" : "";
 
-      switch (b.rewardType) {
-        case "cashback":
-          if (b.valueType === "fixed") {
-            const formulaPrefix = spanNightsText ? `(${spanNightsText}) × ` : multiplierPrefix;
-            formulaLines.push(
-              `${formulaPrefix}${formatCurrency(bValue)} fixed cashback${capSuffix}${pendingSuffix} = ${formatCurrency(bApplied)}${tieInSuffix}`
-            );
-            descriptionLines.push(
-              `${appliedMultiplier > 1 ? `Earning ${appliedMultiplier}x of a ` : "A "}fixed cashback of ${formatCurrency(bValue)}.${isCapped ? " This benefit was reduced by redemption caps." : ""}${proportionalSuffix}${tieInSuffix}`
-            );
-          } else if (b.valueType === "percentage") {
-            const formulaPrefix = spanNightsText ? `(${spanNightsText}) × ` : "";
-            formulaLines.push(
-              `${formulaPrefix}${formatCurrency(totalCost)} (total cost) × ${bValue}%${capSuffix}${pendingSuffix} = ${formatCurrency(bApplied)}${tieInSuffix}`
-            );
-            descriptionLines.push(
-              `A ${bValue}% cashback on the total cost of the booking.${isCapped ? " This benefit was reduced by redemption caps." : ""}${proportionalSuffix}${tieInSuffix}`
-            );
-          }
-          break;
-        case "points": {
+        let benefitFormula = "";
+        let benefitDescription = "Reward based on stay criteria.";
+        if (b.rewardType === "points") {
           const centsStr = formatCents(hotelCentsPerPoint);
           if (b.valueType === "multiplier") {
             const isBaseOnly = !b.pointsMultiplierBasis || b.pointsMultiplierBasis === "base_only";
@@ -262,73 +288,66 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
                 ? Math.round(pretaxCost * baseRate)
                 : booking.loyaltyPointsEarned || 0;
             const basisLabel = isBaseOnly ? "(base rate only)" : "(incl. elite bonus)";
-            const formulaPrefix = spanNightsText ? `(${spanNightsText}) × ` : multiplierPrefix;
-            formulaLines.push(
-              `${formulaPrefix}${basisPoints.toLocaleString()} pts ${basisLabel} × (${bValue} - 1) × ${centsStr}¢${capSuffix}${pendingSuffix} = ${formatCurrency(bApplied)}${tieInSuffix}`
-            );
-            const basisDesc = isBaseOnly
-              ? `applies to base-rate points only, not including elite bonus`
-              : `applies to full earned points including elite bonus`;
-            descriptionLines.push(
-              `A ${bValue}x points multiplier on ${basisLabel} loyalty points, valued at ${centsStr}¢ each. This ${basisDesc}.${isCapped ? " This benefit was reduced by redemption caps." : ""}${proportionalSuffix}${tieInSuffix}`
-            );
+            benefitFormula = `${basisPoints.toLocaleString()} pts ${basisLabel} × (${bValue} - 1) × ${centsStr}¢${capSuffix}`;
+            benefitDescription = `A ${bValue}x points multiplier on ${basisLabel} loyalty points, valued at ${centsStr}¢ each.`;
           } else {
-            const formulaPrefix = spanNightsText ? `(${spanNightsText}) × ` : multiplierPrefix;
-            formulaLines.push(
-              `${formulaPrefix}${bValue.toLocaleString()} bonus pts × ${centsStr}¢${capSuffix}${pendingSuffix} = ${formatCurrency(bApplied)}${tieInSuffix}`
-            );
-            descriptionLines.push(
-              `${appliedMultiplier > 1 ? `Earning ${appliedMultiplier}x of ` : ""}${bValue.toLocaleString()} fixed bonus points, valued at ${centsStr}¢ each.${isCapped ? " This benefit was reduced by redemption caps." : ""}${proportionalSuffix}${tieInSuffix}`
-            );
+            benefitFormula = `${multiplierPrefix}${bValue.toLocaleString()} bonus pts × ${centsStr}¢${capSuffix}`;
+            benefitDescription = `${appliedMultiplier > 1 ? `Earning ${appliedMultiplier}x of ` : ""}${bValue.toLocaleString()} fixed bonus points, valued at ${centsStr}¢ each.`;
           }
-          break;
-        }
-        case "certificate": {
+        } else if (b.rewardType === "cashback") {
+          if (b.valueType === "fixed") {
+            benefitFormula = `${multiplierPrefix}${formatCurrency(bValue)} fixed cashback${capSuffix}`;
+            benefitDescription = `${appliedMultiplier > 1 ? `Earning ${appliedMultiplier}x of a ` : "A "}fixed cashback of ${formatCurrency(bValue)}.`;
+          } else {
+            benefitFormula = `${formatCurrency(totalCost)} (total cost) × ${bValue}%${capSuffix}`;
+            benefitDescription = `A ${bValue}% cashback on the total cost of the booking.`;
+          }
+        } else if (b.rewardType === "certificate") {
           const centsStr = formatCents(hotelCentsPerPoint);
           const points = b.certType ? certPointsValue(b.certType) : 0;
-          const formulaPrefix = spanNightsText ? `(${spanNightsText}) × ` : multiplierPrefix;
-          formulaLines.push(
-            `${formulaPrefix}${bValue.toLocaleString()} cert(s) × ${points.toLocaleString()} pts × 70% × ${centsStr}¢${capSuffix}${pendingSuffix} = ${formatCurrency(bApplied)}${tieInSuffix}`
-          );
-          descriptionLines.push(
-            `Earns ${appliedMultiplier > 1 ? (appliedMultiplier * bValue).toLocaleString() : bValue.toLocaleString()} free night certificate(s), valued at 70% of a max redemption (${points.toLocaleString()} pts) at ${centsStr}¢ per point.${isCapped ? " This benefit was reduced by redemption caps." : ""}${proportionalSuffix}${tieInSuffix}`
-          );
-          break;
+          benefitFormula = `${multiplierPrefix}${bValue.toLocaleString()} cert(s) × ${points.toLocaleString()} pts × 70% × ${centsStr}¢${capSuffix}`;
+          benefitDescription = `Earns ${appliedMultiplier > 1 ? (appliedMultiplier * bValue).toLocaleString() : bValue.toLocaleString()} free night certificate(s), valued at ${centsStr}¢ per point.`;
+        } else if (b.rewardType === "eqn") {
+          benefitFormula = `${multiplierPrefix}${bValue.toLocaleString()} bonus EQN(s) × ${formatCurrency(DEFAULT_EQN_VALUE)}${capSuffix}`;
+          benefitDescription = `Earns ${appliedMultiplier > 1 ? (appliedMultiplier * bValue).toLocaleString() : bValue.toLocaleString()} bonus Elite Qualifying Night(s).`;
         }
-        case "eqn": {
-          const formulaPrefix = spanNightsText ? `(${spanNightsText}) × ` : multiplierPrefix;
-          formulaLines.push(
-            `${formulaPrefix}${bValue.toLocaleString()} bonus EQN(s) × ${formatCurrency(DEFAULT_EQN_VALUE)}${capSuffix}${pendingSuffix} = ${formatCurrency(bApplied)}${tieInSuffix}`
-          );
-          descriptionLines.push(
-            `Earns ${appliedMultiplier > 1 ? (appliedMultiplier * bValue).toLocaleString() : bValue.toLocaleString()} bonus Elite Qualifying Night(s), valued at ${formatCurrency(DEFAULT_EQN_VALUE)} each.${isCapped ? " This benefit was reduced by redemption caps." : ""}${proportionalSuffix}${tieInSuffix}`
-          );
-          break;
+
+        if (isCapped) {
+          benefitDescription += " Reduced by redemption caps.";
         }
+
+        // Standard segment
+        segments.push({
+          label: `Benefit: ${b.rewardType}`,
+          value: bApplied,
+          formula: `${benefitFormula} = ${formatCurrency(bApplied)}`,
+          description: benefitDescription,
+        });
+
+        descriptionLines.push(benefitDescription);
       }
     }
 
-    // Fall back to applied value if no benefit applications (e.g. manually verified promos)
-    let formula: string;
-    if (formulaLines.length > 1) {
-      formula = formulaLines.join("; ") + ` = ${formatCurrency(appliedValue)} total`;
-    } else if (formulaLines.length === 1) {
-      formula = formulaLines[0];
-    } else {
-      formula = `${formatCurrency(appliedValue)}`;
-    }
+    const formula =
+      segments.length > 1
+        ? segments.map((s) => s.formula).join("; ") + ` = ${formatCurrency(appliedValue)} total`
+        : segments.length === 1
+          ? segments[0].formula
+          : formatCurrency(appliedValue);
+
     const description =
       descriptionLines.length > 0
         ? descriptionLines.join(" ")
         : `Applied promotion value: ${formatCurrency(appliedValue)}.`;
 
     return {
-      id: String(index),
+      id: bp.id || String(index),
       name: bp.promotion.name,
       appliedValue,
       label: "Promotion",
       formula,
       description,
+      segments,
     };
   });
   const promoSavings = promotions.reduce((sum, p) => sum + p.appliedValue, 0);
@@ -393,49 +412,65 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
       (a, b) => Number(b.rewardValue) - Number(a.rewardValue)
     )[0];
 
-    const rateToUse = bestMultiplierRule ? Number(bestMultiplierRule.rewardValue) : baseRate;
-    const totalFixedBonus = fixedRules.reduce((sum, r) => sum + Number(r.rewardValue), 0);
+    const multiplierToUse = bestMultiplierRule ? Number(bestMultiplierRule.rewardValue) : baseRate;
 
-    const pointName = booking.creditCard.pointType?.name || "points";
     const centsPerPoint = booking.creditCard.pointType
       ? Number(booking.creditCard.pointType.centsPerPoint)
       : DEFAULT_CENTS_PER_POINT;
     const centsStr = formatCents(centsPerPoint);
 
-    const baseReward = totalCost * rateToUse * centsPerPoint;
-    const fixedReward = totalFixedBonus * centsPerPoint;
-    cardReward = baseReward + fixedReward;
+    const cardSegments: CalculationSegment[] = [];
 
-    // Build Explanation
-    const isBoosted = !!bestMultiplierRule;
-    const hasFixed = totalFixedBonus > 0;
+    // Base vs Boosted Multiplier
+    if (bestMultiplierRule) {
+      const baseValue = totalCost * baseRate * centsPerPoint;
+      const boostValue = totalCost * (multiplierToUse - baseRate) * centsPerPoint;
 
-    if (isBoosted && hasFixed) {
-      cardRewardCalc = {
-        label: "Card Reward",
-        formula: `(${formatCurrency(totalCost)} × ${rateToUse}x) + ${totalFixedBonus.toLocaleString()} bonus pts × ${centsStr}¢ = ${formatCurrency(cardReward)}`,
-        description: `The ${booking.creditCard.name} earns a boosted ${rateToUse}x ${pointName} plus a fixed bonus of ${totalFixedBonus.toLocaleString()} ${pointName} for this stay. We value ${pointName} at ${centsStr}¢ each.`,
-      };
-    } else if (isBoosted) {
-      cardRewardCalc = {
-        label: "Card Reward",
-        formula: `${formatCurrency(totalCost)} (total cost) × ${rateToUse}x (boosted) × ${centsStr}¢ = ${formatCurrency(cardReward)}`,
-        description: `The ${booking.creditCard.name} earns a boosted total of ${rateToUse}x ${pointName} per dollar for this booking. We value ${pointName} at ${centsStr}¢ each.`,
-      };
-    } else if (hasFixed) {
-      cardRewardCalc = {
-        label: "Card Reward",
-        formula: `(${formatCurrency(totalCost)} × ${baseRate}x) + ${totalFixedBonus.toLocaleString()} bonus pts × ${centsStr}¢ = ${formatCurrency(cardReward)}`,
-        description: `The ${booking.creditCard.name} earns its base ${baseRate}x ${pointName} plus a fixed bonus of ${totalFixedBonus.toLocaleString()} ${pointName} for this stay. We value ${pointName} at ${centsStr}¢ each.`,
-      };
+      cardSegments.push({
+        label: "Base Card Earning",
+        value: baseValue,
+        formula: `${formatCurrency(totalCost)} (total cost) × ${baseRate}x × ${centsStr}¢ = ${formatCurrency(baseValue)}`,
+        description: `Standard earning rate for the ${booking.creditCard.name}.`,
+      });
+
+      cardSegments.push({
+        label: `Hotel/Booking Boost`,
+        value: boostValue,
+        formula: `${formatCurrency(totalCost)} (total cost) × ${multiplierToUse - baseRate}x boost × ${centsStr}¢ = ${formatCurrency(boostValue)}`,
+        description: `Additional earning for booking with ${booking.hotelChain.name}.`,
+      });
     } else {
-      // Pure base rate
-      cardRewardCalc = {
-        label: "Card Reward",
-        formula: `${formatCurrency(totalCost)} (total cost) × ${baseRate}x × ${centsStr}¢ = ${formatCurrency(cardReward)}`,
-        description: `The ${booking.creditCard.name} earns ${baseRate}x ${pointName} per dollar spent on the total cost of the booking. We value ${pointName} at ${centsStr}¢ each.`,
-      };
+      const baseValue = totalCost * baseRate * centsPerPoint;
+      cardSegments.push({
+        label: "Base Card Earning",
+        value: baseValue,
+        formula: `${formatCurrency(totalCost)} (total cost) × ${baseRate}x × ${centsStr}¢ = ${formatCurrency(baseValue)}`,
+        description: `Standard earning rate for the ${booking.creditCard.name}.`,
+      });
     }
+
+    // Fixed Bonuses
+    for (const rule of fixedRules) {
+      const bonusValue = Number(rule.rewardValue) * centsPerPoint;
+      cardSegments.push({
+        label: "Fixed Card Bonus",
+        value: bonusValue,
+        formula: `${Number(rule.rewardValue).toLocaleString()} bonus pts × ${centsStr}¢ = ${formatCurrency(bonusValue)}`,
+        description: `Fixed point bonus awarded for this booking type.`,
+      });
+    }
+
+    cardReward = cardSegments.reduce((sum, s) => sum + s.value, 0);
+
+    cardRewardCalc = {
+      label: "Card Reward",
+      formula:
+        cardSegments.length > 1
+          ? cardSegments.map((s) => s.formula).join(" + ") + ` = ${formatCurrency(cardReward)}`
+          : cardSegments[0].formula,
+      description: `Total rewards earned using your ${booking.creditCard.name}.`,
+      segments: cardSegments,
+    };
   }
 
   // 4. Loyalty Points Earned
@@ -447,69 +482,108 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
     const centsStr = formatCents(centsPerPoint);
     loyaltyPointsValue = booking.loyaltyPointsEarned * centsPerPoint;
 
-    let description = `You earned ${booking.loyaltyPointsEarned.toLocaleString()} ${pointName} for this stay. Loyalty points are typically earned on the pre-tax cost only. We value these points at ${centsStr}¢ each.`;
-
+    const loyaltySegments: CalculationSegment[] = [];
     const elite = booking.hotelChain.userStatus?.eliteStatus;
-    if (elite) {
-      if (elite.isFixed && elite.fixedRate != null) {
-        description += ` This was calculated as a fixed rate of ${elite.fixedRate} points per dollar of the pre-tax cost for your ${elite.name} status.`;
-      } else if (elite.bonusPercentage != null && booking.hotelChain.basePointRate != null) {
-        const baseRate = Number(booking.hotelChain.basePointRate);
-        const bonusPct = Number(elite.bonusPercentage);
-        const basePoints = Math.round(pretaxCost * baseRate);
-        const bonusPoints = Math.round(basePoints * bonusPct);
-        description += ` This includes ${basePoints.toLocaleString()} base points (${baseRate}x on pre-tax cost) and a ${bonusPct * 100}% bonus of ${bonusPoints.toLocaleString()} points for your ${elite.name} status.`;
-      }
+
+    if (
+      elite &&
+      !elite.isFixed &&
+      elite.bonusPercentage != null &&
+      booking.hotelChain.basePointRate != null
+    ) {
+      const baseRate = Number(booking.hotelChain.basePointRate);
+      const bonusPct = Number(elite.bonusPercentage);
+      const basePoints = Math.round(pretaxCost * baseRate);
+      const bonusPoints = Math.round(basePoints * bonusPct);
+
+      loyaltySegments.push({
+        label: "Base Loyalty Points",
+        value: basePoints * centsPerPoint,
+        formula: `${formatCurrency(pretaxCost)} (pre-tax) × ${baseRate}x = ${basePoints.toLocaleString()} pts`,
+        description: "Standard earning rate for this hotel chain.",
+      });
+
+      loyaltySegments.push({
+        label: `${elite.name} Elite Bonus`,
+        value: bonusPoints * centsPerPoint,
+        formula: `${basePoints.toLocaleString()} base pts × ${bonusPct * 100}% bonus = ${bonusPoints.toLocaleString()} pts`,
+        description: `Additional points for your ${elite.name} status.`,
+      });
+    } else {
+      loyaltySegments.push({
+        label: "Total Loyalty Points",
+        value: loyaltyPointsValue,
+        formula: `${booking.loyaltyPointsEarned.toLocaleString()} pts × ${centsStr}¢ = ${formatCurrency(loyaltyPointsValue)}`,
+        description: `Total points earned for this stay.`,
+      });
     }
 
     loyaltyPointsCalc = {
       label: "Loyalty Points Value",
-      formula: `${booking.loyaltyPointsEarned.toLocaleString()} pts × ${centsStr}¢ = ${formatCurrency(loyaltyPointsValue)}`,
-      description,
-    };
-  }
-
-  // 5. Points Redeemed
-  const hotelChainCentsPerPoint = booking.hotelChain.pointType
-    ? Number(booking.hotelChain.pointType.centsPerPoint)
-    : 0;
-  const pointsRedeemedValue = (booking.pointsRedeemed ?? 0) * hotelChainCentsPerPoint;
-  let pointsRedeemedCalc: CalculationDetail | undefined;
-  if (booking.pointsRedeemed) {
-    const centsStr = formatCents(hotelChainCentsPerPoint);
-    pointsRedeemedCalc = {
-      label: "Award Points (value)",
-      formula: `${booking.pointsRedeemed.toLocaleString()} pts × ${centsStr}¢ = ${formatCurrency(pointsRedeemedValue)}`,
-      description: `You redeemed ${booking.pointsRedeemed.toLocaleString()} points for this stay. Their equivalent cash value based on our valuation is ${formatCurrency(pointsRedeemedValue)}.`,
-    };
-  }
-
-  // 6. Certificates
-  const certsValue = booking.certificates.reduce(
-    (sum, cert) => sum + certPointsValue(cert.certType) * hotelChainCentsPerPoint,
-    0
-  );
-  let certsCalc: CalculationDetail | undefined;
-  if (booking.certificates.length > 0) {
-    const centsStr = formatCents(hotelChainCentsPerPoint);
-    certsCalc = {
-      label: "Certificates (value)",
       formula:
-        booking.certificates
-          .map((c) => `${certPointsValue(c.certType).toLocaleString()} pts`)
-          .join(" + ") + ` × ${centsStr}¢ = ${formatCurrency(certsValue)}`,
-      description: `You used ${booking.certificates.length} certificate(s). We value them based on the maximum point value they can be redeemed for.`,
+        loyaltySegments.length > 1
+          ? loyaltySegments.map((s) => s.formula).join("; ") +
+            ` = ${formatCurrency(loyaltyPointsValue)} total`
+          : loyaltySegments[0].formula,
+      description: `You earned ${booking.loyaltyPointsEarned.toLocaleString()} ${pointName} for this stay.`,
+      segments: loyaltySegments,
+    };
+  }
+
+  // 5. Points RedeemedValue
+  let pointsRedeemedValue = 0;
+  let pointsRedeemedCalc: CalculationDetail | undefined;
+  if (booking.pointsRedeemed && booking.hotelChain.pointType) {
+    const centsPerPoint = Number(booking.hotelChain.pointType.centsPerPoint);
+    const centsStr = formatCents(centsPerPoint);
+    pointsRedeemedValue = booking.pointsRedeemed * centsPerPoint;
+
+    pointsRedeemedCalc = {
+      label: "Points Redeemed Value",
+      formula: `${booking.pointsRedeemed.toLocaleString()} pts × ${centsStr}¢ = ${formatCurrency(pointsRedeemedValue)}`,
+      description: `The estimated value of the points you redeemed for this stay.`,
+    };
+  }
+
+  // 6. Certificates Value
+  let certsValue = 0;
+  let certsCalc: CalculationDetail | undefined;
+  if (booking.certificates.length > 0 && booking.hotelChain.pointType) {
+    const centsPerPoint = Number(booking.hotelChain.pointType.centsPerPoint);
+    const centsStr = formatCents(centsPerPoint);
+
+    const certSegments = booking.certificates.map((cert) => {
+      const points = certPointsValue(cert.certType);
+      const value = points * centsPerPoint;
+      return {
+        label: `Free Night Cert (${cert.certType})`,
+        value,
+        formula: `${points.toLocaleString()} pts × ${centsStr}¢ = ${formatCurrency(value)}`,
+        description: `Estimated value of this certificate type.`,
+      };
+    });
+
+    certsValue = certSegments.reduce((sum, s) => sum + s.value, 0);
+
+    certsCalc = {
+      label: "Certificates Value",
+      formula:
+        certSegments.length > 1
+          ? certSegments.map((s) => s.formula).join(" + ") + ` = ${formatCurrency(certsValue)}`
+          : certSegments[0].formula,
+      description: `The total estimated value of certificates used for this stay.`,
+      segments: certSegments,
     };
   }
 
   const netCost =
-    totalCost +
-    pointsRedeemedValue +
-    certsValue -
+    totalCost -
     promoSavings -
     portalCashback -
     cardReward -
-    loyaltyPointsValue;
+    loyaltyPointsValue +
+    pointsRedeemedValue +
+    certsValue;
 
   return {
     totalCost,

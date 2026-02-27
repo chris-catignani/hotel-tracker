@@ -35,6 +35,7 @@ function makeRestrictions(overrides: Partial<TestRestrictions> = {}): TestRestri
     minSpend: null,
     minNightsRequired: null,
     nightsStackable: false,
+    spanStays: false,
     maxRedemptionCount: null,
     maxRedemptionValue: null,
     maxTotalBonusPoints: null,
