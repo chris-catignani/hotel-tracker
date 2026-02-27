@@ -429,7 +429,9 @@ describe("promotion-matching", () => {
           count: 2,
           totalValue: 20,
           totalBonusPoints: 0,
-          benefitUsage: new Map([["benefit-count-limit", { count: 2, totalValue: 20 }]]),
+          benefitUsage: new Map([
+            ["benefit-count-limit", { count: 2, totalValue: 20, totalBonusPoints: 0 }],
+          ]),
         },
       ],
     ]);
@@ -459,7 +461,9 @@ describe("promotion-matching", () => {
           count: 1,
           totalValue: 45,
           totalBonusPoints: 0,
-          benefitUsage: new Map([["benefit-value-limit", { count: 1, totalValue: 45 }]]),
+          benefitUsage: new Map([
+            ["benefit-value-limit", { count: 1, totalValue: 45, totalBonusPoints: 0 }],
+          ]),
         },
       ],
     ]);
@@ -510,7 +514,9 @@ describe("promotion-matching", () => {
           count: 1,
           totalValue: 10,
           totalBonusPoints: 0,
-          benefitUsage: new Map([["benefit-once-subbrand", { count: 1, totalValue: 10 }]]),
+          benefitUsage: new Map([
+            ["benefit-once-subbrand", { count: 1, totalValue: 10, totalBonusPoints: 0 }],
+          ]),
           appliedSubBrandIds: new Set(["brand-4"]), // mockBooking sub-brand is brand-4
         },
       ],
@@ -1589,5 +1595,48 @@ describe("spanStays", () => {
     const matched2 = calculateMatchedPromotions(booking2, [promo], priorUsage);
     expect(matched2[0].bonusPointsApplied).toBe(2000);
     // Total bonus points across both stays = 4000 (for 4 nights @ 1000/night)
+  });
+
+  it("should respect benefit-level maxTotalBonusPoints", () => {
+    const promo = makePromo({
+      benefits: [
+        {
+          id: "benefit-pts-limit",
+          rewardType: PromotionRewardType.points,
+          valueType: PromotionBenefitValueType.fixed,
+          value: new Prisma.Decimal(3000),
+          certType: null,
+          pointsMultiplierBasis: null,
+          sortOrder: 0,
+          restrictions: makeRestrictions({ maxTotalBonusPoints: 5000 }),
+        },
+      ],
+    });
+    const priorUsage = new Map([
+      [
+        promo.id,
+        {
+          count: 1,
+          totalValue: 60,
+          totalBonusPoints: 3000,
+          benefitUsage: new Map([
+            ["benefit-pts-limit", { count: 1, totalValue: 60, totalBonusPoints: 3000 }],
+          ]),
+        },
+      ],
+    ]);
+    const booking = {
+      ...mockBooking,
+      numNights: 1,
+      hotelChain: {
+        ...mockBooking.hotelChain,
+        pointType: { centsPerPoint: 0.02 },
+      },
+    };
+    const matched = calculateMatchedPromotions(booking, [promo], priorUsage);
+    expect(matched).toHaveLength(1);
+    // 3000 pts value, but only 2000 capacity.
+    expect(matched[0].bonusPointsApplied).toBe(2000);
+    expect(matched[0].appliedValue).toBe(40); // 2000 pts * 0.02 $/pt
   });
 });
