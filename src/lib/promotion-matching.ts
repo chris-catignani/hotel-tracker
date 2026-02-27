@@ -312,6 +312,11 @@ export function calculateMatchedPromotions(
       if (br.allowedPaymentTypes && !checkPaymentTypeRestriction(br.allowedPaymentTypes, booking))
         return false;
 
+      // Benefit-level minimum nights check
+      if (br.minNightsRequired && booking.numNights < br.minNightsRequired) {
+        return false;
+      }
+
       return true;
     });
 
@@ -363,6 +368,20 @@ export function calculateMatchedPromotions(
         case PromotionRewardType.eqn:
           appliedValue = benefitValue * DEFAULT_EQN_VALUE;
           break;
+      }
+
+      // Apply benefit-level nightsStackable multiplier
+      // Skip if promotion-level multiplication will already be applied to all benefits
+      const promoIsStacked = r?.nightsStackable && r?.minNightsRequired && r.minNightsRequired > 0;
+      if (
+        !promoIsStacked &&
+        benefit.restrictions?.nightsStackable &&
+        benefit.restrictions?.minNightsRequired &&
+        benefit.restrictions.minNightsRequired > 0
+      ) {
+        const multiplier = Math.floor(booking.numNights / benefit.restrictions.minNightsRequired);
+        appliedValue *= multiplier;
+        benefitBonusPoints *= multiplier;
       }
 
       benefitApplications.push({

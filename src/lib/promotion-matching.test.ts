@@ -395,6 +395,49 @@ describe("promotion-matching", () => {
     expect(matched[0].appliedValue).toBe(30); // 10 * 3
   });
 
+  it("should respect benefit-level minNightsRequired", () => {
+    const promo = makePromo({
+      restrictions: null,
+      benefits: [
+        {
+          id: "benefit-min-nights",
+          rewardType: PromotionRewardType.cashback,
+          valueType: PromotionBenefitValueType.fixed,
+          value: new Prisma.Decimal(10),
+          certType: null,
+          pointsMultiplierBasis: null,
+          sortOrder: 0,
+          restrictions: makeRestrictions({ minNightsRequired: 5 }),
+        },
+      ],
+    });
+    // Booking has 3 nights (from mockBooking), benefit requires 5
+    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    expect(matched).toHaveLength(0);
+  });
+
+  it("should apply benefit-level nightsStackable multiplier", () => {
+    const promo = makePromo({
+      restrictions: null,
+      benefits: [
+        {
+          id: "benefit-stackable",
+          rewardType: PromotionRewardType.cashback,
+          valueType: PromotionBenefitValueType.fixed,
+          value: new Prisma.Decimal(10),
+          certType: null,
+          pointsMultiplierBasis: null,
+          sortOrder: 0,
+          restrictions: makeRestrictions({ minNightsRequired: 2, nightsStackable: true }),
+        },
+      ],
+    });
+    const booking = { ...mockBooking, numNights: 6 }; // 6 nights / 2 = 3x multiplier
+    const matched = calculateMatchedPromotions(booking, [promo]);
+    expect(matched).toHaveLength(1);
+    expect(matched[0].appliedValue).toBe(30); // 10 * 3
+  });
+
   it("should respect bookByDate: allow before cutoff", () => {
     const promo = makePromo({
       restrictions: makeRestrictions({ bookByDate: new Date("2026-02-01") }),
