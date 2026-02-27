@@ -152,19 +152,58 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
       const bApplied = Number(ba.appliedValue);
       const tieInSuffix = "";
 
+      // Check for benefit-level stacking or capping
+      // We can infer the multiplier if we know the reward type
+      let appliedMultiplier = 1;
+      let isCapped = false;
+
+      // Note: PromotionBenefit in NetCostBooking doesn't include restrictions currently,
+      // but we can infer them from the ratio of bApplied vs bValue
+      // This is a bit of a heuristic but works for display.
+
+      switch (b.rewardType) {
+        case "cashback":
+        case "eqn":
+          if (b.valueType === "fixed") {
+            if (bApplied % bValue === 0 && bApplied > bValue) {
+              appliedMultiplier = bApplied / bValue;
+            } else if (bApplied < bValue) {
+              isCapped = true;
+            }
+          }
+          break;
+        case "points":
+          if (b.valueType !== "multiplier") {
+            const pointsValue = bValue * hotelCentsPerPoint;
+            if (Math.abs(bApplied - pointsValue) < 0.001) {
+              appliedMultiplier = 1;
+            } else if (bApplied > pointsValue && Math.abs(bApplied % pointsValue) < 0.001) {
+              appliedMultiplier = Math.round(bApplied / pointsValue);
+            } else if (bApplied < pointsValue) {
+              isCapped = true;
+            }
+          }
+          break;
+      }
+
+      const multiplierPrefix = appliedMultiplier > 1 ? `${appliedMultiplier} × ` : "";
+      const capSuffix = isCapped ? " (capped)" : "";
+
       switch (b.rewardType) {
         case "cashback":
           if (b.valueType === "fixed") {
             formulaLines.push(
-              `${formatCurrency(bValue)} fixed cashback = ${formatCurrency(bApplied)}${tieInSuffix}`
-            );
-            descriptionLines.push(`A fixed cashback of ${formatCurrency(bValue)}.${tieInSuffix}`);
-          } else if (b.valueType === "percentage") {
-            formulaLines.push(
-              `${formatCurrency(totalCost)} (total cost) × ${bValue}% = ${formatCurrency(bApplied)}${tieInSuffix}`
+              `${multiplierPrefix}${formatCurrency(bValue)} fixed cashback${capSuffix} = ${formatCurrency(bApplied)}${tieInSuffix}`
             );
             descriptionLines.push(
-              `A ${bValue}% cashback on the total cost of the booking.${tieInSuffix}`
+              `${appliedMultiplier > 1 ? `Earning ${appliedMultiplier}x of a ` : "A "}fixed cashback of ${formatCurrency(bValue)}.${isCapped ? " This benefit was reduced by redemption caps." : ""}${tieInSuffix}`
+            );
+          } else if (b.valueType === "percentage") {
+            formulaLines.push(
+              `${formatCurrency(totalCost)} (total cost) × ${bValue}%${capSuffix} = ${formatCurrency(bApplied)}${tieInSuffix}`
+            );
+            descriptionLines.push(
+              `A ${bValue}% cashback on the total cost of the booking.${isCapped ? " This benefit was reduced by redemption caps." : ""}${tieInSuffix}`
             );
           }
           break;
@@ -181,20 +220,20 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
                 : booking.loyaltyPointsEarned || 0;
             const basisLabel = isBaseOnly ? "(base rate only)" : "(incl. elite bonus)";
             formulaLines.push(
-              `${basisPoints.toLocaleString()} pts ${basisLabel} × (${bValue} - 1) × ${centsStr}¢ = ${formatCurrency(bApplied)}${tieInSuffix}`
+              `${multiplierPrefix}${basisPoints.toLocaleString()} pts ${basisLabel} × (${bValue} - 1) × ${centsStr}¢${capSuffix} = ${formatCurrency(bApplied)}${tieInSuffix}`
             );
             const basisDesc = isBaseOnly
               ? `applies to base-rate points only, not including elite bonus`
               : `applies to full earned points including elite bonus`;
             descriptionLines.push(
-              `A ${bValue}x points multiplier on ${basisLabel} loyalty points, valued at ${centsStr}¢ each. This ${basisDesc}.${tieInSuffix}`
+              `A ${bValue}x points multiplier on ${basisLabel} loyalty points, valued at ${centsStr}¢ each. This ${basisDesc}.${isCapped ? " This benefit was reduced by redemption caps." : ""}${tieInSuffix}`
             );
           } else {
             formulaLines.push(
-              `${bValue.toLocaleString()} bonus pts × ${centsStr}¢ = ${formatCurrency(bApplied)}${tieInSuffix}`
+              `${multiplierPrefix}${bValue.toLocaleString()} bonus pts × ${centsStr}¢${capSuffix} = ${formatCurrency(bApplied)}${tieInSuffix}`
             );
             descriptionLines.push(
-              `${bValue.toLocaleString()} fixed bonus points, valued at ${centsStr}¢ each.${tieInSuffix}`
+              `${appliedMultiplier > 1 ? `Earning ${appliedMultiplier}x of ` : ""}${bValue.toLocaleString()} fixed bonus points, valued at ${centsStr}¢ each.${isCapped ? " This benefit was reduced by redemption caps." : ""}${tieInSuffix}`
             );
           }
           break;
@@ -203,19 +242,19 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
           const centsStr = formatCents(hotelCentsPerPoint);
           const points = b.certType ? certPointsValue(b.certType) : 0;
           formulaLines.push(
-            `${bValue.toLocaleString()} cert(s) × ${points.toLocaleString()} pts × 70% × ${centsStr}¢ = ${formatCurrency(bApplied)}${tieInSuffix}`
+            `${multiplierPrefix}${bValue.toLocaleString()} cert(s) × ${points.toLocaleString()} pts × 70% × ${centsStr}¢${capSuffix} = ${formatCurrency(bApplied)}${tieInSuffix}`
           );
           descriptionLines.push(
-            `Earns ${bValue.toLocaleString()} free night certificate(s), valued at 70% of a max redemption (${points.toLocaleString()} pts) at ${centsStr}¢ per point. This valuation is fixed and not based on the booking's cost.${tieInSuffix}`
+            `Earns ${appliedMultiplier > 1 ? Number(appliedMultiplier * bValue) : bValue.toLocaleString()} free night certificate(s), valued at 70% of a max redemption (${points.toLocaleString()} pts) at ${centsStr}¢ per point.${isCapped ? " This benefit was reduced by redemption caps." : ""}${tieInSuffix}`
           );
           break;
         }
         case "eqn":
           formulaLines.push(
-            `${bValue.toLocaleString()} bonus EQN(s) × ${formatCurrency(DEFAULT_EQN_VALUE)} = ${formatCurrency(bApplied)}${tieInSuffix}`
+            `${multiplierPrefix}${bValue.toLocaleString()} bonus EQN(s) × ${formatCurrency(DEFAULT_EQN_VALUE)}${capSuffix} = ${formatCurrency(bApplied)}${tieInSuffix}`
           );
           descriptionLines.push(
-            `Earns ${bValue.toLocaleString()} bonus Elite Qualifying Night(s), which we value at ${formatCurrency(DEFAULT_EQN_VALUE)} each. This valuation is fixed and not based on the booking's cost.${tieInSuffix}`
+            `Earns ${appliedMultiplier > 1 ? Number(appliedMultiplier * bValue) : bValue.toLocaleString()} bonus Elite Qualifying Night(s), valued at ${formatCurrency(DEFAULT_EQN_VALUE)} each.${isCapped ? " This benefit was reduced by redemption caps." : ""}${tieInSuffix}`
           );
           break;
       }

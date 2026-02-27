@@ -323,12 +323,6 @@ export function calculateMatchedPromotions(
         return false;
       }
 
-      // Benefit-level once per sub-brand check
-      if (br.oncePerSubBrand) {
-        const appliedSubBrands = usage?.appliedSubBrandIds;
-        if (appliedSubBrands?.has(booking.hotelChainSubBrandId ?? null)) return false;
-      }
-
       // Benefit-level max redemption count
       if (br.maxRedemptionCount) {
         const benefitCount = usage?.benefitUsage?.get(b.id)?.count ?? 0;
@@ -577,6 +571,14 @@ async function fetchPromotionUsage(
   ]);
 
   if (allBenefitIds.length > 0) {
+    const benefitToPromoMap = new Map<string, string>();
+    for (const p of promotions) {
+      for (const b of p.benefits) benefitToPromoMap.set(b.id, p.id);
+      for (const t of p.tiers) {
+        for (const b of t.benefits) benefitToPromoMap.set(b.id, p.id);
+      }
+    }
+
     const benefitUsage = await prisma.bookingPromotionBenefit.groupBy({
       by: ["promotionBenefitId"],
       where: {
@@ -588,15 +590,9 @@ async function fetchPromotionUsage(
     });
 
     for (const row of benefitUsage) {
-      // Find which promotion this benefit belongs to
-      const promo = promotions.find(
-        (p) =>
-          p.benefits.some((b) => b.id === row.promotionBenefitId) ||
-          p.tiers.some((t) => t.benefits.some((b) => b.id === row.promotionBenefitId))
-      );
-
-      if (promo) {
-        const usage = usageMap.get(promo.id);
+      const promoId = benefitToPromoMap.get(row.promotionBenefitId);
+      if (promoId) {
+        const usage = usageMap.get(promoId);
         if (usage && usage.benefitUsage) {
           usage.benefitUsage.set(row.promotionBenefitId, {
             count: row._count.id,
