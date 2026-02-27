@@ -14,7 +14,7 @@ export function apiError(
   const isDev = process.env.NODE_ENV === "development";
 
   // Log to server console
-  const reqContext = request ? `[${request.method} ${new URL(request.url).pathname}] ` : "";
+  const reqContext = request ? `[${request.method} ${request.nextUrl.pathname}] ` : "";
   console.error(`${reqContext}API ERROR: ${message}`, error);
 
   const body: Record<string, unknown> = { error: message };
