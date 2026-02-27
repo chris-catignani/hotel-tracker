@@ -80,7 +80,8 @@ function mapApiRestrictionsToForm(
     minNightsRequired: r.minNightsRequired != null ? String(r.minNightsRequired) : "",
     nightsStackable: r.nightsStackable ?? false,
     spanStays: r.spanStays ?? false,
-    maxRedemptionCount: r.maxRedemptionCount != null ? String(r.maxRedemptionCount) : "",
+    maxStayCount: r.maxStayCount != null ? String(r.maxStayCount) : "",
+    maxRewardCount: r.maxRewardCount != null ? String(r.maxRewardCount) : "",
     maxRedemptionValue: r.maxRedemptionValue != null ? String(r.maxRedemptionValue) : "",
     maxTotalBonusPoints: r.maxTotalBonusPoints != null ? String(r.maxTotalBonusPoints) : "",
     oncePerSubBrand: r.oncePerSubBrand ?? false,
@@ -236,7 +237,8 @@ export function PromotionForm({
         break;
       case "redemption_caps":
         updateRestrictions({
-          maxRedemptionCount: "",
+          maxStayCount: "",
+          maxRewardCount: "",
           maxRedemptionValue: "",
           maxTotalBonusPoints: "",
         });
@@ -353,8 +355,9 @@ export function PromotionForm({
           ? restrictions.nightsStackable
           : false,
         spanStays: activeRestrictions.has("min_nights") ? restrictions.spanStays : false,
-        maxRedemptionCount: activeRestrictions.has("redemption_caps")
-          ? restrictions.maxRedemptionCount
+        maxStayCount: activeRestrictions.has("redemption_caps") ? restrictions.maxStayCount : "",
+        maxRewardCount: activeRestrictions.has("redemption_caps")
+          ? restrictions.maxRewardCount
           : "",
         maxRedemptionValue: activeRestrictions.has("redemption_caps")
           ? restrictions.maxRedemptionValue
@@ -794,12 +797,12 @@ export function PromotionForm({
                 return (
                   <RedemptionCapsCard
                     key={key}
-                    maxRedemptionCount={restrictions.maxRedemptionCount}
+                    maxStayCount={restrictions.maxStayCount}
+                    maxRewardCount={restrictions.maxRewardCount}
                     maxRedemptionValue={restrictions.maxRedemptionValue}
                     maxTotalBonusPoints={restrictions.maxTotalBonusPoints}
-                    onMaxRedemptionCountChange={(v) =>
-                      updateRestrictions({ maxRedemptionCount: v })
-                    }
+                    onMaxStayCountChange={(v) => updateRestrictions({ maxStayCount: v })}
+                    onMaxRewardCountChange={(v) => updateRestrictions({ maxRewardCount: v })}
                     onMaxRedemptionValueChange={(v) =>
                       updateRestrictions({ maxRedemptionValue: v })
                     }

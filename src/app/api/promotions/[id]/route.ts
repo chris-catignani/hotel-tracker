@@ -139,8 +139,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
                   : null,
                 nightsStackable: restrictions.nightsStackable ?? false,
                 spanStays: restrictions.spanStays ?? false,
-                maxRedemptionCount: restrictions.maxRedemptionCount
-                  ? Number(restrictions.maxRedemptionCount)
+                maxStayCount: restrictions.maxStayCount ? Number(restrictions.maxStayCount) : null,
+                maxRewardCount: restrictions.maxRewardCount
+                  ? Number(restrictions.maxRewardCount)
                   : null,
                 maxRedemptionValue: restrictions.maxRedemptionValue
                   ? Number(restrictions.maxRedemptionValue)

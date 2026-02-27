@@ -340,10 +340,12 @@ export function BenefitRow({
             )}
             {visibleRestrictionKeys.has("redemption_caps") && (
               <RedemptionCapsCard
-                maxRedemptionCount={benefit.restrictions?.maxRedemptionCount ?? ""}
+                maxStayCount={benefit.restrictions?.maxStayCount ?? ""}
+                maxRewardCount={benefit.restrictions?.maxRewardCount ?? ""}
                 maxRedemptionValue={benefit.restrictions?.maxRedemptionValue ?? ""}
                 maxTotalBonusPoints={benefit.restrictions?.maxTotalBonusPoints ?? ""}
-                onMaxRedemptionCountChange={(v) => updateRestrictions({ maxRedemptionCount: v })}
+                onMaxStayCountChange={(v) => updateRestrictions({ maxStayCount: v })}
+                onMaxRewardCountChange={(v) => updateRestrictions({ maxRewardCount: v })}
                 onMaxRedemptionValueChange={(v) => updateRestrictions({ maxRedemptionValue: v })}
                 onMaxTotalBonusPointsChange={(v) => updateRestrictions({ maxTotalBonusPoints: v })}
                 onRemove={() => removeBenefitRestriction("redemption_caps")}

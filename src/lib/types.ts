@@ -111,7 +111,8 @@ export interface PromotionRestrictionsData {
   minNightsRequired: number | null;
   nightsStackable: boolean;
   spanStays: boolean;
-  maxRedemptionCount: number | null;
+  maxStayCount: number | null;
+  maxRewardCount: number | null;
   maxRedemptionValue: string | number | null;
   maxTotalBonusPoints: number | null;
   oncePerSubBrand: boolean;
@@ -129,7 +130,8 @@ export interface PromotionRestrictionsFormData {
   minNightsRequired: string;
   nightsStackable: boolean;
   spanStays: boolean;
-  maxRedemptionCount: string;
+  maxStayCount: string;
+  maxRewardCount: string;
   maxRedemptionValue: string;
   maxTotalBonusPoints: string;
   oncePerSubBrand: boolean;
@@ -149,7 +151,8 @@ export const EMPTY_RESTRICTIONS: PromotionRestrictionsFormData = {
   minNightsRequired: "",
   nightsStackable: false,
   spanStays: false,
-  maxRedemptionCount: "",
+  maxStayCount: "",
+  maxRewardCount: "",
   maxRedemptionValue: "",
   maxTotalBonusPoints: "",
   oncePerSubBrand: false,

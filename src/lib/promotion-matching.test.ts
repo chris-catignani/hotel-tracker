@@ -37,7 +37,8 @@ function makeRestrictions(overrides: Partial<TestRestrictions> = {}): TestRestri
     minNightsRequired: null,
     nightsStackable: false,
     spanStays: false,
-    maxRedemptionCount: null,
+    maxStayCount: null,
+    maxRewardCount: null,
     maxRedemptionValue: null,
     maxTotalBonusPoints: null,
     oncePerSubBrand: false,
@@ -346,8 +347,8 @@ describe("promotion-matching", () => {
   });
 
   // Constraint tests
-  it("should respect maxRedemptionCount: 1 — skip when already used once", () => {
-    const promo = makePromo({ restrictions: makeRestrictions({ maxRedemptionCount: 1 }) });
+  it("should respect maxStayCount: 1 — skip when already used once", () => {
+    const promo = makePromo({ restrictions: makeRestrictions({ maxStayCount: 1 }) });
     const priorUsage = new Map([
       [promo.id, { count: 1, totalValue: 10, totalBonusPoints: 0, benefitUsage: new Map() }],
     ]);
@@ -355,8 +356,8 @@ describe("promotion-matching", () => {
     expect(matched).toHaveLength(0);
   });
 
-  it("should respect maxRedemptionCount: allow below limit", () => {
-    const promo = makePromo({ restrictions: makeRestrictions({ maxRedemptionCount: 3 }) });
+  it("should respect maxStayCount: allow below limit", () => {
+    const promo = makePromo({ restrictions: makeRestrictions({ maxStayCount: 3 }) });
     const priorUsage = new Map([
       [promo.id, { count: 1, totalValue: 10, totalBonusPoints: 0, benefitUsage: new Map() }],
     ]);
@@ -364,8 +365,8 @@ describe("promotion-matching", () => {
     expect(matched).toHaveLength(1);
   });
 
-  it("should respect maxRedemptionCount: skip at limit", () => {
-    const promo = makePromo({ restrictions: makeRestrictions({ maxRedemptionCount: 2 }) });
+  it("should respect maxStayCount: skip at limit", () => {
+    const promo = makePromo({ restrictions: makeRestrictions({ maxStayCount: 2 }) });
     const priorUsage = new Map([
       [promo.id, { count: 2, totalValue: 10, totalBonusPoints: 0, benefitUsage: new Map() }],
     ]);
@@ -408,7 +409,7 @@ describe("promotion-matching", () => {
     expect(matched[0].benefitApplications[0].appliedValue).toBe(30); // 10 * 3
   });
 
-  it("should respect benefit-level maxRedemptionCount", () => {
+  it("should respect benefit-level maxRewardCount", () => {
     const promo = makePromo({
       benefits: [
         {
@@ -419,7 +420,7 @@ describe("promotion-matching", () => {
           certType: null,
           pointsMultiplierBasis: null,
           sortOrder: 0,
-          restrictions: makeRestrictions({ maxRedemptionCount: 2 }),
+          restrictions: makeRestrictions({ maxRewardCount: 2 }),
         },
       ],
     });
@@ -1480,7 +1481,7 @@ describe("promotion-matching", () => {
 describe("getConstrainedPromotions", () => {
   it("should include promotions with promotion-level constraints", () => {
     const promo = makePromo({
-      restrictions: makeRestrictions({ maxRedemptionCount: 5 }),
+      restrictions: makeRestrictions({ maxStayCount: 5 }),
     });
     expect(getConstrainedPromotions([promo])).toHaveLength(1);
   });
