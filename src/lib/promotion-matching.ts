@@ -457,7 +457,7 @@ export function calculateMatchedPromotions(
       benefitApplications.push({
         promotionBenefitId: benefit.id,
         appliedValue,
-        bonusPointsApplied: benefitBonusPoints,
+        bonusPointsApplied: Math.round(benefitBonusPoints),
         eligibleNightsAtBooking:
           (usage?.benefitUsage?.get(benefit.id)?.eligibleNights ?? 0) + booking.numNights,
       });
@@ -474,6 +474,7 @@ export function calculateMatchedPromotions(
       // Also scale individual benefit applications to maintain consistency
       for (const ba of benefitApplications) {
         ba.appliedValue *= multiplier;
+        ba.bonusPointsApplied = Math.round(ba.bonusPointsApplied * multiplier);
       }
     }
 
@@ -487,6 +488,7 @@ export function calculateMatchedPromotions(
       // Also scale individual benefit applications to maintain consistency
       for (const ba of benefitApplications) {
         ba.appliedValue *= multiplier;
+        ba.bonusPointsApplied = Math.round(ba.bonusPointsApplied * multiplier);
       }
     }
 
@@ -501,6 +503,7 @@ export function calculateMatchedPromotions(
         // Scale down each benefit application proportionally
         for (const benefit of benefitApplications) {
           benefit.appliedValue *= ratio;
+          benefit.bonusPointsApplied = Math.round(benefit.bonusPointsApplied * ratio);
         }
         totalAppliedValue = remainingCapacity;
       }
@@ -516,6 +519,7 @@ export function calculateMatchedPromotions(
         // Scale down each benefit application proportionally
         for (const benefit of benefitApplications) {
           benefit.appliedValue *= ratio;
+          benefit.bonusPointsApplied = Math.round(benefit.bonusPointsApplied * ratio);
         }
         totalAppliedValue = totalAppliedValue * ratio;
         totalBonusPoints = remainingPoints;
@@ -525,7 +529,7 @@ export function calculateMatchedPromotions(
     matched.push({
       promotionId: promo.id,
       appliedValue: totalAppliedValue,
-      bonusPointsApplied: totalBonusPoints,
+      bonusPointsApplied: Math.round(totalBonusPoints),
       eligibleNightsAtBooking: (usage?.eligibleStayNights ?? 0) + booking.numNights,
       benefitApplications,
     });

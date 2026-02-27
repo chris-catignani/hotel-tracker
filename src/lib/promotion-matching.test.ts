@@ -21,6 +21,7 @@ const mockBooking: MatchingBooking = {
   pretaxCost: 80,
   totalCost: 100,
   loyaltyPointsEarned: 1000,
+  pointsRedeemed: null,
   hotelChain: {
     basePointRate: 10,
     pointType: { centsPerPoint: 0.015 }, // non-default
@@ -44,6 +45,7 @@ function makeRestrictions(overrides: Partial<TestRestrictions> = {}): TestRestri
     registrationDeadline: null,
     validDaysAfterRegistration: null,
     tieInRequiresPayment: false,
+    allowedPaymentTypes: [],
     subBrandRestrictions: [],
     tieInCards: [],
     ...overrides,
@@ -53,7 +55,6 @@ function makeRestrictions(overrides: Partial<TestRestrictions> = {}): TestRestri
 function makePromo(overrides: Partial<TestPromotion> = {}): TestPromotion {
   return {
     id: "promo-1",
-    name: "Test Promo",
     type: PromotionType.credit_card,
     creditCardId: "card-1",
     shoppingPortalId: null,
