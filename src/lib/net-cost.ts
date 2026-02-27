@@ -138,7 +138,8 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
 
   // NOTE: Redemption Constraints
   // The appliedValue shown here already reflects any constraints enforced at matching time:
-  // - maxRedemptionCount: limits how many times a promotion can be applied
+  // - maxStayCount: limits how many separate stays can trigger a promotion
+  // - maxRewardCount: limits how many times a modular reward can be earned across stays
   // - maxRedemptionValue: caps the total dollar value; appliedValue is reduced proportionally
   // - maxTotalBonusPoints: caps total bonus points earned; appliedValue is reduced proportionally
   // - minNightsRequired: promotion only applies to stays of minimum length

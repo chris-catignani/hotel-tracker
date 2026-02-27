@@ -41,7 +41,8 @@ type MatchingRestrictions = {
   minNightsRequired: number | null;
   nightsStackable: boolean;
   spanStays: boolean;
-  maxRedemptionCount: number | null;
+  maxStayCount: number | null;
+  maxRewardCount: number | null;
   maxRedemptionValue: Prisma.Decimal | null;
   maxTotalBonusPoints: number | null;
   oncePerSubBrand: boolean;
@@ -265,7 +266,7 @@ export function calculateMatchedPromotions(
 
     // Redemption constraint checks
     const usage = priorUsage?.get(promo.id);
-    if (r?.maxRedemptionCount && usage && usage.count >= r.maxRedemptionCount) continue;
+    if (r?.maxStayCount && usage && usage.count >= r.maxStayCount) continue;
 
     // Book-by-date check
     if (r?.bookByDate) {
@@ -340,10 +341,10 @@ export function calculateMatchedPromotions(
         return false;
       }
 
-      // Benefit-level max redemption count
-      if (br.maxRedemptionCount) {
+      // Benefit-level max reward count
+      if (br.maxRewardCount) {
         const benefitCount = usage?.benefitUsage?.get(b.id)?.count ?? 0;
-        if (benefitCount >= br.maxRedemptionCount) return false;
+        if (benefitCount >= br.maxRewardCount) return false;
       }
 
       return true;
@@ -805,7 +806,8 @@ async function fetchPromotionUsage(
 export function getConstrainedPromotions(promotions: MatchingPromotion[]): MatchingPromotion[] {
   return promotions.filter(
     (p) =>
-      p.restrictions?.maxRedemptionCount ||
+      p.restrictions?.maxStayCount ||
+      p.restrictions?.maxRewardCount ||
       p.restrictions?.maxRedemptionValue ||
       p.restrictions?.maxTotalBonusPoints ||
       p.restrictions?.spanStays ||
@@ -814,7 +816,8 @@ export function getConstrainedPromotions(promotions: MatchingPromotion[]): Match
       p.benefits.some(
         (b) =>
           b.restrictions?.oncePerSubBrand ||
-          b.restrictions?.maxRedemptionCount ||
+          b.restrictions?.maxStayCount ||
+          b.restrictions?.maxRewardCount ||
           b.restrictions?.maxRedemptionValue ||
           b.restrictions?.maxTotalBonusPoints ||
           b.restrictions?.spanStays
@@ -823,7 +826,8 @@ export function getConstrainedPromotions(promotions: MatchingPromotion[]): Match
         t.benefits.some(
           (b) =>
             b.restrictions?.oncePerSubBrand ||
-            b.restrictions?.maxRedemptionCount ||
+            b.restrictions?.maxStayCount ||
+            b.restrictions?.maxRewardCount ||
             b.restrictions?.maxRedemptionValue ||
             b.restrictions?.maxTotalBonusPoints ||
             b.restrictions?.spanStays

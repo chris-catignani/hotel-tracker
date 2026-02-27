@@ -70,7 +70,7 @@ export function deriveActiveRestrictions(
   if (r.minSpend) keys.add("min_spend");
   if (r.bookByDate) keys.add("book_by_date");
   if (r.minNightsRequired) keys.add("min_nights");
-  if (r.maxRedemptionCount || r.maxRedemptionValue || r.maxTotalBonusPoints)
+  if (r.maxStayCount || r.maxRewardCount || r.maxRedemptionValue || r.maxTotalBonusPoints)
     keys.add("redemption_caps");
   if (r.oncePerSubBrand === true) keys.add("once_per_sub_brand");
   if (r.tieInCreditCardIds && r.tieInCreditCardIds.length > 0) keys.add("tie_in_cards");
@@ -225,18 +225,22 @@ export function MinNightsCard({
 }
 
 export function RedemptionCapsCard({
-  maxRedemptionCount,
+  maxStayCount,
+  maxRewardCount,
   maxRedemptionValue,
   maxTotalBonusPoints,
-  onMaxRedemptionCountChange,
+  onMaxStayCountChange,
+  onMaxRewardCountChange,
   onMaxRedemptionValueChange,
   onMaxTotalBonusPointsChange,
   onRemove,
 }: {
-  maxRedemptionCount: string;
+  maxStayCount: string;
+  maxRewardCount: string;
   maxRedemptionValue: string;
   maxTotalBonusPoints: string;
-  onMaxRedemptionCountChange: (val: string) => void;
+  onMaxStayCountChange: (val: string) => void;
+  onMaxRewardCountChange: (val: string) => void;
   onMaxRedemptionValueChange: (val: string) => void;
   onMaxTotalBonusPointsChange: (val: string) => void;
   onRemove: () => void;
@@ -244,15 +248,27 @@ export function RedemptionCapsCard({
   return (
     <RestrictionCard title="Redemption Caps" testId="redemption_caps" onRemove={onRemove}>
       <div className="space-y-2">
-        <Label htmlFor="maxRedemptionCount">Max Redemption Count</Label>
+        <Label htmlFor="maxStayCount">Max Stay Count (Promotion-level)</Label>
         <Input
-          id="maxRedemptionCount"
+          id="maxStayCount"
           type="number"
           step="1"
-          value={maxRedemptionCount}
-          onChange={(e) => onMaxRedemptionCountChange(e.target.value)}
+          value={maxStayCount}
+          onChange={(e) => onMaxStayCountChange(e.target.value)}
           placeholder="e.g. 3"
-          data-testid="promotion-max-redemption-count"
+          data-testid="promotion-max-stay-count"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="maxRewardCount">Max Reward Count (Benefit-level)</Label>
+        <Input
+          id="maxRewardCount"
+          type="number"
+          step="1"
+          value={maxRewardCount}
+          onChange={(e) => onMaxRewardCountChange(e.target.value)}
+          placeholder="e.g. 10"
+          data-testid="promotion-max-reward-count"
         />
       </div>
       <div className="space-y-2">
