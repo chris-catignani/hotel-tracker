@@ -15,6 +15,7 @@ export type PromotionUsage = {
   totalBonusPoints: number;
   eligibleStayCount?: number;
   appliedSubBrandIds?: Set<string | null>;
+  benefitUsage?: Map<string, { count: number; totalValue: number }>;
 };
 export type PromotionUsageMap = Map<string, PromotionUsage>;
 
@@ -312,6 +313,22 @@ export function calculateMatchedPromotions(
       if (br.allowedPaymentTypes && !checkPaymentTypeRestriction(br.allowedPaymentTypes, booking))
         return false;
 
+      // Benefit-level minimum nights check
+      if (br.minNightsRequired && booking.numNights < br.minNightsRequired) {
+        return false;
+      }
+
+      // Benefit-level min spend check
+      if (br.minSpend != null && Number(booking.totalCost) < Number(br.minSpend)) {
+        return false;
+      }
+
+      // Benefit-level max redemption count
+      if (br.maxRedemptionCount) {
+        const benefitCount = usage?.benefitUsage?.get(b.id)?.count ?? 0;
+        if (benefitCount >= br.maxRedemptionCount) return false;
+      }
+
       return true;
     });
 
@@ -365,6 +382,53 @@ export function calculateMatchedPromotions(
           break;
       }
 
+      // Apply benefit-level nightsStackable multiplier
+      // Skip if promotion-level multiplication will already be applied to all benefits
+      const promoIsStacked = r?.nightsStackable && r?.minNightsRequired && r.minNightsRequired > 0;
+      if (
+        !promoIsStacked &&
+        benefit.restrictions?.nightsStackable &&
+        benefit.restrictions?.minNightsRequired &&
+        benefit.restrictions.minNightsRequired > 0
+      ) {
+        const multiplier = Math.floor(booking.numNights / benefit.restrictions.minNightsRequired);
+        appliedValue *= multiplier;
+        benefitBonusPoints *= multiplier;
+      }
+
+      // Apply benefit-level maxRedemptionValue cap
+      if (benefit.restrictions?.maxRedemptionValue) {
+        const maxValue = Number(benefit.restrictions.maxRedemptionValue);
+        const priorValue = usage?.benefitUsage?.get(benefit.id)?.totalValue ?? 0;
+        const remainingCapacity = Math.max(0, maxValue - priorValue);
+        if (remainingCapacity <= 0) {
+          appliedValue = 0;
+          benefitBonusPoints = 0;
+        } else if (appliedValue > remainingCapacity) {
+          const ratio = remainingCapacity / appliedValue;
+          appliedValue = remainingCapacity;
+          benefitBonusPoints = Math.round(benefitBonusPoints * ratio);
+        }
+      }
+
+      // Apply benefit-level maxTotalBonusPoints cap
+      if (benefit.restrictions?.maxTotalBonusPoints) {
+        const maxPoints = benefit.restrictions.maxTotalBonusPoints;
+        // Approximation: we don't store points per benefit, so we estimate from appliedValue
+        const priorPointsEstimated =
+          (usage?.benefitUsage?.get(benefit.id)?.totalValue ?? 0) / centsPerPoint;
+        const remainingPoints = Math.max(0, maxPoints - priorPointsEstimated);
+
+        if (remainingPoints <= 0) {
+          appliedValue = 0;
+          benefitBonusPoints = 0;
+        } else if (benefitBonusPoints > remainingPoints) {
+          const ratio = remainingPoints / benefitBonusPoints;
+          appliedValue *= ratio;
+          benefitBonusPoints = Math.round(remainingPoints);
+        }
+      }
+
       benefitApplications.push({
         promotionBenefitId: benefit.id,
         appliedValue,
@@ -378,6 +442,11 @@ export function calculateMatchedPromotions(
       const multiplier = Math.floor(booking.numNights / r.minNightsRequired);
       totalAppliedValue *= multiplier;
       totalBonusPoints *= multiplier;
+
+      // Also scale individual benefit applications to maintain consistency
+      for (const ba of benefitApplications) {
+        ba.appliedValue *= multiplier;
+      }
     }
 
     // Apply maxRedemptionValue cap
@@ -491,7 +560,47 @@ async function fetchPromotionUsage(
       count: row._count.id,
       totalValue: Number(row._sum.appliedValue ?? 0),
       totalBonusPoints: row._sum.bonusPointsApplied ?? 0,
+      benefitUsage: new Map(),
     });
+  }
+
+  // Fetch benefit-level usage
+  const allBenefitIds = promotions.flatMap((p) => [
+    ...p.benefits.map((b) => b.id),
+    ...p.tiers.flatMap((t) => t.benefits.map((b) => b.id)),
+  ]);
+
+  if (allBenefitIds.length > 0) {
+    const benefitToPromoMap = new Map<string, string>();
+    for (const p of promotions) {
+      for (const b of p.benefits) benefitToPromoMap.set(b.id, p.id);
+      for (const t of p.tiers) {
+        for (const b of t.benefits) benefitToPromoMap.set(b.id, p.id);
+      }
+    }
+
+    const benefitUsage = await prisma.bookingPromotionBenefit.groupBy({
+      by: ["promotionBenefitId"],
+      where: {
+        promotionBenefitId: { in: allBenefitIds },
+        ...(excludeBookingId ? { bookingPromotion: { bookingId: { not: excludeBookingId } } } : {}),
+      },
+      _count: { id: true },
+      _sum: { appliedValue: true },
+    });
+
+    for (const row of benefitUsage) {
+      const promoId = benefitToPromoMap.get(row.promotionBenefitId);
+      if (promoId) {
+        const usage = usageMap.get(promoId);
+        if (usage && usage.benefitUsage) {
+          usage.benefitUsage.set(row.promotionBenefitId, {
+            count: row._count.id,
+            totalValue: Number(row._sum.appliedValue ?? 0),
+          });
+        }
+      }
+    }
   }
 
   // Fetch eligibleStayCount for tiered promotions
@@ -531,7 +640,12 @@ async function fetchPromotionUsage(
         },
       },
     });
-    const existing = usageMap.get(promo.id) ?? { count: 0, totalValue: 0, totalBonusPoints: 0 };
+    const existing = usageMap.get(promo.id) ?? {
+      count: 0,
+      totalValue: 0,
+      totalBonusPoints: 0,
+      benefitUsage: new Map(),
+    };
     usageMap.set(promo.id, { ...existing, eligibleStayCount: eligibleCount });
   }
 
@@ -566,7 +680,12 @@ async function fetchPromotionUsage(
     }
 
     for (const promo of oncePerSubBrandPromos) {
-      const existing = usageMap.get(promo.id) ?? { count: 0, totalValue: 0, totalBonusPoints: 0 };
+      const existing = usageMap.get(promo.id) ?? {
+        count: 0,
+        totalValue: 0,
+        totalBonusPoints: 0,
+        benefitUsage: new Map(),
+      };
       usageMap.set(promo.id, { ...existing, appliedSubBrandIds: subBrandsByPromo.get(promo.id) });
     }
   }
