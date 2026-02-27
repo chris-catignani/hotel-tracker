@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const pointTypes = await prisma.pointType.findMany({
       orderBy: [{ category: "asc" }, { name: "asc" }],
     });
     return NextResponse.json(pointTypes);
   } catch (error) {
-    return apiError("Failed to fetch point types", error);
+    return apiError("Failed to fetch point types", error, 500, request);
   }
 }
 
@@ -28,6 +28,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(pointType, { status: 201 });
   } catch (error) {
-    return apiError("Failed to create point type", error);
+    return apiError("Failed to create point type", error, 500, request);
   }
 }

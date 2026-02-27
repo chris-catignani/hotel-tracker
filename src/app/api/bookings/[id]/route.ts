@@ -32,12 +32,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     });
 
     if (!booking) {
-      return apiError("Booking not found", null, 404);
+      return apiError("Booking not found", null, 404, request);
     }
 
     return NextResponse.json(booking);
   } catch (error) {
-    return apiError("Failed to fetch booking", error);
+    return apiError("Failed to fetch booking", error, 500, request);
   }
 }
 
@@ -226,7 +226,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(fullBooking);
   } catch (error) {
-    return apiError("Failed to update booking", error);
+    return apiError("Failed to update booking", error, 500, request);
   }
 }
 
@@ -248,6 +248,6 @@ export async function DELETE(
 
     return NextResponse.json({ message: "Booking deleted" });
   } catch (error) {
-    return apiError("Failed to delete booking", error);
+    return apiError("Failed to delete booking", error, 500, request);
   }
 }

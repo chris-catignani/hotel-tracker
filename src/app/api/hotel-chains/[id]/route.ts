@@ -15,10 +15,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         userStatus: { include: { eliteStatus: true } },
       },
     });
-    if (!hotelChain) return apiError("Hotel chain not found", null, 404);
+    if (!hotelChain) return apiError("Hotel chain not found", null, 404, request);
     return NextResponse.json(hotelChain);
   } catch (error) {
-    return apiError("Failed to fetch hotel chain", error);
+    return apiError("Failed to fetch hotel chain", error, 500, request);
   }
 }
 
@@ -58,7 +58,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(hotelChain);
   } catch (error) {
-    return apiError("Failed to update hotel chain", error);
+    return apiError("Failed to update hotel chain", error, 500, request);
   }
 }
 
@@ -99,6 +99,6 @@ export async function DELETE(
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    return apiError("Failed to delete hotel chain", error);
+    return apiError("Failed to delete hotel chain", error, 500, request);
   }
 }

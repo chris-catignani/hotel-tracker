@@ -26,12 +26,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     });
 
     if (!bookingPromotion) {
-      return apiError("Booking promotion not found", null, 404);
+      return apiError("Booking promotion not found", null, 404, request);
     }
 
     return NextResponse.json(bookingPromotion);
   } catch (error) {
-    return apiError("Failed to fetch booking promotion", error);
+    return apiError("Failed to fetch booking promotion", error, 500, request);
   }
 }
 
@@ -47,6 +47,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     return NextResponse.json(bookingPromotion);
   } catch (error) {
-    return apiError("Failed to update booking promotion", error);
+    return apiError("Failed to update booking promotion", error, 500, request);
   }
 }

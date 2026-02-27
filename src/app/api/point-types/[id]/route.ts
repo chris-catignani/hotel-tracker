@@ -20,12 +20,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(pointType);
   } catch (error) {
-    return apiError("Failed to update point type", error);
+    return apiError("Failed to update point type", error, 500, request);
   }
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -37,12 +37,17 @@ export async function DELETE(
     const portalCount = await prisma.shoppingPortal.count({ where: { pointTypeId: id } });
 
     if (hotelChainCount > 0 || creditCardCount > 0 || portalCount > 0) {
-      return apiError("Cannot delete point type that is in use by other records", null, 400);
+      return apiError(
+        "Cannot delete point type that is in use by other records",
+        null,
+        400,
+        request
+      );
     }
 
     await prisma.pointType.delete({ where: { id: id } });
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    return apiError("Failed to delete point type", error);
+    return apiError("Failed to delete point type", error, 500, request);
   }
 }

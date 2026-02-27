@@ -13,7 +13,7 @@ const CARD_INCLUDE = {
   },
 } as const;
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const cards = await prisma.creditCard.findMany({
       where: { isDeleted: false },
@@ -24,7 +24,7 @@ export async function GET() {
     });
     return NextResponse.json(cards);
   } catch (error) {
-    return apiError("Failed to fetch credit cards", error);
+    return apiError("Failed to fetch credit cards", error, 500, request);
   }
 }
 
@@ -52,6 +52,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(card, { status: 201 });
   } catch (error) {
-    return apiError("Failed to create credit card", error);
+    return apiError("Failed to create credit card", error, 500, request);
   }
 }

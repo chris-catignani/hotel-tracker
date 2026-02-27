@@ -13,7 +13,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     });
     return NextResponse.json(subBrands);
   } catch (error) {
-    return apiError("Failed to fetch sub-brands", error);
+    return apiError("Failed to fetch sub-brands", error, 500, request);
   }
 }
 
@@ -32,6 +32,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     return NextResponse.json(subBrand, { status: 201 });
   } catch (error) {
-    return apiError("Failed to create sub-brand", error);
+    return apiError("Failed to create sub-brand", error, 500, request);
   }
 }
