@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { calculateMatchedPromotions, MatchingBooking } from "./promotion-matching";
+import {
+  calculateMatchedPromotions,
+  MatchingBooking,
+  getConstrainedPromotions,
+} from "./promotion-matching";
 import { PromotionType, PromotionRewardType, PromotionBenefitValueType } from "@prisma/client";
 import { Prisma } from "@prisma/client";
 
@@ -1462,5 +1466,66 @@ describe("promotion-matching", () => {
       // Mixed booking → none (both benefits restricted to single types)
       expect(calculateMatchedPromotions(mixedBooking, [promo])).toHaveLength(0);
     });
+  });
+});
+
+describe("getConstrainedPromotions", () => {
+  it("should include promotions with promotion-level constraints", () => {
+    const promo = makePromo({
+      restrictions: makeRestrictions({ maxRedemptionCount: 5 }),
+    });
+    expect(getConstrainedPromotions([promo])).toHaveLength(1);
+  });
+
+  it("should include tiered promotions", () => {
+    const promo = makePromo({
+      tiers: [
+        {
+          id: "tier-1",
+          minStays: 1,
+          maxStays: 5,
+          benefits: [],
+        },
+      ],
+    });
+    expect(getConstrainedPromotions([promo])).toHaveLength(1);
+  });
+
+  it("should include promotions with benefit-level constraints", () => {
+    const promo = makePromo({
+      restrictions: null,
+      benefits: [
+        {
+          id: "benefit-constrained",
+          rewardType: PromotionRewardType.cashback,
+          valueType: PromotionBenefitValueType.fixed,
+          value: new Prisma.Decimal(10),
+          certType: null,
+          pointsMultiplierBasis: null,
+          sortOrder: 0,
+          restrictions: makeRestrictions({ maxRedemptionValue: new Prisma.Decimal(100) }),
+        },
+      ],
+    });
+    expect(getConstrainedPromotions([promo])).toHaveLength(1);
+  });
+
+  it("should exclude promotions without any constraints", () => {
+    const promo = makePromo({
+      restrictions: null,
+      benefits: [
+        {
+          id: "benefit-simple",
+          rewardType: PromotionRewardType.cashback,
+          valueType: PromotionBenefitValueType.fixed,
+          value: new Prisma.Decimal(10),
+          certType: null,
+          pointsMultiplierBasis: null,
+          sortOrder: 0,
+          restrictions: null,
+        },
+      ],
+    });
+    expect(getConstrainedPromotions([promo])).toHaveLength(0);
   });
 });
