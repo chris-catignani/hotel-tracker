@@ -693,6 +693,36 @@ async function fetchPromotionUsage(
 }
 
 /**
+ * Filters promotions that have constraints requiring usage tracking.
+ */
+export function getConstrainedPromotions(promotions: MatchingPromotion[]): MatchingPromotion[] {
+  return promotions.filter(
+    (p) =>
+      p.restrictions?.maxRedemptionCount ||
+      p.restrictions?.maxRedemptionValue ||
+      p.restrictions?.maxTotalBonusPoints ||
+      p.tiers.length > 0 ||
+      p.restrictions?.oncePerSubBrand ||
+      p.benefits.some(
+        (b) =>
+          b.restrictions?.oncePerSubBrand ||
+          b.restrictions?.maxRedemptionCount ||
+          b.restrictions?.maxRedemptionValue ||
+          b.restrictions?.maxTotalBonusPoints
+      ) ||
+      p.tiers.some((t) =>
+        t.benefits.some(
+          (b) =>
+            b.restrictions?.oncePerSubBrand ||
+            b.restrictions?.maxRedemptionCount ||
+            b.restrictions?.maxRedemptionValue ||
+            b.restrictions?.maxTotalBonusPoints
+        )
+      )
+  );
+}
+
+/**
  * Re-evaluates and applies promotions for a list of booking IDs sequentially.
  * Processes bookings one at a time to ensure accurate redemption constraint checks.
  */
@@ -706,7 +736,8 @@ export async function reevaluateBookings(bookingIds: string[]): Promise<void> {
     })
   ).map((p) => ({
     ...p,
-    registrationDate: p.userPromotions[0]?.registrationDate ?? null,
+    registrationDate:
+      p.userPromotions && p.userPromotions.length > 0 ? p.userPromotions[0].registrationDate : null,
   }));
 
   const bookings = await prisma.booking.findMany({
@@ -716,16 +747,7 @@ export async function reevaluateBookings(bookingIds: string[]): Promise<void> {
   });
 
   // Get all promotions with constraints (including tier-based stay counting)
-  const constrainedPromos = activePromotions.filter(
-    (p) =>
-      p.restrictions?.maxRedemptionCount ||
-      p.restrictions?.maxRedemptionValue ||
-      p.restrictions?.maxTotalBonusPoints ||
-      p.tiers.length > 0 ||
-      p.restrictions?.oncePerSubBrand ||
-      p.benefits.some((b) => b.restrictions?.oncePerSubBrand) ||
-      p.tiers.some((t) => t.benefits.some((b) => b.restrictions?.oncePerSubBrand))
-  );
+  const constrainedPromos = getConstrainedPromotions(activePromotions);
 
   // Process sequentially to ensure accurate constraint checks
   for (const booking of bookings) {
@@ -755,20 +777,12 @@ export async function matchPromotionsForBooking(bookingId: string): Promise<Book
     })
   ).map((p) => ({
     ...p,
-    registrationDate: p.userPromotions[0]?.registrationDate ?? null,
+    registrationDate:
+      p.userPromotions && p.userPromotions.length > 0 ? p.userPromotions[0].registrationDate : null,
   }));
 
   // Get all promotions with constraints (including tier-based stay counting)
-  const constrainedPromos = activePromotions.filter(
-    (p) =>
-      p.restrictions?.maxRedemptionCount ||
-      p.restrictions?.maxRedemptionValue ||
-      p.restrictions?.maxTotalBonusPoints ||
-      p.tiers.length > 0 ||
-      p.restrictions?.oncePerSubBrand ||
-      p.benefits.some((b) => b.restrictions?.oncePerSubBrand) ||
-      p.tiers.some((t) => t.benefits.some((b) => b.restrictions?.oncePerSubBrand))
-  );
+  const constrainedPromos = getConstrainedPromotions(activePromotions);
 
   // Fetch prior usage excluding current booking
   const priorUsage = await fetchPromotionUsage(constrainedPromos, booking, bookingId);
