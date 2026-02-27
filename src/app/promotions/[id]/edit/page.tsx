@@ -30,6 +30,7 @@ function mapApiRestrictionsToForm(
     minSpend: r.minSpend ? String(r.minSpend) : "",
     minNightsRequired: r.minNightsRequired ? String(r.minNightsRequired) : "",
     nightsStackable: r.nightsStackable ?? false,
+    spanStays: r.spanStays ?? false,
     maxRedemptionCount: r.maxRedemptionCount ? String(r.maxRedemptionCount) : "",
     maxRedemptionValue: r.maxRedemptionValue ? String(r.maxRedemptionValue) : "",
     maxTotalBonusPoints: r.maxTotalBonusPoints ? String(r.maxTotalBonusPoints) : "",
