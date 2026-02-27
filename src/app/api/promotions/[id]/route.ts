@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { PromotionType, Prisma } from "@prisma/client";
 import { apiError } from "@/lib/api-error";
 import { matchPromotionsForAffectedBookings, reevaluateBookings } from "@/lib/promotion-matching";
 import {
@@ -77,9 +78,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const registrationDate = (restrictions as PromotionRestrictionsFormData | null | undefined)
       ?.registrationDate;
 
-    const data: Record<string, unknown> = {};
+    const data: Prisma.PromotionUpdateInput = {};
     if (name !== undefined) data.name = name;
-    if (type !== undefined) data.type = type;
+    if (type !== undefined) data.type = type as PromotionType;
+
     if (hotelChainId !== undefined) {
       data.hotelChain = hotelChainId ? { connect: { id: hotelChainId } } : { disconnect: true };
     }
@@ -91,6 +93,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         ? { connect: { id: shoppingPortalId } }
         : { disconnect: true };
     }
+
     if (startDate !== undefined) data.startDate = startDate ? new Date(startDate) : null;
     if (endDate !== undefined) data.endDate = endDate ? new Date(endDate) : null;
     if (isActive !== undefined) data.isActive = isActive;
@@ -114,7 +117,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
             await tx.promotionRestrictions.delete({
               where: { id: existingPromo.restrictionsId },
             });
-            data.restrictionsId = null;
+            data.restrictions = { disconnect: true };
           }
         } else {
           // Upsert restrictions
@@ -173,13 +176,14 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
                 },
               },
             });
-            // restrictionsId stays the same
+            // Ensure the relation is connected (though it should already be)
+            data.restrictions = { connect: { id: existingPromo.restrictionsId } };
           } else {
             // Create new restrictions and link
             const newRestrictions = await tx.promotionRestrictions.create({
               data: buildRestrictionsCreateData(restrictions),
             });
-            data.restrictionsId = newRestrictions.id;
+            data.restrictions = { connect: { id: newRestrictions.id } };
           }
         }
       }
