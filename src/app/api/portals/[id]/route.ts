@@ -21,12 +21,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(portal);
   } catch (error) {
-    return apiError("Failed to update portal", error);
+    return apiError("Failed to update portal", error, 500, request);
   }
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -36,6 +36,6 @@ export async function DELETE(
     });
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    return apiError("Failed to delete portal", error);
+    return apiError("Failed to delete portal", error, 500, request);
   }
 }

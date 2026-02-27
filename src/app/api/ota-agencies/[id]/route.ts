@@ -8,10 +8,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const agency = await prisma.otaAgency.findUnique({
       where: { id: id },
     });
-    if (!agency) return apiError("Agency not found", null, 404);
+    if (!agency) return apiError("Agency not found", null, 404, request);
     return NextResponse.json(agency);
   } catch (error) {
-    return apiError("Failed to fetch agency", error);
+    return apiError("Failed to fetch agency", error, 500, request);
   }
 }
 
@@ -25,7 +25,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     });
     return NextResponse.json(agency);
   } catch (error) {
-    return apiError("Failed to update agency", error);
+    return apiError("Failed to update agency", error, 500, request);
   }
 }
 
@@ -40,12 +40,12 @@ export async function DELETE(
       where: { otaAgencyId: id },
     });
     if (count > 0) {
-      return apiError("Cannot delete agency that is in use by bookings", null, 400);
+      return apiError("Cannot delete agency that is in use by bookings", null, 400, request);
     }
 
     await prisma.otaAgency.delete({ where: { id: id } });
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    return apiError("Failed to delete agency", error);
+    return apiError("Failed to delete agency", error, 500, request);
   }
 }

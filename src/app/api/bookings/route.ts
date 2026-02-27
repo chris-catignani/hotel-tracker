@@ -5,7 +5,7 @@ import { apiError } from "@/lib/api-error";
 import { calculatePoints } from "@/lib/loyalty-utils";
 import { CertType, BenefitType } from "@prisma/client";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const bookings = await prisma.booking.findMany({
       include: {
@@ -35,7 +35,7 @@ export async function GET() {
 
     return NextResponse.json(bookings);
   } catch (error) {
-    return apiError("Failed to fetch bookings", error);
+    return apiError("Failed to fetch bookings", error, 500, request);
   }
 }
 
@@ -182,6 +182,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(fullBooking, { status: 201 });
   } catch (error) {
-    return apiError("Failed to create booking", error);
+    return apiError("Failed to create booking", error, 500, request);
   }
 }

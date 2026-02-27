@@ -47,12 +47,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     });
 
     if (!promotion) {
-      return apiError("Promotion not found", null, 404);
+      return apiError("Promotion not found", null, 404, request);
     }
 
     return NextResponse.json(promotion);
   } catch (error) {
-    return apiError("Failed to fetch promotion", error);
+    return apiError("Failed to fetch promotion", error, 500, request);
   }
 }
 
@@ -261,7 +261,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(promotion);
   } catch (error) {
-    return apiError("Failed to update promotion", error);
+    return apiError("Failed to update promotion", error, 500, request);
   }
 }
 
@@ -308,6 +308,6 @@ export async function DELETE(
 
     return NextResponse.json({ message: "Promotion deleted" });
   } catch (error) {
-    return apiError("Failed to delete promotion", error);
+    return apiError("Failed to delete promotion", error, 500, request);
   }
 }

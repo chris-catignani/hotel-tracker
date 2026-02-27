@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(promotions);
   } catch (error) {
-    return apiError("Failed to fetch promotions", error);
+    return apiError("Failed to fetch promotions", error, 500, request);
   }
 }
 
@@ -141,6 +141,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(promotion, { status: 201 });
   } catch (error) {
-    return apiError("Failed to create promotion", error);
+    return apiError("Failed to create promotion", error, 500, request);
   }
 }

@@ -7,3 +7,14 @@ code_review:
     summary: false
     code_review: true
     include_drafts: false
+
+tool:
+  run_shell_command:
+    permanently_allowed:
+      - "npm run test:e2e"
+      - "npx playwright test*"
+      - "npm test*"
+      - "npm run dev"
+      - "npx tsx*"
+      - "git*"
+      - "gh*"

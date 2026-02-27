@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { recalculateLoyaltyForHotelChain } from "@/lib/loyalty-recalculation";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const statuses = await prisma.userStatus.findMany({
       include: {
@@ -18,7 +18,7 @@ export async function GET() {
     });
     return NextResponse.json(statuses);
   } catch (error) {
-    return apiError("Failed to fetch user statuses", error);
+    return apiError("Failed to fetch user statuses", error, 500, request);
   }
 }
 
@@ -65,6 +65,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(status);
   } catch (error) {
-    return apiError("Failed to update user status", error);
+    return apiError("Failed to update user status", error, 500, request);
   }
 }

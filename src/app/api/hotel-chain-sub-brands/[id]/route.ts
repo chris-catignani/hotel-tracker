@@ -20,12 +20,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(subBrand);
   } catch (error) {
-    return apiError("Failed to update sub-brand", error);
+    return apiError("Failed to update sub-brand", error, 500, request);
   }
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -37,7 +37,7 @@ export async function DELETE(
     });
 
     if (bookingCount > 0) {
-      return apiError("Cannot delete sub-brand that is in use by bookings", null, 400);
+      return apiError("Cannot delete sub-brand that is in use by bookings", null, 400, request);
     }
 
     await prisma.hotelChainSubBrand.delete({
@@ -46,6 +46,6 @@ export async function DELETE(
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    return apiError("Failed to delete sub-brand", error);
+    return apiError("Failed to delete sub-brand", error, 500, request);
   }
 }

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const hotelChains = await prisma.hotelChain.findMany({
       include: {
@@ -30,7 +30,7 @@ export async function GET() {
 
     return NextResponse.json(hotelChains);
   } catch (error) {
-    return apiError("Failed to fetch hotel chains", error);
+    return apiError("Failed to fetch hotel chains", error, 500, request);
   }
 }
 
@@ -55,6 +55,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(hotelChain, { status: 201 });
   } catch (error) {
-    return apiError("Failed to create hotel chain", error);
+    return apiError("Failed to create hotel chain", error, 500, request);
   }
 }
