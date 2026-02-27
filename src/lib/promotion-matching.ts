@@ -16,7 +16,10 @@ export type PromotionUsage = {
   eligibleStayCount?: number;
   eligibleStayNights?: number;
   appliedSubBrandIds?: Set<string | null>;
-  benefitUsage?: Map<string, { count: number; totalValue: number; eligibleNights?: number }>;
+  benefitUsage?: Map<
+    string,
+    { count: number; totalValue: number; totalBonusPoints: number; eligibleNights?: number }
+  >;
 };
 export type PromotionUsageMap = Map<string, PromotionUsage>;
 
@@ -129,6 +132,7 @@ interface MatchingPromotion {
 interface BenefitApplication {
   promotionBenefitId: string;
   appliedValue: number;
+  bonusPointsApplied: number;
   eligibleNightsAtBooking?: number;
 }
 
@@ -437,10 +441,8 @@ export function calculateMatchedPromotions(
       // Apply benefit-level maxTotalBonusPoints cap
       if (benefit.restrictions?.maxTotalBonusPoints) {
         const maxPoints = benefit.restrictions.maxTotalBonusPoints;
-        // Approximation: we don't store points per benefit, so we estimate from appliedValue
-        const priorPointsEstimated =
-          (usage?.benefitUsage?.get(benefit.id)?.totalValue ?? 0) / centsPerPoint;
-        const remainingPoints = Math.max(0, maxPoints - priorPointsEstimated);
+        const priorPoints = usage?.benefitUsage?.get(benefit.id)?.totalBonusPoints ?? 0;
+        const remainingPoints = Math.max(0, maxPoints - priorPoints);
 
         if (remainingPoints <= 0) {
           appliedValue = 0;
@@ -455,6 +457,7 @@ export function calculateMatchedPromotions(
       benefitApplications.push({
         promotionBenefitId: benefit.id,
         appliedValue,
+        bonusPointsApplied: benefitBonusPoints,
         eligibleNightsAtBooking:
           (usage?.benefitUsage?.get(benefit.id)?.eligibleNights ?? 0) + booking.numNights,
       });
@@ -561,6 +564,7 @@ async function applyMatchedPromotions(
           create: match.benefitApplications.map((ba) => ({
             promotionBenefitId: ba.promotionBenefitId,
             appliedValue: ba.appliedValue,
+            bonusPointsApplied: ba.bonusPointsApplied > 0 ? ba.bonusPointsApplied : null,
             eligibleNightsAtBooking: ba.eligibleNightsAtBooking,
           })),
         },
@@ -626,7 +630,7 @@ async function fetchPromotionUsage(
         ...(excludeBookingId ? { bookingPromotion: { bookingId: { not: excludeBookingId } } } : {}),
       },
       _count: { id: true },
-      _sum: { appliedValue: true },
+      _sum: { appliedValue: true, bonusPointsApplied: true },
     });
 
     // To get eligible nights, we need to join with Booking
@@ -663,6 +667,7 @@ async function fetchPromotionUsage(
           usage.benefitUsage.set(row.promotionBenefitId, {
             count: row._count.id,
             totalValue: Number(row._sum.appliedValue ?? 0),
+            totalBonusPoints: row._sum.bonusPointsApplied ?? 0,
             eligibleNights: nightsMap.get(row.promotionBenefitId) ?? 0,
           });
         }
