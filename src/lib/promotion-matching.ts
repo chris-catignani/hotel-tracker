@@ -719,27 +719,30 @@ async function fetchPromotionUsage(
 
   // Fetch eligibleStayNights for spanStays promotions
   const spanStaysPromos = promotions.filter((p) => p.restrictions?.spanStays);
-  for (const promo of spanStaysPromos) {
-    const aggregate = await prisma.bookingPromotion.aggregate({
-      where: {
-        promotionId: promo.id,
-        ...(excludeBookingId ? { bookingId: { not: excludeBookingId } } : {}),
-      },
-      _sum: {
-        booking: {
+  if (spanStaysPromos.length > 0) {
+    for (const promo of spanStaysPromos) {
+      const aggregate = await prisma.booking.aggregate({
+        where: {
+          bookingPromotions: {
+            some: {
+              promotionId: promo.id,
+              ...(excludeBookingId ? { bookingId: { not: excludeBookingId } } : {}),
+            },
+          },
+        },
+        _sum: {
           numNights: true,
         },
-      },
-    });
-    const sumData = aggregate._sum as { booking: { numNights: number | null } | null };
-    const nights = sumData?.booking?.numNights ?? 0;
-    const existing = usageMap.get(promo.id) ?? {
-      count: 0,
-      totalValue: 0,
-      totalBonusPoints: 0,
-      benefitUsage: new Map(),
-    };
-    usageMap.set(promo.id, { ...existing, eligibleStayNights: nights });
+      });
+      const nights = aggregate._sum.numNights ?? 0;
+      const existing = usageMap.get(promo.id) ?? {
+        count: 0,
+        totalValue: 0,
+        totalBonusPoints: 0,
+        benefitUsage: new Map(),
+      };
+      usageMap.set(promo.id, { ...existing, eligibleStayNights: nights });
+    }
   }
 
   // Fetch appliedSubBrandIds for oncePerSubBrand promotions

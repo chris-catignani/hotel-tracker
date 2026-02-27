@@ -615,9 +615,7 @@ describe("net-cost", () => {
       ],
     };
     const result = getNetCostBreakdown(booking);
-    expect(result.promotions[0].formula).toContain(
-      "$30.00 fixed cashback (capped) (pending) = $10.00"
-    );
+    expect(result.promotions[0].formula).toContain("$30.00 fixed cashback (pending) = $10.00");
     expect(result.promotions[0].description).toContain(
       "pending additional stays (1 of 3 nights required)"
     );

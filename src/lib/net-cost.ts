@@ -193,7 +193,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
           if (b.valueType === "fixed") {
             if (bApplied % bValue === 0 && bApplied > bValue) {
               appliedMultiplier = bApplied / bValue;
-            } else if (bApplied < bValue) {
+            } else if (bApplied < bValue && !isPending) {
               isCapped = true;
             }
           }
@@ -205,7 +205,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
               appliedMultiplier = 1;
             } else if (bApplied > pointsValue && Math.abs(bApplied % pointsValue) < 0.001) {
               appliedMultiplier = Math.round(bApplied / pointsValue);
-            } else if (bApplied < pointsValue) {
+            } else if (bApplied < pointsValue && !isPending) {
               isCapped = true;
             }
           }
