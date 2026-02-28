@@ -22,7 +22,7 @@ export async function PUT(request: NextRequest) {
       return apiError("Invalid input: valuations must be an array", null, 400, request);
     }
 
-    // Process updates/creates in a transaction
+    // Process updates/creates/deletes in a transaction
     await prisma.$transaction(async (tx) => {
       for (const v of valuations) {
         const { hotelChainId, isEqn, certType, benefitType, value, valueType } = v;
@@ -38,6 +38,16 @@ export async function PUT(request: NextRequest) {
         const existing = await tx.benefitValuation.findFirst({
           where,
         });
+
+        if (value === null) {
+          // Deletion requested
+          if (existing) {
+            await tx.benefitValuation.delete({
+              where: { id: existing.id },
+            });
+          }
+          continue;
+        }
 
         if (existing) {
           await tx.benefitValuation.update({

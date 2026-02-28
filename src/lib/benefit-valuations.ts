@@ -7,7 +7,7 @@ export interface BenefitValuationData {
   isEqn: boolean;
   certType: CertType | null;
   benefitType: BenefitType | null;
-  value: number;
+  value: number | null;
   valueType: ValuationValueType;
 }
 
@@ -45,9 +45,10 @@ export function resolveValuation(
         v.hotelChainId === hotelChainId &&
         v.isEqn === isEqn &&
         v.certType === certType &&
-        v.benefitType === benefitType
+        v.benefitType === benefitType &&
+        v.value !== null
     );
-    if (override) return { value: override.value, valueType: override.valueType };
+    if (override) return { value: override.value as number, valueType: override.valueType };
   }
 
   // 2. Fall back to global default (hotelChainId is null)
@@ -56,10 +57,12 @@ export function resolveValuation(
       v.hotelChainId === null &&
       v.isEqn === isEqn &&
       v.certType === certType &&
-      v.benefitType === benefitType
+      v.benefitType === benefitType &&
+      v.value !== null
   );
 
-  if (globalDefault) return { value: globalDefault.value, valueType: globalDefault.valueType };
+  if (globalDefault)
+    return { value: globalDefault.value as number, valueType: globalDefault.valueType };
 
   // 3. System hardcoded fallbacks (if DB is somehow missing the seed data)
   if (isEqn) return { value: 10.0, valueType: "dollar" };

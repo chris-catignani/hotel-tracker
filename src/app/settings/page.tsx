@@ -16,13 +16,27 @@ export default function SettingsPage() {
       <Tabs defaultValue="my-status" className="w-full">
         <div className="overflow-x-auto pb-1">
           <TabsList className="w-full justify-start md:w-auto md:inline-flex min-w-max">
-            <TabsTrigger value="my-status">My Status</TabsTrigger>
-            <TabsTrigger value="point-types">Point Types</TabsTrigger>
-            <TabsTrigger value="hotels">Hotel Chains</TabsTrigger>
-            <TabsTrigger value="valuations">Valuations</TabsTrigger>
-            <TabsTrigger value="credit-cards">Credit Cards</TabsTrigger>
-            <TabsTrigger value="portals">Shopping Portals</TabsTrigger>
-            <TabsTrigger value="ota-agencies">OTA Agencies</TabsTrigger>
+            <TabsTrigger value="my-status" data-testid="tab-trigger-my-status">
+              My Status
+            </TabsTrigger>
+            <TabsTrigger value="point-types" data-testid="tab-trigger-point-types">
+              Point Types
+            </TabsTrigger>
+            <TabsTrigger value="hotels" data-testid="tab-trigger-hotels">
+              Hotel Chains
+            </TabsTrigger>
+            <TabsTrigger value="valuations" data-testid="tab-trigger-valuations">
+              Valuations
+            </TabsTrigger>
+            <TabsTrigger value="credit-cards" data-testid="tab-trigger-credit-cards">
+              Credit Cards
+            </TabsTrigger>
+            <TabsTrigger value="portals" data-testid="tab-trigger-portals">
+              Shopping Portals
+            </TabsTrigger>
+            <TabsTrigger value="ota-agencies" data-testid="tab-trigger-ota-agencies">
+              OTA Agencies
+            </TabsTrigger>
           </TabsList>
         </div>
         <TabsContent value="my-status" data-testid="tab-my-status">

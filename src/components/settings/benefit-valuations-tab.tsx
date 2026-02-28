@@ -76,28 +76,30 @@ export function BenefitValuationsTab() {
 
   const handleSave = async () => {
     setSaving(true);
-    const chainId = selectedChainId === "global" ? null : selectedChainId;
+    const isGlobal = selectedChainId === "global";
+    const chainId = isGlobal ? null : selectedChainId;
 
     const updates: Array<Partial<BenefitValuationData>> = [];
 
     // EQN
-    if (formValues["eqn"] !== "") {
+    if (formValues["eqn"] !== "" || !isGlobal) {
       updates.push({
         hotelChainId: chainId,
         isEqn: true,
-        value: Number(formValues["eqn"]),
+        value: formValues["eqn"] === "" ? null : Number(formValues["eqn"]),
         valueType: "dollar",
       });
     }
 
     // Certs
     CERT_TYPE_OPTIONS.forEach((opt) => {
-      if (formValues[`cert_${opt.value}`] !== "") {
+      if (formValues[`cert_${opt.value}`] !== "" || !isGlobal) {
         updates.push({
           hotelChainId: chainId,
           isEqn: false,
           certType: opt.value as CertType,
-          value: Number(formValues[`cert_${opt.value}`]),
+          value:
+            formValues[`cert_${opt.value}`] === "" ? null : Number(formValues[`cert_${opt.value}`]),
           valueType: "points",
         });
       }
@@ -105,12 +107,15 @@ export function BenefitValuationsTab() {
 
     // Standard Benefits
     BENEFIT_TYPE_OPTIONS.forEach((opt) => {
-      if (formValues[`benefit_${opt.value}`] !== "") {
+      if (formValues[`benefit_${opt.value}`] !== "" || !isGlobal) {
         updates.push({
           hotelChainId: chainId,
           isEqn: false,
           benefitType: opt.value as BenefitType,
-          value: Number(formValues[`benefit_${opt.value}`]),
+          value:
+            formValues[`benefit_${opt.value}`] === ""
+              ? null
+              : Number(formValues[`benefit_${opt.value}`]),
           valueType: "dollar",
         });
       }
