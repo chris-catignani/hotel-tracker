@@ -678,10 +678,15 @@ async function fetchPromotionUsage(
           },
         },
       },
-      include: {
+      select: {
+        promotionBenefitId: true,
         bookingPromotion: {
-          include: {
-            booking: true,
+          select: {
+            booking: {
+              select: {
+                numNights: true,
+              },
+            },
           },
         },
       },
