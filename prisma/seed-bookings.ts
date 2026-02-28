@@ -36,7 +36,7 @@ const SP_TOPCASHBACK_ID = SHOPPING_PORTAL_ID.TOPCASHBACK;
 const SP_BA_ID = SHOPPING_PORTAL_ID.BRITISH_AIRWAYS;
 const SP_RAKUTEN_ID = SHOPPING_PORTAL_ID.RAKUTEN;
 
-async function main() {
+export async function seedBookings() {
   const bookings: BookingSeedData[] = [
     {
       id: "clas2mljema779deuxi5mhuee",
@@ -434,11 +434,13 @@ async function main() {
   console.log("Bookings restored/upserted successfully");
 }
 
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+if (require.main === module) {
+  seedBookings()
+    .catch((e) => {
+      console.error(e);
+      process.exit(1);
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
+}
