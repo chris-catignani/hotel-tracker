@@ -15,6 +15,7 @@ export interface CalculationDetail {
   label: string;
   formula: string;
   description: string;
+  descriptionLines?: string[];
   segments?: CalculationSegment[];
 }
 
@@ -254,9 +255,24 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
 
           const capSuffix = isSegmentCapped ? " (capped)" : "";
 
+          let groupName = "";
+          if (b.rewardType === "points") {
+            groupName = `${bValue.toLocaleString()} Bonus Points`;
+          } else if (b.rewardType === "eqn") {
+            groupName = `${bValue} Bonus Elite Night${bValue !== 1 ? "s" : ""}`;
+          } else if (b.rewardType === "cashback") {
+            groupName =
+              b.valueType === "percentage"
+                ? `${bValue}% Cashback`
+                : `${formatCurrency(bValue)} Cashback`;
+          } else {
+            groupName = b.rewardType.charAt(0).toUpperCase() + b.rewardType.slice(1);
+          }
+
           segments.push({
             label,
             value: segmentValue,
+            group: groupName,
             formula: isMaxedOut
               ? ""
               : nightFormula +
@@ -374,10 +390,25 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
           benefitDescription += " Reduced by redemption caps.";
         }
 
+        let groupName = "";
+        if (b.rewardType === "points") {
+          groupName = `${bValue.toLocaleString()} Bonus Points`;
+        } else if (b.rewardType === "eqn") {
+          groupName = `${bValue} Bonus Elite Night${bValue !== 1 ? "s" : ""}`;
+        } else if (b.rewardType === "cashback") {
+          groupName =
+            b.valueType === "percentage"
+              ? `${bValue}% Cashback`
+              : `${formatCurrency(bValue)} Cashback`;
+        } else {
+          groupName = b.rewardType.charAt(0).toUpperCase() + b.rewardType.slice(1);
+        }
+
         // Standard segment
         segments.push({
           label: `Benefit: ${b.rewardType}`,
           value: bApplied,
+          group: groupName,
           formula: isMaxedOutOverall ? "" : `${benefitFormula} = ${formatCurrency(bApplied)}`,
           description: isMaxedOutOverall
             ? "This segment no longer applies because the promotion has been maxed out."
@@ -411,6 +442,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
       label: "Promotion",
       formula,
       description,
+      descriptionLines,
       segments,
     };
   });

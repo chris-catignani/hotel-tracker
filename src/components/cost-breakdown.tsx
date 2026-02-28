@@ -20,7 +20,20 @@ function CalculationInfo({ calc }: { calc: CalculationDetail | undefined }) {
     <div className="space-y-4">
       <div>
         <h4 className="font-semibold text-sm mb-1 hidden md:block">{calc.label}</h4>
-        <p className="text-xs text-muted-foreground leading-relaxed">{calc.description}</p>
+        {calc.descriptionLines && calc.descriptionLines.length > 0 ? (
+          <ul className="list-disc list-inside space-y-1">
+            {calc.descriptionLines.map((line, i) => (
+              <li
+                key={i}
+                className="text-xs text-muted-foreground leading-relaxed pl-1 -indent-5 ml-5"
+              >
+                {line}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-xs text-muted-foreground leading-relaxed">{calc.description}</p>
+        )}
       </div>
 
       {calc.segments && calc.segments.length > 0 ? (
