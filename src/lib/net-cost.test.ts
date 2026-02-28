@@ -602,6 +602,7 @@ describe("net-cost", () => {
     expect(result.cardReward).toBeCloseTo(1.4, 2);
     expect(result.cardRewardCalc?.groups).toHaveLength(1);
     expect(result.cardRewardCalc?.groups[0].segments).toHaveLength(1);
+    expect(result.cardRewardCalc?.groups[0].segments[0].formula).not.toContain("6x");
   });
 
   it("should explain benefit-level stacking (multiplier) in the formula", () => {
