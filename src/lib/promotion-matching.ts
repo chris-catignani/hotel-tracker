@@ -45,6 +45,7 @@ type MatchingRestrictions = {
   maxRewardCount: number | null;
   maxRedemptionValue: Prisma.Decimal | null;
   maxTotalBonusPoints: number | null;
+  maxTotalNights: number | null;
   oncePerSubBrand: boolean;
   bookByDate: Date | null;
   registrationDeadline: Date | null;

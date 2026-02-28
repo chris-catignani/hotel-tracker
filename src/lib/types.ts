@@ -115,6 +115,7 @@ export interface PromotionRestrictionsData {
   maxRewardCount: number | null;
   maxRedemptionValue: string | number | null;
   maxTotalBonusPoints: number | null;
+  maxTotalNights: number | null;
   oncePerSubBrand: boolean;
   bookByDate: string | null;
   registrationDeadline: string | null;
@@ -134,6 +135,7 @@ export interface PromotionRestrictionsFormData {
   maxRewardCount: string;
   maxRedemptionValue: string;
   maxTotalBonusPoints: string;
+  maxTotalNights: string;
   oncePerSubBrand: boolean;
   bookByDate: string;
   registrationDeadline: string;
@@ -155,6 +157,7 @@ export const EMPTY_RESTRICTIONS: PromotionRestrictionsFormData = {
   maxRewardCount: "",
   maxRedemptionValue: "",
   maxTotalBonusPoints: "",
+  maxTotalNights: "",
   oncePerSubBrand: false,
   bookByDate: "",
   registrationDeadline: "",

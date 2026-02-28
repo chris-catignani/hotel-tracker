@@ -139,6 +139,7 @@ export function BenefitRow({
           maxRewardCount: "",
           maxRedemptionValue: "",
           maxTotalBonusPoints: "",
+          maxTotalNights: "",
         };
         break;
       case "once_per_sub_brand":
@@ -350,11 +351,14 @@ export function BenefitRow({
                 maxRewardCount={benefit.restrictions?.maxRewardCount ?? ""}
                 maxRedemptionValue={benefit.restrictions?.maxRedemptionValue ?? ""}
                 maxTotalBonusPoints={benefit.restrictions?.maxTotalBonusPoints ?? ""}
+                maxTotalNights={benefit.restrictions?.maxTotalNights ?? ""}
                 onMaxStayCountChange={(v) => updateRestrictions({ maxStayCount: v })}
                 onMaxRewardCountChange={(v) => updateRestrictions({ maxRewardCount: v })}
                 onMaxRedemptionValueChange={(v) => updateRestrictions({ maxRedemptionValue: v })}
                 onMaxTotalBonusPointsChange={(v) => updateRestrictions({ maxTotalBonusPoints: v })}
+                onMaxTotalNightsChange={(v) => updateRestrictions({ maxTotalNights: v })}
                 onRemove={() => removeBenefitRestriction("redemption_caps")}
+                rewardType={benefit.rewardType}
               />
             )}
             {visibleRestrictionKeys.has("once_per_sub_brand") && (

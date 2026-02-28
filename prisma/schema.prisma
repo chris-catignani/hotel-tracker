@@ -245,6 +245,7 @@ model PromotionRestrictions {
   maxRewardCount             Int?                          @map("max_reward_count")
   maxRedemptionValue         Decimal?                      @map("max_redemption_value") @db.Decimal(10, 2)
   maxTotalBonusPoints        Int?                          @map("max_total_bonus_points")
+  maxTotalNights             Int?                          @map("max_total_nights")
   oncePerSubBrand            Boolean                       @default(false) @map("once_per_sub_brand")
   bookByDate                 DateTime?                     @map("book_by_date") @db.Date
   registrationDeadline       DateTime?                     @map("registration_deadline") @db.Date

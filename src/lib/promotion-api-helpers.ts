@@ -10,6 +10,7 @@ export function buildRestrictionsCreateData(r: PromotionRestrictionsFormData) {
     maxRewardCount: r.maxRewardCount ? Number(r.maxRewardCount) : null,
     maxRedemptionValue: r.maxRedemptionValue ? Number(r.maxRedemptionValue) : null,
     maxTotalBonusPoints: r.maxTotalBonusPoints ? Number(r.maxTotalBonusPoints) : null,
+    maxTotalNights: r.maxTotalNights ? Number(r.maxTotalNights) : null,
     oncePerSubBrand: r.oncePerSubBrand ?? false,
     bookByDate: r.bookByDate ? new Date(r.bookByDate) : null,
     registrationDeadline: r.registrationDeadline ? new Date(r.registrationDeadline) : null,

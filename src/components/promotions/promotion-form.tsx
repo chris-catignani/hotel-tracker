@@ -84,6 +84,7 @@ function mapApiRestrictionsToForm(
     maxRewardCount: r.maxRewardCount != null ? String(r.maxRewardCount) : "",
     maxRedemptionValue: r.maxRedemptionValue != null ? String(r.maxRedemptionValue) : "",
     maxTotalBonusPoints: r.maxTotalBonusPoints != null ? String(r.maxTotalBonusPoints) : "",
+    maxTotalNights: r.maxTotalNights != null ? String(r.maxTotalNights) : "",
     oncePerSubBrand: r.oncePerSubBrand ?? false,
     bookByDate: r.bookByDate ? new Date(r.bookByDate).toISOString().split("T")[0] : "",
     registrationDeadline: r.registrationDeadline
@@ -241,6 +242,7 @@ export function PromotionForm({
           maxRewardCount: "",
           maxRedemptionValue: "",
           maxTotalBonusPoints: "",
+          maxTotalNights: "",
         });
         break;
       case "tie_in_cards":
@@ -364,6 +366,9 @@ export function PromotionForm({
           : "",
         maxTotalBonusPoints: activeRestrictions.has("redemption_caps")
           ? restrictions.maxTotalBonusPoints
+          : "",
+        maxTotalNights: activeRestrictions.has("redemption_caps")
+          ? restrictions.maxTotalNights
           : "",
         oncePerSubBrand: activeRestrictions.has("once_per_sub_brand"),
         allowedPaymentTypes: activeRestrictions.has("payment_type")
@@ -793,7 +798,13 @@ export function PromotionForm({
                   />
                 );
 
-              if (key === "redemption_caps")
+              if (key === "redemption_caps") {
+                const allBenefitTypes = isTiered
+                  ? tiers.flatMap((t) => t.benefits.map((b) => b.rewardType))
+                  : benefits.map((b) => b.rewardType);
+                const uniqueTypes = Array.from(new Set(allBenefitTypes));
+                const commonRewardType = uniqueTypes.length === 1 ? uniqueTypes[0] : undefined;
+
                 return (
                   <RedemptionCapsCard
                     key={key}
@@ -801,6 +812,7 @@ export function PromotionForm({
                     maxRewardCount={restrictions.maxRewardCount}
                     maxRedemptionValue={restrictions.maxRedemptionValue}
                     maxTotalBonusPoints={restrictions.maxTotalBonusPoints}
+                    maxTotalNights={restrictions.maxTotalNights}
                     onMaxStayCountChange={(v) => updateRestrictions({ maxStayCount: v })}
                     onMaxRewardCountChange={(v) => updateRestrictions({ maxRewardCount: v })}
                     onMaxRedemptionValueChange={(v) =>
@@ -809,9 +821,12 @@ export function PromotionForm({
                     onMaxTotalBonusPointsChange={(v) =>
                       updateRestrictions({ maxTotalBonusPoints: v })
                     }
+                    onMaxTotalNightsChange={(v) => updateRestrictions({ maxTotalNights: v })}
                     onRemove={() => removeRestriction("redemption_caps")}
+                    rewardType={commonRewardType}
                   />
                 );
+              }
 
               if (key === "once_per_sub_brand")
                 return (
