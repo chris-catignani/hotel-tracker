@@ -40,9 +40,11 @@ function CalculationInfo({ calc }: { calc: CalculationDetail | undefined }) {
                 <div className="text-[10px] text-muted-foreground leading-tight italic">
                   {segment.description}
                 </div>
-                <div className="rounded bg-muted/50 px-1.5 py-1 font-mono text-[9px] text-muted-foreground border border-muted-foreground/10">
-                  {segment.formula}
-                </div>
+                {segment.formula && (
+                  <div className="rounded bg-muted/50 px-1.5 py-1 font-mono text-[9px] text-muted-foreground border border-muted-foreground/10">
+                    {segment.formula}
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -54,9 +56,11 @@ function CalculationInfo({ calc }: { calc: CalculationDetail | undefined }) {
           </div>
         </div>
       ) : (
-        <div className="rounded-md bg-muted p-2 font-mono text-[10px] break-all">
-          {calc.formula}
-        </div>
+        calc.formula && (
+          <div className="rounded-md bg-muted p-2 font-mono text-[10px] break-all">
+            {calc.formula}
+          </div>
+        )
       )}
     </div>
   );

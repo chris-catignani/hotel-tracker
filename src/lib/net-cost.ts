@@ -212,6 +212,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
 
           const isSegmentCapped =
             expectedSegmentValue > 0 && segmentValue < expectedSegmentValue - 0.001;
+          const isMaxedOut = isSegmentCapped && segmentValue < 0.01;
 
           let label = "";
           let description = "";
@@ -240,13 +241,15 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
               : `${nightsInThisSegment} nights towards ${minNights}-night goal`;
 
           let nightFormula = "";
-          if (b.rewardType === "points") {
-            const centsStr = formatCents(hotelCentsPerPoint);
-            nightFormula = `(${nightProgressLabel}) × ${bValue.toLocaleString()} bonus pts × ${centsStr}¢`;
-          } else if (b.rewardType === "cashback") {
-            nightFormula = `(${nightProgressLabel}) × ${formatCurrency(bValue)} fixed cashback`;
-          } else {
-            nightFormula = `(${nightProgressLabel}) × ${formatCurrency(bValue)} ${b.rewardType}`;
+          if (!isMaxedOut) {
+            if (b.rewardType === "points") {
+              const centsStr = formatCents(hotelCentsPerPoint);
+              nightFormula = `(${nightProgressLabel}) × ${bValue.toLocaleString()} bonus pts × ${centsStr}¢`;
+            } else if (b.rewardType === "cashback") {
+              nightFormula = `(${nightProgressLabel}) × ${formatCurrency(bValue)} fixed cashback`;
+            } else {
+              nightFormula = `(${nightProgressLabel}) × ${formatCurrency(bValue)} ${b.rewardType}`;
+            }
           }
 
           const capSuffix = isSegmentCapped ? " (capped)" : "";
@@ -254,15 +257,17 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
           segments.push({
             label,
             value: segmentValue,
-            formula:
-              nightFormula +
-              ` = ${formatCurrency(segmentValue)}` +
-              capSuffix +
-              (isCycleFinished ? "" : " (pending)"),
-            description:
-              description +
-              (isCycleFinished ? " (Goal Met!)" : " (Pending)") +
-              (isSegmentCapped ? " Reduced by redemption caps." : ""),
+            formula: isMaxedOut
+              ? ""
+              : nightFormula +
+                ` = ${formatCurrency(segmentValue)}` +
+                capSuffix +
+                (isCycleFinished ? "" : " (pending)"),
+            description: isMaxedOut
+              ? "This segment no longer applies because the promotion has been maxed out."
+              : description +
+                (isCycleFinished ? " (Goal Met!)" : " (Pending)") +
+                (isSegmentCapped ? " Reduced by redemption caps." : ""),
           });
 
           nightsAccountedFor += nightsInThisSegment;
@@ -278,12 +283,18 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
               } required)`
             : "";
 
-        const proportionalSuffix = pendingRatio
-          ? ` This bonus is pending additional stays${pendingRatio}.`
-          : "";
+        const isMaxedOutOverall = bApplied < 0.01 && expectedValuePerNight * nightsInStay > 0.01;
 
-        let description = `Earned proportional rewards for ${nightsInStay} nights towards a ${minNights}-night requirement.${proportionalSuffix}`;
-        if (bApplied < expectedValuePerNight * nightsInStay - 0.001) {
+        const proportionalSuffix =
+          pendingRatio && !isMaxedOutOverall
+            ? ` This bonus is pending additional stays${pendingRatio}.`
+            : "";
+
+        let description = isMaxedOutOverall
+          ? "This promotion has been maxed out and no further rewards apply."
+          : `Earned proportional rewards for ${nightsInStay} nights towards a ${minNights}-night requirement.${proportionalSuffix}`;
+
+        if (bApplied < expectedValuePerNight * nightsInStay - 0.001 && !isMaxedOutOverall) {
           description += " Reduced by redemption caps.";
         }
         descriptionLines.push(description);
@@ -317,6 +328,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
             break;
         }
 
+        const isMaxedOutOverall = isCapped && bApplied < 0.01;
         const multiplierPrefix = appliedMultiplier > 1 ? `${appliedMultiplier} × ` : "";
         const capSuffix = isCapped ? " (capped)" : "";
 
@@ -358,7 +370,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
           benefitDescription = `Earns ${appliedMultiplier > 1 ? (appliedMultiplier * bValue).toLocaleString() : bValue.toLocaleString()} bonus Elite Qualifying Night(s).`;
         }
 
-        if (isCapped) {
+        if (isCapped && !isMaxedOutOverall) {
           benefitDescription += " Reduced by redemption caps.";
         }
 
@@ -366,11 +378,17 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
         segments.push({
           label: `Benefit: ${b.rewardType}`,
           value: bApplied,
-          formula: `${benefitFormula} = ${formatCurrency(bApplied)}`,
-          description: benefitDescription,
+          formula: isMaxedOutOverall ? "" : `${benefitFormula} = ${formatCurrency(bApplied)}`,
+          description: isMaxedOutOverall
+            ? "This segment no longer applies because the promotion has been maxed out."
+            : benefitDescription,
         });
 
-        descriptionLines.push(benefitDescription);
+        descriptionLines.push(
+          isMaxedOutOverall
+            ? "This promotion has been maxed out and no further rewards apply."
+            : benefitDescription
+        );
       }
     }
 
