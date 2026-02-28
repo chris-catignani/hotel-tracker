@@ -828,14 +828,11 @@ export function PromotionForm({
                     creditCards={creditCards}
                     tieInCreditCardIds={restrictions.tieInCreditCardIds}
                     tieInRequiresPayment={restrictions.tieInRequiresPayment}
-                    onTieInCardChange={(cardId, checked) => {
-                      const newIds = checked
-                        ? [...restrictions.tieInCreditCardIds, cardId]
-                        : restrictions.tieInCreditCardIds.filter((id) => id !== cardId);
+                    onTieInCreditCardIdsChange={(ids) => {
                       updateRestrictions({
-                        tieInCreditCardIds: newIds,
+                        tieInCreditCardIds: ids,
                         tieInRequiresPayment:
-                          newIds.length === 0 ? false : restrictions.tieInRequiresPayment,
+                          ids.length === 0 ? false : restrictions.tieInRequiresPayment,
                       });
                     }}
                     onTieInRequiresPaymentChange={(v) =>
@@ -874,18 +871,8 @@ export function PromotionForm({
                     subBrands={selectedChainSubBrands}
                     subBrandIncludeIds={restrictions.subBrandIncludeIds}
                     subBrandExcludeIds={restrictions.subBrandExcludeIds}
-                    onIncludeChange={(subBrandId, checked) => {
-                      const newIds = checked
-                        ? [...restrictions.subBrandIncludeIds, subBrandId]
-                        : restrictions.subBrandIncludeIds.filter((id) => id !== subBrandId);
-                      updateRestrictions({ subBrandIncludeIds: newIds });
-                    }}
-                    onExcludeChange={(subBrandId, checked) => {
-                      const newIds = checked
-                        ? [...restrictions.subBrandExcludeIds, subBrandId]
-                        : restrictions.subBrandExcludeIds.filter((id) => id !== subBrandId);
-                      updateRestrictions({ subBrandExcludeIds: newIds });
-                    }}
+                    onIncludeIdsChange={(ids) => updateRestrictions({ subBrandIncludeIds: ids })}
+                    onExcludeIdsChange={(ids) => updateRestrictions({ subBrandExcludeIds: ids })}
                     onRemove={() => removeRestriction("sub_brand_scope")}
                   />
                 );

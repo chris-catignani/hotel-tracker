@@ -9,6 +9,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { parseISO } from "date-fns";
 import { X } from "lucide-react";
 import type { PromotionRestrictionsFormData } from "@/lib/types";
+import { AppSelect } from "@/components/ui/app-select";
 
 // ─── Types & constants ────────────────────────────────────────────────────────
 
@@ -313,38 +314,34 @@ export function TieInCardsCard({
   creditCards,
   tieInCreditCardIds,
   tieInRequiresPayment,
-  onTieInCardChange,
+  onTieInCreditCardIdsChange,
   onTieInRequiresPaymentChange,
   onRemove,
 }: {
   creditCards: Array<{ id: string; name: string }>;
   tieInCreditCardIds: string[];
   tieInRequiresPayment: boolean;
-  onTieInCardChange: (cardId: string, checked: boolean) => void;
+  onTieInCreditCardIdsChange: (ids: string[]) => void;
   onTieInRequiresPaymentChange: (val: boolean) => void;
   onRemove: () => void;
 }) {
   return (
     <RestrictionCard title="Tie-In Credit Cards" testId="tie_in_cards" onRemove={onRemove}>
-      <p className="text-xs text-muted-foreground">
+      <p className="text-xs text-muted-foreground mb-2">
         This benefit only applies when the booking&apos;s payment card matches one of these cards.
       </p>
-      <div className="flex flex-col gap-2" data-testid="tie-in-credit-cards">
-        {creditCards.map((card) => (
-          <label key={card.id} className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              className="size-4 rounded border-gray-300"
-              checked={tieInCreditCardIds.includes(card.id)}
-              onChange={(e) => onTieInCardChange(card.id, e.target.checked)}
-              data-testid={`tie-in-credit-card-${card.id}`}
-            />
-            <span className="text-sm">{card.name}</span>
-          </label>
-        ))}
+      <div className="space-y-3" data-testid="tie-in-credit-cards">
+        <AppSelect
+          multiple
+          value={tieInCreditCardIds}
+          onValueChange={onTieInCreditCardIdsChange}
+          options={creditCards.map((c) => ({ label: c.name, value: c.id }))}
+          placeholder="Select credit cards..."
+          searchPlaceholder="Search credit cards..."
+        />
       </div>
       {tieInCreditCardIds.length > 0 && (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 pt-1">
           <input
             id="tieInRequiresPayment"
             type="checkbox"
@@ -497,20 +494,22 @@ export function SubBrandScopeCard({
   subBrands,
   subBrandIncludeIds,
   subBrandExcludeIds,
-  onIncludeChange,
-  onExcludeChange,
+  onIncludeIdsChange,
+  onExcludeIdsChange,
   onRemove,
 }: {
   subBrands: Array<{ id: string; name: string }>;
   subBrandIncludeIds: string[];
   subBrandExcludeIds: string[];
-  onIncludeChange: (subBrandId: string, checked: boolean) => void;
-  onExcludeChange: (subBrandId: string, checked: boolean) => void;
+  onIncludeIdsChange: (ids: string[]) => void;
+  onExcludeIdsChange: (ids: string[]) => void;
   onRemove: () => void;
 }) {
   const [mode, setMode] = useState<"include" | "exclude">(
     subBrandIncludeIds.length > 0 ? "include" : "exclude"
   );
+
+  const options = subBrands.map((sb) => ({ label: sb.name, value: sb.id }));
 
   return (
     <RestrictionCard title="Sub-Brand Scope" testId="sub_brand_scope" onRemove={onRemove}>
@@ -540,32 +539,20 @@ export function SubBrandScopeCard({
           Exclude
         </button>
       </div>
-      <p className="text-xs text-muted-foreground">
+      <p className="text-xs text-muted-foreground mb-2">
         {mode === "include"
           ? "Only applies to bookings at the selected sub-brands."
           : "Applies to all sub-brands EXCEPT the selected ones."}
       </p>
-      <div className="flex flex-col gap-2" data-testid="sub-brand-scope-list">
-        {subBrands.map((sb) => (
-          <label key={sb.id} className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              className="size-4 rounded border-gray-300"
-              checked={
-                mode === "include"
-                  ? subBrandIncludeIds.includes(sb.id)
-                  : subBrandExcludeIds.includes(sb.id)
-              }
-              onChange={(e) =>
-                mode === "include"
-                  ? onIncludeChange(sb.id, e.target.checked)
-                  : onExcludeChange(sb.id, e.target.checked)
-              }
-              data-testid={`sub-brand-scope-${mode}-${sb.id}`}
-            />
-            <span className="text-sm">{sb.name}</span>
-          </label>
-        ))}
+      <div className="space-y-3" data-testid="sub-brand-scope-list">
+        <AppSelect
+          multiple
+          value={mode === "include" ? subBrandIncludeIds : subBrandExcludeIds}
+          onValueChange={mode === "include" ? onIncludeIdsChange : onExcludeIdsChange}
+          options={options}
+          placeholder={`Select sub-brands to ${mode}...`}
+          searchPlaceholder="Search sub-brands..."
+        />
       </div>
     </RestrictionCard>
   );
