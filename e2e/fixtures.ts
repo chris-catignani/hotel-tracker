@@ -1,4 +1,5 @@
 import { test as base } from "@playwright/test";
+import crypto from "crypto";
 
 type TestFixtures = {
   testBooking: { id: string; propertyName: string; hotelChainName: string };

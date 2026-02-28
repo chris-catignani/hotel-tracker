@@ -498,8 +498,15 @@ export function calculateMatchedPromotions(
       const maxValue = Number(r.maxRedemptionValue);
       const priorValue = usage?.totalValue ?? 0;
       const remainingCapacity = Math.max(0, maxValue - priorValue);
-      if (remainingCapacity <= 0) continue;
-      if (totalAppliedValue > remainingCapacity) {
+      if (remainingCapacity <= 0) {
+        // Fully capped, set all to 0 but continue to push to matched
+        for (const benefit of benefitApplications) {
+          benefit.appliedValue = 0;
+          benefit.bonusPointsApplied = 0;
+        }
+        totalAppliedValue = 0;
+        totalBonusPoints = 0;
+      } else if (totalAppliedValue > remainingCapacity) {
         const ratio = remainingCapacity / totalAppliedValue;
         // Scale down each benefit application proportionally
         for (const benefit of benefitApplications) {
@@ -514,8 +521,15 @@ export function calculateMatchedPromotions(
     if (r?.maxTotalBonusPoints) {
       const priorPoints = usage?.totalBonusPoints ?? 0;
       const remainingPoints = Math.max(0, r.maxTotalBonusPoints - priorPoints);
-      if (remainingPoints <= 0) continue;
-      if (totalBonusPoints > remainingPoints) {
+      if (remainingPoints <= 0) {
+        // Fully capped, set all to 0 but continue to push to matched
+        for (const benefit of benefitApplications) {
+          benefit.appliedValue = 0;
+          benefit.bonusPointsApplied = 0;
+        }
+        totalAppliedValue = 0;
+        totalBonusPoints = 0;
+      } else if (totalBonusPoints > remainingPoints) {
         const ratio = remainingPoints / totalBonusPoints;
         // Scale down each benefit application proportionally
         for (const benefit of benefitApplications) {
@@ -600,6 +614,11 @@ async function fetchPromotionUsage(
     where: {
       promotionId: { in: promotionIds },
       ...(excludeBookingId ? { bookingId: { not: excludeBookingId } } : {}),
+      booking: {
+        checkIn: {
+          lt: new Date(booking.checkIn),
+        },
+      },
     },
     _count: { id: true },
     _sum: { appliedValue: true, bonusPointsApplied: true },
@@ -633,6 +652,13 @@ async function fetchPromotionUsage(
       where: {
         promotionBenefitId: { in: allBenefitIds },
         ...(excludeBookingId ? { bookingPromotion: { bookingId: { not: excludeBookingId } } } : {}),
+        bookingPromotion: {
+          booking: {
+            checkIn: {
+              lt: new Date(booking.checkIn),
+            },
+          },
+        },
       },
       _count: { id: true },
       _sum: { appliedValue: true, bonusPointsApplied: true },
@@ -644,8 +670,16 @@ async function fetchPromotionUsage(
       where: {
         promotionBenefitId: { in: allBenefitIds },
         ...(excludeBookingId ? { bookingPromotion: { bookingId: { not: excludeBookingId } } } : {}),
+        bookingPromotion: {
+          booking: {
+            checkIn: {
+              lt: new Date(booking.checkIn),
+            },
+          },
+        },
       },
-      include: {
+      select: {
+        promotionBenefitId: true,
         bookingPromotion: {
           select: {
             booking: {
@@ -660,8 +694,10 @@ async function fetchPromotionUsage(
 
     const nightsMap = new Map<string, number>();
     for (const bn of benefitNights) {
-      const current = nightsMap.get(bn.promotionBenefitId) ?? 0;
-      nightsMap.set(bn.promotionBenefitId, current + bn.bookingPromotion.booking.numNights);
+      if (bn.bookingPromotion?.booking) {
+        const current = nightsMap.get(bn.promotionBenefitId) ?? 0;
+        nightsMap.set(bn.promotionBenefitId, current + bn.bookingPromotion.booking.numNights);
+      }
     }
 
     for (const row of benefitUsage) {
@@ -734,6 +770,11 @@ async function fetchPromotionUsage(
       where: {
         promotionId: { in: spanStaysPromoIds },
         ...(excludeBookingId ? { bookingId: { not: excludeBookingId } } : {}),
+        booking: {
+          checkIn: {
+            lt: new Date(booking.checkIn),
+          },
+        },
       },
       include: { booking: { select: { numNights: true } } },
     });
@@ -771,6 +812,11 @@ async function fetchPromotionUsage(
       where: {
         promotionId: { in: oncePerSubBrandPromoIds },
         ...(excludeBookingId ? { bookingId: { not: excludeBookingId } } : {}),
+        booking: {
+          checkIn: {
+            lt: new Date(booking.checkIn),
+          },
+        },
       },
       select: {
         promotionId: true,
@@ -873,8 +919,9 @@ export async function reevaluateBookings(bookingIds: string[]): Promise<void> {
 
 /**
  * Re-evaluates and applies promotions for a single booking.
+ * Returns the list of promotion IDs that were applied.
  */
-export async function matchPromotionsForBooking(bookingId: string): Promise<BookingPromotion[]> {
+export async function matchPromotionsForBooking(bookingId: string): Promise<string[]> {
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
     include: BOOKING_INCLUDE,
@@ -902,7 +949,8 @@ export async function matchPromotionsForBooking(bookingId: string): Promise<Book
   const priorUsage = await fetchPromotionUsage(constrainedPromos, booking, bookingId);
 
   const matched = calculateMatchedPromotions(booking, activePromotions, priorUsage);
-  return applyMatchedPromotions(bookingId, matched);
+  await applyMatchedPromotions(bookingId, matched);
+  return matched.map((m) => m.promotionId);
 }
 
 /**
@@ -932,7 +980,8 @@ export async function matchPromotionsForAffectedBookings(promotionId: string): P
             },
           ].filter((condition) => {
             // Remove conditions that are undefined/null to avoid matching everything
-            const value = Object.values(condition)[0];
+            const firstKey = Object.keys(condition)[0] as keyof typeof condition;
+            const value = condition[firstKey];
             return value !== undefined && value !== null;
           }),
         },

@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { matchPromotionsForBooking } from "@/lib/promotion-matching";
+import { matchPromotionsForBooking, reevaluateBookings } from "@/lib/promotion-matching";
+import {
+  reevaluateSubsequentBookings,
+  getSubsequentBookingIds,
+} from "@/lib/promotion-matching-helpers";
 import { apiError } from "@/lib/api-error";
 import { calculatePoints } from "@/lib/loyalty-utils";
 
@@ -210,7 +214,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     });
 
     // Re-run promotion matching after update
-    await matchPromotionsForBooking(booking.id);
+    const appliedPromoIds = await matchPromotionsForBooking(booking.id);
+
+    // Re-evaluate subsequent bookings if this is an earlier stay
+    await reevaluateSubsequentBookings(booking.id, appliedPromoIds);
 
     // Fetch the booking with all relations to return
     const fullBooking = await prisma.booking.findUnique({
@@ -263,6 +270,14 @@ export async function DELETE(
   try {
     const { id } = await params;
 
+    // Find subsequent bookings before deleting
+    const booking = await prisma.booking.findUnique({
+      where: { id },
+      select: { checkIn: true },
+    });
+
+    const subsequentBookingIds = booking ? await getSubsequentBookingIds(booking.checkIn) : [];
+
     // Delete associated booking promotions first
     await prisma.bookingPromotion.deleteMany({
       where: { bookingId: id },
@@ -271,6 +286,11 @@ export async function DELETE(
     await prisma.booking.delete({
       where: { id: id },
     });
+
+    // Re-evaluate subsequent bookings
+    if (subsequentBookingIds.length > 0) {
+      await reevaluateBookings(subsequentBookingIds);
+    }
 
     return NextResponse.json({ message: "Booking deleted" });
   } catch (error) {

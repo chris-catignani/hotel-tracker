@@ -610,7 +610,7 @@ describe("promotion-matching", () => {
     expect(matched[0].appliedValue).toBe(15); // capped at 60 - 45 = 15
   });
 
-  it("should skip if maxRedemptionValue cap exhausted", () => {
+  it("should return with 0 value if maxRedemptionValue cap exhausted", () => {
     const promo = makePromo({
       restrictions: makeRestrictions({ maxRedemptionValue: new Prisma.Decimal(50) }),
     });
@@ -618,7 +618,8 @@ describe("promotion-matching", () => {
       [promo.id, { count: 0, totalValue: 50, totalBonusPoints: 0, benefitUsage: new Map() }],
     ]);
     const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
-    expect(matched).toHaveLength(0);
+    expect(matched).toHaveLength(1);
+    expect(matched[0].appliedValue).toBe(0);
   });
 
   it("should respect maxTotalBonusPoints: cap bonus points and reduce appliedValue", () => {
@@ -651,7 +652,7 @@ describe("promotion-matching", () => {
     expect(matched[0].appliedValue).toBeCloseTo(0.75, 2);
   });
 
-  it("should skip if maxTotalBonusPoints cap exhausted", () => {
+  it("should return with 0 value if maxTotalBonusPoints cap exhausted", () => {
     const promo = makePromo({
       restrictions: makeRestrictions({ maxTotalBonusPoints: 50 }),
       benefits: [
@@ -671,7 +672,9 @@ describe("promotion-matching", () => {
       [promo.id, { count: 0, totalValue: 0, totalBonusPoints: 50, benefitUsage: new Map() }],
     ]);
     const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
-    expect(matched).toHaveLength(0);
+    expect(matched).toHaveLength(1);
+    expect(matched[0].bonusPointsApplied).toBe(0);
+    expect(matched[0].appliedValue).toBe(0);
   });
 
   // tier tests
