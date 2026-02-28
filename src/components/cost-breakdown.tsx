@@ -27,7 +27,7 @@ function CalculationInfo({ calc }: { calc: CalculationDetail | undefined }) {
 
       <div className="space-y-6">
         {calc.groups.map((group, groupIdx) => (
-          <div key={group.name || groupIdx} className="space-y-3">
+          <div key={`${group.name || "group"}-${groupIdx}`} className="space-y-3">
             {(group.name || group.description) && (
               <div className="space-y-1">
                 {group.name && (
@@ -44,8 +44,8 @@ function CalculationInfo({ calc }: { calc: CalculationDetail | undefined }) {
             )}
 
             <div className="space-y-3 pl-2 border-l-2 border-muted/50 ml-1">
-              {group.segments.map((segment) => (
-                <div key={segment.label} className="space-y-1.5">
+              {group.segments.map((segment, segmentIdx) => (
+                <div key={`${segment.label}-${segmentIdx}`} className="space-y-1.5">
                   <div className="flex justify-between items-start gap-4">
                     <span className="text-xs font-semibold">{segment.label}</span>
                     <span className="text-xs font-mono font-bold whitespace-nowrap text-foreground/80">
