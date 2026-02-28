@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { matchPromotionsForBooking, reevaluateBookings } from "@/lib/promotion-matching";
 import {
-  matchPromotionsForBooking,
   reevaluateSubsequentBookings,
-  reevaluateBookings,
   getSubsequentBookingIds,
-} from "@/lib/promotion-matching";
+} from "@/lib/promotion-matching-helpers";
 import { apiError } from "@/lib/api-error";
 import { calculatePoints } from "@/lib/loyalty-utils";
 
