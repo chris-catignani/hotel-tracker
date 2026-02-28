@@ -25,26 +25,47 @@ function CalculationInfo({ calc }: { calc: CalculationDetail | undefined }) {
 
       {calc.segments && calc.segments.length > 0 ? (
         <div className="space-y-3">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground border-b pb-1">
             Breakdown Ledger
           </p>
-          <div className="space-y-3 border-t pt-3">
-            {calc.segments.map((segment) => (
-              <div key={segment.label} className="space-y-1.5">
-                <div className="flex justify-between items-start gap-4">
-                  <span className="text-xs font-semibold">{segment.label}</span>
-                  <span className="text-xs font-mono font-bold whitespace-nowrap">
-                    {formatCurrency(segment.value)}
-                  </span>
-                </div>
-                <div className="text-[10px] text-muted-foreground leading-tight italic">
-                  {segment.description}
-                </div>
-                {segment.formula && (
-                  <div className="rounded bg-muted/50 px-1.5 py-1 font-mono text-[9px] text-muted-foreground border border-muted-foreground/10">
-                    {segment.formula}
-                  </div>
+          <div className="space-y-4">
+            {Object.entries(
+              calc.segments.reduce(
+                (acc, segment) => {
+                  const group = segment.group || "Other";
+                  if (!acc[group]) acc[group] = [];
+                  acc[group].push(segment);
+                  return acc;
+                },
+                {} as Record<string, typeof calc.segments>
+              )
+            ).map(([groupName, groupSegments]) => (
+              <div key={groupName} className="space-y-3">
+                {groupName !== "Other" && (
+                  <h5 className="text-[10px] font-bold text-muted-foreground uppercase bg-muted/20 px-1 py-0.5 rounded w-fit">
+                    {groupName}
+                  </h5>
                 )}
+                <div className="space-y-3">
+                  {groupSegments.map((segment) => (
+                    <div key={segment.label} className="space-y-1.5 pl-1 border-l-2 border-muted">
+                      <div className="flex justify-between items-start gap-4">
+                        <span className="text-xs font-semibold">{segment.label}</span>
+                        <span className="text-xs font-mono font-bold whitespace-nowrap">
+                          {formatCurrency(segment.value)}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-muted-foreground leading-tight italic">
+                        {segment.description}
+                      </div>
+                      {segment.formula && (
+                        <div className="rounded bg-muted/50 px-1.5 py-1 font-mono text-[9px] text-muted-foreground border border-muted-foreground/10">
+                          {segment.formula}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>

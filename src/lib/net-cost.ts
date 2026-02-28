@@ -9,6 +9,7 @@ export interface CalculationSegment {
   value: number;
   formula: string;
   description: string;
+  group?: string;
 }
 
 export interface CalculationDetail {
@@ -253,10 +254,12 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
           }
 
           const capSuffix = isSegmentCapped ? " (capped)" : "";
+          const groupName = b.rewardType.charAt(0).toUpperCase() + b.rewardType.slice(1);
 
           segments.push({
             label,
             value: segmentValue,
+            group: groupName,
             formula: isMaxedOut
               ? ""
               : nightFormula +
@@ -374,10 +377,13 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
           benefitDescription += " Reduced by redemption caps.";
         }
 
+        const groupName = b.rewardType.charAt(0).toUpperCase() + b.rewardType.slice(1);
+
         // Standard segment
         segments.push({
           label: `Benefit: ${b.rewardType}`,
           value: bApplied,
+          group: groupName,
           formula: isMaxedOutOverall ? "" : `${benefitFormula} = ${formatCurrency(bApplied)}`,
           description: isMaxedOutOverall
             ? "This segment no longer applies because the promotion has been maxed out."
