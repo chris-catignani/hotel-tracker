@@ -474,12 +474,8 @@ export function PromotionForm({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Summer Bonus Offer"
-              aria-invalid={showErrors && !!errors.name}
-              required
+              error={showErrors ? errors.name : ""}
             />
-            {showErrors && errors.name && (
-              <p className="text-xs font-medium text-destructive">{errors.name}</p>
-            )}
           </div>
 
           {/* Type */}
@@ -647,8 +643,7 @@ export function PromotionForm({
                           })
                         }
                         data-testid={`tier-min-stays-${tierIndex}`}
-                        aria-invalid={showErrors && !tier.minStays}
-                        required
+                        error={showErrors && !tier.minStays ? "Required" : ""}
                       />
                     </div>
                     <div className="space-y-2">

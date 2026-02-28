@@ -38,12 +38,14 @@ export function PointTypesTab() {
   const [category, setCategory] = useState<"hotel" | "airline" | "transferable">("hotel");
   const [centsPerPoint, setCentsPerPoint] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [showErrors, setShowErrors] = useState(false);
 
   const [editOpen, setEditOpen] = useState(false);
   const [editPt, setEditPt] = useState<PointType | null>(null);
   const [editName, setEditName] = useState("");
   const [editCategory, setEditCategory] = useState<"hotel" | "airline" | "transferable">("hotel");
   const [editCentsPerPoint, setEditCentsPerPoint] = useState("");
+  const [showEditErrors, setShowEditErrors] = useState(false);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [ptToDelete, setPtToDelete] = useState<PointType | null>(null);
@@ -62,7 +64,18 @@ export function PointTypesTab() {
     fetchPointTypes();
   }, [fetchPointTypes]);
 
+  const validate = (n: string, cpp: string) => ({
+    name: !n.trim() ? "Name is required" : "",
+    centsPerPoint: !cpp ? "Value is required" : "",
+  });
+
+  const currentErrors = validate(name, centsPerPoint);
+  const isValid = !currentErrors.name && !currentErrors.centsPerPoint;
+
   const handleSubmit = async () => {
+    setShowErrors(true);
+    if (!isValid) return;
+
     setError(null);
     const res = await fetch("/api/point-types", {
       method: "POST",
@@ -73,6 +86,7 @@ export function PointTypesTab() {
       setName("");
       setCategory("hotel");
       setCentsPerPoint("");
+      setShowErrors(false);
       setOpen(false);
       fetchPointTypes();
     } else {
@@ -85,11 +99,18 @@ export function PointTypesTab() {
     setEditName(pt.name);
     setEditCategory(pt.category);
     setEditCentsPerPoint(String(Number(pt.centsPerPoint)));
+    setShowEditErrors(false);
     setEditOpen(true);
   };
 
+  const editErrors = validate(editName, editCentsPerPoint);
+  const isEditValid = !editErrors.name && !editErrors.centsPerPoint;
+
   const handleEditSubmit = async () => {
     if (!editPt) return;
+    setShowEditErrors(true);
+    if (!isEditValid) return;
+
     setError(null);
     const res = await fetch(`/api/point-types/${editPt.id}`, {
       method: "PUT",
@@ -103,6 +124,7 @@ export function PointTypesTab() {
     if (res.ok) {
       setEditOpen(false);
       setEditPt(null);
+      setShowEditErrors(false);
       fetchPointTypes();
     } else {
       setError(await extractApiError(res, "Failed to update point type."));
@@ -134,7 +156,13 @@ export function PointTypesTab() {
       <ErrorBanner error={error} onDismiss={() => setError(null)} />
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Point Types</h2>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog
+          open={open}
+          onOpenChange={(o) => {
+            setOpen(o);
+            if (!o) setShowErrors(false);
+          }}
+        >
           <DialogTrigger asChild>
             <Button data-testid="add-point-type-button">Add Point Type</Button>
           </DialogTrigger>
@@ -147,12 +175,13 @@ export function PointTypesTab() {
             </DialogHeader>
             <div className="space-y-4 py-2">
               <div className="space-y-2">
-                <Label htmlFor="pt-name">Name</Label>
+                <Label htmlFor="pt-name">Name *</Label>
                 <Input
                   id="pt-name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Hilton Honors"
+                  error={showErrors ? currentErrors.name : ""}
                 />
               </div>
               <div className="space-y-2">
@@ -170,7 +199,7 @@ export function PointTypesTab() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="pt-cpp">Value per Point ($)</Label>
+                <Label htmlFor="pt-cpp">Value per Point ($) *</Label>
                 <Input
                   id="pt-cpp"
                   type="number"
@@ -178,20 +207,25 @@ export function PointTypesTab() {
                   value={centsPerPoint}
                   onChange={(e) => setCentsPerPoint(e.target.value)}
                   placeholder="e.g. 0.005"
+                  error={showErrors ? currentErrors.centsPerPoint : ""}
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button onClick={handleSubmit} disabled={!name.trim() || !centsPerPoint}>
-                Save
-              </Button>
+              <Button onClick={handleSubmit}>Save</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
       {/* Edit Dialog */}
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+      <Dialog
+        open={editOpen}
+        onOpenChange={(o) => {
+          setEditOpen(o);
+          if (!o) setShowEditErrors(false);
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Point Type</DialogTitle>
@@ -199,12 +233,13 @@ export function PointTypesTab() {
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label htmlFor="edit-pt-name">Name</Label>
+              <Label htmlFor="edit-pt-name">Name *</Label>
               <Input
                 id="edit-pt-name"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
                 placeholder="e.g. Hilton Honors"
+                error={showEditErrors ? editErrors.name : ""}
               />
             </div>
             <div className="space-y-2">
@@ -222,7 +257,7 @@ export function PointTypesTab() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-pt-cpp">Value per Point ($)</Label>
+              <Label htmlFor="edit-pt-cpp">Value per Point ($) *</Label>
               <Input
                 id="edit-pt-cpp"
                 type="number"
@@ -230,13 +265,12 @@ export function PointTypesTab() {
                 value={editCentsPerPoint}
                 onChange={(e) => setEditCentsPerPoint(e.target.value)}
                 placeholder="e.g. 0.005"
+                error={showEditErrors ? editErrors.centsPerPoint : ""}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={handleEditSubmit} disabled={!editName.trim() || !editCentsPerPoint}>
-              Save
-            </Button>
+            <Button onClick={handleEditSubmit}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

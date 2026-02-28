@@ -353,12 +353,8 @@ export function BookingForm({
                 value={propertyName}
                 onChange={(e) => setPropertyName(e.target.value)}
                 placeholder="e.g. Marriott Downtown Chicago"
-                aria-invalid={showErrors && !!errors.propertyName}
-                required
+                error={showErrors ? errors.propertyName : ""}
               />
-              {showErrors && errors.propertyName && (
-                <p className="text-xs font-medium text-destructive">{errors.propertyName}</p>
-              )}
             </div>
           </div>
 
@@ -477,12 +473,8 @@ export function BookingForm({
                   value={pretaxCost}
                   onChange={(e) => setPretaxCost(e.target.value)}
                   placeholder="0.00"
-                  aria-invalid={showErrors && !!errors.pretaxCost}
-                  required
+                  error={showErrors ? errors.pretaxCost : ""}
                 />
-                {showErrors && errors.pretaxCost && (
-                  <p className="text-xs font-medium text-destructive">{errors.pretaxCost}</p>
-                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="totalCost">Total Cost (USD) *</Label>
@@ -494,12 +486,8 @@ export function BookingForm({
                   value={totalCost}
                   onChange={(e) => setTotalCost(e.target.value)}
                   placeholder="0.00"
-                  aria-invalid={showErrors && !!errors.totalCost}
-                  required
+                  error={showErrors ? errors.totalCost : ""}
                 />
-                {showErrors && errors.totalCost && (
-                  <p className="text-xs font-medium text-destructive">{errors.totalCost}</p>
-                )}
               </div>
             </div>
           )}
