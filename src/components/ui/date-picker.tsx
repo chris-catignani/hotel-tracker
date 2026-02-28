@@ -17,6 +17,7 @@ interface DatePickerProps {
   placeholder?: string;
   className?: string;
   id?: string;
+  error?: string;
 }
 
 function useMediaQuery(query: string) {
@@ -79,6 +80,7 @@ export function DatePicker({
   placeholder = "Pick a date",
   className,
   id,
+  error,
 }: DatePickerProps) {
   const [open, setOpen] = React.useState(false);
   const isDesktop = useMediaQuery("(min-width: 768px)");
@@ -128,6 +130,7 @@ export function DatePicker({
         onFocus={() => setOpen(true)}
         onClick={() => setOpen(true)}
         placeholder="MM/DD/YYYY"
+        aria-invalid={!!error}
         className={cn(
           "w-full justify-start text-left font-normal h-11 md:h-9 text-base md:text-sm pl-9",
           !date && "text-muted-foreground",
@@ -144,9 +147,11 @@ export function DatePicker({
       id={id}
       variant={"outline"}
       data-testid={id ? `date-picker-trigger-${id}` : "date-picker-trigger"}
+      aria-invalid={!!error}
       className={cn(
         "w-full justify-start text-left font-normal h-11 md:h-9 text-base md:text-sm",
         !date && "text-muted-foreground",
+        error && "border-destructive ring-destructive/20 focus-visible:ring-destructive/50",
         className
       )}
     >
@@ -168,30 +173,31 @@ export function DatePicker({
     />
   );
 
-  if (isDesktop) {
-    return (
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverAnchor asChild>{desktopTrigger}</PopoverAnchor>
-        <PopoverContent
-          className="w-auto p-0"
-          align="start"
-          onOpenAutoFocus={(e) => e.preventDefault()}
-        >
-          {calendar}
-        </PopoverContent>
-      </Popover>
-    );
-  }
-
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>{mobileTrigger}</SheetTrigger>
-      <SheetContent side="bottom" className="p-0">
-        <SheetHeader className="px-4 pt-4 pb-2 border-b">
-          <SheetTitle>{placeholder}</SheetTitle>
-        </SheetHeader>
-        <div className="flex justify-center p-4 pb-8">{calendar}</div>
-      </SheetContent>
-    </Sheet>
+    <div className="w-full space-y-1">
+      {isDesktop ? (
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverAnchor asChild>{desktopTrigger}</PopoverAnchor>
+          <PopoverContent
+            className="w-auto p-0"
+            align="start"
+            onOpenAutoFocus={(e) => e.preventDefault()}
+          >
+            {calendar}
+          </PopoverContent>
+        </Popover>
+      ) : (
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetTrigger asChild>{mobileTrigger}</SheetTrigger>
+          <SheetContent side="bottom" className="p-0">
+            <SheetHeader className="px-4 pt-4 pb-2 border-b">
+              <SheetTitle>{placeholder}</SheetTitle>
+            </SheetHeader>
+            <div className="flex justify-center p-4 pb-8">{calendar}</div>
+          </SheetContent>
+        </Sheet>
+      )}
+      {error && <p className="text-xs font-medium text-destructive">{error}</p>}
+    </div>
   );
 }

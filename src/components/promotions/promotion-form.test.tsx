@@ -53,6 +53,9 @@ describe("PromotionForm", () => {
         title="Test"
         description="Test"
         submitLabel="Submit"
+        initialData={{
+          hotelChainId: "dummy-chain",
+        }}
       />
     );
 

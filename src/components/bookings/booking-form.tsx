@@ -92,6 +92,9 @@ export function BookingForm({
   const [portals, setPortals] = useState<ShoppingPortal[]>([]);
   const [otaAgencies, setOtaAgencies] = useState<OtaAgency[]>([]);
 
+  // Validation state
+  const [showErrors, setShowErrors] = useState(false);
+
   // Form fields
   const [hotelChainId, setHotelChainId] = useState("");
   const [hotelChainSubBrandId, setHotelChainSubBrandId] = useState("none");
@@ -246,8 +249,59 @@ export function BookingForm({
     setBenefits((prev) => prev.map((b, i) => (i === idx ? { ...b, [field]: value } : b)));
   const removeBenefit = (idx: number) => setBenefits((prev) => prev.filter((_, i) => i !== idx));
 
+  const { errors, isValid } = useMemo(() => {
+    const errs = {
+      hotelChainId: !hotelChainId ? "Hotel chain is required" : "",
+      propertyName: !propertyName.trim() ? "Property name is required" : "",
+      checkIn: !checkIn ? "Check-in date is required" : "",
+      checkOut: !checkOut
+        ? "Check-out date is required"
+        : Number(numNights) <= 0
+          ? "Check-out must be after check-in"
+          : "",
+      pretaxCost: hasCash && pretaxCost === "" ? "Pre-tax cost is required" : "",
+      totalCost: hasCash && totalCost === "" ? "Total cost is required" : "",
+      pointsRedeemed:
+        hasPoints && (!pointsRedeemed || Number(pointsRedeemed) <= 0)
+          ? "Points redeemed is required"
+          : "",
+      certificates:
+        hasCert && (certificates.length === 0 || certificates.some((c) => !c))
+          ? "All certificates must be selected"
+          : "",
+    };
+
+    const valid =
+      !errs.hotelChainId &&
+      !errs.propertyName &&
+      !errs.checkIn &&
+      !errs.checkOut &&
+      (!hasCash || (!errs.pretaxCost && !errs.totalCost)) &&
+      (!hasPoints || !errs.pointsRedeemed) &&
+      (!hasCert || !errs.certificates) &&
+      Number(numNights) > 0;
+
+    return { errors: errs, isValid: valid };
+  }, [
+    hotelChainId,
+    propertyName,
+    checkIn,
+    checkOut,
+    hasCash,
+    pretaxCost,
+    totalCost,
+    hasPoints,
+    pointsRedeemed,
+    hasCert,
+    certificates,
+    numNights,
+  ]);
+
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setShowErrors(true);
+
+    if (!isValid) return;
 
     const body = {
       hotelChainId: hotelChainId,
@@ -290,14 +344,6 @@ export function BookingForm({
     await onSubmit(body);
   };
 
-  const isValid =
-    hotelChainId &&
-    propertyName.trim() &&
-    checkIn &&
-    checkOut &&
-    numNights &&
-    (!hasCash || (pretaxCost !== "" && totalCost !== ""));
-
   return (
     <Card>
       <CardHeader>
@@ -311,6 +357,7 @@ export function BookingForm({
               <Label htmlFor="hotelChainId">Hotel Chain *</Label>
               <AppSelect
                 value={hotelChainId}
+                error={showErrors ? errors.hotelChainId : ""}
                 onValueChange={(val) => {
                   setHotelChainId(val);
                   setHotelChainSubBrandId("none");
@@ -337,7 +384,7 @@ export function BookingForm({
                 value={propertyName}
                 onChange={(e) => setPropertyName(e.target.value)}
                 placeholder="e.g. Marriott Downtown Chicago"
-                required
+                error={showErrors ? errors.propertyName : ""}
               />
             </div>
           </div>
@@ -405,6 +452,7 @@ export function BookingForm({
               <DatePicker
                 id="checkIn"
                 date={checkInDate}
+                error={showErrors ? errors.checkIn : ""}
                 setDate={handleCheckInChange}
                 placeholder="Select check-in"
               />
@@ -414,6 +462,7 @@ export function BookingForm({
               <DatePicker
                 id="checkOut"
                 date={checkOutDate}
+                error={showErrors ? errors.checkOut : ""}
                 setDate={handleCheckOutChange}
                 placeholder="Select check-out"
               />
@@ -455,7 +504,7 @@ export function BookingForm({
                   value={pretaxCost}
                   onChange={(e) => setPretaxCost(e.target.value)}
                   placeholder="0.00"
-                  required
+                  error={showErrors ? errors.pretaxCost : ""}
                 />
               </div>
               <div className="space-y-2">
@@ -468,7 +517,7 @@ export function BookingForm({
                   value={totalCost}
                   onChange={(e) => setTotalCost(e.target.value)}
                   placeholder="0.00"
-                  required
+                  error={showErrors ? errors.totalCost : ""}
                 />
               </div>
             </div>
@@ -509,7 +558,7 @@ export function BookingForm({
           {/* Points Redeemed */}
           {hasPoints && (
             <div className="space-y-2">
-              <Label htmlFor="pointsRedeemed">Points Redeemed</Label>
+              <Label htmlFor="pointsRedeemed">Points Redeemed *</Label>
               <Input
                 id="pointsRedeemed"
                 type="number"
@@ -517,6 +566,7 @@ export function BookingForm({
                 value={pointsRedeemed}
                 onChange={(e) => setPointsRedeemed(e.target.value)}
                 placeholder="e.g. 40000"
+                error={showErrors ? errors.pointsRedeemed : ""}
               />
             </div>
           )}
@@ -524,30 +574,40 @@ export function BookingForm({
           {/* Certificates */}
           {hasCert && (
             <div className="space-y-2">
-              <Label>Free Night Certificate(s)</Label>
+              <Label>Free Night Certificate(s) *</Label>
               {certificates.map((cert, idx) => (
-                <div key={idx} className="flex items-center gap-2">
-                  <AppSelect
-                    value={cert}
-                    onValueChange={(v) => updateCertificate(idx, v)}
-                    options={CERT_TYPE_OPTIONS.filter((opt) => opt.hotelChainId === hotelChainId)}
-                    placeholder="Select certificate type..."
-                    className="flex-1"
-                    data-testid={`certificate-select-${idx}`}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => removeCertificate(idx)}
-                  >
-                    ×
-                  </Button>
+                <div key={idx} className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <AppSelect
+                      value={cert}
+                      onValueChange={(v) => updateCertificate(idx, v)}
+                      options={CERT_TYPE_OPTIONS.filter((opt) => opt.hotelChainId === hotelChainId)}
+                      placeholder="Select certificate type..."
+                      className="flex-1"
+                      data-testid={`certificate-select-${idx}`}
+                      error={showErrors && !cert ? "Required" : ""}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removeCertificate(idx)}
+                    >
+                      ×
+                    </Button>
+                  </div>
                 </div>
               ))}
-              <Button type="button" variant="outline" size="sm" onClick={addCertificate}>
-                + Add Certificate
-              </Button>
+              <div className="space-y-1">
+                <Button type="button" variant="outline" size="sm" onClick={addCertificate}>
+                  + Add Certificate
+                </Button>
+                {showErrors && certificates.length === 0 && (
+                  <p className="text-xs font-medium text-destructive">
+                    At least one certificate is required
+                  </p>
+                )}
+              </div>
             </div>
           )}
 
@@ -701,7 +761,7 @@ export function BookingForm({
           <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm p-4 -mx-6 -mb-6 border-t md:static md:bg-transparent md:p-0 md:m-0 md:border-none flex gap-4 z-10">
             <Button
               type="submit"
-              disabled={!isValid || submitting}
+              disabled={submitting}
               className="flex-1 md:flex-none"
               data-testid="booking-form-submit"
             >

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -112,6 +112,9 @@ export function PromotionForm({
   description,
   submitLabel,
 }: PromotionFormProps) {
+  // ── Validation state ─────────────────────────────────────────────────────────
+  const [showErrors, setShowErrors] = useState(false);
+
   // ── Core fields ──────────────────────────────────────────────────────────────
   const [name, setName] = useState(initialData?.name || "");
   const [type, setType] = useState<PromotionType>(
@@ -207,6 +210,43 @@ export function PromotionForm({
       setActiveRestrictions(deriveActiveRestrictions(mappedRestrictions));
     }
   }, [initialData]);
+
+  // ── Validation ───────────────────────────────────────────────────────────────
+
+  const { errors, isValid, benefitErrors, tierErrors } = useMemo(() => {
+    const validateBenefit = (b: PromotionBenefitFormData) => ({
+      value: !b.value ? "Required" : "",
+      certType: b.rewardType === "certificate" && !b.certType ? "Required" : "",
+    });
+
+    const bErrors = benefits.map(validateBenefit);
+    const tErrors = tiers.map((t) => ({
+      minStays: !t.minStays ? "Required" : "",
+      benefits: t.benefits.map(validateBenefit),
+    }));
+
+    const errs = {
+      name: !name.trim() ? "Promotion name is required" : "",
+      hotelChainId: type === "loyalty" && !hotelChainId ? "Hotel chain is required" : "",
+      creditCardId: type === "credit_card" && !creditCardId ? "Credit card is required" : "",
+      shoppingPortalId: type === "portal" && !shoppingPortalId ? "Shopping portal is required" : "",
+      benefits: !isTiered && bErrors.some((e) => e.value || e.certType),
+      tiers:
+        isTiered &&
+        (tErrors.some((e) => e.minStays) ||
+          tErrors.some((e) => e.benefits.some((be) => be.value || be.certType))),
+    };
+
+    const valid =
+      !errs.name &&
+      !errs.hotelChainId &&
+      !errs.creditCardId &&
+      !errs.shoppingPortalId &&
+      !errs.benefits &&
+      !errs.tiers;
+
+    return { errors: errs, isValid: valid, benefitErrors: bErrors, tierErrors: tErrors };
+  }, [name, type, hotelChainId, creditCardId, shoppingPortalId, isTiered, benefits, tiers]);
 
   // ── Restriction helpers ──────────────────────────────────────────────────────
 
@@ -333,6 +373,9 @@ export function PromotionForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setShowErrors(true);
+
+    if (!isValid) return;
 
     const withSortOrder = (bs: PromotionBenefitFormData[]) =>
       bs.map((b, i) => ({ ...b, sortOrder: i }));
@@ -444,13 +487,14 @@ export function PromotionForm({
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Name */}
           <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
+            <Label htmlFor="name">Name *</Label>
             <Input
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Summer Bonus Offer"
-              required
+              error={showErrors ? errors.name : ""}
+              data-testid="promotion-name-input"
             />
           </div>
 
@@ -485,9 +529,10 @@ export function PromotionForm({
           {/* Type-specific linking */}
           {type === "loyalty" && (
             <div className="space-y-2">
-              <Label>Hotel Chain</Label>
+              <Label>Hotel Chain *</Label>
               <AppSelect
                 value={hotelChainId}
+                error={showErrors ? errors.hotelChainId : ""}
                 onValueChange={(v) => {
                   setHotelChainId(v);
                   updateRestrictions({ subBrandIncludeIds: [], subBrandExcludeIds: [] });
@@ -501,9 +546,10 @@ export function PromotionForm({
 
           {type === "credit_card" && (
             <div className="space-y-2">
-              <Label>Credit Card</Label>
+              <Label>Credit Card *</Label>
               <AppSelect
                 value={creditCardId}
+                error={showErrors ? errors.creditCardId : ""}
                 onValueChange={setCreditCardId}
                 options={creditCards.map((card) => ({ label: card.name, value: card.id }))}
                 placeholder="Select credit card..."
@@ -514,9 +560,10 @@ export function PromotionForm({
 
           {type === "portal" && (
             <div className="space-y-2">
-              <Label>Shopping Portal</Label>
+              <Label>Shopping Portal *</Label>
               <AppSelect
                 value={shoppingPortalId}
+                error={showErrors ? errors.shoppingPortalId : ""}
                 onValueChange={setShoppingPortalId}
                 options={portals.map((portal) => ({ label: portal.name, value: portal.id }))}
                 placeholder="Select portal..."
@@ -557,6 +604,7 @@ export function PromotionForm({
                   creditCards={creditCards}
                   onChange={handleBenefitChange}
                   onRemove={handleBenefitRemove}
+                  errors={showErrors ? benefitErrors[index] : undefined}
                 />
               ))}
               <Button
@@ -600,7 +648,7 @@ export function PromotionForm({
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <Label>Min Stay #</Label>
+                      <Label>Min Stay # *</Label>
                       <Input
                         type="number"
                         step="1"
@@ -613,7 +661,7 @@ export function PromotionForm({
                           })
                         }
                         data-testid={`tier-min-stays-${tierIndex}`}
-                        required
+                        error={showErrors ? tierErrors[tierIndex].minStays : ""}
                       />
                     </div>
                     <div className="space-y-2">
@@ -646,6 +694,9 @@ export function PromotionForm({
                         creditCards={creditCards}
                         onChange={(bi, updated) => handleTierBenefitChange(tierIndex, bi, updated)}
                         onRemove={(bi) => handleTierBenefitRemove(tierIndex, bi)}
+                        errors={
+                          showErrors ? tierErrors[tierIndex].benefits[benefitIndex] : undefined
+                        }
                       />
                     ))}
                     <Button
