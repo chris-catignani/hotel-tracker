@@ -64,10 +64,13 @@ export function PointTypesTab() {
     fetchPointTypes();
   }, [fetchPointTypes]);
 
-  const validate = (n: string, cpp: string) => ({
-    name: !n.trim() ? "Name is required" : "",
-    centsPerPoint: !cpp ? "Value is required" : "",
-  });
+  const validate = useCallback(
+    (n: string, cpp: string) => ({
+      name: !n.trim() ? "Name is required" : "",
+      centsPerPoint: !cpp ? "Value is required" : "",
+    }),
+    []
+  );
 
   const currentErrors = validate(name, centsPerPoint);
   const isValid = !currentErrors.name && !currentErrors.centsPerPoint;

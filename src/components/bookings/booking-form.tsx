@@ -249,32 +249,53 @@ export function BookingForm({
     setBenefits((prev) => prev.map((b, i) => (i === idx ? { ...b, [field]: value } : b)));
   const removeBenefit = (idx: number) => setBenefits((prev) => prev.filter((_, i) => i !== idx));
 
-  const errors = {
-    hotelChainId: !hotelChainId ? "Hotel chain is required" : "",
-    propertyName: !propertyName.trim() ? "Property name is required" : "",
-    checkIn: !checkIn ? "Check-in date is required" : "",
-    checkOut: !checkOut ? "Check-out date is required" : "",
-    pretaxCost: hasCash && pretaxCost === "" ? "Pre-tax cost is required" : "",
-    totalCost: hasCash && totalCost === "" ? "Total cost is required" : "",
-    pointsRedeemed:
-      hasPoints && (!pointsRedeemed || Number(pointsRedeemed) <= 0)
-        ? "Points redeemed is required"
-        : "",
-    certificates:
-      hasCert && (certificates.length === 0 || certificates.some((c) => !c))
-        ? "All certificates must be selected"
-        : "",
-  };
+  const { errors, isValid } = useMemo(() => {
+    const errs = {
+      hotelChainId: !hotelChainId ? "Hotel chain is required" : "",
+      propertyName: !propertyName.trim() ? "Property name is required" : "",
+      checkIn: !checkIn ? "Check-in date is required" : "",
+      checkOut: !checkOut
+        ? "Check-out date is required"
+        : Number(numNights) <= 0
+          ? "Check-out must be after check-in"
+          : "",
+      pretaxCost: hasCash && pretaxCost === "" ? "Pre-tax cost is required" : "",
+      totalCost: hasCash && totalCost === "" ? "Total cost is required" : "",
+      pointsRedeemed:
+        hasPoints && (!pointsRedeemed || Number(pointsRedeemed) <= 0)
+          ? "Points redeemed is required"
+          : "",
+      certificates:
+        hasCert && (certificates.length === 0 || certificates.some((c) => !c))
+          ? "All certificates must be selected"
+          : "",
+    };
 
-  const isValid =
-    !errors.hotelChainId &&
-    !errors.propertyName &&
-    !errors.checkIn &&
-    !errors.checkOut &&
-    (!hasCash || (!errors.pretaxCost && !errors.totalCost)) &&
-    (!hasPoints || !errors.pointsRedeemed) &&
-    (!hasCert || !errors.certificates) &&
-    Number(numNights) > 0;
+    const valid =
+      !errs.hotelChainId &&
+      !errs.propertyName &&
+      !errs.checkIn &&
+      !errs.checkOut &&
+      (!hasCash || (!errs.pretaxCost && !errs.totalCost)) &&
+      (!hasPoints || !errs.pointsRedeemed) &&
+      (!hasCert || !errs.certificates) &&
+      Number(numNights) > 0;
+
+    return { errors: errs, isValid: valid };
+  }, [
+    hotelChainId,
+    propertyName,
+    checkIn,
+    checkOut,
+    hasCash,
+    pretaxCost,
+    totalCost,
+    hasPoints,
+    pointsRedeemed,
+    hasCert,
+    certificates,
+    numNights,
+  ]);
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

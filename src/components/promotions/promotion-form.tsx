@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -213,36 +213,40 @@ export function PromotionForm({
 
   // ── Validation ───────────────────────────────────────────────────────────────
 
-  const validateBenefit = (b: PromotionBenefitFormData) => ({
-    value: !b.value ? "Required" : "",
-    certType: b.rewardType === "certificate" && !b.certType ? "Required" : "",
-  });
+  const { errors, isValid, benefitErrors, tierErrors } = useMemo(() => {
+    const validateBenefit = (b: PromotionBenefitFormData) => ({
+      value: !b.value ? "Required" : "",
+      certType: b.rewardType === "certificate" && !b.certType ? "Required" : "",
+    });
 
-  const benefitErrors = benefits.map(validateBenefit);
-  const tierErrors = tiers.map((t) => ({
-    minStays: !t.minStays ? "Required" : "",
-    benefits: t.benefits.map(validateBenefit),
-  }));
+    const bErrors = benefits.map(validateBenefit);
+    const tErrors = tiers.map((t) => ({
+      minStays: !t.minStays ? "Required" : "",
+      benefits: t.benefits.map(validateBenefit),
+    }));
 
-  const errors = {
-    name: !name.trim() ? "Promotion name is required" : "",
-    hotelChainId: type === "loyalty" && !hotelChainId ? "Hotel chain is required" : "",
-    creditCardId: type === "credit_card" && !creditCardId ? "Credit card is required" : "",
-    shoppingPortalId: type === "portal" && !shoppingPortalId ? "Shopping portal is required" : "",
-    benefits: !isTiered && benefitErrors.some((e) => e.value || e.certType),
-    tiers:
-      isTiered &&
-      (tierErrors.some((e) => e.minStays) ||
-        tierErrors.some((e) => e.benefits.some((be) => be.value || be.certType))),
-  };
+    const errs = {
+      name: !name.trim() ? "Promotion name is required" : "",
+      hotelChainId: type === "loyalty" && !hotelChainId ? "Hotel chain is required" : "",
+      creditCardId: type === "credit_card" && !creditCardId ? "Credit card is required" : "",
+      shoppingPortalId: type === "portal" && !shoppingPortalId ? "Shopping portal is required" : "",
+      benefits: !isTiered && bErrors.some((e) => e.value || e.certType),
+      tiers:
+        isTiered &&
+        (tErrors.some((e) => e.minStays) ||
+          tErrors.some((e) => e.benefits.some((be) => be.value || be.certType))),
+    };
 
-  const isValid =
-    !errors.name &&
-    !errors.hotelChainId &&
-    !errors.creditCardId &&
-    !errors.shoppingPortalId &&
-    !errors.benefits &&
-    !errors.tiers;
+    const valid =
+      !errs.name &&
+      !errs.hotelChainId &&
+      !errs.creditCardId &&
+      !errs.shoppingPortalId &&
+      !errs.benefits &&
+      !errs.tiers;
+
+    return { errors: errs, isValid: valid, benefitErrors: bErrors, tierErrors: tErrors };
+  }, [name, type, hotelChainId, creditCardId, shoppingPortalId, isTiered, benefits, tiers]);
 
   // ── Restriction helpers ──────────────────────────────────────────────────────
 
