@@ -57,7 +57,8 @@ describe("net-cost", () => {
     const result = getNetCostBreakdown(booking);
     expect(result.promoSavings).toBe(10);
     expect(result.netCost).toBe(90);
-    expect(result.promotions[0].formula).toContain("$10.00 fixed cashback = $10.00");
+    const promo = result.promotions[0];
+    expect(promo.benefitGroups![0].segments[0].formula).toContain("$10.00 fixed cashback = $10.00");
   });
 
   it("should apply percentage cashback promotions", () => {
@@ -84,7 +85,10 @@ describe("net-cost", () => {
     const result = getNetCostBreakdown(booking);
     expect(result.promoSavings).toBe(20);
     expect(result.netCost).toBe(80);
-    expect(result.promotions[0].formula).toContain("$100.00 (total cost) × 20% = $20.00");
+    const promo = result.promotions[0];
+    expect(promo.benefitGroups![0].segments[0].formula).toContain(
+      "$100.00 (total cost) × 20% = $20.00"
+    );
   });
 
   it("should apply points multiplier promotions (base_and_elite)", () => {
@@ -114,10 +118,11 @@ describe("net-cost", () => {
     // (1000 earned * (2-1) = 1000 bonus pts) * 0.015 = $15.00
     expect(result.promoSavings).toBe(15);
     expect(result.netCost).toBe(70);
-    expect(result.promotions[0].formula).toContain(
+    const promo = result.promotions[0];
+    expect(promo.benefitGroups![0].segments[0].formula).toContain(
       "1,000 pts (incl. elite bonus) × (2 - 1) × 1.5¢ = $15.00"
     );
-    expect(result.promotions[0].description).toContain("loyalty points");
+    expect(promo.benefitGroups![0].description).toContain("loyalty points");
   });
 
   it("should apply fixed points promotions", () => {
@@ -145,7 +150,10 @@ describe("net-cost", () => {
     // 1000 pts * 0.015 = $15.00
     expect(result.promoSavings).toBe(15);
     expect(result.netCost).toBe(85);
-    expect(result.promotions[0].formula).toContain("1,000 bonus pts × 1.5¢ = $15.00");
+    const promo = result.promotions[0];
+    expect(promo.benefitGroups![0].segments[0].formula).toContain(
+      "1,000 bonus pts × 1.5¢ = $15.00"
+    );
   });
 
   it("should handle certificate benefit with valuation", () => {
@@ -173,7 +181,10 @@ describe("net-cost", () => {
     // marriott_35k = 35000 pts * 0.015 * 0.7 = 367.5
     expect(result.promoSavings).toBe(367.5);
     expect(result.netCost).toBe(-267.5); // 100 - 367.5
-    expect(result.promotions[0].formula).toContain("35,000 pts × 70% × 1.5¢ = $367.50");
+    const promo = result.promotions[0];
+    expect(promo.benefitGroups![0].segments[0].formula).toContain(
+      "35,000 pts × 70% × 1.5¢ = $367.50"
+    );
   });
 
   it("should handle EQN benefit with valuation", () => {
@@ -201,7 +212,10 @@ describe("net-cost", () => {
     // 2 EQNs * $10.00 = $20.00
     expect(result.promoSavings).toBe(20);
     expect(result.netCost).toBe(80); // 100 - 20
-    expect(result.promotions[0].formula).toContain("2 bonus EQN(s) × $10.00 = $20.00");
+    const promo = result.promotions[0];
+    expect(promo.benefitGroups![0].segments[0].formula).toContain(
+      "2 bonus EQN(s) × $10.00 = $20.00"
+    );
   });
 
   it("should sum multiple benefits across a promotion", () => {
@@ -237,10 +251,11 @@ describe("net-cost", () => {
     const result = getNetCostBreakdown(booking);
     expect(result.promoSavings).toBe(25);
     expect(result.netCost).toBe(75);
-    // Formula should include both benefit lines
-    expect(result.promotions[0].formula).toContain("$10.00 fixed cashback");
-    expect(result.promotions[0].formula).toContain("1,000 bonus pts");
-    expect(result.promotions[0].formula).toContain("$25.00 total");
+    const promo = result.promotions[0];
+    // Formula should include both benefits in their groups
+    expect(promo.benefitGroups).toHaveLength(2);
+    expect(promo.benefitGroups![0].segments[0].formula).toContain("$10.00 fixed cashback");
+    expect(promo.benefitGroups![1].segments[0].formula).toContain("1,000 bonus pts");
   });
 
   it("should calculate shopping portal cashback (pre-tax)", () => {
@@ -381,8 +396,9 @@ describe("net-cost", () => {
     // netCost = 100 - 24 - 12 = 64
     expect(result.promoSavings).toBe(24);
     expect(result.netCost).toBe(64);
-    expect(result.promotions[0].formula).toContain("(base rate only)");
-    expect(result.promotions[0].description).toContain("base rate");
+    const promo = result.promotions[0];
+    expect(promo.benefitGroups![0].segments[0].formula).toContain("(base rate only)");
+    expect(promo.benefitGroups![0].description).toContain("base rate");
   });
 
   it("should calculate boosted credit card rewards for specific hotel chain", () => {
@@ -565,8 +581,11 @@ describe("net-cost", () => {
       ],
     };
     const result = getNetCostBreakdown(booking);
-    expect(result.promotions[0].formula).toContain("2 × $10.00 fixed cashback = $20.00");
-    expect(result.promotions[0].description).toContain("Earning 2x of a fixed cashback");
+    const promo = result.promotions[0];
+    expect(promo.benefitGroups![0].segments[0].formula).toContain(
+      "2 × $10.00 fixed cashback = $20.00"
+    );
+    expect(promo.benefitGroups![0].description).toContain("Earning 2x of a fixed cashback");
   });
 
   it("should explain benefit-level capping in the formula", () => {
@@ -591,8 +610,11 @@ describe("net-cost", () => {
       ],
     };
     const result = getNetCostBreakdown(booking);
-    expect(result.promotions[0].formula).toContain("$20.00 fixed cashback (capped) = $15.00");
-    expect(result.promotions[0].description).toContain("Reduced by redemption caps");
+    const promo = result.promotions[0];
+    expect(promo.benefitGroups![0].segments[0].formula).toContain(
+      "$20.00 fixed cashback (capped) = $15.00"
+    );
+    expect(promo.benefitGroups![0].description).toContain("Reduced by redemption caps");
   });
 
   it("should explain pending spanned promotion in the formula and description", () => {
@@ -624,10 +646,11 @@ describe("net-cost", () => {
       ],
     };
     const result = getNetCostBreakdown(booking);
-    expect(result.promotions[0].formula).toContain(
+    const promo = result.promotions[0];
+    expect(promo.benefitGroups![0].segments[0].formula).toContain(
       "(1 of 3 nights) × $30.00 fixed cashback = $10.00 (pending)"
     );
-    expect(result.promotions[0].description).toContain(
+    expect(promo.benefitGroups![0].description).toContain(
       "This bonus is pending additional stays (1 of 3 nights required)"
     );
   });
@@ -663,12 +686,12 @@ describe("net-cost", () => {
     const result = getNetCostBreakdown(booking);
     const promo = result.promotions[0];
 
-    expect(promo.segments).toHaveLength(2);
-    expect(promo.segments![0].label).toBe("Full Reward Cycle (3/3 nights)");
-    expect(promo.segments![0].value).toBe(30);
-    expect(promo.segments![1].label).toBe("New Reward Cycle (1/3 nights)");
-    expect(promo.segments![1].value).toBe(10);
-    expect(promo.segments![1].formula).toContain("(pending)");
+    expect(promo.benefitGroups![0].segments).toHaveLength(2);
+    expect(promo.benefitGroups![0].segments[0].label).toBe("Full Reward Cycle (3/3 nights)");
+    expect(promo.benefitGroups![0].segments[0].value).toBe(30);
+    expect(promo.benefitGroups![0].segments[1].label).toBe("New Reward Cycle (1/3 nights)");
+    expect(promo.benefitGroups![0].segments[1].value).toBe(10);
+    expect(promo.benefitGroups![0].segments[1].formula).toContain("(pending)");
   });
 
   it("should provide segments for credit card rewards with hotel boost", () => {
@@ -734,14 +757,14 @@ describe("net-cost", () => {
 
       const breakdown = getNetCostBreakdown(booking);
       const promo = breakdown.promotions[0];
-      const segment = promo.segments![0];
+      const segment = promo.benefitGroups![0].segments[0];
 
       expect(segment.value).toBe(0);
       expect(segment.formula).toBe("");
       expect(segment.description).toBe(
         "This segment no longer applies because the promotion has been maxed out."
       );
-      expect(promo.description).toBe(
+      expect(promo.benefitGroups![0].description).toBe(
         "This promotion has been maxed out and no further rewards apply."
       );
     });
@@ -786,24 +809,24 @@ describe("net-cost", () => {
       const breakdown = getNetCostBreakdown(booking);
       const promo = breakdown.promotions[0];
 
-      expect(promo.segments).toHaveLength(4);
+      expect(promo.benefitGroups![0].segments).toHaveLength(4);
 
       // Cycle 1: Completion (2 nights) -> $40
-      expect(promo.segments![0].value).toBe(40);
-      expect(promo.segments![0].label).toContain("Cycle Completion");
+      expect(promo.benefitGroups![0].segments[0].value).toBe(40);
+      expect(promo.benefitGroups![0].segments[0].label).toContain("Cycle Completion");
 
       // Cycle 2: Full (3 nights) -> $60
-      expect(promo.segments![1].value).toBe(60);
-      expect(promo.segments![1].label).toContain("Full Reward Cycle");
+      expect(promo.benefitGroups![0].segments[1].value).toBe(60);
+      expect(promo.benefitGroups![0].segments[1].label).toContain("Full Reward Cycle");
 
       // Cycle 3: Full (3 nights) -> $20 (Capped)
-      expect(promo.segments![2].value).toBe(20);
-      expect(promo.segments![2].formula).toContain("(capped)");
+      expect(promo.benefitGroups![0].segments[2].value).toBe(20);
+      expect(promo.benefitGroups![0].segments[2].formula).toContain("(capped)");
 
       // Cycle 4: Start (1 night) -> $0 (Maxed Out)
-      expect(promo.segments![3].value).toBe(0);
-      expect(promo.segments![3].formula).toBe("");
-      expect(promo.segments![3].description).toBe(
+      expect(promo.benefitGroups![0].segments[3].value).toBe(0);
+      expect(promo.benefitGroups![0].segments[3].formula).toBe("");
+      expect(promo.benefitGroups![0].segments[3].description).toBe(
         "This segment no longer applies because the promotion has been maxed out."
       );
     });

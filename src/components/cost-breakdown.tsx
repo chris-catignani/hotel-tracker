@@ -17,7 +17,7 @@ function CalculationInfo({ calc }: { calc: CalculationDetail | undefined }) {
   if (!calc) return null;
 
   const content = (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div>
         <h4 className="font-semibold text-sm mb-1 hidden md:block">{calc.label}</h4>
         {calc.descriptionLines && calc.descriptionLines.length > 0 ? (
@@ -32,11 +32,53 @@ function CalculationInfo({ calc }: { calc: CalculationDetail | undefined }) {
             ))}
           </ul>
         ) : (
-          <p className="text-xs text-muted-foreground leading-relaxed">{calc.description}</p>
+          calc.description && (
+            <p className="text-xs text-muted-foreground leading-relaxed">{calc.description}</p>
+          )
         )}
       </div>
 
-      {calc.segments && calc.segments.length > 0 ? (
+      {calc.benefitGroups && calc.benefitGroups.length > 0 ? (
+        <div className="space-y-6">
+          {calc.benefitGroups.map((group) => (
+            <div key={group.name} className="space-y-3">
+              <div className="space-y-1">
+                <h5 className="text-[10px] font-bold text-foreground uppercase tracking-tight bg-muted/40 px-1.5 py-0.5 rounded w-fit">
+                  {group.name}
+                </h5>
+                <p className="text-[11px] text-muted-foreground leading-relaxed pl-0.5">
+                  {group.description}
+                </p>
+              </div>
+
+              <div className="space-y-3 pl-2 border-l-2 border-muted/50 ml-1">
+                {group.segments.map((segment) => (
+                  <div key={segment.label} className="space-y-1.5">
+                    <div className="flex justify-between items-start gap-4">
+                      <span className="text-xs font-semibold">{segment.label}</span>
+                      <span className="text-xs font-mono font-bold whitespace-nowrap text-foreground/80">
+                        {formatCurrency(segment.value)}
+                      </span>
+                    </div>
+                    {segment.formula && (
+                      <div className="rounded bg-muted/30 px-1.5 py-1 font-mono text-[9px] text-muted-foreground border border-muted-foreground/5">
+                        {segment.formula}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          <div className="border-t pt-2 flex justify-between items-center bg-muted/30 px-2 py-1.5 rounded">
+            <span className="text-[10px] font-bold uppercase">Total Applied</span>
+            <span className="text-xs font-bold font-mono">
+              {formatCurrency(calc.segments?.reduce((sum, s) => sum + s.value, 0) || 0)}
+            </span>
+          </div>
+        </div>
+      ) : calc.segments && calc.segments.length > 0 ? (
         <div className="space-y-3">
           <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
             Breakdown Ledger

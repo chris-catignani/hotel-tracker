@@ -11,11 +11,18 @@ export interface CalculationSegment {
   description: string;
 }
 
+export interface BenefitGroup {
+  name: string;
+  description: string;
+  segments: CalculationSegment[];
+}
+
 export interface CalculationDetail {
   label: string;
   formula: string;
   description: string;
   descriptionLines?: string[];
+  benefitGroups?: BenefitGroup[];
   segments?: CalculationSegment[];
 }
 
@@ -156,11 +163,9 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
     : DEFAULT_CENTS_PER_POINT;
 
   const promotions: PromotionBreakdown[] = booking.bookingPromotions.map((bp, index) => {
-    const appliedValue = Number(bp.appliedValue);
     const benefits = bp.benefitApplications ?? [];
 
-    const descriptionLines: string[] = [];
-    const segments: CalculationSegment[] = [];
+    const benefitGroups: BenefitGroup[] = [];
 
     for (const ba of benefits) {
       const b = ba.promotionBenefit;
@@ -169,6 +174,23 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
 
       const restrictions = b.restrictions || bp.promotion.restrictions;
       const isSpanned = !!(restrictions?.spanStays && restrictions?.minNightsRequired);
+
+      const benefitSegments: CalculationSegment[] = [];
+      let benefitDescriptionLine = "";
+
+      let groupName = "";
+      if (b.rewardType === "points") {
+        groupName = `${bValue.toLocaleString()} Bonus Points`;
+      } else if (b.rewardType === "eqn") {
+        groupName = `${bValue} Bonus Elite Night${bValue !== 1 ? "s" : ""}`;
+      } else if (b.rewardType === "cashback") {
+        groupName =
+          b.valueType === "percentage"
+            ? `${bValue}% Cashback`
+            : `${formatCurrency(bValue)} Cashback`;
+      } else {
+        groupName = b.rewardType.charAt(0).toUpperCase() + b.rewardType.slice(1);
+      }
 
       if (isSpanned && restrictions?.minNightsRequired) {
         const minNights = restrictions.minNightsRequired;
@@ -255,24 +277,9 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
 
           const capSuffix = isSegmentCapped ? " (capped)" : "";
 
-          let groupName = "";
-          if (b.rewardType === "points") {
-            groupName = `${bValue.toLocaleString()} Bonus Points`;
-          } else if (b.rewardType === "eqn") {
-            groupName = `${bValue} Bonus Elite Night${bValue !== 1 ? "s" : ""}`;
-          } else if (b.rewardType === "cashback") {
-            groupName =
-              b.valueType === "percentage"
-                ? `${bValue}% Cashback`
-                : `${formatCurrency(bValue)} Cashback`;
-          } else {
-            groupName = b.rewardType.charAt(0).toUpperCase() + b.rewardType.slice(1);
-          }
-
-          segments.push({
+          benefitSegments.push({
             label,
             value: segmentValue,
-            group: groupName,
             formula: isMaxedOut
               ? ""
               : nightFormula +
@@ -306,14 +313,13 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
             ? ` This bonus is pending additional stays${pendingRatio}.`
             : "";
 
-        let description = isMaxedOutOverall
+        benefitDescriptionLine = isMaxedOutOverall
           ? "This promotion has been maxed out and no further rewards apply."
           : `Earned proportional rewards for ${nightsInStay} nights towards a ${minNights}-night requirement.${proportionalSuffix}`;
 
         if (bApplied < expectedValuePerNight * nightsInStay - 0.001 && !isMaxedOutOverall) {
-          description += " Reduced by redemption caps.";
+          benefitDescriptionLine += " Reduced by redemption caps.";
         }
-        descriptionLines.push(description);
       } else {
         // Standard (Non-spanned) benefit logic
         let appliedMultiplier = 1;
@@ -390,60 +396,41 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
           benefitDescription += " Reduced by redemption caps.";
         }
 
-        let groupName = "";
-        if (b.rewardType === "points") {
-          groupName = `${bValue.toLocaleString()} Bonus Points`;
-        } else if (b.rewardType === "eqn") {
-          groupName = `${bValue} Bonus Elite Night${bValue !== 1 ? "s" : ""}`;
-        } else if (b.rewardType === "cashback") {
-          groupName =
-            b.valueType === "percentage"
-              ? `${bValue}% Cashback`
-              : `${formatCurrency(bValue)} Cashback`;
-        } else {
-          groupName = b.rewardType.charAt(0).toUpperCase() + b.rewardType.slice(1);
-        }
+        benefitDescriptionLine = isMaxedOutOverall
+          ? "This promotion has been maxed out and no further rewards apply."
+          : benefitDescription;
 
         // Standard segment
-        segments.push({
+        benefitSegments.push({
           label: `Benefit: ${b.rewardType}`,
           value: bApplied,
-          group: groupName,
           formula: isMaxedOutOverall ? "" : `${benefitFormula} = ${formatCurrency(bApplied)}`,
           description: isMaxedOutOverall
             ? "This segment no longer applies because the promotion has been maxed out."
             : benefitDescription,
         });
-
-        descriptionLines.push(
-          isMaxedOutOverall
-            ? "This promotion has been maxed out and no further rewards apply."
-            : benefitDescription
-        );
       }
+
+      benefitGroups.push({
+        name: groupName,
+        description: benefitDescriptionLine,
+        segments: benefitSegments,
+      });
     }
 
-    const formula =
-      segments.length > 1
-        ? segments.map((s) => s.formula).join("; ") + ` = ${formatCurrency(appliedValue)} total`
-        : segments.length === 1
-          ? segments[0].formula
-          : formatCurrency(appliedValue);
-
-    const description =
-      descriptionLines.length > 0
-        ? descriptionLines.join(" ")
-        : `Applied promotion value: ${formatCurrency(appliedValue)}.`;
+    const totalAppliedValue = benefitGroups.reduce(
+      (sum, group) => sum + group.segments.reduce((sSum, s) => sSum + s.value, 0),
+      0
+    );
 
     return {
       id: bp.id || String(index),
       name: bp.promotion.name,
-      appliedValue,
+      appliedValue: totalAppliedValue,
       label: "Promotion",
-      formula,
-      description,
-      descriptionLines,
-      segments,
+      formula: "", // Not used by promotions anymore since they have segments
+      description: "", // Not used by promotions anymore
+      benefitGroups,
     };
   });
   const promoSavings = promotions.reduce((sum, p) => sum + p.appliedValue, 0);
