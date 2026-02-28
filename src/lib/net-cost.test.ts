@@ -701,4 +701,112 @@ describe("net-cost", () => {
     expect(card?.segments![0].value).toBe(1.5); // 100 * 1 * 0.015
     expect(card?.segments![1].value).toBe(4.5); // 100 * 3 * 0.015
   });
+
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  describe("Capped and Maxed Out Promotions (Issue #157)", () => {
+    it("should omit formula and show maxed out message for spanned reward when value is 0", () => {
+      const booking: NetCostBooking = {
+        ...mockBaseBooking,
+        numNights: 3,
+        bookingPromotions: [
+          {
+            id: "bp1",
+            promotionId: "p1",
+            promotion: {
+              name: "Hyatt Promo",
+              restrictions: { spanStays: true, minNightsRequired: 3 } as unknown as any,
+            } as any,
+            appliedValue: 0,
+            benefitApplications: [
+              {
+                promotionBenefit: {
+                  rewardType: "points",
+                  valueType: "fixed",
+                  value: 3000,
+                } as any,
+                appliedValue: 0,
+                eligibleNightsAtBooking: 3,
+              },
+            ] as any[],
+          },
+        ],
+      };
+
+      const breakdown = getNetCostBreakdown(booking);
+      const promo = breakdown.promotions[0];
+      const segment = promo.segments![0];
+
+      expect(segment.value).toBe(0);
+      expect(segment.formula).toBe("");
+      expect(segment.description).toBe(
+        "This segment no longer applies because the promotion has been maxed out."
+      );
+      expect(promo.description).toBe(
+        "This promotion has been maxed out and no further rewards apply."
+      );
+    });
+
+    it("should reward first cycles fully and cap the remaining nights ('split the pot')", () => {
+      // Stay: 9 nights. Remaining capacity: $120 (6000 pts).
+      // Cycle 1 (nights 5-6): 2/3 nights -> $40 (Full)
+      // Cycle 2 (nights 7-9): 3/3 nights -> $60 (Full)
+      // Cycle 3 (nights 10-12): 3/3 nights -> $20 (Capped)
+      // Cycle 4 (night 13): 1/3 nights -> $0 (Maxed Out)
+      const booking: NetCostBooking = {
+        ...mockBaseBooking,
+        hotelChain: {
+          ...mockBaseBooking.hotelChain,
+          pointType: { name: "Test Pts", centsPerPoint: 0.02 },
+        } as unknown as any,
+        numNights: 9,
+        bookingPromotions: [
+          {
+            id: "bp2",
+            promotionId: "p2",
+            promotion: {
+              name: "Hyatt Promo",
+              restrictions: { spanStays: true, minNightsRequired: 3 } as unknown as any,
+            } as any,
+            appliedValue: 120,
+            benefitApplications: [
+              {
+                promotionBenefit: {
+                  rewardType: "points",
+                  valueType: "fixed",
+                  value: 3000,
+                } as any,
+                appliedValue: 120,
+                eligibleNightsAtBooking: 13, // 4 prior + 9 current
+              },
+            ] as any[],
+          },
+        ],
+      };
+
+      const breakdown = getNetCostBreakdown(booking);
+      const promo = breakdown.promotions[0];
+
+      expect(promo.segments).toHaveLength(4);
+
+      // Cycle 1: Completion (2 nights) -> $40
+      expect(promo.segments![0].value).toBe(40);
+      expect(promo.segments![0].label).toContain("Cycle Completion");
+
+      // Cycle 2: Full (3 nights) -> $60
+      expect(promo.segments![1].value).toBe(60);
+      expect(promo.segments![1].label).toContain("Full Reward Cycle");
+
+      // Cycle 3: Full (3 nights) -> $20 (Capped)
+      expect(promo.segments![2].value).toBe(20);
+      expect(promo.segments![2].formula).toContain("(capped)");
+
+      // Cycle 4: Start (1 night) -> $0 (Maxed Out)
+      expect(promo.segments![3].value).toBe(0);
+      expect(promo.segments![3].formula).toBe("");
+      expect(promo.segments![3].description).toBe(
+        "This segment no longer applies because the promotion has been maxed out."
+      );
+    });
+  });
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 });
