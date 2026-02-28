@@ -1641,4 +1641,39 @@ describe("spanStays", () => {
     expect(matched[0].bonusPointsApplied).toBe(2000);
     expect(matched[0].appliedValue).toBe(40); // 2000 pts * 0.02 $/pt
   });
+
+  it("should enforce promotion-level points cap across multiple benefits", () => {
+    const promo = makePromo({
+      restrictions: makeRestrictions({ maxTotalBonusPoints: 5000 }),
+      benefits: [
+        {
+          id: "b1",
+          rewardType: PromotionRewardType.points,
+          valueType: PromotionBenefitValueType.fixed,
+          value: new Prisma.Decimal(4000),
+          certType: null,
+          pointsMultiplierBasis: null,
+          sortOrder: 0,
+          restrictions: null,
+        },
+        {
+          id: "b2",
+          rewardType: PromotionRewardType.points,
+          valueType: PromotionBenefitValueType.fixed,
+          value: new Prisma.Decimal(2000),
+          certType: null,
+          pointsMultiplierBasis: null,
+          sortOrder: 1,
+          restrictions: null,
+        },
+      ],
+    });
+
+    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    expect(matched).toHaveLength(1);
+    // Total requested: 6000. Cap: 5000.
+    expect(matched[0].bonusPointsApplied).toBe(5000);
+    // Applied value should be scaled: 5000 * 0.015 $/pt = 75
+    expect(matched[0].appliedValue).toBe(75);
+  });
 });
