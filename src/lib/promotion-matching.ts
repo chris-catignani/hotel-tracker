@@ -902,8 +902,9 @@ export async function reevaluateBookings(bookingIds: string[]): Promise<void> {
 
 /**
  * Re-evaluates and applies promotions for a single booking.
+ * Returns the list of promotion IDs that were applied.
  */
-export async function matchPromotionsForBooking(bookingId: string): Promise<BookingPromotion[]> {
+export async function matchPromotionsForBooking(bookingId: string): Promise<string[]> {
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
     include: BOOKING_INCLUDE,
@@ -931,7 +932,9 @@ export async function matchPromotionsForBooking(bookingId: string): Promise<Book
   const priorUsage = await fetchPromotionUsage(constrainedPromos, booking, bookingId);
 
   const matched = calculateMatchedPromotions(booking, activePromotions, priorUsage);
-  return applyMatchedPromotions(bookingId, matched);
+  await applyMatchedPromotions(bookingId, matched);
+
+  return matched.map((m) => m.promotionId);
 }
 
 /**
@@ -981,11 +984,35 @@ export async function matchPromotionsForAffectedBookings(promotionId: string): P
 }
 
 /**
+ * Finds all bookings that occur after a given check-in date.
+ */
+export async function getSubsequentBookingIds(checkIn: Date): Promise<string[]> {
+  const subsequentBookings = await prisma.booking.findMany({
+    where: {
+      checkIn: {
+        gt: checkIn,
+      },
+    },
+    select: { id: true },
+    orderBy: { checkIn: "asc" },
+  });
+
+  return subsequentBookings.map((b) => b.id);
+}
+
+/**
  * Re-evaluates all bookings that occur after a given booking.
  * This is necessary because changes to an earlier booking can affect the
  * redemption capacity and eligibility for chronologically later stays.
+ *
+ * Optimization: If promotionIds are provided, only re-evaluates subsequent
+ * bookings that either currently have one of those promotions or could
+ * potentially match them.
  */
-export async function reevaluateSubsequentBookings(bookingId: string): Promise<void> {
+export async function reevaluateSubsequentBookings(
+  bookingId: string,
+  promotionIds?: string[]
+): Promise<void> {
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
     select: { checkIn: true },
@@ -993,17 +1020,29 @@ export async function reevaluateSubsequentBookings(bookingId: string): Promise<v
 
   if (!booking) return;
 
-  const subsequentBookings = await prisma.booking.findMany({
-    where: {
-      checkIn: {
-        gt: booking.checkIn,
-      },
-    },
-    select: { id: true },
-    orderBy: { checkIn: "asc" },
-  });
+  let queryIds: string[] = [];
 
-  if (subsequentBookings.length > 0) {
-    await reevaluateBookings(subsequentBookings.map((b) => b.id));
+  if (promotionIds && promotionIds.length > 0) {
+    // Optimized path: only find bookings after this stay that match the same promos
+    const affected = await prisma.booking.findMany({
+      where: {
+        checkIn: { gt: booking.checkIn },
+        bookingPromotions: {
+          some: {
+            promotionId: { in: promotionIds },
+          },
+        },
+      },
+      select: { id: true },
+      orderBy: { checkIn: "asc" },
+    });
+    queryIds = affected.map((b) => b.id);
+  } else {
+    // Fallback: re-evaluate all future bookings (e.g. on deletion where we don't know what matched)
+    queryIds = await getSubsequentBookingIds(booking.checkIn);
+  }
+
+  if (queryIds.length > 0) {
+    await reevaluateBookings(queryIds);
   }
 }

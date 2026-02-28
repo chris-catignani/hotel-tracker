@@ -166,10 +166,10 @@ export async function POST(request: NextRequest) {
     });
 
     // Auto-run promotion matching
-    await matchPromotionsForBooking(booking.id);
+    const appliedPromoIds = await matchPromotionsForBooking(booking.id);
 
     // Re-evaluate subsequent bookings if this is an earlier stay
-    await reevaluateSubsequentBookings(booking.id);
+    await reevaluateSubsequentBookings(booking.id, appliedPromoIds);
 
     // Fetch the booking with all relations to return
     const fullBooking = await prisma.booking.findUnique({
