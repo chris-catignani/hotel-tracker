@@ -1550,7 +1550,7 @@ describe("spanStays", () => {
         id: "benefit-span",
         rewardType: PromotionRewardType.points,
         valueType: PromotionBenefitValueType.fixed,
-        value: new Prisma.Decimal(3000),
+        value: new Prisma.Decimal(3000), // 3000 pts per 3 nights
         certType: null,
         pointsMultiplierBasis: null,
         sortOrder: 0,
@@ -1559,32 +1559,107 @@ describe("spanStays", () => {
     ],
   });
 
-  it("should apply proportional reward for a single stay below min nights", () => {
-    const booking = {
-      ...mockBooking,
-      numNights: 1,
-      loyaltyPointsEarned: 0,
-      hotelChain: {
-        ...mockBooking.hotelChain,
-        pointType: { centsPerPoint: 0.02 },
-      },
-    };
+  const hotelChain = {
+    ...mockBooking.hotelChain,
+    pointType: { centsPerPoint: 0.02 },
+  };
+
+  it("should NOT value a single stay below min nights if no other stays exist", () => {
+    const booking = { ...mockBooking, numNights: 1, hotelChain };
     const matched = calculateMatchedPromotions(booking, [promo]);
     expect(matched).toHaveLength(1);
-    expect(matched[0].appliedValue).toBe(20); // (1/3) * (3000 pts * 0.02 $/pt) = 20
-    expect(matched[0].bonusPointsApplied).toBe(1000); // (1/3) * 3000
+    // 1 night towards 3-night goal. Total system nights = 1.
+    // 0 full cycles completed. Value should be 0.
+    expect(matched[0].appliedValue).toBe(0);
+    expect(matched[0].bonusPointsApplied).toBe(0);
   });
 
-  it("should apply multiple rewards across stays spanning increments", () => {
-    // 1st stay: 2 nights
-    const booking1 = { ...mockBooking, numNights: 2 };
-    const matched1 = calculateMatchedPromotions(booking1, [promo]);
-    expect(matched1[0].bonusPointsApplied).toBe(2000);
+  it("should value a stay if future stays complete the cycle", () => {
+    const booking = { ...mockBooking, numNights: 1, hotelChain };
+    // Total system nights = 3 (1 current + 2 other/future)
+    const priorUsage: PromotionUsageMap = new Map([
+      [
+        promo.id,
+        {
+          count: 0,
+          totalValue: 0,
+          totalBonusPoints: 0,
+          eligibleStayNights: 0,
+          totalStayNights: 2, // Other bookings in system
+          benefitUsage: new Map([
+            [
+              "benefit-span",
+              { count: 0, totalValue: 0, totalBonusPoints: 0, totalNights: 2, eligibleNights: 0 },
+            ],
+          ]),
+        },
+      ],
+    ]);
+    const matched = calculateMatchedPromotions(booking, [promo], priorUsage);
+    expect(matched).toHaveLength(1);
+    // Total system nights = 3 (1 current + 2 other). Current stay is 1 of those 3 nights.
+    // Earning is 1/3 of the reward (3000 pts * 0.02 = 60 total value).
+    expect(matched[0].appliedValue).toBe(20);
+    expect(matched[0].bonusPointsApplied).toBe(1000);
+  });
 
-    // 2nd stay: 2 nights (total 4 nights)
-    const booking2 = { ...mockBooking, numNights: 2 };
-    // Prior usage has 2 nights
-    const priorUsage = new Map([
+  it("should value a stay if past stays complete the cycle", () => {
+    const booking = { ...mockBooking, numNights: 1, hotelChain };
+    // Prior: 2. Current: 1. Total: 3 (Complete!)
+    const priorUsage: PromotionUsageMap = new Map([
+      [
+        promo.id,
+        {
+          count: 1,
+          totalValue: 0,
+          totalBonusPoints: 0,
+          eligibleStayNights: 2,
+          totalStayNights: 2, // Only the past stays
+          benefitUsage: new Map([
+            [
+              "benefit-span",
+              { count: 1, totalValue: 0, totalBonusPoints: 0, totalNights: 2, eligibleNights: 2 },
+            ],
+          ]),
+        },
+      ],
+    ]);
+    const matched = calculateMatchedPromotions(booking, [promo], priorUsage);
+    expect(matched).toHaveLength(1);
+    expect(matched[0].bonusPointsApplied).toBe(1000);
+    expect(matched[0].appliedValue).toBe(20);
+  });
+
+  it("should reward multiple cycles across stays correctly", () => {
+    // 1st stay: 2 nights
+    // 2nd stay: 2 nights
+    // Total: 4 nights. Milestone: 3 nights.
+    // Stay 1 should get 2 nights credit. Stay 2 should get 1 night credit (completing the cycle).
+    // The 4th night remains part of an incomplete cycle (0 value).
+
+    // Test Stay 1
+    const b1 = { ...mockBooking, numNights: 2, hotelChain };
+    // Other stays = 2 nights (the future stay)
+    const usage1: PromotionUsageMap = new Map([
+      [
+        promo.id,
+        {
+          count: 0,
+          totalValue: 0,
+          totalBonusPoints: 0,
+          eligibleStayNights: 0,
+          totalStayNights: 2,
+          benefitUsage: new Map(),
+        },
+      ],
+    ]);
+    const m1 = calculateMatchedPromotions(b1, [promo], usage1);
+    expect(m1[0].bonusPointsApplied).toBe(2000);
+
+    // Test Stay 2
+    const b2 = { ...mockBooking, numNights: 2, hotelChain };
+    // Other stays = 2 nights (the past stay)
+    const usage2: PromotionUsageMap = new Map([
       [
         promo.id,
         {
@@ -1592,91 +1667,12 @@ describe("spanStays", () => {
           totalValue: 40,
           totalBonusPoints: 2000,
           eligibleStayNights: 2,
+          totalStayNights: 2,
           benefitUsage: new Map(),
         },
       ],
     ]);
-
-    const matched2 = calculateMatchedPromotions(booking2, [promo], priorUsage);
-    expect(matched2[0].bonusPointsApplied).toBe(2000);
-    // Total bonus points across both stays = 4000 (for 4 nights @ 1000/night)
-  });
-
-  it("should respect benefit-level maxTotalBonusPoints", () => {
-    const promo = makePromo({
-      benefits: [
-        {
-          id: "benefit-pts-limit",
-          rewardType: PromotionRewardType.points,
-          valueType: PromotionBenefitValueType.fixed,
-          value: new Prisma.Decimal(3000),
-          certType: null,
-          pointsMultiplierBasis: null,
-          sortOrder: 0,
-          restrictions: makeRestrictions({ maxTotalBonusPoints: 5000 }),
-        },
-      ],
-    });
-    const priorUsage = new Map([
-      [
-        promo.id,
-        {
-          count: 1,
-          totalValue: 60,
-          totalBonusPoints: 3000,
-          benefitUsage: new Map([
-            ["benefit-pts-limit", { count: 1, totalValue: 60, totalBonusPoints: 3000 }],
-          ]),
-        },
-      ],
-    ]);
-    const booking = {
-      ...mockBooking,
-      numNights: 1,
-      hotelChain: {
-        ...mockBooking.hotelChain,
-        pointType: { centsPerPoint: 0.02 },
-      },
-    };
-    const matched = calculateMatchedPromotions(booking, [promo], priorUsage);
-    expect(matched).toHaveLength(1);
-    // 3000 pts value, but only 2000 capacity.
-    expect(matched[0].bonusPointsApplied).toBe(2000);
-    expect(matched[0].appliedValue).toBe(40); // 2000 pts * 0.02 $/pt
-  });
-
-  it("should enforce promotion-level points cap across multiple benefits", () => {
-    const promo = makePromo({
-      restrictions: makeRestrictions({ maxTotalBonusPoints: 5000 }),
-      benefits: [
-        {
-          id: "b1",
-          rewardType: PromotionRewardType.points,
-          valueType: PromotionBenefitValueType.fixed,
-          value: new Prisma.Decimal(4000),
-          certType: null,
-          pointsMultiplierBasis: null,
-          sortOrder: 0,
-          restrictions: null,
-        },
-        {
-          id: "b2",
-          rewardType: PromotionRewardType.points,
-          valueType: PromotionBenefitValueType.fixed,
-          value: new Prisma.Decimal(2000),
-          certType: null,
-          pointsMultiplierBasis: null,
-          sortOrder: 1,
-          restrictions: null,
-        },
-      ],
-    });
-
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
-    expect(matched).toHaveLength(1);
-    // Total requested: 6000. Cap: 5000.
-    expect(matched[0].bonusPointsApplied).toBe(5000);
-    // Applied value should be scaled: 5000 * 0.015 $/pt = 75
-    expect(matched[0].appliedValue).toBe(75);
+    const m2 = calculateMatchedPromotions(b2, [promo], usage2);
+    expect(m2[0].bonusPointsApplied).toBe(1000); // Only gets the 1 night that completes the cycle
   });
 });

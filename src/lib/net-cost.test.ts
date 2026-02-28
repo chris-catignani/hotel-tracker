@@ -682,6 +682,7 @@ describe("net-cost", () => {
             {
               appliedValue: 10,
               eligibleNightsAtBooking: 1,
+              totalNights: 3, // Completes cycle eventually!
               promotionBenefit: {
                 rewardType: "cashback",
                 valueType: "fixed",
@@ -705,6 +706,42 @@ describe("net-cost", () => {
     );
   });
 
+  it("should show 0 value for spanned promotion if cycle is NEVER completed by system bookings", () => {
+    const booking: NetCostBooking = {
+      ...mockBaseBooking,
+      numNights: 1,
+      bookingPromotions: [
+        {
+          appliedValue: 0,
+          eligibleNightsAtBooking: 1,
+          promotion: {
+            name: "Unearned Promo",
+            restrictions: { minNightsRequired: 3, spanStays: true },
+            benefits: [],
+          },
+          benefitApplications: [
+            {
+              appliedValue: 0,
+              eligibleNightsAtBooking: 1,
+              totalNights: 1, // Stay is only 1 night total in system
+              promotionBenefit: {
+                rewardType: "cashback",
+                valueType: "fixed",
+                value: 30,
+                certType: null,
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const result = getNetCostBreakdown(booking);
+    const promo = result.promotions[0];
+    expect(promo.groups[0].segments[0].value).toBe(0);
+    expect(promo.groups[0].segments[0].formula).toBe("");
+    expect(promo.groups[0].segments[0].description).toContain("cycle remains incomplete");
+  });
+
   it("should provide segments for a complex multi-night spanned stay", () => {
     const booking: NetCostBooking = {
       ...mockBaseBooking,
@@ -722,6 +759,7 @@ describe("net-cost", () => {
             {
               appliedValue: 40,
               eligibleNightsAtBooking: 4,
+              totalNights: 6, // 6 nights total in system (includes this stay)
               promotionBenefit: {
                 rewardType: "cashback",
                 valueType: "fixed",
@@ -801,6 +839,7 @@ describe("net-cost", () => {
                 } as any,
                 appliedValue: 0,
                 eligibleNightsAtBooking: 3,
+                totalNights: 3, // Complete cycle, but maxed out
               },
             ] as any[],
           },
@@ -827,7 +866,7 @@ describe("net-cost", () => {
       // Cycle 1 (nights 5-6): 2/3 nights -> $40 (Full)
       // Cycle 2 (nights 7-9): 3/3 nights -> $60 (Full)
       // Cycle 3 (nights 10-12): 3/3 nights -> $20 (Capped)
-      // Cycle 4 (night 13): 1/3 nights -> $0 (Maxed Out)
+      // Cycle 4 (night 13): 1/3 nights -> $0 (Maxed Out / Unearned)
       const booking: NetCostBooking = {
         ...mockBaseBooking,
         hotelChain: {
@@ -853,6 +892,7 @@ describe("net-cost", () => {
                 } as any,
                 appliedValue: 120,
                 eligibleNightsAtBooking: 13,
+                totalNights: 12, // 12 nights total in system = 4 cycles. Stay ends at 13th night though.
               },
             ] as any[],
           },
@@ -877,11 +917,11 @@ describe("net-cost", () => {
       expect(promo.groups[0].segments[2].value).toBe(20);
       expect(promo.groups[0].segments[2].formula).toContain("(capped)");
 
-      // Cycle 4: Start (1 night) -> $0 (Maxed Out)
+      // Cycle 4: Start (1 night) -> $0 (Maxed Out / Unearned)
       expect(promo.groups[0].segments[3].value).toBe(0);
       expect(promo.groups[0].segments[3].formula).toBe("");
       expect(promo.groups[0].segments[3].description).toBe(
-        "This segment no longer applies because the promotion has been maxed out."
+        "This cycle remains incomplete (0 of 3 nights total in system). Missing nights to earn."
       );
     });
   });

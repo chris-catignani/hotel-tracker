@@ -14,11 +14,18 @@ export type PromotionUsage = {
   totalValue: number;
   totalBonusPoints: number;
   eligibleStayCount?: number;
-  eligibleStayNights?: number;
+  eligibleStayNights?: number; // nights up to current booking
+  totalStayNights?: number; // total nights across ALL bookings
   appliedSubBrandIds?: Set<string | null>;
   benefitUsage?: Map<
     string,
-    { count: number; totalValue: number; totalBonusPoints: number; eligibleNights?: number }
+    {
+      count: number;
+      totalValue: number;
+      totalBonusPoints: number;
+      eligibleNights?: number;
+      totalNights?: number;
+    }
   >;
 };
 export type PromotionUsageMap = Map<string, PromotionUsage>;
@@ -412,13 +419,29 @@ export function calculateMatchedPromotions(
         benefit.restrictions?.minNightsRequired &&
         benefit.restrictions.minNightsRequired > 0
       ) {
+        const minNights = benefit.restrictions.minNightsRequired;
         if (benefit.restrictions.spanStays) {
-          // Proportionally apply based on nights
-          const multiplier = booking.numNights / benefit.restrictions.minNightsRequired;
+          // Guaranteed rewards logic: only credit nights that contribute to a COMPLETED cycle
+          // across all bookings in the system (past, current, and future).
+          const priorNights = usage?.benefitUsage?.get(benefit.id)?.eligibleNights ?? 0;
+          const currentNights = booking.numNights;
+          const otherStaysTotalNights = usage?.benefitUsage?.get(benefit.id)?.totalNights ?? 0;
+          const totalSystemNights = otherStaysTotalNights + currentNights;
+
+          // How many total nights in the system are part of a completed cycle?
+          const maxRewardableTotalNights = Math.floor(totalSystemNights / minNights) * minNights;
+
+          // How many of the current stay's nights fall within that "guaranteed" window?
+          const currentNightsInGuaranteedWindow = Math.min(
+            currentNights,
+            Math.max(0, maxRewardableTotalNights - priorNights)
+          );
+
+          const multiplier = currentNightsInGuaranteedWindow / minNights;
           appliedValue *= multiplier;
           benefitBonusPoints *= multiplier;
         } else {
-          const multiplier = Math.floor(booking.numNights / benefit.restrictions.minNightsRequired);
+          const multiplier = Math.floor(booking.numNights / minNights);
           appliedValue *= multiplier;
           benefitBonusPoints *= multiplier;
         }
@@ -468,7 +491,20 @@ export function calculateMatchedPromotions(
 
     // Proportional scaling for spanStays
     if (r?.spanStays && r?.minNightsRequired && r.minNightsRequired > 0) {
-      const multiplier = booking.numNights / r.minNightsRequired;
+      const minNights = r.minNightsRequired;
+      const priorNights = usage?.eligibleStayNights ?? 0;
+      const currentNights = booking.numNights;
+      const otherStaysTotalNights = usage?.totalStayNights ?? 0;
+      const totalSystemNights = otherStaysTotalNights + currentNights;
+
+      // Guaranteed rewards logic: only credit nights that contribute to a COMPLETED cycle
+      const maxRewardableTotalNights = Math.floor(totalSystemNights / minNights) * minNights;
+      const currentNightsInGuaranteedWindow = Math.min(
+        currentNights,
+        Math.max(0, maxRewardableTotalNights - priorNights)
+      );
+
+      const multiplier = currentNightsInGuaranteedWindow / minNights;
       totalAppliedValue *= multiplier;
       totalBonusPoints *= multiplier;
 
@@ -608,6 +644,13 @@ async function fetchPromotionUsage(
   const promotionIds = promotions.map((p) => p.id);
   if (promotionIds.length === 0) return usageMap;
 
+  const benefitToPromoMap = new Map<string, string>();
+  for (const p of promotions) {
+    for (const b of [...p.benefits, ...p.tiers.flatMap((t) => t.benefits)]) {
+      benefitToPromoMap.set(b.id, p.id);
+    }
+  }
+
   // Single aggregation query to get count, totalValue, and totalBonusPoints
   const usage = await prisma.bookingPromotion.groupBy({
     by: ["promotionId"],
@@ -640,13 +683,6 @@ async function fetchPromotionUsage(
   ]);
 
   if (allBenefitIds.length > 0) {
-    const benefitToPromoMap = new Map<string, string>();
-    for (const p of promotions) {
-      for (const b of [...p.benefits, ...p.tiers.flatMap((t) => t.benefits)]) {
-        benefitToPromoMap.set(b.id, p.id);
-      }
-    }
-
     const benefitUsage = await prisma.bookingPromotionBenefit.groupBy({
       by: ["promotionBenefitId"],
       where: {
@@ -700,6 +736,36 @@ async function fetchPromotionUsage(
       }
     }
 
+    // Fetch total nights across ALL OTHER bookings for these benefits
+    const otherBenefitTotalNights = await prisma.bookingPromotionBenefit.findMany({
+      where: {
+        promotionBenefitId: { in: allBenefitIds },
+        ...(excludeBookingId ? { bookingPromotion: { bookingId: { not: excludeBookingId } } } : {}),
+      },
+      include: {
+        bookingPromotion: {
+          select: {
+            booking: {
+              select: {
+                numNights: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const otherTotalNightsMap = new Map<string, number>();
+    for (const btn of otherBenefitTotalNights) {
+      if (btn.bookingPromotion?.booking) {
+        const current = otherTotalNightsMap.get(btn.promotionBenefitId) ?? 0;
+        otherTotalNightsMap.set(
+          btn.promotionBenefitId,
+          current + btn.bookingPromotion.booking.numNights
+        );
+      }
+    }
+
     for (const row of benefitUsage) {
       const promoId = benefitToPromoMap.get(row.promotionBenefitId);
       if (promoId) {
@@ -710,6 +776,7 @@ async function fetchPromotionUsage(
             totalValue: Number(row._sum.appliedValue ?? 0),
             totalBonusPoints: row._sum.bonusPointsApplied ?? 0,
             eligibleNights: nightsMap.get(row.promotionBenefitId) ?? 0,
+            totalNights: otherTotalNightsMap.get(row.promotionBenefitId) ?? 0,
           });
         }
       }
@@ -762,38 +829,97 @@ async function fetchPromotionUsage(
     usageMap.set(promo.id, { ...existing, eligibleStayCount: eligibleCount });
   }
 
-  // Fetch eligibleStayNights for spanStays promotions
+  // Fetch potential nights for spanStays promotions
   const spanStaysPromos = promotions.filter((p) => p.restrictions?.spanStays);
-  if (spanStaysPromos.length > 0) {
-    const spanStaysPromoIds = spanStaysPromos.map((p) => p.id);
-    const bookingPromos = await prisma.bookingPromotion.findMany({
-      where: {
-        promotionId: { in: spanStaysPromoIds },
-        ...(excludeBookingId ? { bookingId: { not: excludeBookingId } } : {}),
-        booking: {
-          checkIn: {
-            lt: new Date(booking.checkIn),
-          },
-        },
-      },
-      include: { booking: { select: { numNights: true } } },
-    });
+  for (const promo of spanStaysPromos) {
+    const currentCheckIn = new Date(booking.checkIn);
 
-    const nightsByPromo = new Map<string, number>();
-    for (const bp of bookingPromos) {
-      const current = nightsByPromo.get(bp.promotionId) ?? 0;
-      nightsByPromo.set(bp.promotionId, current + bp.booking.numNights);
+    // Build the same filter used for tiered stay counting
+    let subBrandFilter: Record<string, unknown> = {};
+    const r = promo.restrictions;
+    if (r) {
+      const includeList = r.subBrandRestrictions.filter((s) => s.mode === "include");
+      const excludeList = r.subBrandRestrictions.filter((s) => s.mode === "exclude");
+      if (includeList.length > 0) {
+        subBrandFilter = {
+          hotelChainSubBrandId: { in: includeList.map((s) => s.hotelChainSubBrandId) },
+        };
+      } else if (excludeList.length > 0) {
+        subBrandFilter = {
+          NOT: {
+            hotelChainSubBrandId: { in: excludeList.map((s) => s.hotelChainSubBrandId) },
+          },
+        };
+      }
     }
 
-    for (const promo of spanStaysPromos) {
-      const nights = nightsByPromo.get(promo.id) ?? 0;
-      const existing = usageMap.get(promo.id) ?? {
-        count: 0,
-        totalValue: 0,
-        totalBonusPoints: 0,
-        benefitUsage: new Map(),
-      };
-      usageMap.set(promo.id, { ...existing, eligibleStayNights: nights });
+    const commonFilter = {
+      hotelChainId: promo.hotelChainId ?? undefined,
+      ...(promo.creditCardId !== null ? { creditCardId: promo.creditCardId } : {}),
+      ...(promo.shoppingPortalId !== null ? { shoppingPortalId: promo.shoppingPortalId } : {}),
+      ...subBrandFilter,
+      checkIn: {
+        ...(promo.startDate ? { gte: promo.startDate } : {}),
+        ...(promo.endDate ? { lte: promo.endDate } : {}),
+      },
+    };
+
+    // 1. Nights BEFORE this stay
+    const priorNightsData = await prisma.booking.aggregate({
+      where: {
+        ...commonFilter,
+        ...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
+        checkIn: {
+          ...commonFilter.checkIn,
+          lt: currentCheckIn,
+        },
+      },
+      _sum: { numNights: true },
+    });
+
+    // 2. ALL OTHER nights in system (excluding current stay)
+    const otherNightsData = await prisma.booking.aggregate({
+      where: {
+        ...commonFilter,
+        ...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
+      },
+      _sum: { numNights: true },
+    });
+
+    const existing = usageMap.get(promo.id) ?? {
+      count: 0,
+      totalValue: 0,
+      totalBonusPoints: 0,
+      benefitUsage: new Map(),
+    };
+
+    usageMap.set(promo.id, {
+      ...existing,
+      eligibleStayNights: priorNightsData._sum.numNights ?? 0,
+      totalStayNights: otherNightsData._sum.numNights ?? 0,
+    });
+  }
+
+  // Fetch benefit-level potential nights if benefit has individual spanStays
+  const spannedBenefits = promotions.flatMap((p) =>
+    [...p.benefits, ...p.tiers.flatMap((t) => t.benefits)].filter((b) => b.restrictions?.spanStays)
+  );
+
+  for (const benefit of spannedBenefits) {
+    // Note: In current system, benefit-level criteria matches promotion-level criteria
+    // but we fetch nights specifically for benefits that have individual spanStays flags.
+    // For simplicity, we reuse the promo usage map values if they exist, or fetch similar if needed.
+    const promoId = benefitToPromoMap.get(benefit.id);
+    if (promoId) {
+      const pUsage = usageMap.get(promoId);
+      const bUsage = pUsage?.benefitUsage?.get(benefit.id);
+      if (pUsage && bUsage) {
+        pUsage.benefitUsage.set(benefit.id, {
+          ...bUsage,
+          eligibleNights: pUsage.eligibleStayNights ?? 0,
+          totalNights: pUsage.totalStayNights ?? 0,
+        });
+      }
     }
   }
 

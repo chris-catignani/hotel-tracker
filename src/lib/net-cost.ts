@@ -193,8 +193,13 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
       if (isSpanned && restrictions?.minNightsRequired) {
         const minNights = restrictions.minNightsRequired;
         const cumulativeAtEnd = ba.eligibleNightsAtBooking || bp.eligibleNightsAtBooking || 0;
+        const totalSystemNights = ba.totalNights || bp.totalStayNights || 0;
         const nightsInStay = booking.numNights;
         const cumulativeAtStart = Math.max(0, cumulativeAtEnd - nightsInStay);
+
+        // Guaranteed rewards logic: only credit nights that contribute to a COMPLETED cycle
+        // across all bookings in the system (past, current, and future).
+        const maxRewardableTotalNights = Math.floor(totalSystemNights / minNights) * minNights;
 
         let expectedValuePerNight = 0;
         if (b.rewardType === "points") {
@@ -224,15 +229,21 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
           );
 
           const segmentEndProgress = (currentStart + nightsInThisSegment) % minNights;
-          const isCycleFinished = segmentEndProgress === 0;
+          const isCycleFinishedInStay = segmentEndProgress === 0;
+          const isCycleEventuallyFinished =
+            currentStart + nightsInThisSegment <= maxRewardableTotalNights;
 
           // 'Fill Up' strategy: Give this segment its full expected value until we run out of bApplied
           const expectedSegmentValue = expectedValuePerNight * nightsInThisSegment;
-          const segmentValue = Math.min(remainingBApplied, expectedSegmentValue);
+          const segmentValue = isCycleEventuallyFinished
+            ? Math.min(remainingBApplied, expectedSegmentValue)
+            : 0;
           remainingBApplied -= segmentValue;
 
           const isSegmentCapped =
-            expectedSegmentValue > 0 && segmentValue < expectedSegmentValue - 0.001;
+            expectedSegmentValue > 0 &&
+            segmentValue < expectedSegmentValue - 0.001 &&
+            isCycleEventuallyFinished;
           const isMaxedOut = isSegmentCapped && segmentValue < 0.01;
 
           let label = "";
@@ -247,7 +258,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
               description = `Started a new reward cycle. Pending more nights to complete.`;
             }
           } else {
-            if (isCycleFinished) {
+            if (isCycleFinishedInStay) {
               label = `Cycle Completion (${nightsInThisSegment} nights)`;
               description = `Completed the reward cycle started in a previous stay.`;
             } else {
@@ -262,7 +273,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
               : `${nightsInThisSegment} nights towards ${minNights}-night goal`;
 
           let nightFormula = "";
-          if (!isMaxedOut) {
+          if (!isMaxedOut && isCycleEventuallyFinished) {
             if (b.rewardType === "points") {
               const centsStr = formatCents(hotelCentsPerPoint);
               nightFormula = `(${nightProgressLabel}) × ${bValue.toLocaleString()} bonus pts × ${centsStr}¢`;
@@ -278,17 +289,21 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
           benefitSegments.push({
             label,
             value: segmentValue,
-            formula: isMaxedOut
+            formula: !isCycleEventuallyFinished
               ? ""
-              : nightFormula +
-                ` = ${formatCurrency(segmentValue)}` +
-                capSuffix +
-                (isCycleFinished ? "" : " (pending)"),
-            description: isMaxedOut
-              ? "This segment no longer applies because the promotion has been maxed out."
-              : description +
-                (isCycleFinished ? " (Goal Met!)" : " (Pending)") +
-                (isSegmentCapped ? " Reduced by redemption caps." : ""),
+              : isMaxedOut
+                ? ""
+                : nightFormula +
+                  ` = ${formatCurrency(segmentValue)}` +
+                  capSuffix +
+                  (isCycleFinishedInStay ? "" : " (pending)"),
+            description: !isCycleEventuallyFinished
+              ? `This cycle remains incomplete (${totalSystemNights % minNights} of ${minNights} nights total in system). Missing nights to earn.`
+              : isMaxedOut
+                ? "This segment no longer applies because the promotion has been maxed out."
+                : description +
+                  (isCycleFinishedInStay ? " (Goal Met!)" : " (Pending)") +
+                  (isSegmentCapped ? " Reduced by redemption caps." : ""),
           });
 
           nightsAccountedFor += nightsInThisSegment;
@@ -311,11 +326,17 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
             ? ` This bonus is pending additional stays${pendingRatio}.`
             : "";
 
+        const isAnyCycleEarned = maxRewardableTotalNights > cumulativeAtStart;
+
         benefitDescriptionLine = isMaxedOutOverall
           ? "This promotion has been maxed out and no further rewards apply."
           : `Earned proportional rewards for ${nightsInStay} nights towards a ${minNights}-night requirement.${proportionalSuffix}`;
 
-        if (bApplied < expectedValuePerNight * nightsInStay - 0.001 && !isMaxedOutOverall) {
+        if (
+          bApplied < expectedValuePerNight * nightsInStay - 0.001 &&
+          !isMaxedOutOverall &&
+          isAnyCycleEarned
+        ) {
           benefitDescriptionLine += " Reduced by redemption caps.";
         }
       } else {
