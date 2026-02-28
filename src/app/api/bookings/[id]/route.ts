@@ -67,6 +67,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       propertyName,
       checkIn,
       checkOut,
+      numNights,
       pretaxCost,
       taxAmount,
       totalCost,
@@ -93,16 +94,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (propertyName !== undefined) data.propertyName = propertyName;
     if (checkIn !== undefined) data.checkIn = new Date(checkIn);
     if (checkOut !== undefined) data.checkOut = new Date(checkOut);
-
-    if (checkIn !== undefined && checkOut !== undefined) {
-      const checkInDate = new Date(checkIn);
-      const checkOutDate = new Date(checkOut);
-      data.numNights = Math.max(
-        0,
-        Math.round((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))
-      );
-    }
-
+    if (numNights !== undefined) data.numNights = Number(numNights);
     if (pretaxCost !== undefined) data.pretaxCost = Number(pretaxCost);
     if (taxAmount !== undefined) data.taxAmount = Number(taxAmount);
     if (totalCost !== undefined) data.totalCost = Number(totalCost);

@@ -114,9 +114,9 @@ export function BookingForm({
   const [portalCashbackOnTotal, setPortalCashbackOnTotal] = useState(false);
   const [bookingSource, setBookingSource] = useState("");
   const [otaAgencyId, setOtaAgencyId] = useState("none");
-  const [benefits, setBenefits] = useState<
-    { benefitType: string; label: string; dollarValue: string }[]
-  >([]);
+  const [benefits, setBenefits] = useState<{ type: string; label: string; dollarValue: string }[]>(
+    []
+  );
   const [notes, setNotes] = useState("");
 
   const handleCheckInChange = (date?: Date) => {
@@ -182,7 +182,7 @@ export function BookingForm({
       setOtaAgencyId(initialData.otaAgencyId ? initialData.otaAgencyId : "none");
       setBenefits(
         initialData.benefits.map((b) => ({
-          benefitType: b.benefitType,
+          type: b.benefitType,
           label: b.label || "",
           dollarValue: b.dollarValue != null ? String(Number(b.dollarValue)) : "",
         }))
@@ -244,7 +244,7 @@ export function BookingForm({
     setCertificates((prev) => prev.filter((_, i) => i !== idx));
 
   const addBenefit = () =>
-    setBenefits((prev) => [...prev, { benefitType: "", label: "", dollarValue: "" }]);
+    setBenefits((prev) => [...prev, { type: "", label: "", dollarValue: "" }]);
   const updateBenefit = (idx: number, field: string, value: string) =>
     setBenefits((prev) => prev.map((b, i) => (i === idx ? { ...b, [field]: value } : b)));
   const removeBenefit = (idx: number) => setBenefits((prev) => prev.filter((_, i) => i !== idx));
@@ -253,11 +253,7 @@ export function BookingForm({
     hotelChainId: !hotelChainId ? "Hotel chain is required" : "",
     propertyName: !propertyName.trim() ? "Property name is required" : "",
     checkIn: !checkIn ? "Check-in date is required" : "",
-    checkOut: !checkOut
-      ? "Check-out date is required"
-      : Number(numNights) <= 0
-        ? "Check-out must be after check-in"
-        : "",
+    checkOut: !checkOut ? "Check-out date is required" : "",
     pretaxCost: hasCash && pretaxCost === "" ? "Pre-tax cost is required" : "",
     totalCost: hasCash && totalCost === "" ? "Total cost is required" : "",
     pointsRedeemed:
@@ -286,13 +282,13 @@ export function BookingForm({
 
     if (!isValid) return;
 
-    // We do NOT send numNights; server auto-calculates from dates.
-    const body: BookingFormData = {
+    const body = {
       hotelChainId: hotelChainId,
       hotelChainSubBrandId: hotelChainSubBrandId === "none" ? null : hotelChainSubBrandId,
       propertyName,
       checkIn,
       checkOut,
+      numNights: Number(numNights),
       pretaxCost: hasCash ? Number(pretaxCost) : 0,
       taxAmount: hasCash ? Number(taxAmount) : 0,
       totalCost: hasCash ? Number(totalCost) : 0,
@@ -315,9 +311,9 @@ export function BookingForm({
       bookingSource: bookingSource || null,
       otaAgencyId: bookingSource === "ota" && otaAgencyId !== "none" ? otaAgencyId : null,
       benefits: benefits
-        .filter((b) => b.benefitType)
+        .filter((b) => b.type)
         .map((b) => ({
-          benefitType: b.benefitType,
+          benefitType: b.type,
           label: b.label || null,
           dollarValue: b.dollarValue ? Number(b.dollarValue) : null,
         })),
@@ -368,7 +364,6 @@ export function BookingForm({
                 onChange={(e) => setPropertyName(e.target.value)}
                 placeholder="e.g. Marriott Downtown Chicago"
                 error={showErrors ? errors.propertyName : ""}
-                data-testid="propertyName-input"
               />
             </div>
           </div>
@@ -489,7 +484,6 @@ export function BookingForm({
                   onChange={(e) => setPretaxCost(e.target.value)}
                   placeholder="0.00"
                   error={showErrors ? errors.pretaxCost : ""}
-                  data-testid="pretaxCost-input"
                 />
               </div>
               <div className="space-y-2">
@@ -503,7 +497,6 @@ export function BookingForm({
                   onChange={(e) => setTotalCost(e.target.value)}
                   placeholder="0.00"
                   error={showErrors ? errors.totalCost : ""}
-                  data-testid="totalCost-input"
                 />
               </div>
             </div>
@@ -553,7 +546,6 @@ export function BookingForm({
                 onChange={(e) => setPointsRedeemed(e.target.value)}
                 placeholder="e.g. 40000"
                 error={showErrors ? errors.pointsRedeemed : ""}
-                data-testid="pointsRedeemed-input"
               />
             </div>
           )}
@@ -590,10 +582,7 @@ export function BookingForm({
                   + Add Certificate
                 </Button>
                 {showErrors && certificates.length === 0 && (
-                  <p
-                    className="text-xs font-medium text-destructive"
-                    data-testid="error-certificates"
-                  >
+                  <p className="text-xs font-medium text-destructive">
                     At least one certificate is required
                   </p>
                 )}
@@ -696,14 +685,14 @@ export function BookingForm({
             {benefits.map((benefit, idx) => (
               <div key={idx} className="flex items-start gap-2">
                 <AppSelect
-                  value={benefit.benefitType || "none"}
-                  onValueChange={(v) => updateBenefit(idx, "benefitType", v === "none" ? "" : v)}
+                  value={benefit.type || "none"}
+                  onValueChange={(v) => updateBenefit(idx, "type", v === "none" ? "" : v)}
                   options={[{ label: "Select type...", value: "none" }, ...BENEFIT_TYPE_OPTIONS]}
                   placeholder="Select type..."
                   className="w-48"
                   data-testid={`benefit-type-select-${idx}`}
                 />
-                {benefit.benefitType === "other" && (
+                {benefit.type === "other" && (
                   <Input
                     value={benefit.label}
                     onChange={(e) => updateBenefit(idx, "label", e.target.value)}
