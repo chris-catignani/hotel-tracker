@@ -52,6 +52,11 @@ function CalculationInfo({ calc }: { calc: CalculationDetail | undefined }) {
                       {formatCurrency(segment.value)}
                     </span>
                   </div>
+                  {segment.description && (
+                    <p className="text-[11px] text-muted-foreground leading-relaxed pl-0.5 italic">
+                      {segment.description}
+                    </p>
+                  )}
                   {segment.formula && (
                     <div className="rounded bg-muted/30 px-1.5 py-1 font-mono text-[9px] text-muted-foreground border border-muted-foreground/5">
                       {segment.formula}
