@@ -213,13 +213,27 @@ export function PromotionForm({
 
   // ── Validation ───────────────────────────────────────────────────────────────
 
+  const validateBenefit = (b: PromotionBenefitFormData) => ({
+    value: !b.value ? "Required" : "",
+    certType: b.rewardType === "certificate" && !b.certType ? "Required" : "",
+  });
+
+  const benefitErrors = benefits.map(validateBenefit);
+  const tierErrors = tiers.map((t) => ({
+    minStays: !t.minStays ? "Required" : "",
+    benefits: t.benefits.map(validateBenefit),
+  }));
+
   const errors = {
     name: !name.trim() ? "Promotion name is required" : "",
     hotelChainId: type === "loyalty" && !hotelChainId ? "Hotel chain is required" : "",
     creditCardId: type === "credit_card" && !creditCardId ? "Credit card is required" : "",
     shoppingPortalId: type === "portal" && !shoppingPortalId ? "Shopping portal is required" : "",
+    benefits: !isTiered && benefitErrors.some((e) => e.value || e.certType),
     tiers:
-      isTiered && tiers.some((t) => !t.minStays) ? "All tiers must have a minimum stay value" : "",
+      isTiered &&
+      (tierErrors.some((e) => e.minStays) ||
+        tierErrors.some((e) => e.benefits.some((be) => be.value || be.certType))),
   };
 
   const isValid =
@@ -227,6 +241,7 @@ export function PromotionForm({
     !errors.hotelChainId &&
     !errors.creditCardId &&
     !errors.shoppingPortalId &&
+    !errors.benefits &&
     !errors.tiers;
 
   // ── Restriction helpers ──────────────────────────────────────────────────────
@@ -584,6 +599,7 @@ export function PromotionForm({
                   creditCards={creditCards}
                   onChange={handleBenefitChange}
                   onRemove={handleBenefitRemove}
+                  errors={showErrors ? benefitErrors[index] : undefined}
                 />
               ))}
               <Button
@@ -603,9 +619,6 @@ export function PromotionForm({
           {isTiered && (
             <div className="space-y-4">
               <Label>Tiers</Label>
-              {showErrors && errors.tiers && (
-                <p className="text-xs font-medium text-destructive">{errors.tiers}</p>
-              )}
               {tiers.map((tier, tierIndex) => (
                 <div
                   key={tierIndex}
@@ -643,7 +656,7 @@ export function PromotionForm({
                           })
                         }
                         data-testid={`tier-min-stays-${tierIndex}`}
-                        error={showErrors && !tier.minStays ? "Required" : ""}
+                        error={showErrors ? tierErrors[tierIndex].minStays : ""}
                       />
                     </div>
                     <div className="space-y-2">
@@ -676,6 +689,9 @@ export function PromotionForm({
                         creditCards={creditCards}
                         onChange={(bi, updated) => handleTierBenefitChange(tierIndex, bi, updated)}
                         onRemove={(bi) => handleTierBenefitRemove(tierIndex, bi)}
+                        errors={
+                          showErrors ? tierErrors[tierIndex].benefits[benefitIndex] : undefined
+                        }
                       />
                     ))}
                     <Button

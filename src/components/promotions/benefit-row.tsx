@@ -67,6 +67,10 @@ export interface BenefitRowProps {
   creditCards: Array<{ id: string; name: string }>;
   onChange: (index: number, updated: PromotionBenefitFormData) => void;
   onRemove: (index: number) => void;
+  errors?: {
+    value?: string;
+    certType?: string;
+  };
 }
 
 export function BenefitRow({
@@ -77,6 +81,7 @@ export function BenefitRow({
   creditCards,
   onChange,
   onRemove,
+  errors,
 }: BenefitRowProps) {
   const [restrictionPickerOpen, setRestrictionPickerOpen] = useState(false);
   // Track which restriction cards are explicitly shown (independent of whether they have values).
@@ -228,7 +233,7 @@ export function BenefitRow({
         )}
 
         <div className="space-y-2">
-          <Label>{valueLabel}</Label>
+          <Label>{valueLabel} *</Label>
           <Input
             type="number"
             step="any"
@@ -238,19 +243,20 @@ export function BenefitRow({
             }
             placeholder={valuePlaceholder}
             data-testid={`benefit-value-${index}`}
-            required
+            error={errors?.value}
           />
         </div>
 
         {showCertType && (
           <div className="space-y-2">
-            <Label>Certificate Type</Label>
+            <Label>Certificate Type *</Label>
             <AppSelect
               value={benefit.certType || ""}
               onValueChange={(v) => onChange(index, { ...benefit, certType: v || null })}
               options={[...CERT_OPTIONS]}
               placeholder="Select certificate type..."
               data-testid={`benefit-cert-type-${index}`}
+              error={errors?.certType}
             />
           </div>
         )}
