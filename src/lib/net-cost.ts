@@ -11,11 +11,17 @@ export interface CalculationSegment {
   description: string;
 }
 
+export interface CalculationGroup {
+  name?: string;
+  description?: string;
+  segments: CalculationSegment[];
+}
+
 export interface CalculationDetail {
   label: string;
-  formula: string;
-  description: string;
-  segments?: CalculationSegment[];
+  appliedValue: number;
+  description?: string;
+  groups: CalculationGroup[];
 }
 
 export interface NetCostBookingPromotionBenefit {
@@ -155,11 +161,9 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
     : DEFAULT_CENTS_PER_POINT;
 
   const promotions: PromotionBreakdown[] = booking.bookingPromotions.map((bp, index) => {
-    const appliedValue = Number(bp.appliedValue);
     const benefits = bp.benefitApplications ?? [];
 
-    const descriptionLines: string[] = [];
-    const segments: CalculationSegment[] = [];
+    const groups: CalculationGroup[] = [];
 
     for (const ba of benefits) {
       const b = ba.promotionBenefit;
@@ -168,6 +172,23 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
 
       const restrictions = b.restrictions || bp.promotion.restrictions;
       const isSpanned = !!(restrictions?.spanStays && restrictions?.minNightsRequired);
+
+      const benefitSegments: CalculationSegment[] = [];
+      let benefitDescriptionLine = "";
+
+      let groupName = "";
+      if (b.rewardType === "points") {
+        groupName = `${bValue.toLocaleString()} Bonus Points`;
+      } else if (b.rewardType === "eqn") {
+        groupName = `${bValue} Bonus Elite Night${bValue !== 1 ? "s" : ""}`;
+      } else if (b.rewardType === "cashback") {
+        groupName =
+          b.valueType === "percentage"
+            ? `${bValue}% Cashback`
+            : `${formatCurrency(bValue)} Cashback`;
+      } else {
+        groupName = b.rewardType.charAt(0).toUpperCase() + b.rewardType.slice(1);
+      }
 
       if (isSpanned && restrictions?.minNightsRequired) {
         const minNights = restrictions.minNightsRequired;
@@ -254,7 +275,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
 
           const capSuffix = isSegmentCapped ? " (capped)" : "";
 
-          segments.push({
+          benefitSegments.push({
             label,
             value: segmentValue,
             formula: isMaxedOut
@@ -290,14 +311,13 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
             ? ` This bonus is pending additional stays${pendingRatio}.`
             : "";
 
-        let description = isMaxedOutOverall
+        benefitDescriptionLine = isMaxedOutOverall
           ? "This promotion has been maxed out and no further rewards apply."
           : `Earned proportional rewards for ${nightsInStay} nights towards a ${minNights}-night requirement.${proportionalSuffix}`;
 
         if (bApplied < expectedValuePerNight * nightsInStay - 0.001 && !isMaxedOutOverall) {
-          description += " Reduced by redemption caps.";
+          benefitDescriptionLine += " Reduced by redemption caps.";
         }
-        descriptionLines.push(description);
       } else {
         // Standard (Non-spanned) benefit logic
         let appliedMultiplier = 1;
@@ -374,8 +394,12 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
           benefitDescription += " Reduced by redemption caps.";
         }
 
+        benefitDescriptionLine = isMaxedOutOverall
+          ? "This promotion has been maxed out and no further rewards apply."
+          : benefitDescription;
+
         // Standard segment
-        segments.push({
+        benefitSegments.push({
           label: `Benefit: ${b.rewardType}`,
           value: bApplied,
           formula: isMaxedOutOverall ? "" : `${benefitFormula} = ${formatCurrency(bApplied)}`,
@@ -383,35 +407,27 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
             ? "This segment no longer applies because the promotion has been maxed out."
             : benefitDescription,
         });
-
-        descriptionLines.push(
-          isMaxedOutOverall
-            ? "This promotion has been maxed out and no further rewards apply."
-            : benefitDescription
-        );
       }
+
+      groups.push({
+        name: groupName,
+        description: benefitDescriptionLine,
+        segments: benefitSegments,
+      });
     }
 
-    const formula =
-      segments.length > 1
-        ? segments.map((s) => s.formula).join("; ") + ` = ${formatCurrency(appliedValue)} total`
-        : segments.length === 1
-          ? segments[0].formula
-          : formatCurrency(appliedValue);
-
-    const description =
-      descriptionLines.length > 0
-        ? descriptionLines.join(" ")
-        : `Applied promotion value: ${formatCurrency(appliedValue)}.`;
+    const totalAppliedValue = groups.reduce(
+      (sum, group) => sum + group.segments.reduce((sSum, s) => sSum + s.value, 0),
+      0
+    );
 
     return {
       id: bp.id || String(index),
       name: bp.promotion.name,
-      appliedValue,
+      appliedValue: totalAppliedValue,
       label: "Promotion",
-      formula,
-      description,
-      segments,
+      description: `Rewards from ${bp.promotion.name}`,
+      groups,
     };
   });
   const promoSavings = promotions.reduce((sum, p) => sum + p.appliedValue, 0);
@@ -444,8 +460,21 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
 
     portalCashbackCalc = {
       label: "Portal Cashback",
-      formula,
-      description,
+      appliedValue: portalCashback,
+      description: `Rewards earned via ${booking.shoppingPortal.name}.`,
+      groups: [
+        {
+          name: booking.shoppingPortal.name,
+          segments: [
+            {
+              label: "Portal Reward",
+              value: portalCashback,
+              formula,
+              description,
+            },
+          ],
+        },
+      ],
     };
   }
 
@@ -528,12 +557,14 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
 
     cardRewardCalc = {
       label: "Card Reward",
-      formula:
-        cardSegments.length > 1
-          ? cardSegments.map((s) => s.formula).join(" + ") + ` = ${formatCurrency(cardReward)}`
-          : cardSegments[0].formula,
+      appliedValue: cardReward,
       description: `Total rewards earned using your ${booking.creditCard.name}.`,
-      segments: cardSegments,
+      groups: [
+        {
+          name: booking.creditCard.name,
+          segments: cardSegments,
+        },
+      ],
     };
   }
 
@@ -584,13 +615,14 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
 
     loyaltyPointsCalc = {
       label: "Loyalty Points Value",
-      formula:
-        loyaltySegments.length > 1
-          ? loyaltySegments.map((s) => s.formula).join("; ") +
-            ` = ${formatCurrency(loyaltyPointsValue)} total`
-          : loyaltySegments[0].formula,
+      appliedValue: loyaltyPointsValue,
       description: `You earned ${booking.loyaltyPointsEarned.toLocaleString()} ${pointName} for this stay.`,
-      segments: loyaltySegments,
+      groups: [
+        {
+          name: booking.hotelChain.loyaltyProgram || "Loyalty Points",
+          segments: loyaltySegments,
+        },
+      ],
     };
   }
 
@@ -604,8 +636,21 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
 
     pointsRedeemedCalc = {
       label: "Points Redeemed Value",
-      formula: `${booking.pointsRedeemed.toLocaleString()} pts × ${centsStr}¢ = ${formatCurrency(pointsRedeemedValue)}`,
+      appliedValue: pointsRedeemedValue,
       description: `The estimated value of the points you redeemed for this stay.`,
+      groups: [
+        {
+          name: "Points Redemption",
+          segments: [
+            {
+              label: "Points Redeemed",
+              value: pointsRedeemedValue,
+              formula: `${booking.pointsRedeemed.toLocaleString()} pts × ${centsStr}¢ = ${formatCurrency(pointsRedeemedValue)}`,
+              description: `Estimated value based on ${centsStr}¢ per point.`,
+            },
+          ],
+        },
+      ],
     };
   }
 
@@ -631,12 +676,14 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
 
     certsCalc = {
       label: "Certificates Value",
-      formula:
-        certSegments.length > 1
-          ? certSegments.map((s) => s.formula).join(" + ") + ` = ${formatCurrency(certsValue)}`
-          : certSegments[0].formula,
+      appliedValue: certsValue,
       description: `The total estimated value of certificates used for this stay.`,
-      segments: certSegments,
+      groups: [
+        {
+          name: "Free Night Certificates",
+          segments: certSegments,
+        },
+      ],
     };
   }
 

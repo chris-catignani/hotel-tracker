@@ -14,16 +14,48 @@ describe("CostBreakdown", () => {
         name: "Promo 1",
         appliedValue: 10,
         label: "Promotion",
-        formula: "10 = 10",
         description: "desc",
+        groups: [
+          {
+            name: "Benefit Group",
+            segments: [{ label: "Benefit 1", value: 10, formula: "10", description: "desc" }],
+          },
+        ],
       },
     ],
     portalCashback: 5,
-    portalCashbackCalc: { label: "Portal", formula: "5 = 5", description: "desc" },
+    portalCashbackCalc: {
+      label: "Portal",
+      appliedValue: 5,
+      description: "desc",
+      groups: [
+        {
+          segments: [{ label: "Portal", value: 5, formula: "5", description: "desc" }],
+        },
+      ],
+    },
     cardReward: 2,
-    cardRewardCalc: { label: "Card", formula: "2 = 2", description: "desc" },
+    cardRewardCalc: {
+      label: "Card",
+      appliedValue: 2,
+      description: "desc",
+      groups: [
+        {
+          segments: [{ label: "Card", value: 2, formula: "2", description: "desc" }],
+        },
+      ],
+    },
     loyaltyPointsValue: 3,
-    loyaltyPointsCalc: { label: "Loyalty", formula: "3 = 3", description: "desc" },
+    loyaltyPointsCalc: {
+      label: "Loyalty",
+      appliedValue: 3,
+      description: "desc",
+      groups: [
+        {
+          segments: [{ label: "Loyalty", value: 3, formula: "3", description: "desc" }],
+        },
+      ],
+    },
     pointsRedeemedValue: 0,
     certsValue: 0,
     netCost: 80,
