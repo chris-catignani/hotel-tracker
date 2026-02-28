@@ -91,4 +91,45 @@ describe("AppSelect", () => {
     expect(trigger).toBeInTheDocument();
     expect(trigger).toHaveAttribute("id", "unique-id");
   });
+
+  it("renders multiple selected values as badges", () => {
+    render(
+      <AppSelect
+        multiple
+        value={["apple", "banana"]}
+        onValueChange={() => {}}
+        options={options}
+        placeholder="Pick fruits"
+      />
+    );
+
+    expect(screen.getByText("Apple")).toBeInTheDocument();
+    expect(screen.getByText("Banana")).toBeInTheDocument();
+  });
+
+  it("calls onValueChange with array of values in multi-select mode", async () => {
+    const handleChange = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <AppSelect
+        multiple
+        value={["apple"]}
+        onValueChange={handleChange}
+        options={options}
+        placeholder="Pick fruits"
+      />
+    );
+
+    await user.click(screen.getByRole("combobox"));
+
+    // Select Banana
+    await user.click(screen.getByText("Banana"));
+    expect(handleChange).toHaveBeenCalledWith(["apple", "banana"]);
+
+    // Deselect Apple
+    await user.click(
+      screen.getAllByRole("option").find((el) => el.textContent?.includes("Apple"))!
+    );
+    expect(handleChange).toHaveBeenCalledWith([]);
+  });
 });

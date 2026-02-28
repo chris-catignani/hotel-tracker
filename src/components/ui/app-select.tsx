@@ -1,31 +1,43 @@
 "use client";
 
 import * as React from "react";
-import { Check, ChevronsUpDown, Search } from "lucide-react";
+import { Check, ChevronsUpDown, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 
 export interface AppSelectOption {
   label: string;
   value: string;
 }
 
-interface AppSelectProps extends React.HTMLAttributes<HTMLButtonElement> {
-  value: string;
-  onValueChange: (value: string) => void;
+type AppSelectProps = {
   options: AppSelectOption[];
   placeholder?: string;
   searchPlaceholder?: string;
   emptyMessage?: string;
   disabled?: boolean;
-}
+  className?: string;
+} & (
+  | {
+      multiple?: false;
+      value: string;
+      onValueChange: (value: string) => void;
+    }
+  | {
+      multiple: true;
+      value: string[];
+      onValueChange: (value: string[]) => void;
+    }
+);
 
 export function AppSelect({
   value,
   onValueChange,
   options,
+  multiple = false,
   placeholder = "Select item...",
   searchPlaceholder = "Search...",
   emptyMessage = "No item found.",
@@ -55,12 +67,40 @@ export function AppSelect({
     return sortedOptions.filter((opt) => opt.label.toLowerCase().includes(lowerQuery));
   }, [sortedOptions, searchQuery]);
 
-  const selectedOption = React.useMemo(
-    () => options.find((opt) => opt.value === value),
-    [options, value]
-  );
+  const selectedOptions = React.useMemo(() => {
+    if (multiple) {
+      const values = value as string[];
+      return options.filter((opt) => values.includes(opt.value));
+    }
+    const val = value as string;
+    const found = options.find((opt) => opt.value === val);
+    return found ? [found] : [];
+  }, [options, value, multiple]);
 
   const showSearch = options.length > 10;
+
+  const handleSelect = (optionValue: string) => {
+    if (multiple) {
+      const currentValues = value as string[];
+      const newValues = currentValues.includes(optionValue)
+        ? currentValues.filter((v) => v !== optionValue)
+        : [...currentValues, optionValue];
+      (onValueChange as (value: string[]) => void)(newValues);
+    } else {
+      (onValueChange as (value: string) => void)(optionValue);
+      setOpen(false);
+      setSearchQuery("");
+    }
+  };
+
+  const handleRemove = (e: React.MouseEvent, optionValue: string) => {
+    e.stopPropagation();
+    if (multiple) {
+      const currentValues = value as string[];
+      const newValues = currentValues.filter((v) => v !== optionValue);
+      (onValueChange as (value: string[]) => void)(newValues);
+    }
+  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -69,15 +109,35 @@ export function AppSelect({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className={cn("w-full justify-between font-normal", className)}
+          className={cn("w-full justify-between font-normal min-h-10 h-auto py-2 px-3", className)}
           disabled={disabled}
           {...props}
         >
-          <span className="truncate">{selectedOption ? selectedOption.label : placeholder}</span>
+          <div className="flex flex-wrap gap-1 items-center overflow-hidden">
+            {selectedOptions.length > 0 ? (
+              multiple ? (
+                selectedOptions.map((opt) => (
+                  <Badge
+                    key={opt.value}
+                    variant="secondary"
+                    className="mr-1 mb-1 font-normal"
+                    onClick={(e) => handleRemove(e, opt.value)}
+                  >
+                    {opt.label}
+                    <X className="ml-1 h-3 w-3 hover:text-destructive" />
+                  </Badge>
+                ))
+              ) : (
+                <span className="truncate">{selectedOptions[0].label}</span>
+              )
+            ) : (
+              <span className="text-muted-foreground">{placeholder}</span>
+            )}
+          </div>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
         <div
           className="max-h-[300px] overflow-y-auto"
           onWheel={(e) => e.stopPropagation()}
@@ -98,30 +158,28 @@ export function AppSelect({
             {filteredOptions.length === 0 ? (
               <div className="py-6 text-center text-sm text-muted-foreground">{emptyMessage}</div>
             ) : (
-              filteredOptions.map((option) => (
-                <div
-                  key={option.value}
-                  role="option"
-                  aria-selected={value === option.value}
-                  className={cn(
-                    "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-                    value === option.value && "bg-accent text-accent-foreground"
-                  )}
-                  onClick={() => {
-                    onValueChange(option.value);
-                    setOpen(false);
-                    setSearchQuery("");
-                  }}
-                >
-                  <Check
+              filteredOptions.map((option) => {
+                const isSelected = multiple
+                  ? (value as string[]).includes(option.value)
+                  : value === option.value;
+                return (
+                  <div
+                    key={option.value}
+                    role="option"
+                    aria-selected={isSelected}
                     className={cn(
-                      "mr-2 h-4 w-4",
-                      value === option.value ? "opacity-100" : "opacity-0"
+                      "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+                      isSelected && "bg-accent text-accent-foreground"
                     )}
-                  />
-                  {option.label}
-                </div>
-              ))
+                    onClick={() => handleSelect(option.value)}
+                  >
+                    <Check
+                      className={cn("mr-2 h-4 w-4", isSelected ? "opacity-100" : "opacity-0")}
+                    />
+                    {option.label}
+                  </div>
+                );
+              })
             )}
           </div>
         </div>
