@@ -11,19 +11,17 @@ export interface CalculationSegment {
   description: string;
 }
 
-export interface BenefitGroup {
-  name: string;
-  description: string;
+export interface CalculationGroup {
+  name?: string;
+  description?: string;
   segments: CalculationSegment[];
 }
 
 export interface CalculationDetail {
   label: string;
-  formula: string;
-  description: string;
-  descriptionLines?: string[];
-  benefitGroups?: BenefitGroup[];
-  segments?: CalculationSegment[];
+  appliedValue: number;
+  description?: string;
+  groups: CalculationGroup[];
 }
 
 export interface NetCostBookingPromotionBenefit {
@@ -165,7 +163,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
   const promotions: PromotionBreakdown[] = booking.bookingPromotions.map((bp, index) => {
     const benefits = bp.benefitApplications ?? [];
 
-    const benefitGroups: BenefitGroup[] = [];
+    const groups: CalculationGroup[] = [];
 
     for (const ba of benefits) {
       const b = ba.promotionBenefit;
@@ -411,14 +409,14 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
         });
       }
 
-      benefitGroups.push({
+      groups.push({
         name: groupName,
         description: benefitDescriptionLine,
         segments: benefitSegments,
       });
     }
 
-    const totalAppliedValue = benefitGroups.reduce(
+    const totalAppliedValue = groups.reduce(
       (sum, group) => sum + group.segments.reduce((sSum, s) => sSum + s.value, 0),
       0
     );
@@ -428,9 +426,8 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
       name: bp.promotion.name,
       appliedValue: totalAppliedValue,
       label: "Promotion",
-      formula: "", // Not used by promotions anymore since they have segments
-      description: "", // Not used by promotions anymore
-      benefitGroups,
+      description: `Rewards from ${bp.promotion.name}`,
+      groups,
     };
   });
   const promoSavings = promotions.reduce((sum, p) => sum + p.appliedValue, 0);
@@ -463,8 +460,21 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
 
     portalCashbackCalc = {
       label: "Portal Cashback",
-      formula,
-      description,
+      appliedValue: portalCashback,
+      description: `Rewards earned via ${booking.shoppingPortal.name}.`,
+      groups: [
+        {
+          name: booking.shoppingPortal.name,
+          segments: [
+            {
+              label: "Portal Reward",
+              value: portalCashback,
+              formula,
+              description,
+            },
+          ],
+        },
+      ],
     };
   }
 
@@ -547,12 +557,14 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
 
     cardRewardCalc = {
       label: "Card Reward",
-      formula:
-        cardSegments.length > 1
-          ? cardSegments.map((s) => s.formula).join(" + ") + ` = ${formatCurrency(cardReward)}`
-          : cardSegments[0].formula,
+      appliedValue: cardReward,
       description: `Total rewards earned using your ${booking.creditCard.name}.`,
-      segments: cardSegments,
+      groups: [
+        {
+          name: booking.creditCard.name,
+          segments: cardSegments,
+        },
+      ],
     };
   }
 
@@ -603,13 +615,14 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
 
     loyaltyPointsCalc = {
       label: "Loyalty Points Value",
-      formula:
-        loyaltySegments.length > 1
-          ? loyaltySegments.map((s) => s.formula).join("; ") +
-            ` = ${formatCurrency(loyaltyPointsValue)} total`
-          : loyaltySegments[0].formula,
+      appliedValue: loyaltyPointsValue,
       description: `You earned ${booking.loyaltyPointsEarned.toLocaleString()} ${pointName} for this stay.`,
-      segments: loyaltySegments,
+      groups: [
+        {
+          name: booking.hotelChain.loyaltyProgram || "Loyalty Points",
+          segments: loyaltySegments,
+        },
+      ],
     };
   }
 
@@ -623,8 +636,21 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
 
     pointsRedeemedCalc = {
       label: "Points Redeemed Value",
-      formula: `${booking.pointsRedeemed.toLocaleString()} pts × ${centsStr}¢ = ${formatCurrency(pointsRedeemedValue)}`,
+      appliedValue: pointsRedeemedValue,
       description: `The estimated value of the points you redeemed for this stay.`,
+      groups: [
+        {
+          name: "Points Redemption",
+          segments: [
+            {
+              label: "Points Redeemed",
+              value: pointsRedeemedValue,
+              formula: `${booking.pointsRedeemed.toLocaleString()} pts × ${centsStr}¢ = ${formatCurrency(pointsRedeemedValue)}`,
+              description: `Estimated value based on ${centsStr}¢ per point.`,
+            },
+          ],
+        },
+      ],
     };
   }
 
@@ -650,12 +676,14 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
 
     certsCalc = {
       label: "Certificates Value",
-      formula:
-        certSegments.length > 1
-          ? certSegments.map((s) => s.formula).join(" + ") + ` = ${formatCurrency(certsValue)}`
-          : certSegments[0].formula,
+      appliedValue: certsValue,
       description: `The total estimated value of certificates used for this stay.`,
-      segments: certSegments,
+      groups: [
+        {
+          name: "Free Night Certificates",
+          segments: certSegments,
+        },
+      ],
     };
   }
 
