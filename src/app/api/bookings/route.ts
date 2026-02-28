@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { matchPromotionsForBooking } from "@/lib/promotion-matching";
+import { matchPromotionsForBooking, reevaluateSubsequentBookings } from "@/lib/promotion-matching";
 import { apiError } from "@/lib/api-error";
 import { calculatePoints } from "@/lib/loyalty-utils";
 import { CertType, BenefitType } from "@prisma/client";
@@ -167,6 +167,9 @@ export async function POST(request: NextRequest) {
 
     // Auto-run promotion matching
     await matchPromotionsForBooking(booking.id);
+
+    // Re-evaluate subsequent bookings if this is an earlier stay
+    await reevaluateSubsequentBookings(booking.id);
 
     // Fetch the booking with all relations to return
     const fullBooking = await prisma.booking.findUnique({

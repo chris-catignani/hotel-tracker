@@ -600,6 +600,11 @@ async function fetchPromotionUsage(
     where: {
       promotionId: { in: promotionIds },
       ...(excludeBookingId ? { bookingId: { not: excludeBookingId } } : {}),
+      booking: {
+        checkIn: {
+          lt: new Date(booking.checkIn),
+        },
+      },
     },
     _count: { id: true },
     _sum: { appliedValue: true, bonusPointsApplied: true },
@@ -633,6 +638,13 @@ async function fetchPromotionUsage(
       where: {
         promotionBenefitId: { in: allBenefitIds },
         ...(excludeBookingId ? { bookingPromotion: { bookingId: { not: excludeBookingId } } } : {}),
+        bookingPromotion: {
+          booking: {
+            checkIn: {
+              lt: new Date(booking.checkIn),
+            },
+          },
+        },
       },
       _count: { id: true },
       _sum: { appliedValue: true, bonusPointsApplied: true },
@@ -644,6 +656,13 @@ async function fetchPromotionUsage(
       where: {
         promotionBenefitId: { in: allBenefitIds },
         ...(excludeBookingId ? { bookingPromotion: { bookingId: { not: excludeBookingId } } } : {}),
+        bookingPromotion: {
+          booking: {
+            checkIn: {
+              lt: new Date(booking.checkIn),
+            },
+          },
+        },
       },
       include: {
         bookingPromotion: {
@@ -734,6 +753,11 @@ async function fetchPromotionUsage(
       where: {
         promotionId: { in: spanStaysPromoIds },
         ...(excludeBookingId ? { bookingId: { not: excludeBookingId } } : {}),
+        booking: {
+          checkIn: {
+            lt: new Date(booking.checkIn),
+          },
+        },
       },
       include: { booking: { select: { numNights: true } } },
     });
@@ -771,6 +795,11 @@ async function fetchPromotionUsage(
       where: {
         promotionId: { in: oncePerSubBrandPromoIds },
         ...(excludeBookingId ? { bookingId: { not: excludeBookingId } } : {}),
+        booking: {
+          checkIn: {
+            lt: new Date(booking.checkIn),
+          },
+        },
       },
       select: {
         promotionId: true,
@@ -949,4 +978,32 @@ export async function matchPromotionsForAffectedBookings(promotionId: string): P
   });
 
   await reevaluateBookings(affectedBookings.map((b) => b.id));
+}
+
+/**
+ * Re-evaluates all bookings that occur after a given booking.
+ * This is necessary because changes to an earlier booking can affect the
+ * redemption capacity and eligibility for chronologically later stays.
+ */
+export async function reevaluateSubsequentBookings(bookingId: string): Promise<void> {
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    select: { checkIn: true },
+  });
+
+  if (!booking) return;
+
+  const subsequentBookings = await prisma.booking.findMany({
+    where: {
+      checkIn: {
+        gt: booking.checkIn,
+      },
+    },
+    select: { id: true },
+    orderBy: { checkIn: "asc" },
+  });
+
+  if (subsequentBookings.length > 0) {
+    await reevaluateBookings(subsequentBookings.map((b) => b.id));
+  }
 }
