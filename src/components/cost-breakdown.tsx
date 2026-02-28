@@ -6,11 +6,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { NetCostBreakdown, CalculationDetail } from "@/lib/net-cost";
+import {
+  NetCostBreakdown,
+  CalculationDetail,
+  NetCostBooking,
+  getNetCostBreakdown,
+} from "@/lib/net-cost";
 import { formatCurrency } from "@/lib/utils";
+import { BenefitValuationData } from "@/lib/benefit-valuations";
 
 interface CostBreakdownProps {
-  breakdown: NetCostBreakdown;
+  breakdown?: NetCostBreakdown;
+  booking?: NetCostBooking;
+  valuations?: BenefitValuationData[];
 }
 
 function CalculationInfo({ calc }: { calc: CalculationDetail | undefined }) {
@@ -118,8 +126,17 @@ function CalculationInfo({ calc }: { calc: CalculationDetail | undefined }) {
   );
 }
 
-export function CostBreakdown({ breakdown }: CostBreakdownProps) {
+export function CostBreakdown({
+  breakdown: providedBreakdown,
+  booking,
+  valuations = [],
+}: CostBreakdownProps) {
   const [isPromosExpanded, setIsPromosExpanded] = useState(false);
+
+  const breakdown =
+    providedBreakdown || (booking ? getNetCostBreakdown(booking, valuations) : null);
+
+  if (!breakdown) return null;
 
   const {
     totalCost,
@@ -135,6 +152,8 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
     cardRewardCalc,
     loyaltyPointsValue,
     loyaltyPointsCalc,
+    manualBenefitsValue,
+    manualBenefitsCalc,
     netCost,
   } = breakdown;
 
@@ -201,6 +220,18 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
             </div>
             <span data-testid="breakdown-loyalty-value" className="text-green-600">
               -{formatCurrency(loyaltyPointsValue)}
+            </span>
+          </div>
+        )}
+
+        {manualBenefitsValue > 0 && (
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center gap-1.5">
+              <span>Stay Benefits</span>
+              <CalculationInfo calc={manualBenefitsCalc} />
+            </div>
+            <span data-testid="breakdown-manual-benefits" className="text-green-600">
+              -{formatCurrency(manualBenefitsValue)}
             </span>
           </div>
         )}

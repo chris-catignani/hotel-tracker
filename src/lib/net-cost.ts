@@ -1,6 +1,6 @@
-import { certPointsValue } from "@/lib/cert-types";
 import { formatCurrency } from "@/lib/utils";
-import { DEFAULT_EQN_VALUE } from "@/lib/constants";
+import { resolveValuation, BenefitValuationData } from "./benefit-valuations";
+import { CertType, BenefitType } from "@prisma/client";
 
 const DEFAULT_CENTS_PER_POINT = 0.01;
 
@@ -27,6 +27,7 @@ export interface CalculationDetail {
 export interface NetCostBookingPromotionBenefit {
   appliedValue: string | number;
   eligibleNightsAtBooking?: number | null;
+  totalNights?: number | null;
   promotionBenefit: {
     rewardType: string;
     valueType: string;
@@ -49,6 +50,7 @@ export interface NetCostBooking {
   loyaltyPointsEarned: number | null;
   pointsRedeemed: number | null;
   certificates: { certType: string }[];
+  benefits?: { benefitType: string; label?: string | null; dollarValue?: string | number | null }[];
   hotelChainId: string | null;
   otaAgencyId: string | null;
   hotelChain: {
@@ -90,6 +92,7 @@ export interface NetCostBooking {
     autoApplied?: boolean;
     verified?: boolean;
     eligibleNightsAtBooking?: number | null;
+    totalStayNights?: number | null;
     promotion: {
       name: string;
       type?: string;
@@ -128,6 +131,8 @@ export interface NetCostBreakdown {
   pointsRedeemedCalc?: CalculationDetail;
   certsValue: number;
   certsCalc?: CalculationDetail;
+  manualBenefitsValue: number;
+  manualBenefitsCalc?: CalculationDetail;
   netCost: number;
 }
 
@@ -138,9 +143,21 @@ function formatCents(centsPerPoint: number): string {
   return parseFloat(c.toFixed(2)).toString();
 }
 
-export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
+export function getNetCostBreakdown(
+  booking: NetCostBooking,
+  valuations: BenefitValuationData[] = []
+): NetCostBreakdown {
   const totalCost = Number(booking.totalCost);
   const pretaxCost = Number(booking.pretaxCost);
+  const hotelChain = booking.hotelChain;
+  const hotelCentsPerPoint = Number(hotelChain.pointType?.centsPerPoint ?? DEFAULT_CENTS_PER_POINT);
+
+  // 1. Resolve EQN value for this chain
+  const eqnValuation = resolveValuation(valuations, {
+    hotelChainId: hotelChain.id,
+    isEqn: true,
+  });
+  const eqnDollarValue = eqnValuation.value;
 
   // NOTE: Redemption Constraints
   // The appliedValue shown here already reflects any constraints enforced at matching time:
@@ -156,10 +173,6 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
   // The final appliedValue shown below is the result after all constraints are applied.
 
   // 1. Promotions
-  const hotelCentsPerPoint = booking.hotelChain.pointType?.centsPerPoint
-    ? Number(booking.hotelChain.pointType.centsPerPoint)
-    : DEFAULT_CENTS_PER_POINT;
-
   const promotions: PromotionBreakdown[] = booking.bookingPromotions.map((bp, index) => {
     const benefits = bp.benefitApplications ?? [];
 
@@ -208,8 +221,11 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
             expectedValuePerNight = (totalCost * (bValue / 100)) / nightsInStay;
           }
         } else if (b.rewardType === "eqn") {
-          expectedValuePerNight = (bValue * DEFAULT_EQN_VALUE) / minNights;
+          expectedValuePerNight = (bValue * eqnDollarValue) / minNights;
         }
+
+        const totalSystemNights = (ba.totalNights ?? 0) + nightsInStay;
+        const maxRewardableTotalNights = Math.floor(totalSystemNights / minNights) * minNights;
 
         let nightsAccountedFor = 0;
         let currentStart = cumulativeAtStart;
@@ -226,13 +242,20 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
           const segmentEndProgress = (currentStart + nightsInThisSegment) % minNights;
           const isCycleFinished = segmentEndProgress === 0;
 
+          const isCycleEventuallyFinished =
+            currentStart + nightsInThisSegment <= maxRewardableTotalNights;
+
           // 'Fill Up' strategy: Give this segment its full expected value until we run out of bApplied
           const expectedSegmentValue = expectedValuePerNight * nightsInThisSegment;
-          const segmentValue = Math.min(remainingBApplied, expectedSegmentValue);
+          const segmentValue = isCycleEventuallyFinished
+            ? Math.min(remainingBApplied, expectedSegmentValue)
+            : 0;
           remainingBApplied -= segmentValue;
 
           const isSegmentCapped =
-            expectedSegmentValue > 0 && segmentValue < expectedSegmentValue - 0.001;
+            expectedSegmentValue > 0 &&
+            segmentValue < expectedSegmentValue - 0.001 &&
+            isCycleEventuallyFinished;
           const isMaxedOut = isSegmentCapped && segmentValue < 0.01;
 
           let label = "";
@@ -262,7 +285,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
               : `${nightsInThisSegment} nights towards ${minNights}-night goal`;
 
           let nightFormula = "";
-          if (!isMaxedOut) {
+          if (!isMaxedOut && isCycleEventuallyFinished) {
             if (b.rewardType === "points") {
               const centsStr = formatCents(hotelCentsPerPoint);
               nightFormula = `(${nightProgressLabel}) × ${bValue.toLocaleString()} bonus pts × ${centsStr}¢`;
@@ -278,17 +301,21 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
           benefitSegments.push({
             label,
             value: segmentValue,
-            formula: isMaxedOut
+            formula: !isCycleEventuallyFinished
               ? ""
-              : nightFormula +
-                ` = ${formatCurrency(segmentValue)}` +
-                capSuffix +
-                (isCycleFinished ? "" : " (pending)"),
-            description: isMaxedOut
-              ? "This segment no longer applies because the promotion has been maxed out."
-              : description +
-                (isCycleFinished ? " (Goal Met!)" : " (Pending)") +
-                (isSegmentCapped ? " Reduced by redemption caps." : ""),
+              : isMaxedOut
+                ? ""
+                : nightFormula +
+                  ` = ${formatCurrency(segmentValue)}` +
+                  capSuffix +
+                  (isCycleFinished ? "" : " (pending)"),
+            description: !isCycleEventuallyFinished
+              ? `This cycle remains incomplete (${totalSystemNights % minNights} of ${minNights} nights total in system). Missing nights to earn.`
+              : isMaxedOut
+                ? "This segment no longer applies because the promotion has been maxed out."
+                : description +
+                  (isCycleFinished ? " (Goal Met!)" : " (Pending)") +
+                  (isSegmentCapped ? " Reduced by redemption caps." : ""),
           });
 
           nightsAccountedFor += nightsInThisSegment;
@@ -311,11 +338,17 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
             ? ` This bonus is pending additional stays${pendingRatio}.`
             : "";
 
+        const isAnyCycleEarned = maxRewardableTotalNights > cumulativeAtStart;
+
         benefitDescriptionLine = isMaxedOutOverall
           ? "This promotion has been maxed out and no further rewards apply."
           : `Earned proportional rewards for ${nightsInStay} nights towards a ${minNights}-night requirement.${proportionalSuffix}`;
 
-        if (bApplied < expectedValuePerNight * nightsInStay - 0.001 && !isMaxedOutOverall) {
+        if (
+          bApplied < expectedValuePerNight * nightsInStay - 0.001 &&
+          !isMaxedOutOverall &&
+          isAnyCycleEarned
+        ) {
           benefitDescriptionLine += " Reduced by redemption caps.";
         }
       } else {
@@ -382,12 +415,23 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
           }
         } else if (b.rewardType === "certificate") {
           const centsStr = formatCents(hotelCentsPerPoint);
-          const points = b.certType ? certPointsValue(b.certType) : 0;
-          benefitFormula = `${multiplierPrefix}${bValue.toLocaleString()} cert(s) × ${points.toLocaleString()} pts × 70% × ${centsStr}¢${capSuffix}`;
-          benefitDescription = `Earns ${appliedMultiplier > 1 ? (appliedMultiplier * bValue).toLocaleString() : bValue.toLocaleString()} free night certificate(s), valued at ${centsStr}¢ per point.`;
+          const certValuation = resolveValuation(valuations, {
+            hotelChainId: hotelChain.id,
+            certType: b.certType as CertType,
+          });
+          const points = certValuation.valueType === "points" ? certValuation.value : 0;
+          const directDollar = certValuation.valueType === "dollar" ? certValuation.value : 0;
+
+          if (certValuation.valueType === "points") {
+            benefitFormula = `${multiplierPrefix}${bValue.toLocaleString()} cert(s) × ${points.toLocaleString()} pts × ${centsStr}¢${capSuffix}`;
+            benefitDescription = `Earns ${appliedMultiplier > 1 ? (appliedMultiplier * bValue).toLocaleString() : bValue.toLocaleString()} free night certificate(s), valued at your custom ${points.toLocaleString()} point valuation.`;
+          } else {
+            benefitFormula = `${multiplierPrefix}${bValue.toLocaleString()} cert(s) × ${formatCurrency(directDollar)}${capSuffix}`;
+            benefitDescription = `Earns ${appliedMultiplier > 1 ? (appliedMultiplier * bValue).toLocaleString() : bValue.toLocaleString()} free night certificate(s), valued at a flat ${formatCurrency(directDollar)} each.`;
+          }
         } else if (b.rewardType === "eqn") {
-          benefitFormula = `${multiplierPrefix}${bValue.toLocaleString()} bonus EQN(s) × ${formatCurrency(DEFAULT_EQN_VALUE)}${capSuffix}`;
-          benefitDescription = `Earns ${appliedMultiplier > 1 ? (appliedMultiplier * bValue).toLocaleString() : bValue.toLocaleString()} bonus Elite Qualifying Night(s).`;
+          benefitFormula = `${multiplierPrefix}${bValue.toLocaleString()} bonus EQN(s) × ${formatCurrency(eqnDollarValue)}${capSuffix}`;
+          benefitDescription = `Earns ${appliedMultiplier > 1 ? (appliedMultiplier * bValue).toLocaleString() : bValue.toLocaleString()} bonus Elite Qualifying Night(s), valued at ${formatCurrency(eqnDollarValue)} each.`;
         }
 
         if (isCapped && !isMaxedOutOverall) {
@@ -662,13 +706,26 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
     const centsStr = formatCents(centsPerPoint);
 
     const certSegments = booking.certificates.map((cert) => {
-      const points = certPointsValue(cert.certType);
-      const value = points * centsPerPoint;
+      const certValuation = resolveValuation(valuations, {
+        hotelChainId: hotelChain.id,
+        certType: cert.certType as CertType,
+      });
+
+      let val = 0;
+      let formula = "";
+      if (certValuation.valueType === "points") {
+        val = certValuation.value * centsPerPoint;
+        formula = `${certValuation.value.toLocaleString()} pts × ${centsStr}¢ = ${formatCurrency(val)}`;
+      } else {
+        val = certValuation.value;
+        formula = formatCurrency(val);
+      }
+
       return {
         label: `Free Night Cert (${cert.certType})`,
-        value,
-        formula: `${points.toLocaleString()} pts × ${centsStr}¢ = ${formatCurrency(value)}`,
-        description: `Estimated value of this certificate type.`,
+        value: val,
+        formula,
+        description: `Estimated value based on your ${certValuation.valueType} valuation.`,
       };
     });
 
@@ -687,6 +744,49 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
     };
   }
 
+  // 7. Manual Booking Benefits Value
+  const manualBenefitSegments = (booking.benefits || []).map((benefit) => {
+    // If dollarValue is explicitly set, use it
+    if (benefit.dollarValue != null) {
+      const val = Number(benefit.dollarValue);
+      return {
+        label: benefit.label || benefit.benefitType,
+        value: val,
+        formula: formatCurrency(val),
+        description: "Manually entered value.",
+      };
+    }
+
+    // Otherwise, try to resolve from valuations
+    const valuation = resolveValuation(valuations, {
+      hotelChainId: hotelChain.id,
+      benefitType: benefit.benefitType as BenefitType,
+    });
+
+    return {
+      label: benefit.label || benefit.benefitType,
+      value: valuation.value, // benefit valuations are always 'dollar' for standard benefits
+      formula: formatCurrency(valuation.value),
+      description: `Default valuation for ${benefit.benefitType}.`,
+    };
+  });
+
+  const manualBenefitsValue = manualBenefitSegments.reduce((sum, s) => sum + s.value, 0);
+  const manualBenefitsCalc: CalculationDetail | undefined =
+    manualBenefitSegments.length > 0
+      ? {
+          label: "Stay Benefits",
+          appliedValue: manualBenefitsValue,
+          description: "Value of perks and credits for this stay.",
+          groups: [
+            {
+              name: "Individual Perks",
+              segments: manualBenefitSegments,
+            },
+          ],
+        }
+      : undefined;
+
   const netCost =
     totalCost -
     promoSavings -
@@ -694,7 +794,8 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
     cardReward -
     loyaltyPointsValue +
     pointsRedeemedValue +
-    certsValue;
+    certsValue -
+    manualBenefitsValue;
 
   return {
     totalCost,
@@ -710,6 +811,8 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
     pointsRedeemedCalc,
     certsValue,
     certsCalc,
+    manualBenefitsValue,
+    manualBenefitsCalc,
     netCost,
   };
 }

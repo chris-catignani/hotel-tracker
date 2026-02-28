@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserStatusTab } from "@/components/settings/user-status-tab";
 import { PointTypesTab } from "@/components/settings/point-types-tab";
 import { HotelChainsTab } from "@/components/settings/hotel-chains-tab";
+import { BenefitValuationsTab } from "@/components/settings/benefit-valuations-tab";
 import { CreditCardsTab } from "@/components/settings/credit-cards-tab";
 import { ShoppingPortalsTab } from "@/components/settings/shopping-portals-tab";
 import { OtaAgenciesTab } from "@/components/settings/ota-agencies-tab";
@@ -18,6 +19,7 @@ export default function SettingsPage() {
             <TabsTrigger value="my-status">My Status</TabsTrigger>
             <TabsTrigger value="point-types">Point Types</TabsTrigger>
             <TabsTrigger value="hotels">Hotel Chains</TabsTrigger>
+            <TabsTrigger value="valuations">Valuations</TabsTrigger>
             <TabsTrigger value="credit-cards">Credit Cards</TabsTrigger>
             <TabsTrigger value="portals">Shopping Portals</TabsTrigger>
             <TabsTrigger value="ota-agencies">OTA Agencies</TabsTrigger>
@@ -31,6 +33,9 @@ export default function SettingsPage() {
         </TabsContent>
         <TabsContent value="hotels" data-testid="tab-hotels">
           <HotelChainsTab />
+        </TabsContent>
+        <TabsContent value="valuations" data-testid="tab-valuations">
+          <BenefitValuationsTab />
         </TabsContent>
         <TabsContent value="credit-cards" data-testid="tab-credit-cards">
           <CreditCardsTab />
