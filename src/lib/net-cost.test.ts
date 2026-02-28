@@ -741,6 +741,7 @@ describe("net-cost", () => {
     expect(promo.groups[0].segments[0].value).toBe(30);
     expect(promo.groups[0].segments[1].label).toBe("New Reward Cycle (1/3 nights)");
     expect(promo.groups[0].segments[1].value).toBe(10);
+    expect(promo.groups[0].segments[1].formula).toContain("(pending)");
   });
 
   it("should provide segments for credit card rewards with hotel boost", () => {
@@ -772,6 +773,7 @@ describe("net-cost", () => {
     expect(card?.groups[0].segments[0].label).toBe("Base Card Earning");
     expect(card?.groups[0].segments[1].label).toBe("Hotel/Booking Boost");
     expect(card?.groups[0].segments[0].value).toBe(1.5);
+    expect(card?.groups[0].segments[1].value).toBe(4.5);
   });
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -861,10 +863,25 @@ describe("net-cost", () => {
 
       expect(promo.groups).toHaveLength(1);
       expect(promo.groups[0].segments).toHaveLength(4);
+
+      // Cycle 1: Completion (2 nights) -> $40
       expect(promo.groups[0].segments[0].value).toBe(40);
+      expect(promo.groups[0].segments[0].label).toContain("Cycle Completion");
+
+      // Cycle 2: Full (3 nights) -> $60
       expect(promo.groups[0].segments[1].value).toBe(60);
+      expect(promo.groups[0].segments[1].label).toContain("Full Reward Cycle");
+
+      // Cycle 3: Full (3 nights) -> $20 (Capped)
       expect(promo.groups[0].segments[2].value).toBe(20);
+      expect(promo.groups[0].segments[2].formula).toContain("(capped)");
+
+      // Cycle 4: Start (1 night) -> $0 (Maxed Out)
       expect(promo.groups[0].segments[3].value).toBe(0);
+      expect(promo.groups[0].segments[3].formula).toBe("");
+      expect(promo.groups[0].segments[3].description).toBe(
+        "This segment no longer applies because the promotion has been maxed out."
+      );
     });
   });
 });
