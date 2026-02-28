@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { certTypeLabel } from "@/lib/cert-types";
 import { getNetCostBreakdown, NetCostBooking } from "@/lib/net-cost";
+import { BenefitValuationData } from "@/lib/benefit-valuations";
 import { formatCurrency } from "@/lib/utils";
 import {
   Table,
@@ -169,13 +170,21 @@ export default function BookingDetailPage() {
   const id = params.id as string;
 
   const [booking, setBooking] = useState<Booking | null>(null);
+  const [valuations, setValuations] = useState<BenefitValuationData[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchBooking = useCallback(async () => {
     setLoading(true);
-    const res = await fetch(`/api/bookings/${id}`);
-    if (res.ok) {
-      setBooking(await res.json());
+    const [bookingRes, valuationsRes] = await Promise.all([
+      fetch(`/api/bookings/${id}`),
+      fetch("/api/benefit-valuations"),
+    ]);
+
+    if (bookingRes.ok) {
+      setBooking(await bookingRes.json());
+    }
+    if (valuationsRes.ok) {
+      setValuations(await valuationsRes.json());
     }
     setLoading(false);
   }, [id]);
@@ -226,7 +235,7 @@ export default function BookingDetailPage() {
     );
   }
 
-  const breakdown = getNetCostBreakdown(booking);
+  const breakdown = getNetCostBreakdown(booking, valuations);
   const totalCost = Number(booking.totalCost);
 
   const typeBadge = getBookingTypeBadge(booking);

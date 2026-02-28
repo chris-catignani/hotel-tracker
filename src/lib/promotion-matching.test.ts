@@ -4,8 +4,14 @@ import {
   MatchingBooking,
   getConstrainedPromotions,
 } from "./promotion-matching";
-import { PromotionType, PromotionRewardType, PromotionBenefitValueType } from "@prisma/client";
+import {
+  PromotionType,
+  PromotionRewardType,
+  PromotionBenefitValueType,
+  CertType,
+} from "@prisma/client";
 import { Prisma } from "@prisma/client";
+import { BenefitValuationData } from "./benefit-valuations";
 
 type TestPromotion = Parameters<typeof calculateMatchedPromotions>[1][number];
 type TestRestrictions = NonNullable<TestPromotion["restrictions"]>;
@@ -30,6 +36,27 @@ const mockBooking: MatchingBooking = {
     pointType: { centsPerPoint: 0.02 }, // distinct non-default
   },
 };
+
+const mockValuations: BenefitValuationData[] = [
+  {
+    id: "v1",
+    hotelChainId: null,
+    isEqn: true,
+    certType: null,
+    benefitType: null,
+    value: 10,
+    valueType: "dollar",
+  },
+  {
+    id: "v2",
+    hotelChainId: null,
+    isEqn: false,
+    certType: "marriott_35k" as CertType,
+    benefitType: null,
+    value: 35000,
+    valueType: "points",
+  },
+];
 
 function makeRestrictions(overrides: Partial<TestRestrictions> = {}): TestRestrictions {
   return {
@@ -84,7 +111,12 @@ function makePromo(overrides: Partial<TestPromotion> = {}): TestPromotion {
 
 describe("promotion-matching", () => {
   it("should match a valid credit card promotion with fixed cashback", () => {
-    const matched = calculateMatchedPromotions(mockBooking, [makePromo()]);
+    const matched = calculateMatchedPromotions(
+      mockBooking,
+      [makePromo()],
+      new Map(),
+      mockValuations
+    );
     expect(matched).toHaveLength(1);
     expect(matched[0].promotionId).toBe("promo-1");
     expect(matched[0].appliedValue).toBe(10);
@@ -93,9 +125,12 @@ describe("promotion-matching", () => {
   });
 
   it("should not match if credit card ID differs", () => {
-    const matched = calculateMatchedPromotions(mockBooking, [
-      makePromo({ creditCardId: "card-99" }),
-    ]);
+    const matched = calculateMatchedPromotions(
+      mockBooking,
+      [makePromo({ creditCardId: "card-99" })],
+      new Map(),
+      mockValuations
+    );
     expect(matched).toHaveLength(0);
   });
 
@@ -105,7 +140,7 @@ describe("promotion-matching", () => {
       creditCardId: null,
       hotelChainId: "chain-3",
     });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
     expect(matched).toHaveLength(1);
   });
 
@@ -121,8 +156,12 @@ describe("promotion-matching", () => {
       }),
     });
 
-    expect(calculateMatchedPromotions(mockBooking, [promoWithCorrectSubBrand])).toHaveLength(1);
-    expect(calculateMatchedPromotions(mockBooking, [promoWithWrongSubBrand])).toHaveLength(0);
+    expect(
+      calculateMatchedPromotions(mockBooking, [promoWithCorrectSubBrand], new Map(), mockValuations)
+    ).toHaveLength(1);
+    expect(
+      calculateMatchedPromotions(mockBooking, [promoWithWrongSubBrand], new Map(), mockValuations)
+    ).toHaveLength(0);
   });
 
   it("should respect date ranges", () => {
@@ -135,8 +174,12 @@ describe("promotion-matching", () => {
       endDate: new Date("2026-02-01"),
     });
 
-    expect(calculateMatchedPromotions(mockBooking, [promoInRange])).toHaveLength(1);
-    expect(calculateMatchedPromotions(mockBooking, [promoPast])).toHaveLength(0);
+    expect(
+      calculateMatchedPromotions(mockBooking, [promoInRange], new Map(), mockValuations)
+    ).toHaveLength(1);
+    expect(
+      calculateMatchedPromotions(mockBooking, [promoPast], new Map(), mockValuations)
+    ).toHaveLength(0);
   });
 
   it("should respect min spend for credit card promos", () => {
@@ -147,8 +190,12 @@ describe("promotion-matching", () => {
       restrictions: makeRestrictions({ minSpend: new Prisma.Decimal(200) }),
     });
 
-    expect(calculateMatchedPromotions(mockBooking, [promoLowMin])).toHaveLength(1);
-    expect(calculateMatchedPromotions(mockBooking, [promoHighMin])).toHaveLength(0);
+    expect(
+      calculateMatchedPromotions(mockBooking, [promoLowMin], new Map(), mockValuations)
+    ).toHaveLength(1);
+    expect(
+      calculateMatchedPromotions(mockBooking, [promoHighMin], new Map(), mockValuations)
+    ).toHaveLength(0);
   });
 
   it("should calculate cashback percentage value correctly", () => {
@@ -166,7 +213,7 @@ describe("promotion-matching", () => {
         },
       ],
     });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
     expect(matched[0].appliedValue).toBe(15); // 15% of 100
     expect(matched[0].benefitApplications[0].appliedValue).toBe(15);
   });
@@ -186,7 +233,7 @@ describe("promotion-matching", () => {
         },
       ],
     });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
     // 1000 pts * (3-1) * 0.015 $/pt = 30
     expect(matched[0].appliedValue).toBe(30);
     expect(matched[0].benefitApplications[0].appliedValue).toBe(30);
@@ -207,7 +254,7 @@ describe("promotion-matching", () => {
         },
       ],
     });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
     // 2000 pts * 0.015 $/pt = 30
     expect(matched[0].appliedValue).toBe(30);
     expect(matched[0].benefitApplications[0].appliedValue).toBe(30);
@@ -238,12 +285,12 @@ describe("promotion-matching", () => {
         },
       ],
     });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
-    // Cert: 35000 pts * 0.015 $/pt * 0.7 = 367.5
+    const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
+    // Cert: 35000 pts * 0.015 $/pt = 525
     // EQN: 1 * 10.0 = 10
-    // Total: 367.5 + 10 = 377.5
-    expect(matched[0].appliedValue).toBe(377.5);
-    expect(matched[0].benefitApplications[0].appliedValue).toBe(367.5);
+    // Total: 525 + 10 = 535
+    expect(matched[0].appliedValue).toBe(535);
+    expect(matched[0].benefitApplications[0].appliedValue).toBe(525);
     expect(matched[0].benefitApplications[1].appliedValue).toBe(10);
   });
 
@@ -272,7 +319,7 @@ describe("promotion-matching", () => {
         },
       ],
     });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
     // 10 (fixed cashback) + 1000 pts * 0.015 (= 15) = 25
     expect(matched[0].appliedValue).toBe(25);
     expect(matched[0].benefitApplications).toHaveLength(2);
@@ -295,7 +342,7 @@ describe("promotion-matching", () => {
         },
       ],
     });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
     // basePoints = 80 (pretaxCost) * 10 (basePointRate) = 800
     // 800 pts * (3-1) * 0.015 $/pt = 24
     expect(matched[0].appliedValue).toBe(24);
@@ -317,7 +364,7 @@ describe("promotion-matching", () => {
         },
       ],
     });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
     // Uses full loyaltyPointsEarned = 1000
     // 1000 pts * (3-1) * 0.015 $/pt = 30
     expect(matched[0].appliedValue).toBe(30);
@@ -339,7 +386,7 @@ describe("promotion-matching", () => {
         },
       ],
     });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
     // basePoints = 80 * 10 = 800
     // 800 * (3-1) * 0.015 = 24
     expect(matched[0].appliedValue).toBe(24);
@@ -352,7 +399,7 @@ describe("promotion-matching", () => {
     const priorUsage = new Map([
       [promo.id, { count: 1, totalValue: 10, totalBonusPoints: 0, benefitUsage: new Map() }],
     ]);
-    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage, mockValuations);
     expect(matched).toHaveLength(0);
   });
 
@@ -361,7 +408,7 @@ describe("promotion-matching", () => {
     const priorUsage = new Map([
       [promo.id, { count: 1, totalValue: 10, totalBonusPoints: 0, benefitUsage: new Map() }],
     ]);
-    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage, mockValuations);
     expect(matched).toHaveLength(1);
   });
 
@@ -370,19 +417,19 @@ describe("promotion-matching", () => {
     const priorUsage = new Map([
       [promo.id, { count: 2, totalValue: 10, totalBonusPoints: 0, benefitUsage: new Map() }],
     ]);
-    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage, mockValuations);
     expect(matched).toHaveLength(0);
   });
 
   it("should respect minNightsRequired: skip below minimum", () => {
     const promo = makePromo({ restrictions: makeRestrictions({ minNightsRequired: 5 }) });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
     expect(matched).toHaveLength(0);
   });
 
   it("should respect minNightsRequired: allow at minimum", () => {
     const promo = makePromo({ restrictions: makeRestrictions({ minNightsRequired: 3 }) });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
     expect(matched).toHaveLength(1);
   });
 
@@ -403,7 +450,7 @@ describe("promotion-matching", () => {
       ],
     });
     const booking = { ...mockBooking, numNights: 6 }; // 6 nights / 2 = 3x multiplier
-    const matched = calculateMatchedPromotions(booking, [promo]);
+    const matched = calculateMatchedPromotions(booking, [promo], new Map(), mockValuations);
     expect(matched).toHaveLength(1);
     expect(matched[0].appliedValue).toBe(30); // 10 * 3
     expect(matched[0].benefitApplications[0].appliedValue).toBe(30); // 10 * 3
@@ -437,7 +484,7 @@ describe("promotion-matching", () => {
         },
       ],
     ]);
-    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage, mockValuations);
     expect(matched).toHaveLength(0); // benefit filtered out, promo has no benefits left
   });
 
@@ -469,7 +516,7 @@ describe("promotion-matching", () => {
         },
       ],
     ]);
-    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage, mockValuations);
     expect(matched).toHaveLength(1);
     expect(matched[0].appliedValue).toBe(15); // capped at 60 - 45 = 15
   });
@@ -490,7 +537,7 @@ describe("promotion-matching", () => {
       ],
     });
     // mockBooking totalCost is 100, benefit requires 200
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
     expect(matched).toHaveLength(0);
   });
 
@@ -523,7 +570,7 @@ describe("promotion-matching", () => {
         },
       ],
     ]);
-    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage, mockValuations);
     expect(matched).toHaveLength(0);
   });
 
@@ -544,7 +591,7 @@ describe("promotion-matching", () => {
       ],
     });
     // Booking has 3 nights (from mockBooking), benefit requires 5
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
     expect(matched).toHaveLength(0);
   });
 
@@ -565,7 +612,7 @@ describe("promotion-matching", () => {
       ],
     });
     const booking = { ...mockBooking, numNights: 6 }; // 6 nights / 2 = 3x multiplier
-    const matched = calculateMatchedPromotions(booking, [promo]);
+    const matched = calculateMatchedPromotions(booking, [promo], new Map(), mockValuations);
     expect(matched).toHaveLength(1);
     expect(matched[0].appliedValue).toBe(30); // 10 * 3
   });
@@ -574,7 +621,7 @@ describe("promotion-matching", () => {
     const promo = makePromo({
       restrictions: makeRestrictions({ bookByDate: new Date("2026-02-01") }),
     });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
     expect(matched).toHaveLength(1);
   });
 
@@ -582,7 +629,7 @@ describe("promotion-matching", () => {
     const promo = makePromo({
       restrictions: makeRestrictions({ bookByDate: new Date("2025-12-01") }),
     });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
     expect(matched).toHaveLength(0);
   });
 
@@ -605,7 +652,7 @@ describe("promotion-matching", () => {
     const priorUsage = new Map([
       [promo.id, { count: 0, totalValue: 45, totalBonusPoints: 0, benefitUsage: new Map() }],
     ]);
-    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage, mockValuations);
     expect(matched).toHaveLength(1);
     expect(matched[0].appliedValue).toBe(15); // capped at 60 - 45 = 15
   });
@@ -617,7 +664,7 @@ describe("promotion-matching", () => {
     const priorUsage = new Map([
       [promo.id, { count: 0, totalValue: 50, totalBonusPoints: 0, benefitUsage: new Map() }],
     ]);
-    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage, mockValuations);
     expect(matched).toHaveLength(1);
     expect(matched[0].appliedValue).toBe(0);
   });
@@ -641,7 +688,7 @@ describe("promotion-matching", () => {
     const priorUsage = new Map([
       [promo.id, { count: 0, totalValue: 0, totalBonusPoints: 50, benefitUsage: new Map() }],
     ]);
-    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage, mockValuations);
     expect(matched).toHaveLength(1);
     // Original: 200 pts * 0.015 = 3, bonusPoints = 200
     // Remaining capacity: 100 - 50 = 50 points
@@ -671,7 +718,7 @@ describe("promotion-matching", () => {
     const priorUsage = new Map([
       [promo.id, { count: 0, totalValue: 0, totalBonusPoints: 50, benefitUsage: new Map() }],
     ]);
-    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage, mockValuations);
     expect(matched).toHaveLength(1);
     expect(matched[0].bonusPointsApplied).toBe(0);
     expect(matched[0].appliedValue).toBe(0);
@@ -723,7 +770,7 @@ describe("promotion-matching", () => {
   it("tiered: 0 prior matched stays → tier 1 benefits apply ($50)", () => {
     const promo = makeTieredPromo();
     // No prior usage → count=0 → currentStayNumber=1 → tier 1
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
     expect(matched).toHaveLength(1);
     expect(matched[0].appliedValue).toBe(50);
     expect(matched[0].benefitApplications[0].promotionBenefitId).toBe("benefit-101");
@@ -734,7 +781,7 @@ describe("promotion-matching", () => {
     const priorUsage = new Map([
       [promo.id, { count: 0, totalValue: 0, totalBonusPoints: 0, eligibleStayCount: 1 }],
     ]);
-    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage, mockValuations);
     expect(matched).toHaveLength(1);
     expect(matched[0].appliedValue).toBe(75);
     expect(matched[0].benefitApplications[0].promotionBenefitId).toBe("benefit-102");
@@ -745,7 +792,7 @@ describe("promotion-matching", () => {
     const priorUsage = new Map([
       [promo.id, { count: 1, totalValue: 50, totalBonusPoints: 0, eligibleStayCount: 2 }],
     ]);
-    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage, mockValuations);
     expect(matched).toHaveLength(1);
     expect(matched[0].appliedValue).toBe(100);
     expect(matched[0].benefitApplications[0].promotionBenefitId).toBe("benefit-103");
@@ -756,7 +803,7 @@ describe("promotion-matching", () => {
     const priorUsage = new Map([
       [promo.id, { count: 3, totalValue: 300, totalBonusPoints: 0, eligibleStayCount: 5 }],
     ]);
-    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage, mockValuations);
     expect(matched).toHaveLength(1);
     expect(matched[0].appliedValue).toBe(100);
   });
@@ -767,7 +814,7 @@ describe("promotion-matching", () => {
       benefits: [],
       tiers: [{ id: "tier-1", minStays: 2, maxStays: null, benefits: [tier2Benefit] }],
     });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
     expect(matched).toHaveLength(0);
   });
 
@@ -780,7 +827,7 @@ describe("promotion-matching", () => {
     const priorUsage = new Map([
       [promo.id, { count: 0, totalValue: 0, totalBonusPoints: 0, eligibleStayCount: 1 }],
     ]);
-    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage, mockValuations);
     expect(matched).toHaveLength(1);
     expect(matched[0].appliedValue).toBe(75);
   });
@@ -794,13 +841,13 @@ describe("promotion-matching", () => {
       [promo.id, { count: 2, totalValue: 0, totalBonusPoints: 0, eligibleStayCount: 2 }],
     ]);
     // currentStayNumber=3, tier maxStays=2 → no match
-    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage, mockValuations);
     expect(matched).toHaveLength(0);
   });
 
   it("flat promo (no tiers) still works as before", () => {
     const promo = makePromo({ tiers: [] });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
     expect(matched).toHaveLength(1);
     expect(matched[0].appliedValue).toBe(10);
   });
@@ -821,7 +868,7 @@ describe("promotion-matching", () => {
         },
       ],
     ]);
-    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage, mockValuations);
     expect(matched).toHaveLength(1);
   });
 
@@ -841,7 +888,7 @@ describe("promotion-matching", () => {
         },
       ],
     ]);
-    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage, mockValuations);
     expect(matched).toHaveLength(0);
   });
 
@@ -861,7 +908,7 @@ describe("promotion-matching", () => {
         },
       ],
     ]);
-    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage, mockValuations);
     expect(matched).toHaveLength(1);
   });
 
@@ -878,7 +925,7 @@ describe("promotion-matching", () => {
         },
       ],
     ]);
-    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage, mockValuations);
     expect(matched).toHaveLength(1);
   });
 
@@ -898,7 +945,12 @@ describe("promotion-matching", () => {
         },
       ],
     ]);
-    const matched = calculateMatchedPromotions(bookingNoSubBrand, [promo], priorUsage);
+    const matched = calculateMatchedPromotions(
+      bookingNoSubBrand,
+      [promo],
+      priorUsage,
+      mockValuations
+    );
     expect(matched).toHaveLength(0);
   });
 
@@ -910,7 +962,7 @@ describe("promotion-matching", () => {
         subBrandRestrictions: [{ hotelChainSubBrandId: "brand-99", mode: "exclude" }],
       }),
     });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
     expect(matched).toHaveLength(1);
     expect(matched[0].appliedValue).toBe(10);
   });
@@ -922,7 +974,7 @@ describe("promotion-matching", () => {
         subBrandRestrictions: [{ hotelChainSubBrandId: "brand-4", mode: "exclude" }],
       }),
     });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
     expect(matched).toHaveLength(0);
   });
 
@@ -934,7 +986,12 @@ describe("promotion-matching", () => {
         subBrandRestrictions: [{ hotelChainSubBrandId: "brand-4", mode: "exclude" }],
       }),
     });
-    const matched = calculateMatchedPromotions(bookingNoSubBrand, [promo]);
+    const matched = calculateMatchedPromotions(
+      bookingNoSubBrand,
+      [promo],
+      new Map(),
+      mockValuations
+    );
     expect(matched).toHaveLength(1);
     expect(matched[0].appliedValue).toBe(10);
   });
@@ -969,7 +1026,7 @@ describe("promotion-matching", () => {
       hotelChainId: "chain-3",
       benefits: [baseBenefitDef, tieInBenefit],
     });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
     expect(matched).toHaveLength(1);
     // $10 base + $15 tie-in = $25
     expect(matched[0].appliedValue).toBe(25);
@@ -996,7 +1053,7 @@ describe("promotion-matching", () => {
       hotelChainId: "chain-3",
       benefits: [baseBenefitDef, tieInBenefit],
     });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
     expect(matched).toHaveLength(1);
     // Only $10 base benefit applies
     expect(matched[0].appliedValue).toBe(10);
@@ -1021,7 +1078,7 @@ describe("promotion-matching", () => {
       hotelChainId: "chain-3",
       benefits: [tieInBenefit],
     });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
     expect(matched).toHaveLength(0);
   });
 
@@ -1042,7 +1099,7 @@ describe("promotion-matching", () => {
       hotelChainId: "chain-3",
       benefits: [tieInBenefit],
     });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
     expect(matched).toHaveLength(1);
     expect(matched[0].appliedValue).toBe(15);
     expect(matched[0].benefitApplications).toHaveLength(1);
@@ -1066,7 +1123,7 @@ describe("promotion-matching", () => {
       hotelChainId: "chain-3",
       benefits: [baseBenefitDef, extraBenefit],
     });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
     expect(matched).toHaveLength(1);
     expect(matched[0].appliedValue).toBe(25);
     expect(matched[0].benefitApplications).toHaveLength(2);
@@ -1092,7 +1149,7 @@ describe("promotion-matching", () => {
       hotelChainId: "chain-3",
       benefits: [baseBenefitDef, tieInBenefit],
     });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
     expect(matched).toHaveLength(1);
     expect(matched[0].appliedValue).toBe(25); // $10 + $15
     expect(matched[0].benefitApplications).toHaveLength(2);
@@ -1124,8 +1181,18 @@ describe("promotion-matching", () => {
       hotelChainId: "chain-3",
       benefits: [baseBenefitDef, makeTieInBenefit(true)],
     });
-    const matchedHold = calculateMatchedPromotions(mockBooking, [promoHold]);
-    const matchedPay = calculateMatchedPromotions(mockBooking, [promoPay]);
+    const matchedHold = calculateMatchedPromotions(
+      mockBooking,
+      [promoHold],
+      new Map(),
+      mockValuations
+    );
+    const matchedPay = calculateMatchedPromotions(
+      mockBooking,
+      [promoPay],
+      new Map(),
+      mockValuations
+    );
     expect(matchedHold).toHaveLength(1);
     expect(matchedPay).toHaveLength(1);
     expect(matchedHold[0].appliedValue).toBe(matchedPay[0].appliedValue);
@@ -1143,7 +1210,7 @@ describe("promotion-matching", () => {
       hotelChainId: "chain-3",
       restrictions: makeRestrictions({ tieInCards: [{ creditCardId: "card-1" }] }),
     });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
     expect(matched).toHaveLength(1);
     expect(matched[0].appliedValue).toBe(10);
   });
@@ -1156,7 +1223,7 @@ describe("promotion-matching", () => {
       hotelChainId: "chain-3",
       restrictions: makeRestrictions({ tieInCards: [{ creditCardId: "card-99" }] }),
     });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
     expect(matched).toHaveLength(0);
   });
 
@@ -1182,12 +1249,22 @@ describe("promotion-matching", () => {
     });
 
     // Booking at "brand-4" → both benefits apply
-    const matchedAtBrand4 = calculateMatchedPromotions(mockBooking, [promo]);
+    const matchedAtBrand4 = calculateMatchedPromotions(
+      mockBooking,
+      [promo],
+      new Map(),
+      mockValuations
+    );
     expect(matchedAtBrand4[0].appliedValue).toBe(30); // 10 + 20
 
     // Booking at different brand → only base applies
     const bookingAtOtherBrand = { ...mockBooking, hotelChainSubBrandId: "brand-99" };
-    const matchedAtOther = calculateMatchedPromotions(bookingAtOtherBrand, [promo]);
+    const matchedAtOther = calculateMatchedPromotions(
+      bookingAtOtherBrand,
+      [promo],
+      new Map(),
+      mockValuations
+    );
     expect(matchedAtOther[0].appliedValue).toBe(10); // only base
   });
 
@@ -1212,12 +1289,22 @@ describe("promotion-matching", () => {
     });
 
     // Booking at "brand-4" → scoped benefit excluded, only base
-    const matchedAtBrand4 = calculateMatchedPromotions(mockBooking, [promo]);
+    const matchedAtBrand4 = calculateMatchedPromotions(
+      mockBooking,
+      [promo],
+      new Map(),
+      mockValuations
+    );
     expect(matchedAtBrand4[0].appliedValue).toBe(10); // only base
 
     // Booking at different brand → both apply
     const bookingAtOtherBrand = { ...mockBooking, hotelChainSubBrandId: "brand-99" };
-    const matchedAtOther = calculateMatchedPromotions(bookingAtOtherBrand, [promo]);
+    const matchedAtOther = calculateMatchedPromotions(
+      bookingAtOtherBrand,
+      [promo],
+      new Map(),
+      mockValuations
+    );
     expect(matchedAtOther[0].appliedValue).toBe(30); // 10 + 20
   });
 
@@ -1240,7 +1327,7 @@ describe("promotion-matching", () => {
     });
 
     // First stay at "brand-4" → both apply
-    const firstStay = calculateMatchedPromotions(mockBooking, [promo]);
+    const firstStay = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
     expect(firstStay[0].appliedValue).toBe(30);
 
     // Second stay at "brand-4" → onceBenefit filtered, only base applies
@@ -1255,7 +1342,7 @@ describe("promotion-matching", () => {
         },
       ],
     ]);
-    const secondStay = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
+    const secondStay = calculateMatchedPromotions(mockBooking, [promo], priorUsage, mockValuations);
     expect(secondStay[0].appliedValue).toBe(10); // only base
   });
 
@@ -1267,7 +1354,7 @@ describe("promotion-matching", () => {
         restrictions: makeRestrictions({ validDaysAfterRegistration: 30 }), // valid until 2026-06-19
       });
       // mockBooking.checkIn is 2026-06-01 (within window)
-      const matched = calculateMatchedPromotions(mockBooking, [promo]);
+      const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
       expect(matched).toHaveLength(1);
     });
 
@@ -1277,7 +1364,7 @@ describe("promotion-matching", () => {
         restrictions: makeRestrictions({ validDaysAfterRegistration: 30 }),
       });
       // mockBooking.checkIn is 2026-06-01 (before registration)
-      const matched = calculateMatchedPromotions(mockBooking, [promo]);
+      const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
       expect(matched).toHaveLength(0);
     });
 
@@ -1287,7 +1374,7 @@ describe("promotion-matching", () => {
         restrictions: makeRestrictions({ validDaysAfterRegistration: 30 }), // valid until 2026-05-01
       });
       // mockBooking.checkIn is 2026-06-01 (after window)
-      const matched = calculateMatchedPromotions(mockBooking, [promo]);
+      const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
       expect(matched).toHaveLength(0);
     });
 
@@ -1298,7 +1385,7 @@ describe("promotion-matching", () => {
         restrictions: makeRestrictions({ validDaysAfterRegistration: null }),
       });
       // mockBooking.checkIn is 2026-06-01 (within global window)
-      const matched = calculateMatchedPromotions(mockBooking, [promo]);
+      const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
       expect(matched).toHaveLength(1);
     });
 
@@ -1309,7 +1396,7 @@ describe("promotion-matching", () => {
         restrictions: makeRestrictions({ validDaysAfterRegistration: 30 }),
       });
       // mockBooking.checkIn is 2026-06-01 (within global window)
-      const matched = calculateMatchedPromotions(mockBooking, [promo]);
+      const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
       expect(matched).toHaveLength(1);
     });
 
@@ -1320,7 +1407,7 @@ describe("promotion-matching", () => {
         restrictions: makeRestrictions({ validDaysAfterRegistration: 30 }), // valid until 2026-06-19
       });
       // mockBooking.checkIn is 2026-06-01 (past global end, but within personal window)
-      const matched = calculateMatchedPromotions(mockBooking, [promo]);
+      const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
       expect(matched).toHaveLength(1);
     });
 
@@ -1331,7 +1418,7 @@ describe("promotion-matching", () => {
         restrictions: makeRestrictions({ validDaysAfterRegistration: 90 }),
       });
       // mockBooking.checkIn is 2026-06-01 (before global start, but after registration)
-      const matched = calculateMatchedPromotions(mockBooking, [promo]);
+      const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
       expect(matched).toHaveLength(1);
     });
 
@@ -1343,7 +1430,7 @@ describe("promotion-matching", () => {
           validDaysAfterRegistration: 30,
         }),
       });
-      const matched = calculateMatchedPromotions(mockBooking, [promo]);
+      const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
       expect(matched).toHaveLength(0);
     });
 
@@ -1353,7 +1440,7 @@ describe("promotion-matching", () => {
         registrationDate: null,
       });
       // mockBooking.checkIn is 2026-06-01 (before global start)
-      const matched = calculateMatchedPromotions(mockBooking, [promo]);
+      const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
       expect(matched).toHaveLength(0);
     });
 
@@ -1364,7 +1451,7 @@ describe("promotion-matching", () => {
         restrictions: makeRestrictions({ validDaysAfterRegistration: null }),
       });
       // mockBooking.checkIn is 2026-06-01 (after registration)
-      const matched = calculateMatchedPromotions(mockBooking, [promo]);
+      const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
       expect(matched).toHaveLength(1);
     });
   });
@@ -1400,51 +1487,81 @@ describe("promotion-matching", () => {
       const promo = makePromo({
         restrictions: makeRestrictions({ allowedPaymentTypes: [] }),
       });
-      expect(calculateMatchedPromotions(cashBooking, [promo])).toHaveLength(1);
-      expect(calculateMatchedPromotions(pointsBooking, [promo])).toHaveLength(1);
-      expect(calculateMatchedPromotions(certBooking, [promo])).toHaveLength(1);
-      expect(calculateMatchedPromotions(mixedBooking, [promo])).toHaveLength(1);
+      expect(
+        calculateMatchedPromotions(cashBooking, [promo], new Map(), mockValuations)
+      ).toHaveLength(1);
+      expect(
+        calculateMatchedPromotions(pointsBooking, [promo], new Map(), mockValuations)
+      ).toHaveLength(1);
+      expect(
+        calculateMatchedPromotions(certBooking, [promo], new Map(), mockValuations)
+      ).toHaveLength(1);
+      expect(
+        calculateMatchedPromotions(mixedBooking, [promo], new Map(), mockValuations)
+      ).toHaveLength(1);
     });
 
     it("allowedPaymentTypes=['cash']: applies only to cash, skips points/certs", () => {
       const promo = makePromo({
         restrictions: makeRestrictions({ allowedPaymentTypes: ["cash"] }),
       });
-      expect(calculateMatchedPromotions(cashBooking, [promo])).toHaveLength(1);
-      expect(calculateMatchedPromotions(pointsBooking, [promo])).toHaveLength(0);
-      expect(calculateMatchedPromotions(certBooking, [promo])).toHaveLength(0);
+      expect(
+        calculateMatchedPromotions(cashBooking, [promo], new Map(), mockValuations)
+      ).toHaveLength(1);
+      expect(
+        calculateMatchedPromotions(pointsBooking, [promo], new Map(), mockValuations)
+      ).toHaveLength(0);
+      expect(
+        calculateMatchedPromotions(certBooking, [promo], new Map(), mockValuations)
+      ).toHaveLength(0);
     });
 
     it("allowedPaymentTypes=['points']: applies only to points, skips cash/certs", () => {
       const promo = makePromo({
         restrictions: makeRestrictions({ allowedPaymentTypes: ["points"] }),
       });
-      expect(calculateMatchedPromotions(pointsBooking, [promo])).toHaveLength(1);
-      expect(calculateMatchedPromotions(cashBooking, [promo])).toHaveLength(0);
-      expect(calculateMatchedPromotions(certBooking, [promo])).toHaveLength(0);
+      expect(
+        calculateMatchedPromotions(pointsBooking, [promo], new Map(), mockValuations)
+      ).toHaveLength(1);
+      expect(
+        calculateMatchedPromotions(cashBooking, [promo], new Map(), mockValuations)
+      ).toHaveLength(0);
+      expect(
+        calculateMatchedPromotions(certBooking, [promo], new Map(), mockValuations)
+      ).toHaveLength(0);
     });
 
     it("allowedPaymentTypes=['cert']: applies only to certs, skips cash/points", () => {
       const promo = makePromo({
         restrictions: makeRestrictions({ allowedPaymentTypes: ["cert"] }),
       });
-      expect(calculateMatchedPromotions(certBooking, [promo])).toHaveLength(1);
-      expect(calculateMatchedPromotions(cashBooking, [promo])).toHaveLength(0);
-      expect(calculateMatchedPromotions(pointsBooking, [promo])).toHaveLength(0);
+      expect(
+        calculateMatchedPromotions(certBooking, [promo], new Map(), mockValuations)
+      ).toHaveLength(1);
+      expect(
+        calculateMatchedPromotions(cashBooking, [promo], new Map(), mockValuations)
+      ).toHaveLength(0);
+      expect(
+        calculateMatchedPromotions(pointsBooking, [promo], new Map(), mockValuations)
+      ).toHaveLength(0);
     });
 
     it("allowedPaymentTypes=['cash', 'points']: applies to mixed cash+points booking", () => {
       const promo = makePromo({
         restrictions: makeRestrictions({ allowedPaymentTypes: ["cash", "points"] }),
       });
-      expect(calculateMatchedPromotions(mixedBooking, [promo])).toHaveLength(1);
+      expect(
+        calculateMatchedPromotions(mixedBooking, [promo], new Map(), mockValuations)
+      ).toHaveLength(1);
     });
 
     it("allowedPaymentTypes=['cash']: skips mixed cash+points booking because points are present but not allowed", () => {
       const promo = makePromo({
         restrictions: makeRestrictions({ allowedPaymentTypes: ["cash"] }),
       });
-      expect(calculateMatchedPromotions(mixedBooking, [promo])).toHaveLength(0);
+      expect(
+        calculateMatchedPromotions(mixedBooking, [promo], new Map(), mockValuations)
+      ).toHaveLength(0);
     });
 
     it("benefit-level payment restriction: only applicable benefits apply", () => {
@@ -1466,17 +1583,24 @@ describe("promotion-matching", () => {
       });
 
       // Cash booking → only cashBenefit
-      const resCash = calculateMatchedPromotions(cashBooking, [promo]);
+      const resCash = calculateMatchedPromotions(cashBooking, [promo], new Map(), mockValuations);
       expect(resCash[0].benefitApplications).toHaveLength(1);
       expect(resCash[0].benefitApplications[0].promotionBenefitId).toBe("b-cash");
 
       // Points booking → only pointsBenefit
-      const resPoints = calculateMatchedPromotions(pointsBooking, [promo]);
+      const resPoints = calculateMatchedPromotions(
+        pointsBooking,
+        [promo],
+        new Map(),
+        mockValuations
+      );
       expect(resPoints[0].benefitApplications).toHaveLength(1);
       expect(resPoints[0].benefitApplications[0].promotionBenefitId).toBe("b-points");
 
       // Mixed booking → none (both benefits restricted to single types)
-      expect(calculateMatchedPromotions(mixedBooking, [promo])).toHaveLength(0);
+      expect(
+        calculateMatchedPromotions(mixedBooking, [promo], new Map(), mockValuations)
+      ).toHaveLength(0);
     });
   });
 });
@@ -1569,7 +1693,7 @@ describe("spanStays", () => {
         pointType: { centsPerPoint: 0.02 },
       },
     };
-    const matched = calculateMatchedPromotions(booking, [promo]);
+    const matched = calculateMatchedPromotions(booking, [promo], new Map(), mockValuations);
     expect(matched).toHaveLength(1);
     expect(matched[0].appliedValue).toBe(20); // (1/3) * (3000 pts * 0.02 $/pt) = 20
     expect(matched[0].bonusPointsApplied).toBe(1000); // (1/3) * 3000
@@ -1578,7 +1702,7 @@ describe("spanStays", () => {
   it("should apply multiple rewards across stays spanning increments", () => {
     // 1st stay: 2 nights
     const booking1 = { ...mockBooking, numNights: 2 };
-    const matched1 = calculateMatchedPromotions(booking1, [promo]);
+    const matched1 = calculateMatchedPromotions(booking1, [promo], new Map(), mockValuations);
     expect(matched1[0].bonusPointsApplied).toBe(2000);
 
     // 2nd stay: 2 nights (total 4 nights)
@@ -1597,7 +1721,7 @@ describe("spanStays", () => {
       ],
     ]);
 
-    const matched2 = calculateMatchedPromotions(booking2, [promo], priorUsage);
+    const matched2 = calculateMatchedPromotions(booking2, [promo], priorUsage, mockValuations);
     expect(matched2[0].bonusPointsApplied).toBe(2000);
     // Total bonus points across both stays = 4000 (for 4 nights @ 1000/night)
   });
@@ -1638,7 +1762,7 @@ describe("spanStays", () => {
         pointType: { centsPerPoint: 0.02 },
       },
     };
-    const matched = calculateMatchedPromotions(booking, [promo], priorUsage);
+    const matched = calculateMatchedPromotions(booking, [promo], priorUsage, mockValuations);
     expect(matched).toHaveLength(1);
     // 3000 pts value, but only 2000 capacity.
     expect(matched[0].bonusPointsApplied).toBe(2000);
@@ -1672,7 +1796,7 @@ describe("spanStays", () => {
       ],
     });
 
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], new Map(), mockValuations);
     expect(matched).toHaveLength(1);
     // Total requested: 6000. Cap: 5000.
     expect(matched[0].bonusPointsApplied).toBe(5000);

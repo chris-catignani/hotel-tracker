@@ -5,9 +5,9 @@ import {
   PromotionRewardType,
   PromotionBenefitValueType,
   Prisma,
+  CertType,
 } from "@prisma/client";
-import { DEFAULT_EQN_VALUE } from "./constants";
-import { certPointsValue } from "./cert-types";
+import { getAllValuations, resolveValuation, BenefitValuationData } from "./benefit-valuations";
 
 export type PromotionUsage = {
   count: number;
@@ -185,7 +185,8 @@ function checkPaymentTypeRestriction(
 export function calculateMatchedPromotions(
   booking: MatchingBooking,
   activePromotions: MatchingPromotion[],
-  priorUsage?: PromotionUsageMap
+  priorUsage?: PromotionUsageMap,
+  valuations: BenefitValuationData[] = []
 ) {
   const matched: MatchedPromotion[] = [];
 
@@ -391,12 +392,26 @@ export function calculateMatchedPromotions(
           }
           break;
         case PromotionRewardType.certificate:
-          appliedValue = benefit.certType
-            ? certPointsValue(benefit.certType) * centsPerPoint * 0.7
-            : 0;
+          if (benefit.certType) {
+            const certValuation = resolveValuation(valuations, {
+              hotelChainId: booking.hotelChainId,
+              certType: benefit.certType as CertType,
+            });
+            if (certValuation.valueType === "points") {
+              appliedValue = benefitValue * certValuation.value * centsPerPoint;
+            } else {
+              appliedValue = benefitValue * certValuation.value;
+            }
+          } else {
+            appliedValue = 0;
+          }
           break;
         case PromotionRewardType.eqn:
-          appliedValue = benefitValue * DEFAULT_EQN_VALUE;
+          const eqnValuation = resolveValuation(valuations, {
+            hotelChainId: booking.hotelChainId,
+            isEqn: true,
+          });
+          appliedValue = benefitValue * eqnValuation.value;
           break;
       }
 
@@ -909,10 +924,13 @@ export async function reevaluateBookings(bookingIds: string[]): Promise<void> {
   // Get all promotions with constraints (including tier-based stay counting)
   const constrainedPromos = getConstrainedPromotions(activePromotions);
 
+  // Fetch all valuations once
+  const valuations = await getAllValuations();
+
   // Process sequentially to ensure accurate constraint checks
   for (const booking of bookings) {
     const priorUsage = await fetchPromotionUsage(constrainedPromos, booking, booking.id);
-    const matched = calculateMatchedPromotions(booking, activePromotions, priorUsage);
+    const matched = calculateMatchedPromotions(booking, activePromotions, priorUsage, valuations);
     await applyMatchedPromotions(booking.id, matched);
   }
 }
@@ -948,7 +966,10 @@ export async function matchPromotionsForBooking(bookingId: string): Promise<stri
   // Fetch prior usage excluding current booking
   const priorUsage = await fetchPromotionUsage(constrainedPromos, booking, bookingId);
 
-  const matched = calculateMatchedPromotions(booking, activePromotions, priorUsage);
+  // Fetch all valuations once
+  const valuations = await getAllValuations();
+
+  const matched = calculateMatchedPromotions(booking, activePromotions, priorUsage, valuations);
   await applyMatchedPromotions(bookingId, matched);
   return matched.map((m) => m.promotionId);
 }

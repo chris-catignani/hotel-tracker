@@ -5,7 +5,8 @@ import Link from "next/link";
 import { DashboardStats } from "@/components/dashboard-stats";
 import { PaymentTypeBreakdown } from "@/components/payment-type-breakdown";
 import { SubBrandBreakdown } from "@/components/sub-brand-breakdown";
-import { calculateNetCost, getNetCostBreakdown } from "@/lib/net-cost";
+import { getNetCostBreakdown } from "@/lib/net-cost";
+import { BenefitValuationData } from "@/lib/benefit-valuations";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -117,9 +118,14 @@ interface BookingWithRelations {
   certificates: BookingCertificate[];
 }
 
-function calcTotalSavings(booking: BookingWithRelations): number {
-  const { promoSavings, portalCashback, cardReward, loyaltyPointsValue } =
-    getNetCostBreakdown(booking);
+function calcTotalSavings(
+  booking: BookingWithRelations,
+  valuations: BenefitValuationData[]
+): number {
+  const { promoSavings, portalCashback, cardReward, loyaltyPointsValue } = getNetCostBreakdown(
+    booking,
+    valuations
+  );
   return promoSavings + portalCashback + cardReward + loyaltyPointsValue;
 }
 
@@ -168,6 +174,7 @@ const SortHeader = ({
 
 export default function DashboardPage() {
   const [bookings, setBookings] = useState<BookingWithRelations[]>([]);
+  const [valuations, setValuations] = useState<BenefitValuationData[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortConfig, setSortConfig] = useState<{
     key: keyof HotelChainSummary;
@@ -178,10 +185,10 @@ export default function DashboardPage() {
   });
 
   useEffect(() => {
-    fetch("/api/bookings")
-      .then((res) => res.json())
-      .then((data) => {
-        setBookings(data);
+    Promise.all([fetch("/api/bookings"), fetch("/api/benefit-valuations")])
+      .then(async ([bookingsRes, valuationsRes]) => {
+        if (bookingsRes.ok) setBookings(await bookingsRes.json());
+        if (valuationsRes.ok) setValuations(await valuationsRes.json());
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -207,18 +214,18 @@ export default function DashboardPage() {
         acc[chain].totalNights += b.numNights;
         acc[chain].pointsRedeemed += b.pointsRedeemed ?? 0;
         acc[chain].certs += b.certificates.length;
-        acc[chain].totalNet += calculateNetCost(b);
+        acc[chain].totalNet += getNetCostBreakdown(b, valuations).netCost;
         // Only cash bookings contribute to spend/savings
         if (Number(b.totalCost) > 0) {
           acc[chain].totalSpend += Number(b.totalCost);
-          acc[chain].totalSavings += calcTotalSavings(b);
+          acc[chain].totalSavings += calcTotalSavings(b, valuations);
         }
         return acc;
       },
       {} as Record<string, HotelChainSummary>
     );
     return Object.values(summaries);
-  }, [bookings]);
+  }, [bookings, valuations]);
 
   const sortedHotelChainSummaries = useMemo(() => {
     return [...hotelChainSummaries].sort((a, b) => {
@@ -268,16 +275,19 @@ export default function DashboardPage() {
   // Only cash bookings (totalCost > 0) contribute to spend/savings/avg stats
   const cashBookings = bookings.filter((b) => Number(b.totalCost) > 0);
   const totalSpend = cashBookings.reduce((sum, b) => sum + Number(b.totalCost), 0);
-  const totalSavings = bookings.reduce((sum, b) => sum + calcTotalSavings(b), 0);
+  const totalSavings = bookings.reduce((sum, b) => sum + calcTotalSavings(b, valuations), 0);
   const totalNights = bookings.reduce((sum, b) => sum + b.numNights, 0);
   const cashNights = cashBookings.reduce((sum, b) => sum + b.numNights, 0);
   const avgNetCostPerNight =
-    cashNights > 0 ? cashBookings.reduce((sum, b) => sum + calculateNetCost(b), 0) / cashNights : 0;
+    cashNights > 0
+      ? cashBookings.reduce((sum, b) => sum + getNetCostBreakdown(b, valuations).netCost, 0) /
+        cashNights
+      : 0;
 
   const totalPointsRedeemed = bookings.reduce((sum, b) => sum + (b.pointsRedeemed ?? 0), 0);
   const totalCertificates = bookings.reduce((sum, b) => sum + b.certificates.length, 0);
   const totalCombinedSpend = bookings.reduce((sum, b) => {
-    const { pointsRedeemedValue, certsValue } = getNetCostBreakdown(b);
+    const { pointsRedeemedValue, certsValue } = getNetCostBreakdown(b, valuations);
     return sum + Number(b.totalCost) + pointsRedeemedValue + certsValue;
   }, 0);
 
@@ -348,7 +358,7 @@ export default function DashboardPage() {
                     </TableHeader>
                     <TableBody>
                       {recentBookings.map((booking) => {
-                        const netCost = calculateNetCost(booking);
+                        const netCost = getNetCostBreakdown(booking, valuations).netCost;
                         const total = Number(booking.totalCost);
                         return (
                           <TableRow key={booking.id} data-testid={`booking-row-${booking.id}`}>

@@ -58,6 +58,7 @@ describe("CostBreakdown", () => {
     },
     pointsRedeemedValue: 0,
     certsValue: 0,
+    manualBenefitsValue: 0,
     netCost: 80,
   };
 

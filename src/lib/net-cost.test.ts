@@ -1,8 +1,31 @@
 import { describe, it, expect } from "vitest";
 import { getNetCostBreakdown, NetCostBooking } from "./net-cost";
 import { HotelChain } from "./types";
+import { BenefitValuationData } from "./benefit-valuations";
+import { CertType } from "@prisma/client";
 
 describe("net-cost", () => {
+  const mockValuations: BenefitValuationData[] = [
+    {
+      id: "v1",
+      hotelChainId: null,
+      isEqn: true,
+      certType: null,
+      benefitType: null,
+      value: 10,
+      valueType: "dollar",
+    },
+    {
+      id: "v2",
+      hotelChainId: null,
+      isEqn: false,
+      certType: "marriott_35k" as CertType,
+      benefitType: null,
+      value: 35000,
+      valueType: "points",
+    },
+  ];
+
   const mockBaseBooking: NetCostBooking = {
     id: "b1",
     hotelChainId: "h1",
@@ -33,7 +56,7 @@ describe("net-cost", () => {
   };
 
   it("should calculate base net cost correctly", () => {
-    const result = getNetCostBreakdown(mockBaseBooking);
+    const result = getNetCostBreakdown(mockBaseBooking, mockValuations);
     expect(result.totalCost).toBe(100);
     expect(result.netCost).toBe(100);
     expect(result.promoSavings).toBe(0);
@@ -61,7 +84,7 @@ describe("net-cost", () => {
         },
       ],
     };
-    const result = getNetCostBreakdown(booking);
+    const result = getNetCostBreakdown(booking, mockValuations);
     expect(result.promoSavings).toBe(10);
     expect(result.netCost).toBe(90);
     const promo = result.promotions[0];
@@ -91,7 +114,7 @@ describe("net-cost", () => {
         },
       ],
     };
-    const result = getNetCostBreakdown(booking);
+    const result = getNetCostBreakdown(booking, mockValuations);
     expect(result.promoSavings).toBe(20);
     expect(result.netCost).toBe(80);
     const promo = result.promotions[0];
@@ -123,7 +146,7 @@ describe("net-cost", () => {
         },
       ],
     };
-    const result = getNetCostBreakdown(booking);
+    const result = getNetCostBreakdown(booking, mockValuations);
     // (1000 earned * (2-1) = 1000 bonus pts) * 0.015 = $15.00
     expect(result.promoSavings).toBe(15);
     expect(result.netCost).toBe(70);
@@ -157,7 +180,7 @@ describe("net-cost", () => {
         },
       ],
     };
-    const result = getNetCostBreakdown(booking);
+    const result = getNetCostBreakdown(booking, mockValuations);
     // 1000 pts * 0.015 = $15.00
     expect(result.promoSavings).toBe(15);
     expect(result.netCost).toBe(85);
@@ -172,11 +195,11 @@ describe("net-cost", () => {
       ...mockBaseBooking,
       bookingPromotions: [
         {
-          appliedValue: 367.5,
+          appliedValue: 525,
           promotion: { name: "Free Night Cert", benefits: [] },
           benefitApplications: [
             {
-              appliedValue: 367.5,
+              appliedValue: 525,
               promotionBenefit: {
                 rewardType: "certificate",
                 valueType: "fixed",
@@ -188,14 +211,14 @@ describe("net-cost", () => {
         },
       ],
     };
-    const result = getNetCostBreakdown(booking);
-    // marriott_35k = 35000 pts * 0.015 * 0.7 = 367.5
-    expect(result.promoSavings).toBe(367.5);
-    expect(result.netCost).toBe(-267.5); // 100 - 367.5
+    const result = getNetCostBreakdown(booking, mockValuations);
+    // marriott_35k = 35000 pts * 0.015 = 525
+    expect(result.promoSavings).toBe(525);
+    expect(result.netCost).toBe(-425); // 100 - 525
     const promo = result.promotions[0];
     expect(promo.groups).toHaveLength(1);
     expect(promo.groups[0].segments).toHaveLength(1);
-    expect(promo.groups[0].segments[0].formula).toContain("35,000 pts × 70% × 1.5¢ = $367.50");
+    expect(promo.groups[0].segments[0].formula).toContain("35,000 pts × 1.5¢ = $525.00");
   });
 
   it("should handle EQN benefit with valuation", () => {
@@ -219,7 +242,7 @@ describe("net-cost", () => {
         },
       ],
     };
-    const result = getNetCostBreakdown(booking);
+    const result = getNetCostBreakdown(booking, mockValuations);
     // 2 EQNs * $10.00 = $20.00
     expect(result.promoSavings).toBe(20);
     expect(result.netCost).toBe(80); // 100 - 20
@@ -259,7 +282,7 @@ describe("net-cost", () => {
         },
       ],
     };
-    const result = getNetCostBreakdown(booking);
+    const result = getNetCostBreakdown(booking, mockValuations);
     expect(result.promoSavings).toBe(25);
     expect(result.netCost).toBe(75);
     const promo = result.promotions[0];
@@ -281,7 +304,7 @@ describe("net-cost", () => {
         pointType: null,
       },
     };
-    const result = getNetCostBreakdown(booking);
+    const result = getNetCostBreakdown(booking, mockValuations);
     // 0.05 * 80 (pre-tax) = 4
     expect(result.portalCashback).toBe(4);
     expect(result.netCost).toBe(96);
@@ -303,7 +326,7 @@ describe("net-cost", () => {
         pointType: null,
       },
     };
-    const result = getNetCostBreakdown(booking);
+    const result = getNetCostBreakdown(booking, mockValuations);
     // 0.05 * 100 (total) = 5
     expect(result.portalCashback).toBe(5);
     expect(result.netCost).toBe(95);
@@ -324,7 +347,7 @@ describe("net-cost", () => {
         pointType: { name: "Amex Points", centsPerPoint: 0.015 },
       },
     };
-    const result = getNetCostBreakdown(booking);
+    const result = getNetCostBreakdown(booking, mockValuations);
     // 80 pretax * 10 pts/$ * 0.015 $/pt = 12
     expect(result.portalCashback).toBe(12);
     expect(result.netCost).toBe(88);
@@ -345,7 +368,7 @@ describe("net-cost", () => {
         rewardRules: [],
       },
     };
-    const result = getNetCostBreakdown(booking);
+    const result = getNetCostBreakdown(booking, mockValuations);
     // 100 total * 4 pts/$ * 0.015 $/pt = 6.00
     expect(result.cardReward).toBe(6.0);
     expect(result.netCost).toBe(94.0);
@@ -361,7 +384,7 @@ describe("net-cost", () => {
       ...mockBaseBooking,
       loyaltyPointsEarned: 2000,
     };
-    const result = getNetCostBreakdown(booking);
+    const result = getNetCostBreakdown(booking, mockValuations);
     // 2000 earned * 0.015 = 30
     expect(result.loyaltyPointsValue).toBe(30);
     expect(result.netCost).toBe(70);
@@ -377,7 +400,7 @@ describe("net-cost", () => {
       ...mockBaseBooking,
       pointsRedeemed: 10000,
     };
-    const result = getNetCostBreakdown(booking);
+    const result = getNetCostBreakdown(booking, mockValuations);
     // 10000 redeemed * 0.015 = 150
     // Net cost is 100 (total) + 150 (redeemed value) = 250
     expect(result.pointsRedeemedValue).toBe(150);
@@ -394,7 +417,7 @@ describe("net-cost", () => {
       ...mockBaseBooking,
       certificates: [{ certType: "marriott_35k" }],
     };
-    const result = getNetCostBreakdown(booking);
+    const result = getNetCostBreakdown(booking, mockValuations);
     // marriott_35k = 35000 pts * 0.015 = 525
     // Net cost is 100 (total) + 525 (cert value) = 625
     expect(result.certsValue).toBe(525);
@@ -429,7 +452,7 @@ describe("net-cost", () => {
         },
       ],
     };
-    const result = getNetCostBreakdown(booking);
+    const result = getNetCostBreakdown(booking, mockValuations);
     // basePoints = 80 (pretaxCost) * 10 (basePointRate) = 800
     // 800 pts * (3-1) * 0.015 = 24 (promo savings)
     // loyaltyPointsEarned = 800 * 0.015 = 12 (loyalty value)
@@ -463,7 +486,7 @@ describe("net-cost", () => {
         ],
       },
     };
-    const result = getNetCostBreakdown(booking);
+    const result = getNetCostBreakdown(booking, mockValuations);
     // 100 total * 4x (boosted) * 0.015 $/pt = 6.00
     expect(result.cardReward).toBe(6.0);
     expect(result.cardRewardCalc?.groups).toHaveLength(1);
@@ -497,7 +520,7 @@ describe("net-cost", () => {
         ],
       },
     };
-    const result = getNetCostBreakdown(booking);
+    const result = getNetCostBreakdown(booking, mockValuations);
     // 100 total * 10x (boosted) * 0.015 $/pt = 15.00
     expect(result.cardReward).toBe(15.0);
     expect(result.cardRewardCalc?.groups).toHaveLength(1);
@@ -527,7 +550,7 @@ describe("net-cost", () => {
         ],
       },
     };
-    const result = getNetCostBreakdown(booking);
+    const result = getNetCostBreakdown(booking, mockValuations);
     // base: 100 total * 2x * 0.007 = 1.40
     // bonus: 1000 pts * 0.007 = 7.00
     // total: 1.40 + 7.00 = 8.40
@@ -565,7 +588,7 @@ describe("net-cost", () => {
         ],
       },
     };
-    const result = getNetCostBreakdown(booking);
+    const result = getNetCostBreakdown(booking, mockValuations);
     // boosted base: 100 total * 6x * 0.007 = 4.20
     // fixed bonus: 1000 pts * 0.007 = 7.00
     // total: 4.20 + 7.00 = 11.20
@@ -596,7 +619,7 @@ describe("net-cost", () => {
         ],
       },
     };
-    const result = getNetCostBreakdown(booking);
+    const result = getNetCostBreakdown(booking, mockValuations);
     // Should NOT get 6x because it's an OTA booking.
     // Fallback to base 2x: 100 total * 2x * 0.007 = 1.40
     expect(result.cardReward).toBeCloseTo(1.4, 2);
@@ -626,7 +649,7 @@ describe("net-cost", () => {
         },
       ],
     };
-    const result = getNetCostBreakdown(booking);
+    const result = getNetCostBreakdown(booking, mockValuations);
     const promo = result.promotions[0];
     expect(promo.groups).toHaveLength(1);
     expect(promo.groups[0].segments).toHaveLength(1);
@@ -655,7 +678,7 @@ describe("net-cost", () => {
         },
       ],
     };
-    const result = getNetCostBreakdown(booking);
+    const result = getNetCostBreakdown(booking, mockValuations);
     const promo = result.promotions[0];
     expect(promo.groups).toHaveLength(1);
     expect(promo.groups[0].segments).toHaveLength(1);
@@ -682,6 +705,7 @@ describe("net-cost", () => {
             {
               appliedValue: 10,
               eligibleNightsAtBooking: 1,
+              totalNights: 3, // Completes cycle eventually!
               promotionBenefit: {
                 rewardType: "cashback",
                 valueType: "fixed",
@@ -693,7 +717,7 @@ describe("net-cost", () => {
         },
       ],
     };
-    const result = getNetCostBreakdown(booking);
+    const result = getNetCostBreakdown(booking, mockValuations);
     const promo = result.promotions[0];
     expect(promo.groups).toHaveLength(1);
     expect(promo.groups[0].segments).toHaveLength(1);
@@ -703,6 +727,42 @@ describe("net-cost", () => {
     expect(promo.groups[0].description).toContain(
       "This bonus is pending additional stays (1 of 3 nights required)"
     );
+  });
+
+  it("should show 0 value for spanned promotion if cycle is NEVER completed by system bookings", () => {
+    const booking: NetCostBooking = {
+      ...mockBaseBooking,
+      numNights: 1,
+      bookingPromotions: [
+        {
+          appliedValue: 0,
+          eligibleNightsAtBooking: 1,
+          promotion: {
+            name: "Unearned Promo",
+            restrictions: { minNightsRequired: 3, spanStays: true },
+            benefits: [],
+          },
+          benefitApplications: [
+            {
+              appliedValue: 0,
+              eligibleNightsAtBooking: 1,
+              totalNights: 1, // Stay is only 1 night total in system
+              promotionBenefit: {
+                rewardType: "cashback",
+                valueType: "fixed",
+                value: 30,
+                certType: null,
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const result = getNetCostBreakdown(booking, mockValuations);
+    const promo = result.promotions[0];
+    expect(promo.groups[0].segments[0].value).toBe(0);
+    expect(promo.groups[0].segments[0].formula).toBe("");
+    expect(promo.groups[0].segments[0].description).toContain("cycle remains incomplete");
   });
 
   it("should provide segments for a complex multi-night spanned stay", () => {
@@ -722,6 +782,7 @@ describe("net-cost", () => {
             {
               appliedValue: 40,
               eligibleNightsAtBooking: 4,
+              totalNights: 6, // 6 nights total in system (includes this stay)
               promotionBenefit: {
                 rewardType: "cashback",
                 valueType: "fixed",
@@ -733,7 +794,7 @@ describe("net-cost", () => {
         },
       ],
     };
-    const result = getNetCostBreakdown(booking);
+    const result = getNetCostBreakdown(booking, mockValuations);
     const promo = result.promotions[0];
 
     expect(promo.groups).toHaveLength(1);
@@ -766,7 +827,7 @@ describe("net-cost", () => {
         ],
       },
     };
-    const result = getNetCostBreakdown(booking);
+    const result = getNetCostBreakdown(booking, mockValuations);
     const card = result.cardRewardCalc;
 
     expect(card?.groups).toHaveLength(1);
@@ -801,13 +862,14 @@ describe("net-cost", () => {
                 } as any,
                 appliedValue: 0,
                 eligibleNightsAtBooking: 3,
+                totalNights: 3, // Complete cycle, but maxed out
               },
             ] as any[],
           },
         ],
       };
 
-      const breakdown = getNetCostBreakdown(booking);
+      const breakdown = getNetCostBreakdown(booking, mockValuations);
       const promo = breakdown.promotions[0];
       expect(promo.groups).toHaveLength(1);
       const segment = promo.groups[0].segments[0];
@@ -827,7 +889,7 @@ describe("net-cost", () => {
       // Cycle 1 (nights 5-6): 2/3 nights -> $40 (Full)
       // Cycle 2 (nights 7-9): 3/3 nights -> $60 (Full)
       // Cycle 3 (nights 10-12): 3/3 nights -> $20 (Capped)
-      // Cycle 4 (night 13): 1/3 nights -> $0 (Maxed Out)
+      // Cycle 4 (night 13): 1/3 nights -> $0 (Maxed Out / Unearned)
       const booking: NetCostBooking = {
         ...mockBaseBooking,
         hotelChain: {
@@ -853,13 +915,14 @@ describe("net-cost", () => {
                 } as any,
                 appliedValue: 120,
                 eligibleNightsAtBooking: 13,
+                totalNights: 12, // 12 nights total in system = 4 cycles. Stay ends at 13th night though.
               },
             ] as any[],
           },
         ],
       };
 
-      const breakdown = getNetCostBreakdown(booking);
+      const breakdown = getNetCostBreakdown(booking, mockValuations);
       const promo = breakdown.promotions[0];
 
       expect(promo.groups).toHaveLength(1);
@@ -877,7 +940,7 @@ describe("net-cost", () => {
       expect(promo.groups[0].segments[2].value).toBe(20);
       expect(promo.groups[0].segments[2].formula).toContain("(capped)");
 
-      // Cycle 4: Start (1 night) -> $0 (Maxed Out)
+      // Cycle 4: Start (1 night) -> $0 (Maxed Out / Unearned)
       expect(promo.groups[0].segments[3].value).toBe(0);
       expect(promo.groups[0].segments[3].formula).toBe("");
       expect(promo.groups[0].segments[3].description).toBe(

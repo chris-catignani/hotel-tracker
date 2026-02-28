@@ -62,6 +62,29 @@ model PointType {
   @@map("point_types")
 }
 
+enum ValuationValueType {
+  dollar
+  points
+}
+
+model BenefitValuation {
+  id           String             @id @default(cuid())
+  hotelChainId String?            @map("hotel_chain_id")
+  hotelChain   HotelChain?        @relation(fields: [hotelChainId], references: [id], onDelete: Cascade)
+
+  // Benefit identifiers (Only one of these will be set per row)
+  isEqn        Boolean            @default(false) @map("is_eqn")
+  certType     CertType?          @map("cert_type")
+  benefitType  BenefitType?       @map("benefit_type")
+
+  // Valuation
+  value        Decimal            @db.Decimal(10, 2)
+  valueType    ValuationValueType @map("value_type")
+
+  @@unique([hotelChainId, isEqn, certType, benefitType])
+  @@map("benefit_valuations")
+}
+
 model HotelChain {
   id                    String                  @id @default(cuid())
   name                  String
@@ -75,6 +98,7 @@ model HotelChain {
   eliteStatuses         HotelChainEliteStatus[]
   userStatus            UserStatus?
   creditCardRewardRules CreditCardRewardRule[]
+  benefitValuations     BenefitValuation[]
 
   @@map("hotel_chains")
 }

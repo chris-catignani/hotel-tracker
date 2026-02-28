@@ -1,6 +1,13 @@
-import { PrismaClient, PointCategory } from "@prisma/client";
+import {
+  PrismaClient,
+  PointCategory,
+  BenefitType,
+  CertType,
+  ValuationValueType,
+} from "@prisma/client";
 import { HOTEL_ID, SUB_BRAND_ID } from "../src/lib/constants";
 import { CREDIT_CARD_ID, SHOPPING_PORTAL_ID, OTA_AGENCY_ID } from "./seed-ids";
+import { CERT_TYPE_OPTIONS } from "../src/lib/cert-types";
 
 const prisma = new PrismaClient();
 
@@ -140,7 +147,52 @@ async function upsertUserStatus(hotelChainId: string, statusName: string) {
   }
 }
 
+async function upsertGlobalValuations() {
+  const valuations = [
+    // 1. EQN Global Default
+    {
+      where: { hotelChainId: null, isEqn: true, certType: null, benefitType: null },
+      data: { value: 10.0, valueType: "dollar" as ValuationValueType },
+    },
+    // 2. Certificate Global Defaults
+    ...CERT_TYPE_OPTIONS.map((opt) => ({
+      where: {
+        hotelChainId: null,
+        isEqn: false,
+        certType: opt.value as CertType,
+        benefitType: null,
+      },
+      data: { value: opt.pointsValue, valueType: "points" as ValuationValueType },
+    })),
+    // 3. Standard Benefit Global Defaults
+    ...Object.values(BenefitType).map((type) => ({
+      where: { hotelChainId: null, isEqn: false, certType: null, benefitType: type },
+      data: { value: 0.0, valueType: "dollar" as ValuationValueType },
+    })),
+  ];
+
+  for (const v of valuations) {
+    const existing = await prisma.benefitValuation.findFirst({
+      where: v.where,
+    });
+
+    if (existing) {
+      await prisma.benefitValuation.update({
+        where: { id: existing.id },
+        data: v.data,
+      });
+    } else {
+      await prisma.benefitValuation.create({
+        data: { ...v.where, ...v.data },
+      });
+    }
+  }
+}
+
 async function main() {
+  // Valuations
+  await upsertGlobalValuations();
+
   // PointTypes
   const pointTypeData = [
     {
