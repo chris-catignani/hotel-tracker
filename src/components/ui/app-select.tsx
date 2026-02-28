@@ -13,7 +13,7 @@ export interface AppSelectOption {
   value: string;
 }
 
-type AppSelectProps = {
+type AppSelectProps = React.ComponentPropsWithoutRef<typeof Button> & {
   options: AppSelectOption[];
   placeholder?: string;
   searchPlaceholder?: string;
@@ -21,17 +21,17 @@ type AppSelectProps = {
   disabled?: boolean;
   className?: string;
 } & (
-  | {
-      multiple?: false;
-      value: string;
-      onValueChange: (value: string) => void;
-    }
-  | {
-      multiple: true;
-      value: string[];
-      onValueChange: (value: string[]) => void;
-    }
-);
+    | {
+        multiple?: false;
+        value: string;
+        onValueChange: (value: string) => void;
+      }
+    | {
+        multiple: true;
+        value: string[];
+        onValueChange: (value: string[]) => void;
+      }
+  );
 
 export function AppSelect({
   value,
@@ -68,25 +68,26 @@ export function AppSelect({
   }, [sortedOptions, searchQuery]);
 
   const selectedOptions = React.useMemo(() => {
-    if (multiple) {
-      const values = value as string[];
-      return options.filter((opt) => values.includes(opt.value));
+    if (multiple && Array.isArray(value)) {
+      return options.filter((opt) => value.includes(opt.value));
     }
-    const val = value as string;
-    const found = options.find((opt) => opt.value === val);
-    return found ? [found] : [];
+    if (!multiple && typeof value === "string") {
+      const found = options.find((opt) => opt.value === value);
+      return found ? [found] : [];
+    }
+    return [];
   }, [options, value, multiple]);
 
   const showSearch = options.length > 10;
 
   const handleSelect = (optionValue: string) => {
-    if (multiple) {
-      const currentValues = value as string[];
+    if (multiple && Array.isArray(value)) {
+      const currentValues = value;
       const newValues = currentValues.includes(optionValue)
         ? currentValues.filter((v) => v !== optionValue)
         : [...currentValues, optionValue];
       (onValueChange as (value: string[]) => void)(newValues);
-    } else {
+    } else if (!multiple && typeof value === "string") {
       (onValueChange as (value: string) => void)(optionValue);
       setOpen(false);
       setSearchQuery("");
@@ -95,8 +96,8 @@ export function AppSelect({
 
   const handleRemove = (e: React.MouseEvent, optionValue: string) => {
     e.stopPropagation();
-    if (multiple) {
-      const currentValues = value as string[];
+    if (multiple && Array.isArray(value)) {
+      const currentValues = value;
       const newValues = currentValues.filter((v) => v !== optionValue);
       (onValueChange as (value: string[]) => void)(newValues);
     }
