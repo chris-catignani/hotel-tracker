@@ -92,6 +92,9 @@ export function BookingForm({
   const [portals, setPortals] = useState<ShoppingPortal[]>([]);
   const [otaAgencies, setOtaAgencies] = useState<OtaAgency[]>([]);
 
+  // Validation state
+  const [showErrors, setShowErrors] = useState(false);
+
   // Form fields
   const [hotelChainId, setHotelChainId] = useState("");
   const [hotelChainSubBrandId, setHotelChainSubBrandId] = useState("none");
@@ -246,8 +249,28 @@ export function BookingForm({
     setBenefits((prev) => prev.map((b, i) => (i === idx ? { ...b, [field]: value } : b)));
   const removeBenefit = (idx: number) => setBenefits((prev) => prev.filter((_, i) => i !== idx));
 
+  const errors = {
+    hotelChainId: !hotelChainId ? "Hotel chain is required" : "",
+    propertyName: !propertyName.trim() ? "Property name is required" : "",
+    checkIn: !checkIn ? "Check-in date is required" : "",
+    checkOut: !checkOut ? "Check-out date is required" : "",
+    pretaxCost: hasCash && pretaxCost === "" ? "Pre-tax cost is required" : "",
+    totalCost: hasCash && totalCost === "" ? "Total cost is required" : "",
+  };
+
+  const isValid =
+    !errors.hotelChainId &&
+    !errors.propertyName &&
+    !errors.checkIn &&
+    !errors.checkOut &&
+    (!hasCash || (!errors.pretaxCost && !errors.totalCost)) &&
+    Number(numNights) > 0;
+
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setShowErrors(true);
+
+    if (!isValid) return;
 
     const body = {
       hotelChainId: hotelChainId,
@@ -290,14 +313,6 @@ export function BookingForm({
     await onSubmit(body);
   };
 
-  const isValid =
-    hotelChainId &&
-    propertyName.trim() &&
-    checkIn &&
-    checkOut &&
-    numNights &&
-    (!hasCash || (pretaxCost !== "" && totalCost !== ""));
-
   return (
     <Card>
       <CardHeader>
@@ -311,6 +326,7 @@ export function BookingForm({
               <Label htmlFor="hotelChainId">Hotel Chain *</Label>
               <AppSelect
                 value={hotelChainId}
+                error={showErrors ? errors.hotelChainId : ""}
                 onValueChange={(val) => {
                   setHotelChainId(val);
                   setHotelChainSubBrandId("none");
@@ -337,8 +353,12 @@ export function BookingForm({
                 value={propertyName}
                 onChange={(e) => setPropertyName(e.target.value)}
                 placeholder="e.g. Marriott Downtown Chicago"
+                aria-invalid={showErrors && !!errors.propertyName}
                 required
               />
+              {showErrors && errors.propertyName && (
+                <p className="text-xs font-medium text-destructive">{errors.propertyName}</p>
+              )}
             </div>
           </div>
 
@@ -405,6 +425,7 @@ export function BookingForm({
               <DatePicker
                 id="checkIn"
                 date={checkInDate}
+                error={showErrors ? errors.checkIn : ""}
                 setDate={handleCheckInChange}
                 placeholder="Select check-in"
               />
@@ -414,6 +435,7 @@ export function BookingForm({
               <DatePicker
                 id="checkOut"
                 date={checkOutDate}
+                error={showErrors ? errors.checkOut : ""}
                 setDate={handleCheckOutChange}
                 placeholder="Select check-out"
               />
@@ -455,8 +477,12 @@ export function BookingForm({
                   value={pretaxCost}
                   onChange={(e) => setPretaxCost(e.target.value)}
                   placeholder="0.00"
+                  aria-invalid={showErrors && !!errors.pretaxCost}
                   required
                 />
+                {showErrors && errors.pretaxCost && (
+                  <p className="text-xs font-medium text-destructive">{errors.pretaxCost}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="totalCost">Total Cost (USD) *</Label>
@@ -468,8 +494,12 @@ export function BookingForm({
                   value={totalCost}
                   onChange={(e) => setTotalCost(e.target.value)}
                   placeholder="0.00"
+                  aria-invalid={showErrors && !!errors.totalCost}
                   required
                 />
+                {showErrors && errors.totalCost && (
+                  <p className="text-xs font-medium text-destructive">{errors.totalCost}</p>
+                )}
               </div>
             </div>
           )}
@@ -701,7 +731,7 @@ export function BookingForm({
           <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm p-4 -mx-6 -mb-6 border-t md:static md:bg-transparent md:p-0 md:m-0 md:border-none flex gap-4 z-10">
             <Button
               type="submit"
-              disabled={!isValid || submitting}
+              disabled={submitting}
               className="flex-1 md:flex-none"
               data-testid="booking-form-submit"
             >

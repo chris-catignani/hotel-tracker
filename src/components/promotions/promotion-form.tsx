@@ -112,6 +112,9 @@ export function PromotionForm({
   description,
   submitLabel,
 }: PromotionFormProps) {
+  // ── Validation state ─────────────────────────────────────────────────────────
+  const [showErrors, setShowErrors] = useState(false);
+
   // ── Core fields ──────────────────────────────────────────────────────────────
   const [name, setName] = useState(initialData?.name || "");
   const [type, setType] = useState<PromotionType>(
@@ -207,6 +210,24 @@ export function PromotionForm({
       setActiveRestrictions(deriveActiveRestrictions(mappedRestrictions));
     }
   }, [initialData]);
+
+  // ── Validation ───────────────────────────────────────────────────────────────
+
+  const errors = {
+    name: !name.trim() ? "Promotion name is required" : "",
+    hotelChainId: type === "loyalty" && !hotelChainId ? "Hotel chain is required" : "",
+    creditCardId: type === "credit_card" && !creditCardId ? "Credit card is required" : "",
+    shoppingPortalId: type === "portal" && !shoppingPortalId ? "Shopping portal is required" : "",
+    tiers:
+      isTiered && tiers.some((t) => !t.minStays) ? "All tiers must have a minimum stay value" : "",
+  };
+
+  const isValid =
+    !errors.name &&
+    !errors.hotelChainId &&
+    !errors.creditCardId &&
+    !errors.shoppingPortalId &&
+    !errors.tiers;
 
   // ── Restriction helpers ──────────────────────────────────────────────────────
 
@@ -333,6 +354,9 @@ export function PromotionForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setShowErrors(true);
+
+    if (!isValid) return;
 
     const withSortOrder = (bs: PromotionBenefitFormData[]) =>
       bs.map((b, i) => ({ ...b, sortOrder: i }));
@@ -444,14 +468,18 @@ export function PromotionForm({
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Name */}
           <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
+            <Label htmlFor="name">Name *</Label>
             <Input
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Summer Bonus Offer"
+              aria-invalid={showErrors && !!errors.name}
               required
             />
+            {showErrors && errors.name && (
+              <p className="text-xs font-medium text-destructive">{errors.name}</p>
+            )}
           </div>
 
           {/* Type */}
@@ -485,9 +513,10 @@ export function PromotionForm({
           {/* Type-specific linking */}
           {type === "loyalty" && (
             <div className="space-y-2">
-              <Label>Hotel Chain</Label>
+              <Label>Hotel Chain *</Label>
               <AppSelect
                 value={hotelChainId}
+                error={showErrors ? errors.hotelChainId : ""}
                 onValueChange={(v) => {
                   setHotelChainId(v);
                   updateRestrictions({ subBrandIncludeIds: [], subBrandExcludeIds: [] });
@@ -501,9 +530,10 @@ export function PromotionForm({
 
           {type === "credit_card" && (
             <div className="space-y-2">
-              <Label>Credit Card</Label>
+              <Label>Credit Card *</Label>
               <AppSelect
                 value={creditCardId}
+                error={showErrors ? errors.creditCardId : ""}
                 onValueChange={setCreditCardId}
                 options={creditCards.map((card) => ({ label: card.name, value: card.id }))}
                 placeholder="Select credit card..."
@@ -514,9 +544,10 @@ export function PromotionForm({
 
           {type === "portal" && (
             <div className="space-y-2">
-              <Label>Shopping Portal</Label>
+              <Label>Shopping Portal *</Label>
               <AppSelect
                 value={shoppingPortalId}
+                error={showErrors ? errors.shoppingPortalId : ""}
                 onValueChange={setShoppingPortalId}
                 options={portals.map((portal) => ({ label: portal.name, value: portal.id }))}
                 placeholder="Select portal..."
@@ -576,6 +607,9 @@ export function PromotionForm({
           {isTiered && (
             <div className="space-y-4">
               <Label>Tiers</Label>
+              {showErrors && errors.tiers && (
+                <p className="text-xs font-medium text-destructive">{errors.tiers}</p>
+              )}
               {tiers.map((tier, tierIndex) => (
                 <div
                   key={tierIndex}
@@ -600,7 +634,7 @@ export function PromotionForm({
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <Label>Min Stay #</Label>
+                      <Label>Min Stay # *</Label>
                       <Input
                         type="number"
                         step="1"
@@ -613,6 +647,7 @@ export function PromotionForm({
                           })
                         }
                         data-testid={`tier-min-stays-${tierIndex}`}
+                        aria-invalid={showErrors && !tier.minStays}
                         required
                       />
                     </div>
