@@ -61,7 +61,6 @@ export async function POST(request: NextRequest) {
       propertyName,
       checkIn,
       checkOut,
-      numNights,
       pretaxCost,
       taxAmount,
       totalCost,
@@ -80,6 +79,13 @@ export async function POST(request: NextRequest) {
       notes,
       hotelChainSubBrandId,
     } = body;
+
+    const checkInDate = new Date(checkIn);
+    const checkOutDate = new Date(checkOut);
+    const calculatedNumNights = Math.max(
+      0,
+      Math.round((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))
+    );
 
     // Auto-calculate loyalty points from hotel/sub-brand rates if not explicitly provided
     let calculatedPoints: number | null =
@@ -128,9 +134,9 @@ export async function POST(request: NextRequest) {
         hotelChainId: hotelChainId,
         hotelChainSubBrandId: hotelChainSubBrandId || null,
         propertyName,
-        checkIn: new Date(checkIn),
-        checkOut: new Date(checkOut),
-        numNights: Number(numNights),
+        checkIn: checkInDate,
+        checkOut: checkOutDate,
+        numNights: calculatedNumNights,
         pretaxCost: Number(pretaxCost),
         taxAmount: Number(taxAmount),
         totalCost: Number(totalCost),

@@ -490,6 +490,7 @@ export function PromotionForm({
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Summer Bonus Offer"
               error={showErrors ? errors.name : ""}
+              data-testid="promotion-name-input"
             />
           </div>
 

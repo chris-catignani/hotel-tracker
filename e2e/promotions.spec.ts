@@ -803,7 +803,7 @@ test.describe("Promotions payment type restrictions", () => {
     await page.goto("/promotions/new");
 
     // Basic info
-    await page.getByLabel(/Name/i).fill(promoName);
+    await page.getByTestId("promotion-name-input").fill(promoName);
     await page.getByTestId("promotion-type-select").click();
     await page.getByRole("option", { name: "Loyalty" }).click();
     await page.getByTestId("hotel-chain-select").click();
