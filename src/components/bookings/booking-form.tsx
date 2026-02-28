@@ -256,6 +256,14 @@ export function BookingForm({
     checkOut: !checkOut ? "Check-out date is required" : "",
     pretaxCost: hasCash && pretaxCost === "" ? "Pre-tax cost is required" : "",
     totalCost: hasCash && totalCost === "" ? "Total cost is required" : "",
+    pointsRedeemed:
+      hasPoints && (!pointsRedeemed || Number(pointsRedeemed) <= 0)
+        ? "Points redeemed is required"
+        : "",
+    certificates:
+      hasCert && (certificates.length === 0 || certificates.some((c) => !c))
+        ? "All certificates must be selected"
+        : "",
   };
 
   const isValid =
@@ -264,6 +272,8 @@ export function BookingForm({
     !errors.checkIn &&
     !errors.checkOut &&
     (!hasCash || (!errors.pretaxCost && !errors.totalCost)) &&
+    (!hasPoints || !errors.pointsRedeemed) &&
+    (!hasCert || !errors.certificates) &&
     Number(numNights) > 0;
 
   const handleFormSubmit = async (e: React.FormEvent) => {
@@ -527,7 +537,7 @@ export function BookingForm({
           {/* Points Redeemed */}
           {hasPoints && (
             <div className="space-y-2">
-              <Label htmlFor="pointsRedeemed">Points Redeemed</Label>
+              <Label htmlFor="pointsRedeemed">Points Redeemed *</Label>
               <Input
                 id="pointsRedeemed"
                 type="number"
@@ -535,6 +545,7 @@ export function BookingForm({
                 value={pointsRedeemed}
                 onChange={(e) => setPointsRedeemed(e.target.value)}
                 placeholder="e.g. 40000"
+                error={showErrors ? errors.pointsRedeemed : ""}
               />
             </div>
           )}
@@ -542,30 +553,40 @@ export function BookingForm({
           {/* Certificates */}
           {hasCert && (
             <div className="space-y-2">
-              <Label>Free Night Certificate(s)</Label>
+              <Label>Free Night Certificate(s) *</Label>
               {certificates.map((cert, idx) => (
-                <div key={idx} className="flex items-center gap-2">
-                  <AppSelect
-                    value={cert}
-                    onValueChange={(v) => updateCertificate(idx, v)}
-                    options={CERT_TYPE_OPTIONS.filter((opt) => opt.hotelChainId === hotelChainId)}
-                    placeholder="Select certificate type..."
-                    className="flex-1"
-                    data-testid={`certificate-select-${idx}`}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => removeCertificate(idx)}
-                  >
-                    ×
-                  </Button>
+                <div key={idx} className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <AppSelect
+                      value={cert}
+                      onValueChange={(v) => updateCertificate(idx, v)}
+                      options={CERT_TYPE_OPTIONS.filter((opt) => opt.hotelChainId === hotelChainId)}
+                      placeholder="Select certificate type..."
+                      className="flex-1"
+                      data-testid={`certificate-select-${idx}`}
+                      error={showErrors && !cert ? "Required" : ""}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removeCertificate(idx)}
+                    >
+                      ×
+                    </Button>
+                  </div>
                 </div>
               ))}
-              <Button type="button" variant="outline" size="sm" onClick={addCertificate}>
-                + Add Certificate
-              </Button>
+              <div className="space-y-1">
+                <Button type="button" variant="outline" size="sm" onClick={addCertificate}>
+                  + Add Certificate
+                </Button>
+                {showErrors && certificates.length === 0 && (
+                  <p className="text-xs font-medium text-destructive">
+                    At least one certificate is required
+                  </p>
+                )}
+              </div>
             </div>
           )}
 
