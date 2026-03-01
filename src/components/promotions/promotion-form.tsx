@@ -510,7 +510,14 @@ export function PromotionForm({
               const bVal = tierRequirementType === "stays" ? b.minStays : b.minNights;
               return (aVal ?? 0) - (bVal ?? 0);
             })
-            .map((tier) => ({ ...tier, benefits: withSortOrder(tier.benefits) }))
+            .map((tier) => ({
+              ...tier,
+              minStays: tierRequirementType === "stays" ? tier.minStays : null,
+              maxStays: tierRequirementType === "stays" ? tier.maxStays : null,
+              minNights: tierRequirementType === "nights" ? tier.minNights : null,
+              maxNights: tierRequirementType === "nights" ? tier.maxNights : null,
+              benefits: withSortOrder(tier.benefits),
+            }))
         : [],
       tierRequirementType: isTiered ? tierRequirementType : undefined,
       restrictions: finalRestrictions,
@@ -722,20 +729,7 @@ export function PromotionForm({
                     </div>
                     <Tabs
                       value={tierRequirementType}
-                      onValueChange={(val) => {
-                        const newType = val as "stays" | "nights";
-                        setTierRequirementType(newType);
-                        // Clear the other metric across all tiers
-                        setTiers((prev) =>
-                          prev.map((t) => ({
-                            ...t,
-                            minStays: newType === "stays" ? t.minStays : null,
-                            maxStays: newType === "stays" ? t.maxStays : null,
-                            minNights: newType === "nights" ? t.minNights : null,
-                            maxNights: newType === "nights" ? t.maxNights : null,
-                          }))
-                        );
-                      }}
+                      onValueChange={(val) => setTierRequirementType(val as "stays" | "nights")}
                       className="w-full sm:w-[240px]"
                     >
                       <TabsList className="grid w-full grid-cols-2">
@@ -842,8 +836,8 @@ export function PromotionForm({
                                       : null;
                                     handleTierChange(tierIndex, {
                                       ...tier,
-                                      minStays: tierRequirementType === "stays" ? val : null,
-                                      minNights: tierRequirementType === "nights" ? val : null,
+                                      [tierRequirementType === "stays" ? "minStays" : "minNights"]:
+                                        val,
                                     });
                                   }}
                                   placeholder={
@@ -873,8 +867,8 @@ export function PromotionForm({
                                       : null;
                                     handleTierChange(tierIndex, {
                                       ...tier,
-                                      maxStays: tierRequirementType === "stays" ? val : null,
-                                      maxNights: tierRequirementType === "nights" ? val : null,
+                                      [tierRequirementType === "stays" ? "maxStays" : "maxNights"]:
+                                        val,
                                     });
                                   }}
                                   placeholder="Any"
