@@ -361,8 +361,13 @@ export function BenefitRow({
                     { key: "once_per_sub_brand", label: "Once Per Sub-Brand" },
                   ].map(({ key, label }) => {
                     const k = key as RestrictionKey;
-                    if (k === "sub_brand_scope" && !showSubBrandScopeOption) return null;
+                    if (k === "sub_brand_scope") {
+                      const hasChain =
+                        promotionType === "loyalty" || visibleRestrictionKeys.has("hotel_chain");
+                      if (!hasChain) return null;
+                    }
                     if (k === "hotel_chain" && promotionType === "loyalty") return null;
+                    if (k === "tie_in_cards" && promotionType === "credit_card") return null;
                     const isVisible = visibleRestrictionKeys.has(k);
                     return (
                       <button
@@ -444,6 +449,7 @@ export function BenefitRow({
             {visibleRestrictionKeys.has("redemption_caps") && (
               <RedemptionCapsCard
                 level="benefit"
+                rewardType={benefit.rewardType}
                 maxStayCount={benefit.restrictions?.maxStayCount ?? ""}
                 maxRewardCount={benefit.restrictions?.maxRewardCount ?? ""}
                 maxRedemptionValue={benefit.restrictions?.maxRedemptionValue ?? ""}

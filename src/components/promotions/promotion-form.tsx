@@ -1041,8 +1041,13 @@ export function PromotionForm({
                         {["hotel_chain", "sub_brand_scope", "tie_in_cards", "booking_source"].map(
                           (key) => {
                             const k = key as RestrictionKey;
-                            if (k === "sub_brand_scope" && !showSubBrandScopeOption) return null;
+                            if (k === "sub_brand_scope") {
+                              const hasChain =
+                                type === "loyalty" || activeRestrictions.has("hotel_chain");
+                              if (!hasChain) return null;
+                            }
                             if (k === "hotel_chain" && type === "loyalty") return null;
+                            if (k === "tie_in_cards" && type === "credit_card") return null;
                             const isActive = activeRestrictions.has(k);
                             return (
                               <button
