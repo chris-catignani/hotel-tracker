@@ -4,15 +4,9 @@ import { HotelChain } from "./types";
 
 describe("net-cost", () => {
   const mockBaseBooking: NetCostBooking = {
-    id: "b1",
     hotelChainId: "h1",
-    hotelChainSubBrandId: "s1",
-    propertyName: "Test Hotel",
-    checkIn: new Date("2026-03-01"),
-    checkOut: new Date("2026-03-02"),
     numNights: 1,
     pretaxCost: 80,
-    taxAmount: 20,
     totalCost: 100,
     loyaltyPointsEarned: 0,
     pointsRedeemed: null,

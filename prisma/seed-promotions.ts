@@ -7,8 +7,9 @@ export async function seedPromotions() {
     {
       name: "IHG 2x Promo",
       type: "loyalty",
-      hotelChainId: "co5ll49okbgq0fbceti8p0dpd",
+      hotelChain: { connect: { id: "co5ll49okbgq0fbceti8p0dpd" } },
       startDate: new Date("2026-01-01"),
+
       endDate: new Date("2026-03-31"),
       isActive: true,
       restrictions: {
@@ -29,8 +30,9 @@ export async function seedPromotions() {
     {
       name: "WF Card Linked Offer",
       type: "credit_card",
-      creditCardId: "cvn8tp6d6nae4s543nno1qc6p",
+      creditCard: { connect: { id: "cvn8tp6d6nae4s543nno1qc6p" } },
       startDate: new Date("2026-02-01"),
+
       endDate: new Date("2026-04-30"),
       isActive: true,
       restrictions: {
@@ -52,8 +54,9 @@ export async function seedPromotions() {
     {
       name: "IHG Bonus EQN",
       type: "loyalty",
-      hotelChainId: "co5ll49okbgq0fbceti8p0dpd",
+      hotelChain: { connect: { id: "co5ll49okbgq0fbceti8p0dpd" } },
       startDate: new Date("2026-01-22"),
+
       endDate: new Date("2026-03-31"),
       isActive: true,
       restrictions: {
@@ -79,8 +82,9 @@ export async function seedPromotions() {
     {
       name: "Hyatt Bonus Journeys",
       type: "loyalty",
-      hotelChainId: "cxjdwg32a8xf7by36md0mdvuu",
+      hotelChain: { connect: { id: "cxjdwg32a8xf7by36md0mdvuu" } },
       startDate: new Date("2026-02-02"),
+
       endDate: new Date("2026-04-15"),
       isActive: true,
       benefits: {
@@ -119,8 +123,9 @@ export async function seedPromotions() {
     {
       name: "GHA multi brand",
       type: "loyalty",
-      hotelChainId: "cwizlxi70wnbaq3qehma0fhbz",
+      hotelChain: { connect: { id: "cwizlxi70wnbaq3qehma0fhbz" } },
       startDate: new Date("2025-12-01"),
+
       endDate: new Date("2026-05-31"),
       isActive: true,
       tiers: {
@@ -170,8 +175,9 @@ export async function seedPromotions() {
     {
       name: "Marriott Global Q1",
       type: "loyalty",
-      hotelChainId: "c9uc76fdp3v95dccffxsa3h31",
+      hotelChain: { connect: { id: "c9uc76fdp3v95dccffxsa3h31" } },
       startDate: new Date("2026-02-25"),
+
       endDate: new Date("2026-05-10"),
       isActive: true,
       benefits: {
@@ -199,8 +205,9 @@ export async function seedPromotions() {
     {
       name: "Hyatt Place/House 5k",
       type: "loyalty",
-      hotelChainId: "cxjdwg32a8xf7by36md0mdvuu",
+      hotelChain: { connect: { id: "cxjdwg32a8xf7by36md0mdvuu" } },
       startDate: new Date("2026-01-20"),
+
       endDate: new Date("2026-12-31"),
       isActive: true,
       benefits: {

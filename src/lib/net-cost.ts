@@ -171,6 +171,33 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
 
     const groups: CalculationGroup[] = [];
 
+    // Add prerequisite info if applicable
+    const promoRestrictions = bp.promotion.restrictions;
+    if (promoRestrictions?.prerequisiteStayCount || promoRestrictions?.prerequisiteNightCount) {
+      const prerequisiteSegments: CalculationSegment[] = [];
+      if (promoRestrictions.prerequisiteStayCount) {
+        prerequisiteSegments.push({
+          label: "Prerequisite: Stays",
+          value: 0,
+          formula: `Requires ${promoRestrictions.prerequisiteStayCount} prior stay(s)`,
+          description: `This promotion was successfully activated after completing the required ${promoRestrictions.prerequisiteStayCount} prior stay(s) within the promotion period.`,
+        });
+      }
+      if (promoRestrictions.prerequisiteNightCount) {
+        prerequisiteSegments.push({
+          label: "Prerequisite: Nights",
+          value: 0,
+          formula: `Requires ${promoRestrictions.prerequisiteNightCount} prior night(s)`,
+          description: `This promotion was successfully activated after completing the required ${promoRestrictions.prerequisiteNightCount} prior night(s) within the promotion period.`,
+        });
+      }
+      groups.push({
+        name: "Prerequisites Met",
+        description: "The activation requirements for this promotion have been satisfied.",
+        segments: prerequisiteSegments,
+      });
+    }
+
     for (const ba of benefits) {
       const b = ba.promotionBenefit;
       const bValue = Number(b.value);
