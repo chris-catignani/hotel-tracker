@@ -36,6 +36,8 @@ export interface NetCostBookingPromotionBenefit {
     restrictions?: {
       minNightsRequired?: number | null;
       spanStays?: boolean;
+      prerequisiteStayCount?: number | null;
+      prerequisiteNightCount?: number | null;
     } | null;
   };
 }
@@ -96,6 +98,8 @@ export interface NetCostBooking {
       restrictions?: {
         minNightsRequired?: number | null;
         spanStays?: boolean;
+        prerequisiteStayCount?: number | null;
+        prerequisiteNightCount?: number | null;
       } | null;
       benefits?: {
         rewardType: string;
@@ -149,6 +153,8 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
   // - maxRedemptionValue: caps the total dollar value; appliedValue is reduced proportionally
   // - maxTotalBonusPoints: caps total bonus points earned; appliedValue is reduced proportionally
   // - minNightsRequired: promotion only applies to stays of minimum length
+  // - prerequisiteStayCount: promotion only applies after a certain number of prior stays
+  // - prerequisiteNightCount: promotion only applies after a certain number of prior nights
   // - nightsStackable: benefit is multiplied by number of qualifying stay nights
   // - bookByDate: booking must be created before cutoff date
   // - registrationDeadline: user must have registered by this date

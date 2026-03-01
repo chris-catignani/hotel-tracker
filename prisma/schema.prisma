@@ -251,6 +251,8 @@ model PromotionRestrictions {
   validDaysAfterRegistration Int?                          @map("valid_days_after_registration")
   tieInRequiresPayment       Boolean                       @default(false) @map("tie_in_requires_payment")
   allowedPaymentTypes        String[]                      @default([]) @map("allowed_payment_types")
+  prerequisiteStayCount      Int?                          @map("prerequisite_stay_count")
+  prerequisiteNightCount     Int?                          @map("prerequisite_night_count")
   subBrandRestrictions       PromotionSubBrandRestriction[]
   tieInCards                 PromotionRestrictionTieInCard[]
   // Exactly one of these is set
@@ -320,8 +322,10 @@ model UserPromotion {
 model PromotionTier {
   id          String             @id @default(cuid())
   promotionId String             @map("promotion_id")
-  minStays    Int                @map("min_stays")
+  minStays    Int?               @map("min_stays")
   maxStays    Int?               @map("max_stays")
+  minNights   Int?               @map("min_nights")
+  maxNights   Int?               @map("max_nights")
   promotion   Promotion          @relation(fields: [promotionId], references: [id], onDelete: Cascade)
   benefits    PromotionBenefit[]
 
