@@ -251,6 +251,7 @@ model PromotionRestrictions {
   validDaysAfterRegistration Int?                          @map("valid_days_after_registration")
   tieInRequiresPayment       Boolean                       @default(false) @map("tie_in_requires_payment")
   allowedPaymentTypes        String[]                      @default([]) @map("allowed_payment_types")
+  allowedBookingSources      String[]                      @default([]) @map("allowed_booking_sources")
   prerequisiteStayCount      Int?                          @map("prerequisite_stay_count")
   prerequisiteNightCount     Int?                          @map("prerequisite_night_count")
   subBrandRestrictions       PromotionSubBrandRestriction[]

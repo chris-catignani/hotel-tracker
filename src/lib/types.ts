@@ -121,6 +121,7 @@ export interface PromotionRestrictionsData {
   validDaysAfterRegistration: number | null;
   tieInRequiresPayment: boolean;
   allowedPaymentTypes: string[];
+  allowedBookingSources: string[];
   prerequisiteStayCount: number | null;
   prerequisiteNightCount: number | null;
   subBrandRestrictions: SubBrandRestriction[];
@@ -143,6 +144,7 @@ export interface PromotionRestrictionsFormData {
   registrationDate: string; // form convenience; maps to UserPromotion on the promotion
   tieInRequiresPayment: boolean;
   allowedPaymentTypes: string[];
+  allowedBookingSources: string[];
   prerequisiteStayCount: string;
   prerequisiteNightCount: string;
   subBrandIncludeIds: string[];
@@ -166,6 +168,7 @@ export const EMPTY_RESTRICTIONS: PromotionRestrictionsFormData = {
   registrationDate: "",
   tieInRequiresPayment: false,
   allowedPaymentTypes: [],
+  allowedBookingSources: [],
   prerequisiteStayCount: "",
   prerequisiteNightCount: "",
   subBrandIncludeIds: [],

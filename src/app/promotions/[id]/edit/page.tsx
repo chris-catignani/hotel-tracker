@@ -44,6 +44,7 @@ function mapApiRestrictionsToForm(
     registrationDate: "",
     tieInRequiresPayment: r.tieInRequiresPayment ?? false,
     allowedPaymentTypes: r.allowedPaymentTypes ?? [],
+    allowedBookingSources: r.allowedBookingSources ?? [],
     prerequisiteStayCount: r.prerequisiteStayCount ? String(r.prerequisiteStayCount) : "",
     prerequisiteNightCount: r.prerequisiteNightCount ? String(r.prerequisiteNightCount) : "",
     subBrandIncludeIds: (r.subBrandRestrictions ?? [])

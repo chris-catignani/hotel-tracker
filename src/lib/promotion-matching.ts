@@ -52,6 +52,7 @@ type MatchingRestrictions = {
   validDaysAfterRegistration: number | null;
   tieInRequiresPayment: boolean;
   allowedPaymentTypes: string[];
+  allowedBookingSources: string[];
   prerequisiteStayCount: number | null;
   prerequisiteNightCount: number | null;
   subBrandRestrictions: { hotelChainSubBrandId: string; mode: string }[];
@@ -97,6 +98,7 @@ export interface MatchingBooking {
   shoppingPortalId: string | null;
   hotelChainId: string | null;
   hotelChainSubBrandId: string | null;
+  bookingSource: string | null;
   checkIn: Date | string;
   createdAt: Date | string;
   numNights: number;
@@ -289,6 +291,14 @@ const PromotionRules: Record<string, PromotionRule> = {
     return { valid: true };
   },
 
+  bookingSource: (booking, promo) => {
+    const allowed = promo.restrictions?.allowedBookingSources;
+    if (allowed && allowed.length > 0) {
+      return { valid: allowed.includes(booking.bookingSource ?? "other") };
+    }
+    return { valid: true };
+  },
+
   tieInCard: (booking, promo) => {
     if (promo.restrictions?.tieInCards && promo.restrictions.tieInCards.length > 0) {
       const cardMatches =
@@ -401,6 +411,11 @@ export function calculateMatchedPromotions(
       }
       if (br.allowedPaymentTypes && !checkPaymentTypeRestriction(br.allowedPaymentTypes, booking)) {
         return false;
+      }
+      if (br.allowedBookingSources && br.allowedBookingSources.length > 0) {
+        if (!br.allowedBookingSources.includes(booking.bookingSource ?? "other")) {
+          return false;
+        }
       }
       if (br.minNightsRequired && booking.numNights < br.minNightsRequired && !br.spanStays) {
         return false;
