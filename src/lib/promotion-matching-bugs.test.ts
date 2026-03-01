@@ -81,6 +81,7 @@ describe("Promotion Matching - Regression Tests (#166 Bugs)", () => {
       endDate: new Date("2026-12-31"),
       restrictions: {
         prerequisiteStayCount: 1, // Requires 1 prior stay
+        prerequisiteNightCount: null,
         minSpend: null,
         minNightsRequired: null,
         nightsStackable: false,

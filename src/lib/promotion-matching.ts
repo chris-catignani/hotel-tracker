@@ -770,9 +770,12 @@ async function fetchPromotionUsage(
     const eligibleStats = await prisma.booking.aggregate({
       where: {
         ...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
-        hotelChainId: promo.type === PromotionType.loyalty ? promo.hotelChainId : undefined,
-        creditCardId: promo.type === PromotionType.credit_card ? promo.creditCardId : undefined,
-        shoppingPortalId: promo.type === PromotionType.portal ? promo.shoppingPortalId : undefined,
+        hotelChainId:
+          promo.type === PromotionType.loyalty ? (promo.hotelChainId ?? undefined) : undefined,
+        creditCardId:
+          promo.type === PromotionType.credit_card ? (promo.creditCardId ?? undefined) : undefined,
+        shoppingPortalId:
+          promo.type === PromotionType.portal ? (promo.shoppingPortalId ?? undefined) : undefined,
         ...subBrandFilter,
         checkIn: {
           ...(promo.startDate ? { gte: promo.startDate } : {}),
