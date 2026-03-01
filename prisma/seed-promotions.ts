@@ -100,6 +100,9 @@ export async function seedPromotions() {
                 nightsStackable: true,
                 spanStays: true,
                 maxTotalBonusPoints: 7000,
+                subBrandRestrictions: {
+                  create: [{ hotelChainSubBrandId: "ckz1vxi70wnbaq3qehma0fhcc", mode: "include" }],
+                },
               },
             },
           },
@@ -207,9 +210,18 @@ export async function seedPromotions() {
       type: "loyalty",
       hotelChain: { connect: { id: "cxjdwg32a8xf7by36md0mdvuu" } },
       startDate: new Date("2026-01-20"),
-
       endDate: new Date("2026-12-31"),
       isActive: true,
+      restrictions: {
+        create: {
+          subBrandRestrictions: {
+            create: [
+              { hotelChainSubBrandId: "ckz1vxi70wnbaq3qehma0fhbz", mode: "include" }, // Hyatt House
+              { hotelChainSubBrandId: "ckz1vxi70wnbaq3qehma0fhcc", mode: "include" }, // Hyatt Place
+            ],
+          },
+        },
+      },
       benefits: {
         create: [
           {
