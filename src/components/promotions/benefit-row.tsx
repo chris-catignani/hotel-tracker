@@ -29,6 +29,7 @@ import {
   OncePerSubBrandCard,
   TieInCardsCard,
   SubBrandScopeCard,
+  BookingSourceCard,
 } from "./restriction-cards";
 
 const CERT_OPTIONS = CERT_TYPE_OPTIONS.map((o) => ({ value: o.value, label: o.label }));
@@ -129,6 +130,9 @@ export function BenefitRow({
     const current = benefit.restrictions ?? { ...EMPTY_RESTRICTIONS };
     let updates: Partial<PromotionRestrictionsFormData> = {};
     switch (key) {
+      case "booking_source":
+        updates = { allowedBookingSources: [] };
+        break;
       case "payment_type":
         updates = { allowedPaymentTypes: [] };
         break;
@@ -323,6 +327,15 @@ export function BenefitRow({
         {/* Active benefit restriction cards */}
         {visibleRestrictionKeys.size > 0 && (
           <div className="space-y-2">
+            {visibleRestrictionKeys.has("booking_source") && (
+              <BookingSourceCard
+                allowedBookingSources={benefit.restrictions?.allowedBookingSources ?? []}
+                onAllowedBookingSourcesChange={(sources) =>
+                  updateRestrictions({ allowedBookingSources: sources })
+                }
+                onRemove={() => removeBenefitRestriction("booking_source")}
+              />
+            )}
             {visibleRestrictionKeys.has("payment_type") && (
               <PaymentTypeCard
                 allowedPaymentTypes={benefit.restrictions?.allowedPaymentTypes ?? []}
