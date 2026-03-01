@@ -55,6 +55,7 @@ export interface NetCostBooking {
   certificates: { certType: string }[];
   hotelChainId: string | null;
   otaAgencyId: string | null;
+  bookingSource: string | null;
   hotelChain: {
     id: string;
     name: string;

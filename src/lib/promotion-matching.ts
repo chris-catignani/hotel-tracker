@@ -616,6 +616,17 @@ async function applyMatchedPromotions(
   bookingId: string,
   matched: MatchedPromotion[]
 ): Promise<BookingPromotion[]> {
+  // Verify booking still exists to avoid foreign key violations in concurrent re-evaluations
+  const bookingExists = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    select: { id: true },
+  });
+
+  if (!bookingExists) {
+    console.warn(`applyMatchedPromotions: Booking ${bookingId} not found, skipping.`);
+    return [];
+  }
+
   // Delete existing auto-applied BookingPromotions for this booking
   await prisma.bookingPromotion.deleteMany({
     where: {
@@ -722,37 +733,30 @@ async function fetchPromotionUsage(
 
     // To get eligible nights, we need to join with Booking
     // This is because numNights is on the booking, not the benefit application
-    const benefitNights = await prisma.bookingPromotionBenefit.findMany({
+    const priorBookingPromos = await prisma.bookingPromotion.findMany({
       where: {
-        promotionBenefitId: { in: allBenefitIds },
-        ...(excludeBookingId ? { bookingPromotion: { bookingId: { not: excludeBookingId } } } : {}),
-        bookingPromotion: {
-          booking: {
-            checkIn: {
-              lt: new Date(booking.checkIn),
-            },
+        promotionId: { in: promotions.map((p) => p.id) },
+        ...(excludeBookingId ? { bookingId: { not: excludeBookingId } } : {}),
+        booking: {
+          checkIn: {
+            lt: new Date(booking.checkIn),
           },
         },
       },
       select: {
-        promotionBenefitId: true,
-        bookingPromotion: {
-          select: {
-            booking: {
-              select: {
-                numNights: true,
-              },
-            },
-          },
+        booking: { select: { numNights: true } },
+        benefitApplications: {
+          where: { promotionBenefitId: { in: allBenefitIds } },
+          select: { promotionBenefitId: true },
         },
       },
     });
 
     const nightsMap = new Map<string, number>();
-    for (const bn of benefitNights) {
-      if (bn.bookingPromotion?.booking) {
-        const current = nightsMap.get(bn.promotionBenefitId) ?? 0;
-        nightsMap.set(bn.promotionBenefitId, current + bn.bookingPromotion.booking.numNights);
+    for (const bp of priorBookingPromos) {
+      for (const ba of bp.benefitApplications) {
+        const current = nightsMap.get(ba.promotionBenefitId) ?? 0;
+        nightsMap.set(ba.promotionBenefitId, current + bp.booking.numNights);
       }
     }
 
@@ -988,6 +992,7 @@ export async function reevaluateBookings(bookingIds: string[]): Promise<void> {
   for (const booking of bookings) {
     const priorUsage = await fetchPromotionUsage(constrainedPromos, booking, booking.id);
     const matched = calculateMatchedPromotions(booking, activePromotions, priorUsage);
+
     await applyMatchedPromotions(booking.id, matched);
   }
 }

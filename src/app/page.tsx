@@ -42,6 +42,7 @@ interface BookingWithRelations {
   notes: string | null;
   hotelChainId: string;
   otaAgencyId: string | null;
+  bookingSource: string | null;
   hotelChain: {
     id: string;
     name: string;
