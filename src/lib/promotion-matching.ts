@@ -53,6 +53,7 @@ type MatchingRestrictions = {
   tieInRequiresPayment: boolean;
   allowedPaymentTypes: string[];
   allowedBookingSources: string[];
+  hotelChainId: string | null;
   prerequisiteStayCount: number | null;
   prerequisiteNightCount: number | null;
   subBrandRestrictions: { hotelChainSubBrandId: string; mode: string }[];
@@ -307,6 +308,14 @@ const PromotionRules: Record<string, PromotionRule> = {
     };
   },
 
+  hotelChain: (booking, promo) => {
+    const r = promo.restrictions;
+    if (r?.hotelChainId) {
+      return { valid: r.hotelChainId === booking.hotelChainId };
+    }
+    return { valid: true };
+  },
+
   tieInCard: (booking, promo) => {
     if (promo.restrictions?.tieInCards && promo.restrictions.tieInCards.length > 0) {
       const cardMatches =
@@ -318,14 +327,11 @@ const PromotionRules: Record<string, PromotionRule> = {
   },
 
   usageCaps: (booking, promo, usage) => {
-    if (
-      promo.restrictions?.maxStayCount &&
-      usage &&
-      usage.count >= promo.restrictions.maxStayCount
-    ) {
+    const r = promo.restrictions;
+    if (r?.maxStayCount && usage && usage.count >= r.maxStayCount) {
       return { valid: false };
     }
-    if (promo.restrictions?.oncePerSubBrand) {
+    if (r?.oncePerSubBrand) {
       if (usage?.appliedSubBrandIds?.has(booking.hotelChainSubBrandId ?? null)) {
         return { valid: false };
       }
@@ -424,6 +430,9 @@ export function calculateMatchedPromotions(
         br.allowedBookingSources &&
         !checkBookingSourceRestriction(br.allowedBookingSources, booking)
       ) {
+        return false;
+      }
+      if (br.hotelChainId && br.hotelChainId !== booking.hotelChainId) {
         return false;
       }
       if (br.minNightsRequired && booking.numNights < br.minNightsRequired && !br.spanStays) {
@@ -915,7 +924,6 @@ export function getConstrainedPromotions(promotions: MatchingPromotion[]): Match
   return promotions.filter(
     (p) =>
       p.restrictions?.maxStayCount ||
-      p.restrictions?.maxRewardCount ||
       p.restrictions?.maxRedemptionValue ||
       p.restrictions?.maxTotalBonusPoints ||
       p.restrictions?.spanStays ||

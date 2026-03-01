@@ -157,6 +157,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
                   : null,
                 tieInRequiresPayment: restrictions.tieInRequiresPayment ?? false,
                 allowedPaymentTypes: restrictions.allowedPaymentTypes ?? [],
+                allowedBookingSources: restrictions.allowedBookingSources ?? [],
+                hotelChainId: restrictions.hotelChainId || null,
                 subBrandRestrictions: {
                   create: [
                     ...(restrictions.subBrandIncludeIds ?? []).map((sbId) => ({

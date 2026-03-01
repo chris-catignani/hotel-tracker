@@ -9,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { AppSelect } from "@/components/ui/app-select";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
 import { format, parseISO } from "date-fns";
 import { Trash2, Plus, ChevronDown } from "lucide-react";
 import {
@@ -37,6 +39,7 @@ import {
   SubBrandScopeCard,
   PrerequisitesCard,
   BookingSourceCard,
+  HotelChainRestrictionCard,
 } from "./restriction-cards";
 
 interface HotelChainSubBrand {
@@ -97,6 +100,7 @@ function mapApiRestrictionsToForm(
     tieInRequiresPayment: r.tieInRequiresPayment ?? false,
     allowedPaymentTypes: r.allowedPaymentTypes ?? [],
     allowedBookingSources: r.allowedBookingSources ?? [],
+    hotelChainId: r.hotelChainId ?? "",
     prerequisiteStayCount: r.prerequisiteStayCount != null ? String(r.prerequisiteStayCount) : "",
     prerequisiteNightCount:
       r.prerequisiteNightCount != null ? String(r.prerequisiteNightCount) : "",
@@ -114,8 +118,8 @@ export function PromotionForm({
   initialData,
   onSubmit,
   submitting,
-  title,
-  description,
+  title: _title,
+  description: _description,
   submitLabel,
 }: PromotionFormProps) {
   // ── Validation state ─────────────────────────────────────────────────────────
@@ -147,12 +151,13 @@ export function PromotionForm({
   const [isTiered, setIsTiered] = useState(
     () => (initialData?.tiers && initialData.tiers.length > 0) ?? false
   );
+  const [activeTierTab, setActiveTierTab] = useState("tier-0");
   const [tiers, setTiers] = useState<PromotionTierFormData[]>(
     initialData?.tiers && initialData.tiers.length > 0
       ? initialData.tiers
       : [
           {
-            minStays: 1,
+            minStays: null,
             maxStays: null,
             minNights: null,
             maxNights: null,
@@ -308,6 +313,9 @@ export function PromotionForm({
       case "payment_type":
         updateRestrictions({ allowedPaymentTypes: [] });
         break;
+      case "booking_source":
+        updateRestrictions({ allowedBookingSources: [] });
+        break;
       case "sub_brand_scope":
         updateRestrictions({ subBrandIncludeIds: [], subBrandExcludeIds: [] });
         break;
@@ -422,9 +430,7 @@ export function PromotionForm({
           : false,
         spanStays: activeRestrictions.has("min_nights") ? restrictions.spanStays : false,
         maxStayCount: activeRestrictions.has("redemption_caps") ? restrictions.maxStayCount : "",
-        maxRewardCount: activeRestrictions.has("redemption_caps")
-          ? restrictions.maxRewardCount
-          : "",
+        maxRewardCount: "", // Promotion-level reward count is deprecated in favor of maxStayCount
         maxRedemptionValue: activeRestrictions.has("redemption_caps")
           ? restrictions.maxRedemptionValue
           : "",
@@ -438,6 +444,7 @@ export function PromotionForm({
         allowedBookingSources: activeRestrictions.has("booking_source")
           ? restrictions.allowedBookingSources
           : [],
+        hotelChainId: activeRestrictions.has("hotel_chain") ? restrictions.hotelChainId : "",
         tieInCreditCardIds: activeRestrictions.has("tie_in_cards")
           ? restrictions.tieInCreditCardIds
           : [],
@@ -509,532 +516,772 @@ export function PromotionForm({
   // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Name */}
-          <div className="space-y-2">
-            <Label htmlFor="name">Name *</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Summer Bonus Offer"
-              error={showErrors ? errors.name : ""}
-              data-testid="promotion-name-input"
-            />
-          </div>
-
-          {/* Type */}
-          <div className="space-y-2">
-            <Label>Type</Label>
-            <AppSelect
-              value={type}
-              onValueChange={(v) => setType(v as PromotionType)}
-              options={[
-                { label: "Credit Card", value: "credit_card" },
-                { label: "Portal", value: "portal" },
-                { label: "Loyalty", value: "loyalty" },
-              ]}
-              placeholder="Select type..."
-              data-testid="promotion-type-select"
-            />
-          </div>
-
-          {/* Type-specific linking */}
-          {type === "loyalty" && (
-            <div className="space-y-2">
-              <Label>Hotel Chain *</Label>
-              <AppSelect
-                value={hotelChainId}
-                error={showErrors ? errors.hotelChainId : ""}
-                onValueChange={(v) => {
-                  setHotelChainId(v);
-                  updateRestrictions({ subBrandIncludeIds: [], subBrandExcludeIds: [] });
-                }}
-                options={hotelChains.map((chain) => ({ label: chain.name, value: chain.id }))}
-                placeholder="Select hotel chain..."
-                data-testid="hotel-chain-select"
-              />
-            </div>
-          )}
-
-          {type === "credit_card" && (
-            <div className="space-y-2">
-              <Label>Credit Card *</Label>
-              <AppSelect
-                value={creditCardId}
-                error={showErrors ? errors.creditCardId : ""}
-                onValueChange={setCreditCardId}
-                options={creditCards.map((card) => ({ label: card.name, value: card.id }))}
-                placeholder="Select credit card..."
-                data-testid="credit-card-select"
-              />
-            </div>
-          )}
-
-          {type === "portal" && (
-            <div className="space-y-2">
-              <Label>Shopping Portal *</Label>
-              <AppSelect
-                value={shoppingPortalId}
-                error={showErrors ? errors.shoppingPortalId : ""}
-                onValueChange={setShoppingPortalId}
-                options={portals.map((portal) => ({ label: portal.name, value: portal.id }))}
-                placeholder="Select portal..."
-                data-testid="shopping-portal-select"
-              />
-            </div>
-          )}
-
-          {/* Tiered toggle */}
-          <div className="flex items-center gap-2">
-            <input
-              id="isTiered"
-              type="checkbox"
-              checked={isTiered}
-              onChange={(e) => setIsTiered(e.target.checked)}
-              className="size-4 rounded border-gray-300"
-              data-testid="promotion-is-tiered"
-            />
-            <div>
-              <Label htmlFor="isTiered">Tiered Promotion</Label>
-              <p className="text-xs text-muted-foreground">
-                Different benefits apply based on how many stays the guest has accumulated.
-              </p>
-            </div>
-          </div>
-
-          {/* Flat benefits */}
-          {!isTiered && (
-            <div className="space-y-3">
-              <Label>Benefits</Label>
-              {benefits.map((benefit, index) => (
-                <BenefitRow
-                  key={index}
-                  benefit={benefit}
-                  index={index}
-                  canRemove={benefits.length > 1}
-                  subBrands={selectedChainSubBrands}
-                  creditCards={creditCards}
-                  onChange={handleBenefitChange}
-                  onRemove={handleBenefitRemove}
-                  errors={showErrors ? benefitErrors[index] : undefined}
+    <div className="max-w-4xl mx-auto pb-20">
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* ── Section 1: Basic Information ─────────────────────────────────────── */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Basic Information</CardTitle>
+            <CardDescription>
+              Give your promotion a name and link it to a chain, card, or portal.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Name */}
+              <div className="space-y-2">
+                <Label htmlFor="name">Promotion Name *</Label>
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. Summer Bonus Offer"
+                  error={showErrors ? errors.name : ""}
+                  data-testid="promotion-name-input"
                 />
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleAddBenefit}
-                data-testid="benefit-add"
-              >
-                <Plus className="size-4 mr-2" />
-                Add Benefit
-              </Button>
-            </div>
-          )}
+              </div>
 
-          {/* Tiered benefits */}
-          {isTiered && (
-            <div className="space-y-4">
-              <Label>Tiers</Label>
-              {tiers.map((tier, tierIndex) => (
-                <div
-                  key={tierIndex}
-                  className="rounded-lg border p-4 space-y-3"
-                  data-testid={`tier-${tierIndex}`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-muted-foreground">
-                      Tier {tierIndex + 1}
-                    </span>
-                    {tiers.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleTierRemove(tierIndex)}
-                        data-testid={`tier-remove-${tierIndex}`}
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label>Min Stay #</Label>
-                      <Input
-                        type="number"
-                        step="1"
-                        min="1"
-                        value={tier.minStays ?? ""}
-                        onChange={(e) =>
-                          handleTierChange(tierIndex, {
-                            ...tier,
-                            minStays: e.target.value ? parseInt(e.target.value, 10) : null,
-                          })
-                        }
-                        data-testid={`tier-min-stays-${tierIndex}`}
-                        error={showErrors ? tierErrors[tierIndex].minStays : ""}
-                        placeholder="e.g. 1"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Max Stay # (optional)</Label>
-                      <Input
-                        type="number"
-                        step="1"
-                        min="1"
-                        value={tier.maxStays ?? ""}
-                        onChange={(e) =>
-                          handleTierChange(tierIndex, {
-                            ...tier,
-                            maxStays: e.target.value ? parseInt(e.target.value, 10) : null,
-                          })
-                        }
-                        placeholder="No limit"
-                        data-testid={`tier-max-stays-${tierIndex}`}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label>Min Night #</Label>
-                      <Input
-                        type="number"
-                        step="1"
-                        min="1"
-                        value={tier.minNights ?? ""}
-                        onChange={(e) =>
-                          handleTierChange(tierIndex, {
-                            ...tier,
-                            minNights: e.target.value ? parseInt(e.target.value, 10) : null,
-                          })
-                        }
-                        data-testid={`tier-min-nights-${tierIndex}`}
-                        placeholder="e.g. 5"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Max Night # (optional)</Label>
-                      <Input
-                        type="number"
-                        step="1"
-                        min="1"
-                        value={tier.maxNights ?? ""}
-                        onChange={(e) =>
-                          handleTierChange(tierIndex, {
-                            ...tier,
-                            maxNights: e.target.value ? parseInt(e.target.value, 10) : null,
-                          })
-                        }
-                        placeholder="No limit"
-                        data-testid={`tier-max-nights-${tierIndex}`}
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground">Benefits for this tier</Label>
-                    {tier.benefits.map((benefit, benefitIndex) => (
-                      <BenefitRow
-                        key={benefitIndex}
-                        benefit={benefit}
-                        index={benefitIndex}
-                        canRemove={tier.benefits.length > 1}
-                        subBrands={selectedChainSubBrands}
-                        creditCards={creditCards}
-                        onChange={(bi, updated) => handleTierBenefitChange(tierIndex, bi, updated)}
-                        onRemove={(bi) => handleTierBenefitRemove(tierIndex, bi)}
-                        errors={
-                          showErrors ? tierErrors[tierIndex].benefits[benefitIndex] : undefined
-                        }
-                      />
-                    ))}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleTierAddBenefit(tierIndex)}
-                      data-testid={`tier-add-benefit-${tierIndex}`}
-                    >
-                      <Plus className="size-4 mr-2" />
-                      Add Benefit
-                    </Button>
-                  </div>
-                </div>
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleAddTier}
-                data-testid="tier-add"
-              >
-                <Plus className="size-4 mr-2" />
-                Add Tier
-              </Button>
+              {/* Type */}
+              <div className="space-y-2">
+                <Label>Promotion Type</Label>
+                <AppSelect
+                  value={type}
+                  onValueChange={(v) => setType(v as PromotionType)}
+                  options={[
+                    { label: "Loyalty Program", value: "loyalty" },
+                    { label: "Credit Card", value: "credit_card" },
+                    { label: "Shopping Portal", value: "portal" },
+                  ]}
+                  placeholder="Select type..."
+                  data-testid="promotion-type-select"
+                />
+              </div>
             </div>
-          )}
 
-          {/* Date range */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="startDate">Start Date</Label>
-              <DatePicker
-                id="startDate"
-                date={startDateObj}
-                setDate={(date) => setStartDate(date ? format(date, "yyyy-MM-dd") : "")}
-                placeholder="Select start date"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="endDate">End Date</Label>
-              <DatePicker
-                id="endDate"
-                date={endDateObj}
-                setDate={(date) => setEndDate(date ? format(date, "yyyy-MM-dd") : "")}
-                placeholder="Select end date"
-              />
-            </div>
-          </div>
+            {/* Type-specific linking */}
+            {type === "loyalty" && (
+              <div className="space-y-2">
+                <Label>Hotel Chain *</Label>
+                <AppSelect
+                  value={hotelChainId}
+                  error={showErrors ? errors.hotelChainId : ""}
+                  onValueChange={(v) => {
+                    setHotelChainId(v);
+                    updateRestrictions({ subBrandIncludeIds: [], subBrandExcludeIds: [] });
+                  }}
+                  options={hotelChains.map((chain) => ({ label: chain.name, value: chain.id }))}
+                  placeholder="Select hotel chain..."
+                  data-testid="hotel-chain-select"
+                />
+              </div>
+            )}
 
-          {/* Restriction picker + active restriction cards */}
-          <div className="space-y-3">
-            <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
-              <PopoverTrigger asChild>
+            {type === "credit_card" && (
+              <div className="space-y-2">
+                <Label>Credit Card *</Label>
+                <AppSelect
+                  value={creditCardId}
+                  error={showErrors ? errors.creditCardId : ""}
+                  onValueChange={setCreditCardId}
+                  options={creditCards.map((card) => ({ label: card.name, value: card.id }))}
+                  placeholder="Select credit card..."
+                  data-testid="credit-card-select"
+                />
+              </div>
+            )}
+
+            {type === "portal" && (
+              <div className="space-y-2">
+                <Label>Shopping Portal *</Label>
+                <AppSelect
+                  value={shoppingPortalId}
+                  error={showErrors ? errors.shoppingPortalId : ""}
+                  onValueChange={setShoppingPortalId}
+                  options={portals.map((portal) => ({ label: portal.name, value: portal.id }))}
+                  placeholder="Select portal..."
+                  data-testid="shopping-portal-select"
+                />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* ── Section 2: Earning Rules ────────────────────────────────────────── */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <CardTitle className="text-lg">Earning Rules</CardTitle>
+                <CardDescription>Define the rewards earned from this promotion.</CardDescription>
+              </div>
+              <div className="flex items-center gap-2 bg-primary/5 px-3 py-1.5 rounded-lg border border-primary/10">
+                <input
+                  id="isTiered"
+                  type="checkbox"
+                  checked={isTiered}
+                  onChange={(e) => setIsTiered(e.target.checked)}
+                  className="size-4 rounded border-gray-300"
+                  data-testid="promotion-is-tiered"
+                />
+                <Label htmlFor="isTiered" className="text-sm font-bold text-primary">
+                  Enable Tiers
+                </Label>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {isTiered && (
+              <div className="mb-6 p-4 bg-muted/50 rounded-lg border border-dashed text-xs leading-relaxed space-y-2">
+                <p className="font-bold text-foreground">What are Tiers?</p>
+                <p className="text-muted-foreground">
+                  Use tiers when a promotion rewards you differently as you accumulate more stays or
+                  nights (e.g. &quot;Earn 2,000 points on your 2nd stay, and 4,000 points on your
+                  3rd&quot;).
+                </p>
+                <p className="text-muted-foreground">
+                  <span className="font-bold text-primary">Note:</span> Tier requirements
+                  (stays/nights) are <span className="underline italic">cumulative</span> across the
+                  entire promotion period.
+                </p>
+              </div>
+            )}
+
+            {/* Flat benefits */}
+            {!isTiered && (
+              <div className="space-y-3">
+                {benefits.map((benefit, index) => (
+                  <BenefitRow
+                    key={index}
+                    benefit={benefit}
+                    index={index}
+                    canRemove={benefits.length > 1}
+                    promotionType={type}
+                    subBrands={selectedChainSubBrands}
+                    creditCards={creditCards}
+                    hotelChains={hotelChains}
+                    onChange={handleBenefitChange}
+                    onRemove={handleBenefitRemove}
+                    errors={showErrors ? benefitErrors[index] : undefined}
+                  />
+                ))}
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  data-testid="restriction-picker-button"
+                  onClick={handleAddBenefit}
+                  data-testid="benefit-add"
                 >
                   <Plus className="size-4 mr-2" />
-                  Add Restriction
-                  <ChevronDown className="size-4 ml-2" />
+                  Add Reward
                 </Button>
-              </PopoverTrigger>
-              <PopoverContent
-                align="start"
-                className="w-64 p-2"
-                data-testid="restriction-picker-popover"
-              >
-                <div className="flex flex-col gap-1">
-                  {RESTRICTION_ORDER.map((key) => {
-                    if (key === "sub_brand_scope" && !showSubBrandScopeOption) return null;
-                    const isActive = activeRestrictions.has(key);
+              </div>
+            )}
+
+            {/* Tiered benefits */}
+            {isTiered && (
+              <div className="space-y-4">
+                <Tabs value={activeTierTab} onValueChange={setActiveTierTab} className="w-full">
+                  <div className="flex items-center justify-between mb-4 overflow-x-auto pb-2">
+                    <TabsList className="bg-muted/50 p-1">
+                      {tiers.map((_, idx) => (
+                        <TabsTrigger
+                          key={idx}
+                          value={`tier-${idx}`}
+                          className="px-4 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                        >
+                          Tier {idx + 1}
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        handleAddTier();
+                        setActiveTierTab(`tier-${tiers.length}`);
+                      }}
+                      className="text-primary hover:bg-primary/5 ml-2 shrink-0"
+                    >
+                      <Plus className="size-4 mr-1" />
+                      New Tier
+                    </Button>
+                  </div>
+
+                  {tiers.map((tier, tierIndex) => (
+                    <TabsContent
+                      key={tierIndex}
+                      value={`tier-${tierIndex}`}
+                      className="space-y-6 animate-in fade-in zoom-in-95 duration-200"
+                    >
+                      <div className="rounded-xl border bg-card p-6 shadow-sm space-y-6">
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-0.5">
+                            <h4 className="text-sm font-bold uppercase tracking-tight text-primary">
+                              Tier {tierIndex + 1} Configuration
+                            </h4>
+                            <p className="text-xs text-muted-foreground font-medium">
+                              Set the cumulative goals required to unlock this tier.
+                            </p>
+                          </div>
+                          {tiers.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                handleTierRemove(tierIndex);
+                                setActiveTierTab(`tier-${Math.max(0, tierIndex - 1)}`);
+                              }}
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="space-y-4">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="flex size-5 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
+                                1
+                              </span>
+                              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                                Cumulative Stays
+                              </Label>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4 ml-7">
+                              <div className="space-y-2">
+                                <Label className="text-[11px]">Minimum</Label>
+                                <Input
+                                  type="number"
+                                  step="1"
+                                  min="1"
+                                  value={tier.minStays ?? ""}
+                                  onChange={(e) =>
+                                    handleTierChange(tierIndex, {
+                                      ...tier,
+                                      minStays: e.target.value
+                                        ? parseInt(e.target.value, 10)
+                                        : null,
+                                    })
+                                  }
+                                  placeholder="e.g. 1"
+                                  className="h-9"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label className="text-[11px]">Maximum</Label>
+                                <Input
+                                  type="number"
+                                  step="1"
+                                  min="1"
+                                  value={tier.maxStays ?? ""}
+                                  onChange={(e) =>
+                                    handleTierChange(tierIndex, {
+                                      ...tier,
+                                      maxStays: e.target.value
+                                        ? parseInt(e.target.value, 10)
+                                        : null,
+                                    })
+                                  }
+                                  placeholder="Any"
+                                  className="h-9"
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="space-y-4 border-l pl-6 hidden md:block">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="flex size-5 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
+                                2
+                              </span>
+                              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                                Cumulative Nights
+                              </Label>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4 ml-7">
+                              <div className="space-y-2">
+                                <Label className="text-[11px]">Minimum</Label>
+                                <Input
+                                  type="number"
+                                  step="1"
+                                  min="1"
+                                  value={tier.minNights ?? ""}
+                                  onChange={(e) =>
+                                    handleTierChange(tierIndex, {
+                                      ...tier,
+                                      minNights: e.target.value
+                                        ? parseInt(e.target.value, 10)
+                                        : null,
+                                    })
+                                  }
+                                  placeholder="e.g. 5"
+                                  className="h-9"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label className="text-[11px]">Maximum</Label>
+                                <Input
+                                  type="number"
+                                  step="1"
+                                  min="1"
+                                  value={tier.maxNights ?? ""}
+                                  onChange={(e) =>
+                                    handleTierChange(tierIndex, {
+                                      ...tier,
+                                      maxNights: e.target.value
+                                        ? parseInt(e.target.value, 10)
+                                        : null,
+                                    })
+                                  }
+                                  placeholder="Any"
+                                  className="h-9"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-4 pt-4 border-t">
+                          <div className="flex items-center gap-2">
+                            <span className="flex size-5 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
+                              3
+                            </span>
+                            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                              Rewards for this tier
+                            </Label>
+                          </div>
+                          <div className="ml-7 space-y-3">
+                            {tier.benefits.map((benefit, benefitIndex) => (
+                              <BenefitRow
+                                key={benefitIndex}
+                                benefit={benefit}
+                                index={benefitIndex}
+                                canRemove={tier.benefits.length > 1}
+                                promotionType={type}
+                                subBrands={selectedChainSubBrands}
+                                creditCards={creditCards}
+                                hotelChains={hotelChains}
+                                onChange={(bi, updated) =>
+                                  handleTierBenefitChange(tierIndex, bi, updated)
+                                }
+                                onRemove={(bi) => handleTierBenefitRemove(tierIndex, bi)}
+                                errors={
+                                  showErrors
+                                    ? tierErrors[tierIndex].benefits[benefitIndex]
+                                    : undefined
+                                }
+                              />
+                            ))}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleTierAddBenefit(tierIndex)}
+                              className="w-full border-dashed py-6 hover:bg-primary/5 hover:text-primary transition-all group"
+                            >
+                              <Plus className="size-4 mr-2 group-hover:scale-110 transition-transform" />
+                              Add Reward to Tier {tierIndex + 1}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </TabsContent>
+                  ))}
+                </Tabs>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* ── Section 3: Timing ────────────────────────────────────────────────── */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Promotion Timing</CardTitle>
+            <CardDescription>When is this promotion active for stays?</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="startDate">Global Start Date</Label>
+                <DatePicker
+                  id="startDate"
+                  date={startDateObj}
+                  setDate={(date) => setStartDate(date ? format(date, "yyyy-MM-dd") : "")}
+                  placeholder="Stays on/after..."
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="endDate">Global End Date</Label>
+                <DatePicker
+                  id="endDate"
+                  date={endDateObj}
+                  setDate={(date) => setEndDate(date ? format(date, "yyyy-MM-dd") : "")}
+                  placeholder="Stays on/before..."
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ── Section 4: Eligibility & Restrictions ────────────────────────────── */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Eligibility & Restrictions</CardTitle>
+            <CardDescription>
+              Add specific requirements to limit how this promotion applies.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-3">
+              <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    data-testid="restriction-picker-button"
+                    className="bg-primary/5 hover:bg-primary/10 border-primary/20 text-primary"
+                  >
+                    <Plus className="size-4 mr-2" />
+                    Add Qualification Rule
+                    <ChevronDown className="size-4 ml-2" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  align="start"
+                  className="w-72 p-0"
+                  data-testid="restriction-picker-popover"
+                >
+                  <div className="p-3 bg-muted/20 border-b">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      Add Qualification Rule
+                    </h4>
+                  </div>
+                  <div className="p-2 max-h-[400px] overflow-y-auto">
+                    <div className="space-y-4">
+                      {/* Group 1: Usage & Spend */}
+                      <div className="space-y-1">
+                        <p className="px-2 pb-1 text-[10px] font-bold uppercase text-muted-foreground/70">
+                          Usage & Spend
+                        </p>
+                        {[
+                          { key: "min_spend", label: "Minimum Spend" },
+                          { key: "min_nights", label: "Min Length of Stay" },
+                          { key: "redemption_caps", label: "Redemption Caps" },
+                          { key: "payment_type", label: "Payment Type" },
+                        ].map(({ key, label }) => {
+                          const k = key as RestrictionKey;
+                          const isActive = activeRestrictions.has(k);
+                          return (
+                            <button
+                              key={k}
+                              type="button"
+                              disabled={isActive}
+                              onClick={() => addRestriction(k)}
+                              className={`w-full text-left px-2 py-1.5 rounded-md text-sm transition-colors flex items-center justify-between ${
+                                isActive
+                                  ? "opacity-40 cursor-not-allowed bg-muted/30"
+                                  : "hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                              }`}
+                              data-testid={`restriction-option-${k}`}
+                            >
+                              {label}
+                              {!isActive && <Plus className="size-3 text-muted-foreground/50" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <Separator />
+
+                      {/* Group 2: Timing & Validity */}
+                      <div className="space-y-1">
+                        <p className="px-2 pb-1 text-[10px] font-bold uppercase text-muted-foreground/70">
+                          Timing & Validity
+                        </p>
+                        {["book_by_date", "registration", "prerequisite"].map((key) => {
+                          const k = key as RestrictionKey;
+                          const isActive = activeRestrictions.has(k);
+                          return (
+                            <button
+                              key={k}
+                              type="button"
+                              disabled={isActive}
+                              onClick={() => addRestriction(k)}
+                              className={`w-full text-left px-2 py-1.5 rounded-md text-sm transition-colors flex items-center justify-between ${
+                                isActive
+                                  ? "opacity-40 cursor-not-allowed bg-muted/30"
+                                  : "hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                              }`}
+                              data-testid={`restriction-option-${k}`}
+                            >
+                              {RESTRICTION_LABELS[k]}
+                              {!isActive && <Plus className="size-3 text-muted-foreground/50" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <Separator />
+
+                      {/* Group 3: Scope */}
+                      <div className="space-y-1">
+                        <p className="px-2 pb-1 text-[10px] font-bold uppercase text-muted-foreground/70">
+                          Scope
+                        </p>
+                        {["hotel_chain", "sub_brand_scope", "tie_in_cards", "booking_source"].map(
+                          (key) => {
+                            const k = key as RestrictionKey;
+                            if (k === "sub_brand_scope" && !showSubBrandScopeOption) return null;
+                            if (k === "hotel_chain" && type === "loyalty") return null;
+                            const isActive = activeRestrictions.has(k);
+                            return (
+                              <button
+                                key={k}
+                                type="button"
+                                disabled={isActive}
+                                onClick={() => addRestriction(k)}
+                                className={`w-full text-left px-2 py-1.5 rounded-md text-sm transition-colors flex items-center justify-between ${
+                                  isActive
+                                    ? "opacity-40 cursor-not-allowed bg-muted/30"
+                                    : "hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                                }`}
+                                data-testid={`restriction-option-${k}`}
+                              >
+                                {RESTRICTION_LABELS[k]}
+                                {!isActive && <Plus className="size-3 text-muted-foreground/50" />}
+                              </button>
+                            );
+                          }
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {/* Active restriction cards in canonical order */}
+              <div className="grid grid-cols-1 gap-4">
+                {RESTRICTION_ORDER.map((key) => {
+                  if (!activeRestrictions.has(key)) return null;
+
+                  if (key === "hotel_chain")
                     return (
-                      <button
+                      <HotelChainRestrictionCard
                         key={key}
-                        type="button"
-                        disabled={isActive}
-                        onClick={() => addRestriction(key)}
-                        className={`text-left px-3 py-2 rounded text-sm transition-colors ${
-                          isActive
-                            ? "opacity-50 cursor-not-allowed"
-                            : "hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                        }`}
-                        data-testid={`restriction-option-${key}`}
-                      >
-                        {RESTRICTION_LABELS[key]}
-                      </button>
+                        hotelChainId={restrictions.hotelChainId}
+                        hotelChains={hotelChains}
+                        onHotelChainChange={(val) => {
+                          updateRestrictions({
+                            hotelChainId: val,
+                            subBrandIncludeIds: [],
+                            subBrandExcludeIds: [],
+                          });
+                        }}
+                        onRemove={() => removeRestriction("hotel_chain")}
+                      />
                     );
-                  })}
-                </div>
-              </PopoverContent>
-            </Popover>
 
-            {/* Active restriction cards in canonical order */}
-            {RESTRICTION_ORDER.map((key) => {
-              if (!activeRestrictions.has(key)) return null;
+                  if (key === "booking_source")
+                    return (
+                      <BookingSourceCard
+                        key={key}
+                        allowedBookingSources={restrictions.allowedBookingSources}
+                        onAllowedBookingSourcesChange={(sources) =>
+                          updateRestrictions({ allowedBookingSources: sources })
+                        }
+                        onRemove={() => removeRestriction("booking_source")}
+                      />
+                    );
 
-              if (key === "booking_source")
-                return (
-                  <BookingSourceCard
-                    key={key}
-                    allowedBookingSources={restrictions.allowedBookingSources}
-                    onAllowedBookingSourcesChange={(sources) =>
-                      updateRestrictions({ allowedBookingSources: sources })
-                    }
-                    onRemove={() => removeRestriction("booking_source")}
-                  />
-                );
+                  if (key === "payment_type")
+                    return (
+                      <PaymentTypeCard
+                        key={key}
+                        allowedPaymentTypes={restrictions.allowedPaymentTypes}
+                        onAllowedPaymentTypesChange={(types) =>
+                          updateRestrictions({ allowedPaymentTypes: types })
+                        }
+                        onRemove={() => removeRestriction("payment_type")}
+                      />
+                    );
 
-              if (key === "payment_type")
-                return (
-                  <PaymentTypeCard
-                    key={key}
-                    allowedPaymentTypes={restrictions.allowedPaymentTypes}
-                    onAllowedPaymentTypesChange={(types) =>
-                      updateRestrictions({ allowedPaymentTypes: types })
-                    }
-                    onRemove={() => removeRestriction("payment_type")}
-                  />
-                );
+                  if (key === "prerequisite")
+                    return (
+                      <PrerequisitesCard
+                        key={key}
+                        prerequisiteStayCount={restrictions.prerequisiteStayCount}
+                        prerequisiteNightCount={restrictions.prerequisiteNightCount}
+                        onStayCountChange={(v) => updateRestrictions({ prerequisiteStayCount: v })}
+                        onNightCountChange={(v) =>
+                          updateRestrictions({ prerequisiteNightCount: v })
+                        }
+                        onRemove={() => removeRestriction("prerequisite")}
+                      />
+                    );
 
-              if (key === "prerequisite")
-                return (
-                  <PrerequisitesCard
-                    key={key}
-                    prerequisiteStayCount={restrictions.prerequisiteStayCount}
-                    prerequisiteNightCount={restrictions.prerequisiteNightCount}
-                    onStayCountChange={(v) => updateRestrictions({ prerequisiteStayCount: v })}
-                    onNightCountChange={(v) => updateRestrictions({ prerequisiteNightCount: v })}
-                    onRemove={() => removeRestriction("prerequisite")}
-                  />
-                );
+                  if (key === "min_spend")
+                    return (
+                      <MinSpendCard
+                        key={key}
+                        minSpend={restrictions.minSpend}
+                        onMinSpendChange={(v) => updateRestrictions({ minSpend: v })}
+                        onRemove={() => removeRestriction("min_spend")}
+                      />
+                    );
 
-              if (key === "min_spend")
-                return (
-                  <MinSpendCard
-                    key={key}
-                    minSpend={restrictions.minSpend}
-                    onMinSpendChange={(v) => updateRestrictions({ minSpend: v })}
-                    onRemove={() => removeRestriction("min_spend")}
-                  />
-                );
+                  if (key === "book_by_date")
+                    return (
+                      <BookByDateCard
+                        key={key}
+                        bookByDate={restrictions.bookByDate}
+                        onBookByDateChange={(date) =>
+                          updateRestrictions({ bookByDate: date ? format(date, "yyyy-MM-dd") : "" })
+                        }
+                        onRemove={() => removeRestriction("book_by_date")}
+                      />
+                    );
 
-              if (key === "book_by_date")
-                return (
-                  <BookByDateCard
-                    key={key}
-                    bookByDate={restrictions.bookByDate}
-                    onBookByDateChange={(date) =>
-                      updateRestrictions({ bookByDate: date ? format(date, "yyyy-MM-dd") : "" })
-                    }
-                    onRemove={() => removeRestriction("book_by_date")}
-                  />
-                );
+                  if (key === "min_nights")
+                    return (
+                      <MinNightsCard
+                        key={key}
+                        minNightsRequired={restrictions.minNightsRequired}
+                        nightsStackable={restrictions.nightsStackable}
+                        spanStays={restrictions.spanStays}
+                        onMinNightsChange={(v) => updateRestrictions({ minNightsRequired: v })}
+                        onNightsStackableChange={(v) => updateRestrictions({ nightsStackable: v })}
+                        onSpanStaysChange={(v) => updateRestrictions({ spanStays: v })}
+                        onRemove={() => removeRestriction("min_nights")}
+                      />
+                    );
 
-              if (key === "min_nights")
-                return (
-                  <MinNightsCard
-                    key={key}
-                    minNightsRequired={restrictions.minNightsRequired}
-                    nightsStackable={restrictions.nightsStackable}
-                    spanStays={restrictions.spanStays}
-                    onMinNightsChange={(v) => updateRestrictions({ minNightsRequired: v })}
-                    onNightsStackableChange={(v) => updateRestrictions({ nightsStackable: v })}
-                    onSpanStaysChange={(v) => updateRestrictions({ spanStays: v })}
-                    onRemove={() => removeRestriction("min_nights")}
-                  />
-                );
+                  if (key === "redemption_caps")
+                    return (
+                      <RedemptionCapsCard
+                        key={key}
+                        maxStayCount={restrictions.maxStayCount}
+                        maxRewardCount={restrictions.maxRewardCount}
+                        maxRedemptionValue={restrictions.maxRedemptionValue}
+                        maxTotalBonusPoints={restrictions.maxTotalBonusPoints}
+                        onMaxStayCountChange={(v) => updateRestrictions({ maxStayCount: v })}
+                        onMaxRewardCountChange={(v) => updateRestrictions({ maxRewardCount: v })}
+                        onMaxRedemptionValueChange={(v) =>
+                          updateRestrictions({ maxRedemptionValue: v })
+                        }
+                        onMaxTotalBonusPointsChange={(v) =>
+                          updateRestrictions({ maxTotalBonusPoints: v })
+                        }
+                        onRemove={() => removeRestriction("redemption_caps")}
+                      />
+                    );
 
-              if (key === "redemption_caps")
-                return (
-                  <RedemptionCapsCard
-                    key={key}
-                    maxStayCount={restrictions.maxStayCount}
-                    maxRewardCount={restrictions.maxRewardCount}
-                    maxRedemptionValue={restrictions.maxRedemptionValue}
-                    maxTotalBonusPoints={restrictions.maxTotalBonusPoints}
-                    onMaxStayCountChange={(v) => updateRestrictions({ maxStayCount: v })}
-                    onMaxRewardCountChange={(v) => updateRestrictions({ maxRewardCount: v })}
-                    onMaxRedemptionValueChange={(v) =>
-                      updateRestrictions({ maxRedemptionValue: v })
-                    }
-                    onMaxTotalBonusPointsChange={(v) =>
-                      updateRestrictions({ maxTotalBonusPoints: v })
-                    }
-                    onRemove={() => removeRestriction("redemption_caps")}
-                  />
-                );
+                  if (key === "once_per_sub_brand")
+                    return (
+                      <OncePerSubBrandCard
+                        key={key}
+                        onRemove={() => removeRestriction("once_per_sub_brand")}
+                      />
+                    );
 
-              if (key === "once_per_sub_brand")
-                return (
-                  <OncePerSubBrandCard
-                    key={key}
-                    onRemove={() => removeRestriction("once_per_sub_brand")}
-                  />
-                );
+                  if (key === "tie_in_cards")
+                    return (
+                      <TieInCardsCard
+                        key={key}
+                        creditCards={creditCards}
+                        tieInCreditCardIds={restrictions.tieInCreditCardIds}
+                        tieInRequiresPayment={restrictions.tieInRequiresPayment}
+                        onTieInCreditCardIdsChange={(ids) => {
+                          updateRestrictions({
+                            tieInCreditCardIds: ids,
+                            tieInRequiresPayment:
+                              ids.length === 0 ? false : restrictions.tieInRequiresPayment,
+                          });
+                        }}
+                        onTieInRequiresPaymentChange={(v) =>
+                          updateRestrictions({ tieInRequiresPayment: v })
+                        }
+                        onRemove={() => removeRestriction("tie_in_cards")}
+                      />
+                    );
 
-              if (key === "tie_in_cards")
-                return (
-                  <TieInCardsCard
-                    key={key}
-                    creditCards={creditCards}
-                    tieInCreditCardIds={restrictions.tieInCreditCardIds}
-                    tieInRequiresPayment={restrictions.tieInRequiresPayment}
-                    onTieInCreditCardIdsChange={(ids) => {
-                      updateRestrictions({
-                        tieInCreditCardIds: ids,
-                        tieInRequiresPayment:
-                          ids.length === 0 ? false : restrictions.tieInRequiresPayment,
-                      });
-                    }}
-                    onTieInRequiresPaymentChange={(v) =>
-                      updateRestrictions({ tieInRequiresPayment: v })
-                    }
-                    onRemove={() => removeRestriction("tie_in_cards")}
-                  />
-                );
+                  if (key === "registration")
+                    return (
+                      <RegistrationCard
+                        key={key}
+                        registrationDeadline={restrictions.registrationDeadline}
+                        validDaysAfterRegistration={restrictions.validDaysAfterRegistration}
+                        registrationDate={restrictions.registrationDate}
+                        onRegistrationDeadlineChange={(date) =>
+                          updateRestrictions({
+                            registrationDeadline: date ? format(date, "yyyy-MM-dd") : "",
+                          })
+                        }
+                        onValidDaysChange={(v) =>
+                          updateRestrictions({ validDaysAfterRegistration: v })
+                        }
+                        onRegistrationDateChange={(date) =>
+                          updateRestrictions({
+                            registrationDate: date ? format(date, "yyyy-MM-dd") : "",
+                          })
+                        }
+                        onRemove={() => removeRestriction("registration")}
+                      />
+                    );
 
-              if (key === "registration")
-                return (
-                  <RegistrationCard
-                    key={key}
-                    registrationDeadline={restrictions.registrationDeadline}
-                    validDaysAfterRegistration={restrictions.validDaysAfterRegistration}
-                    registrationDate={restrictions.registrationDate}
-                    onRegistrationDeadlineChange={(date) =>
-                      updateRestrictions({
-                        registrationDeadline: date ? format(date, "yyyy-MM-dd") : "",
-                      })
-                    }
-                    onValidDaysChange={(v) => updateRestrictions({ validDaysAfterRegistration: v })}
-                    onRegistrationDateChange={(date) =>
-                      updateRestrictions({
-                        registrationDate: date ? format(date, "yyyy-MM-dd") : "",
-                      })
-                    }
-                    onRemove={() => removeRestriction("registration")}
-                  />
-                );
+                  if (key === "sub_brand_scope" && showSubBrandScopeOption)
+                    return (
+                      <SubBrandScopeCard
+                        key={key}
+                        subBrands={selectedChainSubBrands}
+                        subBrandIncludeIds={restrictions.subBrandIncludeIds}
+                        subBrandExcludeIds={restrictions.subBrandExcludeIds}
+                        onIncludeIdsChange={(ids) =>
+                          updateRestrictions({ subBrandIncludeIds: ids })
+                        }
+                        onExcludeIdsChange={(ids) =>
+                          updateRestrictions({ subBrandExcludeIds: ids })
+                        }
+                        onRemove={() => removeRestriction("sub_brand_scope")}
+                      />
+                    );
 
-              if (key === "sub_brand_scope" && showSubBrandScopeOption)
-                return (
-                  <SubBrandScopeCard
-                    key={key}
-                    subBrands={selectedChainSubBrands}
-                    subBrandIncludeIds={restrictions.subBrandIncludeIds}
-                    subBrandExcludeIds={restrictions.subBrandExcludeIds}
-                    onIncludeIdsChange={(ids) => updateRestrictions({ subBrandIncludeIds: ids })}
-                    onExcludeIdsChange={(ids) => updateRestrictions({ subBrandExcludeIds: ids })}
-                    onRemove={() => removeRestriction("sub_brand_scope")}
-                  />
-                );
+                  return null;
+                })}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-              return null;
-            })}
+        {/* ── Actions (Sticky Footer) ────────────────────────────────────────── */}
+        <div className="sticky bottom-4 bg-background/95 backdrop-blur-sm p-4 rounded-xl border shadow-lg flex gap-4 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="flex-1 flex flex-col justify-center">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider leading-none mb-1">
+              {initialData ? "Editing" : "Creating"} Promotion
+            </p>
+            <p className="text-sm font-bold truncate max-w-[200px] sm:max-w-md">
+              {name || "Untitled Promotion"}
+            </p>
           </div>
-
-          {/* Actions */}
-          <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm p-4 -mx-6 -mb-6 border-t md:static md:bg-transparent md:p-0 md:m-0 md:border-none flex gap-4 z-10">
-            <Button
-              type="submit"
-              disabled={submitting}
-              className="flex-1 md:flex-none"
-              data-testid="promotion-form-submit"
-            >
-              {submitting ? "Saving..." : submitLabel}
-            </Button>
+          <div className="flex items-center gap-3">
             <Button
               type="button"
               variant="outline"
               asChild
-              className="flex-1 md:flex-none"
+              className="hidden sm:flex"
               data-testid="promotion-form-cancel"
             >
               <Link href="/promotions">Cancel</Link>
             </Button>
+            <Button type="submit" disabled={submitting} data-testid="promotion-form-submit">
+              {submitting ? "Saving..." : submitLabel}
+            </Button>
           </div>
-        </form>
-      </CardContent>
-    </Card>
+        </div>
+      </form>
+    </div>
   );
 }
