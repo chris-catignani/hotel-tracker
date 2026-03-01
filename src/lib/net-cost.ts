@@ -38,6 +38,8 @@ export interface NetCostBookingPromotionBenefit {
       spanStays?: boolean;
       prerequisiteStayCount?: number | null;
       prerequisiteNightCount?: number | null;
+      hotelChainId?: string | null;
+      allowedBookingSources?: string[] | null;
     } | null;
   };
 }
@@ -100,6 +102,8 @@ export interface NetCostBooking {
         spanStays?: boolean;
         prerequisiteStayCount?: number | null;
         prerequisiteNightCount?: number | null;
+        hotelChainId?: string | null;
+        allowedBookingSources?: string[] | null;
       } | null;
       benefits?: {
         rewardType: string;
@@ -195,6 +199,35 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
         name: "Prerequisites Met",
         description: "The activation requirements for this promotion have been satisfied.",
         segments: prerequisiteSegments,
+      });
+    }
+
+    // Add Eligibility info if applicable (hotel chain, booking source)
+    if (
+      promoRestrictions?.hotelChainId ||
+      (promoRestrictions?.allowedBookingSources?.length ?? 0) > 0
+    ) {
+      const eligibilitySegments: CalculationSegment[] = [];
+      if (promoRestrictions?.hotelChainId) {
+        eligibilitySegments.push({
+          label: "Restricted to Chain",
+          value: 0,
+          formula: `Must be at ${booking.hotelChain.name}`,
+          description: `This promotion is limited to stays at ${booking.hotelChain.name}.`,
+        });
+      }
+      if (promoRestrictions?.allowedBookingSources?.length) {
+        eligibilitySegments.push({
+          label: "Booking Source",
+          value: 0,
+          formula: `Source: ${booking.bookingSource || "Direct"}`,
+          description: `This promotion is only valid for specific booking sources.`,
+        });
+      }
+      groups.push({
+        name: "Eligibility Rules Met",
+        description: "This booking satisfies the scope restrictions for this promotion.",
+        segments: eligibilitySegments,
       });
     }
 

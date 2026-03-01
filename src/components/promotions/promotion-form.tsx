@@ -316,6 +316,9 @@ export function PromotionForm({
       case "booking_source":
         updateRestrictions({ allowedBookingSources: [] });
         break;
+      case "hotel_chain":
+        updateRestrictions({ hotelChainId: "" });
+        break;
       case "sub_brand_scope":
         updateRestrictions({ subBrandIncludeIds: [], subBrandExcludeIds: [] });
         break;
@@ -527,7 +530,10 @@ export function PromotionForm({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div
+              className="grid grid-cols-1 md:grid-cols-2 gap-4"
+              data-testid="promotion-form-main-grid"
+            >
               {/* Name */}
               <div className="space-y-2">
                 <Label htmlFor="name">Promotion Name *</Label>
