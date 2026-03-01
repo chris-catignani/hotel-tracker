@@ -10,6 +10,7 @@ import { parseISO } from "date-fns";
 import { X } from "lucide-react";
 import type { PromotionRestrictionsFormData } from "@/lib/types";
 import { AppSelect } from "@/components/ui/app-select";
+import { BOOKING_SOURCE_LABELS } from "@/lib/constants";
 
 // ─── Types & constants ────────────────────────────────────────────────────────
 
@@ -23,10 +24,12 @@ export type RestrictionKey =
   | "registration"
   | "sub_brand_scope"
   | "payment_type"
-  | "prerequisite";
+  | "prerequisite"
+  | "booking_source";
 
 /** Canonical display order — cards and picker options always follow this order. */
 export const RESTRICTION_ORDER: RestrictionKey[] = [
+  "booking_source",
   "payment_type",
   "min_spend",
   "book_by_date",
@@ -41,6 +44,7 @@ export const RESTRICTION_ORDER: RestrictionKey[] = [
 
 /** Restriction keys available at the benefit level (not all apply per-benefit). */
 export const BENEFIT_RESTRICTION_ORDER: RestrictionKey[] = [
+  "booking_source",
   "payment_type",
   "min_spend",
   "min_nights",
@@ -61,6 +65,7 @@ export const RESTRICTION_LABELS: Record<RestrictionKey, string> = {
   registration: "Registration & Validity",
   sub_brand_scope: "Sub-Brand Scope",
   prerequisite: "Promotion Prerequisites",
+  booking_source: "Booking Source",
 };
 
 // ─── Auto-detect active restrictions from saved restrictions data ─────────────
@@ -70,6 +75,7 @@ export function deriveActiveRestrictions(
 ): Set<RestrictionKey> {
   const keys = new Set<RestrictionKey>();
   if (!r) return keys;
+  if (r.allowedBookingSources && r.allowedBookingSources.length > 0) keys.add("booking_source");
   if (r.allowedPaymentTypes && r.allowedPaymentTypes.length > 0) keys.add("payment_type");
   if (r.minSpend) keys.add("min_spend");
   if (r.bookByDate) keys.add("book_by_date");
@@ -137,6 +143,40 @@ export function PrerequisitesCard({
 }
 
 // ─── Shared card wrapper ──────────────────────────────────────────────────────
+
+export function BookingSourceCard({
+  allowedBookingSources,
+  onAllowedBookingSourcesChange,
+  onRemove,
+}: {
+  allowedBookingSources: string[];
+  onAllowedBookingSourcesChange: (val: string[]) => void;
+  onRemove: () => void;
+}) {
+  const options = Object.entries(BOOKING_SOURCE_LABELS).map(([value, label]) => ({
+    label,
+    value,
+  }));
+
+  return (
+    <RestrictionCard title="Booking Source" testId="booking-source" onRemove={onRemove}>
+      <p className="text-xs text-muted-foreground">
+        Limit this promotion to specific booking channels.
+      </p>
+      <div className="space-y-2">
+        <Label>Allowed Sources</Label>
+        <AppSelect
+          multiple
+          value={allowedBookingSources}
+          onValueChange={onAllowedBookingSourcesChange}
+          options={options}
+          placeholder="All sources allowed..."
+          searchPlaceholder="Search sources..."
+        />
+      </div>
+    </RestrictionCard>
+  );
+}
 
 export function RestrictionCard({
   title,

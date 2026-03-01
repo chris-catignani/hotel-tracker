@@ -36,6 +36,7 @@ import {
   RegistrationCard,
   SubBrandScopeCard,
   PrerequisitesCard,
+  BookingSourceCard,
 } from "./restriction-cards";
 
 interface HotelChainSubBrand {
@@ -95,6 +96,7 @@ function mapApiRestrictionsToForm(
     registrationDate: "", // comes from userPromotions, set separately
     tieInRequiresPayment: r.tieInRequiresPayment ?? false,
     allowedPaymentTypes: r.allowedPaymentTypes ?? [],
+    allowedBookingSources: r.allowedBookingSources ?? [],
     prerequisiteStayCount: r.prerequisiteStayCount != null ? String(r.prerequisiteStayCount) : "",
     prerequisiteNightCount:
       r.prerequisiteNightCount != null ? String(r.prerequisiteNightCount) : "",
@@ -434,6 +436,9 @@ export function PromotionForm({
         oncePerSubBrand: activeRestrictions.has("once_per_sub_brand"),
         allowedPaymentTypes: activeRestrictions.has("payment_type")
           ? restrictions.allowedPaymentTypes
+          : [],
+        allowedBookingSources: activeRestrictions.has("booking_source")
+          ? restrictions.allowedBookingSources
           : [],
         tieInCreditCardIds: activeRestrictions.has("tie_in_cards")
           ? restrictions.tieInCreditCardIds
@@ -862,6 +867,18 @@ export function PromotionForm({
             {/* Active restriction cards in canonical order */}
             {RESTRICTION_ORDER.map((key) => {
               if (!activeRestrictions.has(key)) return null;
+
+              if (key === "booking_source")
+                return (
+                  <BookingSourceCard
+                    key={key}
+                    allowedBookingSources={restrictions.allowedBookingSources}
+                    onAllowedBookingSourcesChange={(sources) =>
+                      updateRestrictions({ allowedBookingSources: sources })
+                    }
+                    onRemove={() => removeRestriction("booking_source")}
+                  />
+                );
 
               if (key === "payment_type")
                 return (
