@@ -97,11 +97,18 @@ export default function EditPromotionPage() {
           promo.userPromotions?.[0]?.registrationDate || null
         );
 
+        const promoTiers = promo.tiers || [];
+        const tierRequirementType = promoTiers.some(
+          (t) => t.minNights != null || t.maxNights != null
+        )
+          ? "nights"
+          : "stays";
+
         setInitialData({
           name: promo.name,
           type: promo.type as PromotionType,
           benefits: (promo.benefits || []).map((b, i) => mapApiBenefitToForm(b, i)),
-          tiers: (promo.tiers || []).map(
+          tiers: promoTiers.map(
             (tier): PromotionTierFormData => ({
               minStays: tier.minStays,
               maxStays: tier.maxStays,
@@ -110,6 +117,7 @@ export default function EditPromotionPage() {
               benefits: (tier.benefits || []).map((b, i) => mapApiBenefitToForm(b, i)),
             })
           ),
+          tierRequirementType,
           hotelChainId: promo.hotelChainId,
           creditCardId: promo.creditCardId,
           shoppingPortalId: promo.shoppingPortalId,

@@ -46,8 +46,8 @@ export function PromotionCard({ promotion, onDelete }: PromotionCardProps) {
             <div className="flex items-center gap-2">
               <Link2 className="size-3.5 text-muted-foreground shrink-0" />
               <div className="leading-tight">
-                <span className="text-[10px] text-muted-foreground block uppercase font-semibold">
-                  Linked To
+                <span className="text-[10px] text-muted-foreground block font-medium">
+                  Linked to
                 </span>
                 <span className="font-medium line-clamp-1">{getLinkedName(promotion)}</span>
               </div>
@@ -56,9 +56,7 @@ export function PromotionCard({ promotion, onDelete }: PromotionCardProps) {
             <div className="flex items-center gap-2">
               <CalendarDays className="size-3.5 text-muted-foreground shrink-0" />
               <div className="leading-tight">
-                <span className="text-[10px] text-muted-foreground block uppercase font-semibold">
-                  Dates
-                </span>
+                <span className="text-[10px] text-muted-foreground block font-medium">Dates</span>
                 <span className="font-medium line-clamp-1 whitespace-nowrap">
                   {formatDateRange(promotion.startDate, promotion.endDate)}
                 </span>
@@ -70,9 +68,7 @@ export function PromotionCard({ promotion, onDelete }: PromotionCardProps) {
           <div className="flex items-start gap-2 pt-1 border-t mt-2">
             <Tag className="size-3.5 text-muted-foreground shrink-0 mt-1" />
             <div className="leading-tight">
-              <span className="text-[10px] text-muted-foreground block uppercase font-semibold">
-                Benefits
-              </span>
+              <span className="text-[10px] text-muted-foreground block font-medium">Benefits</span>
               <span
                 className="font-medium text-xs text-primary"
                 data-testid="promotion-card-benefits"

@@ -113,9 +113,7 @@ export function PrerequisitesCard({
   return (
     <RestrictionCard title="Promotion Prerequisites" testId="prerequisite" onRemove={onRemove}>
       <div className="bg-primary/5 border border-primary/10 p-2 rounded text-[11px] mb-3">
-        <p className="font-bold text-primary mb-1 italic uppercase tracking-wider">
-          Activation Rule
-        </p>
+        <p className="font-semibold text-primary mb-1 italic tracking-tight">Activation rule</p>
         <p className="text-muted-foreground leading-relaxed">
           These requirements must be met{" "}
           <span className="font-bold underline text-foreground">first</span> before this promotion

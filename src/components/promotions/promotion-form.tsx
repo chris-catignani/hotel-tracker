@@ -152,6 +152,9 @@ export function PromotionForm({
     () => (initialData?.tiers && initialData.tiers.length > 0) ?? false
   );
   const [activeTierTab, setActiveTierTab] = useState("tier-0");
+  const [tierRequirementType, setTierRequirementType] = useState<"stays" | "nights">(
+    initialData?.tierRequirementType || "stays"
+  );
   const [tiers, setTiers] = useState<PromotionTierFormData[]>(
     initialData?.tiers && initialData.tiers.length > 0
       ? initialData.tiers
@@ -218,7 +221,12 @@ export function PromotionForm({
       if (initialData.tiers !== undefined) {
         const hasTiers = initialData.tiers.length > 0;
         setIsTiered(hasTiers);
-        if (hasTiers) setTiers(initialData.tiers);
+        if (hasTiers) {
+          setTiers(initialData.tiers);
+          if (initialData.tierRequirementType) {
+            setTierRequirementType(initialData.tierRequirementType);
+          }
+        }
       }
       if (initialData.startDate !== undefined) setStartDate(initialData.startDate || "");
       if (initialData.endDate !== undefined) setEndDate(initialData.endDate || "");
@@ -352,19 +360,32 @@ export function PromotionForm({
   const handleAddTier = () => {
     setTiers((prev) => {
       const last = prev[prev.length - 1];
-      const lastMin = last?.minStays ?? 0;
-      const lastMax = last?.maxStays ?? lastMin;
-      const nextMin = lastMax + 1;
-      return [
-        ...prev,
-        {
-          minStays: nextMin,
-          maxStays: null,
-          minNights: null,
-          maxNights: null,
-          benefits: [{ ...DEFAULT_BENEFIT }],
-        },
-      ];
+
+      if (tierRequirementType === "stays") {
+        const lastMax = last?.maxStays ?? last?.minStays ?? 0;
+        return [
+          ...prev,
+          {
+            minStays: lastMax + 1,
+            maxStays: null,
+            minNights: null,
+            maxNights: null,
+            benefits: [{ ...DEFAULT_BENEFIT }],
+          },
+        ];
+      } else {
+        const lastMax = last?.maxNights ?? last?.minNights ?? 0;
+        return [
+          ...prev,
+          {
+            minStays: null,
+            maxStays: null,
+            minNights: lastMax + 1,
+            maxNights: null,
+            benefits: [{ ...DEFAULT_BENEFIT }],
+          },
+        ];
+      }
     });
   };
 
@@ -484,9 +505,14 @@ export function PromotionForm({
       benefits: isTiered ? [] : withSortOrder(benefits),
       tiers: isTiered
         ? [...tiers]
-            .sort((a, b) => (a.minStays ?? 0) - (b.minStays ?? 0))
+            .sort((a, b) => {
+              const aVal = tierRequirementType === "stays" ? a.minStays : a.minNights;
+              const bVal = tierRequirementType === "stays" ? b.minStays : b.minNights;
+              return (aVal ?? 0) - (bVal ?? 0);
+            })
             .map((tier) => ({ ...tier, benefits: withSortOrder(tier.benefits) }))
         : [],
+      tierRequirementType: isTiered ? tierRequirementType : undefined,
       restrictions: finalRestrictions,
     };
 
@@ -685,7 +711,41 @@ export function PromotionForm({
 
             {/* Tiered benefits */}
             {isTiered && (
-              <div className="space-y-4">
+              <div className="space-y-6">
+                <div className="space-y-3 p-4 bg-muted/30 rounded-lg border border-dashed">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="space-y-0.5">
+                      <Label className="text-sm font-semibold">Requirement Type</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Choose whether all tiers are stay-based or night-based.
+                      </p>
+                    </div>
+                    <Tabs
+                      value={tierRequirementType}
+                      onValueChange={(val) => {
+                        const newType = val as "stays" | "nights";
+                        setTierRequirementType(newType);
+                        // Clear the other metric across all tiers
+                        setTiers((prev) =>
+                          prev.map((t) => ({
+                            ...t,
+                            minStays: newType === "stays" ? t.minStays : null,
+                            maxStays: newType === "stays" ? t.maxStays : null,
+                            minNights: newType === "nights" ? t.minNights : null,
+                            maxNights: newType === "nights" ? t.maxNights : null,
+                          }))
+                        );
+                      }}
+                      className="w-full sm:w-[240px]"
+                    >
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="stays">Stay-Based</TabsTrigger>
+                        <TabsTrigger value="nights">Night-Based</TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  </div>
+                </div>
+
                 <Tabs value={activeTierTab} onValueChange={setActiveTierTab} className="w-full">
                   <div className="flex items-center justify-between mb-4 overflow-x-auto pb-2">
                     <TabsList className="bg-muted/50 p-1">
@@ -723,7 +783,7 @@ export function PromotionForm({
                       <div className="rounded-xl border bg-card p-6 shadow-sm space-y-6">
                         <div className="flex items-center justify-between">
                           <div className="space-y-0.5">
-                            <h4 className="text-sm font-bold uppercase tracking-tight text-primary">
+                            <h4 className="text-base font-bold tracking-tight text-primary">
                               Tier {tierIndex + 1} Configuration
                             </h4>
                             <p className="text-xs text-muted-foreground font-medium">
@@ -746,102 +806,77 @@ export function PromotionForm({
                           )}
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-6">
                           <div className="space-y-4">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="flex size-5 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
-                                1
-                              </span>
-                              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                                Cumulative Stays
+                            <div>
+                              <Label className="text-sm font-semibold">
+                                {tierRequirementType === "stays"
+                                  ? "Cumulative Stays"
+                                  : "Cumulative Nights"}
                               </Label>
+                              <p className="text-xs text-muted-foreground mt-1 mb-3">
+                                {tierRequirementType === "stays"
+                                  ? "Define the range of stays required to unlock this tier."
+                                  : "Use a night count to define this tier requirement."}
+                              </p>
                             </div>
-                            <div className="grid grid-cols-2 gap-4 ml-7">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                               <div className="space-y-2">
-                                <Label className="text-[11px]">Minimum</Label>
+                                <Label className="text-xs text-muted-foreground">
+                                  {tierRequirementType === "stays"
+                                    ? "Minimum Stays"
+                                    : "Minimum Nights"}
+                                </Label>
                                 <Input
                                   type="number"
                                   step="1"
                                   min="1"
-                                  value={tier.minStays ?? ""}
-                                  onChange={(e) =>
+                                  value={
+                                    (tierRequirementType === "stays"
+                                      ? tier.minStays
+                                      : tier.minNights) ?? ""
+                                  }
+                                  onChange={(e) => {
+                                    const val = e.target.value
+                                      ? parseInt(e.target.value, 10)
+                                      : null;
                                     handleTierChange(tierIndex, {
                                       ...tier,
-                                      minStays: e.target.value
-                                        ? parseInt(e.target.value, 10)
-                                        : null,
-                                    })
+                                      minStays: tierRequirementType === "stays" ? val : null,
+                                      minNights: tierRequirementType === "nights" ? val : null,
+                                    });
+                                  }}
+                                  placeholder={
+                                    tierRequirementType === "stays" ? "e.g. 1" : "e.g. 5"
                                   }
-                                  placeholder="e.g. 1"
                                   className="h-9"
                                 />
                               </div>
                               <div className="space-y-2">
-                                <Label className="text-[11px]">Maximum</Label>
+                                <Label className="text-xs text-muted-foreground">
+                                  {tierRequirementType === "stays"
+                                    ? "Maximum Stays"
+                                    : "Maximum Nights"}
+                                </Label>
                                 <Input
                                   type="number"
                                   step="1"
                                   min="1"
-                                  value={tier.maxStays ?? ""}
-                                  onChange={(e) =>
+                                  value={
+                                    (tierRequirementType === "stays"
+                                      ? tier.maxStays
+                                      : tier.maxNights) ?? ""
+                                  }
+                                  onChange={(e) => {
+                                    const val = e.target.value
+                                      ? parseInt(e.target.value, 10)
+                                      : null;
                                     handleTierChange(tierIndex, {
                                       ...tier,
-                                      maxStays: e.target.value
-                                        ? parseInt(e.target.value, 10)
-                                        : null,
-                                    })
-                                  }
-                                  placeholder="Any"
-                                  className="h-9"
-                                />
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="space-y-4 border-l pl-6 hidden md:block">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="flex size-5 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
-                                2
-                              </span>
-                              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                                Cumulative Nights
-                              </Label>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4 ml-7">
-                              <div className="space-y-2">
-                                <Label className="text-[11px]">Minimum</Label>
-                                <Input
-                                  type="number"
-                                  step="1"
-                                  min="1"
-                                  value={tier.minNights ?? ""}
-                                  onChange={(e) =>
-                                    handleTierChange(tierIndex, {
-                                      ...tier,
-                                      minNights: e.target.value
-                                        ? parseInt(e.target.value, 10)
-                                        : null,
-                                    })
-                                  }
-                                  placeholder="e.g. 5"
-                                  className="h-9"
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label className="text-[11px]">Maximum</Label>
-                                <Input
-                                  type="number"
-                                  step="1"
-                                  min="1"
-                                  value={tier.maxNights ?? ""}
-                                  onChange={(e) =>
-                                    handleTierChange(tierIndex, {
-                                      ...tier,
-                                      maxNights: e.target.value
-                                        ? parseInt(e.target.value, 10)
-                                        : null,
-                                    })
-                                  }
+                                      maxStays: tierRequirementType === "stays" ? val : null,
+                                      maxNights: tierRequirementType === "nights" ? val : null,
+                                    });
+                                  }}
                                   placeholder="Any"
                                   className="h-9"
                                 />
@@ -850,16 +885,9 @@ export function PromotionForm({
                           </div>
                         </div>
 
-                        <div className="space-y-4 pt-4 border-t">
-                          <div className="flex items-center gap-2">
-                            <span className="flex size-5 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
-                              3
-                            </span>
-                            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                              Rewards for this tier
-                            </Label>
-                          </div>
-                          <div className="ml-7 space-y-3">
+                        <div className="space-y-4 pt-6 border-t">
+                          <Label className="text-sm font-semibold">Rewards for this Tier</Label>
+                          <div className="space-y-3">
                             {tier.benefits.map((benefit, benefitIndex) => (
                               <BenefitRow
                                 key={benefitIndex}
@@ -889,7 +917,7 @@ export function PromotionForm({
                               className="w-full border-dashed py-6 hover:bg-primary/5 hover:text-primary transition-all group"
                             >
                               <Plus className="size-4 mr-2 group-hover:scale-110 transition-transform" />
-                              Add Reward to Tier {tierIndex + 1}
+                              Add reward to this tier
                             </Button>
                           </div>
                         </div>
@@ -962,16 +990,16 @@ export function PromotionForm({
                   data-testid="restriction-picker-popover"
                 >
                   <div className="p-3 bg-muted/20 border-b">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                      Add Qualification Rule
+                    <h4 className="text-sm font-semibold text-foreground">
+                      Add qualification rule
                     </h4>
                   </div>
                   <div className="p-2 max-h-[400px] overflow-y-auto">
                     <div className="space-y-4">
                       {/* Group 1: Usage & Spend */}
                       <div className="space-y-1">
-                        <p className="px-2 pb-1 text-[10px] font-bold uppercase text-muted-foreground/70">
-                          Usage & Spend
+                        <p className="px-2 pb-1 text-[11px] font-medium text-muted-foreground/70">
+                          Usage & spend
                         </p>
                         {[
                           { key: "min_spend", label: "Minimum Spend" },
@@ -1005,8 +1033,8 @@ export function PromotionForm({
 
                       {/* Group 2: Timing & Validity */}
                       <div className="space-y-1">
-                        <p className="px-2 pb-1 text-[10px] font-bold uppercase text-muted-foreground/70">
-                          Timing & Validity
+                        <p className="px-2 pb-1 text-[11px] font-medium text-muted-foreground/70">
+                          Timing & validity
                         </p>
                         {["book_by_date", "registration", "prerequisite"].map((key) => {
                           const k = key as RestrictionKey;
@@ -1035,7 +1063,7 @@ export function PromotionForm({
 
                       {/* Group 3: Scope */}
                       <div className="space-y-1">
-                        <p className="px-2 pb-1 text-[10px] font-bold uppercase text-muted-foreground/70">
+                        <p className="px-2 pb-1 text-[11px] font-medium text-muted-foreground/70">
                           Scope
                         </p>
                         {["hotel_chain", "sub_brand_scope", "tie_in_cards", "booking_source"].map(
@@ -1270,8 +1298,8 @@ export function PromotionForm({
         {/* ── Actions (Sticky Footer) ────────────────────────────────────────── */}
         <div className="sticky bottom-4 bg-background/95 backdrop-blur-sm p-4 rounded-xl border shadow-lg flex gap-4 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
           <div className="flex-1 flex flex-col justify-center">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider leading-none mb-1">
-              {initialData ? "Editing" : "Creating"} Promotion
+            <p className="text-xs font-medium text-muted-foreground tracking-tight leading-none mb-1">
+              {initialData ? "Editing" : "Creating"} promotion
             </p>
             <p className="text-sm font-bold truncate max-w-[200px] sm:max-w-md">
               {name || "Untitled Promotion"}

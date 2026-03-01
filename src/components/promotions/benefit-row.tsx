@@ -307,16 +307,14 @@ export function BenefitRow({
           </PopoverTrigger>
           <PopoverContent align="start" className="w-64 p-0">
             <div className="p-2.5 bg-muted/20 border-b">
-              <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                Add Benefit Rule
-              </h4>
+              <h4 className="text-sm font-semibold text-foreground">Add benefit rule</h4>
             </div>
             <div className="p-2">
               <div className="space-y-3">
                 {/* Group 1: Usage & Spend */}
                 <div className="space-y-1">
-                  <p className="px-2 pb-1 text-[9px] font-bold uppercase text-muted-foreground/70">
-                    Usage & Spend
+                  <p className="px-2 pb-1 text-[11px] font-medium text-muted-foreground/70">
+                    Usage & spend
                   </p>
                   {[
                     { key: "min_spend", label: "Minimum Spend" },
@@ -350,7 +348,7 @@ export function BenefitRow({
 
                 {/* Group 2: Scope */}
                 <div className="space-y-1">
-                  <p className="px-2 pb-1 text-[9px] font-bold uppercase text-muted-foreground/70">
+                  <p className="px-2 pb-1 text-[11px] font-medium text-muted-foreground/70">
                     Scope
                   </p>
                   {[
