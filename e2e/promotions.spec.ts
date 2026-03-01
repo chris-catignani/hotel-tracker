@@ -853,4 +853,28 @@ test.describe("Promotions payment type restrictions", () => {
     // Cleanup
     await request.delete(`/api/promotions/${promoId}`);
   });
+
+  test("should dynamically hide ineligible restrictions from the picker", async ({ page }) => {
+    await page.goto("/promotions/new");
+
+    // 1. Initial Type: Loyalty
+    await page.getByTestId("restriction-picker-button").click();
+    // For Loyalty, "Hotel Chain Restriction" should be hidden
+    await expect(page.getByTestId("restriction-option-hotel_chain")).not.toBeVisible();
+    // "Tie-In Credit Cards" should be visible
+    await expect(page.getByTestId("restriction-option-tie_in_cards")).toBeVisible();
+
+    // Close picker
+    await page.keyboard.press("Escape");
+
+    // 2. Change Type to Credit Card
+    await page.getByText("Loyalty Program").click();
+    await page.getByRole("option", { name: "Credit Card" }).click();
+
+    await page.getByTestId("restriction-picker-button").click();
+    // For Credit Card, "Tie-In Credit Cards" should be hidden
+    await expect(page.getByTestId("restriction-option-tie_in_cards")).not.toBeVisible();
+    // "Hotel Chain Restriction" should be visible
+    await expect(page.getByTestId("restriction-option-hotel_chain")).toBeVisible();
+  });
 });

@@ -377,6 +377,7 @@ export function RedemptionCapsCard({
   onMaxTotalBonusPointsChange,
   onRemove,
   level = "promotion",
+  rewardType,
 }: {
   maxStayCount: string;
   maxRewardCount: string;
@@ -388,8 +389,13 @@ export function RedemptionCapsCard({
   onMaxTotalBonusPointsChange: (val: string) => void;
   onRemove: () => void;
   level?: "promotion" | "benefit";
+  rewardType?: string;
 }) {
   const isPromo = level === "promotion";
+
+  // Filter caps based on reward type (Benefit level only)
+  const showValueCap = !rewardType || rewardType === "cashback";
+  const showPointsCap = !rewardType || rewardType === "points";
 
   return (
     <RestrictionCard title="Redemption Caps" testId="redemption_caps" onRemove={onRemove}>
@@ -422,34 +428,39 @@ export function RedemptionCapsCard({
           </div>
         )}
 
-        <div className="space-y-2">
-          <Label htmlFor="maxRedemptionValue">
-            {isPromo ? "Max Total Value ($)" : "Max Value for this Reward ($)"}
-          </Label>
-          <Input
-            id="maxRedemptionValue"
-            type="number"
-            step="0.01"
-            value={maxRedemptionValue}
-            onChange={(e) => onMaxRedemptionValueChange(e.target.value)}
-            placeholder="e.g. 50.00"
-            data-testid="promotion-max-redemption-value"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="maxTotalBonusPoints">
-            {isPromo ? "Max Total Points" : "Max Points for this Reward"}
-          </Label>
-          <Input
-            id="maxTotalBonusPoints"
-            type="number"
-            step="1"
-            value={maxTotalBonusPoints}
-            onChange={(e) => onMaxTotalBonusPointsChange(e.target.value)}
-            placeholder="e.g. 10000"
-            data-testid="promotion-max-total-bonus-points"
-          />
-        </div>
+        {showValueCap && (
+          <div className="space-y-2">
+            <Label htmlFor="maxRedemptionValue">
+              {isPromo ? "Max Total Value ($)" : "Max Value for this Reward ($)"}
+            </Label>
+            <Input
+              id="maxRedemptionValue"
+              type="number"
+              step="0.01"
+              value={maxRedemptionValue}
+              onChange={(e) => onMaxRedemptionValueChange(e.target.value)}
+              placeholder="e.g. 50.00"
+              data-testid="promotion-max-redemption-value"
+            />
+          </div>
+        )}
+
+        {showPointsCap && (
+          <div className="space-y-2">
+            <Label htmlFor="maxTotalBonusPoints">
+              {isPromo ? "Max Total Points" : "Max Points for this Reward"}
+            </Label>
+            <Input
+              id="maxTotalBonusPoints"
+              type="number"
+              step="1"
+              value={maxTotalBonusPoints}
+              onChange={(e) => onMaxTotalBonusPointsChange(e.target.value)}
+              placeholder="e.g. 10000"
+              data-testid="promotion-max-total-bonus-points"
+            />
+          </div>
+        )}
       </div>
     </RestrictionCard>
   );
