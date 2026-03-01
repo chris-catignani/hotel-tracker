@@ -322,6 +322,7 @@ const PromotionRules: Record<string, PromotionRule> = {
     if (r.prerequisiteStayCount && (usage?.eligibleStayCount ?? 0) < r.prerequisiteStayCount) {
       return { valid: false };
     }
+
     if (r.prerequisiteNightCount && (usage?.eligibleNightCount ?? 0) < r.prerequisiteNightCount) {
       return { valid: false };
     }
@@ -738,9 +739,14 @@ async function fetchPromotionUsage(
     }
   }
 
-  // Fetch eligibleStayCount for tiered promotions
-  const tieredPromos = promotions.filter((p) => p.tiers.length > 0);
-  for (const promo of tieredPromos) {
+  // Fetch eligibleStayCount for tiered or prerequisite promotions
+  const relevantPromos = promotions.filter(
+    (p) =>
+      p.tiers.length > 0 ||
+      p.restrictions?.prerequisiteStayCount ||
+      p.restrictions?.prerequisiteNightCount
+  );
+  for (const promo of relevantPromos) {
     const currentCheckIn = new Date(booking.checkIn);
     // Build sub-brand filter from restrictions
     let subBrandFilter: Record<string, unknown> = {};
@@ -764,9 +770,9 @@ async function fetchPromotionUsage(
     const eligibleStats = await prisma.booking.aggregate({
       where: {
         ...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
-        hotelChainId: promo.hotelChainId ?? undefined,
-        ...(promo.creditCardId !== null ? { creditCardId: promo.creditCardId } : {}),
-        ...(promo.shoppingPortalId !== null ? { shoppingPortalId: promo.shoppingPortalId } : {}),
+        hotelChainId: promo.type === PromotionType.loyalty ? promo.hotelChainId : undefined,
+        creditCardId: promo.type === PromotionType.credit_card ? promo.creditCardId : undefined,
+        shoppingPortalId: promo.type === PromotionType.portal ? promo.shoppingPortalId : undefined,
         ...subBrandFilter,
         checkIn: {
           ...(promo.startDate ? { gte: promo.startDate } : {}),
@@ -886,6 +892,8 @@ export function getConstrainedPromotions(promotions: MatchingPromotion[]): Match
       p.restrictions?.maxRedemptionValue ||
       p.restrictions?.maxTotalBonusPoints ||
       p.restrictions?.spanStays ||
+      p.restrictions?.prerequisiteStayCount ||
+      p.restrictions?.prerequisiteNightCount ||
       p.tiers.length > 0 ||
       p.restrictions?.oncePerSubBrand ||
       p.benefits.some(
@@ -895,7 +903,9 @@ export function getConstrainedPromotions(promotions: MatchingPromotion[]): Match
           b.restrictions?.maxRewardCount ||
           b.restrictions?.maxRedemptionValue ||
           b.restrictions?.maxTotalBonusPoints ||
-          b.restrictions?.spanStays
+          b.restrictions?.spanStays ||
+          b.restrictions?.prerequisiteStayCount ||
+          b.restrictions?.prerequisiteNightCount
       ) ||
       p.tiers.some((t) =>
         t.benefits.some(
@@ -905,7 +915,9 @@ export function getConstrainedPromotions(promotions: MatchingPromotion[]): Match
             b.restrictions?.maxRewardCount ||
             b.restrictions?.maxRedemptionValue ||
             b.restrictions?.maxTotalBonusPoints ||
-            b.restrictions?.spanStays
+            b.restrictions?.spanStays ||
+            b.restrictions?.prerequisiteStayCount ||
+            b.restrictions?.prerequisiteNightCount
         )
       )
   );
