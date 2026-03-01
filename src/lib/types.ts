@@ -250,6 +250,7 @@ export interface PromotionFormData {
   type: PromotionType;
   benefits: PromotionBenefitFormData[];
   tiers?: PromotionTierFormData[];
+  tierRequirementType?: "stays" | "nights";
   hotelChainId?: string | null;
   creditCardId?: string | null;
   shoppingPortalId?: string | null;
