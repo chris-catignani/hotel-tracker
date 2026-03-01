@@ -11,19 +11,17 @@ export async function seedPromotions() {
       startDate: new Date("2026-01-01"),
       endDate: new Date("2026-03-31"),
       isActive: true,
-      tiers: {
+      restrictions: {
+        create: {
+          prerequisiteStayCount: 1,
+        },
+      },
+      benefits: {
         create: [
           {
-            minStays: 2,
-            benefits: {
-              create: [
-                {
-                  rewardType: "points",
-                  valueType: "multiplier",
-                  value: 2,
-                },
-              ],
-            },
+            rewardType: "points",
+            valueType: "multiplier",
+            value: 2,
           },
         ],
       },
