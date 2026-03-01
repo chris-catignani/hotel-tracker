@@ -394,8 +394,8 @@ export function RedemptionCapsCard({
   const isPromo = level === "promotion";
 
   // Filter caps based on reward type (Benefit level only)
-  const showValueCap = !rewardType || rewardType === "cashback";
-  const showPointsCap = !rewardType || rewardType === "points";
+  const showValueCap = isPromo || rewardType === "cashback";
+  const showPointsCap = isPromo || rewardType === "points";
 
   return (
     <RestrictionCard title="Redemption Caps" testId="redemption_caps" onRemove={onRemove}>
