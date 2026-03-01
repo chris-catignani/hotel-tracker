@@ -61,7 +61,6 @@ test.describe("Promotions CRUD", () => {
         benefits: [
           { rewardType: "cashback", valueType: "fixed", value: 10, certType: null, sortOrder: 0 },
         ],
-        isActive: true,
       },
     });
     const promo = await res.json();
@@ -101,7 +100,6 @@ test.describe("Promotions multi-benefit via API", () => {
           },
           { rewardType: "eqn", valueType: "fixed", value: 1, certType: null, sortOrder: 2 },
         ],
-        isActive: true,
       },
     });
 
@@ -132,7 +130,6 @@ test.describe("Promotions multi-benefit via API", () => {
         benefits: [
           { rewardType: "cashback", valueType: "fixed", value: 50, certType: null, sortOrder: 0 },
         ],
-        isActive: true,
       },
     });
     const created = await createRes.json();
@@ -158,7 +155,6 @@ test.describe("Promotions multi-benefit via API", () => {
             sortOrder: 1,
           },
         ],
-        isActive: true,
       },
     });
 
@@ -191,7 +187,6 @@ test.describe("Promotions multi-benefit via API", () => {
           { rewardType: "cashback", valueType: "fixed", value: 20, certType: null, sortOrder: 0 },
           { rewardType: "eqn", valueType: "fixed", value: 2, certType: null, sortOrder: 1 },
         ],
-        isActive: true,
       },
     });
     const promo = await promoRes.json();
@@ -281,7 +276,6 @@ test.describe("Promotions tiered", () => {
             ],
           },
         ],
-        isActive: true,
       },
     });
     expect(promoRes.ok()).toBeTruthy();
@@ -374,7 +368,6 @@ test.describe("Promotions tie-in credit card (benefit-level restrictions)", () =
             restrictions: { tieInCreditCardIds: [TIE_IN_CARD_ID], tieInRequiresPayment: false },
           },
         ],
-        isActive: true,
       },
     });
     expect(promoRes.ok()).toBeTruthy();
@@ -441,7 +434,6 @@ test.describe("Promotions tie-in credit card (benefit-level restrictions)", () =
             restrictions: { tieInCreditCardIds: [TIE_IN_CARD_ID] },
           },
         ],
-        isActive: true,
       },
     });
     expect(promoRes.ok()).toBeTruthy();
@@ -506,7 +498,6 @@ test.describe("Promotions tie-in credit card (benefit-level restrictions)", () =
             restrictions: { tieInCreditCardIds: [TIE_IN_CARD_ID], tieInRequiresPayment: true },
           },
         ],
-        isActive: true,
       },
     });
     expect(promoRes.ok()).toBeTruthy();
@@ -557,7 +548,6 @@ test.describe("Promotions restriction picker UX", () => {
         benefits: [
           { rewardType: "cashback", valueType: "fixed", value: 25, certType: null, sortOrder: 0 },
         ],
-        isActive: true,
         restrictions: { minSpend: "200", registrationDeadline: "2026-06-01" },
       },
     });
@@ -590,7 +580,6 @@ test.describe("Promotions restriction picker UX", () => {
         benefits: [
           { rewardType: "cashback", valueType: "fixed", value: 25, certType: null, sortOrder: 0 },
         ],
-        isActive: true,
         restrictions: { minSpend: "100" },
       },
     });
@@ -615,7 +604,6 @@ test.describe("Promotions restriction picker UX", () => {
         benefits: [
           { rewardType: "cashback", valueType: "fixed", value: 25, certType: null, sortOrder: 0 },
         ],
-        isActive: true,
       },
     });
     expect(res.ok()).toBeTruthy();
@@ -654,7 +642,6 @@ test.describe("Promotions constraints", () => {
         benefits: [
           { rewardType: "cashback", valueType: "fixed", value: 50, certType: null, sortOrder: 0 },
         ],
-        isActive: true,
       },
     });
     expect(promoRes.ok()).toBeTruthy();
@@ -733,7 +720,6 @@ test.describe("Promotions payment type restrictions", () => {
         restrictions: {
           allowedPaymentTypes: ["cash"],
         },
-        isActive: true,
       },
     });
     expect(promoRes.ok()).toBeTruthy();

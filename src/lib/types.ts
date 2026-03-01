@@ -228,7 +228,6 @@ export interface Promotion {
   shoppingPortalId: string | null;
   startDate: string | null;
   endDate: string | null;
-  isActive: boolean;
   restrictions: PromotionRestrictionsData | null;
   userPromotions: UserPromotion[];
   createdAt: string;
@@ -253,7 +252,6 @@ export interface PromotionFormData {
   shoppingPortalId?: string | null;
   startDate?: string | null;
   endDate?: string | null;
-  isActive: boolean;
   restrictions: PromotionRestrictionsFormData | null;
 }
 

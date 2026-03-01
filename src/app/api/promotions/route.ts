@@ -72,7 +72,6 @@ export async function POST(request: NextRequest) {
       shoppingPortalId,
       startDate,
       endDate,
-      isActive,
       restrictions,
     } = body as PromotionFormData;
 
@@ -92,7 +91,6 @@ export async function POST(request: NextRequest) {
           shoppingPortal: shoppingPortalId ? { connect: { id: shoppingPortalId } } : undefined,
           startDate: startDate ? new Date(startDate) : null,
           endDate: endDate ? new Date(endDate) : null,
-          isActive: isActive !== undefined ? isActive : true,
           ...(restrictions
             ? { restrictions: { create: buildRestrictionsCreateData(restrictions) } }
             : {}),

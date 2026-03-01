@@ -80,7 +80,6 @@ export const test = base.extend<TestFixtures>({
             sortOrder: 0,
           },
         ],
-        isActive: true,
       },
     });
     const promotion = await res.json();

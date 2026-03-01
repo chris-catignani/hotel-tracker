@@ -14,7 +14,6 @@ test.describe("Promotion Cascading Re-evaluation", () => {
         name: promoName,
         type: "loyalty",
         hotelChainId: testHotelChain.id,
-        isActive: true,
         restrictions: {
           maxRedemptionValue: 100, // Capped at $100
         },
@@ -138,7 +137,6 @@ test.describe("Promotion Cascading Re-evaluation", () => {
         name: `Delete Cascading ${crypto.randomUUID()}`,
         type: "loyalty",
         hotelChainId: testHotelChain.id,
-        isActive: true,
         restrictions: { maxRedemptionValue: 50 },
         benefits: [{ rewardType: "cashback", valueType: "fixed", value: 50, sortOrder: 0 }],
       },

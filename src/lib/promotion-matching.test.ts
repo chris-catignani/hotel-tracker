@@ -15,7 +15,9 @@ const mockBooking: MatchingBooking = {
   shoppingPortalId: "portal-2",
   hotelChainId: "chain-3",
   hotelChainSubBrandId: "brand-4",
+  bookingSource: null,
   checkIn: new Date("2026-06-01"),
+
   createdAt: new Date("2026-01-01"),
   numNights: 3,
   pretaxCost: 80,
@@ -47,6 +49,7 @@ function makeRestrictions(overrides: Partial<TestRestrictions> = {}): TestRestri
     validDaysAfterRegistration: null,
     tieInRequiresPayment: false,
     allowedPaymentTypes: [],
+    allowedBookingSources: [],
     prerequisiteStayCount: null,
     prerequisiteNightCount: null,
     subBrandRestrictions: [],
@@ -64,7 +67,6 @@ function makePromo(overrides: Partial<TestPromotion> = {}): TestPromotion {
     hotelChainId: null,
     startDate: null,
     endDate: null,
-    isActive: true,
     restrictions: null,
     registrationDate: null,
     benefits: [

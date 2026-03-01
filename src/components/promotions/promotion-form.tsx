@@ -126,7 +126,6 @@ export function PromotionForm({
   const [type, setType] = useState<PromotionType>(
     (initialData?.type as PromotionType) || "loyalty"
   );
-  const [isActive, setIsActive] = useState(initialData?.isActive ?? true);
 
   // ── Type-specific linking ────────────────────────────────────────────────────
   const [hotelChainId, setHotelChainId] = useState<string>(
@@ -203,7 +202,6 @@ export function PromotionForm({
       // eslint-disable-next-line react-hooks/set-state-in-effect
       if (initialData.name !== undefined) setName(initialData.name);
       if (initialData.type !== undefined) setType(initialData.type as PromotionType);
-      if (initialData.isActive !== undefined) setIsActive(initialData.isActive);
       if (initialData.hotelChainId !== undefined)
         setHotelChainId(initialData.hotelChainId ? initialData.hotelChainId : "");
       if (initialData.creditCardId !== undefined)
@@ -479,7 +477,6 @@ export function PromotionForm({
             .sort((a, b) => (a.minStays ?? 0) - (b.minStays ?? 0))
             .map((tier) => ({ ...tier, benefits: withSortOrder(tier.benefits) }))
         : [],
-      isActive,
       restrictions: finalRestrictions,
     };
 
@@ -546,18 +543,6 @@ export function PromotionForm({
               placeholder="Select type..."
               data-testid="promotion-type-select"
             />
-          </div>
-
-          {/* Active */}
-          <div className="flex items-center gap-2">
-            <input
-              id="isActive"
-              type="checkbox"
-              checked={isActive}
-              onChange={(e) => setIsActive(e.target.checked)}
-              className="size-4 rounded border-gray-300"
-            />
-            <Label htmlFor="isActive">Active</Label>
           </div>
 
           {/* Type-specific linking */}

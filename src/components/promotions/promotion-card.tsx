@@ -37,12 +37,6 @@ export function PromotionCard({ promotion, onDelete }: PromotionCardProps) {
                 >
                   {typeLabel(promotion.type)}
                 </Badge>
-                <Badge
-                  variant={promotion.isActive ? "default" : "secondary"}
-                  className="font-normal px-1.5 py-0"
-                >
-                  {promotion.isActive ? "Active" : "Inactive"}
-                </Badge>
               </div>
             </div>
           </div>

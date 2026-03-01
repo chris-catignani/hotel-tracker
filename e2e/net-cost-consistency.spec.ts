@@ -90,7 +90,6 @@ test.describe("Net Cost Consistency", () => {
         name: `Consistency Promo ${crypto.randomUUID()}`,
         type: "loyalty",
         hotelChainId: testHotelChain.id,
-        isActive: true,
         benefits: [
           {
             rewardType: "cashback",
