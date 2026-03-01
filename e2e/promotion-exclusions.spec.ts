@@ -18,7 +18,6 @@ test.describe("Promotion sub-brand scope (exclude)", () => {
         benefits: [
           { rewardType: "cashback", valueType: "fixed", value: 50, certType: null, sortOrder: 0 },
         ],
-        isActive: true,
       },
     });
     expect(promoRes.ok()).toBeTruthy();
@@ -74,7 +73,6 @@ test.describe("Promotion sub-brand scope (exclude)", () => {
         benefits: [
           { rewardType: "cashback", valueType: "fixed", value: 50, certType: null, sortOrder: 0 },
         ],
-        isActive: true,
       },
     });
     expect(promoRes.ok()).toBeTruthy();
@@ -130,7 +128,6 @@ test.describe("Promotion sub-brand scope (exclude)", () => {
         benefits: [
           { rewardType: "cashback", valueType: "fixed", value: 50, certType: null, sortOrder: 0 },
         ],
-        isActive: true,
       },
     });
     expect(promoRes.ok()).toBeTruthy();

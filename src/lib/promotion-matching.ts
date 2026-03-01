@@ -128,7 +128,6 @@ interface MatchingPromotion {
   hotelChainId: string | null;
   startDate: Date | null;
   endDate: Date | null;
-  isActive: boolean;
   restrictions: MatchingRestrictions;
   registrationDate?: Date | null;
   benefits: MatchingBenefit[];
@@ -960,7 +959,6 @@ export async function reevaluateBookings(bookingIds: string[]): Promise<void> {
 
   const activePromotions = (
     await prisma.promotion.findMany({
-      where: { isActive: true },
       include: PROMOTIONS_INCLUDE,
     })
   ).map((p) => ({
@@ -1002,7 +1000,6 @@ export async function matchPromotionsForBooking(bookingId: string): Promise<stri
 
   const activePromotions = (
     await prisma.promotion.findMany({
-      where: { isActive: true },
       include: PROMOTIONS_INCLUDE,
     })
   ).map((p) => ({

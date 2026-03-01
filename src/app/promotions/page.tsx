@@ -124,8 +124,7 @@ export default function PromotionsPage() {
                       <TableHead>Type</TableHead>
                       <TableHead>Value</TableHead>
                       <TableHead>Linked To</TableHead>
-                      <TableHead>Date Range</TableHead>
-                      <TableHead>Status</TableHead>
+                      <TableHead>Dates</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -141,11 +140,6 @@ export default function PromotionsPage() {
                         <TableCell>{formatBenefits(promo.benefits, promo.tiers)}</TableCell>
                         <TableCell>{getLinkedName(promo)}</TableCell>
                         <TableCell>{formatDateRange(promo.startDate, promo.endDate)}</TableCell>
-                        <TableCell>
-                          <Badge variant={promo.isActive ? "default" : "secondary"}>
-                            {promo.isActive ? "Active" : "Inactive"}
-                          </Badge>
-                        </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
                             <Button variant="outline" size="sm" asChild>

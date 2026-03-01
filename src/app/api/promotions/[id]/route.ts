@@ -70,7 +70,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       shoppingPortalId,
       startDate,
       endDate,
-      isActive,
       restrictions,
     } = body as PromotionFormData;
 
@@ -96,7 +95,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     if (startDate !== undefined) data.startDate = startDate ? new Date(startDate) : null;
     if (endDate !== undefined) data.endDate = endDate ? new Date(endDate) : null;
-    if (isActive !== undefined) data.isActive = isActive;
 
     const hasTiers = benefits === undefined ? tiers !== undefined : false;
     const replacingBenefitsOrTiers = benefits !== undefined || tiers !== undefined;

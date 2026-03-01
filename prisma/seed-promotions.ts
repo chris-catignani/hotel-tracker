@@ -9,9 +9,8 @@ export async function seedPromotions() {
       type: "loyalty",
       hotelChain: { connect: { id: "co5ll49okbgq0fbceti8p0dpd" } },
       startDate: new Date("2026-01-01"),
-
       endDate: new Date("2026-03-31"),
-      isActive: true,
+
       restrictions: {
         create: {
           prerequisiteStayCount: 1,
@@ -34,7 +33,6 @@ export async function seedPromotions() {
       startDate: new Date("2026-02-01"),
 
       endDate: new Date("2026-04-30"),
-      isActive: true,
       restrictions: {
         create: {
           maxRewardCount: 1,
@@ -58,7 +56,6 @@ export async function seedPromotions() {
       startDate: new Date("2026-01-22"),
 
       endDate: new Date("2026-03-31"),
-      isActive: true,
       restrictions: {
         create: {
           minNightsRequired: 1,
@@ -86,7 +83,6 @@ export async function seedPromotions() {
       startDate: new Date("2026-02-02"),
 
       endDate: new Date("2026-04-15"),
-      isActive: true,
       benefits: {
         create: [
           {
@@ -130,7 +126,6 @@ export async function seedPromotions() {
       startDate: new Date("2025-12-01"),
 
       endDate: new Date("2026-05-31"),
-      isActive: true,
       tiers: {
         create: [
           {
@@ -182,7 +177,6 @@ export async function seedPromotions() {
       startDate: new Date("2026-02-25"),
 
       endDate: new Date("2026-05-10"),
-      isActive: true,
       benefits: {
         create: [
           {
@@ -211,7 +205,6 @@ export async function seedPromotions() {
       hotelChain: { connect: { id: "cxjdwg32a8xf7by36md0mdvuu" } },
       startDate: new Date("2026-01-20"),
       endDate: new Date("2026-12-31"),
-      isActive: true,
       restrictions: {
         create: {
           subBrandRestrictions: {

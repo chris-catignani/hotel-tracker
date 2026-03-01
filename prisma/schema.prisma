@@ -298,7 +298,6 @@ model Promotion {
   shoppingPortal   ShoppingPortal?        @relation(fields: [shoppingPortalId], references: [id])
   startDate        DateTime?              @map("start_date") @db.Date
   endDate          DateTime?              @map("end_date") @db.Date
-  isActive         Boolean                @default(true) @map("is_active")
   createdAt        DateTime               @default(now()) @map("created_at")
   restrictionsId   String?                @unique @map("restrictions_id")
   restrictions     PromotionRestrictions? @relation(fields: [restrictionsId], references: [id])

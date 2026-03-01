@@ -114,7 +114,6 @@ export default function EditPromotionPage() {
           shoppingPortalId: promo.shoppingPortalId,
           startDate: toDateInputValue(promo.startDate),
           endDate: toDateInputValue(promo.endDate),
-          isActive: promo.isActive,
           restrictions: restrictionsForm,
         });
         setLoading(false);
