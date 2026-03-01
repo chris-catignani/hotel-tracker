@@ -136,7 +136,7 @@ export async function seedPromotions() {
                 {
                   rewardType: "points",
                   valueType: "fixed",
-                  value: 4999,
+                  value: 5000,
                 },
               ],
             },
@@ -149,7 +149,7 @@ export async function seedPromotions() {
                 {
                   rewardType: "points",
                   valueType: "fixed",
-                  value: 7499,
+                  value: 7500,
                 },
               ],
             },
@@ -162,7 +162,7 @@ export async function seedPromotions() {
                 {
                   rewardType: "points",
                   valueType: "fixed",
-                  value: 9999,
+                  value: 10000,
                 },
               ],
             },

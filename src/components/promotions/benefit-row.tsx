@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { AppSelect } from "@/components/ui/app-select";
 import { Trash2, Plus, ChevronDown } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Separator } from "@/components/ui/separator";
 import {
   PromotionRewardType,
   PromotionBenefitValueType,
@@ -19,8 +20,6 @@ import { BENEFIT_REWARD_TYPE_OPTIONS } from "@/lib/constants";
 import { CERT_TYPE_OPTIONS } from "@/lib/cert-types";
 import {
   RestrictionKey,
-  BENEFIT_RESTRICTION_ORDER,
-  RESTRICTION_LABELS,
   deriveActiveRestrictions,
   PaymentTypeCard,
   MinSpendCard,
@@ -30,6 +29,7 @@ import {
   TieInCardsCard,
   SubBrandScopeCard,
   BookingSourceCard,
+  HotelChainRestrictionCard,
 } from "./restriction-cards";
 
 const CERT_OPTIONS = CERT_TYPE_OPTIONS.map((o) => ({ value: o.value, label: o.label }));
@@ -64,8 +64,10 @@ export interface BenefitRowProps {
   benefit: PromotionBenefitFormData;
   index: number;
   canRemove: boolean;
+  promotionType: string;
   subBrands: Array<{ id: string; name: string }>;
   creditCards: Array<{ id: string; name: string }>;
+  hotelChains: Array<{ id: string; name: string }>;
   onChange: (index: number, updated: PromotionBenefitFormData) => void;
   onRemove: (index: number) => void;
   errors?: {
@@ -78,8 +80,10 @@ export function BenefitRow({
   benefit,
   index,
   canRemove,
+  promotionType,
   subBrands,
   creditCards,
+  hotelChains,
   onChange,
   onRemove,
   errors,
@@ -130,6 +134,9 @@ export function BenefitRow({
     const current = benefit.restrictions ?? { ...EMPTY_RESTRICTIONS };
     let updates: Partial<PromotionRestrictionsFormData> = {};
     switch (key) {
+      case "hotel_chain":
+        updates = { hotelChainId: "" };
+        break;
       case "booking_source":
         updates = { allowedBookingSources: [] };
         break;
@@ -298,28 +305,85 @@ export function BenefitRow({
               <ChevronDown className="size-3" />
             </button>
           </PopoverTrigger>
-          <PopoverContent align="start" className="w-56 p-2">
-            <div className="flex flex-col gap-1">
-              {BENEFIT_RESTRICTION_ORDER.map((key) => {
-                if (key === "sub_brand_scope" && !showSubBrandScopeOption) return null;
-                const isVisible = visibleRestrictionKeys.has(key);
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    disabled={isVisible}
-                    onClick={() => addBenefitRestriction(key)}
-                    className={`text-left px-3 py-2 rounded text-sm transition-colors ${
-                      isVisible
-                        ? "opacity-50 cursor-not-allowed"
-                        : "hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                    }`}
-                    data-testid={`benefit-restriction-option-${key}-${index}`}
-                  >
-                    {RESTRICTION_LABELS[key]}
-                  </button>
-                );
-              })}
+          <PopoverContent align="start" className="w-64 p-0">
+            <div className="p-2.5 bg-muted/20 border-b">
+              <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                Add Benefit Rule
+              </h4>
+            </div>
+            <div className="p-2">
+              <div className="space-y-3">
+                {/* Group 1: Usage & Spend */}
+                <div className="space-y-1">
+                  <p className="px-2 pb-1 text-[9px] font-bold uppercase text-muted-foreground/70">
+                    Usage & Spend
+                  </p>
+                  {[
+                    { key: "min_spend", label: "Minimum Spend" },
+                    { key: "min_nights", label: "Min Length of Stay" },
+                    { key: "redemption_caps", label: "Redemption Caps" },
+                    { key: "payment_type", label: "Payment Type" },
+                  ].map(({ key, label }) => {
+                    const k = key as RestrictionKey;
+                    const isVisible = visibleRestrictionKeys.has(k);
+                    return (
+                      <button
+                        key={k}
+                        type="button"
+                        disabled={isVisible}
+                        onClick={() => addBenefitRestriction(k)}
+                        className={`w-full text-left px-2 py-1 rounded text-xs transition-colors flex items-center justify-between ${
+                          isVisible
+                            ? "opacity-40 cursor-not-allowed bg-muted/30"
+                            : "hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                        }`}
+                        data-testid={`benefit-restriction-option-${k}-${index}`}
+                      >
+                        {label}
+                        {!isVisible && <Plus className="size-2.5 text-muted-foreground/50" />}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <Separator />
+
+                {/* Group 2: Scope */}
+                <div className="space-y-1">
+                  <p className="px-2 pb-1 text-[9px] font-bold uppercase text-muted-foreground/70">
+                    Scope
+                  </p>
+                  {[
+                    { key: "hotel_chain", label: "Hotel Chain Restriction" },
+                    { key: "sub_brand_scope", label: "Sub-Brand Scope" },
+                    { key: "tie_in_cards", label: "Tie-In Credit Cards" },
+                    { key: "booking_source", label: "Booking Source" },
+                    { key: "once_per_sub_brand", label: "Once Per Sub-Brand" },
+                  ].map(({ key, label }) => {
+                    const k = key as RestrictionKey;
+                    if (k === "sub_brand_scope" && !showSubBrandScopeOption) return null;
+                    if (k === "hotel_chain" && promotionType === "loyalty") return null;
+                    const isVisible = visibleRestrictionKeys.has(k);
+                    return (
+                      <button
+                        key={k}
+                        type="button"
+                        disabled={isVisible}
+                        onClick={() => addBenefitRestriction(k)}
+                        className={`w-full text-left px-2 py-1 rounded text-xs transition-colors flex items-center justify-between ${
+                          isVisible
+                            ? "opacity-40 cursor-not-allowed bg-muted/30"
+                            : "hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                        }`}
+                        data-testid={`benefit-restriction-option-${k}-${index}`}
+                      >
+                        {label}
+                        {!isVisible && <Plus className="size-2.5 text-muted-foreground/50" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </PopoverContent>
         </Popover>
@@ -327,6 +391,20 @@ export function BenefitRow({
         {/* Active benefit restriction cards */}
         {visibleRestrictionKeys.size > 0 && (
           <div className="space-y-2">
+            {visibleRestrictionKeys.has("hotel_chain") && (
+              <HotelChainRestrictionCard
+                hotelChainId={benefit.restrictions?.hotelChainId ?? ""}
+                hotelChains={hotelChains}
+                onHotelChainChange={(val) => {
+                  updateRestrictions({
+                    hotelChainId: val,
+                    subBrandIncludeIds: [],
+                    subBrandExcludeIds: [],
+                  });
+                }}
+                onRemove={() => removeBenefitRestriction("hotel_chain")}
+              />
+            )}
             {visibleRestrictionKeys.has("booking_source") && (
               <BookingSourceCard
                 allowedBookingSources={benefit.restrictions?.allowedBookingSources ?? []}
@@ -365,6 +443,7 @@ export function BenefitRow({
             )}
             {visibleRestrictionKeys.has("redemption_caps") && (
               <RedemptionCapsCard
+                level="benefit"
                 maxStayCount={benefit.restrictions?.maxStayCount ?? ""}
                 maxRewardCount={benefit.restrictions?.maxRewardCount ?? ""}
                 maxRedemptionValue={benefit.restrictions?.maxRedemptionValue ?? ""}

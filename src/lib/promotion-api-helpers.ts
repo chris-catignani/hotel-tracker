@@ -18,6 +18,8 @@ export function buildRestrictionsCreateData(r: PromotionRestrictionsFormData) {
       : null,
     tieInRequiresPayment: r.tieInRequiresPayment ?? false,
     allowedPaymentTypes: r.allowedPaymentTypes ?? [],
+    allowedBookingSources: r.allowedBookingSources ?? [],
+    hotelChainId: r.hotelChainId || null,
     subBrandRestrictions: {
       create: [
         ...(r.subBrandIncludeIds ?? []).map((id) => ({

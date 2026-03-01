@@ -64,23 +64,23 @@ test.describe("Mobile Layout & Responsive Components", () => {
     await page.goto("/promotions/new");
 
     // The grid should have 1 column on mobile (grid-cols-1)
-    const firstGrid = page.locator("form div.grid").first();
+    const firstGrid = page.getByTestId("promotion-form-main-grid");
     await expect(firstGrid).toBeVisible();
     await expect(firstGrid).toHaveClass(/grid-cols-1/);
 
     // Verify stacking by checking the bounding box of two adjacent elements
-    const typeLabel = page.getByText("Type", { exact: true });
-    const valueTypeLabel = page.getByText("Value Type", { exact: true });
+    const nameLabel = page.getByText("Promotion Name", { exact: false });
+    const typeLabel = page.getByText("Promotion Type", { exact: false });
 
+    await expect(nameLabel).toBeVisible();
     await expect(typeLabel).toBeVisible();
-    await expect(valueTypeLabel).toBeVisible();
 
+    const nameBox = await nameLabel.boundingBox();
     const typeBox = await typeLabel.boundingBox();
-    const valueTypeBox = await valueTypeLabel.boundingBox();
 
-    if (typeBox && valueTypeBox) {
+    if (nameBox && typeBox) {
       // On mobile, they should be vertically stacked
-      expect(valueTypeBox.y).toBeGreaterThan(typeBox.y);
+      expect(typeBox.y).toBeGreaterThan(nameBox.y);
     }
   });
 

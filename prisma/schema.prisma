@@ -75,6 +75,7 @@ model HotelChain {
   eliteStatuses         HotelChainEliteStatus[]
   userStatus            UserStatus?
   creditCardRewardRules CreditCardRewardRule[]
+  promotionRestrictions PromotionRestrictions[]
 
   @@map("hotel_chains")
 }
@@ -252,6 +253,8 @@ model PromotionRestrictions {
   tieInRequiresPayment       Boolean                       @default(false) @map("tie_in_requires_payment")
   allowedPaymentTypes        String[]                      @default([]) @map("allowed_payment_types")
   allowedBookingSources      String[]                      @default([]) @map("allowed_booking_sources")
+  hotelChainId               String?                       @map("hotel_chain_id")
+  hotelChain                 HotelChain?                   @relation(fields: [hotelChainId], references: [id])
   prerequisiteStayCount      Int?                          @map("prerequisite_stay_count")
   prerequisiteNightCount     Int?                          @map("prerequisite_night_count")
   subBrandRestrictions       PromotionSubBrandRestriction[]

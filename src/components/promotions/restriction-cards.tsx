@@ -25,10 +25,12 @@ export type RestrictionKey =
   | "sub_brand_scope"
   | "payment_type"
   | "prerequisite"
-  | "booking_source";
+  | "booking_source"
+  | "hotel_chain";
 
 /** Canonical display order — cards and picker options always follow this order. */
 export const RESTRICTION_ORDER: RestrictionKey[] = [
+  "hotel_chain",
   "booking_source",
   "payment_type",
   "min_spend",
@@ -44,6 +46,7 @@ export const RESTRICTION_ORDER: RestrictionKey[] = [
 
 /** Restriction keys available at the benefit level (not all apply per-benefit). */
 export const BENEFIT_RESTRICTION_ORDER: RestrictionKey[] = [
+  "hotel_chain",
   "booking_source",
   "payment_type",
   "min_spend",
@@ -66,6 +69,7 @@ export const RESTRICTION_LABELS: Record<RestrictionKey, string> = {
   sub_brand_scope: "Sub-Brand Scope",
   prerequisite: "Promotion Prerequisites",
   booking_source: "Booking Source",
+  hotel_chain: "Hotel Chain Restriction",
 };
 
 // ─── Auto-detect active restrictions from saved restrictions data ─────────────
@@ -75,6 +79,7 @@ export function deriveActiveRestrictions(
 ): Set<RestrictionKey> {
   const keys = new Set<RestrictionKey>();
   if (!r) return keys;
+  if (r.hotelChainId) keys.add("hotel_chain");
   if (r.allowedBookingSources && r.allowedBookingSources.length > 0) keys.add("booking_source");
   if (r.allowedPaymentTypes && r.allowedPaymentTypes.length > 0) keys.add("payment_type");
   if (r.minSpend) keys.add("min_spend");
@@ -107,9 +112,16 @@ export function PrerequisitesCard({
 }) {
   return (
     <RestrictionCard title="Promotion Prerequisites" testId="prerequisite" onRemove={onRemove}>
-      <p className="text-xs text-muted-foreground">
-        Set requirements that must be met before this promotion starts earning rewards.
-      </p>
+      <div className="bg-primary/5 border border-primary/10 p-2 rounded text-[11px] mb-3">
+        <p className="font-bold text-primary mb-1 italic uppercase tracking-wider">
+          Activation Rule
+        </p>
+        <p className="text-muted-foreground leading-relaxed">
+          These requirements must be met{" "}
+          <span className="font-bold underline text-foreground">first</span> before this promotion
+          starts earning rewards. These are cumulative across the entire promotion.
+        </p>
+      </div>
       <div className="space-y-2">
         <Label htmlFor="prerequisiteStayCount">Prior Stays Required</Label>
         <Input
@@ -143,6 +155,36 @@ export function PrerequisitesCard({
 }
 
 // ─── Shared card wrapper ──────────────────────────────────────────────────────
+
+export function HotelChainRestrictionCard({
+  hotelChainId,
+  hotelChains,
+  onHotelChainChange,
+  onRemove,
+}: {
+  hotelChainId: string;
+  hotelChains: Array<{ id: string; name: string }>;
+  onHotelChainChange: (val: string) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <RestrictionCard title="Hotel Chain Restriction" testId="hotel-chain" onRemove={onRemove}>
+      <p className="text-[11px] text-muted-foreground bg-muted/50 p-2 rounded border border-dashed mb-3 leading-relaxed">
+        <span className="font-bold text-foreground underline">Usage:</span> Use this to limit a
+        Credit Card or Portal promotion to a <span className="font-bold">specific chain</span>.
+      </p>
+      <div className="space-y-2">
+        <Label>Restricted to Chain</Label>
+        <AppSelect
+          value={hotelChainId}
+          onValueChange={onHotelChainChange}
+          options={hotelChains.map((c) => ({ label: c.name, value: c.id }))}
+          placeholder="Select a chain..."
+        />
+      </div>
+    </RestrictionCard>
+  );
+}
 
 export function BookingSourceCard({
   allowedBookingSources,
@@ -281,6 +323,11 @@ export function MinNightsCard({
 }) {
   return (
     <RestrictionCard title="Min Nights Required" testId="min_nights" onRemove={onRemove}>
+      <p className="text-[11px] text-muted-foreground bg-muted/50 p-2 rounded border border-dashed mb-2 leading-relaxed">
+        <span className="font-bold text-foreground underline">Earning Rule:</span> This reward only
+        applies to <span className="font-medium italic text-foreground">individual stays</span> that
+        meet the minimum night requirement below.
+      </p>
       <div className="space-y-2">
         <Label htmlFor="minNightsRequired">Min Nights</Label>
         <Input
@@ -329,6 +376,7 @@ export function RedemptionCapsCard({
   onMaxRedemptionValueChange,
   onMaxTotalBonusPointsChange,
   onRemove,
+  level = "promotion",
 }: {
   maxStayCount: string;
   maxRewardCount: string;
@@ -339,56 +387,69 @@ export function RedemptionCapsCard({
   onMaxRedemptionValueChange: (val: string) => void;
   onMaxTotalBonusPointsChange: (val: string) => void;
   onRemove: () => void;
+  level?: "promotion" | "benefit";
 }) {
+  const isPromo = level === "promotion";
+
   return (
     <RestrictionCard title="Redemption Caps" testId="redemption_caps" onRemove={onRemove}>
-      <div className="space-y-2">
-        <Label htmlFor="maxStayCount">Max Stay Count (Promotion-level)</Label>
-        <Input
-          id="maxStayCount"
-          type="number"
-          step="1"
-          value={maxStayCount}
-          onChange={(e) => onMaxStayCountChange(e.target.value)}
-          placeholder="e.g. 3"
-          data-testid="promotion-max-stay-count"
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="maxRewardCount">Max Reward Count (Benefit-level)</Label>
-        <Input
-          id="maxRewardCount"
-          type="number"
-          step="1"
-          value={maxRewardCount}
-          onChange={(e) => onMaxRewardCountChange(e.target.value)}
-          placeholder="e.g. 10"
-          data-testid="promotion-max-reward-count"
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="maxRedemptionValue">Max Redemption Value ($)</Label>
-        <Input
-          id="maxRedemptionValue"
-          type="number"
-          step="0.01"
-          value={maxRedemptionValue}
-          onChange={(e) => onMaxRedemptionValueChange(e.target.value)}
-          placeholder="e.g. 50.00"
-          data-testid="promotion-max-redemption-value"
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="maxTotalBonusPoints">Max Total Bonus Points</Label>
-        <Input
-          id="maxTotalBonusPoints"
-          type="number"
-          step="1"
-          value={maxTotalBonusPoints}
-          onChange={(e) => onMaxTotalBonusPointsChange(e.target.value)}
-          placeholder="e.g. 10000"
-          data-testid="promotion-max-total-bonus-points"
-        />
+      <div className="space-y-3">
+        {isPromo ? (
+          <div className="space-y-2">
+            <Label htmlFor="maxStayCount">Maximum Stays for Promotion</Label>
+            <Input
+              id="maxStayCount"
+              type="number"
+              step="1"
+              value={maxStayCount}
+              onChange={(e) => onMaxStayCountChange(e.target.value)}
+              placeholder="No limit"
+              data-testid="promotion-max-stay-count"
+            />
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <Label htmlFor="maxRewardCount">Maximum Times to Earn Reward</Label>
+            <Input
+              id="maxRewardCount"
+              type="number"
+              step="1"
+              value={maxRewardCount}
+              onChange={(e) => onMaxRewardCountChange(e.target.value)}
+              placeholder="No limit"
+              data-testid="promotion-max-reward-count"
+            />
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <Label htmlFor="maxRedemptionValue">
+            {isPromo ? "Max Total Value ($)" : "Max Value for this Reward ($)"}
+          </Label>
+          <Input
+            id="maxRedemptionValue"
+            type="number"
+            step="0.01"
+            value={maxRedemptionValue}
+            onChange={(e) => onMaxRedemptionValueChange(e.target.value)}
+            placeholder="e.g. 50.00"
+            data-testid="promotion-max-redemption-value"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="maxTotalBonusPoints">
+            {isPromo ? "Max Total Points" : "Max Points for this Reward"}
+          </Label>
+          <Input
+            id="maxTotalBonusPoints"
+            type="number"
+            step="1"
+            value={maxTotalBonusPoints}
+            onChange={(e) => onMaxTotalBonusPointsChange(e.target.value)}
+            placeholder="e.g. 10000"
+            data-testid="promotion-max-total-bonus-points"
+          />
+        </div>
       </div>
     </RestrictionCard>
   );
