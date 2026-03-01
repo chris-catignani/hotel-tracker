@@ -22,7 +22,8 @@ export type RestrictionKey =
   | "tie_in_cards"
   | "registration"
   | "sub_brand_scope"
-  | "payment_type";
+  | "payment_type"
+  | "prerequisite";
 
 /** Canonical display order — cards and picker options always follow this order. */
 export const RESTRICTION_ORDER: RestrictionKey[] = [
@@ -35,6 +36,7 @@ export const RESTRICTION_ORDER: RestrictionKey[] = [
   "tie_in_cards",
   "registration",
   "sub_brand_scope",
+  "prerequisite",
 ];
 
 /** Restriction keys available at the benefit level (not all apply per-benefit). */
@@ -58,6 +60,7 @@ export const RESTRICTION_LABELS: Record<RestrictionKey, string> = {
   tie_in_cards: "Tie-In Credit Cards",
   registration: "Registration & Validity",
   sub_brand_scope: "Sub-Brand Scope",
+  prerequisite: "Promotion Prerequisites",
 };
 
 // ─── Auto-detect active restrictions from saved restrictions data ─────────────
@@ -79,7 +82,58 @@ export function deriveActiveRestrictions(
     keys.add("registration");
   if (r.subBrandIncludeIds.length > 0 || r.subBrandExcludeIds.length > 0)
     keys.add("sub_brand_scope");
+  if (r.prerequisiteStayCount || r.prerequisiteNightCount) keys.add("prerequisite");
   return keys;
+}
+
+export function PrerequisitesCard({
+  prerequisiteStayCount,
+  prerequisiteNightCount,
+  onStayCountChange,
+  onNightCountChange,
+  onRemove,
+}: {
+  prerequisiteStayCount: string;
+  prerequisiteNightCount: string;
+  onStayCountChange: (val: string) => void;
+  onNightCountChange: (val: string) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <RestrictionCard title="Promotion Prerequisites" testId="prerequisite" onRemove={onRemove}>
+      <p className="text-xs text-muted-foreground">
+        Set requirements that must be met before this promotion starts earning rewards.
+      </p>
+      <div className="space-y-2">
+        <Label htmlFor="prerequisiteStayCount">Prior Stays Required</Label>
+        <Input
+          id="prerequisiteStayCount"
+          type="number"
+          step="1"
+          value={prerequisiteStayCount}
+          onChange={(e) => onStayCountChange(e.target.value)}
+          placeholder="e.g. 1"
+          data-testid="promotion-prerequisite-stay-count"
+        />
+        <p className="text-[0.7rem] text-muted-foreground">Rewards start on the (N+1)th stay.</p>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="prerequisiteNightCount">Prior Nights Required</Label>
+        <Input
+          id="prerequisiteNightCount"
+          type="number"
+          step="1"
+          value={prerequisiteNightCount}
+          onChange={(e) => onNightCountChange(e.target.value)}
+          placeholder="e.g. 5"
+          data-testid="promotion-prerequisite-night-count"
+        />
+        <p className="text-[0.7rem] text-muted-foreground">
+          Rewards start after N nights have been completed.
+        </p>
+      </div>
+    </RestrictionCard>
+  );
 }
 
 // ─── Shared card wrapper ──────────────────────────────────────────────────────

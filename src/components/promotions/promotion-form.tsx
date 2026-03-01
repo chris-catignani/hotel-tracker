@@ -35,6 +35,7 @@ import {
   TieInCardsCard,
   RegistrationCard,
   SubBrandScopeCard,
+  PrerequisitesCard,
 } from "./restriction-cards";
 
 interface HotelChainSubBrand {
@@ -94,6 +95,9 @@ function mapApiRestrictionsToForm(
     registrationDate: "", // comes from userPromotions, set separately
     tieInRequiresPayment: r.tieInRequiresPayment ?? false,
     allowedPaymentTypes: r.allowedPaymentTypes ?? [],
+    prerequisiteStayCount: r.prerequisiteStayCount != null ? String(r.prerequisiteStayCount) : "",
+    prerequisiteNightCount:
+      r.prerequisiteNightCount != null ? String(r.prerequisiteNightCount) : "",
     subBrandIncludeIds: (r.subBrandRestrictions ?? [])
       .filter((s) => s.mode === "include")
       .map((s) => s.hotelChainSubBrandId),
@@ -145,7 +149,15 @@ export function PromotionForm({
   const [tiers, setTiers] = useState<PromotionTierFormData[]>(
     initialData?.tiers && initialData.tiers.length > 0
       ? initialData.tiers
-      : [{ minStays: 1, maxStays: null, benefits: [{ ...DEFAULT_BENEFIT }] }]
+      : [
+          {
+            minStays: 1,
+            maxStays: null,
+            minNights: null,
+            maxNights: null,
+            benefits: [{ ...DEFAULT_BENEFIT }],
+          },
+        ]
   );
 
   // ── Date range ───────────────────────────────────────────────────────────────
@@ -329,8 +341,19 @@ export function PromotionForm({
   const handleAddTier = () => {
     setTiers((prev) => {
       const last = prev[prev.length - 1];
-      const nextMin = last != null ? (last.maxStays ?? last.minStays) + 1 : 1;
-      return [...prev, { minStays: nextMin, maxStays: null, benefits: [{ ...DEFAULT_BENEFIT }] }];
+      const lastMin = last?.minStays ?? 0;
+      const lastMax = last?.maxStays ?? lastMin;
+      const nextMin = lastMax + 1;
+      return [
+        ...prev,
+        {
+          minStays: nextMin,
+          maxStays: null,
+          minNights: null,
+          maxNights: null,
+          benefits: [{ ...DEFAULT_BENEFIT }],
+        },
+      ];
     });
   };
 
@@ -427,6 +450,12 @@ export function PromotionForm({
         registrationDate: activeRestrictions.has("registration")
           ? restrictions.registrationDate
           : "",
+        prerequisiteStayCount: activeRestrictions.has("prerequisite")
+          ? restrictions.prerequisiteStayCount
+          : "",
+        prerequisiteNightCount: activeRestrictions.has("prerequisite")
+          ? restrictions.prerequisiteNightCount
+          : "",
         subBrandIncludeIds: activeRestrictions.has("sub_brand_scope")
           ? restrictions.subBrandIncludeIds
           : [],
@@ -442,7 +471,7 @@ export function PromotionForm({
       benefits: isTiered ? [] : withSortOrder(benefits),
       tiers: isTiered
         ? [...tiers]
-            .sort((a, b) => a.minStays - b.minStays)
+            .sort((a, b) => (a.minStays ?? 0) - (b.minStays ?? 0))
             .map((tier) => ({ ...tier, benefits: withSortOrder(tier.benefits) }))
         : [],
       isActive,
@@ -805,6 +834,18 @@ export function PromotionForm({
                       updateRestrictions({ allowedPaymentTypes: types })
                     }
                     onRemove={() => removeRestriction("payment_type")}
+                  />
+                );
+
+              if (key === "prerequisite")
+                return (
+                  <PrerequisitesCard
+                    key={key}
+                    prerequisiteStayCount={restrictions.prerequisiteStayCount}
+                    prerequisiteNightCount={restrictions.prerequisiteNightCount}
+                    onStayCountChange={(v) => updateRestrictions({ prerequisiteStayCount: v })}
+                    onNightCountChange={(v) => updateRestrictions({ prerequisiteNightCount: v })}
+                    onRemove={() => removeRestriction("prerequisite")}
                   />
                 );
 
