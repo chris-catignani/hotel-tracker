@@ -10,6 +10,7 @@ import { parseISO } from "date-fns";
 import { X } from "lucide-react";
 import type { PromotionRestrictionsFormData } from "@/lib/types";
 import { AppSelect } from "@/components/ui/app-select";
+import { BOOKING_SOURCE_LABELS } from "@/lib/constants";
 
 // ─── Types & constants ────────────────────────────────────────────────────────
 
@@ -142,13 +143,6 @@ export function PrerequisitesCard({
 }
 
 // ─── Shared card wrapper ──────────────────────────────────────────────────────
-
-export const BOOKING_SOURCE_LABELS: Record<string, string> = {
-  direct_web: "Direct Web",
-  direct_app: "Mobile App",
-  ota: "OTA (Expedia, etc.)",
-  other: "Other",
-};
 
 export function BookingSourceCard({
   allowedBookingSources,

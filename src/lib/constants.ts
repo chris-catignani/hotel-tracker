@@ -68,6 +68,13 @@ export const BOOKING_SOURCE_OPTIONS = [
   { value: "other", label: "Other" },
 ];
 
+export const BOOKING_SOURCE_LABELS: Record<string, string> = {
+  direct_web: "Direct Web",
+  direct_app: "Mobile App",
+  ota: "OTA (Expedia, etc.)",
+  other: "Other",
+};
+
 export const BENEFIT_TYPE_OPTIONS = [
   { value: "free_breakfast", label: "Free Breakfast" },
   { value: "dining_credit", label: "Dining Credit" },

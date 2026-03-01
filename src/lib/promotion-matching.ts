@@ -191,6 +191,14 @@ function checkPaymentTypeRestriction(
   return true;
 }
 
+function checkBookingSourceRestriction(
+  allowedBookingSources: string[],
+  booking: MatchingBooking
+): boolean {
+  if (allowedBookingSources.length === 0) return true;
+  return allowedBookingSources.includes(booking.bookingSource ?? "other");
+}
+
 /**
  * Logic for validating and calculating promotion matches.
  */
@@ -292,11 +300,12 @@ const PromotionRules: Record<string, PromotionRule> = {
   },
 
   bookingSource: (booking, promo) => {
-    const allowed = promo.restrictions?.allowedBookingSources;
-    if (allowed && allowed.length > 0) {
-      return { valid: allowed.includes(booking.bookingSource ?? "other") };
-    }
-    return { valid: true };
+    return {
+      valid: checkBookingSourceRestriction(
+        promo.restrictions?.allowedBookingSources ?? [],
+        booking
+      ),
+    };
   },
 
   tieInCard: (booking, promo) => {
@@ -412,10 +421,11 @@ export function calculateMatchedPromotions(
       if (br.allowedPaymentTypes && !checkPaymentTypeRestriction(br.allowedPaymentTypes, booking)) {
         return false;
       }
-      if (br.allowedBookingSources && br.allowedBookingSources.length > 0) {
-        if (!br.allowedBookingSources.includes(booking.bookingSource ?? "other")) {
-          return false;
-        }
+      if (
+        br.allowedBookingSources &&
+        !checkBookingSourceRestriction(br.allowedBookingSources, booking)
+      ) {
+        return false;
       }
       if (br.minNightsRequired && booking.numNights < br.minNightsRequired && !br.spanStays) {
         return false;
