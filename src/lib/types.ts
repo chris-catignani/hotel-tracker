@@ -121,6 +121,8 @@ export interface PromotionRestrictionsData {
   validDaysAfterRegistration: number | null;
   tieInRequiresPayment: boolean;
   allowedPaymentTypes: string[];
+  prerequisiteStayCount: number | null;
+  prerequisiteNightCount: number | null;
   subBrandRestrictions: SubBrandRestriction[];
   tieInCards: { creditCardId: string }[];
 }
@@ -141,6 +143,8 @@ export interface PromotionRestrictionsFormData {
   registrationDate: string; // form convenience; maps to UserPromotion on the promotion
   tieInRequiresPayment: boolean;
   allowedPaymentTypes: string[];
+  prerequisiteStayCount: string;
+  prerequisiteNightCount: string;
   subBrandIncludeIds: string[];
   subBrandExcludeIds: string[];
   tieInCreditCardIds: string[];
@@ -162,6 +166,8 @@ export const EMPTY_RESTRICTIONS: PromotionRestrictionsFormData = {
   registrationDate: "",
   tieInRequiresPayment: false,
   allowedPaymentTypes: [],
+  prerequisiteStayCount: "",
+  prerequisiteNightCount: "",
   subBrandIncludeIds: [],
   subBrandExcludeIds: [],
   tieInCreditCardIds: [],
@@ -183,14 +189,18 @@ export interface PromotionBenefit {
 export interface PromotionTier {
   id: string;
   promotionId: string;
-  minStays: number;
+  minStays: number | null;
   maxStays: number | null;
+  minNights: number | null;
+  maxNights: number | null;
   benefits: PromotionBenefit[];
 }
 
 export interface PromotionTierFormData {
-  minStays: number;
+  minStays: number | null;
   maxStays: number | null;
+  minNights: number | null;
+  maxNights: number | null;
   benefits: PromotionBenefitFormData[];
 }
 

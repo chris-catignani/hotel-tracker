@@ -35,6 +35,7 @@ import {
   TieInCardsCard,
   RegistrationCard,
   SubBrandScopeCard,
+  PrerequisitesCard,
 } from "./restriction-cards";
 
 interface HotelChainSubBrand {
@@ -94,6 +95,9 @@ function mapApiRestrictionsToForm(
     registrationDate: "", // comes from userPromotions, set separately
     tieInRequiresPayment: r.tieInRequiresPayment ?? false,
     allowedPaymentTypes: r.allowedPaymentTypes ?? [],
+    prerequisiteStayCount: r.prerequisiteStayCount != null ? String(r.prerequisiteStayCount) : "",
+    prerequisiteNightCount:
+      r.prerequisiteNightCount != null ? String(r.prerequisiteNightCount) : "",
     subBrandIncludeIds: (r.subBrandRestrictions ?? [])
       .filter((s) => s.mode === "include")
       .map((s) => s.hotelChainSubBrandId),
@@ -145,7 +149,15 @@ export function PromotionForm({
   const [tiers, setTiers] = useState<PromotionTierFormData[]>(
     initialData?.tiers && initialData.tiers.length > 0
       ? initialData.tiers
-      : [{ minStays: 1, maxStays: null, benefits: [{ ...DEFAULT_BENEFIT }] }]
+      : [
+          {
+            minStays: 1,
+            maxStays: null,
+            minNights: null,
+            maxNights: null,
+            benefits: [{ ...DEFAULT_BENEFIT }],
+          },
+        ]
   );
 
   // ── Date range ───────────────────────────────────────────────────────────────
@@ -221,7 +233,7 @@ export function PromotionForm({
 
     const bErrors = benefits.map(validateBenefit);
     const tErrors = tiers.map((t) => ({
-      minStays: !t.minStays ? "Required" : "",
+      minStays: !t.minStays && !t.minNights ? "Qualification Required" : "",
       benefits: t.benefits.map(validateBenefit),
     }));
 
@@ -329,8 +341,19 @@ export function PromotionForm({
   const handleAddTier = () => {
     setTiers((prev) => {
       const last = prev[prev.length - 1];
-      const nextMin = last != null ? (last.maxStays ?? last.minStays) + 1 : 1;
-      return [...prev, { minStays: nextMin, maxStays: null, benefits: [{ ...DEFAULT_BENEFIT }] }];
+      const lastMin = last?.minStays ?? 0;
+      const lastMax = last?.maxStays ?? lastMin;
+      const nextMin = lastMax + 1;
+      return [
+        ...prev,
+        {
+          minStays: nextMin,
+          maxStays: null,
+          minNights: null,
+          maxNights: null,
+          benefits: [{ ...DEFAULT_BENEFIT }],
+        },
+      ];
     });
   };
 
@@ -427,6 +450,12 @@ export function PromotionForm({
         registrationDate: activeRestrictions.has("registration")
           ? restrictions.registrationDate
           : "",
+        prerequisiteStayCount: activeRestrictions.has("prerequisite")
+          ? restrictions.prerequisiteStayCount
+          : "",
+        prerequisiteNightCount: activeRestrictions.has("prerequisite")
+          ? restrictions.prerequisiteNightCount
+          : "",
         subBrandIncludeIds: activeRestrictions.has("sub_brand_scope")
           ? restrictions.subBrandIncludeIds
           : [],
@@ -442,7 +471,7 @@ export function PromotionForm({
       benefits: isTiered ? [] : withSortOrder(benefits),
       tiers: isTiered
         ? [...tiers]
-            .sort((a, b) => a.minStays - b.minStays)
+            .sort((a, b) => (a.minStays ?? 0) - (b.minStays ?? 0))
             .map((tier) => ({ ...tier, benefits: withSortOrder(tier.benefits) }))
         : [],
       isActive,
@@ -648,20 +677,21 @@ export function PromotionForm({
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <Label>Min Stay # *</Label>
+                      <Label>Min Stay #</Label>
                       <Input
                         type="number"
                         step="1"
                         min="1"
-                        value={tier.minStays || ""}
+                        value={tier.minStays ?? ""}
                         onChange={(e) =>
                           handleTierChange(tierIndex, {
                             ...tier,
-                            minStays: parseInt(e.target.value, 10) || 0,
+                            minStays: e.target.value ? parseInt(e.target.value, 10) : null,
                           })
                         }
                         data-testid={`tier-min-stays-${tierIndex}`}
                         error={showErrors ? tierErrors[tierIndex].minStays : ""}
+                        placeholder="e.g. 1"
                       />
                     </div>
                     <div className="space-y-2">
@@ -674,11 +704,48 @@ export function PromotionForm({
                         onChange={(e) =>
                           handleTierChange(tierIndex, {
                             ...tier,
-                            maxStays: e.target.value ? parseInt(e.target.value) : null,
+                            maxStays: e.target.value ? parseInt(e.target.value, 10) : null,
                           })
                         }
                         placeholder="No limit"
                         data-testid={`tier-max-stays-${tierIndex}`}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>Min Night #</Label>
+                      <Input
+                        type="number"
+                        step="1"
+                        min="1"
+                        value={tier.minNights ?? ""}
+                        onChange={(e) =>
+                          handleTierChange(tierIndex, {
+                            ...tier,
+                            minNights: e.target.value ? parseInt(e.target.value, 10) : null,
+                          })
+                        }
+                        data-testid={`tier-min-nights-${tierIndex}`}
+                        placeholder="e.g. 5"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Max Night # (optional)</Label>
+                      <Input
+                        type="number"
+                        step="1"
+                        min="1"
+                        value={tier.maxNights ?? ""}
+                        onChange={(e) =>
+                          handleTierChange(tierIndex, {
+                            ...tier,
+                            maxNights: e.target.value ? parseInt(e.target.value, 10) : null,
+                          })
+                        }
+                        placeholder="No limit"
+                        data-testid={`tier-max-nights-${tierIndex}`}
                       />
                     </div>
                   </div>
@@ -805,6 +872,18 @@ export function PromotionForm({
                       updateRestrictions({ allowedPaymentTypes: types })
                     }
                     onRemove={() => removeRestriction("payment_type")}
+                  />
+                );
+
+              if (key === "prerequisite")
+                return (
+                  <PrerequisitesCard
+                    key={key}
+                    prerequisiteStayCount={restrictions.prerequisiteStayCount}
+                    prerequisiteNightCount={restrictions.prerequisiteNightCount}
+                    onStayCountChange={(v) => updateRestrictions({ prerequisiteStayCount: v })}
+                    onNightCountChange={(v) => updateRestrictions({ prerequisiteNightCount: v })}
+                    onRemove={() => removeRestriction("prerequisite")}
                   />
                 );
 

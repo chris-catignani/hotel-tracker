@@ -14,7 +14,8 @@ export type PromotionUsage = {
   totalValue: number;
   totalBonusPoints: number;
   eligibleStayCount?: number;
-  eligibleStayNights?: number;
+  eligibleStayNights?: number; // For spanStays / nightsStackable scaling
+  eligibleNightCount?: number; // For tier-based matching on cumulative nights
   appliedSubBrandIds?: Set<string | null>;
   benefitUsage?: Map<
     string,
@@ -51,6 +52,8 @@ type MatchingRestrictions = {
   validDaysAfterRegistration: number | null;
   tieInRequiresPayment: boolean;
   allowedPaymentTypes: string[];
+  prerequisiteStayCount: number | null;
+  prerequisiteNightCount: number | null;
   subBrandRestrictions: { hotelChainSubBrandId: string; mode: string }[];
   tieInCards: { creditCardId: string }[];
 } | null;
@@ -127,7 +130,14 @@ interface MatchingPromotion {
   restrictions: MatchingRestrictions;
   registrationDate?: Date | null;
   benefits: MatchingBenefit[];
-  tiers: { id: string; minStays: number; maxStays: number | null; benefits: MatchingBenefit[] }[];
+  tiers: {
+    id: string;
+    minStays: number | null;
+    maxStays: number | null;
+    minNights: number | null;
+    maxNights: number | null;
+    benefits: MatchingBenefit[];
+  }[];
 }
 
 interface BenefitApplication {
@@ -180,6 +190,147 @@ function checkPaymentTypeRestriction(
 }
 
 /**
+ * Logic for validating and calculating promotion matches.
+ */
+
+interface ValidationResult {
+  valid: boolean;
+  reason?: string;
+}
+
+type PromotionRule = (
+  booking: MatchingBooking,
+  promo: MatchingPromotion,
+  usage?: PromotionUsage
+) => ValidationResult;
+
+const PromotionRules: Record<string, PromotionRule> = {
+  typeMatch: (booking, promo) => {
+    switch (promo.type) {
+      case PromotionType.credit_card:
+        return { valid: promo.creditCardId === booking.creditCardId };
+      case PromotionType.portal:
+        return { valid: promo.shoppingPortalId === booking.shoppingPortalId };
+      case PromotionType.loyalty:
+        return { valid: promo.hotelChainId === booking.hotelChainId };
+      default:
+        return { valid: false };
+    }
+  },
+
+  dateRange: (booking, promo) => {
+    const checkInDate = new Date(booking.checkIn);
+
+    if (promo.registrationDate) {
+      const regDate = new Date(promo.registrationDate);
+      if (checkInDate < regDate) return { valid: false };
+
+      if (promo.restrictions?.validDaysAfterRegistration) {
+        const personalEndDate = new Date(regDate);
+        personalEndDate.setDate(regDate.getDate() + promo.restrictions.validDaysAfterRegistration);
+        if (checkInDate > personalEndDate) return { valid: false };
+      } else if (promo.endDate && checkInDate > new Date(promo.endDate)) {
+        return { valid: false };
+      }
+    } else {
+      if (promo.startDate && checkInDate < new Date(promo.startDate)) return { valid: false };
+      if (promo.endDate && checkInDate > new Date(promo.endDate)) return { valid: false };
+    }
+    return { valid: true };
+  },
+
+  registrationDeadline: (booking, promo) => {
+    if (promo.registrationDate && promo.restrictions?.registrationDeadline) {
+      if (new Date(promo.registrationDate) > new Date(promo.restrictions.registrationDeadline)) {
+        return { valid: false };
+      }
+    }
+    return { valid: true };
+  },
+
+  bookByDate: (booking, promo) => {
+    if (promo.restrictions?.bookByDate) {
+      if (new Date(booking.createdAt) > new Date(promo.restrictions.bookByDate)) {
+        return { valid: false };
+      }
+    }
+    return { valid: true };
+  },
+
+  minSpend: (booking, promo) => {
+    if (
+      promo.type === PromotionType.credit_card &&
+      promo.restrictions?.minSpend != null &&
+      Number(booking.totalCost) < Number(promo.restrictions.minSpend)
+    ) {
+      return { valid: false };
+    }
+    return { valid: true };
+  },
+
+  minNights: (booking, promo) => {
+    const r = promo.restrictions;
+    if (r?.minNightsRequired && booking.numNights < r.minNightsRequired && !r.spanStays) {
+      return { valid: false };
+    }
+    return { valid: true };
+  },
+
+  subBrand: (booking, promo) => {
+    return { valid: checkSubBrandRestrictions(promo.restrictions, booking.hotelChainSubBrandId) };
+  },
+
+  paymentType: (booking, promo) => {
+    if (promo.restrictions?.allowedPaymentTypes) {
+      return {
+        valid: checkPaymentTypeRestriction(promo.restrictions.allowedPaymentTypes, booking),
+      };
+    }
+    return { valid: true };
+  },
+
+  tieInCard: (booking, promo) => {
+    if (promo.restrictions?.tieInCards && promo.restrictions.tieInCards.length > 0) {
+      const cardMatches =
+        booking.creditCardId != null &&
+        promo.restrictions.tieInCards.some((c) => c.creditCardId === booking.creditCardId);
+      return { valid: cardMatches };
+    }
+    return { valid: true };
+  },
+
+  usageCaps: (booking, promo, usage) => {
+    if (
+      promo.restrictions?.maxStayCount &&
+      usage &&
+      usage.count >= promo.restrictions.maxStayCount
+    ) {
+      return { valid: false };
+    }
+    if (promo.restrictions?.oncePerSubBrand) {
+      if (usage?.appliedSubBrandIds?.has(booking.hotelChainSubBrandId ?? null)) {
+        return { valid: false };
+      }
+    }
+    return { valid: true };
+  },
+
+  prerequisites: (booking, promo, usage) => {
+    const r = promo.restrictions;
+    if (!r) return { valid: true };
+
+    if (r.prerequisiteStayCount && (usage?.eligibleStayCount ?? 0) < r.prerequisiteStayCount) {
+      return { valid: false };
+    }
+
+    if (r.prerequisiteNightCount && (usage?.eligibleNightCount ?? 0) < r.prerequisiteNightCount) {
+      return { valid: false };
+    }
+    return { valid: true };
+  },
+};
+
+/**
  * Calculates which promotions match a given booking without side effects.
  */
 export function calculateMatchedPromotions(
@@ -190,158 +341,71 @@ export function calculateMatchedPromotions(
   const matched: MatchedPromotion[] = [];
 
   for (const promo of activePromotions) {
-    let typeMatches = false;
-
-    switch (promo.type) {
-      case PromotionType.credit_card:
-        typeMatches = promo.creditCardId === booking.creditCardId;
-        break;
-      case PromotionType.portal:
-        typeMatches = promo.shoppingPortalId === booking.shoppingPortalId;
-        break;
-      case PromotionType.loyalty:
-        typeMatches = promo.hotelChainId === booking.hotelChainId;
-        break;
-    }
-
-    if (!typeMatches) continue;
-
-    // Promotion-level sub-brand restriction check
-    if (!checkSubBrandRestrictions(promo.restrictions, booking.hotelChainSubBrandId)) continue;
-
-    // Promotion-level tie-in gate: if the promotion requires a specific card,
-    // the booking must have a matching card, otherwise the whole promotion is skipped
-    if (promo.restrictions?.tieInCards && promo.restrictions.tieInCards.length > 0) {
-      const cardMatches =
-        booking.creditCardId != null &&
-        promo.restrictions.tieInCards.some((c) => c.creditCardId === booking.creditCardId);
-      if (!cardMatches) continue;
-    }
-
-    // Promotion-level payment type gate
-    if (
-      promo.restrictions?.allowedPaymentTypes &&
-      !checkPaymentTypeRestriction(promo.restrictions.allowedPaymentTypes, booking)
-    )
-      continue;
-
-    // Date range check
-    const checkInDate = new Date(booking.checkIn);
-
-    // Registration deadline check: if user registered after deadline, promo is invalid
-    if (promo.registrationDate && promo.restrictions?.registrationDeadline) {
-      if (new Date(promo.registrationDate) > new Date(promo.restrictions.registrationDeadline))
-        continue;
-    }
-
-    if (promo.registrationDate) {
-      const regDate = new Date(promo.registrationDate);
-      // Promotion is only valid for stays on or after the registration date
-      if (checkInDate < regDate) continue;
-
-      if (promo.restrictions?.validDaysAfterRegistration) {
-        const personalEndDate = new Date(regDate);
-        personalEndDate.setDate(regDate.getDate() + promo.restrictions.validDaysAfterRegistration);
-        if (checkInDate > personalEndDate) continue;
-      } else if (promo.endDate) {
-        // Fallback to global end date if no registration-based duration is set
-        if (checkInDate > new Date(promo.endDate)) continue;
-      }
-    } else {
-      // Global start/end checks only apply if no registration date is set
-      if (promo.startDate && checkInDate < new Date(promo.startDate)) continue;
-      if (promo.endDate && checkInDate > new Date(promo.endDate)) continue;
-    }
-
-    const r = promo.restrictions;
-
-    // Min spend check for credit_card types
-    if (
-      promo.type === PromotionType.credit_card &&
-      r?.minSpend != null &&
-      Number(booking.totalCost) < Number(r.minSpend)
-    ) {
-      continue;
-    }
-
-    // Redemption constraint checks
     const usage = priorUsage?.get(promo.id);
-    if (r?.maxStayCount && usage && usage.count >= r.maxStayCount) continue;
 
-    // Book-by-date check
-    if (r?.bookByDate) {
-      const bookingCreatedDate = new Date(booking.createdAt);
-      if (bookingCreatedDate > new Date(r.bookByDate)) continue;
-    }
+    // Run all validation rules
+    const isValid = Object.values(PromotionRules).every((rule) => {
+      return rule(booking, promo, usage).valid;
+    });
 
-    // Minimum nights check
-    if (r?.minNightsRequired && booking.numNights < r.minNightsRequired && !r.spanStays) {
-      continue;
-    }
-
-    // Once per sub-brand check at promotion level
-    if (r?.oncePerSubBrand) {
-      const appliedSubBrands = usage?.appliedSubBrandIds;
-      if (appliedSubBrands?.has(booking.hotelChainSubBrandId ?? null)) continue;
-    }
+    if (!isValid) continue;
 
     // Determine which benefits to use: tier-based or flat
     let activeBenefits: MatchingBenefit[];
     if (promo.tiers.length > 0) {
       const priorMatchedStays = usage?.eligibleStayCount ?? 0;
+      const priorMatchedNights = usage?.eligibleNightCount ?? 0;
+
       const currentStayNumber = priorMatchedStays + 1;
-      const applicableTier = promo.tiers.find(
-        (tier) =>
-          currentStayNumber >= tier.minStays &&
-          (tier.maxStays === null || currentStayNumber <= tier.maxStays)
-      );
-      if (!applicableTier) continue; // no tier covers this stay count
+      const currentNightNumber = priorMatchedNights + 1; // Tier check is based on the START of the current stay/night sequence
+
+      const applicableTier = promo.tiers.find((tier) => {
+        // Stay-based tier check
+        if (tier.minStays !== null) {
+          const minMatch = currentStayNumber >= tier.minStays;
+          const maxMatch = tier.maxStays === null || currentStayNumber <= tier.maxStays;
+          if (minMatch && maxMatch) return true;
+        }
+        // Night-based tier check
+        if (tier.minNights !== null) {
+          const minMatch = currentNightNumber >= tier.minNights;
+          const maxMatch = tier.maxNights === null || currentNightNumber <= tier.maxNights;
+          if (minMatch && maxMatch) return true;
+        }
+        return false;
+      });
+
+      if (!applicableTier) continue;
       activeBenefits = applicableTier.benefits;
     } else {
       activeBenefits = promo.benefits;
     }
 
-    // Per-benefit filtering: check benefit-level restrictions
+    // Per-benefit filtering
     const eligibleBenefits = activeBenefits.filter((b) => {
       const br = b.restrictions;
       if (!br) return true;
 
-      // Benefit-level sub-brand scope
       if (!checkSubBrandRestrictions(br, booking.hotelChainSubBrandId)) return false;
-
-      // Benefit-level tie-in card
       if (br.tieInCards.length > 0) {
         const cardMatches =
           booking.creditCardId != null &&
           br.tieInCards.some((c) => c.creditCardId === booking.creditCardId);
         if (!cardMatches) return false;
       }
-
-      // Benefit-level oncePerSubBrand
-      if (br.oncePerSubBrand) {
-        const appliedSubBrands = usage?.appliedSubBrandIds;
-        if (appliedSubBrands?.has(booking.hotelChainSubBrandId ?? null)) return false;
-      }
-
-      // Benefit-level payment type
-      if (br.allowedPaymentTypes && !checkPaymentTypeRestriction(br.allowedPaymentTypes, booking))
-        return false;
-
-      // Benefit-level minimum nights check
       if (
-        br.minNightsRequired &&
-        booking.numNights < br.minNightsRequired &&
-        !br.spanStays // Skip per-stay check if we are spanning multiple stays
+        br.oncePerSubBrand &&
+        usage?.appliedSubBrandIds?.has(booking.hotelChainSubBrandId ?? null)
       ) {
         return false;
       }
-
-      // Benefit-level min spend check
-      if (br.minSpend != null && Number(booking.totalCost) < Number(br.minSpend)) {
+      if (br.allowedPaymentTypes && !checkPaymentTypeRestriction(br.allowedPaymentTypes, booking)) {
         return false;
       }
-
-      // Benefit-level max reward count
+      if (br.minNightsRequired && booking.numNights < br.minNightsRequired && !br.spanStays) {
+        return false;
+      }
+      if (br.minSpend != null && Number(booking.totalCost) < Number(br.minSpend)) return false;
       if (br.maxRewardCount) {
         const benefitCount = usage?.benefitUsage?.get(b.id)?.count ?? 0;
         if (benefitCount >= br.maxRewardCount) return false;
@@ -400,56 +464,43 @@ export function calculateMatchedPromotions(
           break;
       }
 
-      // Apply benefit-level nightsStackable multiplier
-      // Skip if promotion-level multiplication will already be applied to all benefits
+      // Scaling logic (Stackable / Span Stays)
+      const r = promo.restrictions;
+      const br = benefit.restrictions;
+
       const promoIsStacked = r?.nightsStackable && r?.minNightsRequired && r.minNightsRequired > 0;
       const promoIsSpanned = r?.spanStays && r?.minNightsRequired && r.minNightsRequired > 0;
 
-      if (
-        !promoIsStacked &&
-        !promoIsSpanned && // Promotion level spanStays also handles multiplication proportionally
-        benefit.restrictions?.nightsStackable &&
-        benefit.restrictions?.minNightsRequired &&
-        benefit.restrictions.minNightsRequired > 0
-      ) {
-        if (benefit.restrictions.spanStays) {
-          // Proportionally apply based on nights
-          const multiplier = booking.numNights / benefit.restrictions.minNightsRequired;
-          appliedValue *= multiplier;
-          benefitBonusPoints *= multiplier;
-        } else {
-          const multiplier = Math.floor(booking.numNights / benefit.restrictions.minNightsRequired);
+      // Benefit-level scaling (only if not already scaled at promo-level)
+      if (!promoIsStacked && !promoIsSpanned && br?.minNightsRequired && br.minNightsRequired > 0) {
+        if (br.spanStays || br.nightsStackable) {
+          const divisor = br.minNightsRequired;
+          const multiplier = br.spanStays
+            ? booking.numNights / divisor
+            : Math.floor(booking.numNights / divisor);
           appliedValue *= multiplier;
           benefitBonusPoints *= multiplier;
         }
       }
 
-      // Apply benefit-level maxRedemptionValue cap
-      if (benefit.restrictions?.maxRedemptionValue) {
-        const maxValue = Number(benefit.restrictions.maxRedemptionValue);
+      // Benefit-level caps
+      if (br?.maxRedemptionValue) {
+        const maxValue = Number(br.maxRedemptionValue);
         const priorValue = usage?.benefitUsage?.get(benefit.id)?.totalValue ?? 0;
         const remainingCapacity = Math.max(0, maxValue - priorValue);
-        if (remainingCapacity <= 0) {
-          appliedValue = 0;
-          benefitBonusPoints = 0;
-        } else if (appliedValue > remainingCapacity) {
-          const ratio = remainingCapacity / appliedValue;
+        if (remainingCapacity < appliedValue) {
+          const ratio = appliedValue > 0 ? remainingCapacity / appliedValue : 0;
           appliedValue = remainingCapacity;
           benefitBonusPoints = Math.round(benefitBonusPoints * ratio);
         }
       }
 
-      // Apply benefit-level maxTotalBonusPoints cap
-      if (benefit.restrictions?.maxTotalBonusPoints) {
-        const maxPoints = benefit.restrictions.maxTotalBonusPoints;
+      if (br?.maxTotalBonusPoints) {
+        const maxPoints = br.maxTotalBonusPoints;
         const priorPoints = usage?.benefitUsage?.get(benefit.id)?.totalBonusPoints ?? 0;
         const remainingPoints = Math.max(0, maxPoints - priorPoints);
-
-        if (remainingPoints <= 0) {
-          appliedValue = 0;
-          benefitBonusPoints = 0;
-        } else if (benefitBonusPoints > remainingPoints) {
-          const ratio = remainingPoints / benefitBonusPoints;
+        if (remainingPoints < benefitBonusPoints) {
+          const ratio = benefitBonusPoints > 0 ? remainingPoints / benefitBonusPoints : 0;
           appliedValue *= ratio;
           benefitBonusPoints = Math.round(remainingPoints);
         }
@@ -462,79 +513,51 @@ export function calculateMatchedPromotions(
         eligibleNightsAtBooking:
           (usage?.benefitUsage?.get(benefit.id)?.eligibleNights ?? 0) + booking.numNights,
       });
+
       totalAppliedValue += appliedValue;
       totalBonusPoints += benefitBonusPoints;
     }
 
-    // Proportional scaling for spanStays
-    if (r?.spanStays && r?.minNightsRequired && r.minNightsRequired > 0) {
-      const multiplier = booking.numNights / r.minNightsRequired;
-      totalAppliedValue *= multiplier;
-      totalBonusPoints *= multiplier;
+    // Promotion-level scaling (Stackable / Span Stays)
+    const r = promo.restrictions;
+    if (r?.minNightsRequired && r.minNightsRequired > 0) {
+      if (r.spanStays || r.nightsStackable) {
+        const multiplier = r.spanStays
+          ? booking.numNights / r.minNightsRequired
+          : Math.floor(booking.numNights / r.minNightsRequired);
 
-      // Also scale individual benefit applications to maintain consistency
-      for (const ba of benefitApplications) {
-        ba.appliedValue *= multiplier;
-        ba.bonusPointsApplied = Math.round(ba.bonusPointsApplied * multiplier);
+        totalAppliedValue *= multiplier;
+        totalBonusPoints *= multiplier;
+        for (const ba of benefitApplications) {
+          ba.appliedValue *= multiplier;
+          ba.bonusPointsApplied = Math.round(ba.bonusPointsApplied * multiplier);
+        }
       }
     }
 
-    // Apply nightsStackable multiplier (Standard floor-based stacking)
-    // Only if spanStays is NOT active (since spanStays already scaled proportionally)
-    if (!r?.spanStays && r?.nightsStackable && r?.minNightsRequired && r.minNightsRequired > 0) {
-      const multiplier = Math.floor(booking.numNights / r.minNightsRequired);
-      totalAppliedValue *= multiplier;
-      totalBonusPoints *= multiplier;
-
-      // Also scale individual benefit applications to maintain consistency
-      for (const ba of benefitApplications) {
-        ba.appliedValue *= multiplier;
-        ba.bonusPointsApplied = Math.round(ba.bonusPointsApplied * multiplier);
-      }
-    }
-
-    // Apply maxRedemptionValue cap
+    // Promotion-level caps
     if (r?.maxRedemptionValue) {
       const maxValue = Number(r.maxRedemptionValue);
       const priorValue = usage?.totalValue ?? 0;
       const remainingCapacity = Math.max(0, maxValue - priorValue);
-      if (remainingCapacity <= 0) {
-        // Fully capped, set all to 0 but continue to push to matched
-        for (const benefit of benefitApplications) {
-          benefit.appliedValue = 0;
-          benefit.bonusPointsApplied = 0;
-        }
-        totalAppliedValue = 0;
-        totalBonusPoints = 0;
-      } else if (totalAppliedValue > remainingCapacity) {
-        const ratio = remainingCapacity / totalAppliedValue;
-        // Scale down each benefit application proportionally
-        for (const benefit of benefitApplications) {
-          benefit.appliedValue *= ratio;
-          benefit.bonusPointsApplied = Math.round(benefit.bonusPointsApplied * ratio);
+      if (totalAppliedValue > remainingCapacity) {
+        const ratio = totalAppliedValue > 0 ? remainingCapacity / totalAppliedValue : 0;
+        for (const ba of benefitApplications) {
+          ba.appliedValue *= ratio;
+          ba.bonusPointsApplied = Math.round(ba.bonusPointsApplied * ratio);
         }
         totalAppliedValue = remainingCapacity;
       }
     }
 
-    // Apply maxTotalBonusPoints cap
     if (r?.maxTotalBonusPoints) {
       const priorPoints = usage?.totalBonusPoints ?? 0;
       const remainingPoints = Math.max(0, r.maxTotalBonusPoints - priorPoints);
-      if (remainingPoints <= 0) {
-        // Fully capped, set all to 0 but continue to push to matched
-        for (const benefit of benefitApplications) {
-          benefit.appliedValue = 0;
-          benefit.bonusPointsApplied = 0;
-        }
-        totalAppliedValue = 0;
-        totalBonusPoints = 0;
-      } else if (totalBonusPoints > remainingPoints) {
-        const ratio = remainingPoints / totalBonusPoints;
-        // Scale down each benefit application proportionally
-        for (const benefit of benefitApplications) {
-          benefit.appliedValue *= ratio;
-          benefit.bonusPointsApplied = Math.round(benefit.bonusPointsApplied * ratio);
+      if (totalBonusPoints > remainingPoints) {
+        const ratio = totalBonusPoints > 0 ? remainingPoints / totalBonusPoints : 0;
+        for (const ba of benefitApplications) {
+          ba.appliedValue *= ratio;
+          ba.bonusPointsApplied = Math.round(ba.bonusPointsApplied * ratio);
         }
         totalAppliedValue = totalAppliedValue * ratio;
         totalBonusPoints = remainingPoints;
@@ -716,9 +739,14 @@ async function fetchPromotionUsage(
     }
   }
 
-  // Fetch eligibleStayCount for tiered promotions
-  const tieredPromos = promotions.filter((p) => p.tiers.length > 0);
-  for (const promo of tieredPromos) {
+  // Fetch eligibleStayCount for tiered or prerequisite promotions
+  const relevantPromos = promotions.filter(
+    (p) =>
+      p.tiers.length > 0 ||
+      p.restrictions?.prerequisiteStayCount ||
+      p.restrictions?.prerequisiteNightCount
+  );
+  for (const promo of relevantPromos) {
     const currentCheckIn = new Date(booking.checkIn);
     // Build sub-brand filter from restrictions
     let subBrandFilter: Record<string, unknown> = {};
@@ -739,12 +767,15 @@ async function fetchPromotionUsage(
       }
     }
 
-    const eligibleCount = await prisma.booking.count({
+    const eligibleStats = await prisma.booking.aggregate({
       where: {
         ...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
-        hotelChainId: promo.hotelChainId ?? undefined,
-        ...(promo.creditCardId !== null ? { creditCardId: promo.creditCardId } : {}),
-        ...(promo.shoppingPortalId !== null ? { shoppingPortalId: promo.shoppingPortalId } : {}),
+        hotelChainId:
+          promo.type === PromotionType.loyalty ? (promo.hotelChainId ?? undefined) : undefined,
+        creditCardId:
+          promo.type === PromotionType.credit_card ? (promo.creditCardId ?? undefined) : undefined,
+        shoppingPortalId:
+          promo.type === PromotionType.portal ? (promo.shoppingPortalId ?? undefined) : undefined,
         ...subBrandFilter,
         checkIn: {
           ...(promo.startDate ? { gte: promo.startDate } : {}),
@@ -752,14 +783,21 @@ async function fetchPromotionUsage(
           ...(promo.endDate ? { lte: promo.endDate } : {}),
         },
       },
+      _count: { id: true },
+      _sum: { numNights: true },
     });
+
     const existing = usageMap.get(promo.id) ?? {
       count: 0,
       totalValue: 0,
       totalBonusPoints: 0,
       benefitUsage: new Map(),
     };
-    usageMap.set(promo.id, { ...existing, eligibleStayCount: eligibleCount });
+    usageMap.set(promo.id, {
+      ...existing,
+      eligibleStayCount: eligibleStats._count.id,
+      eligibleNightCount: eligibleStats._sum.numNights ?? 0,
+    });
   }
 
   // Fetch eligibleStayNights for spanStays promotions
@@ -857,6 +895,8 @@ export function getConstrainedPromotions(promotions: MatchingPromotion[]): Match
       p.restrictions?.maxRedemptionValue ||
       p.restrictions?.maxTotalBonusPoints ||
       p.restrictions?.spanStays ||
+      p.restrictions?.prerequisiteStayCount ||
+      p.restrictions?.prerequisiteNightCount ||
       p.tiers.length > 0 ||
       p.restrictions?.oncePerSubBrand ||
       p.benefits.some(
@@ -866,7 +906,9 @@ export function getConstrainedPromotions(promotions: MatchingPromotion[]): Match
           b.restrictions?.maxRewardCount ||
           b.restrictions?.maxRedemptionValue ||
           b.restrictions?.maxTotalBonusPoints ||
-          b.restrictions?.spanStays
+          b.restrictions?.spanStays ||
+          b.restrictions?.prerequisiteStayCount ||
+          b.restrictions?.prerequisiteNightCount
       ) ||
       p.tiers.some((t) =>
         t.benefits.some(
@@ -876,7 +918,9 @@ export function getConstrainedPromotions(promotions: MatchingPromotion[]): Match
             b.restrictions?.maxRewardCount ||
             b.restrictions?.maxRedemptionValue ||
             b.restrictions?.maxTotalBonusPoints ||
-            b.restrictions?.spanStays
+            b.restrictions?.spanStays ||
+            b.restrictions?.prerequisiteStayCount ||
+            b.restrictions?.prerequisiteNightCount
         )
       )
   );

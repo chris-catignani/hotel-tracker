@@ -44,6 +44,8 @@ function mapApiRestrictionsToForm(
     registrationDate: "",
     tieInRequiresPayment: r.tieInRequiresPayment ?? false,
     allowedPaymentTypes: r.allowedPaymentTypes ?? [],
+    prerequisiteStayCount: r.prerequisiteStayCount ? String(r.prerequisiteStayCount) : "",
+    prerequisiteNightCount: r.prerequisiteNightCount ? String(r.prerequisiteNightCount) : "",
     subBrandIncludeIds: (r.subBrandRestrictions ?? [])
       .filter((s) => s.mode === "include")
       .map((s) => s.hotelChainSubBrandId),
@@ -101,6 +103,8 @@ export default function EditPromotionPage() {
             (tier): PromotionTierFormData => ({
               minStays: tier.minStays,
               maxStays: tier.maxStays,
+              minNights: tier.minNights,
+              maxNights: tier.maxNights,
               benefits: (tier.benefits || []).map((b, i) => mapApiBenefitToForm(b, i)),
             })
           ),

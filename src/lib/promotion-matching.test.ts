@@ -47,6 +47,8 @@ function makeRestrictions(overrides: Partial<TestRestrictions> = {}): TestRestri
     validDaysAfterRegistration: null,
     tieInRequiresPayment: false,
     allowedPaymentTypes: [],
+    prerequisiteStayCount: null,
+    prerequisiteNightCount: null,
     subBrandRestrictions: [],
     tieInCards: [],
     ...overrides,
@@ -713,9 +715,30 @@ describe("promotion-matching", () => {
     return makePromo({
       benefits: [],
       tiers: [
-        { id: "tier-1", minStays: 1, maxStays: 1, benefits: [tier1Benefit] },
-        { id: "tier-2", minStays: 2, maxStays: 2, benefits: [tier2Benefit] },
-        { id: "tier-3", minStays: 3, maxStays: null, benefits: [tier3Benefit] },
+        {
+          id: "tier-1",
+          minStays: 1,
+          maxStays: 1,
+          minNights: null,
+          maxNights: null,
+          benefits: [tier1Benefit],
+        },
+        {
+          id: "tier-2",
+          minStays: 2,
+          maxStays: 2,
+          minNights: null,
+          maxNights: null,
+          benefits: [tier2Benefit],
+        },
+        {
+          id: "tier-3",
+          minStays: 3,
+          maxStays: null,
+          minNights: null,
+          maxNights: null,
+          benefits: [tier3Benefit],
+        },
       ],
     });
   }
@@ -765,7 +788,16 @@ describe("promotion-matching", () => {
     // Tiers only cover stay #2+, so stay #1 (eligibleStayCount=0) has no match
     const promo = makePromo({
       benefits: [],
-      tiers: [{ id: "tier-1", minStays: 2, maxStays: null, benefits: [tier2Benefit] }],
+      tiers: [
+        {
+          id: "tier-1",
+          minStays: 2,
+          maxStays: null,
+          minNights: null,
+          maxNights: null,
+          benefits: [tier2Benefit],
+        },
+      ],
     });
     const matched = calculateMatchedPromotions(mockBooking, [promo]);
     expect(matched).toHaveLength(0);
@@ -775,7 +807,16 @@ describe("promotion-matching", () => {
     // Tier only covers stay #2+; eligibleStayCount=1 means this is stay #2
     const promo = makePromo({
       benefits: [],
-      tiers: [{ id: "tier-1", minStays: 2, maxStays: null, benefits: [tier2Benefit] }],
+      tiers: [
+        {
+          id: "tier-1",
+          minStays: 2,
+          maxStays: null,
+          minNights: null,
+          maxNights: null,
+          benefits: [tier2Benefit],
+        },
+      ],
     });
     const priorUsage = new Map([
       [promo.id, { count: 0, totalValue: 0, totalBonusPoints: 0, eligibleStayCount: 1 }],
@@ -788,7 +829,16 @@ describe("promotion-matching", () => {
   it("tiered: maxStays boundary respected (stay at maxStays+1 → no match)", () => {
     const promo = makePromo({
       benefits: [],
-      tiers: [{ id: "tier-1", minStays: 1, maxStays: 2, benefits: [tier1Benefit] }],
+      tiers: [
+        {
+          id: "tier-1",
+          minStays: 1,
+          maxStays: 2,
+          minNights: null,
+          maxNights: null,
+          benefits: [tier1Benefit],
+        },
+      ],
     });
     const priorUsage = new Map([
       [promo.id, { count: 2, totalValue: 0, totalBonusPoints: 0, eligibleStayCount: 2 }],
@@ -1496,6 +1546,8 @@ describe("getConstrainedPromotions", () => {
           id: "tier-1",
           minStays: 1,
           maxStays: 5,
+          minNights: null,
+          maxNights: null,
           benefits: [],
         },
       ],
