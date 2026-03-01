@@ -233,7 +233,7 @@ export function PromotionForm({
 
     const bErrors = benefits.map(validateBenefit);
     const tErrors = tiers.map((t) => ({
-      minStays: !t.minStays ? "Required" : "",
+      minStays: !t.minStays && !t.minNights ? "Qualification Required" : "",
       benefits: t.benefits.map(validateBenefit),
     }));
 
@@ -677,20 +677,21 @@ export function PromotionForm({
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <Label>Min Stay # *</Label>
+                      <Label>Min Stay #</Label>
                       <Input
                         type="number"
                         step="1"
                         min="1"
-                        value={tier.minStays || ""}
+                        value={tier.minStays ?? ""}
                         onChange={(e) =>
                           handleTierChange(tierIndex, {
                             ...tier,
-                            minStays: parseInt(e.target.value, 10) || 0,
+                            minStays: e.target.value ? parseInt(e.target.value, 10) : null,
                           })
                         }
                         data-testid={`tier-min-stays-${tierIndex}`}
                         error={showErrors ? tierErrors[tierIndex].minStays : ""}
+                        placeholder="e.g. 1"
                       />
                     </div>
                     <div className="space-y-2">
@@ -703,11 +704,48 @@ export function PromotionForm({
                         onChange={(e) =>
                           handleTierChange(tierIndex, {
                             ...tier,
-                            maxStays: e.target.value ? parseInt(e.target.value) : null,
+                            maxStays: e.target.value ? parseInt(e.target.value, 10) : null,
                           })
                         }
                         placeholder="No limit"
                         data-testid={`tier-max-stays-${tierIndex}`}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>Min Night #</Label>
+                      <Input
+                        type="number"
+                        step="1"
+                        min="1"
+                        value={tier.minNights ?? ""}
+                        onChange={(e) =>
+                          handleTierChange(tierIndex, {
+                            ...tier,
+                            minNights: e.target.value ? parseInt(e.target.value, 10) : null,
+                          })
+                        }
+                        data-testid={`tier-min-nights-${tierIndex}`}
+                        placeholder="e.g. 5"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Max Night # (optional)</Label>
+                      <Input
+                        type="number"
+                        step="1"
+                        min="1"
+                        value={tier.maxNights ?? ""}
+                        onChange={(e) =>
+                          handleTierChange(tierIndex, {
+                            ...tier,
+                            maxNights: e.target.value ? parseInt(e.target.value, 10) : null,
+                          })
+                        }
+                        placeholder="No limit"
+                        data-testid={`tier-max-nights-${tierIndex}`}
                       />
                     </div>
                   </div>
