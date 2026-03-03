@@ -27,6 +27,7 @@ export interface CalculationDetail {
 export interface NetCostBookingPromotionBenefit {
   appliedValue: string | number;
   eligibleNightsAtBooking?: number | null;
+  isOrphaned?: boolean;
   promotionBenefit: {
     rewardType: string;
     valueType: string;
@@ -95,6 +96,7 @@ export interface NetCostBooking {
     autoApplied?: boolean;
     verified?: boolean;
     eligibleNightsAtBooking?: number | null;
+    isOrphaned?: boolean;
     promotion: {
       name: string;
       type?: string;
@@ -121,6 +123,7 @@ export interface PromotionBreakdown extends CalculationDetail {
   id: string;
   name: string;
   appliedValue: number;
+  isOrphaned: boolean;
 }
 
 export interface NetCostBreakdown {
@@ -232,10 +235,13 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
       });
     }
 
+    const isPromoOrphaned = bp.isOrphaned ?? false;
+
     for (const ba of benefits) {
       const b = ba.promotionBenefit;
       const bValue = Number(b.value);
       const bApplied = ba.appliedValue != null ? Number(ba.appliedValue) : 0;
+      const isOrphaned = ba.isOrphaned ?? isPromoOrphaned;
 
       const restrictions = b.restrictions || bp.promotion.restrictions;
       const isSpanned = !!(restrictions?.spanStays && restrictions?.minNightsRequired);
@@ -292,6 +298,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
 
           const segmentEndProgress = (currentStart + nightsInThisSegment) % minNights;
           const isCycleFinished = segmentEndProgress === 0;
+          const isSegmentOrphaned = isOrphaned && !isCycleFinished;
 
           // 'Fill Up' strategy: Give this segment its full expected value until we run out of bApplied
           const expectedSegmentValue = expectedValuePerNight * nightsInThisSegment;
@@ -300,7 +307,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
 
           const isSegmentCapped =
             expectedSegmentValue > 0 && segmentValue < expectedSegmentValue - 0.001;
-          const isMaxedOut = isSegmentCapped && segmentValue < 0.01;
+          const isMaxedOut = isSegmentCapped && segmentValue < 0.01 && !isOrphaned;
 
           let label = "";
           let description = "";
@@ -310,16 +317,24 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
               label = `Full Reward Cycle (${minNights}/${minNights} nights)`;
               description = `A complete reward cycle finished within this stay.`;
             } else {
-              label = `New Reward Cycle (${nightsInThisSegment}/${minNights} nights)`;
-              description = `Started a new reward cycle. Pending more nights to complete.`;
+              label = isSegmentOrphaned
+                ? `Orphaned Reward Cycle (${nightsInThisSegment}/${minNights} nights)`
+                : `New Reward Cycle (${nightsInThisSegment}/${minNights} nights)`;
+              description = isSegmentOrphaned
+                ? `Started a new reward cycle, but it cannot be completed.`
+                : `Started a new reward cycle. Pending more nights to complete.`;
             }
           } else {
             if (isCycleFinished) {
               label = `Cycle Completion (${nightsInThisSegment} nights)`;
               description = `Completed the reward cycle started in a previous stay.`;
             } else {
-              label = `Cycle Progress (${nightsInThisSegment} nights)`;
-              description = `Continued the reward cycle started in a previous stay. Still pending.`;
+              label = isSegmentOrphaned
+                ? `Orphaned Cycle Progress (${nightsInThisSegment} nights)`
+                : `Cycle Progress (${nightsInThisSegment} nights)`;
+              description = isSegmentOrphaned
+                ? `Continued the reward cycle started in a previous stay, but it cannot be completed.`
+                : `Continued the reward cycle started in a previous stay. Still pending.`;
             }
           }
 
@@ -350,12 +365,14 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
               : nightFormula +
                 ` = ${formatCurrency(segmentValue)}` +
                 capSuffix +
-                (isCycleFinished ? "" : " (pending)"),
+                (isCycleFinished ? "" : isSegmentOrphaned ? " (orphaned)" : " (pending)"),
             description: isMaxedOut
               ? "This segment no longer applies because the promotion has been maxed out."
-              : description +
-                (isCycleFinished ? " (Goal Met!)" : " (Pending)") +
-                (isSegmentCapped ? " Reduced by redemption caps." : ""),
+              : isSegmentOrphaned
+                ? "There are not enough future bookings to fulfill this promotion."
+                : description +
+                  (isCycleFinished ? " (Goal Met!)" : " (Pending)") +
+                  (isSegmentCapped ? " Reduced by redemption caps." : ""),
           });
 
           nightsAccountedFor += nightsInThisSegment;
@@ -371,16 +388,21 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
               } required)`
             : "";
 
-        const isMaxedOutOverall = bApplied < 0.01 && expectedValuePerNight * nightsInStay > 0.01;
+        const isMaxedOutOverall =
+          bApplied < 0.01 && expectedValuePerNight * nightsInStay > 0.01 && !isOrphaned;
 
         const proportionalSuffix =
           pendingRatio && !isMaxedOutOverall
-            ? ` This bonus is pending additional stays${pendingRatio}.`
+            ? isOrphaned
+              ? " (Not enough future bookings to fulfill)"
+              : ` This bonus is pending additional stays${pendingRatio}.`
             : "";
 
         benefitDescriptionLine = isMaxedOutOverall
           ? "This promotion has been maxed out and no further rewards apply."
-          : `Earned proportional rewards for ${nightsInStay} nights towards a ${minNights}-night requirement.${proportionalSuffix}`;
+          : isOrphaned
+            ? "There are not enough future bookings to fulfill this promotion."
+            : `Earned proportional rewards for ${nightsInStay} nights towards a ${minNights}-night requirement.${proportionalSuffix}`;
 
         if (bApplied < expectedValuePerNight * nightsInStay - 0.001 && !isMaxedOutOverall) {
           benefitDescriptionLine += " Reduced by redemption caps.";
@@ -415,7 +437,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
             break;
         }
 
-        const isMaxedOutOverall = isCapped && bApplied < 0.01;
+        const isMaxedOutOverall = isCapped && bApplied < 0.01 && !isOrphaned;
         const multiplierPrefix = appliedMultiplier > 1 ? `${appliedMultiplier} × ` : "";
         const capSuffix = isCapped ? " (capped)" : "";
 
@@ -463,16 +485,22 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
 
         benefitDescriptionLine = isMaxedOutOverall
           ? "This promotion has been maxed out and no further rewards apply."
-          : benefitDescription;
+          : isOrphaned
+            ? "There are not enough future bookings to fulfill this promotion."
+            : benefitDescription;
 
         // Standard segment
         benefitSegments.push({
           label: `Benefit: ${b.rewardType}`,
           value: bApplied,
-          formula: isMaxedOutOverall ? "" : `${benefitFormula} = ${formatCurrency(bApplied)}`,
+          formula: isMaxedOutOverall
+            ? ""
+            : `${benefitFormula} = ${formatCurrency(bApplied)}` + (isOrphaned ? " (orphaned)" : ""),
           description: isMaxedOutOverall
             ? "This segment no longer applies because the promotion has been maxed out."
-            : benefitDescription,
+            : isOrphaned
+              ? "There are not enough future bookings to fulfill this promotion."
+              : benefitDescription,
         });
       }
 
@@ -489,10 +517,11 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
     );
 
     return {
-      id: bp.id || String(index),
+      id: bp.promotionId || bp.id || String(index),
       name: bp.promotion.name,
       appliedValue: totalAppliedValue,
-      label: "Promotion",
+      isOrphaned: isPromoOrphaned,
+      label: bp.promotion.name,
       description: `Rewards from ${bp.promotion.name}`,
       groups,
     };

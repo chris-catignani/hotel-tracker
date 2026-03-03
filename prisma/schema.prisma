@@ -307,18 +307,17 @@ model Promotion {
   benefits         PromotionBenefit[]
   tiers            PromotionTier[]
   bookingPromotions BookingPromotion[]
-  userPromotions   UserPromotion[]
+  userPromotions   UserPromotion?
 
   @@map("promotions")
 }
 
 model UserPromotion {
   id               String    @id @default(cuid())
-  promotionId      String    @map("promotion_id")
+  promotionId      String    @unique @map("promotion_id")
   registrationDate DateTime  @map("registration_date") @db.Date
   promotion        Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
 
-  @@unique([promotionId])
   @@map("user_promotions")
 }
 
@@ -363,6 +362,7 @@ model BookingPromotion {
   promotion           Promotion                 @relation(fields: [promotionId], references: [id], onDelete: Cascade)
   appliedValue        Decimal                   @map("applied_value") @db.Decimal(10, 2)
   bonusPointsApplied  Int?                      @map("bonus_points_applied")
+  isOrphaned          Boolean                   @default(false) @map("is_orphaned")
   autoApplied         Boolean                   @default(true) @map("auto_applied")
   verified            Boolean                   @default(false)
   eligibleNightsAtBooking Int?                  @map("eligible_nights_at_booking")
@@ -379,6 +379,7 @@ model BookingPromotionBenefit {
   promotionBenefit   PromotionBenefit @relation(fields: [promotionBenefitId], references: [id], onDelete: Cascade)
   appliedValue       Decimal          @map("applied_value") @db.Decimal(10, 2)
   bonusPointsApplied Int?             @map("bonus_points_applied")
+  isOrphaned         Boolean          @default(false) @map("is_orphaned")
   eligibleNightsAtBooking Int?        @map("eligible_nights_at_booking")
 
   @@map("booking_promotion_benefits")

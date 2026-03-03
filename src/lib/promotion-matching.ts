@@ -147,6 +147,7 @@ interface BenefitApplication {
   appliedValue: number;
   bonusPointsApplied: number;
   eligibleNightsAtBooking?: number;
+  isOrphaned?: boolean;
 }
 
 interface MatchedPromotion {
@@ -154,6 +155,7 @@ interface MatchedPromotion {
   appliedValue: number;
   bonusPointsApplied: number;
   eligibleNightsAtBooking?: number;
+  isOrphaned?: boolean;
   benefitApplications: BenefitApplication[];
 }
 
@@ -568,6 +570,7 @@ export function calculateMatchedPromotions(
         bonusPointsApplied: Math.round(benefitBonusPoints),
         eligibleNightsAtBooking:
           (usage?.benefitUsage?.get(benefit.id)?.eligibleNights ?? 0) + booking.numNights,
+        isOrphaned: false,
       });
 
       totalAppliedValue += appliedValue;
@@ -625,6 +628,7 @@ export function calculateMatchedPromotions(
       appliedValue: totalAppliedValue,
       bonusPointsApplied: Math.round(totalBonusPoints),
       eligibleNightsAtBooking: (usage?.eligibleStayNights ?? 0) + booking.numNights,
+      isOrphaned: false,
       benefitApplications,
     });
   }
@@ -669,12 +673,14 @@ async function applyMatchedPromotions(
         bonusPointsApplied: match.bonusPointsApplied > 0 ? match.bonusPointsApplied : null,
         autoApplied: true,
         eligibleNightsAtBooking: match.eligibleNightsAtBooking,
+        isOrphaned: match.isOrphaned ?? false,
         benefitApplications: {
           create: match.benefitApplications.map((ba) => ({
             promotionBenefitId: ba.promotionBenefitId,
             appliedValue: ba.appliedValue,
             bonusPointsApplied: ba.bonusPointsApplied > 0 ? ba.bonusPointsApplied : null,
             eligibleNightsAtBooking: ba.eligibleNightsAtBooking,
+            isOrphaned: ba.isOrphaned ?? false,
           })),
         },
       },
@@ -999,7 +1005,7 @@ export async function reevaluateBookings(bookingIds: string[]): Promise<void> {
   ).map((p) => ({
     ...p,
     registrationDate:
-      p.userPromotions && p.userPromotions.length > 0 ? p.userPromotions[0].registrationDate : null,
+      p.userPromotions && p.userPromotions.length > 0 ? p.userPromotions.registrationDate : null,
   }));
 
   const bookings = await prisma.booking.findMany({
@@ -1041,7 +1047,7 @@ export async function matchPromotionsForBooking(bookingId: string): Promise<stri
   ).map((p) => ({
     ...p,
     registrationDate:
-      p.userPromotions && p.userPromotions.length > 0 ? p.userPromotions[0].registrationDate : null,
+      p.userPromotions && p.userPromotions.length > 0 ? p.userPromotions.registrationDate : null,
   }));
 
   // Get all promotions with constraints (including tier-based stay counting)
@@ -1056,48 +1062,64 @@ export async function matchPromotionsForBooking(bookingId: string): Promise<stri
 }
 
 /**
+ * Finds all bookings potentially affected by changes to a list of promotions.
+ * This includes bookings that already have the promotion applied AND bookings
+ * that match the promotion's core criteria (hotel chain, dates, etc.).
+ */
+export async function getAffectedBookingIds(promotionIds: string[]): Promise<string[]> {
+  if (promotionIds.length === 0) return [];
+
+  const promotions = await prisma.promotion.findMany({
+    where: { id: { in: promotionIds } },
+  });
+
+  if (promotions.length === 0) return [];
+
+  const allAffectedIds = new Set<string>();
+
+  for (const promotion of promotions) {
+    // Find bookings that match the promotion's core criteria or already have it applied
+    const affectedBookings = await prisma.booking.findMany({
+      where: {
+        AND: [
+          {
+            OR: [
+              { hotelChainId: promotion.hotelChainId ?? undefined },
+              { creditCardId: promotion.creditCardId ?? undefined },
+              { shoppingPortalId: promotion.shoppingPortalId ?? undefined },
+              {
+                bookingPromotions: {
+                  some: { promotionId: promotion.id },
+                },
+              },
+            ].filter((condition) => {
+              const firstKey = Object.keys(condition)[0] as keyof typeof condition;
+              const value = condition[firstKey];
+              return value !== undefined && value !== null;
+            }),
+          },
+          {
+            checkIn: {
+              gte: promotion.startDate ?? undefined,
+              lte: promotion.endDate ?? undefined,
+            },
+          },
+        ],
+      },
+      select: { id: true },
+    });
+
+    affectedBookings.forEach((b) => allAffectedIds.add(b.id));
+  }
+
+  return Array.from(allAffectedIds);
+}
+
+/**
  * Re-evaluates and applies promotions for all bookings potentially affected by a promotion change.
  * Minimizes database calls by fetching active promotions once and processing bookings in parallel.
  */
 export async function matchPromotionsForAffectedBookings(promotionId: string): Promise<void> {
-  const promotion = await prisma.promotion.findUnique({
-    where: { id: promotionId },
-  });
-
-  if (!promotion) return;
-
-  // Find bookings that match the promotion's core criteria or already have it applied
-  const affectedBookings = await prisma.booking.findMany({
-    where: {
-      AND: [
-        {
-          OR: [
-            { hotelChainId: promotion.hotelChainId ?? undefined },
-            { creditCardId: promotion.creditCardId ?? undefined },
-            { shoppingPortalId: promotion.shoppingPortalId ?? undefined },
-            {
-              bookingPromotions: {
-                some: { promotionId: promotion.id },
-              },
-            },
-          ].filter((condition) => {
-            // Remove conditions that are undefined/null to avoid matching everything
-            const firstKey = Object.keys(condition)[0] as keyof typeof condition;
-            const value = condition[firstKey];
-            return value !== undefined && value !== null;
-          }),
-        },
-        // Date range filtering: only bookings that could potentially match the promotion
-        {
-          checkIn: {
-            gte: promotion.startDate ?? undefined,
-            lte: promotion.endDate ?? undefined,
-          },
-        },
-      ],
-    },
-    select: { id: true },
-  });
-
-  await reevaluateBookings(affectedBookings.map((b) => b.id));
+  const affectedIds = await getAffectedBookingIds([promotionId]);
+  await reevaluateBookings(affectedIds);
 }

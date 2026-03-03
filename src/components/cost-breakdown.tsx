@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Badge } from "@/components/ui/badge";
 import { NetCostBreakdown, CalculationDetail } from "@/lib/net-cost";
 import { formatCurrency } from "@/lib/utils";
 
@@ -234,9 +235,20 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
                   <div key={p.id} className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-1.5">
                       <span className="text-muted-foreground">{p.name}</span>
+                      {p.isOrphaned && (
+                        <Badge
+                          variant="outline"
+                          className="text-[9px] h-4 px-1 py-0 border-orange-200 bg-orange-50 text-orange-700 font-medium"
+                        >
+                          Orphaned
+                        </Badge>
+                      )}
                       <CalculationInfo calc={p} />
                     </div>
-                    <span data-testid={`breakdown-promo-item-${p.id}`} className="text-green-600">
+                    <span
+                      data-testid={`breakdown-promo-item-${p.id}`}
+                      className={p.appliedValue > 0 ? "text-green-600" : "text-muted-foreground"}
+                    >
                       -{formatCurrency(p.appliedValue)}
                     </span>
                   </div>
