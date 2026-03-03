@@ -1734,3 +1734,73 @@ describe("spanStays", () => {
     expect(matched[0].appliedValue).toBe(75);
   });
 });
+
+describe("promotion-matching architecture: Core vs Fulfillment", () => {
+  it("should separate core eligibility from fulfillment status (insufficient nights)", () => {
+    const promo = makePromo({
+      type: PromotionType.loyalty,
+      hotelChainId: "chain-3",
+      creditCardId: null,
+      restrictions: makeRestrictions({
+        minNightsRequired: 5, // mockBooking only has 3
+        spanStays: false, // Must be 5 in one stay
+      }),
+    });
+
+    // In the new architecture, this should fail fulfillment.
+    // Since calculateMatchedPromotions currently returns an empty list for any failure,
+    // we verify it behaves correctly as a non-match.
+    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    expect(matched).toHaveLength(0);
+  });
+
+  it("should correctly handle tiered prerequisites in the rule-based engine", () => {
+    const tieredPromo = makePromo({
+      type: PromotionType.loyalty,
+      hotelChainId: "chain-3",
+      creditCardId: null,
+      tiers: [
+        {
+          id: "tier-1",
+          minStays: 2, // Requires 1 prior stay
+          maxStays: null,
+          minNights: null,
+          maxNights: null,
+          benefits: [
+            {
+              id: "b1",
+              rewardType: PromotionRewardType.cashback,
+              valueType: PromotionBenefitValueType.fixed,
+              value: new Prisma.Decimal(100),
+              certType: null,
+              pointsMultiplierBasis: null,
+              sortOrder: 0,
+              restrictions: null,
+            },
+          ],
+        },
+      ],
+    });
+
+    // 1. No prior stays -> stay #1 -> does not match tier 1
+    const match1 = calculateMatchedPromotions(mockBooking, [tieredPromo], new Map());
+    expect(match1).toHaveLength(0);
+
+    // 2. One prior stay -> stay #2 -> matches tier 1
+    const priorUsage = new Map([
+      [
+        tieredPromo.id,
+        {
+          count: 0,
+          totalValue: 0,
+          totalBonusPoints: 0,
+          eligibleStayCount: 1,
+          benefitUsage: new Map(),
+        },
+      ],
+    ]);
+    const match2 = calculateMatchedPromotions(mockBooking, [tieredPromo], priorUsage);
+    expect(match2).toHaveLength(1);
+    expect(match2[0].appliedValue).toBe(100);
+  });
+});
