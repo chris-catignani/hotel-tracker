@@ -124,4 +124,34 @@ describe("CostBreakdown", () => {
     expect(screen.queryByText("Loyalty Points Value")).not.toBeInTheDocument();
     expect(screen.queryByText("Promotion Savings")).not.toBeInTheDocument();
   });
+
+  it("should render promotion section for orphaned promos even with 0 savings", async () => {
+    const orphanedBreakdown: NetCostBreakdown = {
+      ...mockBreakdown,
+      promoSavings: 0,
+      promotions: [
+        {
+          id: "orphaned-1",
+          name: "Orphaned Promo",
+          appliedValue: 0,
+          isOrphaned: true,
+          label: "Orphaned",
+          description: "desc",
+          groups: [],
+        },
+      ],
+      netCost: 100,
+    };
+
+    await act(async () => {
+      render(<CostBreakdown breakdown={orphanedBreakdown} />);
+    });
+
+    expect(screen.getByText("Promotion Savings")).toBeInTheDocument();
+    expect(screen.getByTestId("breakdown-promo-savings")).toHaveTextContent("-$0.00");
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: /Promotion Savings/i }));
+    expect(screen.getByText("Orphaned Promo")).toBeInTheDocument();
+  });
 });

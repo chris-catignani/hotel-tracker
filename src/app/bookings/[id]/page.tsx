@@ -27,7 +27,7 @@ import { CostBreakdown } from "@/components/cost-breakdown";
 interface BookingPromotionBenefit {
   appliedValue: string | number;
   eligibleNightsAtBooking?: number | null;
-  isUnfulfillable?: boolean;
+  isOrphaned?: boolean;
   promotionBenefit: {
     rewardType: string;
     valueType: string;
@@ -45,7 +45,7 @@ interface BookingPromotion {
   bookingId: string;
   promotionId: string;
   appliedValue: string | number;
-  isUnfulfillable: boolean;
+  isOrphaned: boolean;
   eligibleNightsAtBooking?: number | null;
   autoApplied: boolean;
   verified: boolean;

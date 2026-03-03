@@ -432,6 +432,11 @@ export function calculateMatchedPromotions(
 
       // Lookahead: Prerequisites
       const prereqStays = r.prerequisiteStayCount != null ? Number(r.prerequisiteStayCount) : 0;
+      if (promo.name?.includes("Orphaned")) {
+        console.log(
+          `[DEBUG] Promo: ${promo.name}, prereqStays: ${prereqStays}, potentialStays: ${potentialStays}`
+        );
+      }
       if (prereqStays > 0 && potentialStays < prereqStays + 1) {
         isPromoOrphaned = true;
       }

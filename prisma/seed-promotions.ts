@@ -255,7 +255,7 @@ export async function seedPromotions() {
   // Seed BookingPromotion application logic moved from seed-bookings.ts
   await seedBookingPromotions();
 
-  // Automate detection of isUnfulfillable by re-evaluating all seeded bookings
+  // Automate detection of isOrphaned by re-evaluating all seeded bookings
   const seededBookingPromos = await prisma.bookingPromotion.findMany({
     select: { bookingId: true },
     distinct: ["bookingId"],

@@ -27,7 +27,7 @@ export interface CalculationDetail {
 export interface NetCostBookingPromotionBenefit {
   appliedValue: string | number;
   eligibleNightsAtBooking?: number | null;
-  isUnfulfillable?: boolean;
+  isOrphaned?: boolean;
   promotionBenefit: {
     rewardType: string;
     valueType: string;
@@ -93,7 +93,7 @@ export interface NetCostBooking {
     bookingId?: string;
     promotionId?: string;
     appliedValue: string | number;
-    isUnfulfillable?: boolean;
+    isOrphaned?: boolean;
     autoApplied?: boolean;
     verified?: boolean;
     eligibleNightsAtBooking?: number | null;
@@ -123,7 +123,7 @@ export interface PromotionBreakdown extends CalculationDetail {
   id: string;
   name: string;
   appliedValue: number;
-  isUnfulfillable: boolean;
+  isOrphaned: boolean;
 }
 
 export interface NetCostBreakdown {
@@ -167,7 +167,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
   // - bookByDate: booking must be created before cutoff date
   // - registrationDeadline: user must have registered by this date
   // - validDaysAfterRegistration: personal validity window starting from the registration date
-  // - isUnfulfillable: promotion is pending but there are not enough future bookings to meet the requirements
+  // - isOrphaned: promotion is pending but there are not enough future bookings to meet the requirements
   // The final appliedValue shown below is the result after all constraints are applied.
 
   // 1. Promotions
@@ -236,13 +236,13 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
       });
     }
 
-    const isPromoUnfulfillable = bp.isUnfulfillable ?? false;
+    const isPromoUnfulfillable = bp.isOrphaned ?? false;
 
     for (const ba of benefits) {
       const b = ba.promotionBenefit;
       const bValue = Number(b.value);
       const bApplied = ba.appliedValue != null ? Number(ba.appliedValue) : 0;
-      const isUnfulfillable = ba.isUnfulfillable ?? isPromoUnfulfillable;
+      const isOrphaned = ba.isOrphaned ?? isPromoUnfulfillable;
 
       const restrictions = b.restrictions || bp.promotion.restrictions;
       const isSpanned = !!(restrictions?.spanStays && restrictions?.minNightsRequired);
@@ -299,7 +299,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
 
           const segmentEndProgress = (currentStart + nightsInThisSegment) % minNights;
           const isCycleFinished = segmentEndProgress === 0;
-          const isSegmentUnfulfillable = isUnfulfillable && !isCycleFinished;
+          const isSegmentUnfulfillable = isOrphaned && !isCycleFinished;
 
           // 'Fill Up' strategy: Give this segment its full expected value until we run out of bApplied
           const expectedSegmentValue = expectedValuePerNight * nightsInThisSegment;
@@ -308,7 +308,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
 
           const isSegmentCapped =
             expectedSegmentValue > 0 && segmentValue < expectedSegmentValue - 0.001;
-          const isMaxedOut = isSegmentCapped && segmentValue < 0.01 && !isUnfulfillable;
+          const isMaxedOut = isSegmentCapped && segmentValue < 0.01 && !isOrphaned;
 
           let label = "";
           let description = "";
@@ -366,11 +366,11 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
               : nightFormula +
                 ` = ${formatCurrency(segmentValue)}` +
                 capSuffix +
-                (isCycleFinished ? "" : isSegmentUnfulfillable ? " (unfulfillable)" : " (pending)"),
+                (isCycleFinished ? "" : isSegmentUnfulfillable ? " (orphaned)" : " (pending)"),
             description: isMaxedOut
               ? "This segment no longer applies because the promotion has been maxed out."
               : isSegmentUnfulfillable
-                ? "This bonus cannot be fulfilled because there are not enough future bookings."
+                ? "There are not enough future bookings to fulfill this promotion."
                 : description +
                   (isCycleFinished ? " (Goal Met!)" : " (Pending)") +
                   (isSegmentCapped ? " Reduced by redemption caps." : ""),
@@ -390,18 +390,18 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
             : "";
 
         const isMaxedOutOverall =
-          bApplied < 0.01 && expectedValuePerNight * nightsInStay > 0.01 && !isUnfulfillable;
+          bApplied < 0.01 && expectedValuePerNight * nightsInStay > 0.01 && !isOrphaned;
 
         const proportionalSuffix =
           pendingRatio && !isMaxedOutOverall
-            ? isUnfulfillable
+            ? isOrphaned
               ? " (Not enough future bookings to fulfill)"
               : ` This bonus is pending additional stays${pendingRatio}.`
             : "";
 
         benefitDescriptionLine = isMaxedOutOverall
           ? "This promotion has been maxed out and no further rewards apply."
-          : isUnfulfillable
+          : isOrphaned
             ? "There are not enough future bookings to fulfill this promotion."
             : `Earned proportional rewards for ${nightsInStay} nights towards a ${minNights}-night requirement.${proportionalSuffix}`;
 
@@ -438,7 +438,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
             break;
         }
 
-        const isMaxedOutOverall = isCapped && bApplied < 0.01 && !isUnfulfillable;
+        const isMaxedOutOverall = isCapped && bApplied < 0.01 && !isOrphaned;
         const multiplierPrefix = appliedMultiplier > 1 ? `${appliedMultiplier} × ` : "";
         const capSuffix = isCapped ? " (capped)" : "";
 
@@ -486,7 +486,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
 
         benefitDescriptionLine = isMaxedOutOverall
           ? "This promotion has been maxed out and no further rewards apply."
-          : isUnfulfillable
+          : isOrphaned
             ? "There are not enough future bookings to fulfill this promotion."
             : benefitDescription;
 
@@ -496,12 +496,11 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
           value: bApplied,
           formula: isMaxedOutOverall
             ? ""
-            : `${benefitFormula} = ${formatCurrency(bApplied)}` +
-              (isUnfulfillable ? " (unfulfillable)" : ""),
+            : `${benefitFormula} = ${formatCurrency(bApplied)}` + (isOrphaned ? " (orphaned)" : ""),
           description: isMaxedOutOverall
             ? "This segment no longer applies because the promotion has been maxed out."
-            : isUnfulfillable
-              ? "This bonus cannot be fulfilled because there are not enough future bookings."
+            : isOrphaned
+              ? "There are not enough future bookings to fulfill this promotion."
               : benefitDescription,
         });
       }
@@ -522,7 +521,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
       id: bp.promotionId || bp.id || String(index),
       name: bp.promotion.name,
       appliedValue: totalAppliedValue,
-      isUnfulfillable: isPromoUnfulfillable,
+      isOrphaned: isPromoUnfulfillable,
       label: bp.promotion.name,
       description: `Rewards from ${bp.promotion.name}`,
       groups,

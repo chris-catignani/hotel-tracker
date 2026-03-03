@@ -345,7 +345,7 @@ export interface BookingPromotion {
   promotionId: string;
   appliedValue: string | number;
   bonusPointsApplied: number | null;
-  isUnfulfillable: boolean;
+  isOrphaned: boolean;
   autoApplied: boolean;
   verified: boolean;
   eligibleNightsAtBooking?: number | null; // Cumulative nights including current stay
@@ -358,7 +358,7 @@ export interface BookingPromotionBenefit {
   bookingPromotionId: string;
   promotionBenefitId: string;
   appliedValue: string | number;
-  isUnfulfillable: boolean;
+  isOrphaned: boolean;
   eligibleNightsAtBooking?: number | null; // Cumulative nights including current stay
   promotionBenefit: PromotionBenefit;
 }

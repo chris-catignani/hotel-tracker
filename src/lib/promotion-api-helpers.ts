@@ -20,6 +20,9 @@ export function buildRestrictionsCreateData(r: PromotionRestrictionsFormData) {
     allowedPaymentTypes: r.allowedPaymentTypes ?? [],
     allowedBookingSources: r.allowedBookingSources ?? [],
     hotelChainId: r.hotelChainId || null,
+    prerequisiteStayCount: r.prerequisiteStayCount != null ? Number(r.prerequisiteStayCount) : null,
+    prerequisiteNightCount:
+      r.prerequisiteNightCount != null ? Number(r.prerequisiteNightCount) : null,
     subBrandRestrictions: {
       create: [
         ...(r.subBrandIncludeIds ?? []).map((id) => ({

@@ -138,7 +138,7 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
     netCost,
   } = breakdown;
 
-  const activePromos = promotions.filter((p) => p.appliedValue > 0 || p.isUnfulfillable);
+  const activePromos = promotions.filter((p) => p.appliedValue > 0 || p.isOrphaned);
 
   return (
     <Card>
@@ -222,7 +222,10 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
                   <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
                 )}
               </div>
-              <span data-testid="breakdown-promo-savings" className="text-green-600">
+              <span
+                data-testid="breakdown-promo-savings"
+                className={promoSavings > 0 ? "text-green-600" : "text-muted-foreground"}
+              >
                 -{formatCurrency(promoSavings)}
               </span>
             </button>
@@ -238,7 +241,10 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
                       <span className="text-muted-foreground">{p.name}</span>
                       <CalculationInfo calc={p} />
                     </div>
-                    <span data-testid={`breakdown-promo-item-${p.id}`} className="text-green-600">
+                    <span
+                      data-testid={`breakdown-promo-item-${p.id}`}
+                      className={p.isOrphaned ? "text-muted-foreground" : "text-green-600"}
+                    >
                       -{formatCurrency(p.appliedValue)}
                     </span>
                   </div>

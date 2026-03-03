@@ -308,7 +308,7 @@ export async function DELETE(
     });
 
     // Surgical Re-evaluation:
-    // 1. All bookings sharing the same promotions (for unfulfillable lookahead)
+    // 1. All bookings sharing the same promotions (for orphaned lookahead)
     // 2. All subsequent bookings (for prerequisites/caps/sequencing)
     await reevaluateRelatedBookings(null, promoIds, booking.checkIn);
 
