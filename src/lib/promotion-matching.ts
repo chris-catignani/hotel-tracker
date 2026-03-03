@@ -317,11 +317,16 @@ const CorePromotionRules: Record<string, PromotionRule> = {
  * These determine if the promotion actually applies a value to this specific booking.
  */
 const FulfillmentPromotionRules: Record<string, PromotionRule> = {
-  usageCaps: (booking, promo, usage) => {
+  maxStayCount: (booking, promo, usage) => {
     const r = promo.restrictions;
     if (r?.maxStayCount && usage && usage.count >= r.maxStayCount) {
       return { valid: false };
     }
+    return { valid: true };
+  },
+
+  oncePerSubBrand: (booking, promo, usage) => {
+    const r = promo.restrictions;
     if (r?.oncePerSubBrand) {
       if (usage?.appliedSubBrandIds?.has(booking.hotelChainSubBrandId ?? null)) {
         return { valid: false };
@@ -427,35 +432,36 @@ export function calculateMatchedPromotions(
       const br = b.restrictions;
       if (!br) return true;
 
-      if (!checkSubBrandRestrictions(br, booking.hotelChainSubBrandId)) return false;
-      if (br.tieInCards.length > 0) {
-        const cardMatches =
-          booking.creditCardId != null &&
-          br.tieInCards.some((c) => c.creditCardId === booking.creditCardId);
-        if (!cardMatches) return false;
-      }
-      if (
-        br.oncePerSubBrand &&
-        usage?.appliedSubBrandIds?.has(booking.hotelChainSubBrandId ?? null)
-      ) {
-        return false;
-      }
-      if (br.allowedPaymentTypes && !checkPaymentTypeRestriction(br.allowedPaymentTypes, booking)) {
-        return false;
-      }
-      if (
-        br.allowedBookingSources &&
-        !checkBookingSourceRestriction(br.allowedBookingSources, booking)
-      ) {
-        return false;
-      }
-      if (br.hotelChainId && br.hotelChainId !== booking.hotelChainId) {
-        return false;
-      }
-      if (br.minNightsRequired && booking.numNights < br.minNightsRequired && !br.spanStays) {
-        return false;
-      }
-      if (br.minSpend != null && Number(booking.totalCost) < Number(br.minSpend)) return false;
+      // Create a temporary pseudo-promo to reuse core and fulfillment rules
+      const tempPromo = { ...promo, restrictions: br };
+
+      // Define benefit-level applicable rules
+      const applicableCoreRules = {
+        subBrand: CorePromotionRules.subBrand,
+        paymentType: CorePromotionRules.paymentType,
+        bookingSource: CorePromotionRules.bookingSource,
+        hotelChain: CorePromotionRules.hotelChain,
+        tieInCard: CorePromotionRules.tieInCard,
+      };
+
+      const applicableFulfillmentRules = {
+        minSpend: FulfillmentPromotionRules.minSpend,
+        minNights: FulfillmentPromotionRules.minNights,
+        oncePerSubBrand: FulfillmentPromotionRules.oncePerSubBrand,
+      };
+
+      // Run reused rules
+      const passCore = Object.values(applicableCoreRules).every((rule) => {
+        return rule(booking, tempPromo, usage).valid;
+      });
+      if (!passCore) return false;
+
+      const passFulfillment = Object.values(applicableFulfillmentRules).every((rule) => {
+        return rule(booking, tempPromo, usage).valid;
+      });
+      if (!passFulfillment) return false;
+
+      // Handle benefit-specific caps (not generic to promo level)
       if (br.maxRewardCount) {
         const benefitCount = usage?.benefitUsage?.get(b.id)?.count ?? 0;
         if (benefitCount >= br.maxRewardCount) return false;
