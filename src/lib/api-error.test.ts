@@ -10,25 +10,23 @@ vi.mock("next/server", () => ({
 }));
 
 describe("apiError", () => {
-  const originalEnv = process.env.NODE_ENV;
-
   beforeEach(() => {
     vi.mocked(NextResponse.json).mockImplementation(
       (body, init) =>
         ({
           json: async () => body,
           status: init?.status ?? 200,
-        }) as unknown as Response
+        }) as unknown as NextResponse
     );
   });
 
   afterEach(() => {
-    process.env.NODE_ENV = originalEnv;
+    vi.unstubAllEnvs();
     vi.clearAllMocks();
   });
 
   it("should return a generic error in production", async () => {
-    process.env.NODE_ENV = "production";
+    vi.stubEnv("NODE_ENV", "production");
     const message = "Something went wrong";
     const error = new Error("Secret details");
 
@@ -41,7 +39,7 @@ describe("apiError", () => {
   });
 
   it("should include debug info in development with Error object", async () => {
-    process.env.NODE_ENV = "development";
+    vi.stubEnv("NODE_ENV", "development");
     const message = "Validation failed";
     const error = new Error("Detailed error");
     error.name = "ValidationError";
@@ -58,7 +56,7 @@ describe("apiError", () => {
   });
 
   it("should handle non-Error objects in development", async () => {
-    process.env.NODE_ENV = "development";
+    vi.stubEnv("NODE_ENV", "development");
     const message = "Failed";
     const error = "Just a string error";
 

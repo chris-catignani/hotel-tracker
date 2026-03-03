@@ -19,6 +19,7 @@ describe("BookingCard", () => {
     certificates: [],
     hotelChainId: "hyatt-id",
     otaAgencyId: null,
+    bookingSource: "direct_web",
     hotelChain: {
       id: "hyatt-id",
       name: "Hyatt",

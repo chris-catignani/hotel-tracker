@@ -5,7 +5,7 @@ import { CreditCardsTab } from "./credit-cards-tab";
 
 const mockCards = [
   {
-    id: 1,
+    id: "1",
     name: "Amex Platinum",
     rewardType: "points",
     rewardRate: 5,
@@ -14,7 +14,7 @@ const mockCards = [
     isDeleted: false,
   },
   {
-    id: 2,
+    id: "2",
     name: "Chase Sapphire",
     rewardType: "points",
     rewardRate: 3,
@@ -28,7 +28,7 @@ describe("CreditCardsTab", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     global.fetch = vi.fn().mockImplementation((input: string | Request | URL) => {
-      const url = typeof input === "string" ? input : input.url;
+      const url = input instanceof Request ? input.url : input.toString();
       if (url.includes("/api/credit-cards"))
         return Promise.resolve({ ok: true, json: async () => [] } as Response);
       if (url.includes("/api/point-types"))
@@ -62,7 +62,7 @@ describe("CreditCardsTab", () => {
 
   it("shows fetched credit cards", async () => {
     vi.mocked(global.fetch).mockImplementation((input: string | Request | URL) => {
-      const url = typeof input === "string" ? input : input.url;
+      const url = input instanceof Request ? input.url : input.toString();
       if (url.includes("/api/credit-cards"))
         return Promise.resolve({ ok: true, json: async () => [mockCards[0]] } as Response);
       return Promise.resolve({ ok: true, json: async () => [] } as Response);
@@ -79,7 +79,7 @@ describe("CreditCardsTab", () => {
 
   it("shows a Delete button for each credit card", async () => {
     vi.mocked(global.fetch).mockImplementation((input: string | Request | URL) => {
-      const url = typeof input === "string" ? input : input.url;
+      const url = input instanceof Request ? input.url : input.toString();
       if (url.includes("/api/credit-cards"))
         return Promise.resolve({ ok: true, json: async () => mockCards } as Response);
       return Promise.resolve({ ok: true, json: async () => [] } as Response);
@@ -98,7 +98,7 @@ describe("CreditCardsTab", () => {
   it("opens confirmation dialog when Delete is clicked", async () => {
     const user = userEvent.setup();
     vi.mocked(global.fetch).mockImplementation((input: string | Request | URL) => {
-      const url = typeof input === "string" ? input : input.url;
+      const url = input instanceof Request ? input.url : input.toString();
       if (url.includes("/api/credit-cards"))
         return Promise.resolve({ ok: true, json: async () => [mockCards[0]] } as Response);
       return Promise.resolve({ ok: true, json: async () => [] } as Response);
@@ -121,7 +121,7 @@ describe("CreditCardsTab", () => {
     const fetchMock = vi
       .mocked(global.fetch)
       .mockImplementation((input: string | Request | URL, options?: RequestInit) => {
-        const url = typeof input === "string" ? input : input.url;
+        const url = input instanceof Request ? input.url : input.toString();
         if (
           url === "/api/credit-cards" &&
           (!options || options.method === undefined || options.method === "GET")
@@ -146,10 +146,10 @@ describe("CreditCardsTab", () => {
     // Verify DELETE was called
     expect(fetchMock).toHaveBeenCalledWith("/api/credit-cards/1", { method: "DELETE" });
     // Verify list was refreshed (fetch called again for credit cards)
-    const cardFetchCalls = fetchMock.mock.calls.filter(
-      ([url, opts]) =>
-        url === "/api/credit-cards" && (!opts || !opts.method || opts.method === "GET")
-    );
+    const cardFetchCalls = fetchMock.mock.calls.filter(([input, opts]) => {
+      const url = typeof input === "string" ? input : (input as Request).url;
+      return url === "/api/credit-cards" && (!opts || !opts.method || opts.method === "GET");
+    });
     expect(cardFetchCalls.length).toBeGreaterThanOrEqual(2);
   });
 
@@ -157,7 +157,7 @@ describe("CreditCardsTab", () => {
     const user = userEvent.setup();
     vi.mocked(global.fetch).mockImplementation(
       (input: string | Request | URL, options?: RequestInit) => {
-        const url = typeof input === "string" ? input : input.url;
+        const url = input instanceof Request ? input.url : input.toString();
         if (
           url === "/api/credit-cards" &&
           (!options || !options.method || options.method === "GET")
@@ -190,7 +190,7 @@ describe("CreditCardsTab", () => {
     const fetchMock = vi
       .mocked(global.fetch)
       .mockImplementation((input: string | Request | URL) => {
-        const url = typeof input === "string" ? input : input.url;
+        const url = input instanceof Request ? input.url : input.toString();
         if (url.includes("/api/credit-cards"))
           return Promise.resolve({ ok: true, json: async () => [mockCards[0]] } as Response);
         return Promise.resolve({ ok: true, json: async () => [] } as Response);
@@ -212,7 +212,7 @@ describe("CreditCardsTab", () => {
 
   it("shows desktop table delete button", async () => {
     vi.mocked(global.fetch).mockImplementation((input: string | Request | URL) => {
-      const url = typeof input === "string" ? input : input.url;
+      const url = input instanceof Request ? input.url : input.toString();
       if (url.includes("/api/credit-cards"))
         return Promise.resolve({ ok: true, json: async () => [mockCards[0]] } as Response);
       return Promise.resolve({ ok: true, json: async () => [] } as Response);

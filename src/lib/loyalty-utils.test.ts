@@ -13,9 +13,6 @@ describe("loyalty-utils", () => {
 
     it("should calculate fixed points for fixed status", () => {
       const eliteStatus = {
-        id: 1,
-        hotelChainId: 1,
-        name: "GHA Discovery",
         bonusPercentage: null,
         fixedRate: 0.07,
         isFixed: true,
@@ -26,9 +23,6 @@ describe("loyalty-utils", () => {
 
     it("should calculate bonus points for percentage status", () => {
       const eliteStatus = {
-        id: 1,
-        hotelChainId: 1,
-        name: "Marriott Gold",
         bonusPercentage: 0.25,
         fixedRate: null,
         isFixed: false,
@@ -56,9 +50,6 @@ describe("loyalty-utils", () => {
           pretaxCost: 100,
           basePointRate: 10,
           eliteStatus: {
-            id: 1,
-            hotelChainId: 1,
-            name: "Sliver",
             bonusPercentage: 0.05,
             fixedRate: null,
             isFixed: false,

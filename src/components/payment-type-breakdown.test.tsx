@@ -99,7 +99,7 @@ describe("PaymentTypeBreakdown", () => {
         const hasText = (node: Element | null) =>
           node?.textContent?.includes(
             "1 combination booking ignored because nightly breakdown is unavailable"
-          );
+          ) ?? false;
         const nodeHasText = hasText(element);
         const childrenDontHaveText = Array.from(element?.children || []).every(
           (child) => !hasText(child as Element)
