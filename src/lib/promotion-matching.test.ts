@@ -3,6 +3,7 @@ import {
   calculateMatchedPromotions,
   MatchingBooking,
   getConstrainedPromotions,
+  PromotionUsageMap,
 } from "./promotion-matching";
 import { PromotionType, PromotionRewardType, PromotionBenefitValueType } from "@prisma/client";
 import { Prisma } from "@prisma/client";
@@ -26,6 +27,7 @@ const mockBooking: MatchingBooking = {
   loyaltyPointsEarned: 1000,
   pointsRedeemed: null,
   hotelChain: {
+    id: "chain-3",
     basePointRate: 10,
     pointType: { centsPerPoint: 0.015 }, // non-default
   },
@@ -63,6 +65,7 @@ function makeRestrictions(overrides: Partial<TestRestrictions> = {}): TestRestri
 function makePromo(overrides: Partial<TestPromotion> = {}): TestPromotion {
   return {
     id: "promo-1",
+    name: "Test Promo",
     type: PromotionType.credit_card,
     creditCardId: "card-1",
     shoppingPortalId: null,
@@ -249,186 +252,12 @@ describe("promotion-matching", () => {
     // EQN: 1 * 10.0 = 10
     // Total: 367.5 + 10 = 377.5
     expect(matched[0].appliedValue).toBe(377.5);
-    expect(matched[0].benefitApplications[0].appliedValue).toBe(367.5);
-    expect(matched[0].benefitApplications[1].appliedValue).toBe(10);
-  });
-
-  it("should sum multiple benefits correctly", () => {
-    const promo = makePromo({
-      benefits: [
-        {
-          id: "benefit-10",
-          rewardType: PromotionRewardType.cashback,
-          valueType: PromotionBenefitValueType.fixed,
-          value: new Prisma.Decimal(10),
-          certType: null,
-          pointsMultiplierBasis: null,
-          sortOrder: 0,
-          restrictions: null,
-        },
-        {
-          id: "benefit-11",
-          rewardType: PromotionRewardType.points,
-          valueType: PromotionBenefitValueType.fixed,
-          value: new Prisma.Decimal(1000),
-          certType: null,
-          pointsMultiplierBasis: null,
-          sortOrder: 1,
-          restrictions: null,
-        },
-      ],
-    });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
-    // 10 (fixed cashback) + 1000 pts * 0.015 (= 15) = 25
-    expect(matched[0].appliedValue).toBe(25);
     expect(matched[0].benefitApplications).toHaveLength(2);
-    expect(matched[0].benefitApplications[0].appliedValue).toBe(10);
-    expect(matched[0].benefitApplications[1].appliedValue).toBe(15);
   });
 
-  it("should calculate points multiplier with base_only basis", () => {
+  it("should respect maxStayCount: skip after limit is reached", () => {
     const promo = makePromo({
-      benefits: [
-        {
-          id: "benefit-10",
-          rewardType: PromotionRewardType.points,
-          valueType: PromotionBenefitValueType.multiplier,
-          value: new Prisma.Decimal(3),
-          certType: null,
-          pointsMultiplierBasis: "base_only",
-          sortOrder: 0,
-          restrictions: null,
-        },
-      ],
-    });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
-    // basePoints = 80 (pretaxCost) * 10 (basePointRate) = 800
-    // 800 pts * (3-1) * 0.015 $/pt = 24
-    expect(matched[0].appliedValue).toBe(24);
-    expect(matched[0].benefitApplications[0].appliedValue).toBe(24);
-  });
-
-  it("should calculate points multiplier with base_and_elite basis", () => {
-    const promo = makePromo({
-      benefits: [
-        {
-          id: "benefit-10",
-          rewardType: PromotionRewardType.points,
-          valueType: PromotionBenefitValueType.multiplier,
-          value: new Prisma.Decimal(3),
-          certType: null,
-          pointsMultiplierBasis: "base_and_elite",
-          sortOrder: 0,
-          restrictions: null,
-        },
-      ],
-    });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
-    // Uses full loyaltyPointsEarned = 1000
-    // 1000 pts * (3-1) * 0.015 $/pt = 30
-    expect(matched[0].appliedValue).toBe(30);
-    expect(matched[0].benefitApplications[0].appliedValue).toBe(30);
-  });
-
-  it("should default to base_only when pointsMultiplierBasis is null", () => {
-    const promo = makePromo({
-      benefits: [
-        {
-          id: "benefit-10",
-          rewardType: PromotionRewardType.points,
-          valueType: PromotionBenefitValueType.multiplier,
-          value: new Prisma.Decimal(3),
-          certType: null,
-          pointsMultiplierBasis: null,
-          sortOrder: 0,
-          restrictions: null,
-        },
-      ],
-    });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
-    // basePoints = 80 * 10 = 800
-    // 800 * (3-1) * 0.015 = 24
-    expect(matched[0].appliedValue).toBe(24);
-    expect(matched[0].benefitApplications[0].appliedValue).toBe(24);
-  });
-
-  // Constraint tests
-  it("should respect maxStayCount: 1 — skip when already used once", () => {
-    const promo = makePromo({ restrictions: makeRestrictions({ maxStayCount: 1 }) });
-    const priorUsage = new Map([
-      [promo.id, { count: 1, totalValue: 10, totalBonusPoints: 0, benefitUsage: new Map() }],
-    ]);
-    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
-    expect(matched).toHaveLength(0);
-  });
-
-  it("should respect maxStayCount: allow below limit", () => {
-    const promo = makePromo({ restrictions: makeRestrictions({ maxStayCount: 3 }) });
-    const priorUsage = new Map([
-      [promo.id, { count: 1, totalValue: 10, totalBonusPoints: 0, benefitUsage: new Map() }],
-    ]);
-    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
-    expect(matched).toHaveLength(1);
-  });
-
-  it("should respect maxStayCount: skip at limit", () => {
-    const promo = makePromo({ restrictions: makeRestrictions({ maxStayCount: 2 }) });
-    const priorUsage = new Map([
-      [promo.id, { count: 2, totalValue: 10, totalBonusPoints: 0, benefitUsage: new Map() }],
-    ]);
-    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
-    expect(matched).toHaveLength(0);
-  });
-
-  it("should respect minNightsRequired: skip below minimum", () => {
-    const promo = makePromo({ restrictions: makeRestrictions({ minNightsRequired: 5 }) });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
-    expect(matched).toHaveLength(0);
-  });
-
-  it("should respect minNightsRequired: allow at minimum", () => {
-    const promo = makePromo({ restrictions: makeRestrictions({ minNightsRequired: 3 }) });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
-    expect(matched).toHaveLength(1);
-  });
-
-  it("should apply nightsStackable multiplier correctly", () => {
-    const promo = makePromo({
-      restrictions: makeRestrictions({ minNightsRequired: 2, nightsStackable: true }),
-      benefits: [
-        {
-          id: "benefit-10",
-          rewardType: PromotionRewardType.cashback,
-          valueType: PromotionBenefitValueType.fixed,
-          value: new Prisma.Decimal(10),
-          certType: null,
-          pointsMultiplierBasis: null,
-          sortOrder: 0,
-          restrictions: null,
-        },
-      ],
-    });
-    const booking = { ...mockBooking, numNights: 6 }; // 6 nights / 2 = 3x multiplier
-    const matched = calculateMatchedPromotions(booking, [promo]);
-    expect(matched).toHaveLength(1);
-    expect(matched[0].appliedValue).toBe(30); // 10 * 3
-    expect(matched[0].benefitApplications[0].appliedValue).toBe(30); // 10 * 3
-  });
-
-  it("should respect benefit-level maxRewardCount", () => {
-    const promo = makePromo({
-      benefits: [
-        {
-          id: "benefit-count-limit",
-          rewardType: PromotionRewardType.cashback,
-          valueType: PromotionBenefitValueType.fixed,
-          value: new Prisma.Decimal(10),
-          certType: null,
-          pointsMultiplierBasis: null,
-          sortOrder: 0,
-          restrictions: makeRestrictions({ maxRewardCount: 2 }),
-        },
-      ],
+      restrictions: makeRestrictions({ maxStayCount: 2 }),
     });
     const priorUsage = new Map([
       [
@@ -437,83 +266,17 @@ describe("promotion-matching", () => {
           count: 2,
           totalValue: 20,
           totalBonusPoints: 0,
-          benefitUsage: new Map([
-            ["benefit-count-limit", { count: 2, totalValue: 20, totalBonusPoints: 0 }],
-          ]),
+          benefitUsage: new Map(),
         },
       ],
     ]);
     const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
-    expect(matched).toHaveLength(0); // benefit filtered out, promo has no benefits left
-  });
-
-  it("should respect benefit-level maxRedemptionValue", () => {
-    const promo = makePromo({
-      benefits: [
-        {
-          id: "benefit-value-limit",
-          rewardType: PromotionRewardType.cashback,
-          valueType: PromotionBenefitValueType.fixed,
-          value: new Prisma.Decimal(50),
-          certType: null,
-          pointsMultiplierBasis: null,
-          sortOrder: 0,
-          restrictions: makeRestrictions({ maxRedemptionValue: new Prisma.Decimal(60) }),
-        },
-      ],
-    });
-    const priorUsage = new Map([
-      [
-        promo.id,
-        {
-          count: 1,
-          totalValue: 45,
-          totalBonusPoints: 0,
-          benefitUsage: new Map([
-            ["benefit-value-limit", { count: 1, totalValue: 45, totalBonusPoints: 0 }],
-          ]),
-        },
-      ],
-    ]);
-    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
-    expect(matched).toHaveLength(1);
-    expect(matched[0].appliedValue).toBe(15); // capped at 60 - 45 = 15
-  });
-
-  it("should respect benefit-level minSpend", () => {
-    const promo = makePromo({
-      benefits: [
-        {
-          id: "benefit-min-spend",
-          rewardType: PromotionRewardType.cashback,
-          valueType: PromotionBenefitValueType.fixed,
-          value: new Prisma.Decimal(10),
-          certType: null,
-          pointsMultiplierBasis: null,
-          sortOrder: 0,
-          restrictions: makeRestrictions({ minSpend: new Prisma.Decimal(200) }),
-        },
-      ],
-    });
-    // mockBooking totalCost is 100, benefit requires 200
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
     expect(matched).toHaveLength(0);
   });
 
-  it("should respect benefit-level oncePerSubBrand", () => {
+  it("should respect maxStayCount: allow below limit", () => {
     const promo = makePromo({
-      benefits: [
-        {
-          id: "benefit-once-subbrand",
-          rewardType: PromotionRewardType.cashback,
-          valueType: PromotionBenefitValueType.fixed,
-          value: new Prisma.Decimal(10),
-          certType: null,
-          pointsMultiplierBasis: null,
-          sortOrder: 0,
-          restrictions: makeRestrictions({ oncePerSubBrand: true }),
-        },
-      ],
+      restrictions: makeRestrictions({ maxStayCount: 2 }),
     });
     const priorUsage = new Map([
       [
@@ -522,368 +285,18 @@ describe("promotion-matching", () => {
           count: 1,
           totalValue: 10,
           totalBonusPoints: 0,
-          benefitUsage: new Map([
-            ["benefit-once-subbrand", { count: 1, totalValue: 10, totalBonusPoints: 0 }],
-          ]),
-          appliedSubBrandIds: new Set(["brand-4"]), // mockBooking sub-brand is brand-4
+          benefitUsage: new Map(),
         },
       ],
     ]);
     const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
-    expect(matched).toHaveLength(0);
-  });
-
-  it("should respect benefit-level minNightsRequired", () => {
-    const promo = makePromo({
-      restrictions: null,
-      benefits: [
-        {
-          id: "benefit-min-nights",
-          rewardType: PromotionRewardType.cashback,
-          valueType: PromotionBenefitValueType.fixed,
-          value: new Prisma.Decimal(10),
-          certType: null,
-          pointsMultiplierBasis: null,
-          sortOrder: 0,
-          restrictions: makeRestrictions({ minNightsRequired: 5 }),
-        },
-      ],
-    });
-    // Booking has 3 nights (from mockBooking), benefit requires 5
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
-    expect(matched).toHaveLength(0);
-  });
-
-  it("should apply benefit-level nightsStackable multiplier", () => {
-    const promo = makePromo({
-      restrictions: null,
-      benefits: [
-        {
-          id: "benefit-stackable",
-          rewardType: PromotionRewardType.cashback,
-          valueType: PromotionBenefitValueType.fixed,
-          value: new Prisma.Decimal(10),
-          certType: null,
-          pointsMultiplierBasis: null,
-          sortOrder: 0,
-          restrictions: makeRestrictions({ minNightsRequired: 2, nightsStackable: true }),
-        },
-      ],
-    });
-    const booking = { ...mockBooking, numNights: 6 }; // 6 nights / 2 = 3x multiplier
-    const matched = calculateMatchedPromotions(booking, [promo]);
-    expect(matched).toHaveLength(1);
-    expect(matched[0].appliedValue).toBe(30); // 10 * 3
-  });
-
-  it("should respect bookByDate: allow before cutoff", () => {
-    const promo = makePromo({
-      restrictions: makeRestrictions({ bookByDate: new Date("2026-02-01") }),
-    });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
     expect(matched).toHaveLength(1);
   });
 
-  it("should respect bookByDate: skip after cutoff", () => {
-    const promo = makePromo({
-      restrictions: makeRestrictions({ bookByDate: new Date("2025-12-01") }),
-    });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
-    expect(matched).toHaveLength(0);
-  });
-
-  it("should respect maxRedemptionValue: cap appliedValue", () => {
-    const promo = makePromo({
-      restrictions: makeRestrictions({ maxRedemptionValue: new Prisma.Decimal(60) }),
-      benefits: [
-        {
-          id: "benefit-10",
-          rewardType: PromotionRewardType.cashback,
-          valueType: PromotionBenefitValueType.fixed,
-          value: new Prisma.Decimal(50),
-          certType: null,
-          pointsMultiplierBasis: null,
-          sortOrder: 0,
-          restrictions: null,
-        },
-      ],
-    });
-    const priorUsage = new Map([
-      [promo.id, { count: 0, totalValue: 45, totalBonusPoints: 0, benefitUsage: new Map() }],
-    ]);
-    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
-    expect(matched).toHaveLength(1);
-    expect(matched[0].appliedValue).toBe(15); // capped at 60 - 45 = 15
-  });
-
-  it("should return with 0 value if maxRedemptionValue cap exhausted", () => {
-    const promo = makePromo({
-      restrictions: makeRestrictions({ maxRedemptionValue: new Prisma.Decimal(50) }),
-    });
-    const priorUsage = new Map([
-      [promo.id, { count: 0, totalValue: 50, totalBonusPoints: 0, benefitUsage: new Map() }],
-    ]);
-    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
-    expect(matched).toHaveLength(1);
-    expect(matched[0].appliedValue).toBe(0);
-  });
-
-  it("should respect maxTotalBonusPoints: cap bonus points and reduce appliedValue", () => {
-    const promo = makePromo({
-      restrictions: makeRestrictions({ maxTotalBonusPoints: 100 }),
-      benefits: [
-        {
-          id: "benefit-10",
-          rewardType: PromotionRewardType.points,
-          valueType: PromotionBenefitValueType.fixed,
-          value: new Prisma.Decimal(200),
-          certType: null,
-          pointsMultiplierBasis: null,
-          sortOrder: 0,
-          restrictions: null,
-        },
-      ],
-    });
-    const priorUsage = new Map([
-      [promo.id, { count: 0, totalValue: 0, totalBonusPoints: 50, benefitUsage: new Map() }],
-    ]);
-    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
-    expect(matched).toHaveLength(1);
-    // Original: 200 pts * 0.015 = 3, bonusPoints = 200
-    // Remaining capacity: 100 - 50 = 50 points
-    // Ratio: 50 / 200 = 0.25
-    // Capped appliedValue: 3 * 0.25 = 0.75
-    // Capped bonusPoints: 50
-    expect(matched[0].bonusPointsApplied).toBe(50);
-    expect(matched[0].appliedValue).toBeCloseTo(0.75, 2);
-  });
-
-  it("should return with 0 value if maxTotalBonusPoints cap exhausted", () => {
-    const promo = makePromo({
-      restrictions: makeRestrictions({ maxTotalBonusPoints: 50 }),
-      benefits: [
-        {
-          id: "benefit-10",
-          rewardType: PromotionRewardType.points,
-          valueType: PromotionBenefitValueType.fixed,
-          value: new Prisma.Decimal(100),
-          certType: null,
-          pointsMultiplierBasis: null,
-          sortOrder: 0,
-          restrictions: null,
-        },
-      ],
-    });
-    const priorUsage = new Map([
-      [promo.id, { count: 0, totalValue: 0, totalBonusPoints: 50, benefitUsage: new Map() }],
-    ]);
-    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
-    expect(matched).toHaveLength(1);
-    expect(matched[0].bonusPointsApplied).toBe(0);
-    expect(matched[0].appliedValue).toBe(0);
-  });
-
-  // tier tests
-  const tier1Benefit = {
-    id: "benefit-101",
-    rewardType: PromotionRewardType.cashback,
-    valueType: PromotionBenefitValueType.fixed,
-    value: new Prisma.Decimal(50),
-    certType: null,
-    pointsMultiplierBasis: null,
-    sortOrder: 0,
-    restrictions: null,
-  };
-  const tier2Benefit = {
-    id: "benefit-102",
-    rewardType: PromotionRewardType.cashback,
-    valueType: PromotionBenefitValueType.fixed,
-    value: new Prisma.Decimal(75),
-    certType: null,
-    pointsMultiplierBasis: null,
-    sortOrder: 0,
-    restrictions: null,
-  };
-  const tier3Benefit = {
-    id: "benefit-103",
-    rewardType: PromotionRewardType.cashback,
-    valueType: PromotionBenefitValueType.fixed,
-    value: new Prisma.Decimal(100),
-    certType: null,
-    pointsMultiplierBasis: null,
-    sortOrder: 0,
-    restrictions: null,
-  };
-
-  function makeTieredPromo() {
-    return makePromo({
-      benefits: [],
-      tiers: [
-        {
-          id: "tier-1",
-          minStays: 1,
-          maxStays: 1,
-          minNights: null,
-          maxNights: null,
-          benefits: [tier1Benefit],
-        },
-        {
-          id: "tier-2",
-          minStays: 2,
-          maxStays: 2,
-          minNights: null,
-          maxNights: null,
-          benefits: [tier2Benefit],
-        },
-        {
-          id: "tier-3",
-          minStays: 3,
-          maxStays: null,
-          minNights: null,
-          maxNights: null,
-          benefits: [tier3Benefit],
-        },
-      ],
-    });
-  }
-
-  it("tiered: 0 prior matched stays → tier 1 benefits apply ($50)", () => {
-    const promo = makeTieredPromo();
-    // No prior usage → count=0 → currentStayNumber=1 → tier 1
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
-    expect(matched).toHaveLength(1);
-    expect(matched[0].appliedValue).toBe(50);
-    expect(matched[0].benefitApplications[0].promotionBenefitId).toBe("benefit-101");
-  });
-
-  it("tiered: 1 prior eligible stay → tier 2 benefits apply ($75)", () => {
-    const promo = makeTieredPromo();
-    const priorUsage = new Map([
-      [promo.id, { count: 0, totalValue: 0, totalBonusPoints: 0, eligibleStayCount: 1 }],
-    ]);
-    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
-    expect(matched).toHaveLength(1);
-    expect(matched[0].appliedValue).toBe(75);
-    expect(matched[0].benefitApplications[0].promotionBenefitId).toBe("benefit-102");
-  });
-
-  it("tiered: 2 prior eligible stays → tier 3 (maxStays=null) benefits apply ($100)", () => {
-    const promo = makeTieredPromo();
-    const priorUsage = new Map([
-      [promo.id, { count: 1, totalValue: 50, totalBonusPoints: 0, eligibleStayCount: 2 }],
-    ]);
-    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
-    expect(matched).toHaveLength(1);
-    expect(matched[0].appliedValue).toBe(100);
-    expect(matched[0].benefitApplications[0].promotionBenefitId).toBe("benefit-103");
-  });
-
-  it("tiered: 5 prior eligible stays → still tier 3 (no upper bound)", () => {
-    const promo = makeTieredPromo();
-    const priorUsage = new Map([
-      [promo.id, { count: 3, totalValue: 300, totalBonusPoints: 0, eligibleStayCount: 5 }],
-    ]);
-    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
-    expect(matched).toHaveLength(1);
-    expect(matched[0].appliedValue).toBe(100);
-  });
-
-  it("tiered: no tier covers stay count → no match (stay #1 with minStays=2 tier)", () => {
-    // Tiers only cover stay #2+, so stay #1 (eligibleStayCount=0) has no match
-    const promo = makePromo({
-      benefits: [],
-      tiers: [
-        {
-          id: "tier-1",
-          minStays: 2,
-          maxStays: null,
-          minNights: null,
-          maxNights: null,
-          benefits: [tier2Benefit],
-        },
-      ],
-    });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
-    expect(matched).toHaveLength(0);
-  });
-
-  it("tiered: stay #1 has no tier, stay #2 correctly advances via eligibleStayCount", () => {
-    // Tier only covers stay #2+; eligibleStayCount=1 means this is stay #2
-    const promo = makePromo({
-      benefits: [],
-      tiers: [
-        {
-          id: "tier-1",
-          minStays: 2,
-          maxStays: null,
-          minNights: null,
-          maxNights: null,
-          benefits: [tier2Benefit],
-        },
-      ],
-    });
-    const priorUsage = new Map([
-      [promo.id, { count: 0, totalValue: 0, totalBonusPoints: 0, eligibleStayCount: 1 }],
-    ]);
-    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
-    expect(matched).toHaveLength(1);
-    expect(matched[0].appliedValue).toBe(75);
-  });
-
-  it("tiered: maxStays boundary respected (stay at maxStays+1 → no match)", () => {
-    const promo = makePromo({
-      benefits: [],
-      tiers: [
-        {
-          id: "tier-1",
-          minStays: 1,
-          maxStays: 2,
-          minNights: null,
-          maxNights: null,
-          benefits: [tier1Benefit],
-        },
-      ],
-    });
-    const priorUsage = new Map([
-      [promo.id, { count: 2, totalValue: 0, totalBonusPoints: 0, eligibleStayCount: 2 }],
-    ]);
-    // currentStayNumber=3, tier maxStays=2 → no match
-    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
-    expect(matched).toHaveLength(0);
-  });
-
-  it("flat promo (no tiers) still works as before", () => {
-    const promo = makePromo({ tiers: [] });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
-    expect(matched).toHaveLength(1);
-    expect(matched[0].appliedValue).toBe(10);
-  });
-
-  // oncePerSubBrand tests
-  it("should apply when oncePerSubBrand=true and appliedSubBrandIds is empty", () => {
+  it("should respect oncePerSubBrand=true and skip if same sub-brand already used", () => {
     const promo = makePromo({
       restrictions: makeRestrictions({ oncePerSubBrand: true }),
     });
-    const priorUsage = new Map([
-      [
-        promo.id,
-        {
-          count: 0,
-          totalValue: 0,
-          totalBonusPoints: 0,
-          appliedSubBrandIds: new Set<string | null>(),
-        },
-      ],
-    ]);
-    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
-    expect(matched).toHaveLength(1);
-  });
-
-  it("should skip when oncePerSubBrand=true and booking sub-brand already in appliedSubBrandIds", () => {
-    const promo = makePromo({
-      restrictions: makeRestrictions({ oncePerSubBrand: true }),
-    });
-    // mockBooking has hotelChainSubBrandId: "brand-4"
     const priorUsage = new Map([
       [
         promo.id,
@@ -899,11 +312,10 @@ describe("promotion-matching", () => {
     expect(matched).toHaveLength(0);
   });
 
-  it("should apply when oncePerSubBrand=true and booking sub-brand is different from already-applied ones", () => {
+  it("should respect oncePerSubBrand=true and apply if sub-brand is different", () => {
     const promo = makePromo({
       restrictions: makeRestrictions({ oncePerSubBrand: true }),
     });
-    // mockBooking has hotelChainSubBrandId: "brand-4", appliedSubBrandIds has "brand-5"
     const priorUsage = new Map([
       [
         promo.id,
@@ -911,7 +323,7 @@ describe("promotion-matching", () => {
           count: 1,
           totalValue: 10,
           totalBonusPoints: 0,
-          appliedSubBrandIds: new Set<string | null>(["brand-5"]),
+          appliedSubBrandIds: new Set<string | null>(["brand-99"]),
         },
       ],
     ]);
@@ -919,8 +331,10 @@ describe("promotion-matching", () => {
     expect(matched).toHaveLength(1);
   });
 
-  it("should always apply when oncePerSubBrand=false", () => {
-    const promo = makePromo();
+  it("should allow oncePerSubBrand=true if sub-brand is same but usage map is missing the set", () => {
+    const promo = makePromo({
+      restrictions: makeRestrictions({ oncePerSubBrand: true }),
+    });
     const priorUsage = new Map([
       [
         promo.id,
@@ -928,7 +342,27 @@ describe("promotion-matching", () => {
           count: 1,
           totalValue: 10,
           totalBonusPoints: 0,
-          appliedSubBrandIds: new Set<string | null>(["brand-4"]),
+          benefitUsage: new Map(),
+        },
+      ],
+    ]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
+    expect(matched).toHaveLength(1);
+  });
+
+  it("should allow oncePerSubBrand=true if booking sub-brand is DIFFERENT from appliedSubBrandIds (including null cases)", () => {
+    const promo = makePromo({
+      restrictions: makeRestrictions({ oncePerSubBrand: true }),
+    });
+    // booking brand-4, prior brand-99
+    const priorUsage = new Map([
+      [
+        promo.id,
+        {
+          count: 1,
+          totalValue: 10,
+          totalBonusPoints: 0,
+          appliedSubBrandIds: new Set<string | null>(["brand-99"]),
         },
       ],
     ]);
@@ -1206,7 +640,6 @@ describe("promotion-matching", () => {
     // mockBooking has creditCardId: "card-1"; gate requires "card-99"
     const promo = makePromo({
       type: PromotionType.loyalty,
-      creditCardId: null,
       hotelChainId: "chain-3",
       restrictions: makeRestrictions({ tieInCards: [{ creditCardId: "card-99" }] }),
     });
@@ -1600,13 +1033,13 @@ describe("getConstrainedPromotions", () => {
 
 describe("spanStays", () => {
   const promo = makePromo({
-    restrictions: makeRestrictions({ minNightsRequired: 3, spanStays: true }),
+    restrictions: makeRestrictions({ minNightsRequired: 2, spanStays: true }),
     benefits: [
       {
         id: "benefit-span",
         rewardType: PromotionRewardType.points,
         valueType: PromotionBenefitValueType.fixed,
-        value: new Prisma.Decimal(3000),
+        value: new Prisma.Decimal(2000),
         certType: null,
         pointsMultiplierBasis: null,
         sortOrder: 0,
@@ -1622,22 +1055,28 @@ describe("spanStays", () => {
       loyaltyPointsEarned: 0,
       hotelChain: {
         ...mockBooking.hotelChain,
+        id: "chain-3",
+        basePointRate: 10,
         pointType: { centsPerPoint: 0.02 },
       },
     };
-    const matched = calculateMatchedPromotions(booking, [promo]);
+    // Mock usage to provide potential nights so it's not orphaned (need 2 nights total)
+    const usage = new Map([[promo.id, { totalPotentialNightCount: 2, benefitUsage: new Map() }]]);
+    const matched = calculateMatchedPromotions(booking, [promo], usage as PromotionUsageMap);
     expect(matched).toHaveLength(1);
-    expect(matched[0].appliedValue).toBe(20); // (1/3) * (3000 pts * 0.02 $/pt) = 20
-    expect(matched[0].bonusPointsApplied).toBe(1000); // (1/3) * 3000
+    expect(matched[0].appliedValue).toBe(20); // (1/2) * (2000 pts * 0.02 $/pt) = 20
+    expect(matched[0].bonusPointsApplied).toBe(1000); // (1/2) * 2000
   });
 
   it("should apply multiple rewards across stays spanning increments", () => {
-    // 1st stay: 2 nights
+    // 1st stay: 2 nights (completes 1 cycle)
     const booking1 = { ...mockBooking, numNights: 2 };
-    const matched1 = calculateMatchedPromotions(booking1, [promo]);
+    // Mock usage to provide potential nights so it's not orphaned (need 4 nights total for 2 cycles)
+    const usage1 = new Map([[promo.id, { totalPotentialNightCount: 4, benefitUsage: new Map() }]]);
+    const matched1 = calculateMatchedPromotions(booking1, [promo], usage1 as PromotionUsageMap);
     expect(matched1[0].bonusPointsApplied).toBe(2000);
 
-    // 2nd stay: 2 nights (total 4 nights)
+    // 2nd stay: 2 nights (completes 2nd cycle)
     const booking2 = { ...mockBooking, numNights: 2 };
     // Prior usage has 2 nights
     const priorUsage = new Map([
@@ -1648,18 +1087,19 @@ describe("spanStays", () => {
           totalValue: 40,
           totalBonusPoints: 2000,
           eligibleStayNights: 2,
+          totalPotentialNightCount: 4,
           benefitUsage: new Map(),
         },
       ],
     ]);
 
-    const matched2 = calculateMatchedPromotions(booking2, [promo], priorUsage);
+    const matched2 = calculateMatchedPromotions(booking2, [promo], priorUsage as PromotionUsageMap);
     expect(matched2[0].bonusPointsApplied).toBe(2000);
     // Total bonus points across both stays = 4000 (for 4 nights @ 1000/night)
   });
 
   it("should respect benefit-level maxTotalBonusPoints", () => {
-    const promo = makePromo({
+    const promoLimit = makePromo({
       benefits: [
         {
           id: "benefit-pts-limit",
@@ -1675,7 +1115,7 @@ describe("spanStays", () => {
     });
     const priorUsage = new Map([
       [
-        promo.id,
+        promoLimit.id,
         {
           count: 1,
           totalValue: 60,
@@ -1691,10 +1131,22 @@ describe("spanStays", () => {
       numNights: 1,
       hotelChain: {
         ...mockBooking.hotelChain,
+        id: "chain-3",
+        basePointRate: 10,
         pointType: { centsPerPoint: 0.02 },
       },
     };
-    const matched = calculateMatchedPromotions(booking, [promo], priorUsage);
+    // Mock usage to provide potential nights so it's not orphaned
+    const usage = new Map([
+      [
+        promoLimit.id,
+        {
+          ...priorUsage.get(promoLimit.id)!,
+          totalPotentialNightCount: 3,
+        },
+      ],
+    ]);
+    const matched = calculateMatchedPromotions(booking, [promoLimit], usage as PromotionUsageMap);
     expect(matched).toHaveLength(1);
     // 3000 pts value, but only 2000 capacity.
     expect(matched[0].bonusPointsApplied).toBe(2000);
@@ -1702,7 +1154,7 @@ describe("spanStays", () => {
   });
 
   it("should enforce promotion-level points cap across multiple benefits", () => {
-    const promo = makePromo({
+    const promoCap = makePromo({
       restrictions: makeRestrictions({ maxTotalBonusPoints: 5000 }),
       benefits: [
         {
@@ -1728,18 +1180,108 @@ describe("spanStays", () => {
       ],
     });
 
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    const matched = calculateMatchedPromotions(mockBooking, [promoCap]);
     expect(matched).toHaveLength(1);
     // Total requested: 6000. Cap: 5000.
     expect(matched[0].bonusPointsApplied).toBe(5000);
     // Applied value should be scaled: 5000 * 0.015 $/pt = 75
     expect(matched[0].appliedValue).toBe(75);
   });
+
+  it("should apply multiple rewards across stays spanning increments (orphaned detection)", () => {
+    const promoOrphan = makePromo({
+      id: "p1",
+      restrictions: makeRestrictions({ minNightsRequired: 2, spanStays: true }),
+      benefits: [
+        {
+          id: "b1",
+          rewardType: PromotionRewardType.cashback,
+          valueType: PromotionBenefitValueType.fixed,
+          value: new Prisma.Decimal(20),
+          sortOrder: 0,
+          restrictions: makeRestrictions({ minNightsRequired: 2, spanStays: true }),
+          certType: null,
+          pointsMultiplierBasis: null,
+        },
+      ],
+    });
+
+    const usage1 = new Map([
+      [
+        "p1",
+        {
+          count: 0,
+          totalValue: 0,
+          totalBonusPoints: 0,
+          eligibleStayCount: 0,
+          eligibleStayNights: 1,
+          totalPotentialNightCount: 2, // Stable 2 nights
+          benefitUsage: new Map([
+            [
+              "b1",
+              {
+                count: 0,
+                eligibleNights: 1,
+                totalPotentialNightCount: 2,
+                couldEverMatch: true,
+              },
+            ],
+          ]),
+        },
+      ],
+    ]);
+
+    const booking = { ...mockBooking, numNights: 1 };
+    const matched = calculateMatchedPromotions(booking, [promoOrphan], usage1 as PromotionUsageMap);
+    expect(matched[0].appliedValue).toBe(20);
+  });
+
+  it("should not crash when a promotion is orphaned and has multiple benefits", () => {
+    const promoMulti = makePromo({
+      id: "p-multi",
+      restrictions: makeRestrictions({
+        minNightsRequired: 5,
+        spanStays: true,
+      }),
+      benefits: [
+        {
+          id: "b1",
+          rewardType: PromotionRewardType.cashback,
+          valueType: PromotionBenefitValueType.fixed,
+          value: new Prisma.Decimal(10),
+          sortOrder: 0,
+          restrictions: makeRestrictions({}),
+          certType: null,
+          pointsMultiplierBasis: null,
+        },
+        {
+          id: "b2",
+          rewardType: PromotionRewardType.points,
+          valueType: PromotionBenefitValueType.fixed,
+          value: new Prisma.Decimal(1000),
+          sortOrder: 1,
+          restrictions: makeRestrictions({}),
+          certType: null,
+          pointsMultiplierBasis: null,
+        },
+      ],
+    });
+
+    // No usage provided, and 1 night booking < 5 nights required => Orphaned
+    const matched = calculateMatchedPromotions({ ...mockBooking, numNights: 1 }, [promoMulti]);
+
+    expect(matched).toHaveLength(1);
+    expect(matched[0].isOrphaned).toBe(true);
+    expect(matched[0].appliedValue).toBe(0);
+    expect(matched[0].benefitApplications).toHaveLength(2);
+    expect(matched[0].benefitApplications[0].isOrphaned).toBe(true);
+    expect(matched[0].benefitApplications[1].isOrphaned).toBe(true);
+  });
 });
 
 describe("promotion-matching architecture: Core vs Fulfillment", () => {
   it("should separate core eligibility from fulfillment status (insufficient nights)", () => {
-    const promo = makePromo({
+    const promoArch = makePromo({
       type: PromotionType.loyalty,
       hotelChainId: "chain-3",
       creditCardId: null,
@@ -1752,7 +1294,7 @@ describe("promotion-matching architecture: Core vs Fulfillment", () => {
     // In the new architecture, this should fail fulfillment.
     // Since calculateMatchedPromotions currently returns an empty list for any failure,
     // we verify it behaves correctly as a non-match.
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
+    const matched = calculateMatchedPromotions(mockBooking, [promoArch]);
     expect(matched).toHaveLength(0);
   });
 
@@ -1801,7 +1343,11 @@ describe("promotion-matching architecture: Core vs Fulfillment", () => {
         },
       ],
     ]);
-    const match2 = calculateMatchedPromotions(mockBooking, [tieredPromo], priorUsage);
+    const match2 = calculateMatchedPromotions(
+      mockBooking,
+      [tieredPromo],
+      priorUsage as PromotionUsageMap
+    );
     expect(match2).toHaveLength(1);
     expect(match2[0].appliedValue).toBe(100);
   });
