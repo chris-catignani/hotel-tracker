@@ -214,7 +214,11 @@ type PromotionRule = (
   usage?: PromotionUsage
 ) => ValidationResult;
 
-const PromotionRules: Record<string, PromotionRule> = {
+/**
+ * Core Eligibility Rules
+ * These are "hard" filters that determine if a promotion is even considered for this booking.
+ */
+const CorePromotionRules: Record<string, PromotionRule> = {
   typeMatch: (booking, promo) => {
     switch (promo.type) {
       case PromotionType.credit_card:
@@ -267,25 +271,6 @@ const PromotionRules: Record<string, PromotionRule> = {
     return { valid: true };
   },
 
-  minSpend: (booking, promo) => {
-    if (
-      promo.type === PromotionType.credit_card &&
-      promo.restrictions?.minSpend != null &&
-      Number(booking.totalCost) < Number(promo.restrictions.minSpend)
-    ) {
-      return { valid: false };
-    }
-    return { valid: true };
-  },
-
-  minNights: (booking, promo) => {
-    const r = promo.restrictions;
-    if (r?.minNightsRequired && booking.numNights < r.minNightsRequired && !r.spanStays) {
-      return { valid: false };
-    }
-    return { valid: true };
-  },
-
   subBrand: (booking, promo) => {
     return { valid: checkSubBrandRestrictions(promo.restrictions, booking.hotelChainSubBrandId) };
   },
@@ -325,7 +310,13 @@ const PromotionRules: Record<string, PromotionRule> = {
     }
     return { valid: true };
   },
+};
 
+/**
+ * Fulfillment Rules
+ * These determine if the promotion actually applies a value to this specific booking.
+ */
+const FulfillmentPromotionRules: Record<string, PromotionRule> = {
   usageCaps: (booking, promo, usage) => {
     const r = promo.restrictions;
     if (r?.maxStayCount && usage && usage.count >= r.maxStayCount) {
@@ -335,6 +326,25 @@ const PromotionRules: Record<string, PromotionRule> = {
       if (usage?.appliedSubBrandIds?.has(booking.hotelChainSubBrandId ?? null)) {
         return { valid: false };
       }
+    }
+    return { valid: true };
+  },
+
+  minSpend: (booking, promo) => {
+    if (
+      promo.type === PromotionType.credit_card &&
+      promo.restrictions?.minSpend != null &&
+      Number(booking.totalCost) < Number(promo.restrictions.minSpend)
+    ) {
+      return { valid: false };
+    }
+    return { valid: true };
+  },
+
+  minNights: (booking, promo) => {
+    const r = promo.restrictions;
+    if (r?.minNightsRequired && booking.numNights < r.minNightsRequired && !r.spanStays) {
+      return { valid: false };
     }
     return { valid: true };
   },
@@ -367,12 +377,19 @@ export function calculateMatchedPromotions(
   for (const promo of activePromotions) {
     const usage = priorUsage?.get(promo.id);
 
-    // Run all validation rules
-    const isValid = Object.values(PromotionRules).every((rule) => {
+    // 1. Core Eligibility (Hard Filters)
+    const isCoreEligible = Object.values(CorePromotionRules).every((rule) => {
       return rule(booking, promo, usage).valid;
     });
 
-    if (!isValid) continue;
+    if (!isCoreEligible) continue;
+
+    // 2. Fulfillment Status (Does this specific stay meet counts/spend?)
+    const isFulfilling = Object.values(FulfillmentPromotionRules).every((rule) => {
+      return rule(booking, promo, usage).valid;
+    });
+
+    if (!isFulfilling) continue;
 
     // Determine which benefits to use: tier-based or flat
     let activeBenefits: MatchingBenefit[];
