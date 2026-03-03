@@ -138,6 +138,8 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
     netCost,
   } = breakdown;
 
+  const activePromos = promotions.filter((p) => p.appliedValue > 0 || p.isUnfulfillable);
+
   return (
     <Card>
       <CardHeader>
@@ -205,7 +207,7 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
           </div>
         )}
 
-        {promotions.length > 0 && (
+        {activePromos.length > 0 && (
           <div className="space-y-2">
             <button
               className="flex w-full items-center justify-between text-sm hover:bg-muted/50 py-0.5 rounded transition-colors group"
@@ -230,7 +232,7 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
                 className="ml-5 space-y-2 border-l pl-3 py-1"
                 data-testid="breakdown-promos-list"
               >
-                {promotions.map((p) => (
+                {activePromos.map((p) => (
                   <div key={p.id} className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-1.5">
                       <span className="text-muted-foreground">{p.name}</span>

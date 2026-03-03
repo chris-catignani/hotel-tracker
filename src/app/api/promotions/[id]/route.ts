@@ -296,7 +296,14 @@ export async function DELETE(
       ...(promo?.tiers ?? []).flatMap((t) => t.benefits.map((b) => b.restrictionsId)),
     ].filter((rid): rid is string => rid !== null && rid !== undefined);
 
-    await prisma.promotion.delete({ where: { id: id } });
+    try {
+      await prisma.promotion.delete({ where: { id: id } });
+    } catch (error) {
+      // If already deleted by another concurrent request/test, we can ignore
+      if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025")) {
+        throw error;
+      }
+    }
 
     if (restrictionIdsToDelete.length > 0) {
       await prisma.promotionRestrictions.deleteMany({

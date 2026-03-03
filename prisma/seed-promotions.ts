@@ -1,4 +1,6 @@
 import { PrismaClient, Prisma } from "@prisma/client";
+import { reevaluateBookings } from "../src/lib/promotion-matching";
+import { HOTEL_ID, SUB_BRAND_ID } from "../src/lib/constants";
 
 const prisma = new PrismaClient();
 
@@ -7,7 +9,7 @@ export async function seedPromotions() {
     {
       name: "IHG 2x Promo",
       type: "loyalty",
-      hotelChain: { connect: { id: "co5ll49okbgq0fbceti8p0dpd" } },
+      hotelChain: { connect: { id: HOTEL_ID.IHG } },
       startDate: new Date("2026-01-01"),
       endDate: new Date("2026-03-31"),
 
@@ -52,7 +54,7 @@ export async function seedPromotions() {
     {
       name: "IHG Bonus EQN",
       type: "loyalty",
-      hotelChain: { connect: { id: "co5ll49okbgq0fbceti8p0dpd" } },
+      hotelChain: { connect: { id: HOTEL_ID.IHG } },
       startDate: new Date("2026-01-22"),
 
       endDate: new Date("2026-03-31"),
@@ -79,7 +81,7 @@ export async function seedPromotions() {
     {
       name: "Hyatt Bonus Journeys",
       type: "loyalty",
-      hotelChain: { connect: { id: "cxjdwg32a8xf7by36md0mdvuu" } },
+      hotelChain: { connect: { id: HOTEL_ID.HYATT } },
       startDate: new Date("2026-02-02"),
 
       endDate: new Date("2026-04-15"),
@@ -97,7 +99,9 @@ export async function seedPromotions() {
                 spanStays: true,
                 maxTotalBonusPoints: 7000,
                 subBrandRestrictions: {
-                  create: [{ hotelChainSubBrandId: "ckz1vxi70wnbaq3qehma0fhcc", mode: "include" }],
+                  create: [
+                    { hotelChainSubBrandId: SUB_BRAND_ID.HYATT.HYATT_PLACE, mode: "include" },
+                  ],
                 },
               },
             },
@@ -122,7 +126,7 @@ export async function seedPromotions() {
     {
       name: "GHA multi brand",
       type: "loyalty",
-      hotelChain: { connect: { id: "cwizlxi70wnbaq3qehma0fhbz" } },
+      hotelChain: { connect: { id: HOTEL_ID.GHA_DISCOVERY } },
       startDate: new Date("2025-12-01"),
 
       endDate: new Date("2026-05-31"),
@@ -173,7 +177,7 @@ export async function seedPromotions() {
     {
       name: "Marriott Global Q1",
       type: "loyalty",
-      hotelChain: { connect: { id: "c9uc76fdp3v95dccffxsa3h31" } },
+      hotelChain: { connect: { id: HOTEL_ID.MARRIOTT } },
       startDate: new Date("2026-02-25"),
 
       endDate: new Date("2026-05-10"),
@@ -202,15 +206,15 @@ export async function seedPromotions() {
     {
       name: "Hyatt Place/House 5k",
       type: "loyalty",
-      hotelChain: { connect: { id: "cxjdwg32a8xf7by36md0mdvuu" } },
+      hotelChain: { connect: { id: HOTEL_ID.HYATT } },
       startDate: new Date("2026-01-20"),
       endDate: new Date("2026-12-31"),
       restrictions: {
         create: {
           subBrandRestrictions: {
             create: [
-              { hotelChainSubBrandId: "ckz1vxi70wnbaq3qehma0fhbz", mode: "include" }, // Hyatt House
-              { hotelChainSubBrandId: "ckz1vxi70wnbaq3qehma0fhcc", mode: "include" }, // Hyatt Place
+              { hotelChainSubBrandId: SUB_BRAND_ID.HYATT.HYATT_HOUSE, mode: "include" }, // Hyatt House
+              { hotelChainSubBrandId: SUB_BRAND_ID.HYATT.HYATT_PLACE, mode: "include" }, // Hyatt Place
             ],
           },
         },
@@ -250,6 +254,16 @@ export async function seedPromotions() {
 
   // Seed BookingPromotion application logic moved from seed-bookings.ts
   await seedBookingPromotions();
+
+  // Automate detection of isUnfulfillable by re-evaluating all seeded bookings
+  const seededBookingPromos = await prisma.bookingPromotion.findMany({
+    select: { bookingId: true },
+    distinct: ["bookingId"],
+  });
+  if (seededBookingPromos.length > 0) {
+    console.log("Automatically re-evaluating seeded bookings to detect unfulfillable status...");
+    await reevaluateBookings(seededBookingPromos.map((b) => b.bookingId));
+  }
 }
 
 async function seedBookingPromotions() {

@@ -1,10 +1,7 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import prisma from "./prisma";
-import {
-  reevaluateSubsequentBookings,
-  getSubsequentBookingIds,
-} from "./promotion-matching-helpers";
-import { reevaluateBookings } from "./promotion-matching";
+import { reevaluateRelatedBookings } from "./promotion-matching-helpers";
+import { reevaluateBookings, getAffectedBookingIds } from "./promotion-matching";
 
 // Mock prisma
 vi.mock("./prisma", () => ({
@@ -16,9 +13,10 @@ vi.mock("./prisma", () => ({
   },
 }));
 
-// Mock reevaluateBookings from promotion-matching
+// Mock promotion-matching functions
 vi.mock("./promotion-matching", () => ({
   reevaluateBookings: vi.fn().mockResolvedValue(undefined),
+  getAffectedBookingIds: vi.fn().mockResolvedValue([]),
 }));
 
 const prismaMock = prisma as unknown as {
@@ -28,64 +26,38 @@ const prismaMock = prisma as unknown as {
   };
 };
 
-describe("cascading-reevaluation", () => {
+describe("promotion-matching-helpers", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("should re-evaluate only relevant subsequent bookings when promotionIds are provided", async () => {
+  it("should re-evaluate related and subsequent bookings when params are provided", async () => {
     const bookingId = "b1";
     const promoIds = ["p1"];
     const checkIn = new Date("2026-01-01");
+    const affectedIds = ["b2"];
 
-    prismaMock.booking.findUnique.mockResolvedValue({ id: bookingId, checkIn });
-    prismaMock.booking.findMany.mockResolvedValue([{ id: "b2" }, { id: "b3" }]);
+    (getAffectedBookingIds as Mock).mockResolvedValue(affectedIds);
+    prismaMock.booking.findMany.mockResolvedValue([{ id: "b1" }, { id: "b2" }, { id: "b3" }]);
 
-    await reevaluateSubsequentBookings(bookingId, promoIds);
+    await reevaluateRelatedBookings(bookingId, promoIds, checkIn);
 
-    expect(prismaMock.booking.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          checkIn: { gt: checkIn },
-          bookingPromotions: { some: { promotionId: { in: promoIds } } },
-        }),
-      })
-    );
-
-    expect(reevaluateBookings).toHaveBeenCalledWith(["b2", "b3"]);
-  });
-
-  it("should re-evaluate all subsequent bookings when no promotionIds are provided", async () => {
-    const bookingId = "b1";
-    const checkIn = new Date("2026-01-01");
-
-    prismaMock.booking.findUnique.mockResolvedValue({ id: bookingId, checkIn });
-    prismaMock.booking.findMany.mockResolvedValue([{ id: "b2" }, { id: "b3" }, { id: "b4" }]);
-
-    await reevaluateSubsequentBookings(bookingId);
+    expect(getAffectedBookingIds).toHaveBeenCalledWith(promoIds);
 
     expect(prismaMock.booking.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
-          checkIn: { gt: checkIn },
+          OR: [{ id: bookingId }, { id: { in: affectedIds } }, { checkIn: { gt: checkIn } }],
         }),
       })
     );
 
-    expect(reevaluateBookings).toHaveBeenCalledWith(["b2", "b3", "b4"]);
+    expect(reevaluateBookings).toHaveBeenCalledWith(["b1", "b2", "b3"]);
   });
 
-  it("should use getSubsequentBookingIds correctly", async () => {
-    const checkIn = new Date("2026-01-01");
-    prismaMock.booking.findMany.mockResolvedValue([{ id: "b2" }]);
-
-    const ids = await getSubsequentBookingIds(checkIn);
-
-    expect(prismaMock.booking.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { checkIn: { gt: checkIn } },
-      })
-    );
-    expect(ids).toEqual(["b2"]);
+  it("should not re-evaluate if no params are provided", async () => {
+    await reevaluateRelatedBookings(null, []);
+    expect(prismaMock.booking.findMany).not.toHaveBeenCalled();
+    expect(reevaluateBookings).not.toHaveBeenCalled();
   });
 });

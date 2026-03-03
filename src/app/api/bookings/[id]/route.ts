@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { matchPromotionsForBooking, reevaluateBookings } from "@/lib/promotion-matching";
-import {
-  reevaluateSubsequentBookings,
-  getSubsequentBookingIds,
-} from "@/lib/promotion-matching-helpers";
+import { matchPromotionsForBooking } from "@/lib/promotion-matching";
+import { reevaluateRelatedBookings } from "@/lib/promotion-matching-helpers";
 import { apiError } from "@/lib/api-error";
 import { calculatePoints } from "@/lib/loyalty-utils";
 
@@ -208,16 +205,32 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       }
     }
 
+    // Find relevant info BEFORE update to handle shifts in promotion eligibility
+    const oldBooking = await prisma.booking.findUnique({
+      where: { id },
+      select: {
+        checkIn: true,
+        bookingPromotions: { select: { promotionId: true } },
+      },
+    });
+
+    if (!oldBooking) {
+      return apiError("Booking not found", null, 404, request);
+    }
+
     const booking = await prisma.booking.update({
       where: { id: id },
       data,
     });
 
     // Re-run promotion matching after update
-    const appliedPromoIds = await matchPromotionsForBooking(booking.id);
+    const newAppliedPromoIds = await matchPromotionsForBooking(booking.id);
+    const oldPromoIds = oldBooking.bookingPromotions.map((bp) => bp.promotionId);
+    const allAffectedPromoIds = Array.from(new Set([...oldPromoIds, ...newAppliedPromoIds]));
 
-    // Re-evaluate subsequent bookings if this is an earlier stay
-    await reevaluateSubsequentBookings(booking.id, appliedPromoIds);
+    // Re-evaluate related bookings (past and future) to handle fulfillment status
+    // Also include subsequent bookings to handle prerequisite/sequence changes
+    await reevaluateRelatedBookings(booking.id, allAffectedPromoIds, booking.checkIn);
 
     // Fetch the booking with all relations to return
     const fullBooking = await prisma.booking.findUnique({
@@ -270,13 +283,20 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    // Find subsequent bookings before deleting
+    // Find relevant info before deleting
     const booking = await prisma.booking.findUnique({
       where: { id },
-      select: { checkIn: true },
+      select: {
+        checkIn: true,
+        bookingPromotions: { select: { promotionId: true } },
+      },
     });
 
-    const subsequentBookingIds = booking ? await getSubsequentBookingIds(booking.checkIn) : [];
+    if (!booking) {
+      return apiError("Booking not found", null, 404, request);
+    }
+
+    const promoIds = booking.bookingPromotions.map((bp) => bp.promotionId);
 
     // Delete associated booking promotions first
     await prisma.bookingPromotion.deleteMany({
@@ -287,10 +307,10 @@ export async function DELETE(
       where: { id: id },
     });
 
-    // Re-evaluate subsequent bookings
-    if (subsequentBookingIds.length > 0) {
-      await reevaluateBookings(subsequentBookingIds);
-    }
+    // Surgical Re-evaluation:
+    // 1. All bookings sharing the same promotions (for unfulfillable lookahead)
+    // 2. All subsequent bookings (for prerequisites/caps/sequencing)
+    await reevaluateRelatedBookings(null, promoIds, booking.checkIn);
 
     return NextResponse.json({ message: "Booking deleted" });
   } catch (error) {

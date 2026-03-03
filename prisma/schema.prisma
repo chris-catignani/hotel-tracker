@@ -7,6 +7,331 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model PointType {
+  id              String           @id @default(cuid())
+  name            String
+  category        PointCategory
+  centsPerPoint   Decimal          @map("cents_per_point") @db.Decimal(10, 6)
+  creditCards     CreditCard[]
+  hotelChains     HotelChain[]
+  shoppingPortals ShoppingPortal[]
+
+  @@map("point_types")
+}
+
+model HotelChain {
+  id                    String                  @id @default(cuid())
+  name                  String
+  loyaltyProgram        String?                 @map("loyalty_program")
+  basePointRate         Decimal?                @map("base_point_rate") @db.Decimal(10, 4)
+  pointTypeId           String?                 @map("point_type_id")
+  bookings              Booking[]
+  creditCardRewardRules CreditCardRewardRule[]
+  eliteStatuses         HotelChainEliteStatus[]
+  hotelChainSubBrands   HotelChainSubBrand[]
+  pointType             PointType?              @relation(fields: [pointTypeId], references: [id])
+  promotionRestrictions PromotionRestrictions[]
+  promotions            Promotion[]
+  userStatus            UserStatus?
+
+  @@map("hotel_chains")
+}
+
+model HotelChainSubBrand {
+  id                   String                         @id @default(cuid())
+  hotelChainId         String                         @map("hotel_chain_id")
+  name                 String
+  basePointRate        Decimal?                       @map("base_point_rate") @db.Decimal(10, 4)
+  bookings             Booking[]
+  hotelChain           HotelChain                     @relation(fields: [hotelChainId], references: [id], onDelete: Cascade)
+  subBrandRestrictions PromotionSubBrandRestriction[]
+
+  @@unique([hotelChainId, name])
+  @@map("hotel_chain_sub_brands")
+}
+
+model HotelChainEliteStatus {
+  id              String       @id @default(cuid())
+  hotelChainId    String       @map("hotel_chain_id")
+  name            String
+  eliteTierLevel  Int          @default(0) @map("elite_tier_level")
+  bonusPercentage Decimal?     @map("bonus_percentage") @db.Decimal(10, 4)
+  fixedRate       Decimal?     @map("fixed_rate") @db.Decimal(10, 4)
+  isFixed         Boolean      @default(false) @map("is_fixed")
+  hotelChain      HotelChain   @relation(fields: [hotelChainId], references: [id], onDelete: Cascade)
+  userStatuses    UserStatus[]
+
+  @@unique([hotelChainId, name])
+  @@map("hotel_chain_elite_statuses")
+}
+
+model UserStatus {
+  id            String                 @id @default(cuid())
+  hotelChainId  String                 @unique @map("hotel_chain_id")
+  eliteStatusId String?                @map("elite_status_id")
+  eliteStatus   HotelChainEliteStatus? @relation(fields: [eliteStatusId], references: [id])
+  hotelChain    HotelChain             @relation(fields: [hotelChainId], references: [id], onDelete: Cascade)
+
+  @@map("user_statuses")
+}
+
+model CreditCard {
+  id                    String                          @id @default(cuid())
+  name                  String
+  rewardType            String                          @map("reward_type")
+  rewardRate            Decimal                         @map("reward_rate") @db.Decimal(10, 4)
+  pointTypeId           String?                         @map("point_type_id")
+  isDeleted             Boolean                         @default(false) @map("is_deleted")
+  bookings              Booking[]
+  rewardRules           CreditCardRewardRule[]
+  pointType             PointType?                      @relation(fields: [pointTypeId], references: [id])
+  restrictionTieInCards PromotionRestrictionTieInCard[]
+  promotions            Promotion[]                     @relation("PromotionCreditCard")
+
+  @@map("credit_cards")
+}
+
+model ShoppingPortal {
+  id          String      @id @default(cuid())
+  name        String
+  rewardType  String      @default("cashback") @map("reward_type")
+  pointTypeId String?     @map("point_type_id")
+  bookings    Booking[]
+  promotions  Promotion[]
+  pointType   PointType?  @relation(fields: [pointTypeId], references: [id])
+
+  @@map("shopping_portals")
+}
+
+model OtaAgency {
+  id                    String                 @id @default(cuid())
+  name                  String
+  bookings              Booking[]
+  creditCardRewardRules CreditCardRewardRule[]
+
+  @@map("ota_agencies")
+}
+
+model Booking {
+  id                    String               @id @default(cuid())
+  hotelChainId          String               @map("hotel_chain_id")
+  hotelChainSubBrandId  String?              @map("hotel_chain_sub_brand_id")
+  propertyName          String               @map("property_name")
+  checkIn               DateTime             @map("check_in") @db.Date
+  checkOut              DateTime             @map("check_out") @db.Date
+  numNights             Int                  @map("num_nights")
+  pretaxCost            Decimal              @map("pretax_cost") @db.Decimal(10, 2)
+  taxAmount             Decimal              @map("tax_amount") @db.Decimal(10, 2)
+  totalCost             Decimal              @map("total_cost") @db.Decimal(10, 2)
+  creditCardId          String?              @map("credit_card_id")
+  shoppingPortalId      String?              @map("shopping_portal_id")
+  portalCashbackRate    Decimal?             @map("portal_cashback_rate") @db.Decimal(10, 4)
+  portalCashbackOnTotal Boolean              @default(false) @map("portal_cashback_on_total")
+  loyaltyPointsEarned   Int?                 @map("loyalty_points_earned")
+  pointsRedeemed        Int?                 @map("points_redeemed")
+  currency              String               @default("USD")
+  originalAmount        Decimal?             @map("original_amount") @db.Decimal(10, 2)
+  bookingSource         BookingSourceType?   @map("booking_source")
+  otaAgencyId           String?              @map("ota_agency_id")
+  notes                 String?
+  createdAt             DateTime             @default(now()) @map("created_at")
+  benefits              BookingBenefit[]
+  certificates          BookingCertificate[]
+  bookingPromotions     BookingPromotion[]
+  creditCard            CreditCard?          @relation(fields: [creditCardId], references: [id])
+  hotelChain            HotelChain           @relation(fields: [hotelChainId], references: [id])
+  hotelChainSubBrand    HotelChainSubBrand?  @relation(fields: [hotelChainSubBrandId], references: [id])
+  otaAgency             OtaAgency?           @relation(fields: [otaAgencyId], references: [id])
+  shoppingPortal        ShoppingPortal?      @relation(fields: [shoppingPortalId], references: [id])
+
+  @@index([checkIn])
+  @@index([createdAt])
+  @@map("bookings")
+}
+
+model BookingBenefit {
+  id          String      @id @default(cuid())
+  bookingId   String      @map("booking_id")
+  benefitType BenefitType @map("benefit_type")
+  label       String?
+  dollarValue Decimal?    @map("dollar_value") @db.Decimal(10, 2)
+  booking     Booking     @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("booking_benefits")
+}
+
+model BookingCertificate {
+  id        String   @id @default(cuid())
+  bookingId String   @map("booking_id")
+  certType  CertType @map("cert_type")
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("booking_certificates")
+}
+
+model PromotionRestrictions {
+  id                         String                          @id @default(cuid())
+  minSpend                   Decimal?                        @map("min_spend") @db.Decimal(10, 2)
+  minNightsRequired          Int?                            @map("min_nights_required")
+  nightsStackable            Boolean                         @default(false) @map("nights_stackable")
+  spanStays                  Boolean                         @default(false) @map("span_stays")
+  maxStayCount               Int?                            @map("max_stay_count")
+  maxRewardCount             Int?                            @map("max_reward_count")
+  maxRedemptionValue         Decimal?                        @map("max_redemption_value") @db.Decimal(10, 2)
+  maxTotalBonusPoints        Int?                            @map("max_total_bonus_points")
+  oncePerSubBrand            Boolean                         @default(false) @map("once_per_sub_brand")
+  bookByDate                 DateTime?                       @map("book_by_date") @db.Date
+  registrationDeadline       DateTime?                       @map("registration_deadline") @db.Date
+  validDaysAfterRegistration Int?                            @map("valid_days_after_registration")
+  tieInRequiresPayment       Boolean                         @default(false) @map("tie_in_requires_payment")
+  allowedPaymentTypes        String[]                        @default([]) @map("allowed_payment_types")
+  allowedBookingSources      String[]                        @default([]) @map("allowed_booking_sources")
+  hotelChainId               String?                         @map("hotel_chain_id")
+  prerequisiteStayCount      Int?                            @map("prerequisite_stay_count")
+  prerequisiteNightCount     Int?                            @map("prerequisite_night_count")
+  promotionBenefit           PromotionBenefit?
+  tieInCards                 PromotionRestrictionTieInCard[]
+  hotelChain                 HotelChain?                     @relation(fields: [hotelChainId], references: [id])
+  subBrandRestrictions       PromotionSubBrandRestriction[]
+  promotion                  Promotion?
+
+  @@map("promotion_restrictions")
+}
+
+model PromotionSubBrandRestriction {
+  id                      String                  @id @default(cuid())
+  promotionRestrictionsId String                  @map("promotion_restrictions_id")
+  hotelChainSubBrandId    String                  @map("hotel_chain_sub_brand_id")
+  mode                    SubBrandRestrictionMode
+  hotelChainSubBrand      HotelChainSubBrand      @relation(fields: [hotelChainSubBrandId], references: [id])
+  promotionRestrictions   PromotionRestrictions   @relation(fields: [promotionRestrictionsId], references: [id], onDelete: Cascade)
+
+  @@unique([promotionRestrictionsId, hotelChainSubBrandId])
+  @@map("promotion_sub_brand_restrictions")
+}
+
+model PromotionRestrictionTieInCard {
+  id                      String                @id @default(cuid())
+  promotionRestrictionsId String                @map("promotion_restrictions_id")
+  creditCardId            String                @map("credit_card_id")
+  creditCard              CreditCard            @relation(fields: [creditCardId], references: [id])
+  promotionRestrictions   PromotionRestrictions @relation(fields: [promotionRestrictionsId], references: [id], onDelete: Cascade)
+
+  @@unique([promotionRestrictionsId, creditCardId])
+  @@map("promotion_restriction_tie_in_cards")
+}
+
+model Promotion {
+  id                String                 @id @default(cuid())
+  name              String
+  type              PromotionType
+  hotelChainId      String?                @map("hotel_chain_id")
+  creditCardId      String?                @map("credit_card_id")
+  shoppingPortalId  String?                @map("shopping_portal_id")
+  startDate         DateTime?              @map("start_date") @db.Date
+  endDate           DateTime?              @map("end_date") @db.Date
+  createdAt         DateTime               @default(now()) @map("created_at")
+  restrictionsId    String?                @unique @map("restrictions_id")
+  bookingPromotions BookingPromotion[]
+  benefits          PromotionBenefit[]
+  tiers             PromotionTier[]
+  creditCard        CreditCard?            @relation("PromotionCreditCard", fields: [creditCardId], references: [id])
+  hotelChain        HotelChain?            @relation(fields: [hotelChainId], references: [id])
+  restrictions      PromotionRestrictions? @relation(fields: [restrictionsId], references: [id])
+  shoppingPortal    ShoppingPortal?        @relation(fields: [shoppingPortalId], references: [id])
+  userPromotions    UserPromotion?
+
+  @@map("promotions")
+}
+
+model UserPromotion {
+  id               String    @id @default(cuid())
+  promotionId      String    @unique @map("promotion_id")
+  registrationDate DateTime  @map("registration_date") @db.Date
+  promotion        Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+
+  @@map("user_promotions")
+}
+
+model PromotionTier {
+  id          String             @id @default(cuid())
+  promotionId String             @map("promotion_id")
+  minStays    Int?               @map("min_stays")
+  maxStays    Int?               @map("max_stays")
+  minNights   Int?               @map("min_nights")
+  maxNights   Int?               @map("max_nights")
+  benefits    PromotionBenefit[]
+  promotion   Promotion          @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+
+  @@map("promotion_tiers")
+}
+
+model PromotionBenefit {
+  id                       String                    @id @default(cuid())
+  promotionId              String?                   @map("promotion_id")
+  promotionTierId          String?                   @map("promotion_tier_id")
+  rewardType               PromotionRewardType       @map("reward_type")
+  valueType                PromotionBenefitValueType @map("value_type")
+  value                    Decimal                   @db.Decimal(10, 4)
+  certType                 String?                   @map("cert_type")
+  pointsMultiplierBasis    PointsMultiplierBasis?    @default(base_only) @map("points_multiplier_basis")
+  sortOrder                Int                       @default(0) @map("sort_order")
+  createdAt                DateTime                  @default(now()) @map("created_at")
+  restrictionsId           String?                   @unique @map("restrictions_id")
+  bookingPromotionBenefits BookingPromotionBenefit[]
+  promotion                Promotion?                @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  promotionTier            PromotionTier?            @relation(fields: [promotionTierId], references: [id], onDelete: Cascade)
+  restrictions             PromotionRestrictions?    @relation(fields: [restrictionsId], references: [id])
+
+  @@map("promotion_benefits")
+}
+
+model BookingPromotion {
+  id                      String                    @id @default(cuid())
+  bookingId               String                    @map("booking_id")
+  promotionId             String                    @map("promotion_id")
+  appliedValue            Decimal                   @map("applied_value") @db.Decimal(10, 2)
+  bonusPointsApplied      Int?                      @map("bonus_points_applied")
+  isUnfulfillable         Boolean                   @default(false) @map("is_unfulfillable")
+  autoApplied             Boolean                   @default(true) @map("auto_applied")
+  verified                Boolean                   @default(false)
+  eligibleNightsAtBooking Int?                      @map("eligible_nights_at_booking")
+  benefitApplications     BookingPromotionBenefit[]
+  booking                 Booking                   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  promotion               Promotion                 @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+
+  @@map("booking_promotions")
+}
+
+model BookingPromotionBenefit {
+  id                      String           @id @default(cuid())
+  bookingPromotionId      String           @map("booking_promotion_id")
+  promotionBenefitId      String           @map("promotion_benefit_id")
+  appliedValue            Decimal          @map("applied_value") @db.Decimal(10, 2)
+  bonusPointsApplied      Int?             @map("bonus_points_applied")
+  isUnfulfillable         Boolean          @default(false) @map("is_unfulfillable")
+  eligibleNightsAtBooking Int?             @map("eligible_nights_at_booking")
+  bookingPromotion        BookingPromotion @relation(fields: [bookingPromotionId], references: [id], onDelete: Cascade)
+  promotionBenefit        PromotionBenefit @relation(fields: [promotionBenefitId], references: [id], onDelete: Cascade)
+
+  @@map("booking_promotion_benefits")
+}
+
+model CreditCardRewardRule {
+  id           String                   @id @default(cuid())
+  creditCardId String                   @map("credit_card_id")
+  hotelChainId String?                  @map("hotel_chain_id")
+  otaAgencyId  String?                  @map("ota_agency_id")
+  rewardType   CreditCardRewardRuleType @map("reward_type")
+  rewardValue  Decimal                  @map("reward_value") @db.Decimal(10, 4)
+  createdAt    DateTime                 @default(now()) @map("created_at")
+  creditCard   CreditCard               @relation(fields: [creditCardId], references: [id], onDelete: Cascade)
+  hotelChain   HotelChain?              @relation(fields: [hotelChainId], references: [id])
+  otaAgency    OtaAgency?               @relation(fields: [otaAgencyId], references: [id])
+
+  @@map("credit_card_reward_rules")
+}
+
 enum PointCategory {
   hotel
   airline
@@ -50,168 +375,6 @@ enum SubBrandRestrictionMode {
   exclude
 }
 
-model PointType {
-  id              String           @id @default(cuid())
-  name            String
-  category        PointCategory
-  centsPerPoint   Decimal          @map("cents_per_point") @db.Decimal(10, 6)
-  hotelChains     HotelChain[]
-  creditCards     CreditCard[]
-  shoppingPortals ShoppingPortal[]
-
-  @@map("point_types")
-}
-
-model HotelChain {
-  id                    String                  @id @default(cuid())
-  name                  String
-  loyaltyProgram        String?                 @map("loyalty_program")
-  basePointRate         Decimal?                @map("base_point_rate") @db.Decimal(10, 4)
-  pointTypeId           String?                 @map("point_type_id")
-  pointType             PointType?              @relation(fields: [pointTypeId], references: [id])
-  bookings              Booking[]
-  promotions            Promotion[]
-  hotelChainSubBrands   HotelChainSubBrand[]
-  eliteStatuses         HotelChainEliteStatus[]
-  userStatus            UserStatus?
-  creditCardRewardRules CreditCardRewardRule[]
-  promotionRestrictions PromotionRestrictions[]
-
-  @@map("hotel_chains")
-}
-
-model HotelChainSubBrand {
-  id                   String                        @id @default(cuid())
-  hotelChainId         String                        @map("hotel_chain_id")
-  hotelChain           HotelChain                    @relation(fields: [hotelChainId], references: [id], onDelete: Cascade)
-  name                 String
-  basePointRate        Decimal?                      @map("base_point_rate") @db.Decimal(10, 4)
-  bookings             Booking[]
-  subBrandRestrictions PromotionSubBrandRestriction[]
-
-  @@unique([hotelChainId, name])
-  @@map("hotel_chain_sub_brands")
-}
-
-model HotelChainEliteStatus {
-  id              String       @id @default(cuid())
-  hotelChainId    String       @map("hotel_chain_id")
-  hotelChain      HotelChain   @relation(fields: [hotelChainId], references: [id], onDelete: Cascade)
-  name            String
-  eliteTierLevel  Int          @default(0) @map("elite_tier_level")
-  bonusPercentage Decimal?     @map("bonus_percentage") @db.Decimal(10, 4) // e.g. 0.50 for 50%
-  fixedRate       Decimal?     @map("fixed_rate") @db.Decimal(10, 4) // e.g. 7.0 for 7 points/$1
-  isFixed         Boolean      @default(false) @map("is_fixed")
-  userStatuses    UserStatus[]
-
-  @@unique([hotelChainId, name])
-  @@map("hotel_chain_elite_statuses")
-}
-
-model UserStatus {
-  id            String                 @id @default(cuid())
-  hotelChainId  String                 @unique @map("hotel_chain_id")
-  hotelChain    HotelChain             @relation(fields: [hotelChainId], references: [id], onDelete: Cascade)
-  eliteStatusId String?                @map("elite_status_id")
-  eliteStatus   HotelChainEliteStatus? @relation(fields: [eliteStatusId], references: [id])
-
-  @@map("user_statuses")
-}
-
-model CreditCard {
-  id                    String                        @id @default(cuid())
-  name                  String
-  rewardType            String                        @map("reward_type") // "points" or "cashback"
-  rewardRate            Decimal                       @map("reward_rate") @db.Decimal(10, 4) // e.g. 0.05 for 5x
-  pointTypeId           String?                       @map("point_type_id")
-  pointType             PointType?                    @relation(fields: [pointTypeId], references: [id])
-  isDeleted             Boolean                       @default(false) @map("is_deleted")
-  rewardRules           CreditCardRewardRule[]
-  bookings              Booking[]
-  promotions            Promotion[]                   @relation("PromotionCreditCard")
-  restrictionTieInCards PromotionRestrictionTieInCard[]
-
-  @@map("credit_cards")
-}
-
-model ShoppingPortal {
-  id          String      @id @default(cuid())
-  name        String
-  rewardType  String      @default("cashback") @map("reward_type")
-  pointTypeId String?     @map("point_type_id")
-  pointType   PointType?  @relation(fields: [pointTypeId], references: [id])
-  bookings    Booking[]
-  promotions  Promotion[]
-
-  @@map("shopping_portals")
-}
-
-model OtaAgency {
-  id                    String                 @id @default(cuid())
-  name                  String
-  bookings              Booking[]
-  creditCardRewardRules CreditCardRewardRule[]
-
-  @@map("ota_agencies")
-}
-
-model Booking {
-  id                    String               @id @default(cuid())
-  hotelChainId          String               @map("hotel_chain_id")
-  hotelChain            HotelChain           @relation(fields: [hotelChainId], references: [id])
-  hotelChainSubBrandId  String?              @map("hotel_chain_sub_brand_id")
-  hotelChainSubBrand    HotelChainSubBrand?  @relation(fields: [hotelChainSubBrandId], references: [id])
-  propertyName          String               @map("property_name")
-  checkIn               DateTime             @map("check_in") @db.Date
-  checkOut              DateTime             @map("check_out") @db.Date
-  numNights             Int                  @map("num_nights")
-  pretaxCost            Decimal              @map("pretax_cost") @db.Decimal(10, 2)
-  taxAmount             Decimal              @map("tax_amount") @db.Decimal(10, 2)
-  totalCost             Decimal              @map("total_cost") @db.Decimal(10, 2)
-  creditCardId          String?              @map("credit_card_id")
-  creditCard            CreditCard?          @relation(fields: [creditCardId], references: [id])
-  shoppingPortalId      String?              @map("shopping_portal_id")
-  shoppingPortal        ShoppingPortal?      @relation(fields: [shoppingPortalId], references: [id])
-  portalCashbackRate    Decimal?             @map("portal_cashback_rate") @db.Decimal(10, 4)
-  portalCashbackOnTotal Boolean              @default(false) @map("portal_cashback_on_total")
-  loyaltyPointsEarned   Int?                 @map("loyalty_points_earned")
-  pointsRedeemed        Int?                 @map("points_redeemed")
-  currency              String               @default("USD")
-  originalAmount        Decimal?             @map("original_amount") @db.Decimal(10, 2)
-  bookingSource         BookingSourceType?   @map("booking_source")
-  otaAgencyId           String?              @map("ota_agency_id")
-  otaAgency             OtaAgency?           @relation(fields: [otaAgencyId], references: [id])
-  notes                 String?
-  createdAt             DateTime             @default(now()) @map("created_at")
-  bookingPromotions     BookingPromotion[]
-  certificates          BookingCertificate[]
-  benefits              BookingBenefit[]
-
-  @@index([checkIn])
-  @@index([createdAt])
-  @@map("bookings")
-}
-
-model BookingBenefit {
-  id          String      @id @default(cuid())
-  bookingId   String      @map("booking_id")
-  benefitType BenefitType @map("benefit_type")
-  label       String?
-  dollarValue Decimal?    @map("dollar_value") @db.Decimal(10, 2)
-  booking     Booking     @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-
-  @@map("booking_benefits")
-}
-
-model BookingCertificate {
-  id        String   @id @default(cuid())
-  bookingId String   @map("booking_id")
-  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  certType  CertType @map("cert_type")
-
-  @@map("booking_certificates")
-}
-
 enum PromotionType {
   credit_card
   portal
@@ -234,167 +397,4 @@ enum PromotionBenefitValueType {
 enum PointsMultiplierBasis {
   base_only
   base_and_elite
-}
-
-model PromotionRestrictions {
-  id                         String                        @id @default(cuid())
-  minSpend                   Decimal?                      @map("min_spend") @db.Decimal(10, 2)
-  minNightsRequired          Int?                          @map("min_nights_required")
-  nightsStackable            Boolean                       @default(false) @map("nights_stackable")
-  spanStays                  Boolean                       @default(false) @map("span_stays")
-  maxStayCount               Int?                          @map("max_stay_count")
-  maxRewardCount             Int?                          @map("max_reward_count")
-  maxRedemptionValue         Decimal?                      @map("max_redemption_value") @db.Decimal(10, 2)
-  maxTotalBonusPoints        Int?                          @map("max_total_bonus_points")
-  oncePerSubBrand            Boolean                       @default(false) @map("once_per_sub_brand")
-  bookByDate                 DateTime?                     @map("book_by_date") @db.Date
-  registrationDeadline       DateTime?                     @map("registration_deadline") @db.Date
-  validDaysAfterRegistration Int?                          @map("valid_days_after_registration")
-  tieInRequiresPayment       Boolean                       @default(false) @map("tie_in_requires_payment")
-  allowedPaymentTypes        String[]                      @default([]) @map("allowed_payment_types")
-  allowedBookingSources      String[]                      @default([]) @map("allowed_booking_sources")
-  hotelChainId               String?                       @map("hotel_chain_id")
-  hotelChain                 HotelChain?                   @relation(fields: [hotelChainId], references: [id])
-  prerequisiteStayCount      Int?                          @map("prerequisite_stay_count")
-  prerequisiteNightCount     Int?                          @map("prerequisite_night_count")
-  subBrandRestrictions       PromotionSubBrandRestriction[]
-  tieInCards                 PromotionRestrictionTieInCard[]
-  // Exactly one of these is set
-  promotion                  Promotion?
-  promotionBenefit           PromotionBenefit?
-
-  @@map("promotion_restrictions")
-}
-
-model PromotionSubBrandRestriction {
-  id                      String                  @id @default(cuid())
-  promotionRestrictionsId String                  @map("promotion_restrictions_id")
-  promotionRestrictions   PromotionRestrictions   @relation(fields: [promotionRestrictionsId], references: [id], onDelete: Cascade)
-  hotelChainSubBrandId    String                  @map("hotel_chain_sub_brand_id")
-  hotelChainSubBrand      HotelChainSubBrand      @relation(fields: [hotelChainSubBrandId], references: [id])
-  mode                    SubBrandRestrictionMode
-
-  @@unique([promotionRestrictionsId, hotelChainSubBrandId])
-  @@map("promotion_sub_brand_restrictions")
-}
-
-model PromotionRestrictionTieInCard {
-  id                      String                @id @default(cuid())
-  promotionRestrictionsId String                @map("promotion_restrictions_id")
-  promotionRestrictions   PromotionRestrictions @relation(fields: [promotionRestrictionsId], references: [id], onDelete: Cascade)
-  creditCardId            String                @map("credit_card_id")
-  creditCard              CreditCard            @relation(fields: [creditCardId], references: [id])
-
-  @@unique([promotionRestrictionsId, creditCardId])
-  @@map("promotion_restriction_tie_in_cards")
-}
-
-model Promotion {
-  id               String                 @id @default(cuid())
-  name             String
-  type             PromotionType
-  hotelChainId     String?                @map("hotel_chain_id")
-  hotelChain       HotelChain?            @relation(fields: [hotelChainId], references: [id])
-  creditCardId     String?                @map("credit_card_id")
-  creditCard       CreditCard?            @relation("PromotionCreditCard", fields: [creditCardId], references: [id])
-  shoppingPortalId String?                @map("shopping_portal_id")
-  shoppingPortal   ShoppingPortal?        @relation(fields: [shoppingPortalId], references: [id])
-  startDate        DateTime?              @map("start_date") @db.Date
-  endDate          DateTime?              @map("end_date") @db.Date
-  createdAt        DateTime               @default(now()) @map("created_at")
-  restrictionsId   String?                @unique @map("restrictions_id")
-  restrictions     PromotionRestrictions? @relation(fields: [restrictionsId], references: [id])
-  benefits         PromotionBenefit[]
-  tiers            PromotionTier[]
-  bookingPromotions BookingPromotion[]
-  userPromotions   UserPromotion[]
-
-  @@map("promotions")
-}
-
-model UserPromotion {
-  id               String    @id @default(cuid())
-  promotionId      String    @map("promotion_id")
-  registrationDate DateTime  @map("registration_date") @db.Date
-  promotion        Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
-
-  @@unique([promotionId])
-  @@map("user_promotions")
-}
-
-model PromotionTier {
-  id          String             @id @default(cuid())
-  promotionId String             @map("promotion_id")
-  minStays    Int?               @map("min_stays")
-  maxStays    Int?               @map("max_stays")
-  minNights   Int?               @map("min_nights")
-  maxNights   Int?               @map("max_nights")
-  promotion   Promotion          @relation(fields: [promotionId], references: [id], onDelete: Cascade)
-  benefits    PromotionBenefit[]
-
-  @@map("promotion_tiers")
-}
-
-model PromotionBenefit {
-  id                       String                    @id @default(cuid())
-  promotionId              String?                   @map("promotion_id")
-  promotion                Promotion?                @relation(fields: [promotionId], references: [id], onDelete: Cascade)
-  promotionTierId          String?                   @map("promotion_tier_id")
-  promotionTier            PromotionTier?            @relation(fields: [promotionTierId], references: [id], onDelete: Cascade)
-  rewardType               PromotionRewardType       @map("reward_type")
-  valueType                PromotionBenefitValueType @map("value_type")
-  value                    Decimal                   @db.Decimal(10, 4)
-  certType                 String?                   @map("cert_type")
-  pointsMultiplierBasis    PointsMultiplierBasis?    @default(base_only) @map("points_multiplier_basis")
-  sortOrder                Int                       @default(0) @map("sort_order")
-  createdAt                DateTime                  @default(now()) @map("created_at")
-  restrictionsId           String?                   @unique @map("restrictions_id")
-  restrictions             PromotionRestrictions?    @relation(fields: [restrictionsId], references: [id])
-  bookingPromotionBenefits BookingPromotionBenefit[]
-
-  @@map("promotion_benefits")
-}
-
-model BookingPromotion {
-  id                  String                    @id @default(cuid())
-  bookingId           String                    @map("booking_id")
-  booking             Booking                   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  promotionId         String                    @map("promotion_id")
-  promotion           Promotion                 @relation(fields: [promotionId], references: [id], onDelete: Cascade)
-  appliedValue        Decimal                   @map("applied_value") @db.Decimal(10, 2)
-  bonusPointsApplied  Int?                      @map("bonus_points_applied")
-  autoApplied         Boolean                   @default(true) @map("auto_applied")
-  verified            Boolean                   @default(false)
-  eligibleNightsAtBooking Int?                  @map("eligible_nights_at_booking")
-  benefitApplications BookingPromotionBenefit[]
-
-  @@map("booking_promotions")
-}
-
-model BookingPromotionBenefit {
-  id                 String           @id @default(cuid())
-  bookingPromotionId String           @map("booking_promotion_id")
-  bookingPromotion   BookingPromotion @relation(fields: [bookingPromotionId], references: [id], onDelete: Cascade)
-  promotionBenefitId String           @map("promotion_benefit_id")
-  promotionBenefit   PromotionBenefit @relation(fields: [promotionBenefitId], references: [id], onDelete: Cascade)
-  appliedValue       Decimal          @map("applied_value") @db.Decimal(10, 2)
-  bonusPointsApplied Int?             @map("bonus_points_applied")
-  eligibleNightsAtBooking Int?        @map("eligible_nights_at_booking")
-
-  @@map("booking_promotion_benefits")
-}
-
-model CreditCardRewardRule {
-  id           String                   @id @default(cuid())
-  creditCardId String                   @map("credit_card_id")
-  creditCard   CreditCard               @relation(fields: [creditCardId], references: [id], onDelete: Cascade)
-  hotelChainId String?                  @map("hotel_chain_id")
-  hotelChain   HotelChain?              @relation(fields: [hotelChainId], references: [id], onDelete: SetNull)
-  otaAgencyId  String?                  @map("ota_agency_id")
-  otaAgency    OtaAgency?               @relation(fields: [otaAgencyId], references: [id], onDelete: SetNull)
-  rewardType   CreditCardRewardRuleType @map("reward_type")
-  rewardValue  Decimal                  @map("reward_value") @db.Decimal(10, 4)
-  createdAt    DateTime                 @default(now()) @map("created_at")
-
-  @@map("credit_card_reward_rules")
 }

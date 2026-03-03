@@ -1,65 +1,49 @@
 import prisma from "./prisma";
-import { reevaluateBookings } from "./promotion-matching";
+import { reevaluateBookings, getAffectedBookingIds } from "./promotion-matching";
 
 /**
- * Finds all bookings that occur after a given check-in date.
+ * Re-evaluates all bookings (past and future) that match specific promotions,
+ * and optionally all bookings occurring after a specific date.
+ *
+ * This handles:
+ * 1. "Unfulfillable" lookahead (global across the promotion)
+ * 2. Prerequisite/Sequencing changes (all subsequent bookings)
+ * 3. Redemption cap changes (all subsequent bookings)
  */
-export async function getSubsequentBookingIds(checkIn: Date): Promise<string[]> {
-  const subsequentBookings = await prisma.booking.findMany({
+export async function reevaluateRelatedBookings(
+  bookingId: string | null,
+  promotionIds: string[],
+  afterCheckIn?: Date
+): Promise<void> {
+  if (promotionIds.length === 0 && !afterCheckIn) return;
+
+  const affectedPromoBookingIds = await getAffectedBookingIds(promotionIds);
+
+  const affected = await prisma.booking.findMany({
     where: {
-      checkIn: {
-        gt: checkIn,
-      },
+      OR: [
+        ...(bookingId ? [{ id: bookingId }] : []),
+        ...(affectedPromoBookingIds.length > 0
+          ? [
+              {
+                id: { in: affectedPromoBookingIds },
+              },
+            ]
+          : []),
+        ...(afterCheckIn
+          ? [
+              {
+                checkIn: { gt: afterCheckIn },
+              },
+            ]
+          : []),
+      ],
     },
     select: { id: true },
     orderBy: { checkIn: "asc" },
   });
 
-  return subsequentBookings.map((b) => b.id);
-}
-
-/**
- * Re-evaluates all bookings that occur after a given booking.
- * This is necessary because changes to an earlier booking can affect the
- * redemption capacity and eligibility for chronologically later stays.
- *
- * Optimization: If promotionIds are provided, only re-evaluates subsequent
- * bookings that either currently have one of those promotions or could
- * potentially match them.
- */
-export async function reevaluateSubsequentBookings(
-  bookingId: string,
-  promotionIds?: string[]
-): Promise<void> {
-  const booking = await prisma.booking.findUnique({
-    where: { id: bookingId },
-    select: { checkIn: true },
-  });
-
-  if (!booking) return;
-
-  let queryIds: string[] = [];
-
-  if (promotionIds && promotionIds.length > 0) {
-    // Optimized path: only find bookings after this stay that match the same promos
-    const affected = await prisma.booking.findMany({
-      where: {
-        checkIn: { gt: booking.checkIn },
-        bookingPromotions: {
-          some: {
-            promotionId: { in: promotionIds },
-          },
-        },
-      },
-      select: { id: true },
-      orderBy: { checkIn: "asc" },
-    });
-    queryIds = affected.map((b) => b.id);
-  } else {
-    // Fallback: re-evaluate all future bookings (e.g. on deletion where we don't know what matched)
-    queryIds = await getSubsequentBookingIds(booking.checkIn);
-  }
-
+  const queryIds = affected.map((b) => b.id);
   if (queryIds.length > 0) {
     await reevaluateBookings(queryIds);
   }

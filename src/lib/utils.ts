@@ -10,7 +10,9 @@ export function cn(...inputs: ClassValue[]) {
  * Formats a number as a currency string (USD).
  */
 export function formatCurrency(amount: number): string {
-  return `$${amount.toLocaleString("en-US", {
+  // Ensure -0 or tiny negative values are treated as positive 0
+  const normalizedAmount = Math.abs(amount) < 0.005 ? 0 : amount;
+  return `$${normalizedAmount.toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
