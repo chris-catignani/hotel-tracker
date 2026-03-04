@@ -3,7 +3,7 @@ import { formatCurrency } from "@/lib/utils";
 import { DEFAULT_EQN_VALUE } from "@/lib/constants";
 
 const DEFAULT_CENTS_PER_POINT = 0.01;
-const ORPHANED_PROMO_DESCRIPTION =
+const ORPHANED_PROMOTION_DESCRIPTION =
   "There are not enough future bookings to fulfill this promotion.";
 
 export interface CalculationSegment {
@@ -371,7 +371,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
             description: isMaxedOut
               ? "This segment no longer applies because the promotion has been maxed out."
               : isSegmentOrphaned
-                ? ORPHANED_PROMO_DESCRIPTION
+                ? ORPHANED_PROMOTION_DESCRIPTION
                 : description +
                   (isCycleFinished ? " (Goal Met!)" : " (Pending)") +
                   (isSegmentCapped ? " Reduced by redemption caps." : ""),
@@ -403,7 +403,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
         benefitDescriptionLine = isMaxedOutOverall
           ? "This promotion has been maxed out and no further rewards apply."
           : isOrphaned
-            ? ORPHANED_PROMO_DESCRIPTION
+            ? ORPHANED_PROMOTION_DESCRIPTION
             : `Earned proportional rewards for ${nightsInStay} nights towards a ${minNights}-night requirement.${proportionalSuffix}`;
 
         if (bApplied < expectedValuePerNight * nightsInStay - 0.001 && !isMaxedOutOverall) {
@@ -488,7 +488,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
         benefitDescriptionLine = isMaxedOutOverall
           ? "This promotion has been maxed out and no further rewards apply."
           : isOrphaned
-            ? ORPHANED_PROMO_DESCRIPTION
+            ? ORPHANED_PROMOTION_DESCRIPTION
             : benefitDescription;
 
         // Standard segment
@@ -501,7 +501,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
           description: isMaxedOutOverall
             ? "This segment no longer applies because the promotion has been maxed out."
             : isOrphaned
-              ? ORPHANED_PROMO_DESCRIPTION
+              ? ORPHANED_PROMOTION_DESCRIPTION
               : benefitDescription,
         });
       }

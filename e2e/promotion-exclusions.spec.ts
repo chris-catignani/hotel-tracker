@@ -168,14 +168,24 @@ test.describe("Promotion sub-brand scope (exclude)", () => {
     });
     expect(updateRes.ok()).toBeTruthy();
 
-    // Verify NOW applied after exclusion removal
-    const detailAfterRes = await request.get(`/api/bookings/${booking.id}`);
-    const detailAfter = await detailAfterRes.json();
-    const appliedAfter = (detailAfter.bookingPromotions ?? []).find(
-      (bp: { promotionId: string }) => bp.promotionId === promo.id
-    );
-    expect(appliedAfter).toBeDefined();
-    expect(Number(appliedAfter.appliedValue)).toBe(50);
+    // Verify NOW applied after exclusion removal (polling due to background re-evaluation)
+    await expect
+      .poll(
+        async () => {
+          const detailAfterRes = await request.get(`/api/bookings/${booking.id}`);
+          const detailAfter = await detailAfterRes.json();
+          const appliedPromo = (detailAfter.bookingPromotions ?? []).find(
+            (bp: { promotionId: string }) => bp.promotionId === promo.id
+          );
+          return appliedPromo ? Number(appliedPromo.appliedValue) : undefined;
+        },
+        {
+          message: "Promotion should be applied with the correct value after exclusion removal",
+          intervals: [500, 1000, 2000],
+          timeout: 10000,
+        }
+      )
+      .toBe(50);
 
     // Cleanup
     await request.delete(`/api/bookings/${booking.id}`);

@@ -322,11 +322,22 @@ test.describe("Promotions tiered", () => {
     expect(booking2Res.ok()).toBeTruthy();
     const booking2 = await booking2Res.json();
 
-    const bp2 = booking2.bookingPromotions.find(
-      (bp: { promotionId: string }) => bp.promotionId === promo.id
-    );
-    expect(bp2).toBeDefined();
-    expect(Number(bp2.appliedValue)).toBe(75);
+    await expect
+      .poll(
+        async () => {
+          const detailRes = await request.get(`/api/bookings/${booking2.id}`);
+          const detail = await detailRes.json();
+          const bp = (detail.bookingPromotions ?? []).find(
+            (bp: { promotionId: string }) => bp.promotionId === promo.id
+          );
+          return bp ? Number(bp.appliedValue) : undefined;
+        },
+        {
+          message: "Second booking should have the tiered promotion applied with correct value",
+          timeout: 10000,
+        }
+      )
+      .toBe(75);
 
     // Cleanup
     await request.delete(`/api/bookings/${booking1.id}`);
@@ -461,10 +472,13 @@ test.describe("Promotions tie-in credit card (benefit-level restrictions)", () =
       (bp: { promotionId: string }) => bp.promotionId === promo.id
     );
     expect(appliedPromo).toBeDefined();
-    // Only $20 base benefit applies; tie-in benefit is skipped
+    // Only $20 base benefit applies; tie-in benefit is skipped (marked as orphaned)
     expect(Number(appliedPromo.appliedValue)).toBe(20);
-    expect(appliedPromo.benefitApplications).toHaveLength(1);
-    expect(Number(appliedPromo.benefitApplications[0].appliedValue)).toBe(20);
+    const validApplications = appliedPromo.benefitApplications.filter(
+      (ba: { isOrphaned: boolean }) => !ba.isOrphaned
+    );
+    expect(validApplications).toHaveLength(1);
+    expect(Number(validApplications[0].appliedValue)).toBe(20);
 
     // Cleanup
     await request.delete(`/api/bookings/${booking.id}`);
@@ -525,9 +539,13 @@ test.describe("Promotions tie-in credit card (benefit-level restrictions)", () =
       (bp: { promotionId: string }) => bp.promotionId === promo.id
     );
     expect(appliedPromo).toBeDefined();
-    // Only $20 base benefit applies; tie-in benefit is skipped (no card)
+    // Only $20 base benefit applies; tie-in benefit is skipped (no card, marked as orphaned)
     expect(Number(appliedPromo.appliedValue)).toBe(20);
-    expect(appliedPromo.benefitApplications).toHaveLength(1);
+    const validApplications = appliedPromo.benefitApplications.filter(
+      (ba: { isOrphaned: boolean }) => !ba.isOrphaned
+    );
+    expect(validApplications).toHaveLength(1);
+    expect(Number(validApplications[0].appliedValue)).toBe(20);
 
     // Cleanup
     await request.delete(`/api/bookings/${booking.id}`);
@@ -689,11 +707,13 @@ test.describe("Promotions constraints", () => {
     expect(booking2Res.ok()).toBeTruthy();
     const booking2 = await booking2Res.json();
 
-    // Verify second booking does NOT have the promotion (maxStayCount = 1 enforced)
+    // Verify second booking has the promotion but it's orphaned (maxStayCount = 1 reached)
     const bp2 = booking2.bookingPromotions.find(
       (bp: { promotionId: string }) => bp.promotionId === promo.id
     );
-    expect(bp2).toBeUndefined();
+    expect(bp2).toBeDefined();
+    expect(Number(bp2.appliedValue)).toBe(0);
+    expect(bp2.isOrphaned).toBe(true);
 
     // Cleanup
     await request.delete(`/api/bookings/${booking1.id}`);
@@ -759,15 +779,22 @@ test.describe("Promotions payment type restrictions", () => {
     });
     const pointsBooking = await pointsBookingRes.json();
 
-    // 4. Verify cash booking GOT the promotion
-    const cashDetail = await (await request.get(`/api/bookings/${cashBooking.id}`)).json();
-    const cashApplied = (cashDetail.bookingPromotions || []).some(
-      (bp: { promotionId: string }) => bp.promotionId === promo.id
-    );
-    expect(cashApplied).toBe(true);
+    // 4. Verify cash booking HAS the promotion
+    await expect
+      .poll(
+        async () => {
+          const detail = await (await request.get(`/api/bookings/${cashBooking.id}`)).json();
+          return (detail.bookingPromotions ?? []).some(
+            (bp: { promotionId: string }) => bp.promotionId === promo.id
+          );
+        },
+        { message: "Cash booking should have the promotion applied", timeout: 10000 }
+      )
+      .toBe(true);
 
     // 5. Verify points booking SKIPPED the promotion
     const pointsDetail = await (await request.get(`/api/bookings/${pointsBooking.id}`)).json();
+
     const pointsApplied = (pointsDetail.bookingPromotions || []).some(
       (bp: { promotionId: string }) => bp.promotionId === promo.id
     );
@@ -789,14 +816,31 @@ test.describe("Promotions payment type restrictions", () => {
     await page.goto("/promotions/new");
 
     // Basic info
-    await page.getByTestId("promotion-name-input").fill(promoName);
-    await page.getByTestId("promotion-type-select").click();
-    await page.getByRole("option", { name: "Loyalty" }).click();
-    await page.getByTestId("hotel-chain-select").click();
-    await page.getByRole("option", { name: testHotelChain.name }).click();
+    const nameInput = page.getByTestId("promotion-name-input");
+    await nameInput.click();
+    await nameInput.pressSequentially(promoName, { delay: 50 });
+    await expect(nameInput).toHaveValue(promoName);
 
-    // Add a benefit (since empty benefits might be rejected)
-    await page.getByTestId("benefit-value-0").fill("10");
+    // Select Loyalty type
+    const typeSelect = page.getByTestId("promotion-type-select");
+    await typeSelect.click();
+    const typeOption = page.getByRole("option", { name: "Loyalty" });
+    await expect(typeOption).toBeVisible();
+    await typeOption.click();
+    await expect(typeSelect).toContainText("Loyalty Program");
+
+    // Select Hotel Chain
+    const chainSelect = page.getByTestId("hotel-chain-select");
+    await chainSelect.click();
+    const chainOption = page.getByRole("option", { name: testHotelChain.name });
+    await expect(chainOption).toBeVisible();
+    await chainOption.click();
+    await expect(chainSelect).toContainText(testHotelChain.name);
+
+    // Add a benefit
+    const benefitInput = page.getByTestId("benefit-value-0");
+    await benefitInput.fill("10");
+    await expect(benefitInput).toHaveValue("10");
 
     // Add Restriction
     await page.getByTestId("restriction-picker-button").click();
@@ -811,11 +855,14 @@ test.describe("Promotions payment type restrictions", () => {
     await restrictionCard.getByTestId("payment-type-points").check();
 
     // Save
-    await page.getByTestId("promotion-form-submit").click();
+    await page.getByTestId("promotion-form-submit").click({ force: true });
 
-    // Ensure we are on promotions page and have latest data
-    await page.goto("/promotions");
-    await page.reload(); // WebKit sometimes needs a push to show latest data
+    // Wait for navigation back to list
+    await expect(page).toHaveURL(/\/promotions$/, { timeout: 15000 });
+
+    // Ensure we have latest data
+    await page.reload();
+    await page.waitForLoadState("networkidle");
     const desktopList = page.getByTestId("promotions-list-desktop");
     const row = desktopList.locator("tr").filter({ hasText: promoName });
     await expect(row).toBeVisible({ timeout: 15000 });
