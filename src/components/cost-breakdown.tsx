@@ -235,7 +235,10 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
                   <div key={p.id} className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-1.5">
                       <span className="text-muted-foreground">{p.name}</span>
-                      {p.isOrphaned && (
+                      {(p.isOrphaned ||
+                        p.groups.some((g) =>
+                          g.segments.some((s) => s.description?.includes("(orphaned)"))
+                        )) && (
                         <Badge variant="warning" className="text-[9px] h-4 px-1 py-0 font-medium">
                           Orphaned
                         </Badge>
