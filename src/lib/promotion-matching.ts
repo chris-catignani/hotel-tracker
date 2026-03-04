@@ -211,6 +211,11 @@ function checkBookingSourceRestriction(
   return allowedBookingSources.includes(booking.bookingSource ?? "other");
 }
 
+function ensureDate(d: Date | string | null | undefined): Date | null {
+  if (!d) return null;
+  return d instanceof Date ? d : new Date(d);
+}
+
 /**
  * Logic for validating and calculating promotion matches.
  */
@@ -245,29 +250,36 @@ const CorePromotionRules: Record<string, PromotionRule> = {
   },
 
   dateRange: (booking, promo) => {
-    const checkInDate = new Date(booking.checkIn);
+    const checkInDate = ensureDate(booking.checkIn)!;
+    const regDate = ensureDate(promo.registrationDate);
 
-    if (promo.registrationDate) {
-      const regDate = new Date(promo.registrationDate);
+    if (regDate) {
+      // If registered, check-in MUST be on or after registration date
       if (checkInDate < regDate) return { valid: false };
 
       if (promo.restrictions?.validDaysAfterRegistration) {
         const personalEndDate = new Date(regDate);
         personalEndDate.setDate(regDate.getDate() + promo.restrictions.validDaysAfterRegistration);
         if (checkInDate > personalEndDate) return { valid: false };
-      } else if (promo.endDate && checkInDate > new Date(promo.endDate)) {
-        return { valid: false };
+        // Within personal window -> valid regardless of global startDate/endDate
+        return { valid: true };
       }
-    } else {
-      if (promo.startDate && checkInDate < new Date(promo.startDate)) return { valid: false };
-      if (promo.endDate && checkInDate > new Date(promo.endDate)) return { valid: false };
     }
+
+    const startDate = ensureDate(promo.startDate);
+    const endDate = ensureDate(promo.endDate);
+
+    if (startDate && checkInDate < startDate) return { valid: false };
+    if (endDate && checkInDate > endDate) return { valid: false };
+
     return { valid: true };
   },
 
   registrationDeadline: (booking, promo) => {
-    if (promo.registrationDate && promo.restrictions?.registrationDeadline) {
-      if (new Date(promo.registrationDate) > new Date(promo.restrictions.registrationDeadline)) {
+    const regDate = ensureDate(promo.registrationDate);
+    const deadline = ensureDate(promo.restrictions?.registrationDeadline);
+    if (regDate && deadline) {
+      if (regDate > deadline) {
         return { valid: false };
       }
     }
@@ -275,8 +287,10 @@ const CorePromotionRules: Record<string, PromotionRule> = {
   },
 
   bookByDate: (booking, promo) => {
-    if (promo.restrictions?.bookByDate) {
-      if (new Date(booking.createdAt) > new Date(promo.restrictions.bookByDate)) {
+    const createdAt = ensureDate(booking.createdAt)!;
+    const bookBy = ensureDate(promo.restrictions?.bookByDate);
+    if (bookBy) {
+      if (createdAt > bookBy) {
         return { valid: false };
       }
     }
@@ -402,7 +416,18 @@ export function calculateMatchedPromotions(
     // 2. Orphaned Lookahead Logic
     // Even if it doesn't match core criteria for THIS booking, it might match for others.
     // If it DOESN'T match core criteria for any stay in the entire campaign, it's truly unfulfillable (orphaned).
-    let isPromoOrphaned = !isCoreEligible;
+    let isPromoOrphaned = false;
+
+    if (!isCoreEligible) {
+      if (usage?.totalPotentialStayCount !== undefined && usage.totalPotentialStayCount > 0) {
+        // We HAVE lookahead data confirming it matches SOME stays in campaign,
+        // but it doesn't match THIS stay -> definitely orphaned for this stay.
+        isPromoOrphaned = true;
+      } else {
+        // No lookahead data evidence it matches ANY stay -> skip
+        continue;
+      }
+    }
 
     // Check spanStays restrictions: do we have enough TOTAL nights across the campaign to meet the goal?
     const r = promo.restrictions;
@@ -427,9 +452,8 @@ export function calculateMatchedPromotions(
       }
     }
 
-    // If it's not even core-eligible AND it's not orphaned (meaning it might match later),
-    // or if it was never registered/matched any stay, skip it entirely.
-    if (!isCoreEligible && !usage?.totalPotentialStayCount) continue;
+    // If it's not core-eligible and NOT marked as orphaned (shouldn't happen with logic above), skip
+    if (!isCoreEligible && !isPromoOrphaned) continue;
 
     // 3. Fulfillment Status (Does this specific stay meet counts/spend?)
     const isFulfilling = Object.values(FulfillmentPromotionRules).every((rule) => {
@@ -636,7 +660,8 @@ export function calculateMatchedPromotions(
 
         // Scaling logic (Stackable / Span Stays)
         const br = benefit.restrictions;
-        const promoIsStacked = r?.nightsStackable && r?.minNightsRequired && r.minNightsRequired > 0;
+        const promoIsStacked =
+          r?.nightsStackable && r?.minNightsRequired && r.minNightsRequired > 0;
         const promoIsSpanned = r?.spanStays && r?.minNightsRequired && r.minNightsRequired > 0;
 
         if (
@@ -930,7 +955,6 @@ async function fetchPromotionUsage(
   // Fetch Potential Counts for all promotions (orphaned detection)
   // We need to count stays that match CORE criteria, even if they didn't fulfill the promo
   for (const promo of promotions) {
-    const currentCheckIn = new Date(booking.checkIn);
     const r = promo.restrictions;
 
     // Filter by the same core rules used in calculateMatchedPromotions
@@ -989,7 +1013,9 @@ async function fetchPromotionUsage(
                 ? (promo.creditCardId ?? undefined)
                 : undefined,
             shoppingPortalId:
-              promo.type === PromotionType.portal ? (promo.shoppingPortalId ?? undefined) : undefined,
+              promo.type === PromotionType.portal
+                ? (promo.shoppingPortalId ?? undefined)
+                : undefined,
             checkIn: {
               ...(promo.startDate ? { gte: promo.startDate } : {}),
               ...(promo.endDate ? { lte: promo.endDate } : {}),

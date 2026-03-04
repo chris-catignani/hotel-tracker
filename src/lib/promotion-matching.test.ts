@@ -154,7 +154,10 @@ describe("promotion-matching", () => {
     });
 
     expect(calculateMatchedPromotions(mockBooking, [promoLowMin])).toHaveLength(1);
-    expect(calculateMatchedPromotions(mockBooking, [promoHighMin])).toHaveLength(0);
+
+    // Without potential usage, it's skipped
+    const matched = calculateMatchedPromotions(mockBooking, [promoHighMin]);
+    expect(matched).toHaveLength(0);
   });
 
   it("should calculate cashback percentage value correctly", () => {
@@ -359,7 +362,7 @@ describe("promotion-matching", () => {
       [promo.id, { count: 1, totalValue: 10, totalBonusPoints: 0, benefitUsage: new Map() }],
     ]);
     const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
-    expect(matched).toHaveLength(0);
+    expect(matched).toHaveLength(0); // core eligibility fails (hard cap)
   });
 
   it("should respect maxStayCount: allow below limit", () => {
@@ -382,8 +385,27 @@ describe("promotion-matching", () => {
 
   it("should respect minNightsRequired: skip below minimum", () => {
     const promo = makePromo({ restrictions: makeRestrictions({ minNightsRequired: 5 }) });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
-    expect(matched).toHaveLength(0);
+
+    // Without potential usage, skip
+    expect(calculateMatchedPromotions(mockBooking, [promo])).toHaveLength(0);
+
+    // With potential usage, mark as orphaned but don't apply value
+    const usage: PromotionUsageMap = new Map([
+      [
+        "promo-1",
+        {
+          count: 0,
+          totalValue: 0,
+          totalBonusPoints: 0,
+          totalPotentialStayCount: 1,
+          totalPotentialNightCount: 3,
+        },
+      ],
+    ]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], usage);
+    expect(matched).toHaveLength(1);
+    expect(matched[0].appliedValue).toBe(0);
+    expect(matched[0].isOrphaned).toBe(true);
   });
 
   it("should respect minNightsRequired: allow at minimum", () => {
@@ -440,11 +462,14 @@ describe("promotion-matching", () => {
           benefitUsage: new Map([
             ["benefit-count-limit", { count: 2, totalValue: 20, totalBonusPoints: 0 }],
           ]),
+          totalPotentialStayCount: 2,
         },
       ],
     ]);
     const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
-    expect(matched).toHaveLength(0); // benefit filtered out, promo has no benefits left
+    expect(matched).toHaveLength(1);
+    expect(matched[0].appliedValue).toBe(0);
+    expect(matched[0].isOrphaned).toBe(true);
   });
 
   it("should respect benefit-level maxRedemptionValue", () => {
@@ -495,9 +520,17 @@ describe("promotion-matching", () => {
         },
       ],
     });
-    // mockBooking totalCost is 100, benefit requires 200
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
-    expect(matched).toHaveLength(0);
+    // Without potential usage, skip
+    expect(calculateMatchedPromotions(mockBooking, [promo])).toHaveLength(0);
+
+    // With potential usage, mark as orphaned but don't apply value
+    const usage = new Map([
+      ["promo-1", { count: 0, totalValue: 0, totalBonusPoints: 0, totalPotentialStayCount: 1 }],
+    ]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], usage);
+    expect(matched).toHaveLength(1);
+    expect(matched[0].appliedValue).toBe(0);
+    expect(matched[0].isOrphaned).toBe(true);
   });
 
   it("should respect benefit-level oncePerSubBrand", () => {
@@ -526,11 +559,14 @@ describe("promotion-matching", () => {
             ["benefit-once-subbrand", { count: 1, totalValue: 10, totalBonusPoints: 0 }],
           ]),
           appliedSubBrandIds: new Set(["brand-4"]), // mockBooking sub-brand is brand-4
+          totalPotentialStayCount: 2,
         },
       ],
     ]);
     const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
-    expect(matched).toHaveLength(0);
+    expect(matched).toHaveLength(1);
+    expect(matched[0].appliedValue).toBe(0);
+    expect(matched[0].isOrphaned).toBe(true);
   });
 
   it("should respect benefit-level minNightsRequired", () => {
@@ -549,9 +585,17 @@ describe("promotion-matching", () => {
         },
       ],
     });
-    // Booking has 3 nights (from mockBooking), benefit requires 5
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
-    expect(matched).toHaveLength(0);
+    // Without potential usage, skip
+    expect(calculateMatchedPromotions(mockBooking, [promo])).toHaveLength(0);
+
+    // With potential usage, mark as orphaned
+    const usage = new Map([
+      ["promo-1", { count: 0, totalValue: 0, totalBonusPoints: 0, totalPotentialStayCount: 1 }],
+    ]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], usage);
+    expect(matched).toHaveLength(1);
+    expect(matched[0].appliedValue).toBe(0);
+    expect(matched[0].isOrphaned).toBe(true);
   });
 
   it("should apply benefit-level nightsStackable multiplier", () => {
@@ -803,8 +847,16 @@ describe("promotion-matching", () => {
         },
       ],
     });
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
-    expect(matched).toHaveLength(0);
+    // No potential usage -> skip
+    expect(calculateMatchedPromotions(mockBooking, [promo])).toHaveLength(0);
+
+    // With potential usage -> mark as orphaned
+    const usage = new Map([
+      ["promo-1", { count: 0, totalValue: 0, totalBonusPoints: 0, totalPotentialStayCount: 1 }],
+    ]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], usage);
+    expect(matched).toHaveLength(1);
+    expect(matched[0].isOrphaned).toBe(true);
   });
 
   it("tiered: stay #1 has no tier, stay #2 correctly advances via eligibleStayCount", () => {
@@ -845,11 +897,22 @@ describe("promotion-matching", () => {
       ],
     });
     const priorUsage = new Map([
-      [promo.id, { count: 2, totalValue: 0, totalBonusPoints: 0, eligibleStayCount: 2 }],
+      [
+        promo.id,
+        {
+          count: 2,
+          totalValue: 0,
+          totalBonusPoints: 0,
+          eligibleStayCount: 2,
+          totalPotentialStayCount: 2,
+        },
+      ],
     ]);
-    // currentStayNumber=3, tier maxStays=2 → no match
+    // currentStayNumber=3, tier maxStays=2 → no match. Since we have lookahead data, mark as orphaned.
     const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
-    expect(matched).toHaveLength(0);
+    expect(matched).toHaveLength(1);
+    expect(matched[0].appliedValue).toBe(0);
+    expect(matched[0].isOrphaned).toBe(true);
   });
 
   it("flat promo (no tiers) still works as before", () => {
@@ -892,11 +955,14 @@ describe("promotion-matching", () => {
           totalValue: 10,
           totalBonusPoints: 0,
           appliedSubBrandIds: new Set<string | null>(["brand-4"]),
+          totalPotentialStayCount: 2,
         },
       ],
     ]);
     const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
-    expect(matched).toHaveLength(0);
+    expect(matched).toHaveLength(1);
+    expect(matched[0].appliedValue).toBe(0);
+    expect(matched[0].isOrphaned).toBe(true);
   });
 
   it("should apply when oncePerSubBrand=true and booking sub-brand is different from already-applied ones", () => {
@@ -949,11 +1015,14 @@ describe("promotion-matching", () => {
           totalValue: 10,
           totalBonusPoints: 0,
           appliedSubBrandIds: new Set<string | null>([null]),
+          totalPotentialStayCount: 2,
         },
       ],
     ]);
     const matched = calculateMatchedPromotions(bookingNoSubBrand, [promo], priorUsage);
-    expect(matched).toHaveLength(0);
+    expect(matched).toHaveLength(1);
+    expect(matched[0].appliedValue).toBe(0);
+    expect(matched[0].isOrphaned).toBe(true);
   });
 
   // Sub-brand scope tests (replaces old exclusion tests)
@@ -1749,11 +1818,16 @@ describe("promotion-matching architecture: Core vs Fulfillment", () => {
       }),
     });
 
-    // In the new architecture, this should fail fulfillment.
-    // Since calculateMatchedPromotions currently returns an empty list for any failure,
-    // we verify it behaves correctly as a non-match.
-    const matched = calculateMatchedPromotions(mockBooking, [promo]);
-    expect(matched).toHaveLength(0);
+    // Without potential usage -> skip
+    expect(calculateMatchedPromotions(mockBooking, [promo])).toHaveLength(0);
+
+    // With potential usage -> mark as orphaned
+    const usage = new Map([
+      ["promo-1", { count: 0, totalValue: 0, totalBonusPoints: 0, totalPotentialStayCount: 1 }],
+    ]);
+    const matched = calculateMatchedPromotions(mockBooking, [promo], usage);
+    expect(matched).toHaveLength(1);
+    expect(matched[0].isOrphaned).toBe(true);
   });
 
   it("should correctly handle tiered prerequisites in the rule-based engine", () => {
