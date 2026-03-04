@@ -9,7 +9,8 @@ describe("UserStatusTab", () => {
   });
 
   it("renders empty state correctly", async () => {
-    vi.mocked(global.fetch).mockImplementation((url: string) => {
+    vi.mocked(global.fetch).mockImplementation((input: string | Request | URL) => {
+      const url = input instanceof Request ? input.url : input.toString();
       if (url.includes("/api/user-statuses"))
         return Promise.resolve({ ok: true, json: async () => [] } as Response);
       if (url.includes("/api/hotel-chains"))
@@ -26,10 +27,11 @@ describe("UserStatusTab", () => {
   });
 
   it("renders rows for hotel chains", async () => {
-    const mockChains = [{ id: 1, name: "Marriott", eliteStatuses: [] }];
-    const mockStatuses = [{ hotelChainId: 1, eliteStatusId: null }];
+    const mockChains = [{ id: "1", name: "Marriott", eliteStatuses: [] }];
+    const mockStatuses = [{ hotelChainId: "1", eliteStatusId: null }];
 
-    vi.mocked(global.fetch).mockImplementation((url: string) => {
+    vi.mocked(global.fetch).mockImplementation((input: string | Request | URL) => {
+      const url = input instanceof Request ? input.url : input.toString();
       if (url.includes("/api/user-statuses"))
         return Promise.resolve({ ok: true, json: async () => mockStatuses } as Response);
       if (url.includes("/api/hotel-chains"))

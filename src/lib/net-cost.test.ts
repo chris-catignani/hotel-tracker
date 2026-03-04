@@ -21,6 +21,7 @@ describe("net-cost", () => {
     portalCashbackRate: 0,
     certificates: [],
     otaAgencyId: null,
+    bookingSource: null,
     creditCard: null,
     shoppingPortal: null,
     bookingPromotions: [],

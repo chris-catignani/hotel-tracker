@@ -11,6 +11,7 @@ type TestPromotion = Parameters<typeof calculateMatchedPromotions>[1][number];
 type TestRestrictions = NonNullable<TestPromotion["restrictions"]>;
 
 const mockBooking: MatchingBooking = {
+  id: "b1",
   creditCardId: "card-1",
   shoppingPortalId: "portal-2",
   hotelChainId: "chain-3",
@@ -54,6 +55,7 @@ function makeRestrictions(overrides: Partial<TestRestrictions> = {}): TestRestri
     prerequisiteNightCount: null,
     subBrandRestrictions: [],
     tieInCards: [],
+    hotelChainId: null,
     ...overrides,
   };
 }

@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { PointTypesTab } from "./point-types-tab";
 
-const mockPt = [{ id: 1, name: "Marriott Points", category: "hotel", centsPerPoint: 0.007 }];
+const mockPt = [{ id: "1", name: "Marriott Points", category: "hotel", centsPerPoint: 0.007 }];
 
 describe("PointTypesTab", () => {
   beforeEach(() => {
@@ -83,7 +83,8 @@ describe("PointTypesTab", () => {
     const user = userEvent.setup();
     const fetchMock = vi
       .mocked(global.fetch)
-      .mockImplementation((url: string, options?: RequestInit) => {
+      .mockImplementation((input: string | Request | URL, options?: RequestInit) => {
+        const url = input instanceof Request ? input.url : input.toString();
         if (url === "/api/point-types" && (!options || !options.method))
           return Promise.resolve({ ok: true, json: async () => mockPt } as Response);
         if (url === "/api/point-types/1" && options?.method === "DELETE")

@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { OtaAgenciesTab } from "./ota-agencies-tab";
 
-const mockAgencies = [{ id: 1, name: "Expedia" }];
+const mockAgencies = [{ id: "1", name: "Expedia" }];
 
 describe("OtaAgenciesTab", () => {
   beforeEach(() => {
@@ -78,7 +78,8 @@ describe("OtaAgenciesTab", () => {
     const user = userEvent.setup();
     const fetchMock = vi
       .mocked(global.fetch)
-      .mockImplementation((url: string, options?: RequestInit) => {
+      .mockImplementation((input: string | Request | URL, options?: RequestInit) => {
+        const url = input instanceof Request ? input.url : input.toString();
         if (url === "/api/ota-agencies" && (!options || !options.method))
           return Promise.resolve({ ok: true, json: async () => mockAgencies } as Response);
         if (url === "/api/ota-agencies/1" && options?.method === "DELETE")

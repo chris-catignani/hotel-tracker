@@ -9,7 +9,8 @@ describe("ShoppingPortalsTab", () => {
   });
 
   it("renders correctly", async () => {
-    vi.mocked(global.fetch).mockImplementation((url: string) => {
+    vi.mocked(global.fetch).mockImplementation((input: string | Request | URL) => {
+      const url = input instanceof Request ? input.url : input.toString();
       if (url.includes("/api/portals"))
         return Promise.resolve({ ok: true, json: async () => [] } as Response);
       if (url.includes("/api/point-types"))
@@ -26,7 +27,8 @@ describe("ShoppingPortalsTab", () => {
   });
 
   it("shows empty state message", async () => {
-    vi.mocked(global.fetch).mockImplementation((url: string) => {
+    vi.mocked(global.fetch).mockImplementation((input: string | Request | URL) => {
+      const url = input instanceof Request ? input.url : input.toString();
       if (url.includes("/api/portals"))
         return Promise.resolve({ ok: true, json: async () => [] } as Response);
       if (url.includes("/api/point-types"))
@@ -44,8 +46,9 @@ describe("ShoppingPortalsTab", () => {
   });
 
   it("shows fetched portals", async () => {
-    const mockPortals = [{ id: 1, name: "Rakuten", rewardType: "cashback" }];
-    vi.mocked(global.fetch).mockImplementation((url: string) => {
+    const mockPortals = [{ id: "1", name: "Rakuten", rewardType: "cashback" }];
+    vi.mocked(global.fetch).mockImplementation((input: string | Request | URL) => {
+      const url = input instanceof Request ? input.url : input.toString();
       if (url.includes("/api/portals"))
         return Promise.resolve({ ok: true, json: async () => mockPortals } as Response);
       if (url.includes("/api/point-types"))

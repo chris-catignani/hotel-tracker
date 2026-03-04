@@ -9,7 +9,8 @@ describe("HotelChainsTab", () => {
   });
 
   it("renders correctly", async () => {
-    vi.mocked(global.fetch).mockImplementation((url: string) => {
+    vi.mocked(global.fetch).mockImplementation((input: string | Request | URL) => {
+      const url = input instanceof Request ? input.url : input.toString();
       if (url.includes("/api/hotel-chains"))
         return Promise.resolve({ ok: true, json: async () => [] } as Response);
       if (url.includes("/api/point-types"))
@@ -26,7 +27,8 @@ describe("HotelChainsTab", () => {
   });
 
   it("shows empty state message", async () => {
-    vi.mocked(global.fetch).mockImplementation((url: string) => {
+    vi.mocked(global.fetch).mockImplementation((input: string | Request | URL) => {
+      const url = input instanceof Request ? input.url : input.toString();
       if (url.includes("/api/hotel-chains"))
         return Promise.resolve({ ok: true, json: async () => [] } as Response);
       if (url.includes("/api/point-types"))
@@ -46,14 +48,15 @@ describe("HotelChainsTab", () => {
   it("shows fetched hotel chains", async () => {
     const mockChains = [
       {
-        id: 1,
+        id: "1",
         name: "Marriott",
         loyaltyProgram: "Bonvoy",
         basePointRate: 10,
         hotelChainSubBrands: [],
       },
     ];
-    vi.mocked(global.fetch).mockImplementation((url: string) => {
+    vi.mocked(global.fetch).mockImplementation((input: string | Request | URL) => {
+      const url = input instanceof Request ? input.url : input.toString();
       if (url.includes("/api/hotel-chains"))
         return Promise.resolve({ ok: true, json: async () => mockChains } as Response);
       if (url.includes("/api/point-types"))
