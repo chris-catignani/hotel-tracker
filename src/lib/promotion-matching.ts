@@ -899,6 +899,92 @@ async function applyMatchedPromotions(
 }
 
 /**
+ * Builds a Prisma 'where' clause that reflects the Core Eligibility rules.
+ * Used for campaign-wide lookahead (orphaned detection).
+ */
+function buildPotentialMatchFilter(
+  promo: MatchingPromotion,
+  benefitRestrictions?: MatchingRestrictions
+) {
+  const r = benefitRestrictions || promo.restrictions;
+
+  const where: Prisma.BookingWhereInput = {
+    hotelChainId:
+      promo.type === PromotionType.loyalty ? (promo.hotelChainId ?? undefined) : undefined,
+    creditCardId:
+      promo.type === PromotionType.credit_card ? (promo.creditCardId ?? undefined) : undefined,
+    shoppingPortalId:
+      promo.type === PromotionType.portal ? (promo.shoppingPortalId ?? undefined) : undefined,
+  };
+
+  // Date range (Global or Registration-based)
+  if (promo.registrationDate) {
+    const regDate = new Date(promo.registrationDate);
+    const dateFilter: Prisma.DateTimeFilter = { gte: regDate };
+
+    if (promo.restrictions?.validDaysAfterRegistration) {
+      const personalEndDate = new Date(regDate);
+      personalEndDate.setDate(regDate.getDate() + promo.restrictions.validDaysAfterRegistration);
+      dateFilter.lte = personalEndDate;
+    } else if (promo.endDate) {
+      dateFilter.lte = new Date(promo.endDate);
+    }
+    where.checkIn = dateFilter;
+  } else {
+    if (promo.startDate || promo.endDate) {
+      where.checkIn = {
+        gte: promo.startDate ?? undefined,
+        lte: promo.endDate ?? undefined,
+      };
+    }
+  }
+
+  // Sub-brand restrictions
+  if (r?.subBrandRestrictions?.length) {
+    where.hotelChainSubBrand = {
+      id: {
+        in: r.subBrandRestrictions
+          .filter((s) => s.mode === "include")
+          .map((s) => s.hotelChainSubBrandId),
+        notIn: r.subBrandRestrictions
+          .filter((s) => s.mode === "exclude")
+          .map((s) => s.hotelChainSubBrandId),
+      },
+    };
+    // Ensure we handle the empty 'in' case correctly (Prisma 'in: []' matches nothing)
+    if (
+      where.hotelChainSubBrand.id &&
+      (where.hotelChainSubBrand.id as { in: string[] }).in?.length === 0
+    ) {
+      delete (where.hotelChainSubBrand.id as { in: string[] }).in;
+    }
+    // Same for 'notIn'
+    if (
+      where.hotelChainSubBrand.id &&
+      (where.hotelChainSubBrand.id as { notIn: string[] }).notIn?.length === 0
+    ) {
+      delete (where.hotelChainSubBrand.id as { notIn: string[] }).notIn;
+    }
+    // If we stripped both, remove the whole subbrand filter
+    if (Object.keys(where.hotelChainSubBrand.id as object).length === 0) {
+      delete where.hotelChainSubBrand;
+    }
+  }
+
+  // Book by date
+  if (promo.restrictions?.bookByDate) {
+    where.createdAt = { lte: new Date(promo.restrictions.bookByDate) };
+  }
+
+  // Tie-in card
+  if (r?.tieInCards?.length) {
+    where.creditCardId = { in: r.tieInCards.map((c) => c.creditCardId) };
+  }
+
+  return where;
+}
+
+/**
  * Fetches prior usage statistics for promotions with redemption constraints.
  */
 async function fetchPromotionUsage(
@@ -1015,35 +1101,9 @@ async function fetchPromotionUsage(
   // Fetch Potential Counts for all promotions (orphaned detection)
   // We need to count stays that match CORE criteria, even if they didn't fulfill the promo
   for (const promo of promotions) {
-    const r = promo.restrictions;
-
     // Filter by the same core rules used in calculateMatchedPromotions
     const potentialStats = await prisma.booking.aggregate({
-      where: {
-        hotelChainId:
-          promo.type === PromotionType.loyalty ? (promo.hotelChainId ?? undefined) : undefined,
-        creditCardId:
-          promo.type === PromotionType.credit_card ? (promo.creditCardId ?? undefined) : undefined,
-        shoppingPortalId:
-          promo.type === PromotionType.portal ? (promo.shoppingPortalId ?? undefined) : undefined,
-        checkIn: {
-          ...(promo.startDate ? { gte: promo.startDate } : {}),
-          ...(promo.endDate ? { lte: promo.endDate } : {}),
-        },
-        // Core criteria from restrictions
-        hotelChainSubBrand: r?.subBrandRestrictions?.length
-          ? {
-              id: {
-                in: r.subBrandRestrictions
-                  .filter((s) => s.mode === "include")
-                  .map((s) => s.hotelChainSubBrandId),
-                notIn: r.subBrandRestrictions
-                  .filter((s) => s.mode === "exclude")
-                  .map((s) => s.hotelChainSubBrandId),
-              },
-            }
-          : undefined,
-      },
+      where: buildPotentialMatchFilter(promo),
       _count: { id: true },
       _sum: { numNights: true },
     });
@@ -1062,50 +1122,22 @@ async function fetchPromotionUsage(
 
     // Also fetch benefit-level potential match (oncePerSubBrand / subBrand restrictions)
     for (const b of [...promo.benefits, ...promo.tiers.flatMap((t) => t.benefits)]) {
-      const br = b.restrictions;
-      if (br) {
-        const bPotential = await prisma.booking.count({
-          where: {
-            hotelChainId:
-              promo.type === PromotionType.loyalty ? (promo.hotelChainId ?? undefined) : undefined,
-            creditCardId:
-              promo.type === PromotionType.credit_card
-                ? (promo.creditCardId ?? undefined)
-                : undefined,
-            shoppingPortalId:
-              promo.type === PromotionType.portal
-                ? (promo.shoppingPortalId ?? undefined)
-                : undefined,
-            checkIn: {
-              ...(promo.startDate ? { gte: promo.startDate } : {}),
-              ...(promo.endDate ? { lte: promo.endDate } : {}),
-            },
-            hotelChainSubBrand: br.subBrandRestrictions?.length
-              ? {
-                  id: {
-                    in: br.subBrandRestrictions
-                      .filter((s) => s.mode === "include")
-                      .map((s) => s.hotelChainSubBrandId),
-                    notIn: br.subBrandRestrictions
-                      .filter((s) => s.mode === "exclude")
-                      .map((s) => s.hotelChainSubBrandId),
-                  },
-                }
-              : undefined,
-          },
-        });
+      const bPotentialStats = await prisma.booking.aggregate({
+        where: buildPotentialMatchFilter(promo, b.restrictions),
+        _count: { id: true },
+        _sum: { numNights: true },
+      });
 
-        const bUsage = existing.benefitUsage.get(b.id) ?? {
-          count: 0,
-          totalValue: 0,
-          totalBonusPoints: 0,
-        };
-        existing.benefitUsage.set(b.id, {
-          ...bUsage,
-          couldEverMatch: bPotential > 0,
-          totalPotentialNightCount: 0, // Simplified for this implementation
-        });
-      }
+      const bUsage = existing.benefitUsage.get(b.id) ?? {
+        count: 0,
+        totalValue: 0,
+        totalBonusPoints: 0,
+      };
+      existing.benefitUsage.set(b.id, {
+        ...bUsage,
+        couldEverMatch: bPotentialStats._count.id > 0,
+        totalPotentialNightCount: bPotentialStats._sum.numNights ?? 0,
+      });
     }
   }
 
