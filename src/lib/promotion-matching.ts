@@ -941,33 +941,19 @@ function buildPotentialMatchFilter(
 
   // Sub-brand restrictions
   if (r?.subBrandRestrictions?.length) {
-    where.hotelChainSubBrand = {
-      id: {
-        in: r.subBrandRestrictions
-          .filter((s) => s.mode === "include")
-          .map((s) => s.hotelChainSubBrandId),
-        notIn: r.subBrandRestrictions
-          .filter((s) => s.mode === "exclude")
-          .map((s) => s.hotelChainSubBrandId),
-      },
-    };
-    // Ensure we handle the empty 'in' case correctly (Prisma 'in: []' matches nothing)
-    if (
-      where.hotelChainSubBrand.id &&
-      (where.hotelChainSubBrand.id as { in: string[] }).in?.length === 0
-    ) {
-      delete (where.hotelChainSubBrand.id as { in: string[] }).in;
-    }
-    // Same for 'notIn'
-    if (
-      where.hotelChainSubBrand.id &&
-      (where.hotelChainSubBrand.id as { notIn: string[] }).notIn?.length === 0
-    ) {
-      delete (where.hotelChainSubBrand.id as { notIn: string[] }).notIn;
-    }
-    // If we stripped both, remove the whole subbrand filter
-    if (Object.keys(where.hotelChainSubBrand.id as object).length === 0) {
-      delete where.hotelChainSubBrand;
+    const includeIds = r.subBrandRestrictions
+      .filter((s) => s.mode === "include")
+      .map((s) => s.hotelChainSubBrandId);
+    const excludeIds = r.subBrandRestrictions
+      .filter((s) => s.mode === "exclude")
+      .map((s) => s.hotelChainSubBrandId);
+
+    const idFilter: Prisma.StringFilter = {};
+    if (includeIds.length > 0) idFilter.in = includeIds;
+    if (excludeIds.length > 0) idFilter.notIn = excludeIds;
+
+    if (Object.keys(idFilter).length > 0) {
+      where.hotelChainSubBrand = { id: idFilter };
     }
   }
 
@@ -1114,6 +1100,10 @@ async function fetchPromotionUsage(
       totalBonusPoints: 0,
       benefitUsage: new Map(),
     };
+    if (!existing.benefitUsage) {
+      existing.benefitUsage = new Map();
+    }
+
     usageMap.set(promo.id, {
       ...existing,
       totalPotentialStayCount: potentialStats._count.id,
