@@ -327,23 +327,17 @@ test.describe("Promotions tiered", () => {
         async () => {
           const detailRes = await request.get(`/api/bookings/${booking2.id}`);
           const detail = await detailRes.json();
-          return (detail.bookingPromotions ?? []).find(
+          const bp = (detail.bookingPromotions ?? []).find(
             (bp: { promotionId: string }) => bp.promotionId === promo.id
           );
+          return bp ? Number(bp.appliedValue) : undefined;
         },
         {
-          message: "Second booking should have the tiered promotion applied",
+          message: "Second booking should have the tiered promotion applied with correct value",
           timeout: 10000,
         }
       )
-      .toBeDefined();
-
-    const detail2Res = await request.get(`/api/bookings/${booking2.id}`);
-    const detail2 = await detail2Res.json();
-    const bp2 = detail2.bookingPromotions.find(
-      (bp: { promotionId: string }) => bp.promotionId === promo.id
-    );
-    expect(Number(bp2.appliedValue)).toBe(75);
+      .toBe(75);
 
     // Cleanup
     await request.delete(`/api/bookings/${booking1.id}`);
@@ -785,15 +779,22 @@ test.describe("Promotions payment type restrictions", () => {
     });
     const pointsBooking = await pointsBookingRes.json();
 
-    // 4. Verify cash booking GOT the promotion
-    const cashDetail = await (await request.get(`/api/bookings/${cashBooking.id}`)).json();
-    const cashApplied = (cashDetail.bookingPromotions || []).some(
-      (bp: { promotionId: string }) => bp.promotionId === promo.id
-    );
-    expect(cashApplied).toBe(true);
+    // 4. Verify cash booking HAS the promotion
+    await expect
+      .poll(
+        async () => {
+          const detail = await (await request.get(`/api/bookings/${cashBooking.id}`)).json();
+          return (detail.bookingPromotions ?? []).some(
+            (bp: { promotionId: string }) => bp.promotionId === promo.id
+          );
+        },
+        { message: "Cash booking should have the promotion applied", timeout: 10000 }
+      )
+      .toBe(true);
 
     // 5. Verify points booking SKIPPED the promotion
     const pointsDetail = await (await request.get(`/api/bookings/${pointsBooking.id}`)).json();
+
     const pointsApplied = (pointsDetail.bookingPromotions || []).some(
       (bp: { promotionId: string }) => bp.promotionId === promo.id
     );

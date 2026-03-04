@@ -908,6 +908,9 @@ function buildPotentialMatchFilter(
 ) {
   const r = benefitRestrictions || promo.restrictions;
 
+  // NOTE: 'bookingSource' and 'paymentType' restrictions are intentionally not included in this filter.
+  // Both are complex to express as Prisma 'where' clauses. Their omission makes lookahead counts
+  // a conservative overestimate, which is safe for orphaned detection (UX imprecision only).
   const where: Prisma.BookingWhereInput = {
     hotelChainId:
       promo.type === PromotionType.loyalty ? (promo.hotelChainId ?? undefined) : undefined,
