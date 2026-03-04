@@ -419,9 +419,13 @@ export function calculateMatchedPromotions(
     let isPromoOrphaned = false;
 
     if (!isCoreEligible) {
-      if (usage?.totalPotentialStayCount !== undefined && usage.totalPotentialStayCount > 0) {
+      if (
+        usage &&
+        usage.totalPotentialStayCount !== undefined &&
+        usage.totalPotentialStayCount > 0
+      ) {
         // We HAVE lookahead data confirming it matches SOME stays in campaign,
-        // but it doesn't match THIS stay -> definitely orphaned for this stay.
+        // but it doesn't match THIS stay -> mark as orphaned
         isPromoOrphaned = true;
       } else {
         // No lookahead data evidence it matches ANY stay -> skip
@@ -452,13 +456,23 @@ export function calculateMatchedPromotions(
       }
     }
 
-    // If it's not core-eligible and NOT marked as orphaned (shouldn't happen with logic above), skip
-    if (!isCoreEligible && !isPromoOrphaned) continue;
-
     // 3. Fulfillment Status (Does this specific stay meet counts/spend?)
     const isFulfilling = Object.values(FulfillmentPromotionRules).every((rule) => {
       return rule(booking, promo, usage).valid;
     });
+
+    if (
+      !isPromoOrphaned &&
+      !isFulfilling &&
+      usage?.totalPotentialStayCount !== undefined &&
+      usage.totalPotentialStayCount > 0
+    ) {
+      // If it fails fulfillment but we have lookahead data, mark as orphaned for the breakdown
+      isPromoOrphaned = true;
+    }
+
+    // Final check: if it's not core-eligible/fulfilling AND not orphaned, skip
+    if (!isFulfilling && !isPromoOrphaned) continue;
 
     // Determine which benefits to use: tier-based or flat
     let activeBenefits: MatchingBenefit[];
@@ -486,8 +500,16 @@ export function calculateMatchedPromotions(
       });
 
       if (!applicableTier) {
+        // Check if we will EVER reach a tier (orphaned detection for tiers)
+        if (!isPromoOrphaned && usage && usage.totalPotentialStayCount !== undefined) {
+          const minTierStays = Math.min(...promo.tiers.map((t) => t.minStays ?? Infinity));
+          if (usage.totalPotentialStayCount < minTierStays) {
+            isPromoOrphaned = true;
+          }
+        }
+
         // If orphaned, show the first tier as the target
-        if (isPromoOrphaned && promo.tiers.length > 0) {
+        if (isPromoOrphaned) {
           activeBenefits = promo.tiers[0].benefits;
         } else {
           continue;
@@ -506,9 +528,12 @@ export function calculateMatchedPromotions(
         const bUsage = usage?.benefitUsage?.get(b.id);
 
         // Create a temporary promotion object to reuse the existing rule functions
+        // We merge benefit-level restrictions with promo-level ones
         const tempPromo: MatchingPromotion = {
           ...promo,
-          restrictions: br || null,
+          restrictions: br
+            ? { ...promo.restrictions, ...br }
+            : (promo.restrictions as MatchingRestrictions),
         };
 
         // 1. Core Eligibility (Hard filters)
@@ -520,8 +545,9 @@ export function calculateMatchedPromotions(
           }
         }
 
-        // If it doesn't match core criteria AND it hasn't matched any OTHER stay, filter it out
-        if (!currentMatchesCore && !bUsage?.couldEverMatch) {
+        // If it doesn't match core criteria AND it hasn't matched any OTHER stay,
+        // filter it out UNLESS the whole promotion is marked as orphaned.
+        if (!currentMatchesCore && !bUsage?.couldEverMatch && !isPromoOrphaned) {
           return null;
         }
 
@@ -536,6 +562,16 @@ export function calculateMatchedPromotions(
             isFulfillmentValid = false;
             break;
           }
+        }
+
+        // Check benefit-level usage limits (maxRewardCount)
+        if (
+          isFulfillmentValid &&
+          br?.maxRewardCount &&
+          bUsage &&
+          bUsage.count >= br.maxRewardCount
+        ) {
+          isFulfillmentValid = false;
         }
 
         // Check Benefit-level spanStays restrictions
@@ -576,6 +612,11 @@ export function calculateMatchedPromotions(
               isRemainderOrphaned = true;
             }
           }
+        }
+
+        // Final check: if it's not core-eligible/fulfilling AND not orphaned, skip this benefit
+        if (!isFulfillmentValid && !isActuallyOrphaned && !isRemainderOrphaned) {
+          return null;
         }
 
         // Filter out if it's a fixed-night stay (not spanned) and doesn't meet requirements
@@ -710,9 +751,15 @@ export function calculateMatchedPromotions(
         bonusPointsApplied: Math.round(benefitBonusPoints),
         eligibleNightsAtBooking:
           (bUsage?.eligibleNights ?? 0) + (currentMatchesCore ? booking.numNights : 0),
-        isOrphaned: isActuallyOrphaned || isRemainderOrphaned,
+        isOrphaned: isPromoOrphaned || isActuallyOrphaned || isRemainderOrphaned,
       });
     }
+
+    // If all benefits are zero-value AND none are orphaned, skip the whole promotion
+    const hasAnyActiveBenefit = benefitApplications.some(
+      (ba) => ba.appliedValue > 0 || ba.isOrphaned
+    );
+    if (!hasAnyActiveBenefit) continue;
 
     // 4. Promotion-level scaling
     if (r?.minNightsRequired && r.minNightsRequired > 0 && (r.spanStays || r.nightsStackable)) {
@@ -812,27 +859,40 @@ async function applyMatchedPromotions(
   // Create new BookingPromotion records with benefit applications
   const createdRecords: BookingPromotion[] = [];
   for (const match of matched) {
-    const record = await prisma.bookingPromotion.create({
-      data: {
-        bookingId,
-        promotionId: match.promotionId,
-        appliedValue: match.appliedValue,
-        bonusPointsApplied: match.bonusPointsApplied > 0 ? match.bonusPointsApplied : null,
-        autoApplied: true,
-        eligibleNightsAtBooking: match.eligibleNightsAtBooking,
-        isOrphaned: match.isOrphaned ?? false,
-        benefitApplications: {
-          create: match.benefitApplications.map((ba) => ({
-            promotionBenefitId: ba.promotionBenefitId,
-            appliedValue: ba.appliedValue,
-            bonusPointsApplied: ba.bonusPointsApplied > 0 ? ba.bonusPointsApplied : null,
-            eligibleNightsAtBooking: ba.eligibleNightsAtBooking,
-            isOrphaned: ba.isOrphaned ?? false,
-          })),
+    try {
+      const record = await prisma.bookingPromotion.create({
+        data: {
+          bookingId,
+          promotionId: match.promotionId,
+          appliedValue: match.appliedValue,
+          bonusPointsApplied: match.bonusPointsApplied > 0 ? match.bonusPointsApplied : null,
+          autoApplied: true,
+          eligibleNightsAtBooking: match.eligibleNightsAtBooking,
+          isOrphaned: match.isOrphaned ?? false,
+          benefitApplications: {
+            create: match.benefitApplications.map((ba) => ({
+              promotionBenefitId: ba.promotionBenefitId,
+              appliedValue: ba.appliedValue,
+              bonusPointsApplied: ba.bonusPointsApplied > 0 ? ba.bonusPointsApplied : null,
+              eligibleNightsAtBooking: ba.eligibleNightsAtBooking,
+              isOrphaned: ba.isOrphaned ?? false,
+            })),
+          },
         },
-      },
-    });
-    createdRecords.push(record);
+      });
+      createdRecords.push(record);
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        (error.code === "P2003" || error.code === "P2025")
+      ) {
+        console.warn(
+          `applyMatchedPromotions: Booking ${bookingId} was likely deleted concurrently.`
+        );
+        return createdRecords;
+      }
+      throw error;
+    }
   }
 
   return createdRecords;
