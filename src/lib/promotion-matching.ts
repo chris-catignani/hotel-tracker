@@ -502,51 +502,19 @@ export function calculateMatchedPromotions(
       const br = b.restrictions;
       const bUsage = usage?.benefitUsage?.get(b.id);
 
+      // Create a temporary promotion object to reuse the existing rule functions
+      // This ensures that benefit-level restrictions follow the same logic as promotion-level ones
+      const tempPromo: MatchingPromotion = {
+        ...promo,
+        restrictions: br || null,
+      };
+
       // 1. Core Eligibility (Hard filters)
       let currentMatchesCore = true;
-      if (br) {
-        if (!checkSubBrandRestrictions(br, booking.hotelChainSubBrandId))
+      for (const rule of Object.values(CorePromotionRules)) {
+        if (!rule(booking, tempPromo, usage).valid) {
           currentMatchesCore = false;
-        if (currentMatchesCore && br.tieInCards.length > 0) {
-          const cardMatches =
-            booking.creditCardId != null &&
-            br.tieInCards.some((c) => c.creditCardId === booking.creditCardId);
-          if (!cardMatches) currentMatchesCore = false;
-        }
-        if (
-          currentMatchesCore &&
-          br.oncePerSubBrand &&
-          usage?.appliedSubBrandIds?.has(booking.hotelChainSubBrandId ?? null)
-        ) {
-          currentMatchesCore = false;
-        }
-        if (
-          currentMatchesCore &&
-          br.allowedPaymentTypes &&
-          !checkPaymentTypeRestriction(br.allowedPaymentTypes, booking)
-        ) {
-          currentMatchesCore = false;
-        }
-        if (
-          currentMatchesCore &&
-          br.allowedBookingSources &&
-          !checkBookingSourceRestriction(br.allowedBookingSources, booking)
-        ) {
-          currentMatchesCore = false;
-        }
-        if (currentMatchesCore && br.hotelChainId && br.hotelChainId !== booking.hotelChainId) {
-          currentMatchesCore = false;
-        }
-        if (
-          currentMatchesCore &&
-          br.minSpend != null &&
-          Number(booking.totalCost) < Number(br.minSpend)
-        ) {
-          currentMatchesCore = false;
-        }
-        if (currentMatchesCore && br.maxRewardCount) {
-          const benefitCount = bUsage?.count ?? 0;
-          if (benefitCount >= br.maxRewardCount) currentMatchesCore = false;
+          break;
         }
       }
 
@@ -560,7 +528,16 @@ export function calculateMatchedPromotions(
       let isOrphaned = !currentMatchesCore || isPromoOrphaned;
       let isRemainderOrphaned = false;
 
-      // Check Benefit-level spanStays restrictions
+      // Also check fulfillment rules for this benefit specifically
+      let isFulfillmentValid = true;
+      for (const rule of Object.values(FulfillmentPromotionRules)) {
+        if (!rule(booking, tempPromo, usage).valid) {
+          isFulfillmentValid = false;
+          break;
+        }
+      }
+
+      // Check Benefit-level spanStays restrictions (lookahead logic)
       if (!isOrphaned && br?.spanStays && br.minNightsRequired && br.minNightsRequired > 0) {
         const totalNights = bUsage?.totalPotentialNightCount ?? usage?.totalPotentialNightCount;
         if (totalNights !== undefined) {
