@@ -1857,3 +1857,126 @@ describe("promotion-matching architecture: Core vs Fulfillment", () => {
     expect(match2[0].appliedValue).toBe(100);
   });
 });
+
+describe("Hyatt Bonus Journeys Feedback Reproduction", () => {
+  const hyattChainId = "hyatt-chain";
+  const hyattPlaceId = "hyatt-place";
+  const parkHyattId = "park-hyatt";
+
+  const benefit3k = {
+    id: "3k-benefit",
+    rewardType: PromotionRewardType.points,
+    valueType: PromotionBenefitValueType.fixed,
+    value: new Prisma.Decimal(3000),
+    certType: null,
+    pointsMultiplierBasis: "base_only",
+    sortOrder: 0,
+    restrictions: makeRestrictions({
+      minNightsRequired: 3,
+      nightsStackable: true,
+      spanStays: true,
+      maxTotalBonusPoints: 21000,
+    }),
+  };
+
+  const benefit1k = {
+    id: "1k-benefit",
+    rewardType: PromotionRewardType.points,
+    valueType: PromotionBenefitValueType.fixed,
+    value: new Prisma.Decimal(1000),
+    certType: null,
+    pointsMultiplierBasis: "base_only",
+    sortOrder: 1,
+    restrictions: makeRestrictions({
+      minNightsRequired: 3,
+      nightsStackable: true,
+      spanStays: true,
+      maxTotalBonusPoints: 7000,
+      subBrandRestrictions: [{ hotelChainSubBrandId: hyattPlaceId, mode: "include" }],
+    }),
+  };
+
+  const promo = makePromo({
+    id: "hyatt-bonus-journeys",
+    type: PromotionType.loyalty,
+    hotelChainId: hyattChainId,
+    benefits: [benefit3k, benefit1k],
+  });
+
+  it("Issue 1: Park Hyatt should NOT show 1k benefit (Hyatt Place only) as orphaned", () => {
+    const booking: MatchingBooking = {
+      ...mockBooking,
+      hotelChainId: hyattChainId,
+      hotelChainSubBrandId: parkHyattId,
+      numNights: 1,
+    };
+
+    const usage: PromotionUsageMap = new Map([
+      [
+        promo.id,
+        {
+          count: 1,
+          totalValue: 0,
+          totalBonusPoints: 0,
+          totalPotentialStayCount: 2,
+          totalPotentialNightCount: 2,
+          benefitUsage: new Map([
+            [benefit1k.id, { count: 0, totalValue: 0, totalBonusPoints: 0, couldEverMatch: true }],
+            [benefit3k.id, { count: 0, totalValue: 0, totalBonusPoints: 0, couldEverMatch: true }],
+          ]),
+        },
+      ],
+    ]);
+
+    const matched = calculateMatchedPromotions(booking, [promo], usage);
+    expect(matched).toHaveLength(1);
+
+    // Should ONLY have the 3k benefit (as orphaned, because 1 night < 3 nights target)
+    // Should NOT have the 1k benefit at all because sub-brand mismatch
+    const benefits = matched[0].benefitApplications;
+    expect(benefits.find((b) => b.promotionBenefitId === benefit3k.id)).toBeDefined();
+    expect(benefits.find((b) => b.promotionBenefitId === benefit1k.id)).toBeUndefined();
+  });
+
+  it("Issue 2: Maxed out benefit should NOT be shown as orphaned", () => {
+    const booking: MatchingBooking = {
+      ...mockBooking,
+      hotelChainId: hyattChainId,
+      hotelChainSubBrandId: hyattPlaceId,
+      numNights: 7,
+    };
+
+    // Usage showing 3k benefit is maxed out
+    const usage: PromotionUsageMap = new Map([
+      [
+        promo.id,
+        {
+          count: 3,
+          totalValue: 420,
+          totalBonusPoints: 21000,
+          totalPotentialStayCount: 4,
+          totalPotentialNightCount: 22,
+          benefitUsage: new Map([
+            [
+              benefit3k.id,
+              { count: 3, totalValue: 420, totalBonusPoints: 21000, couldEverMatch: true },
+            ],
+            [
+              benefit1k.id,
+              { count: 3, totalValue: 140, totalBonusPoints: 7000, couldEverMatch: true },
+            ],
+          ]),
+        },
+      ],
+    ]);
+
+    const matched = calculateMatchedPromotions(booking, [promo], usage);
+    expect(matched).toHaveLength(1);
+
+    const b3k = matched[0].benefitApplications.find((b) => b.promotionBenefitId === benefit3k.id);
+    expect(b3k).toBeDefined();
+    expect(b3k!.appliedValue).toBe(0);
+    // It should NOT be orphaned if it's maxed out.
+    expect(b3k!.isOrphaned).toBe(false);
+  });
+});
