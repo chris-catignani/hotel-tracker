@@ -1061,38 +1061,38 @@ export async function matchPromotionsForBooking(bookingId: string): Promise<stri
 }
 
 /**
- * Re-evaluates and applies promotions for all bookings potentially affected by a promotion change.
- * Minimizes database calls by fetching active promotions once and processing bookings in parallel.
+ * Finds all bookings potentially affected by changes to a list of promotions.
+ * This includes bookings that already have the promotion applied AND bookings
+ * that match the promotion's core criteria (hotel chain, dates, etc.).
  */
-export async function matchPromotionsForAffectedBookings(promotionId: string): Promise<void> {
-  const promotion = await prisma.promotion.findUnique({
-    where: { id: promotionId },
+export async function getAffectedBookingIds(promotionIds: string[]): Promise<string[]> {
+  if (promotionIds.length === 0) return [];
+
+  const promotions = await prisma.promotion.findMany({
+    where: { id: { in: promotionIds } },
   });
 
-  if (!promotion) return;
+  if (promotions.length === 0) return [];
 
-  // Find bookings that match the promotion's core criteria or already have it applied
-  const affectedBookings = await prisma.booking.findMany({
-    where: {
-      AND: [
-        {
-          OR: [
-            { hotelChainId: promotion.hotelChainId ?? undefined },
-            { creditCardId: promotion.creditCardId ?? undefined },
-            { shoppingPortalId: promotion.shoppingPortalId ?? undefined },
-            {
-              bookingPromotions: {
-                some: { promotionId: promotion.id },
-              },
-            },
-          ].filter((condition) => {
-            // Remove conditions that are undefined/null to avoid matching everything
-            const firstKey = Object.keys(condition)[0] as keyof typeof condition;
-            const value = condition[firstKey];
-            return value !== undefined && value !== null;
-          }),
+  const orConditions = promotions.map((promotion) => {
+    const coreConditions = [
+      { hotelChainId: promotion.hotelChainId ?? undefined },
+      { creditCardId: promotion.creditCardId ?? undefined },
+      { shoppingPortalId: promotion.shoppingPortalId ?? undefined },
+      {
+        bookingPromotions: {
+          some: { promotionId: promotion.id },
         },
-        // Date range filtering: only bookings that could potentially match the promotion
+      },
+    ].filter((condition) => {
+      const firstKey = Object.keys(condition)[0] as keyof typeof condition;
+      const value = condition[firstKey];
+      return value !== undefined && value !== null;
+    });
+
+    return {
+      AND: [
+        { OR: coreConditions },
         {
           checkIn: {
             gte: promotion.startDate ?? undefined,
@@ -1100,9 +1100,25 @@ export async function matchPromotionsForAffectedBookings(promotionId: string): P
           },
         },
       ],
+    };
+  });
+
+  const affectedBookings = await prisma.booking.findMany({
+    where: {
+      OR: orConditions,
     },
     select: { id: true },
   });
 
-  await reevaluateBookings(affectedBookings.map((b) => b.id));
+  // Use a Set to handle bookings affected by multiple promotions
+  const allAffectedIds = new Set(affectedBookings.map((b) => b.id));
+  return Array.from(allAffectedIds);
+}
+
+/**
+ * Re-evaluates and applies promotions for all bookings potentially affected by a promotion change.
+ */
+export async function matchPromotionsForAffectedBookings(promotionId: string): Promise<void> {
+  const affectedBookingIds = await getAffectedBookingIds([promotionId]);
+  await reevaluateBookings(affectedBookingIds);
 }
