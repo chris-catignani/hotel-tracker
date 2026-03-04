@@ -147,7 +147,7 @@ describe("CreditCardsTab", () => {
     expect(fetchMock).toHaveBeenCalledWith("/api/credit-cards/1", { method: "DELETE" });
     // Verify list was refreshed (fetch called again for credit cards)
     const cardFetchCalls = fetchMock.mock.calls.filter(([input, opts]) => {
-      const url = typeof input === "string" ? input : (input as Request).url;
+      const url = input instanceof Request ? input.url : input.toString();
       return url === "/api/credit-cards" && (!opts || !opts.method || opts.method === "GET");
     });
     expect(cardFetchCalls.length).toBeGreaterThanOrEqual(2);
