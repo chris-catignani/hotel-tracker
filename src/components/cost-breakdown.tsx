@@ -236,10 +236,7 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
                     <div className="flex items-center gap-1.5">
                       <span className="text-muted-foreground">{p.name}</span>
                       {p.isOrphaned && (
-                        <Badge
-                          variant="outline"
-                          className="text-[9px] h-4 px-1 py-0 border-orange-200 bg-orange-50 text-orange-700 font-medium"
-                        >
+                        <Badge variant="warning" className="text-[9px] h-4 px-1 py-0 font-medium">
                           Orphaned
                         </Badge>
                       )}

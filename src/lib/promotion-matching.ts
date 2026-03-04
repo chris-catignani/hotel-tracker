@@ -1475,43 +1475,44 @@ export async function getAffectedBookingIds(promotionIds: string[]): Promise<str
 
   if (promotions.length === 0) return [];
 
-  const allAffectedIds = new Set<string>();
-
-  for (const promotion of promotions) {
-    // Find bookings that match the promotion's core criteria or already have it applied
-    const affectedBookings = await prisma.booking.findMany({
-      where: {
-        AND: [
-          {
-            OR: [
-              { hotelChainId: promotion.hotelChainId ?? undefined },
-              { creditCardId: promotion.creditCardId ?? undefined },
-              { shoppingPortalId: promotion.shoppingPortalId ?? undefined },
-              {
-                bookingPromotions: {
-                  some: { promotionId: promotion.id },
-                },
-              },
-            ].filter((condition) => {
-              const firstKey = Object.keys(condition)[0] as keyof typeof condition;
-              const value = condition[firstKey];
-              return value !== undefined && value !== null;
-            }),
-          },
-          {
-            checkIn: {
-              gte: promotion.startDate ?? undefined,
-              lte: promotion.endDate ?? undefined,
-            },
-          },
-        ],
+  const orConditions = promotions.map((promotion) => {
+    const coreConditions = [
+      { hotelChainId: promotion.hotelChainId ?? undefined },
+      { creditCardId: promotion.creditCardId ?? undefined },
+      { shoppingPortalId: promotion.shoppingPortalId ?? undefined },
+      {
+        bookingPromotions: {
+          some: { promotionId: promotion.id },
+        },
       },
-      select: { id: true },
+    ].filter((condition) => {
+      const firstKey = Object.keys(condition)[0] as keyof typeof condition;
+      const value = condition[firstKey];
+      return value !== undefined && value !== null;
     });
 
-    affectedBookings.forEach((b) => allAffectedIds.add(b.id));
-  }
+    return {
+      AND: [
+        { OR: coreConditions },
+        {
+          checkIn: {
+            gte: promotion.startDate ?? undefined,
+            lte: promotion.endDate ?? undefined,
+          },
+        },
+      ],
+    };
+  });
 
+  const affectedBookings = await prisma.booking.findMany({
+    where: {
+      OR: orConditions as Prisma.BookingWhereInput[],
+    },
+    select: { id: true },
+  });
+
+  // Use a Set to handle bookings affected by multiple promotions
+  const allAffectedIds = new Set(affectedBookings.map((b) => b.id));
   return Array.from(allAffectedIds);
 }
 
