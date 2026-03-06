@@ -208,16 +208,25 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       }
     }
 
+    // Fetch old promotions before update to track what might have changed
+    const oldBooking = await prisma.booking.findUnique({
+      where: { id: id },
+      include: { bookingPromotions: true },
+    });
+    const oldPromoIds = oldBooking?.bookingPromotions.map((p) => p.promotionId) || [];
+
     const booking = await prisma.booking.update({
       where: { id: id },
       data,
     });
 
     // Re-run promotion matching after update
-    const appliedPromoIds = await matchPromotionsForBooking(booking.id);
+    const matchedPromos = await matchPromotionsForBooking(booking.id);
+    const newPromoIds = matchedPromos.map((p) => p.promotionId);
 
-    // Re-evaluate subsequent bookings if this is an earlier stay
-    await reevaluateSubsequentBookings(booking.id, appliedPromoIds);
+    // Re-evaluate subsequent bookings for all affected promotions
+    const allAffectedPromoIds = Array.from(new Set([...oldPromoIds, ...newPromoIds]));
+    await reevaluateSubsequentBookings(booking.id, allAffectedPromoIds);
 
     // Fetch the booking with all relations to return
     const fullBooking = await prisma.booking.findUnique({

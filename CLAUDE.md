@@ -84,6 +84,17 @@ Net Cost = totalCost - promotionSavings - portalCashback - cardReward - loyaltyP
 - `cardReward` = totalCost × creditCard.rewardRate × creditCard.pointValue
 - `loyaltyPointsValue` = loyaltyPointsEarned × hotel.pointValue (basis is typically pre-tax)
 
+### Promotion Matching & Orphaned Logic
+
+Promotions must be matched and labeled according to three categories:
+
+1. **Structural Match (Invisible if Mismatched):** If any structural criteria fail, skip the promotion entirely (invisible in UI).
+   - **Fields:** Hotel Chain, Credit Card, Shopping Portal, Sub-brand Restrictions, Stay Dates, Registration Deadline, Booking Source, Payment Type, and Tie-in Cards.
+2. **Circumstantial / Fulfillment (Pending vs. Orphaned):** Evaluated if structural match passes.
+   - **Pending (Fulfillable):** Requirements not yet met (Min Nights, Spend, Prerequisites), but fulfillable via campaign potential (current + future stays) -> **Show Pro-rated Value** and **No Badge**.
+   - **Orphaned (Unfulfillable):** Requirements not met AND campaign potential is insufficient -> **Show $0 Value** and **"Orphaned" Badge**.
+3. **Hard Caps (Maxed Out):** If limits reached (Max Stays, Max Value, Once Per Sub-brand) -> **Show $0 Value** and **No "Orphaned" Badge**.
+
 ### Loyalty Points Auto-Calculation
 
 `loyaltyPointsEarned` is calculated based on elite status:

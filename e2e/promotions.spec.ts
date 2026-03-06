@@ -713,7 +713,7 @@ test.describe("Promotions constraints", () => {
     );
     expect(bp2).toBeDefined();
     expect(Number(bp2.appliedValue)).toBe(0);
-    expect(bp2.isOrphaned).toBe(true);
+    expect(bp2.isOrphaned).toBe(false); // Maxed out is not orphaned
 
     // Cleanup
     await request.delete(`/api/bookings/${booking1.id}`);

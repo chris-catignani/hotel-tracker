@@ -167,7 +167,8 @@ export async function POST(request: NextRequest) {
     });
 
     // Auto-run promotion matching
-    const appliedPromoIds = await matchPromotionsForBooking(booking.id);
+    const matchedPromos = await matchPromotionsForBooking(booking.id);
+    const appliedPromoIds = matchedPromos.map((p) => p.promotionId);
 
     // Re-evaluate subsequent bookings if this is an earlier stay
     await reevaluateSubsequentBookings(booking.id, appliedPromoIds);

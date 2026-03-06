@@ -1,3 +1,92 @@
+import { Prisma } from "@prisma/client";
+
+// ---------------------------------------------------------------------------
+// Matching Engine Types
+// ---------------------------------------------------------------------------
+
+export type MatchingRestrictions = {
+  minSpend: Prisma.Decimal | null;
+  minNightsRequired: number | null;
+  nightsStackable: boolean;
+  spanStays: boolean;
+  maxStayCount: number | null;
+  maxRewardCount: number | null;
+  maxRedemptionValue: Prisma.Decimal | null;
+  maxTotalBonusPoints: number | null;
+  oncePerSubBrand: boolean;
+  bookByDate: Date | null;
+  registrationDeadline: Date | null;
+  validDaysAfterRegistration: number | null;
+  tieInRequiresPayment: boolean;
+  allowedPaymentTypes: string[];
+  allowedBookingSources: string[];
+  hotelChainId: string | null;
+  prerequisiteStayCount: number | null;
+  prerequisiteNightCount: number | null;
+  subBrandRestrictions: { hotelChainSubBrandId: string; mode: string }[];
+  tieInCards: { creditCardId: string }[];
+} | null;
+
+export type MatchingBenefit = {
+  id: string;
+  rewardType: PromotionRewardType;
+  valueType: PromotionBenefitValueType;
+  value: Prisma.Decimal;
+  certType: string | null;
+  pointsMultiplierBasis: string | null;
+  sortOrder: number;
+  restrictions: MatchingRestrictions;
+};
+
+export interface MatchingBooking {
+  id?: string;
+  creditCardId: string | null;
+  shoppingPortalId: string | null;
+  hotelChainId: string | null;
+  hotelChainSubBrandId: string | null;
+  bookingSource: string | null;
+  checkIn: Date | string;
+  createdAt: Date | string;
+  numNights: number;
+  pretaxCost: string | number | Prisma.Decimal;
+  totalCost: string | number | Prisma.Decimal;
+  pointsRedeemed: number | null;
+  loyaltyPointsEarned: number | null;
+  _count?: { certificates: number };
+  hotelChain?: {
+    basePointRate?: string | number | Prisma.Decimal | null;
+    pointType?: {
+      centsPerPoint: string | number | Prisma.Decimal | null;
+    } | null;
+  } | null;
+  creditCard?: {
+    pointType?: {
+      centsPerPoint: string | number | Prisma.Decimal | null;
+    } | null;
+  } | null;
+}
+
+export interface MatchingPromotion {
+  id: string;
+  type: PromotionType;
+  creditCardId: string | null;
+  shoppingPortalId: string | null;
+  hotelChainId: string | null;
+  startDate: Date | null;
+  endDate: Date | null;
+  restrictions: MatchingRestrictions;
+  registrationDate?: Date | null;
+  benefits: MatchingBenefit[];
+  tiers: {
+    id: string;
+    minStays: number | null;
+    maxStays: number | null;
+    minNights: number | null;
+    maxNights: number | null;
+    benefits: MatchingBenefit[];
+  }[];
+}
+
 // ---------------------------------------------------------------------------
 // Core Data Models
 // ---------------------------------------------------------------------------
