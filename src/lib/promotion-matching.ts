@@ -1277,13 +1277,16 @@ async function fetchPromotionUsage(
       _sum: { numNights: true },
     });
 
-    // Future potential: stays with checkIn > currentBooking.checkIn (pre-qualifying detection)
+    // Future potential: stays with checkIn > currentBooking.checkIn (pre-qualifying detection).
+    // Merge gt into the existing checkIn filter from buildPotentialMatchFilter so that date-window
+    // constraints (startDate, endDate, registrationDate, validDaysAfterRegistration) are preserved.
+    const promoBaseFilter = buildPotentialMatchFilter(promo);
     const futurePotentialStats = await prisma.booking.aggregate({
       where: {
-        ...buildPotentialMatchFilter(promo),
+        ...promoBaseFilter,
         checkIn: {
+          ...((promoBaseFilter.checkIn as Prisma.DateTimeFilter) ?? {}),
           gt: currentCheckInDate,
-          ...(promo.endDate ? { lte: new Date(promo.endDate) } : {}),
         },
       },
       _count: { id: true },
@@ -1316,12 +1319,13 @@ async function fetchPromotionUsage(
         _sum: { numNights: true },
       });
 
+      const bBaseFilter = buildPotentialMatchFilter(promo, b.restrictions);
       const bFuturePotentialStats = await prisma.booking.aggregate({
         where: {
-          ...buildPotentialMatchFilter(promo, b.restrictions),
+          ...bBaseFilter,
           checkIn: {
+            ...((bBaseFilter.checkIn as Prisma.DateTimeFilter) ?? {}),
             gt: currentCheckInDate,
-            ...(promo.endDate ? { lte: new Date(promo.endDate) } : {}),
           },
         },
         _count: { id: true },
