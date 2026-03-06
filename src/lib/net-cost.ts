@@ -113,6 +113,8 @@ export interface NetCostBooking {
         prerequisiteNightCount?: number | null;
         hotelChainId?: string | null;
         allowedBookingSources?: string[] | null;
+        maxTotalBonusPoints?: number | null;
+        maxRedemptionValue?: string | number | null;
       } | null;
       benefits?: {
         rewardType: string;
