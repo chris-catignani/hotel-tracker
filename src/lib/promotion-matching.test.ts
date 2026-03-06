@@ -3,6 +3,7 @@ import {
   calculateMatchedPromotions,
   MatchingBooking,
   getConstrainedPromotions,
+  PromotionUsageMap,
 } from "./promotion-matching";
 import { PromotionType, PromotionRewardType, PromotionBenefitValueType } from "@prisma/client";
 import { Prisma } from "@prisma/client";
@@ -1978,5 +1979,71 @@ describe("Hyatt Bonus Journeys Feedback Reproduction", () => {
     expect(b3k!.appliedValue).toBe(0);
     // It should NOT be orphaned if it's maxed out.
     expect(b3k!.isOrphaned).toBe(false);
+  });
+
+  it("Issue 3: Promotion-level cap should NOT be shown as orphaned when hit", () => {
+    const promoWithCap = makePromo({
+      id: "promo-with-cap",
+      type: PromotionType.loyalty,
+      hotelChainId: "hyatt-chain",
+      restrictions: makeRestrictions({
+        maxRedemptionValue: new Prisma.Decimal(100),
+        minNightsRequired: 2, // Not met for this booking (1 night)
+      }),
+      benefits: [
+        {
+          id: "benefit-1",
+          rewardType: PromotionRewardType.points,
+          valueType: PromotionBenefitValueType.fixed,
+          value: new Prisma.Decimal(5000), // ~$100
+          certType: null,
+          pointsMultiplierBasis: null,
+          sortOrder: 0,
+          restrictions: null,
+        },
+      ],
+    });
+
+    const booking: MatchingBooking = {
+      ...mockBooking,
+      hotelChainId: "hyatt-chain",
+      numNights: 1,
+      pretaxCost: 100,
+      totalCost: 100,
+    };
+
+    // Usage showing promotion-level cap is hit
+    const usage: PromotionUsageMap = new Map([
+      [
+        promoWithCap.id,
+        {
+          count: 1,
+          totalValue: 100,
+          totalBonusPoints: 5000,
+          totalPotentialStayCount: 2,
+          totalPotentialNightCount: 2,
+          eligibleStayCount: 1,
+          eligibleNightCount: 1,
+          benefitUsage: new Map([
+            [
+              "benefit-1",
+              {
+                count: 1,
+                totalValue: 100,
+                totalBonusPoints: 5000,
+                eligibleNights: 1,
+                couldEverMatch: true,
+              },
+            ],
+          ]),
+        },
+      ],
+    ]);
+
+    const matched = calculateMatchedPromotions(booking, [promoWithCap], usage);
+    expect(matched).toHaveLength(1);
+
+    // It should NOT be orphaned because it's maxed out at the promotion level
+    expect(matched[0].isOrphaned).toBe(false);
   });
 });

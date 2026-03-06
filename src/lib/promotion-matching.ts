@@ -352,6 +352,14 @@ const FulfillmentHardCapRules: Record<string, PromotionRule> = {
     return { valid: true };
   },
 
+  maxRewardCount: (booking, promo, usage) => {
+    const r = promo.restrictions;
+    if (r?.maxRewardCount && usage && usage.count >= r.maxRewardCount) {
+      return { valid: false };
+    }
+    return { valid: true };
+  },
+
   oncePerSubBrand: (booking, promo, usage) => {
     const r = promo.restrictions;
     if (r?.oncePerSubBrand) {
@@ -359,6 +367,21 @@ const FulfillmentHardCapRules: Record<string, PromotionRule> = {
         return { valid: false };
       }
     }
+    return { valid: true };
+  },
+
+  redemptionCaps: (booking, promo, usage) => {
+    const r = promo.restrictions;
+    if (!r || !usage) return { valid: true };
+
+    if (r.maxRedemptionValue && usage.totalValue >= Number(r.maxRedemptionValue)) {
+      return { valid: false };
+    }
+
+    if (r.maxTotalBonusPoints && usage.totalBonusPoints >= r.maxTotalBonusPoints) {
+      return { valid: false };
+    }
+
     return { valid: true };
   },
 };
