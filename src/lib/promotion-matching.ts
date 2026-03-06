@@ -162,6 +162,7 @@ interface BenefitApplication {
   eligibleNightsAtBooking?: number;
   isOrphaned?: boolean;
   isPreQualifying?: boolean;
+  isMaxedOut?: boolean;
 }
 
 interface MatchedPromotion {
@@ -924,12 +925,13 @@ export function calculateMatchedPromotions(
           !isActuallyPreQualifying &&
           !isBenefitMaxedOut,
         isPreQualifying: isActuallyPreQualifying && !isBenefitMaxedOut,
+        isMaxedOut: isBenefitMaxedOut,
       });
     }
 
     // If all benefits are zero-value AND none are orphaned/pre-qualifying/maxed-out, skip
     const hasAnyActiveBenefit = benefitApplications.some(
-      (ba) => ba.appliedValue > 0 || ba.isOrphaned || ba.isPreQualifying
+      (ba) => ba.appliedValue > 0 || ba.isOrphaned || ba.isPreQualifying || ba.isMaxedOut
     );
     if (!hasAnyActiveBenefit) continue;
 

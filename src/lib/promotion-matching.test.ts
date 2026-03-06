@@ -360,13 +360,15 @@ describe("promotion-matching", () => {
   });
 
   // Constraint tests
-  it("should respect maxStayCount: 1 — skip when already used once", () => {
+  it("should respect maxStayCount: 1 — maxed out shows $0, no orphaned badge", () => {
     const promo = makePromo({ restrictions: makeRestrictions({ maxStayCount: 1 }) });
     const priorUsage = new Map([
       [promo.id, { count: 1, totalValue: 10, totalBonusPoints: 0, benefitUsage: new Map() }],
     ]);
     const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
-    expect(matched).toHaveLength(0); // core eligibility fails (hard cap), no potential usage provided
+    expect(matched).toHaveLength(1); // hard cap: Maxed Out ($0, no badge)
+    expect(matched[0].appliedValue).toBe(0);
+    expect(matched[0].isOrphaned).toBe(false);
   });
 
   it("should respect maxStayCount: allow below limit", () => {
@@ -378,13 +380,15 @@ describe("promotion-matching", () => {
     expect(matched).toHaveLength(1);
   });
 
-  it("should respect maxStayCount: skip at limit", () => {
+  it("should respect maxStayCount: at limit shows $0, no orphaned badge", () => {
     const promo = makePromo({ restrictions: makeRestrictions({ maxStayCount: 2 }) });
     const priorUsage = new Map([
       [promo.id, { count: 2, totalValue: 10, totalBonusPoints: 0, benefitUsage: new Map() }],
     ]);
     const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
-    expect(matched).toHaveLength(0);
+    expect(matched).toHaveLength(1); // hard cap: Maxed Out ($0, no badge)
+    expect(matched[0].appliedValue).toBe(0);
+    expect(matched[0].isOrphaned).toBe(false);
   });
 
   it("should respect minNightsRequired: skip below minimum", () => {
@@ -451,7 +455,9 @@ describe("promotion-matching", () => {
       ],
     ]);
     const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
-    expect(matched).toHaveLength(0); // benefit filtered out, promo has no benefits left
+    expect(matched).toHaveLength(1); // benefit maxed out: shows $0, no orphaned badge
+    expect(matched[0].appliedValue).toBe(0);
+    expect(matched[0].isOrphaned).toBe(false);
   });
 
   it("should respect benefit-level maxRedemptionValue", () => {
@@ -537,7 +543,9 @@ describe("promotion-matching", () => {
       ],
     ]);
     const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
-    expect(matched).toHaveLength(0);
+    expect(matched).toHaveLength(1); // benefit maxed out (oncePerSubBrand): shows $0, no orphaned badge
+    expect(matched[0].appliedValue).toBe(0);
+    expect(matched[0].isOrphaned).toBe(false);
   });
 
   it("should respect benefit-level minNightsRequired", () => {
@@ -902,7 +910,7 @@ describe("promotion-matching", () => {
     expect(matched).toHaveLength(1);
   });
 
-  it("should skip when oncePerSubBrand=true and booking sub-brand already in appliedSubBrandIds", () => {
+  it("should show $0 (no badge) when oncePerSubBrand=true and booking sub-brand already in appliedSubBrandIds", () => {
     const promo = makePromo({
       restrictions: makeRestrictions({ oncePerSubBrand: true }),
     });
@@ -919,7 +927,9 @@ describe("promotion-matching", () => {
       ],
     ]);
     const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
-    expect(matched).toHaveLength(0);
+    expect(matched).toHaveLength(1); // hard cap (oncePerSubBrand): Maxed Out ($0, no badge)
+    expect(matched[0].appliedValue).toBe(0);
+    expect(matched[0].isOrphaned).toBe(false);
   });
 
   it("should apply when oncePerSubBrand=true and booking sub-brand is different from already-applied ones", () => {
@@ -959,7 +969,7 @@ describe("promotion-matching", () => {
     expect(matched).toHaveLength(1);
   });
 
-  it("should skip when oncePerSubBrand=true, booking has null sub-brand, and null is in appliedSubBrandIds", () => {
+  it("should show $0 (no badge) when oncePerSubBrand=true, booking has null sub-brand, and null is in appliedSubBrandIds", () => {
     const promo = makePromo({
       restrictions: makeRestrictions({ oncePerSubBrand: true }),
     });
@@ -976,7 +986,9 @@ describe("promotion-matching", () => {
       ],
     ]);
     const matched = calculateMatchedPromotions(bookingNoSubBrand, [promo], priorUsage);
-    expect(matched).toHaveLength(0);
+    expect(matched).toHaveLength(1); // hard cap (oncePerSubBrand): Maxed Out ($0, no badge)
+    expect(matched[0].appliedValue).toBe(0);
+    expect(matched[0].isOrphaned).toBe(false);
   });
 
   // Sub-brand scope tests (replaces old exclusion tests)
