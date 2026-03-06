@@ -12,6 +12,7 @@
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push && rm -rf .next",
     "db:seed": "npx tsx prisma/seed.ts",
+    "db:reevaluate": "npx tsx scripts/reevaluate-all.ts",
     "postinstall": "prisma generate",
     "test": "vitest run",
     "test:e2e": "playwright test",
