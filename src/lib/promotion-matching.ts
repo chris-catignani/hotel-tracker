@@ -561,7 +561,8 @@ export function calculateMatchedPromotions(
     const isFulfillmentValid = Object.values(FulfillmentRules).every(
       (rule) => rule(booking, promo, usage).valid
     );
-    const isFulfilling = !isHardCapHit && isFulfillmentValid;
+    // A stay is fulfilling if it's not a hard cap hit AND either meets requirements OR is a span stay (which is fulfillable by definition)
+    const isFulfilling = !isHardCapHit && (isFulfillmentValid || r?.spanStays);
 
     // 3. Orphaned Detection
     let isPromoOrphaned = false;
@@ -650,12 +651,14 @@ export function calculateMatchedPromotions(
       if (!isBStructuralMatch) continue;
 
       const isBHardCapHit = Object.values(HardCapRules).some(
-        (rule) => !rule(booking, tempPromo, usage).valid
+        (rule) => !rule(booking, tempPromo, bUsage as unknown as PromotionUsage)
       );
-      const isBFulfillmentValid = Object.values(FulfillmentRules).every(
-        (rule) => rule(booking, tempPromo, usage).valid
+      const isBFulfillmentValid = Object.values(FulfillmentRules).every((rule) =>
+        rule(booking, tempPromo, bUsage as unknown as PromotionUsage)
       );
-      const isBFulfilling = !isBHardCapHit && isBFulfillmentValid;
+      // A benefit is fulfilling if it's not a hard cap hit AND either meets requirements OR is a span stay
+      const isBFulfilling =
+        !isBHardCapHit && (isBFulfillmentValid || br?.spanStays || r?.spanStays);
 
       let appliedValue = 0;
       let bonusPointsApplied = 0;
@@ -700,33 +703,41 @@ export function calculateMatchedPromotions(
         const isSpannable = br?.spanStays || r?.spanStays;
         const minReq = br?.minNightsRequired ?? r?.minNightsRequired;
 
-        if ((isStackable || isSpannable) && minReq) {
+        if (minReq && (isStackable || isSpannable)) {
+          // If it's stackable or spannable, we always apply the pro-rated multiplier
           const mult = isStackable
             ? booking.numNights / minReq
             : Math.min(1, booking.numNights / minReq);
           appliedValue *= mult;
           bonusPointsApplied = Math.round(bonusPointsApplied * mult);
         } else if (!isFulfilling || !isBFulfilling) {
-          // If not fulfilling and not stackable/spannable, value is 0
+          // If NOT fulfilling and NOT stackable/spannable, value is 0
           appliedValue = 0;
           bonusPointsApplied = 0;
         }
+        // If it IS fulfilling and NOT stackable/spannable, it keeps its full base value (calculated above)
 
         // Benefit-level caps
+        // Logic: if prior usage already hit the cap, value is 0.
+        // If prior usage + current stay would exceed the cap, pro-rate the current stay portion.
         if (br?.maxRedemptionValue && appliedValue > 0) {
-          const rem = Math.max(0, Number(br.maxRedemptionValue) - (bUsage?.totalValue ?? 0));
-          if (appliedValue > rem) {
-            const ratio = rem / appliedValue;
-            appliedValue = rem;
+          const maxValue = Number(br.maxRedemptionValue);
+          const priorValue = bUsage?.totalValue ?? 0;
+          const remainingCapacity = Math.max(0, maxValue - priorValue);
+          if (remainingCapacity < appliedValue) {
+            const ratio = appliedValue > 0 ? remainingCapacity / appliedValue : 0;
+            appliedValue = remainingCapacity;
             bonusPointsApplied = Math.round(bonusPointsApplied * ratio);
           }
         }
         if (br?.maxTotalBonusPoints && bonusPointsApplied > 0) {
-          const rem = Math.max(0, br.maxTotalBonusPoints - (bUsage?.totalBonusPoints ?? 0));
-          if (bonusPointsApplied > rem) {
-            const ratio = rem / bonusPointsApplied;
+          const maxPoints = br.maxTotalBonusPoints;
+          const priorPoints = bUsage?.totalBonusPoints ?? 0;
+          const remainingPoints = Math.max(0, maxPoints - priorPoints);
+          if (remainingPoints < bonusPointsApplied) {
+            const ratio = bonusPointsApplied > 0 ? remainingPoints / bonusPointsApplied : 0;
             appliedValue *= ratio;
-            bonusPointsApplied = rem;
+            bonusPointsApplied = remainingPoints;
           }
         }
       }
@@ -754,32 +765,35 @@ export function calculateMatchedPromotions(
     let totalAppliedValue = benefitApplications.reduce((sum, ba) => sum + ba.appliedValue, 0);
     let totalBonusPoints = benefitApplications.reduce((sum, ba) => sum + ba.bonusPointsApplied, 0);
 
-    // Caps with proportional scaling for bonus points
+    // Promotion-level caps
     if (r?.maxRedemptionValue && totalAppliedValue > 0) {
-      const rem = Math.max(0, Number(r.maxRedemptionValue) - (usage?.totalValue ?? 0));
-      if (totalAppliedValue > rem) {
-        const ratio = rem / totalAppliedValue;
+      const maxValue = Number(r.maxRedemptionValue);
+      const priorValue = usage?.totalValue ?? 0;
+      const remainingCapacity = Math.max(0, maxValue - priorValue);
+      if (totalAppliedValue > remainingCapacity) {
+        const ratio = totalAppliedValue > 0 ? remainingCapacity / totalAppliedValue : 0;
         benefitApplications.forEach((ba) => {
           ba.appliedValue *= ratio;
           ba.bonusPointsApplied = Math.round(ba.bonusPointsApplied * ratio);
         });
-        totalAppliedValue = rem;
+        totalAppliedValue = remainingCapacity;
         totalBonusPoints = benefitApplications.reduce((sum, ba) => sum + ba.bonusPointsApplied, 0);
       }
     }
     if (r?.maxTotalBonusPoints && totalBonusPoints > 0) {
-      const rem = Math.max(0, r.maxTotalBonusPoints - (usage?.totalBonusPoints ?? 0));
-      if (totalBonusPoints > rem) {
-        const ratio = rem / totalBonusPoints;
+      const maxPoints = r.maxTotalBonusPoints;
+      const priorPoints = usage?.totalBonusPoints ?? 0;
+      const remainingPoints = Math.max(0, maxPoints - priorPoints);
+      if (totalBonusPoints > remainingPoints) {
+        const ratio = totalBonusPoints > 0 ? remainingPoints / totalBonusPoints : 0;
         benefitApplications.forEach((ba) => {
           ba.appliedValue *= ratio;
           ba.bonusPointsApplied = Math.round(ba.bonusPointsApplied * ratio);
         });
-        totalBonusPoints = rem;
+        totalBonusPoints = remainingPoints;
         totalAppliedValue = benefitApplications.reduce((sum, ba) => sum + ba.appliedValue, 0);
       }
     }
-
     matched.push({
       promotionId: promo.id,
       appliedValue: totalAppliedValue,
