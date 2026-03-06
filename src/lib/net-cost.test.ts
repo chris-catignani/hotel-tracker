@@ -773,6 +773,100 @@ describe("net-cost", () => {
   });
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
+  describe("Span-stays Orphaned vs Capped partial cycles (Issue #170)", () => {
+    // Shared setup: 7-night booking, 3-night cycle, 3000-point benefit, centsPerPoint=0.02
+    // cumulativeAtStart=0, cumulativeAtEnd=7
+    // Segments: [0-3 complete=$60, 3-6 complete=$60, 6-7 orphaned partial=$0]
+    const makeSpanBooking = (
+      eligibleNightsAtBooking: number,
+      bApplied: number,
+      maxTotalBonusPoints: number | null,
+      isOrphaned = true
+    ): NetCostBooking => ({
+      ...mockBaseBooking,
+      hotelChain: {
+        ...mockBaseBooking.hotelChain,
+        pointType: { name: "Test Pts", centsPerPoint: 0.02 },
+      } as typeof mockBaseBooking.hotelChain,
+      numNights: 7,
+      bookingPromotions: [
+        {
+          id: "bp-span",
+          promotionId: "p-span",
+          promotion: {
+            name: "Span Promo",
+            restrictions: { spanStays: true, minNightsRequired: 3 } as any,
+          } as any,
+          appliedValue: bApplied,
+          isOrphaned,
+          eligibleNightsAtBooking,
+          benefitApplications: [
+            {
+              promotionBenefit: {
+                rewardType: "points",
+                valueType: "fixed",
+                value: 3000,
+                restrictions: {
+                  spanStays: true,
+                  minNightsRequired: 3,
+                  maxTotalBonusPoints,
+                } as any,
+              } as any,
+              appliedValue: bApplied,
+              eligibleNightsAtBooking,
+              isOrphaned,
+            },
+          ] as any[],
+        },
+      ],
+    });
+
+    it("orphaned partial cycle — cap NOT exhausted → labeled 'Orphaned Reward Cycle'", () => {
+      // cumulativeAtEnd=7, floor(7/3)=2 cycles × 3000pts=6000 < cap of 21000 → cap NOT hit
+      // bApplied = 2 × 3000 × 0.02 = $120 (completed cycles only, isRemainderOrphaned)
+      const booking = makeSpanBooking(7, 120, 21000, true);
+      const breakdown = getNetCostBreakdown(booking);
+      const segments = breakdown.promotions[0].groups[0].segments;
+
+      // 3 segments: 2 complete + 1 orphaned
+      expect(segments).toHaveLength(3);
+      expect(segments[0].label).toBe("Full Reward Cycle (3/3 nights)");
+      expect(segments[0].value).toBe(60);
+      expect(segments[1].label).toBe("Full Reward Cycle (3/3 nights)");
+      expect(segments[1].value).toBe(60);
+      // Orphaned partial: cap not exhausted → "Orphaned", not "Capped"
+      expect(segments[2].label).toBe("Orphaned Reward Cycle (1/3 nights)");
+      expect(segments[2].value).toBe(0);
+      expect(segments[2].formula).toContain("(orphaned)");
+    });
+
+    it("partial cycle — cap IS exhausted by completed cycles → labeled 'Capped Reward Cycle'", () => {
+      // cumulativeAtEnd=22 (prior=15 + this=7), floor(22/3)=7 cycles × 3000pts=21000 = cap of 21000
+      // bApplied = 2 × 3000 × 0.02 = $120 (only THIS booking's 2 cycles; prior cycles are in prior bookings)
+      const booking = makeSpanBooking(22, 120, 21000, true);
+      const breakdown = getNetCostBreakdown(booking);
+      const segments = breakdown.promotions[0].groups[0].segments;
+
+      // 3 segments: cycle-completion + full cycle + capped partial
+      expect(segments).toHaveLength(3);
+      // Last segment: cap IS exhausted (floor(22/3)*3000=21000 >= 21000) → "Capped"
+      expect(segments[2].label).toBe("Capped Reward Cycle (1/3 nights)");
+      expect(segments[2].value).toBe(0);
+      expect(segments[2].formula).toBe("");
+      expect(segments[2].description).toBe(
+        "This segment no longer applies because the promotion has been maxed out."
+      );
+    });
+
+    it("no maxTotalBonusPoints restriction → orphaned partial always shows as Orphaned", () => {
+      // Even if prior cycles exhausted budget, without a cap the partial cycle is Orphaned
+      const booking = makeSpanBooking(7, 120, null, true);
+      const breakdown = getNetCostBreakdown(booking);
+      const segments = breakdown.promotions[0].groups[0].segments;
+      expect(segments[2].label).toBe("Orphaned Reward Cycle (1/3 nights)");
+    });
+  });
+
   describe("Capped and Maxed Out Promotions (Issue #157)", () => {
     it("should omit formula and show maxed out message for spanned reward when value is 0", () => {
       const booking: NetCostBooking = {

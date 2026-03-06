@@ -3,6 +3,14 @@ import { PrismaClient, Prisma } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export async function seedPromotions() {
+  // Look up sub-brand IDs dynamically to avoid hardcoded stale IDs
+  const hyattPlace = await prisma.hotelChainSubBrand.findFirstOrThrow({
+    where: { name: "Hyatt Place" },
+  });
+  const hyattHouse = await prisma.hotelChainSubBrand.findFirstOrThrow({
+    where: { name: "Hyatt House" },
+  });
+
   const promotions: Prisma.PromotionCreateInput[] = [
     {
       name: "IHG 2x Promo",
@@ -97,7 +105,7 @@ export async function seedPromotions() {
                 spanStays: true,
                 maxTotalBonusPoints: 7000,
                 subBrandRestrictions: {
-                  create: [{ hotelChainSubBrandId: "ckz1vxi70wnbaq3qehma0fhcc", mode: "include" }],
+                  create: [{ hotelChainSubBrandId: hyattPlace.id, mode: "include" }],
                 },
               },
             },
@@ -209,8 +217,8 @@ export async function seedPromotions() {
         create: {
           subBrandRestrictions: {
             create: [
-              { hotelChainSubBrandId: "ckz1vxi70wnbaq3qehma0fhbz", mode: "include" }, // Hyatt House
-              { hotelChainSubBrandId: "ckz1vxi70wnbaq3qehma0fhcc", mode: "include" }, // Hyatt Place
+              { hotelChainSubBrandId: hyattHouse.id, mode: "include" }, // Hyatt House
+              { hotelChainSubBrandId: hyattPlace.id, mode: "include" }, // Hyatt Place
             ],
           },
         },
