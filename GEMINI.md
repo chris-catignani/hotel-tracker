@@ -17,6 +17,23 @@ This file provides foundational mandates for Gemini CLI (gemini-cli) when workin
 - **UI Consistency:** Ensure the `CostBreakdown` component (src/components/cost-breakdown.tsx) is updated as necessary to accommodate any new breakdown items or calculation types.
 - **Benefit Value Consistency:** When redemption constraints cap promotion values (e.g., `maxRedemptionValue`, `maxTotalBonusPoints`), the individual `appliedValue` on each `BenefitApplication` must be proportionally scaled to maintain consistency with the total capped `appliedValue`.
 
+### Promotion Matching & Orphaned Logic
+
+Promotions must be matched and labeled according to three strict categories:
+
+1. **Structural Match (Invisible if Mismatched):**
+   If any of these fail, the promotion is irrelevant to the booking and MUST be skipped (invisible in UI).
+   - **Fields:** Hotel Chain ID, Credit Card ID, Shopping Portal ID, Sub-brand Restrictions, Stay Dates, Registration Deadline, Booking Source, Payment Type, and Tie-in Cards.
+
+2. **Circumstantial / Fulfillment (Pending vs. Orphaned):**
+   If structural criteria match, evaluate fulfillment rules (Min Nights, Min Spend, Prerequisites).
+   - **Pending (Fulfillable):** If requirements are not yet met but lookahead data shows enough campaign potential (current + future stays) exists -> **Show Pro-rated Value** and **No Badge**.
+   - **Orphaned (Unfulfillable):** If requirements are not met AND campaign potential is insufficient -> **Show $0 Value** and **"Orphaned" Badge**.
+
+3. **Hard Caps (Maxed Out):**
+   If limits are reached (Max Stay Count, Max Redemption Value, Once Per Sub-brand), the promotion is finished.
+   - **Action:** Show **$0 Value** and **No "Orphaned" Badge**.
+
 ## Testing Mandates
 
 - **Verification:** ALWAYS run all unit tests (`npm test`) and E2E tests (`npm run test:e2e`) locally before creating or pushing updates to a Pull Request. A task is not considered ready for review until all local tests pass.
