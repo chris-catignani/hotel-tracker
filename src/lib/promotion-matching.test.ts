@@ -3,6 +3,7 @@ import {
   calculateMatchedPromotions,
   MatchingBooking,
   getConstrainedPromotions,
+  PromotionUsageMap,
 } from "./promotion-matching";
 import { PromotionType, PromotionRewardType, PromotionBenefitValueType } from "@prisma/client";
 import { Prisma } from "@prisma/client";
@@ -155,14 +156,12 @@ describe("promotion-matching", () => {
 
     expect(calculateMatchedPromotions(mockBooking, [promoLowMin])).toHaveLength(1);
 
-    // If we have potential usage that matches, it stays in the list as orphaned
+    // minSpend failures are per-stay hide rules — promotion is hidden regardless of potential usage
     const usage: PromotionUsageMap = new Map([
       ["promo-1", { count: 0, totalValue: 0, totalBonusPoints: 0, totalPotentialStayCount: 1 }],
     ]);
     const matchedWithUsage = calculateMatchedPromotions(mockBooking, [promoHighMin], usage);
-    expect(matchedWithUsage).toHaveLength(1);
-    expect(matchedWithUsage[0].appliedValue).toBe(0);
-    expect(matchedWithUsage[0].isOrphaned).toBe(true);
+    expect(matchedWithUsage).toHaveLength(0);
   });
 
   it("should calculate cashback percentage value correctly", () => {
@@ -361,13 +360,15 @@ describe("promotion-matching", () => {
   });
 
   // Constraint tests
-  it("should respect maxStayCount: 1 — skip when already used once", () => {
+  it("should respect maxStayCount: 1 — maxed out shows $0, no orphaned badge", () => {
     const promo = makePromo({ restrictions: makeRestrictions({ maxStayCount: 1 }) });
     const priorUsage = new Map([
       [promo.id, { count: 1, totalValue: 10, totalBonusPoints: 0, benefitUsage: new Map() }],
     ]);
     const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
-    expect(matched).toHaveLength(0); // core eligibility fails (hard cap), no potential usage provided
+    expect(matched).toHaveLength(1); // hard cap: Maxed Out ($0, no badge)
+    expect(matched[0].appliedValue).toBe(0);
+    expect(matched[0].isOrphaned).toBe(false);
   });
 
   it("should respect maxStayCount: allow below limit", () => {
@@ -379,13 +380,15 @@ describe("promotion-matching", () => {
     expect(matched).toHaveLength(1);
   });
 
-  it("should respect maxStayCount: skip at limit", () => {
+  it("should respect maxStayCount: at limit shows $0, no orphaned badge", () => {
     const promo = makePromo({ restrictions: makeRestrictions({ maxStayCount: 2 }) });
     const priorUsage = new Map([
       [promo.id, { count: 2, totalValue: 10, totalBonusPoints: 0, benefitUsage: new Map() }],
     ]);
     const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
-    expect(matched).toHaveLength(0);
+    expect(matched).toHaveLength(1); // hard cap: Maxed Out ($0, no badge)
+    expect(matched[0].appliedValue).toBe(0);
+    expect(matched[0].isOrphaned).toBe(false);
   });
 
   it("should respect minNightsRequired: skip below minimum", () => {
@@ -452,7 +455,9 @@ describe("promotion-matching", () => {
       ],
     ]);
     const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
-    expect(matched).toHaveLength(0); // benefit filtered out, promo has no benefits left
+    expect(matched).toHaveLength(1); // benefit maxed out: shows $0, no orphaned badge
+    expect(matched[0].appliedValue).toBe(0);
+    expect(matched[0].isOrphaned).toBe(false);
   });
 
   it("should respect benefit-level maxRedemptionValue", () => {
@@ -538,7 +543,9 @@ describe("promotion-matching", () => {
       ],
     ]);
     const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
-    expect(matched).toHaveLength(0);
+    expect(matched).toHaveLength(1); // benefit maxed out (oncePerSubBrand): shows $0, no orphaned badge
+    expect(matched[0].appliedValue).toBe(0);
+    expect(matched[0].isOrphaned).toBe(false);
   });
 
   it("should respect benefit-level minNightsRequired", () => {
@@ -903,7 +910,7 @@ describe("promotion-matching", () => {
     expect(matched).toHaveLength(1);
   });
 
-  it("should skip when oncePerSubBrand=true and booking sub-brand already in appliedSubBrandIds", () => {
+  it("should show $0 (no badge) when oncePerSubBrand=true and booking sub-brand already in appliedSubBrandIds", () => {
     const promo = makePromo({
       restrictions: makeRestrictions({ oncePerSubBrand: true }),
     });
@@ -920,7 +927,9 @@ describe("promotion-matching", () => {
       ],
     ]);
     const matched = calculateMatchedPromotions(mockBooking, [promo], priorUsage);
-    expect(matched).toHaveLength(0);
+    expect(matched).toHaveLength(1); // hard cap (oncePerSubBrand): Maxed Out ($0, no badge)
+    expect(matched[0].appliedValue).toBe(0);
+    expect(matched[0].isOrphaned).toBe(false);
   });
 
   it("should apply when oncePerSubBrand=true and booking sub-brand is different from already-applied ones", () => {
@@ -960,7 +969,7 @@ describe("promotion-matching", () => {
     expect(matched).toHaveLength(1);
   });
 
-  it("should skip when oncePerSubBrand=true, booking has null sub-brand, and null is in appliedSubBrandIds", () => {
+  it("should show $0 (no badge) when oncePerSubBrand=true, booking has null sub-brand, and null is in appliedSubBrandIds", () => {
     const promo = makePromo({
       restrictions: makeRestrictions({ oncePerSubBrand: true }),
     });
@@ -977,7 +986,9 @@ describe("promotion-matching", () => {
       ],
     ]);
     const matched = calculateMatchedPromotions(bookingNoSubBrand, [promo], priorUsage);
-    expect(matched).toHaveLength(0);
+    expect(matched).toHaveLength(1); // hard cap (oncePerSubBrand): Maxed Out ($0, no badge)
+    expect(matched[0].appliedValue).toBe(0);
+    expect(matched[0].isOrphaned).toBe(false);
   });
 
   // Sub-brand scope tests (replaces old exclusion tests)
@@ -1000,16 +1011,13 @@ describe("promotion-matching", () => {
         subBrandRestrictions: [{ hotelChainSubBrandId: "brand-4", mode: "exclude" }],
       }),
     });
-    // Without potential usage -> skip
+    // Structural mismatch → always invisible, even when other stays exist
     expect(calculateMatchedPromotions(mockBooking, [promo])).toHaveLength(0);
 
-    // With potential usage -> mark as orphaned
     const usage: PromotionUsageMap = new Map([
       ["promo-1", { count: 0, totalValue: 0, totalBonusPoints: 0, totalPotentialStayCount: 1 }],
     ]);
-    const matched = calculateMatchedPromotions(mockBooking, [promo], usage);
-    expect(matched).toHaveLength(1);
-    expect(matched[0].isOrphaned).toBe(true);
+    expect(calculateMatchedPromotions(mockBooking, [promo], usage)).toHaveLength(0);
   });
 
   it("should apply promotion when booking has no sub-brand and exclude restrictions exist", () => {
@@ -1565,6 +1573,171 @@ describe("promotion-matching", () => {
       expect(calculateMatchedPromotions(mixedBooking, [promo])).toHaveLength(0);
     });
   });
+
+  // Span-stays isRemainderOrphaned tests (Issue #170)
+  describe("span-stays isRemainderOrphaned", () => {
+    // Helper: a span-stays promotion with fixed cashback per 3-night cycle
+    function makeSpanPromo(benefitValue: number = 10) {
+      return makePromo({
+        benefits: [
+          {
+            id: "span-benefit",
+            rewardType: PromotionRewardType.cashback,
+            valueType: PromotionBenefitValueType.fixed,
+            value: new Prisma.Decimal(benefitValue),
+            certType: null,
+            pointsMultiplierBasis: null,
+            sortOrder: 0,
+            restrictions: makeRestrictions({ minNightsRequired: 3, spanStays: true }),
+          },
+        ],
+      });
+    }
+
+    it("completed cycles earn value; orphaned partial cycle adds nothing", () => {
+      // 7 nights, 3-night cycle. totalPotentialNightCount=7 (not a multiple of 3) → isRemainderOrphaned.
+      // Completed cycles: floor(7/3) - floor(0/3) = 2. Partial 7th night: $0.
+      const promo = makeSpanPromo(10);
+      const usage: PromotionUsageMap = new Map([
+        [
+          promo.id,
+          {
+            count: 0,
+            totalValue: 0,
+            totalBonusPoints: 0,
+            benefitUsage: new Map([
+              [
+                "span-benefit",
+                {
+                  count: 0,
+                  totalValue: 0,
+                  totalBonusPoints: 0,
+                  totalPotentialNightCount: 7,
+                  eligibleNights: 0,
+                },
+              ],
+            ]),
+          },
+        ],
+      ]);
+      const booking = { ...mockBooking, numNights: 7 };
+      const matched = calculateMatchedPromotions(booking, [promo], usage);
+      expect(matched).toHaveLength(1);
+      // Only 2 complete cycles earn value; the 7th-night partial cycle contributes $0
+      expect(matched[0].appliedValue).toBe(20); // 2 × $10
+      expect(matched[0].benefitApplications[0].appliedValue).toBe(20);
+      expect(matched[0].benefitApplications[0].isOrphaned).toBe(true);
+      expect(matched[0].benefitApplications[0].eligibleNightsAtBooking).toBe(7);
+    });
+
+    it("prior nights shift which cycles complete in this booking", () => {
+      // Prior: 1 night. This booking: 7 nights. totalPotentialNightCount=8 (not multiple of 3).
+      // 8 % 3 ≠ 0 → isRemainderOrphaned. totalSoFar=8, nextCycleGoal=9, 8<9.
+      // Completed cycles: floor(8/3) - floor(1/3) = 2 - 0 = 2. Value = 2 × $10 = $20.
+      const promo = makeSpanPromo(10);
+      const usage: PromotionUsageMap = new Map([
+        [
+          promo.id,
+          {
+            count: 1,
+            totalValue: 0,
+            totalBonusPoints: 0,
+            benefitUsage: new Map([
+              [
+                "span-benefit",
+                {
+                  count: 1,
+                  totalValue: 0,
+                  totalBonusPoints: 0,
+                  totalPotentialNightCount: 8,
+                  eligibleNights: 1,
+                },
+              ],
+            ]),
+          },
+        ],
+      ]);
+      const booking = { ...mockBooking, numNights: 7 };
+      const matched = calculateMatchedPromotions(booking, [promo], usage);
+      expect(matched).toHaveLength(1);
+      expect(matched[0].benefitApplications[0].isOrphaned).toBe(true);
+      expect(matched[0].appliedValue).toBe(20); // 2 completed cycles × $10
+    });
+
+    it("exact cycle total → not remainder-orphaned, uses proportional multiplier", () => {
+      // Prior: 8 nights. This booking: 4 nights. totalPotentialNightCount=12 (multiple of 3).
+      // 12 % 3 = 0 → NOT remainder-orphaned. Multiplier = 4/3 (proportional). Value = $13.33.
+      const promo = makeSpanPromo(10);
+      const usage: PromotionUsageMap = new Map([
+        [
+          promo.id,
+          {
+            count: 1,
+            totalValue: 20,
+            totalBonusPoints: 0,
+            benefitUsage: new Map([
+              [
+                "span-benefit",
+                {
+                  count: 1,
+                  totalValue: 20,
+                  totalBonusPoints: 0,
+                  totalPotentialNightCount: 12,
+                  eligibleNights: 8,
+                },
+              ],
+            ]),
+          },
+        ],
+      ]);
+      const booking = { ...mockBooking, numNights: 4 };
+      const matched = calculateMatchedPromotions(booking, [promo], usage);
+      expect(matched).toHaveLength(1);
+      expect(matched[0].benefitApplications[0].isOrphaned).toBe(false);
+      // Proportional: 4/3 × $10 ≈ $13.33
+      expect(matched[0].appliedValue).toBeCloseTo(13.33, 1);
+    });
+
+    it("benefit sub-brand structural mismatch → benefit hidden, not orphaned", () => {
+      // Booking at "brand-4". Promotion has two benefits:
+      // - base ($10, no restriction) — applies
+      // - scoped ($50, include "brand-99" only) — structurally mismatched → invisible
+      const scopedBenefit = {
+        id: "benefit-wrong-brand",
+        rewardType: PromotionRewardType.cashback,
+        valueType: PromotionBenefitValueType.fixed,
+        value: new Prisma.Decimal(50),
+        certType: null,
+        pointsMultiplierBasis: null,
+        sortOrder: 1,
+        restrictions: makeRestrictions({
+          subBrandRestrictions: [{ hotelChainSubBrandId: "brand-99", mode: "include" }],
+        }),
+      };
+      const baseBenefit = {
+        id: "benefit-base",
+        rewardType: PromotionRewardType.cashback,
+        valueType: PromotionBenefitValueType.fixed,
+        value: new Prisma.Decimal(10),
+        certType: null,
+        pointsMultiplierBasis: null,
+        sortOrder: 0,
+        restrictions: null,
+      };
+      const promo = makePromo({
+        type: PromotionType.loyalty,
+        creditCardId: null,
+        hotelChainId: "chain-3",
+        benefits: [baseBenefit, scopedBenefit],
+      });
+      const matched = calculateMatchedPromotions(mockBooking, [promo]);
+      expect(matched).toHaveLength(1);
+      // Only the base $10 applies; the $50 brand-restricted benefit is invisible
+      expect(matched[0].appliedValue).toBe(10);
+      expect(matched[0].benefitApplications).toHaveLength(1);
+      expect(matched[0].benefitApplications[0].isOrphaned).toBe(false);
+    });
+  });
 });
 
 describe("getConstrainedPromotions", () => {
@@ -1785,14 +1958,12 @@ describe("promotion-matching architecture: Core vs Fulfillment", () => {
     const matched = calculateMatchedPromotions(mockBooking, [promo]);
     expect(matched).toHaveLength(0);
 
-    // With potential usage, mark as orphaned but don't apply value
+    // Per-stay minNights (no span) failures are hide rules — promotion is hidden regardless of potential usage
     const usage = new Map([
       ["promo-1", { count: 0, totalValue: 0, totalBonusPoints: 0, totalPotentialStayCount: 1 }],
     ]);
     const matchedWithUsage = calculateMatchedPromotions(mockBooking, [promo], usage);
-    expect(matchedWithUsage).toHaveLength(1);
-    expect(matchedWithUsage[0].appliedValue).toBe(0);
-    expect(matchedWithUsage[0].isOrphaned).toBe(true);
+    expect(matchedWithUsage).toHaveLength(0);
   });
 
   it("should correctly handle tiered prerequisites in the rule-based engine", () => {

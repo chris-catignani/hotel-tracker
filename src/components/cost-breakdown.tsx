@@ -243,6 +243,11 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
                           Orphaned
                         </Badge>
                       )}
+                      {p.isPreQualifying && (
+                        <Badge variant="secondary" className="text-[9px] h-4 px-1 py-0 font-medium">
+                          Pre-qualifying
+                        </Badge>
+                      )}
                       <CalculationInfo calc={p} />
                     </div>
                     <span

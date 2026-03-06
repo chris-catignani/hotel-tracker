@@ -363,6 +363,7 @@ model BookingPromotion {
   appliedValue        Decimal                   @map("applied_value") @db.Decimal(10, 2)
   bonusPointsApplied  Int?                      @map("bonus_points_applied")
   isOrphaned          Boolean                   @default(false) @map("is_orphaned")
+  isPreQualifying     Boolean                   @default(false) @map("is_pre_qualifying")
   autoApplied         Boolean                   @default(true) @map("auto_applied")
   verified            Boolean                   @default(false)
   eligibleNightsAtBooking Int?                  @map("eligible_nights_at_booking")
@@ -380,6 +381,7 @@ model BookingPromotionBenefit {
   appliedValue       Decimal          @map("applied_value") @db.Decimal(10, 2)
   bonusPointsApplied Int?             @map("bonus_points_applied")
   isOrphaned         Boolean          @default(false) @map("is_orphaned")
+  isPreQualifying    Boolean          @default(false) @map("is_pre_qualifying")
   eligibleNightsAtBooking Int?        @map("eligible_nights_at_booking")
 
   @@map("booking_promotion_benefits")

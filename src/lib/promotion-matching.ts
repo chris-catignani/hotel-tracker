@@ -19,6 +19,8 @@ export type PromotionUsage = {
   appliedSubBrandIds?: Set<string | null>;
   totalPotentialStayCount?: number; // Total stays that match CORE criteria (orphaned detection)
   totalPotentialNightCount?: number; // Total nights that match CORE criteria (orphaned detection)
+  futurePotentialStayCount?: number; // Stays with checkIn > currentBooking.checkIn (pre-qualifying detection)
+  futurePotentialNightCount?: number; // Nights for future potential stays
   benefitUsage?: Map<
     string,
     {
@@ -28,6 +30,7 @@ export type PromotionUsage = {
       eligibleNights?: number;
       couldEverMatch?: boolean; // Does this benefit match the core criteria for ANY stay?
       totalPotentialNightCount?: number; // Cumulative potential nights for this specific benefit
+      futurePotentialNightCount?: number; // Future potential nights for this specific benefit
     }
   >;
 };
@@ -158,6 +161,8 @@ interface BenefitApplication {
   bonusPointsApplied: number;
   eligibleNightsAtBooking?: number;
   isOrphaned?: boolean;
+  isPreQualifying?: boolean;
+  isMaxedOut?: boolean;
 }
 
 interface MatchedPromotion {
@@ -166,6 +171,7 @@ interface MatchedPromotion {
   bonusPointsApplied: number;
   eligibleNightsAtBooking?: number;
   isOrphaned?: boolean;
+  isPreQualifying?: boolean;
   benefitApplications: BenefitApplication[];
 }
 
@@ -339,10 +345,10 @@ const CorePromotionRules: Record<string, PromotionRule> = {
 };
 
 /**
- * Fulfillment Rules
- * These determine if the promotion actually applies a value to this specific booking.
+ * Hard Cap Rules
+ * These represent limits that have been reached. Result is $0 with no badge (Maxed Out).
  */
-const FulfillmentPromotionRules: Record<string, PromotionRule> = {
+const HardCapPromotionRules: Record<string, PromotionRule> = {
   maxStayCount: (booking, promo, usage) => {
     const r = promo.restrictions;
     if (r?.maxStayCount && usage && usage.count >= r.maxStayCount) {
@@ -360,7 +366,13 @@ const FulfillmentPromotionRules: Record<string, PromotionRule> = {
     }
     return { valid: true };
   },
+};
 
+/**
+ * Per-stay "hide" rules.
+ * These failures mean the promotion should be hidden entirely for this booking (not orphaned).
+ */
+const PerStayHideRules: Record<string, PromotionRule> = {
   minSpend: (booking, promo) => {
     if (
       promo.type === PromotionType.credit_card &&
@@ -379,7 +391,14 @@ const FulfillmentPromotionRules: Record<string, PromotionRule> = {
     }
     return { valid: true };
   },
+};
 
+/**
+ * Fulfillment Rules (campaign-level)
+ * These determine if the cumulative campaign state meets thresholds.
+ * Failures here can be pre-qualifying (future stays exist) or orphaned.
+ */
+const FulfillmentPromotionRules: Record<string, PromotionRule> = {
   prerequisites: (booking, promo, usage) => {
     const r = promo.restrictions;
     if (!r) return { valid: true };
@@ -408,71 +427,105 @@ export function calculateMatchedPromotions(
   for (const promo of activePromotions) {
     const usage = priorUsage?.get(promo.id);
 
-    // 1. Core Eligibility (Hard Filters)
+    // 1. Core Eligibility (Hard Filters — structural match)
     const isCoreEligible = Object.values(CorePromotionRules).every((rule) => {
       return rule(booking, promo, usage).valid;
     });
 
-    // 2. Orphaned Lookahead Logic
-    // Even if it doesn't match core criteria for THIS booking, it might match for others.
-    // If it DOESN'T match core criteria for any stay in the entire campaign, it's truly unfulfillable (orphaned).
+    // Any structural mismatch → invisible. "Orphaned" is reserved for fulfillment failures
+    // (not enough stays/nights to complete the campaign), not structural incompatibility.
     let isPromoOrphaned = false;
+    let isPromoPreQualifying = false;
 
     if (!isCoreEligible) {
-      if (
-        usage &&
-        usage.totalPotentialStayCount !== undefined &&
-        usage.totalPotentialStayCount > 0
-      ) {
-        // We HAVE lookahead data confirming it matches SOME stays in campaign,
-        // but it doesn't match THIS stay -> mark as orphaned
-        isPromoOrphaned = true;
-      } else {
-        // No lookahead data evidence it matches ANY stay -> skip
-        continue;
-      }
+      continue;
     }
 
-    // Check spanStays restrictions: do we have enough TOTAL nights across the campaign to meet the goal?
     const r = promo.restrictions;
-    if (!isPromoOrphaned && r?.spanStays && r.minNightsRequired && r.minNightsRequired > 0) {
+
+    // 2. Hard Cap check (maxStayCount, oncePerSubBrand) → Maxed Out ($0, no badge)
+    let isMaxedOut = false;
+    if (!isPromoOrphaned) {
+      isMaxedOut = Object.values(HardCapPromotionRules).some((rule) => {
+        return !rule(booking, promo, usage).valid;
+      });
+    }
+
+    // 3. Per-stay hide rules (minNights no-span, minSpend) → hide entirely
+    if (!isPromoOrphaned && !isMaxedOut) {
+      const isPerStayHidden = Object.values(PerStayHideRules).some((rule) => {
+        return !rule(booking, promo, usage).valid;
+      });
+      if (isPerStayHidden) continue;
+    }
+
+    // 4. SpanStays campaign-level check
+    if (
+      !isPromoOrphaned &&
+      !isMaxedOut &&
+      r?.spanStays &&
+      r.minNightsRequired &&
+      r.minNightsRequired > 0
+    ) {
       const totalNights = usage?.totalPotentialNightCount;
       if (totalNights !== undefined && totalNights < r.minNightsRequired) {
-        isPromoOrphaned = true;
+        // Not enough total campaign nights to ever complete a cycle
+        if ((usage?.futurePotentialNightCount ?? 0) > 0) {
+          isPromoPreQualifying = true;
+        } else {
+          isPromoOrphaned = true;
+        }
       }
     }
 
-    // Check prerequisite stay/night counts: will we ever reach them?
-    if (!isPromoOrphaned && r?.prerequisiteStayCount && r.prerequisiteStayCount > 0) {
-      const totalStays = usage?.totalPotentialStayCount;
-      if (totalStays !== undefined && totalStays < r.prerequisiteStayCount + 1) {
-        isPromoOrphaned = true;
+    // 5. Prerequisite campaign-level check
+    if (!isPromoOrphaned && !isMaxedOut && !isPromoPreQualifying) {
+      if (r?.prerequisiteStayCount && r.prerequisiteStayCount > 0) {
+        const totalStays = usage?.totalPotentialStayCount;
+        if (totalStays !== undefined && totalStays < r.prerequisiteStayCount + 1) {
+          if ((usage?.futurePotentialStayCount ?? 0) > 0) {
+            isPromoPreQualifying = true;
+          } else {
+            isPromoOrphaned = true;
+          }
+        }
       }
-    }
-    if (!isPromoOrphaned && r?.prerequisiteNightCount && r.prerequisiteNightCount > 0) {
-      const totalNights = usage?.totalPotentialNightCount;
-      if (totalNights !== undefined && totalNights < r.prerequisiteNightCount + booking.numNights) {
-        isPromoOrphaned = true;
+      if (
+        !isPromoOrphaned &&
+        !isPromoPreQualifying &&
+        r?.prerequisiteNightCount &&
+        r.prerequisiteNightCount > 0
+      ) {
+        const totalNights = usage?.totalPotentialNightCount;
+        if (
+          totalNights !== undefined &&
+          totalNights < r.prerequisiteNightCount + booking.numNights
+        ) {
+          if ((usage?.futurePotentialNightCount ?? 0) > 0) {
+            isPromoPreQualifying = true;
+          } else {
+            isPromoOrphaned = true;
+          }
+        }
       }
     }
 
-    // 3. Fulfillment Status (Does this specific stay meet counts/spend?)
+    // 6. Fulfillment Rules (campaign-level: prerequisites, tiers)
     const isFulfilling = Object.values(FulfillmentPromotionRules).every((rule) => {
       return rule(booking, promo, usage).valid;
     });
 
-    if (
-      !isPromoOrphaned &&
-      !isFulfilling &&
-      usage?.totalPotentialStayCount !== undefined &&
-      usage.totalPotentialStayCount > 0
-    ) {
-      // If it fails fulfillment but we have lookahead data, mark as orphaned for the breakdown
-      isPromoOrphaned = true;
+    if (!isPromoOrphaned && !isMaxedOut && !isPromoPreQualifying && !isFulfilling) {
+      // Campaign-level fulfillment failed
+      if ((usage?.futurePotentialStayCount ?? 0) > 0) {
+        isPromoPreQualifying = true;
+      } else {
+        isPromoOrphaned = true;
+      }
     }
 
-    // Final check: if it's not core-eligible/fulfilling AND not orphaned, skip
-    if (!isFulfilling && !isPromoOrphaned) continue;
+    // Final check: if not earning/orphaned/maxed/prequalifying, skip
+    if (!isFulfilling && !isPromoOrphaned && !isMaxedOut && !isPromoPreQualifying) continue;
 
     // Determine which benefits to use: tier-based or flat
     let activeBenefits: MatchingBenefit[];
@@ -500,16 +553,25 @@ export function calculateMatchedPromotions(
       });
 
       if (!applicableTier) {
-        // Check if we will EVER reach a tier (orphaned detection for tiers)
-        if (!isPromoOrphaned && usage && usage.totalPotentialStayCount !== undefined) {
+        // Check if we will EVER reach a tier (pre-qualifying vs orphaned detection for tiers)
+        if (
+          !isPromoOrphaned &&
+          !isPromoPreQualifying &&
+          usage &&
+          usage.totalPotentialStayCount !== undefined
+        ) {
           const minTierStays = Math.min(...promo.tiers.map((t) => t.minStays ?? Infinity));
           if (usage.totalPotentialStayCount < minTierStays) {
+            isPromoOrphaned = true;
+          } else if ((usage.futurePotentialStayCount ?? 0) > 0) {
+            isPromoPreQualifying = true;
+          } else {
             isPromoOrphaned = true;
           }
         }
 
-        // If orphaned, show the first tier as the target
-        if (isPromoOrphaned) {
+        // If orphaned or pre-qualifying, show the first tier as the target
+        if (isPromoOrphaned || isPromoPreQualifying) {
           activeBenefits = promo.tiers[0].benefits;
         } else {
           continue;
@@ -545,15 +607,46 @@ export function calculateMatchedPromotions(
           }
         }
 
-        // If it doesn't match core criteria AND it hasn't matched any OTHER stay,
-        // filter it out UNLESS the whole promotion is marked as orphaned.
-        if (!currentMatchesCore && !bUsage?.couldEverMatch && !isPromoOrphaned) {
+        // Any structural mismatch at the benefit level → hide this benefit.
+        if (!currentMatchesCore) {
           return null;
         }
 
-        // 2. Fulfillment detection (If these fail, it might be orphaned)
+        // 2. State detection per benefit
         let isActuallyOrphaned = !currentMatchesCore || isPromoOrphaned;
+        let isActuallyPreQualifying = isPromoPreQualifying && !isActuallyOrphaned;
         let isRemainderOrphaned = false;
+
+        // Check benefit-level hard caps → Maxed Out ($0, no badge)
+        let isBenefitMaxedOut = isMaxedOut;
+        if (
+          !isBenefitMaxedOut &&
+          br?.maxRewardCount &&
+          bUsage &&
+          bUsage.count >= br.maxRewardCount
+        ) {
+          isBenefitMaxedOut = true;
+        }
+        if (!isBenefitMaxedOut && br?.oncePerSubBrand) {
+          if (usage?.appliedSubBrandIds?.has(booking.hotelChainSubBrandId ?? null)) {
+            isBenefitMaxedOut = true;
+          }
+        }
+
+        // Check benefit-level per-stay hide rules (minNights fixed, minSpend)
+        // Only hide if not already orphaned/pre-qualifying
+        if (!isActuallyOrphaned && !isActuallyPreQualifying && !isBenefitMaxedOut) {
+          if (br?.minNightsRequired && !br.spanStays && booking.numNights < br.minNightsRequired) {
+            return null;
+          }
+          if (
+            promo.type === PromotionType.credit_card &&
+            br?.minSpend != null &&
+            Number(booking.totalCost) < Number(br.minSpend)
+          ) {
+            return null;
+          }
+        }
 
         // Also check fulfillment rules for this benefit specifically
         let isFulfillmentValid = true;
@@ -564,19 +657,11 @@ export function calculateMatchedPromotions(
           }
         }
 
-        // Check benefit-level usage limits (maxRewardCount)
-        if (
-          isFulfillmentValid &&
-          br?.maxRewardCount &&
-          bUsage &&
-          bUsage.count >= br.maxRewardCount
-        ) {
-          isFulfillmentValid = false;
-        }
-
         // Check Benefit-level spanStays restrictions
         if (
           !isActuallyOrphaned &&
+          !isActuallyPreQualifying &&
+          !isBenefitMaxedOut &&
           br?.spanStays &&
           br.minNightsRequired &&
           br.minNightsRequired > 0
@@ -584,7 +669,14 @@ export function calculateMatchedPromotions(
           const totalNights = bUsage?.totalPotentialNightCount ?? usage?.totalPotentialNightCount;
           if (totalNights !== undefined) {
             if (totalNights < br.minNightsRequired) {
-              isActuallyOrphaned = true;
+              // Not enough total nights
+              if (
+                (bUsage?.futurePotentialNightCount ?? usage?.futurePotentialNightCount ?? 0) > 0
+              ) {
+                isActuallyPreQualifying = true;
+              } else {
+                isActuallyOrphaned = true;
+              }
             } else if (totalNights % br.minNightsRequired !== 0) {
               const priorNights = bUsage?.eligibleNights ?? 0;
               const currentNights = currentMatchesCore ? booking.numNights : 0;
@@ -600,7 +692,14 @@ export function calculateMatchedPromotions(
         }
 
         // Check Promotion-level spanStays remainder orphaned status
-        if (!isActuallyOrphaned && r?.spanStays && r.minNightsRequired && r.minNightsRequired > 0) {
+        if (
+          !isActuallyOrphaned &&
+          !isActuallyPreQualifying &&
+          !isBenefitMaxedOut &&
+          r?.spanStays &&
+          r.minNightsRequired &&
+          r.minNightsRequired > 0
+        ) {
           const totalNights = usage?.totalPotentialNightCount;
           if (totalNights !== undefined && totalNights % r.minNightsRequired !== 0) {
             const priorNights = usage?.eligibleStayNights ?? 0;
@@ -614,17 +713,13 @@ export function calculateMatchedPromotions(
           }
         }
 
-        // Final check: if it's not core-eligible/fulfilling AND not orphaned, skip this benefit
-        if (!isFulfillmentValid && !isActuallyOrphaned && !isRemainderOrphaned) {
-          return null;
-        }
-
-        // Filter out if it's a fixed-night stay (not spanned) and doesn't meet requirements
+        // Final check: if it's not fulfilling AND not orphaned/pre-qualifying/maxed-out, skip
         if (
+          !isFulfillmentValid &&
           !isActuallyOrphaned &&
-          br?.minNightsRequired &&
-          !br.spanStays &&
-          booking.numNights < br.minNightsRequired
+          !isActuallyPreQualifying &&
+          !isRemainderOrphaned &&
+          !isBenefitMaxedOut
         ) {
           return null;
         }
@@ -632,7 +727,9 @@ export function calculateMatchedPromotions(
         return {
           benefit: b,
           isActuallyOrphaned,
+          isActuallyPreQualifying,
           isRemainderOrphaned,
+          isBenefitMaxedOut,
           currentMatchesCore,
           isFulfillmentValid,
           bUsage,
@@ -653,7 +750,9 @@ export function calculateMatchedPromotions(
       const {
         benefit,
         isActuallyOrphaned,
+        isActuallyPreQualifying,
         isRemainderOrphaned,
+        isBenefitMaxedOut,
         currentMatchesCore,
         isFulfillmentValid,
         bUsage,
@@ -663,8 +762,20 @@ export function calculateMatchedPromotions(
       let appliedValue = 0;
       let benefitBonusPoints = 0;
 
-      // Only calculate values if fulfilling and not orphaned
-      if (isFulfilling && isFulfillmentValid && !isActuallyOrphaned && !isRemainderOrphaned) {
+      // Only calculate values if fulfilling and not orphaned/maxed-out
+      // Pre-qualifying span-stays benefits get pro-rated value; tier/prerequisite get $0
+      const isSpanStaysPreQualifying =
+        isActuallyPreQualifying &&
+        ((benefit.restrictions?.spanStays && benefit.restrictions?.minNightsRequired) ||
+          (r?.spanStays && r?.minNightsRequired));
+
+      if (
+        isFulfilling &&
+        isFulfillmentValid &&
+        !isActuallyOrphaned &&
+        !isBenefitMaxedOut &&
+        !isActuallyPreQualifying
+      ) {
         switch (benefit.rewardType) {
           case PromotionRewardType.cashback:
             if (benefit.valueType === PromotionBenefitValueType.fixed) {
@@ -713,9 +824,20 @@ export function calculateMatchedPromotions(
         ) {
           if (br.spanStays || br.nightsStackable) {
             const divisor = br.minNightsRequired;
-            const multiplier = br.spanStays
-              ? booking.numNights / divisor
-              : Math.floor(booking.numNights / divisor);
+            let multiplier: number;
+            if (br.spanStays) {
+              if (isRemainderOrphaned) {
+                // Only count completed cycles — the partial final cycle earns nothing
+                const priorBenefitNights = bUsage?.eligibleNights ?? 0;
+                const totalSoFar = priorBenefitNights + booking.numNights;
+                multiplier =
+                  Math.floor(totalSoFar / divisor) - Math.floor(priorBenefitNights / divisor);
+              } else {
+                multiplier = booking.numNights / divisor;
+              }
+            } else {
+              multiplier = Math.floor(booking.numNights / divisor);
+            }
             appliedValue *= multiplier;
             benefitBonusPoints *= multiplier;
           }
@@ -743,6 +865,53 @@ export function calculateMatchedPromotions(
             benefitBonusPoints = Math.round(remainingPoints);
           }
         }
+      } else if (isSpanStaysPreQualifying) {
+        // Span-stays pre-qualifying: show pro-rated value based on this stay's contribution
+        // Formula: benefitValue × (booking.numNights / minNightsRequired)
+        const br = benefit.restrictions;
+        const minNights =
+          (br?.spanStays && br.minNightsRequired ? br.minNightsRequired : null) ??
+          (r?.spanStays && r.minNightsRequired ? r.minNightsRequired : null);
+        if (minNights && minNights > 0) {
+          // Calculate full benefit value first
+          switch (benefit.rewardType) {
+            case PromotionRewardType.cashback:
+              if (benefit.valueType === PromotionBenefitValueType.fixed) {
+                appliedValue = benefitValue;
+              } else if (benefit.valueType === PromotionBenefitValueType.percentage) {
+                appliedValue = (Number(booking.totalCost) * benefitValue) / 100;
+              }
+              break;
+            case PromotionRewardType.points:
+              if (benefit.valueType === PromotionBenefitValueType.multiplier) {
+                const isBaseOnly =
+                  !benefit.pointsMultiplierBasis || benefit.pointsMultiplierBasis === "base_only";
+                const baseRate = booking.hotelChain?.basePointRate;
+                const basisPoints =
+                  isBaseOnly && baseRate != null
+                    ? Number(booking.pretaxCost) * Number(baseRate)
+                    : Number(booking.loyaltyPointsEarned || 0);
+                appliedValue = basisPoints * (benefitValue - 1) * centsPerPoint;
+                benefitBonusPoints = Math.round(basisPoints * (benefitValue - 1));
+              } else {
+                appliedValue = benefitValue * centsPerPoint;
+                benefitBonusPoints = Math.round(benefitValue);
+              }
+              break;
+            case PromotionRewardType.certificate:
+              appliedValue = benefit.certType
+                ? certPointsValue(benefit.certType) * centsPerPoint * 0.7
+                : 0;
+              break;
+            case PromotionRewardType.eqn:
+              appliedValue = benefitValue * DEFAULT_EQN_VALUE;
+              break;
+          }
+          // Apply pro-rating
+          const proRateMultiplier = booking.numNights / minNights;
+          appliedValue *= proRateMultiplier;
+          benefitBonusPoints = Math.round(benefitBonusPoints * proRateMultiplier);
+        }
       }
 
       benefitApplications.push({
@@ -751,13 +920,18 @@ export function calculateMatchedPromotions(
         bonusPointsApplied: Math.round(benefitBonusPoints),
         eligibleNightsAtBooking:
           (bUsage?.eligibleNights ?? 0) + (currentMatchesCore ? booking.numNights : 0),
-        isOrphaned: isPromoOrphaned || isActuallyOrphaned || isRemainderOrphaned,
+        isOrphaned:
+          (isPromoOrphaned || isActuallyOrphaned || isRemainderOrphaned) &&
+          !isActuallyPreQualifying &&
+          !isBenefitMaxedOut,
+        isPreQualifying: isActuallyPreQualifying && !isBenefitMaxedOut,
+        isMaxedOut: isBenefitMaxedOut,
       });
     }
 
-    // If all benefits are zero-value AND none are orphaned, skip the whole promotion
+    // If all benefits are zero-value AND none are orphaned/pre-qualifying/maxed-out, skip
     const hasAnyActiveBenefit = benefitApplications.some(
-      (ba) => ba.appliedValue > 0 || ba.isOrphaned
+      (ba) => ba.appliedValue > 0 || ba.isOrphaned || ba.isPreQualifying || ba.isMaxedOut
     );
     if (!hasAnyActiveBenefit) continue;
 
@@ -817,12 +991,17 @@ export function calculateMatchedPromotions(
       }
     }
 
+    const allBenefitsOrphaned = benefitApplications.every((ba) => ba.isOrphaned);
+    const anyBenefitPreQualifying = benefitApplications.some((ba) => ba.isPreQualifying);
+
     matched.push({
       promotionId: promo.id,
       appliedValue: totalAppliedValue,
       bonusPointsApplied: Math.round(totalBonusPoints),
       eligibleNightsAtBooking: (usage?.eligibleStayNights ?? 0) + booking.numNights,
-      isOrphaned: isPromoOrphaned || benefitApplications.every((ba) => ba.isOrphaned),
+      isOrphaned:
+        (isPromoOrphaned || allBenefitsOrphaned) && !anyBenefitPreQualifying && !isMaxedOut,
+      isPreQualifying: isPromoPreQualifying || anyBenefitPreQualifying,
       benefitApplications,
     });
   }
@@ -869,6 +1048,7 @@ async function applyMatchedPromotions(
           autoApplied: true,
           eligibleNightsAtBooking: match.eligibleNightsAtBooking,
           isOrphaned: match.isOrphaned ?? false,
+          isPreQualifying: match.isPreQualifying ?? false,
           benefitApplications: {
             create: match.benefitApplications.map((ba) => ({
               promotionBenefitId: ba.promotionBenefitId,
@@ -876,6 +1056,7 @@ async function applyMatchedPromotions(
               bonusPointsApplied: ba.bonusPointsApplied > 0 ? ba.bonusPointsApplied : null,
               eligibleNightsAtBooking: ba.eligibleNightsAtBooking,
               isOrphaned: ba.isOrphaned ?? false,
+              isPreQualifying: ba.isPreQualifying ?? false,
             })),
           },
         },
@@ -1087,12 +1268,29 @@ async function fetchPromotionUsage(
     }
   }
 
-  // Fetch Potential Counts for all promotions (orphaned detection)
+  // Fetch Potential Counts for all promotions (orphaned + pre-qualifying detection)
   // We need to count stays that match CORE criteria, even if they didn't fulfill the promo
+  const currentCheckInDate = new Date(booking.checkIn);
   for (const promo of promotions) {
     // Filter by the same core rules used in calculateMatchedPromotions
     const potentialStats = await prisma.booking.aggregate({
       where: buildPotentialMatchFilter(promo),
+      _count: { id: true },
+      _sum: { numNights: true },
+    });
+
+    // Future potential: stays with checkIn > currentBooking.checkIn (pre-qualifying detection).
+    // Merge gt into the existing checkIn filter from buildPotentialMatchFilter so that date-window
+    // constraints (startDate, endDate, registrationDate, validDaysAfterRegistration) are preserved.
+    const promoBaseFilter = buildPotentialMatchFilter(promo);
+    const futurePotentialStats = await prisma.booking.aggregate({
+      where: {
+        ...promoBaseFilter,
+        checkIn: {
+          ...((promoBaseFilter.checkIn as Prisma.DateTimeFilter) ?? {}),
+          gt: currentCheckInDate,
+        },
+      },
       _count: { id: true },
       _sum: { numNights: true },
     });
@@ -1111,12 +1309,27 @@ async function fetchPromotionUsage(
       ...existing,
       totalPotentialStayCount: potentialStats._count.id,
       totalPotentialNightCount: potentialStats._sum.numNights ?? 0,
+      futurePotentialStayCount: futurePotentialStats._count.id,
+      futurePotentialNightCount: futurePotentialStats._sum.numNights ?? 0,
     });
 
     // Also fetch benefit-level potential match (oncePerSubBrand / subBrand restrictions)
     for (const b of [...promo.benefits, ...promo.tiers.flatMap((t) => t.benefits)]) {
       const bPotentialStats = await prisma.booking.aggregate({
         where: buildPotentialMatchFilter(promo, b.restrictions),
+        _count: { id: true },
+        _sum: { numNights: true },
+      });
+
+      const bBaseFilter = buildPotentialMatchFilter(promo, b.restrictions);
+      const bFuturePotentialStats = await prisma.booking.aggregate({
+        where: {
+          ...bBaseFilter,
+          checkIn: {
+            ...((bBaseFilter.checkIn as Prisma.DateTimeFilter) ?? {}),
+            gt: currentCheckInDate,
+          },
+        },
         _count: { id: true },
         _sum: { numNights: true },
       });
@@ -1130,6 +1343,7 @@ async function fetchPromotionUsage(
         ...bUsage,
         couldEverMatch: bPotentialStats._count.id > 0,
         totalPotentialNightCount: bPotentialStats._sum.numNights ?? 0,
+        futurePotentialNightCount: bFuturePotentialStats._sum.numNights ?? 0,
       });
     }
   }

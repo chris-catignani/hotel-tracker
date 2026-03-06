@@ -86,14 +86,26 @@ Net Cost = totalCost - promotionSavings - portalCashback - cardReward - loyaltyP
 
 ### Promotion Matching & Orphaned Logic
 
-Promotions must be matched and labeled according to three categories:
+Promotions must be matched and labeled according to three tiers evaluated in order:
 
-1. **Structural Match (Invisible if Mismatched):** If any structural criteria fail, skip the promotion entirely (invisible in UI).
-   - **Fields:** Hotel Chain, Credit Card, Shopping Portal, Sub-brand Restrictions, Stay Dates, Registration Deadline, Booking Source, Payment Type, and Tie-in Cards.
-2. **Circumstantial / Fulfillment (Pending vs. Orphaned):** Evaluated if structural match passes.
-   - **Pending (Fulfillable):** Requirements not yet met (Min Nights, Spend, Prerequisites), but fulfillable via campaign potential (current + future stays) -> **Show Pro-rated Value** and **No Badge**.
-   - **Orphaned (Unfulfillable):** Requirements not met AND campaign potential is insufficient -> **Show $0 Value** and **"Orphaned" Badge**.
-3. **Hard Caps (Maxed Out):** If limits reached (Max Stays, Max Value, Once Per Sub-brand) -> **Show $0 Value** and **No "Orphaned" Badge**.
+1. **Structural Match (Invisible if Mismatched):** If any structural criteria fail for this booking, skip the promotion entirely — it is hidden from the UI with no badge.
+   - **Fields:** Hotel Chain, Credit Card, Shopping Portal, Sub-brand Restrictions, Stay Dates, Registration Deadline, Book-by Date, Booking Source, Payment Type, and Tie-in Cards.
+   - There is no "structural orphan" state — structural incompatibility always means invisible.
+2. **Hard Caps (Maxed Out):** Checked before fulfillment. If a hard limit is reached, show $0 with no badge.
+   - **Fields:** Max Stay Count, Once Per Sub-brand, Max Reward Count.
+3. **Fulfillment (Pre-qualifying vs. Orphaned):** Evaluated only if structural match passes and no hard cap was hit.
+   - **Pre-qualifying:** Campaign requirements not yet met (prerequisites, tiers, span-stays nights), but future booked stays exist that could complete it → Show $0 (or pro-rated value for span-stays) with **"Pre-qualifying" badge**.
+   - **Orphaned:** Campaign requirements not met AND no future booked stays can complete it → Show **$0** with **"Orphaned" badge**.
+   - "Orphaned" specifically means: not enough stays/nights accumulated across the campaign to earn the promotion.
+
+#### Span-stays partial cycle display (`net-cost.ts`)
+
+When a span-stays campaign ends with an incomplete final cycle (`isRemainderOrphaned`), completed cycles earn their full value and the partial cycle earns $0. The partial cycle segment label depends on whether the benefit cap was exhausted:
+
+- **"Orphaned Reward Cycle"**: The cap (`maxTotalBonusPoints` or `maxRedemptionValue`) was NOT exhausted — the cycle simply ran out of eligible nights. Computed as: `floor(eligibleNightsAtBooking / minNightsRequired) × benefitValue < maxTotalBonusPoints`.
+- **"Capped Reward Cycle"**: The cap WAS fully exhausted by all completed cycles across the campaign. Computed as: `floor(eligibleNightsAtBooking / minNightsRequired) × benefitValue >= maxTotalBonusPoints`.
+
+`eligibleNightsAtBooking` (stored on `BookingPromotionBenefit`) is the cumulative eligible nights at the END of this booking (prior nights + this booking's nights). This is the source of truth for all span-stays display calculations in `net-cost.ts`.
 
 ### Loyalty Points Auto-Calculation
 

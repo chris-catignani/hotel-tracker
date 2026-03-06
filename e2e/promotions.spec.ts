@@ -707,13 +707,13 @@ test.describe("Promotions constraints", () => {
     expect(booking2Res.ok()).toBeTruthy();
     const booking2 = await booking2Res.json();
 
-    // Verify second booking has the promotion but it's orphaned (maxStayCount = 1 reached)
+    // Verify second booking has the promotion but it's maxed out ($0, no orphaned badge)
     const bp2 = booking2.bookingPromotions.find(
       (bp: { promotionId: string }) => bp.promotionId === promo.id
     );
     expect(bp2).toBeDefined();
     expect(Number(bp2.appliedValue)).toBe(0);
-    expect(bp2.isOrphaned).toBe(true);
+    expect(bp2.isOrphaned).toBe(false); // Hard cap → Maxed Out, not Orphaned
 
     // Cleanup
     await request.delete(`/api/bookings/${booking1.id}`);
