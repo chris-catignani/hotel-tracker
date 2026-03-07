@@ -1157,7 +1157,7 @@ function buildPotentialMatchFilter(
 /**
  * Fetches prior usage statistics for promotions with redemption constraints.
  */
-async function fetchPromotionUsage(
+export async function fetchPromotionUsage(
   promotions: MatchingPromotion[],
   booking: MatchingBooking,
   excludeBookingId?: string

@@ -25,6 +25,11 @@ export async function GET(request: NextRequest) {
               include: {
                 restrictions: true,
                 benefits: { orderBy: { sortOrder: "asc" } },
+                tiers: {
+                  include: {
+                    benefits: { orderBy: { sortOrder: "asc" } },
+                  },
+                },
               },
             },
             benefitApplications: {
@@ -191,6 +196,11 @@ export async function POST(request: NextRequest) {
               include: {
                 restrictions: true,
                 benefits: { orderBy: { sortOrder: "asc" } },
+                tiers: {
+                  include: {
+                    benefits: { orderBy: { sortOrder: "asc" } },
+                  },
+                },
               },
             },
             benefitApplications: {

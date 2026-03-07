@@ -1,49 +1,117 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { matchPromotionsForBooking, reevaluateBookings } from "@/lib/promotion-matching";
+import {
+  matchPromotionsForBooking,
+  reevaluateBookings,
+  getConstrainedPromotions,
+  fetchPromotionUsage,
+  MatchingPromotion,
+  MatchingBooking,
+} from "@/lib/promotion-matching";
 import { reevaluateSubsequentBookings } from "@/lib/promotion-matching-helpers";
 import { apiError } from "@/lib/api-error";
 import { calculatePoints } from "@/lib/loyalty-utils";
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try {
-    const { id } = await params;
-    const booking = await prisma.booking.findUnique({
-      where: { id: id },
-      include: {
-        hotelChain: {
-          include: {
-            pointType: true,
-            userStatus: { include: { eliteStatus: true } },
-          },
+async function getFullBookingWithUsage(id: string) {
+  const booking = await prisma.booking.findUnique({
+    where: { id: id },
+    include: {
+      hotelChain: {
+        include: {
+          pointType: true,
+          userStatus: { include: { eliteStatus: true } },
         },
-        hotelChainSubBrand: true,
-        creditCard: { include: { pointType: true, rewardRules: true } },
-        shoppingPortal: { include: { pointType: true } },
-        bookingPromotions: {
-          include: {
-            promotion: {
-              include: {
-                restrictions: true,
-                benefits: { orderBy: { sortOrder: "asc" } },
+      },
+      hotelChainSubBrand: true,
+      creditCard: { include: { pointType: true, rewardRules: true } },
+      shoppingPortal: { include: { pointType: true } },
+      bookingPromotions: {
+        include: {
+          promotion: {
+            include: {
+              restrictions: {
+                include: {
+                  subBrandRestrictions: true,
+                  tieInCards: true,
+                },
+              },
+              benefits: { orderBy: { sortOrder: "asc" } },
+              tiers: {
+                include: {
+                  benefits: { orderBy: { sortOrder: "asc" } },
+                },
               },
             },
-            benefitApplications: {
-              include: {
-                promotionBenefit: {
-                  include: {
-                    restrictions: true,
+          },
+          benefitApplications: {
+            include: {
+              promotionBenefit: {
+                include: {
+                  restrictions: {
+                    include: {
+                      subBrandRestrictions: true,
+                      tieInCards: true,
+                    },
                   },
                 },
               },
             },
           },
         },
-        certificates: true,
-        otaAgency: true,
-        benefits: true,
       },
-    });
+      certificates: true,
+      otaAgency: true,
+      benefits: true,
+    },
+  });
+
+  if (!booking) return null;
+
+  // Enhance with usage statistics for better breakdown details
+  const promotions = booking.bookingPromotions.map((bp) => ({
+    ...bp.promotion,
+    registrationDate: null, // fetchPromotionUsage will handle it if needed
+  })) as unknown as MatchingPromotion[];
+  const constrainedPromos = getConstrainedPromotions(promotions);
+  const usageMap = await fetchPromotionUsage(
+    constrainedPromos,
+    booking as unknown as MatchingBooking,
+    booking.id
+  );
+
+  const enhancedBookingPromotions = booking.bookingPromotions.map((bp) => {
+    const usage = usageMap.get(bp.promotionId);
+    if (!usage) return bp;
+
+    return {
+      ...bp,
+      eligibleStayCount: (usage.eligibleStayCount ?? 0) + 1,
+      eligibleNightCount: (usage.eligibleNightCount ?? 0) + booking.numNights,
+      futurePotentialStayCount: usage.futurePotentialStayCount,
+      futurePotentialNightCount: usage.futurePotentialNightCount,
+      benefitApplications: bp.benefitApplications.map((ba) => {
+        const bUsage = usage.benefitUsage?.get(ba.promotionBenefitId);
+        return {
+          ...ba,
+          eligibleStayCount: (usage.eligibleStayCount ?? 0) + 1,
+          eligibleNightCount: (bUsage?.eligibleNights ?? 0) + booking.numNights,
+          futurePotentialStayCount: usage.futurePotentialStayCount,
+          futurePotentialNightCount: bUsage?.futurePotentialNightCount,
+        };
+      }),
+    };
+  });
+
+  return {
+    ...booking,
+    bookingPromotions: enhancedBookingPromotions,
+  };
+}
+
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    const booking = await getFullBookingWithUsage(id);
 
     if (!booking) {
       return apiError("Booking not found", null, 404, request);
@@ -217,42 +285,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     await reevaluateSubsequentBookings(booking.id, appliedPromoIds);
 
     // Fetch the booking with all relations to return
-    const fullBooking = await prisma.booking.findUnique({
-      where: { id: booking.id },
-      include: {
-        hotelChain: {
-          include: {
-            pointType: true,
-            userStatus: { include: { eliteStatus: true } },
-          },
-        },
-        hotelChainSubBrand: true,
-        creditCard: { include: { pointType: true, rewardRules: true } },
-        shoppingPortal: { include: { pointType: true } },
-        bookingPromotions: {
-          include: {
-            promotion: {
-              include: {
-                restrictions: true,
-                benefits: { orderBy: { sortOrder: "asc" } },
-              },
-            },
-            benefitApplications: {
-              include: {
-                promotionBenefit: {
-                  include: {
-                    restrictions: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-        certificates: true,
-        otaAgency: true,
-        benefits: true,
-      },
-    });
+    const fullBooking = await getFullBookingWithUsage(booking.id);
 
     return NextResponse.json(fullBooking);
   } catch (error) {
