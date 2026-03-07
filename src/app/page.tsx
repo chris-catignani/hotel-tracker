@@ -89,8 +89,6 @@ interface BookingWithRelations {
     eligibleNightsAtBooking?: number | null;
     eligibleStayCount?: number | null;
     eligibleNightCount?: number | null;
-    futurePotentialStayCount?: number | null;
-    futurePotentialNightCount?: number | null;
     autoApplied: boolean;
     verified: boolean;
     promotion: {
