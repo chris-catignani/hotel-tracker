@@ -4,8 +4,16 @@ import { useState } from "react";
 import { InfoIcon, ChevronDown, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { NetCostBreakdown, CalculationDetail } from "@/lib/net-cost";
 import { formatCurrency } from "@/lib/utils";
@@ -19,12 +27,9 @@ function CalculationInfo({ calc }: { calc: CalculationDetail | undefined }) {
 
   const content = (
     <div className="space-y-6">
-      <div>
-        <h4 className="font-semibold text-sm mb-1 hidden md:block">{calc.label}</h4>
-        {calc.description && (
-          <p className="text-xs text-muted-foreground leading-relaxed">{calc.description}</p>
-        )}
-      </div>
+      {calc.description && (
+        <p className="text-xs text-muted-foreground leading-relaxed">{calc.description}</p>
+      )}
 
       <div className="space-y-6">
         {calc.groups.map((group, groupIdx) => (
@@ -84,42 +89,27 @@ function CalculationInfo({ calc }: { calc: CalculationDetail | undefined }) {
   const testId = `calc-info-${calc.label.toLowerCase().replace(/\s+/g, "-")}`;
 
   return (
-    <>
-      {/* Desktop: Popover */}
-      <div className="hidden md:block">
-        <Popover>
-          <PopoverTrigger asChild>
-            <button
-              data-testid={`${testId}-desktop`}
-              className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground hover:text-foreground transition-colors cursor-help"
-            >
-              <InfoIcon className="h-3 w-3" />
-            </button>
-          </PopoverTrigger>
-          <PopoverContent className="w-96 max-h-[80vh] overflow-y-auto">{content}</PopoverContent>
-        </Popover>
-      </div>
-
-      {/* Mobile: Bottom Sheet */}
-      <div className="md:hidden">
-        <Sheet>
-          <SheetTrigger asChild>
-            <button
-              data-testid={`${testId}-mobile`}
-              className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground hover:text-foreground transition-colors cursor-help"
-            >
-              <InfoIcon className="h-3 w-3" />
-            </button>
-          </SheetTrigger>
-          <SheetContent side="bottom" className="rounded-t-xl p-6 max-h-[90vh] overflow-y-auto">
-            <SheetHeader className="text-left border-b pb-3 mb-4">
-              <SheetTitle>{calc.label}</SheetTitle>
-            </SheetHeader>
-            {content}
-          </SheetContent>
-        </Sheet>
-      </div>
-    </>
+    <Dialog>
+      <DialogTrigger asChild>
+        <button
+          data-testid={testId}
+          className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground hover:text-foreground transition-colors cursor-help"
+        >
+          <InfoIcon className="h-3 w-3" />
+        </button>
+      </DialogTrigger>
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{calc.label}</DialogTitle>
+        </DialogHeader>
+        {content}
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="outline">Close</Button>
+          </DialogClose>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

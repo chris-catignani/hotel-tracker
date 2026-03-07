@@ -82,7 +82,7 @@ test.describe("Pre-qualifying Promotion Details", () => {
     await page.getByTestId("breakdown-promos-toggle").click();
     await expect(page.getByTestId(`breakdown-promo-item-${promo.id}`)).toBeVisible();
 
-    await page.getByTestId("calc-info-prequaltestpromo-desktop").click();
+    await page.getByTestId("calc-info-prequaltestpromo").click();
     const popover = page.locator("[role='dialog'], .popover-content");
     await expect(popover).toBeVisible();
 
@@ -183,7 +183,7 @@ test.describe("Pre-qualifying Promotion Details", () => {
     await page.getByTestId("breakdown-promos-toggle").click();
     await expect(page.getByTestId(`breakdown-promo-item-${promo.id}`)).toBeVisible();
 
-    await page.getByTestId("calc-info-tieronlytestpromo-desktop").click();
+    await page.getByTestId("calc-info-tieronlytestpromo").click();
     const popover = page.locator("[role='dialog'], .popover-content");
     await expect(popover).toBeVisible();
 
@@ -279,7 +279,7 @@ test.describe("Upcoming Tiers on Actively-Earning Tiered Promotions", () => {
     await page.getByTestId("breakdown-promos-toggle").click();
     await expect(page.getByTestId(`breakdown-promo-item-${promo.id}`)).toBeVisible();
 
-    await page.getByTestId("calc-info-upcomingtierpromo-desktop").click();
+    await page.getByTestId("calc-info-upcomingtierpromo").click();
     const popover = page.locator("[role='dialog'], .popover-content");
     await expect(popover).toBeVisible();
 
@@ -365,7 +365,7 @@ test.describe("Upcoming Tiers on Actively-Earning Tiered Promotions", () => {
     await page.getByTestId("breakdown-promos-toggle").click();
     await expect(page.getByTestId(`breakdown-promo-item-${promo.id}`)).toBeVisible();
 
-    await page.getByTestId("calc-info-lasttierpromo-desktop").click();
+    await page.getByTestId("calc-info-lasttierpromo").click();
     const popover = page.locator("[role='dialog'], .popover-content");
     await expect(popover).toBeVisible();
 
