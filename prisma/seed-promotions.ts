@@ -1,24 +1,17 @@
 import { PrismaClient, Prisma } from "@prisma/client";
+import { HOTEL_ID, SUB_BRAND_ID } from "../src/lib/constants";
+import { CREDIT_CARD_ID } from "./seed-ids";
 
 const prisma = new PrismaClient();
 
 export async function seedPromotions() {
-  // Look up sub-brand IDs dynamically to avoid hardcoded stale IDs
-  const hyattPlace = await prisma.hotelChainSubBrand.findFirstOrThrow({
-    where: { name: "Hyatt Place" },
-  });
-  const hyattHouse = await prisma.hotelChainSubBrand.findFirstOrThrow({
-    where: { name: "Hyatt House" },
-  });
-
   const promotions: Prisma.PromotionCreateInput[] = [
     {
       name: "IHG 2x Promo",
       type: "loyalty",
-      hotelChain: { connect: { id: "co5ll49okbgq0fbceti8p0dpd" } },
       startDate: new Date("2026-01-01"),
       endDate: new Date("2026-03-31"),
-
+      hotelChain: { connect: { id: HOTEL_ID.IHG } },
       restrictions: {
         create: {
           prerequisiteStayCount: 1,
@@ -29,7 +22,9 @@ export async function seedPromotions() {
           {
             rewardType: "points",
             valueType: "multiplier",
-            value: 2,
+            value: "2",
+            pointsMultiplierBasis: "base_only",
+            sortOrder: 0,
           },
         ],
       },
@@ -37,10 +32,9 @@ export async function seedPromotions() {
     {
       name: "WF Card Linked Offer",
       type: "credit_card",
-      creditCard: { connect: { id: "cvn8tp6d6nae4s543nno1qc6p" } },
       startDate: new Date("2026-02-01"),
-
       endDate: new Date("2026-04-30"),
+      creditCard: { connect: { id: CREDIT_CARD_ID.WELLS_FARGO_AUTOGRAPH } },
       restrictions: {
         create: {
           maxRewardCount: 1,
@@ -51,8 +45,8 @@ export async function seedPromotions() {
           {
             rewardType: "cashback",
             valueType: "percentage",
-            value: 10,
-            pointsMultiplierBasis: "base_only",
+            value: "10",
+            sortOrder: 0,
           },
         ],
       },
@@ -60,10 +54,9 @@ export async function seedPromotions() {
     {
       name: "IHG Bonus EQN",
       type: "loyalty",
-      hotelChain: { connect: { id: "co5ll49okbgq0fbceti8p0dpd" } },
       startDate: new Date("2026-01-22"),
-
       endDate: new Date("2026-03-31"),
+      hotelChain: { connect: { id: HOTEL_ID.IHG } },
       restrictions: {
         create: {
           minNightsRequired: 1,
@@ -76,7 +69,8 @@ export async function seedPromotions() {
           {
             rewardType: "eqn",
             valueType: "fixed",
-            value: 1,
+            value: "1",
+            sortOrder: 0,
             restrictions: {
               create: {},
             },
@@ -87,33 +81,15 @@ export async function seedPromotions() {
     {
       name: "Hyatt Bonus Journeys",
       type: "loyalty",
-      hotelChain: { connect: { id: "cxjdwg32a8xf7by36md0mdvuu" } },
       startDate: new Date("2026-02-02"),
-
       endDate: new Date("2026-04-15"),
+      hotelChain: { connect: { id: HOTEL_ID.HYATT } },
       benefits: {
         create: [
           {
             rewardType: "points",
             valueType: "fixed",
-            value: 1000,
-            sortOrder: 1,
-            restrictions: {
-              create: {
-                minNightsRequired: 3,
-                nightsStackable: true,
-                spanStays: true,
-                maxTotalBonusPoints: 7000,
-                subBrandRestrictions: {
-                  create: [{ hotelChainSubBrandId: hyattPlace.id, mode: "include" }],
-                },
-              },
-            },
-          },
-          {
-            rewardType: "points",
-            valueType: "fixed",
-            value: 3000,
+            value: "3000",
             sortOrder: 0,
             restrictions: {
               create: {
@@ -124,27 +100,51 @@ export async function seedPromotions() {
               },
             },
           },
+          {
+            rewardType: "points",
+            valueType: "fixed",
+            value: "1000",
+            sortOrder: 1,
+            restrictions: {
+              create: {
+                minNightsRequired: 3,
+                nightsStackable: true,
+                spanStays: true,
+                maxTotalBonusPoints: 7000,
+                subBrandRestrictions: {
+                  create: [
+                    {
+                      hotelChainSubBrandId: SUB_BRAND_ID.HYATT.HYATT_PLACE,
+                      mode: "include",
+                    },
+                  ],
+                },
+              },
+            },
+          },
         ],
       },
     },
     {
       name: "GHA multi brand",
       type: "loyalty",
-      hotelChain: { connect: { id: "cwizlxi70wnbaq3qehma0fhbz" } },
       startDate: new Date("2025-12-01"),
-
       endDate: new Date("2026-05-31"),
+      hotelChain: { connect: { id: HOTEL_ID.GHA_DISCOVERY } },
       tiers: {
         create: [
           {
             minStays: 2,
             maxStays: 2,
+            minNights: null,
+            maxNights: null,
             benefits: {
               create: [
                 {
                   rewardType: "points",
                   valueType: "fixed",
-                  value: 5000,
+                  value: "5000",
+                  sortOrder: 0,
                 },
               ],
             },
@@ -152,12 +152,15 @@ export async function seedPromotions() {
           {
             minStays: 3,
             maxStays: 3,
+            minNights: null,
+            maxNights: null,
             benefits: {
               create: [
                 {
                   rewardType: "points",
                   valueType: "fixed",
-                  value: 7500,
+                  value: "7500",
+                  sortOrder: 0,
                 },
               ],
             },
@@ -165,14 +168,56 @@ export async function seedPromotions() {
           {
             minStays: 4,
             maxStays: 10,
+            minNights: null,
+            maxNights: null,
             benefits: {
               create: [
                 {
                   rewardType: "points",
                   valueType: "fixed",
-                  value: 10000,
+                  value: "10000",
+                  sortOrder: 0,
                 },
               ],
+            },
+          },
+        ],
+      },
+    },
+    {
+      name: "Hyatt Place/House 5k",
+      type: "loyalty",
+      startDate: new Date("2026-01-20"),
+      endDate: new Date("2026-12-31"),
+      hotelChain: { connect: { id: HOTEL_ID.HYATT } },
+      restrictions: {
+        create: {
+          subBrandRestrictions: {
+            create: [
+              {
+                hotelChainSubBrandId: SUB_BRAND_ID.HYATT.HYATT_HOUSE,
+                mode: "include",
+              },
+              {
+                hotelChainSubBrandId: SUB_BRAND_ID.HYATT.HYATT_PLACE,
+                mode: "include",
+              },
+            ],
+          },
+        },
+      },
+      benefits: {
+        create: [
+          {
+            rewardType: "points",
+            valueType: "fixed",
+            value: "5000",
+            sortOrder: 0,
+            restrictions: {
+              create: {
+                minNightsRequired: 5,
+                maxTotalBonusPoints: 50000,
+              },
             },
           },
         ],
@@ -181,22 +226,26 @@ export async function seedPromotions() {
     {
       name: "Marriott Global Q1",
       type: "loyalty",
-      hotelChain: { connect: { id: "c9uc76fdp3v95dccffxsa3h31" } },
       startDate: new Date("2026-02-25"),
-
       endDate: new Date("2026-05-10"),
+      hotelChain: { connect: { id: HOTEL_ID.MARRIOTT } },
+      restrictions: {
+        create: {
+          allowedPaymentTypes: ["cash"],
+        },
+      },
       benefits: {
         create: [
           {
             rewardType: "points",
             valueType: "fixed",
-            value: 1500,
+            value: "1500",
             sortOrder: 0,
           },
           {
             rewardType: "eqn",
             valueType: "fixed",
-            value: 1,
+            value: "1",
             sortOrder: 1,
             restrictions: {
               create: {
@@ -208,19 +257,14 @@ export async function seedPromotions() {
       },
     },
     {
-      name: "Hyatt Place/House 5k",
+      name: "GHA App",
       type: "loyalty",
-      hotelChain: { connect: { id: "cxjdwg32a8xf7by36md0mdvuu" } },
-      startDate: new Date("2026-01-20"),
-      endDate: new Date("2026-12-31"),
+      startDate: new Date("2026-01-01"),
+      endDate: new Date("2026-04-01"),
+      hotelChain: { connect: { id: HOTEL_ID.GHA_DISCOVERY } },
       restrictions: {
         create: {
-          subBrandRestrictions: {
-            create: [
-              { hotelChainSubBrandId: hyattHouse.id, mode: "include" }, // Hyatt House
-              { hotelChainSubBrandId: hyattPlace.id, mode: "include" }, // Hyatt Place
-            ],
-          },
+          allowedBookingSources: ["direct_app"],
         },
       },
       benefits: {
@@ -228,14 +272,8 @@ export async function seedPromotions() {
           {
             rewardType: "points",
             valueType: "fixed",
-            value: 5000,
+            value: "500",
             sortOrder: 0,
-            restrictions: {
-              create: {
-                minNightsRequired: 5,
-                maxTotalBonusPoints: 50000,
-              },
-            },
           },
         ],
       },
@@ -251,6 +289,9 @@ export async function seedPromotions() {
       await prisma.promotion.create({
         data: promo,
       });
+    } else {
+      // Update existing promotion if needed
+      // For simplicity in seed, we just leave it or could delete and recreate
     }
   }
 
@@ -263,25 +304,130 @@ export async function seedPromotions() {
 async function seedBookingPromotions() {
   const bookingPromosData = [
     {
-      bookingId: "clas2mljema779deuxi5mhuee",
-      promotionName: "Marriott Global Q1",
-      appliedValue: "20.5",
-      bonusPointsApplied: 1500,
-      eligibleNightsAtBooking: 3,
+      bookingId: "ctshv1is5aacu6rwsrsebfyxi",
+      promotionName: "GHA multi brand",
+      appliedValue: "0",
+      bonusPointsApplied: null,
+      eligibleNightsAtBooking: 2,
       benefits: [
         {
           rewardType: "points",
-          value: "1500",
-          appliedValue: "10.5",
-          bonusPointsApplied: 1500,
-          eligibleNightsAtBooking: 3,
-        },
-        {
-          rewardType: "eqn",
-          value: "1",
-          appliedValue: "10",
+          value: "5000",
+          appliedValue: "0",
           bonusPointsApplied: null,
-          eligibleNightsAtBooking: 3,
+          eligibleNightsAtBooking: 2,
+        },
+      ],
+    },
+    {
+      bookingId: "ctshv1is5aacu6rwsrsebfyxi",
+      promotionName: "GHA App",
+      appliedValue: "5",
+      bonusPointsApplied: 500,
+      eligibleNightsAtBooking: 2,
+      benefits: [
+        {
+          rewardType: "points",
+          value: "500",
+          appliedValue: "5",
+          bonusPointsApplied: 500,
+          eligibleNightsAtBooking: 2,
+        },
+      ],
+    },
+    {
+      bookingId: "cnrxt78gdols3zb0bxsmaciaq",
+      promotionName: "GHA multi brand",
+      appliedValue: "50",
+      bonusPointsApplied: 5000,
+      eligibleNightsAtBooking: 2,
+      benefits: [
+        {
+          rewardType: "points",
+          value: "5000",
+          appliedValue: "50",
+          bonusPointsApplied: 5000,
+          eligibleNightsAtBooking: 4,
+        },
+      ],
+    },
+    {
+      bookingId: "cnrxt78gdols3zb0bxsmaciaq",
+      promotionName: "GHA App",
+      appliedValue: "5",
+      bonusPointsApplied: 500,
+      eligibleNightsAtBooking: 2,
+      benefits: [
+        {
+          rewardType: "points",
+          value: "500",
+          appliedValue: "5",
+          bonusPointsApplied: 500,
+          eligibleNightsAtBooking: 2,
+        },
+      ],
+    },
+    {
+      bookingId: "cwy9rm93feastnxmna5u75arp",
+      promotionName: "GHA multi brand",
+      appliedValue: "75",
+      bonusPointsApplied: 7500,
+      eligibleNightsAtBooking: 2,
+      benefits: [
+        {
+          rewardType: "points",
+          value: "7500",
+          appliedValue: "75",
+          bonusPointsApplied: 7500,
+          eligibleNightsAtBooking: 2,
+        },
+      ],
+    },
+    {
+      bookingId: "cwy9rm93feastnxmna5u75arp",
+      promotionName: "GHA App",
+      appliedValue: "5",
+      bonusPointsApplied: 500,
+      eligibleNightsAtBooking: 2,
+      benefits: [
+        {
+          rewardType: "points",
+          value: "500",
+          appliedValue: "5",
+          bonusPointsApplied: 500,
+          eligibleNightsAtBooking: 2,
+        },
+      ],
+    },
+    {
+      bookingId: "c83ak8zknu6pwcvqhbfhm7ekv",
+      promotionName: "Hyatt Bonus Journeys",
+      appliedValue: "20",
+      bonusPointsApplied: 1000,
+      eligibleNightsAtBooking: 1,
+      benefits: [
+        {
+          rewardType: "points",
+          value: "3000",
+          appliedValue: "20",
+          bonusPointsApplied: 1000,
+          eligibleNightsAtBooking: 1,
+        },
+      ],
+    },
+    {
+      bookingId: "ct05t6xeejpm9q6dxgtvei3r8",
+      promotionName: "IHG 2x Promo",
+      appliedValue: "0",
+      bonusPointsApplied: null,
+      eligibleNightsAtBooking: 1,
+      benefits: [
+        {
+          rewardType: "points",
+          value: "2",
+          appliedValue: "0",
+          bonusPointsApplied: null,
+          eligibleNightsAtBooking: 1,
         },
       ],
     },
@@ -298,6 +444,22 @@ async function seedBookingPromotions() {
           appliedValue: "10",
           bonusPointsApplied: null,
           eligibleNightsAtBooking: 1,
+        },
+      ],
+    },
+    {
+      bookingId: "c4mv6rvmc0pln9mk7txqlshkm",
+      promotionName: "IHG 2x Promo",
+      appliedValue: "31.68",
+      bonusPointsApplied: 5280,
+      eligibleNightsAtBooking: 6,
+      benefits: [
+        {
+          rewardType: "points",
+          value: "2",
+          appliedValue: "31.68",
+          bonusPointsApplied: 5280,
+          eligibleNightsAtBooking: 7,
         },
       ],
     },
@@ -334,73 +496,18 @@ async function seedBookingPromotions() {
       ],
     },
     {
-      bookingId: "c4mv6rvmc0pln9mk7txqlshkm",
-      promotionName: "IHG 2x Promo",
-      appliedValue: "31.68",
-      bonusPointsApplied: 5280,
-      eligibleNightsAtBooking: 6,
+      bookingId: "cufi5o67mbga7e8an9rvsb2vn",
+      promotionName: "Hyatt Bonus Journeys",
+      appliedValue: "140",
+      bonusPointsApplied: 7000,
+      eligibleNightsAtBooking: 7,
       benefits: [
         {
           rewardType: "points",
-          value: "2",
-          appliedValue: "31.68",
-          bonusPointsApplied: 5280,
-          eligibleNightsAtBooking: 6,
-        },
-      ],
-    },
-    {
-      bookingId: "cnrxt78gdols3zb0bxsmaciaq",
-      promotionName: "GHA multi brand",
-      appliedValue: "49.99",
-      bonusPointsApplied: 4999,
-      eligibleNightsAtBooking: 2,
-      benefits: [
-        {
-          rewardType: "points",
-          value: "4999",
-          appliedValue: "49.99",
-          bonusPointsApplied: 4999,
-          eligibleNightsAtBooking: 2,
-        },
-      ],
-    },
-    {
-      bookingId: "cwy9rm93feastnxmna5u75arp",
-      promotionName: "GHA multi brand",
-      appliedValue: "74.99",
-      bonusPointsApplied: 7499,
-      eligibleNightsAtBooking: 2,
-      benefits: [
-        {
-          rewardType: "points",
-          value: "7499",
-          appliedValue: "74.99",
-          bonusPointsApplied: 7499,
-          eligibleNightsAtBooking: 2,
-        },
-      ],
-    },
-    {
-      bookingId: "cuj2d4xsen4rntp0ujp9gvjb0",
-      promotionName: "Marriott Global Q1",
-      appliedValue: "20.5",
-      bonusPointsApplied: 1500,
-      eligibleNightsAtBooking: 1,
-      benefits: [
-        {
-          rewardType: "points",
-          value: "1500",
-          appliedValue: "10.5",
-          bonusPointsApplied: 1500,
-          eligibleNightsAtBooking: 4,
-        },
-        {
-          rewardType: "eqn",
-          value: "1",
-          appliedValue: "10",
-          bonusPointsApplied: null,
-          eligibleNightsAtBooking: 4,
+          value: "3000",
+          appliedValue: "140",
+          bonusPointsApplied: 7000,
+          eligibleNightsAtBooking: 8,
         },
       ],
     },
@@ -422,6 +529,29 @@ async function seedBookingPromotions() {
     },
     {
       bookingId: "cy58uq56kllc6feidriho04yh",
+      promotionName: "Hyatt Bonus Journeys",
+      appliedValue: "160",
+      bonusPointsApplied: 8000,
+      eligibleNightsAtBooking: 7,
+      benefits: [
+        {
+          rewardType: "points",
+          value: "3000",
+          appliedValue: "120",
+          bonusPointsApplied: 6000,
+          eligibleNightsAtBooking: 22,
+        },
+        {
+          rewardType: "points",
+          value: "1000",
+          appliedValue: "40",
+          bonusPointsApplied: 2000,
+          eligibleNightsAtBooking: 7,
+        },
+      ],
+    },
+    {
+      bookingId: "cy58uq56kllc6feidriho04yh",
       promotionName: "Hyatt Place/House 5k",
       appliedValue: "100",
       bonusPointsApplied: 5000,
@@ -437,25 +567,25 @@ async function seedBookingPromotions() {
       ],
     },
     {
-      bookingId: "cy58uq56kllc6feidriho04yh",
-      promotionName: "Hyatt Bonus Journeys",
-      appliedValue: "166.67",
-      bonusPointsApplied: 8333,
-      eligibleNightsAtBooking: 7,
+      bookingId: "cuj2d4xsen4rntp0ujp9gvjb0",
+      promotionName: "Marriott Global Q1",
+      appliedValue: "20.5",
+      bonusPointsApplied: 1500,
+      eligibleNightsAtBooking: 1,
       benefits: [
         {
           rewardType: "points",
-          value: "3000",
-          appliedValue: "120",
-          bonusPointsApplied: 6000,
-          eligibleNightsAtBooking: 22,
+          value: "1500",
+          appliedValue: "10.5",
+          bonusPointsApplied: 1500,
+          eligibleNightsAtBooking: 1,
         },
         {
-          rewardType: "points",
-          value: "1000",
-          appliedValue: "46.67",
-          bonusPointsApplied: 2333,
-          eligibleNightsAtBooking: 7,
+          rewardType: "eqn",
+          value: "1",
+          appliedValue: "10",
+          bonusPointsApplied: null,
+          eligibleNightsAtBooking: 1,
         },
       ],
     },
@@ -471,14 +601,14 @@ async function seedBookingPromotions() {
           value: "1500",
           appliedValue: "10.5",
           bonusPointsApplied: 1500,
-          eligibleNightsAtBooking: 8,
+          eligibleNightsAtBooking: 5,
         },
         {
           rewardType: "eqn",
           value: "1",
           appliedValue: "10",
           bonusPointsApplied: null,
-          eligibleNightsAtBooking: 8,
+          eligibleNightsAtBooking: 5,
         },
       ],
     },
@@ -494,46 +624,14 @@ async function seedBookingPromotions() {
           value: "1500",
           appliedValue: "10.5",
           bonusPointsApplied: 1500,
-          eligibleNightsAtBooking: 13,
+          eligibleNightsAtBooking: 6,
         },
         {
           rewardType: "eqn",
           value: "1",
           appliedValue: "10",
           bonusPointsApplied: null,
-          eligibleNightsAtBooking: 13,
-        },
-      ],
-    },
-    {
-      bookingId: "c83ak8zknu6pwcvqhbfhm7ekv",
-      promotionName: "Hyatt Bonus Journeys",
-      appliedValue: "20",
-      bonusPointsApplied: 1000,
-      eligibleNightsAtBooking: 1,
-      benefits: [
-        {
-          rewardType: "points",
-          value: "3000",
-          appliedValue: "20",
-          bonusPointsApplied: 1000,
-          eligibleNightsAtBooking: 1,
-        },
-      ],
-    },
-    {
-      bookingId: "cufi5o67mbga7e8an9rvsb2vn",
-      promotionName: "Hyatt Bonus Journeys",
-      appliedValue: "140",
-      bonusPointsApplied: 7000,
-      eligibleNightsAtBooking: 7,
-      benefits: [
-        {
-          rewardType: "points",
-          value: "3000",
-          appliedValue: "140",
-          bonusPointsApplied: 7000,
-          eligibleNightsAtBooking: 8,
+          eligibleNightsAtBooking: 6,
         },
       ],
     },

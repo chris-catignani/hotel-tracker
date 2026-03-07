@@ -18,6 +18,7 @@ export const SUB_BRAND_ID = {
     PARK_HYATT: "cd7oxx4b5kfe0rq65x74ha3gu",
     HYATT_CENTRIC: "c6b6y4o6u20bqlv0fjuvb9k6i",
     HYATT_PLACE: "cwf3srsbp7rv61q9c9f9zbapb",
+    HYATT_HOUSE: "cmmepq6ks004jlpl1ghsje2x0",
   },
   IHG: {
     HOLIDAY_INN_EXPRESS: "cdfi8ldn9nllyjjrfqgeho0be",
