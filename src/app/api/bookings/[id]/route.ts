@@ -276,12 +276,16 @@ export async function DELETE(
       },
     });
 
+    if (!booking) {
+      return apiError("Booking not found", null, 404, request);
+    }
+
     // Capture promotion IDs and find affected subsequent bookings BEFORE deleting.
     // A booking with no promotions cannot affect any subsequent booking's priorUsage
     // (fetchPromotionUsage only reads BookingPromotion records), so no cascade is needed.
-    const appliedPromoIds = booking?.bookingPromotions.map((bp) => bp.promotionId) ?? [];
+    const appliedPromoIds = booking.bookingPromotions.map((bp) => bp.promotionId);
     let subsequentBookingIds: string[] = [];
-    if (booking && appliedPromoIds.length > 0) {
+    if (appliedPromoIds.length > 0) {
       const affected = await prisma.booking.findMany({
         where: {
           checkIn: { gt: booking.checkIn },
