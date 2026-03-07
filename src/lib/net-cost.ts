@@ -343,6 +343,66 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
       }
     }
 
+    // For actively-earning tiered promotions, show what future tiers will earn.
+    if (
+      !isPromoPreQualifying &&
+      !isPromoOrphaned &&
+      bp.promotion.tiers &&
+      bp.promotion.tiers.length > 1
+    ) {
+      const currentStayCount = bp.eligibleStayCount ?? 0;
+      const currentNightCount = bp.eligibleNightCount ?? 0;
+      const tiersByStays = bp.promotion.tiers.some((t) => t.minStays !== null);
+
+      const futureTiers = bp.promotion.tiers.filter((t) =>
+        tiersByStays ? (t.minStays ?? 0) > currentStayCount : (t.minNights ?? 0) > currentNightCount
+      );
+
+      if (futureTiers.length > 0) {
+        const futureSegments: CalculationSegment[] = futureTiers.map((t, tIdx) => {
+          const rewardParts = t.benefits.map((b) => {
+            const val = Number(b.value);
+            if (b.rewardType === "points") return `${val.toLocaleString()} pts`;
+            if (b.rewardType === "cashback")
+              return b.valueType === "percentage" ? `${val}%` : formatCurrency(val);
+            if (b.rewardType === "eqn") return `${val} EQN${val !== 1 ? "s" : ""}`;
+            return b.rewardType;
+          });
+
+          let rangeLabel = "";
+          if (t.minStays !== null) {
+            rangeLabel =
+              t.maxStays === null
+                ? `Stay ${t.minStays}+`
+                : t.minStays === t.maxStays
+                  ? `Stay ${t.minStays}`
+                  : `Stays ${t.minStays}–${t.maxStays}`;
+          } else if (t.minNights !== null) {
+            rangeLabel =
+              t.maxNights === null
+                ? `Night ${t.minNights}+`
+                : t.minNights === t.maxNights
+                  ? `Night ${t.minNights}`
+                  : `Nights ${t.minNights}–${t.maxNights}`;
+          }
+
+          return {
+            label: tIdx === 0 ? `Next: ${rangeLabel}` : rangeLabel,
+            value: 0,
+            hideValue: true,
+            formula: rewardParts.join(" + "),
+            description: "",
+          };
+        });
+
+        groups.push({
+          name: "Upcoming Tiers",
+          description: "",
+          segments: futureSegments,
+        });
+      }
+    }
+
     for (const ba of benefits) {
       const b = ba.promotionBenefit;
       const bValue = Number(b.value);

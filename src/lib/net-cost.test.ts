@@ -1112,6 +1112,115 @@ describe("net-cost", () => {
       });
     });
 
+    describe("upcoming tiers for actively-earning tiered promotions", () => {
+      const tieredPromo = {
+        name: "GHA Multi Brand",
+        restrictions: null,
+        benefits: [],
+        tiers: [
+          {
+            minStays: 2,
+            maxStays: 2,
+            minNights: null,
+            maxNights: null,
+            benefits: [{ rewardType: "points", valueType: "fixed", value: "5000", certType: null }],
+          },
+          {
+            minStays: 3,
+            maxStays: 3,
+            minNights: null,
+            maxNights: null,
+            benefits: [{ rewardType: "points", valueType: "fixed", value: "7500", certType: null }],
+          },
+          {
+            minStays: 4,
+            maxStays: null,
+            minNights: null,
+            maxNights: null,
+            benefits: [
+              { rewardType: "points", valueType: "fixed", value: "10000", certType: null },
+            ],
+          },
+        ],
+      };
+
+      it("shows upcoming tiers when on an intermediate tier", () => {
+        const booking: NetCostBooking = {
+          ...preQualifyingBase,
+          bookingPromotions: [
+            {
+              appliedValue: 50,
+              isPreQualifying: false,
+              isOrphaned: false,
+              eligibleStayCount: 2, // stay #2 — earning tier 1
+              eligibleNightCount: 4,
+              promotion: tieredPromo,
+              benefitApplications: [
+                {
+                  appliedValue: 50,
+                  promotionBenefit: {
+                    rewardType: "points",
+                    valueType: "fixed",
+                    value: "5000",
+                    certType: null,
+                  },
+                },
+              ],
+            },
+          ],
+        };
+
+        const breakdown = getNetCostBreakdown(booking);
+        const promo = breakdown.promotions[0];
+        const upcomingGroup = promo.groups.find((g) => g.name === "Upcoming Tiers");
+
+        expect(upcomingGroup).toBeDefined();
+        expect(upcomingGroup!.segments).toHaveLength(2); // tier 2 and tier 3
+
+        // First future tier labelled "Next:"
+        expect(upcomingGroup!.segments[0].label).toBe("Next: Stay 3");
+        expect(upcomingGroup!.segments[0].formula).toContain("7,500 pts");
+        expect(upcomingGroup!.segments[0].hideValue).toBe(true);
+
+        // Second future tier
+        expect(upcomingGroup!.segments[1].label).toBe("Stay 4+");
+        expect(upcomingGroup!.segments[1].formula).toContain("10,000 pts");
+      });
+
+      it("shows no upcoming tiers group when on the last tier", () => {
+        const booking: NetCostBooking = {
+          ...preQualifyingBase,
+          bookingPromotions: [
+            {
+              appliedValue: 100,
+              isPreQualifying: false,
+              isOrphaned: false,
+              eligibleStayCount: 5, // stay #5 — last tier (4+)
+              eligibleNightCount: 10,
+              promotion: tieredPromo,
+              benefitApplications: [
+                {
+                  appliedValue: 100,
+                  promotionBenefit: {
+                    rewardType: "points",
+                    valueType: "fixed",
+                    value: "10000",
+                    certType: null,
+                  },
+                },
+              ],
+            },
+          ],
+        };
+
+        const breakdown = getNetCostBreakdown(booking);
+        const promo = breakdown.promotions[0];
+        const upcomingGroup = promo.groups.find((g) => g.name === "Upcoming Tiers");
+
+        expect(upcomingGroup).toBeUndefined();
+      });
+    });
+
     describe("tier-based pre-qualifying (no explicit prerequisite)", () => {
       it("shows current position and full tier table when stay doesn't match any tier", () => {
         const booking: NetCostBooking = {
