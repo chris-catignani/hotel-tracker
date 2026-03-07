@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { matchPromotionsForBooking, reevaluateBookings } from "@/lib/promotion-matching";
-import {
-  reevaluateSubsequentBookings,
-  getSubsequentBookingIds,
-} from "@/lib/promotion-matching-helpers";
+import { reevaluateSubsequentBookings } from "@/lib/promotion-matching-helpers";
 import { apiError } from "@/lib/api-error";
 import { calculatePoints } from "@/lib/loyalty-utils";
 
@@ -270,13 +267,35 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    // Find subsequent bookings before deleting
+    // Find booking and its applied promotions before deleting
     const booking = await prisma.booking.findUnique({
       where: { id },
-      select: { checkIn: true },
+      select: {
+        checkIn: true,
+        bookingPromotions: { select: { promotionId: true } },
+      },
     });
 
-    const subsequentBookingIds = booking ? await getSubsequentBookingIds(booking.checkIn) : [];
+    if (!booking) {
+      return apiError("Booking not found", null, 404, request);
+    }
+
+    // Capture promotion IDs and find affected subsequent bookings BEFORE deleting.
+    // A booking with no promotions cannot affect any subsequent booking's priorUsage
+    // (fetchPromotionUsage only reads BookingPromotion records), so no cascade is needed.
+    const appliedPromoIds = booking.bookingPromotions.map((bp) => bp.promotionId);
+    let subsequentBookingIds: string[] = [];
+    if (appliedPromoIds.length > 0) {
+      const affected = await prisma.booking.findMany({
+        where: {
+          checkIn: { gt: booking.checkIn },
+          bookingPromotions: { some: { promotionId: { in: appliedPromoIds } } },
+        },
+        select: { id: true },
+        orderBy: { checkIn: "asc" },
+      });
+      subsequentBookingIds = affected.map((b) => b.id);
+    }
 
     // Delete associated booking promotions first
     await prisma.bookingPromotion.deleteMany({
