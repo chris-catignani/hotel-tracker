@@ -888,6 +888,7 @@ test.describe("Promotions payment type restrictions", () => {
     await page.getByTestId("promotion-form-submit").click();
     await page.goto("/promotions");
     await expect(page).toHaveURL(/\/promotions$/);
+    await page.waitForLoadState("networkidle");
 
     // Navigate back one more time to be absolutely sure
     await desktopList

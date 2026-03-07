@@ -14,16 +14,16 @@ export default defineConfig({
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
-  /* Retry on CI only */
-  retries: process.env.CI ? 1 : 0,
-  /* Increase parallel tests on CI for better performance with fixture-based isolation. */
-  workers: process.env.CI ? 2 : undefined,
+  /* Retry on failures (1 retry both locally and on CI). */
+  retries: 1,
+  /* Limit workers to 2 to reduce parallel DB contention. Same for local and CI. */
+  workers: 2,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [["list"], ["html", { open: "never" }]],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: "http://127.0.0.1:3000",
+    baseURL: "http://127.0.0.1:3001",
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: process.env.CI ? "on-first-retry" : "retain-on-failure",
@@ -43,10 +43,10 @@ export default defineConfig({
     },
   ],
 
-  /* Run your local dev server before starting the tests */
+  /* Run a dedicated test server on port 3001 (separate from the dev server on 3000). */
   webServer: {
-    command: "npm run dev",
-    url: "http://127.0.0.1:3000",
+    command: "next dev -p 3001",
+    url: "http://127.0.0.1:3001",
     reuseExistingServer: !process.env.CI,
     stdout: "pipe",
     stderr: "pipe",
