@@ -664,6 +664,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
         benefitSegments.push({
           label: `Benefit: ${b.rewardType}`,
           value: bApplied,
+          hideValue: isPreQualifying || undefined,
           formula: isMaxedOutOverall
             ? ""
             : `${benefitFormula} = ${formatCurrency(bApplied)}` +

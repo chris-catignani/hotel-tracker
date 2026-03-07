@@ -71,10 +71,12 @@ function CalculationInfo({ calc }: { calc: CalculationDetail | undefined }) {
           </div>
         ))}
 
-        <div className="border-t pt-2 flex justify-between items-center bg-muted/30 px-2 py-1.5 rounded">
-          <span className="text-[10px] font-bold uppercase">Total {calc.label}</span>
-          <span className="text-xs font-bold font-mono">{formatCurrency(calc.appliedValue)}</span>
-        </div>
+        {calc.appliedValue !== 0 && (
+          <div className="border-t pt-2 flex justify-between items-center bg-muted/30 px-2 py-1.5 rounded">
+            <span className="text-[10px] font-bold uppercase">Total {calc.label}</span>
+            <span className="text-xs font-bold font-mono">{formatCurrency(calc.appliedValue)}</span>
+          </div>
+        )}
       </div>
     </div>
   );
