@@ -14,6 +14,7 @@ describe("CostBreakdown", () => {
         name: "Promo 1",
         appliedValue: 10,
         isOrphaned: false,
+        isPreQualifying: false,
         label: "Promotion",
         description: "desc",
         groups: [

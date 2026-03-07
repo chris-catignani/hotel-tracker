@@ -30,12 +30,6 @@ interface BookingSeedData {
   benefits: { benefitType: string; dollarValue?: number | string | null }[];
 }
 
-const CC_CHASE_ID = CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE;
-const CC_WF_ID = CREDIT_CARD_ID.WELLS_FARGO_AUTOGRAPH;
-const SP_TOPCASHBACK_ID = SHOPPING_PORTAL_ID.TOPCASHBACK;
-const SP_BA_ID = SHOPPING_PORTAL_ID.BRITISH_AIRWAYS;
-const SP_RAKUTEN_ID = SHOPPING_PORTAL_ID.RAKUTEN;
-
 export async function seedBookings() {
   const bookings: BookingSeedData[] = [
     {
@@ -103,8 +97,8 @@ export async function seedBookings() {
       pretaxCost: "58",
       taxAmount: "11",
       totalCost: "69",
-      creditCardId: CC_CHASE_ID,
-      shoppingPortalId: SP_TOPCASHBACK_ID,
+      creditCardId: CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE,
+      shoppingPortalId: SHOPPING_PORTAL_ID.TOPCASHBACK,
       portalCashbackRate: "0.24",
       portalCashbackOnTotal: false,
       loyaltyPointsEarned: 1160,
@@ -128,8 +122,8 @@ export async function seedBookings() {
       pretaxCost: "528",
       taxAmount: "43",
       totalCost: "571",
-      creditCardId: CC_WF_ID,
-      shoppingPortalId: SP_TOPCASHBACK_ID,
+      creditCardId: CREDIT_CARD_ID.WELLS_FARGO_AUTOGRAPH,
+      shoppingPortalId: SHOPPING_PORTAL_ID.TOPCASHBACK,
       portalCashbackRate: "0.12",
       portalCashbackOnTotal: false,
       loyaltyPointsEarned: 10560,
@@ -178,7 +172,7 @@ export async function seedBookings() {
       pretaxCost: "150",
       taxAmount: "13",
       totalCost: "163",
-      creditCardId: CC_CHASE_ID,
+      creditCardId: CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE,
       shoppingPortalId: null,
       portalCashbackRate: null,
       portalCashbackOnTotal: false,
@@ -203,7 +197,7 @@ export async function seedBookings() {
       pretaxCost: "166",
       taxAmount: "14",
       totalCost: "180",
-      creditCardId: CC_CHASE_ID,
+      creditCardId: CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE,
       shoppingPortalId: null,
       portalCashbackRate: null,
       portalCashbackOnTotal: false,
@@ -228,7 +222,7 @@ export async function seedBookings() {
       pretaxCost: "299",
       taxAmount: "24",
       totalCost: "323",
-      creditCardId: CC_CHASE_ID,
+      creditCardId: CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE,
       shoppingPortalId: null,
       portalCashbackRate: null,
       portalCashbackOnTotal: false,
@@ -253,8 +247,8 @@ export async function seedBookings() {
       pretaxCost: "60",
       taxAmount: "4",
       totalCost: "64",
-      creditCardId: CC_CHASE_ID,
-      shoppingPortalId: SP_BA_ID,
+      creditCardId: CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE,
+      shoppingPortalId: SHOPPING_PORTAL_ID.BRITISH_AIRWAYS,
       portalCashbackRate: "6",
       portalCashbackOnTotal: false,
       loyaltyPointsEarned: 1050,
@@ -328,8 +322,8 @@ export async function seedBookings() {
       pretaxCost: "257",
       taxAmount: "46",
       totalCost: "303",
-      creditCardId: CC_CHASE_ID,
-      shoppingPortalId: SP_BA_ID,
+      creditCardId: CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE,
+      shoppingPortalId: SHOPPING_PORTAL_ID.BRITISH_AIRWAYS,
       portalCashbackRate: "6",
       portalCashbackOnTotal: false,
       loyaltyPointsEarned: 4498,
@@ -353,9 +347,9 @@ export async function seedBookings() {
       pretaxCost: "186",
       taxAmount: "37",
       totalCost: "223",
-      creditCardId: CC_CHASE_ID,
-      shoppingPortalId: null,
-      portalCashbackRate: null,
+      creditCardId: CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE,
+      shoppingPortalId: SHOPPING_PORTAL_ID.BRITISH_AIRWAYS,
+      portalCashbackRate: "6",
       portalCashbackOnTotal: false,
       loyaltyPointsEarned: 3255,
       pointsRedeemed: null,
@@ -367,7 +361,7 @@ export async function seedBookings() {
       certificates: [],
       benefits: [
         { benefitType: "free_breakfast" },
-        { benefitType: "dining_credit", dollarValue: 75 },
+        { benefitType: "dining_credit", dollarValue: "75" },
       ],
     },
     {
@@ -381,8 +375,8 @@ export async function seedBookings() {
       pretaxCost: "82",
       taxAmount: "9",
       totalCost: "91",
-      creditCardId: CC_CHASE_ID,
-      shoppingPortalId: SP_RAKUTEN_ID,
+      creditCardId: CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE,
+      shoppingPortalId: SHOPPING_PORTAL_ID.RAKUTEN,
       portalCashbackRate: "2",
       portalCashbackOnTotal: false,
       loyaltyPointsEarned: 150,
