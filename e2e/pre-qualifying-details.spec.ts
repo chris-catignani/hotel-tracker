@@ -206,3 +206,178 @@ test.describe("Pre-qualifying Promotion Details", () => {
     await request.delete(`/api/promotions/${promo.id}`);
   });
 });
+
+test.describe("Upcoming Tiers on Actively-Earning Tiered Promotions", () => {
+  // Shared promotion shape: stay 2 earns 5k pts, stay 3+ earns 7.5k pts
+  const tierDefs = [
+    {
+      minStays: 2,
+      maxStays: 2,
+      benefits: [
+        { rewardType: "points", valueType: "fixed", value: 5000, certType: null, sortOrder: 0 },
+      ],
+    },
+    {
+      minStays: 3,
+      maxStays: null,
+      benefits: [
+        { rewardType: "points", valueType: "fixed", value: 7500, certType: null, sortOrder: 0 },
+      ],
+    },
+  ];
+
+  test("shows upcoming tiers when on an intermediate tier", async ({
+    page,
+    request,
+    testHotelChain,
+  }) => {
+    const promoRes = await request.post("/api/promotions", {
+      data: {
+        name: "UpcomingTierPromo",
+        type: "loyalty",
+        hotelChainId: testHotelChain.id,
+        benefits: [],
+        tiers: tierDefs,
+      },
+    });
+    expect(promoRes.ok()).toBeTruthy();
+    const promo = await promoRes.json();
+
+    // Stay #1: pre-qualifying (stay 1 matches no tier)
+    const stay1Res = await request.post("/api/bookings", {
+      data: {
+        hotelChainId: testHotelChain.id,
+        propertyName: "Upcoming Tier Stay 1",
+        checkIn: "2026-01-01",
+        checkOut: "2026-01-03",
+        numNights: 2,
+        pretaxCost: 200,
+        taxAmount: 30,
+        totalCost: 230,
+        currency: "USD",
+      },
+    });
+    const stay1 = await stay1Res.json();
+
+    // Stay #2 (current): earns tier 1 (5,000 pts) — should show upcoming tier 2
+    const stay2Res = await request.post("/api/bookings", {
+      data: {
+        hotelChainId: testHotelChain.id,
+        propertyName: "Upcoming Tier Stay 2",
+        checkIn: "2026-06-01",
+        checkOut: "2026-06-03",
+        numNights: 2,
+        pretaxCost: 200,
+        taxAmount: 30,
+        totalCost: 230,
+        currency: "USD",
+      },
+    });
+    const stay2 = await stay2Res.json();
+
+    await page.goto(`/bookings/${stay2.id}`);
+    await page.getByTestId("breakdown-promos-toggle").click();
+    await expect(page.getByTestId(`breakdown-promo-item-${promo.id}`)).toBeVisible();
+
+    await page.getByTestId("calc-info-upcomingtierpromo-desktop").click();
+    const popover = page.locator("[role='dialog'], .popover-content");
+    await expect(popover).toBeVisible();
+
+    // Earns tier 1 — upcoming section shows future tier only
+    await expect(popover.getByText(/Upcoming Tiers/i)).toBeVisible();
+    await expect(popover.getByText(/Next: Stay 3\+/i)).toBeVisible();
+    await expect(popover.getByText(/7,500 pts/i)).toBeVisible();
+
+    // Current tier's reward is shown in the benefit group, not duplicated here
+    await expect(popover.getByText(/5,000 Bonus Points/i)).toBeVisible();
+
+    await request.delete(`/api/bookings/${stay2.id}`);
+    await request.delete(`/api/bookings/${stay1.id}`);
+    await request.delete(`/api/promotions/${promo.id}`);
+  });
+
+  test("shows no upcoming tiers section when on the last tier", async ({
+    page,
+    request,
+    testHotelChain,
+  }) => {
+    const promoRes = await request.post("/api/promotions", {
+      data: {
+        name: "LastTierPromo",
+        type: "loyalty",
+        hotelChainId: testHotelChain.id,
+        benefits: [],
+        tiers: tierDefs,
+      },
+    });
+    expect(promoRes.ok()).toBeTruthy();
+    const promo = await promoRes.json();
+
+    // Stay #1: pre-qualifying
+    const stay1Res = await request.post("/api/bookings", {
+      data: {
+        hotelChainId: testHotelChain.id,
+        propertyName: "Last Tier Stay 1",
+        checkIn: "2026-01-01",
+        checkOut: "2026-01-03",
+        numNights: 2,
+        pretaxCost: 200,
+        taxAmount: 30,
+        totalCost: 230,
+        currency: "USD",
+      },
+    });
+    const stay1 = await stay1Res.json();
+
+    // Stay #2: earns tier 1
+    const stay2Res = await request.post("/api/bookings", {
+      data: {
+        hotelChainId: testHotelChain.id,
+        propertyName: "Last Tier Stay 2",
+        checkIn: "2026-02-01",
+        checkOut: "2026-02-03",
+        numNights: 2,
+        pretaxCost: 200,
+        taxAmount: 30,
+        totalCost: 230,
+        currency: "USD",
+      },
+    });
+    const stay2 = await stay2Res.json();
+
+    // Stay #3 (current): earns tier 2 (stay 3+), the last tier — no upcoming
+    const stay3Res = await request.post("/api/bookings", {
+      data: {
+        hotelChainId: testHotelChain.id,
+        propertyName: "Last Tier Stay 3",
+        checkIn: "2026-06-01",
+        checkOut: "2026-06-03",
+        numNights: 2,
+        pretaxCost: 200,
+        taxAmount: 30,
+        totalCost: 230,
+        currency: "USD",
+      },
+    });
+    const stay3 = await stay3Res.json();
+
+    await page.goto(`/bookings/${stay3.id}`);
+    await page.getByTestId("breakdown-promos-toggle").click();
+    await expect(page.getByTestId(`breakdown-promo-item-${promo.id}`)).toBeVisible();
+
+    await page.getByTestId("calc-info-lasttierpromo-desktop").click();
+    const popover = page.locator("[role='dialog'], .popover-content");
+    await expect(popover).toBeVisible();
+
+    // On the last tier — no upcoming section
+    await expect(popover.getByText(/Upcoming Tiers/i)).not.toBeVisible();
+
+    // But still shows the current earning
+    await expect(popover.getByText(/7,500 Bonus Points/i)).toBeVisible();
+
+    await request.delete(`/api/bookings/${stay3.id}`);
+    await request.delete(`/api/bookings/${stay2.id}`);
+    await request.delete(`/api/bookings/${stay1.id}`);
+    await request.delete(`/api/promotions/${promo.id}`);
+  });
+});
