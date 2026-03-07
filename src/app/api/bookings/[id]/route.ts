@@ -87,16 +87,12 @@ async function getFullBookingWithUsage(id: string) {
       ...bp,
       eligibleStayCount: (usage.eligibleStayCount ?? 0) + 1,
       eligibleNightCount: (usage.eligibleNightCount ?? 0) + booking.numNights,
-      futurePotentialStayCount: usage.futurePotentialStayCount,
-      futurePotentialNightCount: usage.futurePotentialNightCount,
       benefitApplications: bp.benefitApplications.map((ba) => {
         const bUsage = usage.benefitUsage?.get(ba.promotionBenefitId);
         return {
           ...ba,
           eligibleStayCount: (usage.eligibleStayCount ?? 0) + 1,
           eligibleNightCount: (bUsage?.eligibleNights ?? 0) + booking.numNights,
-          futurePotentialStayCount: usage.futurePotentialStayCount,
-          futurePotentialNightCount: bUsage?.futurePotentialNightCount,
         };
       }),
     };

@@ -31,8 +31,6 @@ export interface NetCostBookingPromotionBenefit {
   eligibleNightsAtBooking?: number | null;
   eligibleStayCount?: number | null;
   eligibleNightCount?: number | null;
-  futurePotentialStayCount?: number | null;
-  futurePotentialNightCount?: number | null;
   isOrphaned?: boolean;
   isPreQualifying?: boolean;
   promotionBenefit: {
@@ -107,8 +105,6 @@ export interface NetCostBooking {
     eligibleNightsAtBooking?: number | null;
     eligibleStayCount?: number | null;
     eligibleNightCount?: number | null;
-    futurePotentialStayCount?: number | null;
-    futurePotentialNightCount?: number | null;
     isOrphaned?: boolean;
     isPreQualifying?: boolean;
     promotion: {
@@ -220,35 +216,43 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
     const currentNightCount = bp.eligibleNightCount ?? 0;
 
     if (isPromoPreQualifying) {
-      if (prereqStayNeeded > 0 && currentStayCount <= prereqStayNeeded) {
-        const remaining = prereqStayNeeded - (currentStayCount - 1);
-        const thisBookingCounts = " (this booking counts!)";
+      if (prereqStayNeeded > 0) {
+        const remainingAfterThis = prereqStayNeeded - currentStayCount;
+        const fulfilled = remainingAfterThis <= 0;
         groups.push({
           name: "Prerequisite Stays",
-          description: `You need ${prereqStayNeeded} prerequisite stay${prereqStayNeeded !== 1 ? "s" : ""} to unlock this promotion. You currently have ${currentStayCount - 1}.`,
+          description: `This promotion requires ${prereqStayNeeded} pre-qualifying stay${prereqStayNeeded !== 1 ? "s" : ""} before rewards begin.`,
           segments: [
             {
               label: "Requirement Progress",
               value: 0,
-              formula: `${remaining} stay${remaining !== 1 ? "s" : ""} needed${thisBookingCounts}`,
-              description: `After this stay, you will have ${currentStayCount} of ${prereqStayNeeded} required stays.`,
+              formula: fulfilled
+                ? `${prereqStayNeeded} of ${prereqStayNeeded} pre-qualifying stays complete — this booking is #${currentStayCount}`
+                : `${currentStayCount} of ${prereqStayNeeded} stays complete — this booking is #${currentStayCount}, ${remainingAfterThis} more needed`,
+              description: fulfilled
+                ? `This booking fulfills the prerequisite! The promotion will apply starting on your next qualifying stay.`
+                : `You'll need ${remainingAfterThis} more qualifying stay${remainingAfterThis !== 1 ? "s" : ""} after this one to unlock the promotion.`,
             },
           ],
         });
       }
 
-      if (prereqNightNeeded > 0 && currentNightCount <= prereqNightNeeded) {
-        const priorNights = currentNightCount - booking.numNights;
-        const remaining = prereqNightNeeded - priorNights;
+      if (prereqNightNeeded > 0) {
+        const remainingAfterThis = prereqNightNeeded - currentNightCount;
+        const fulfilled = remainingAfterThis <= 0;
         groups.push({
           name: "Prerequisite Nights",
-          description: `You need ${prereqNightNeeded} prerequisite night${prereqNightNeeded !== 1 ? "s" : ""} to unlock this promotion. You currently have ${priorNights}.`,
+          description: `This promotion requires ${prereqNightNeeded} pre-qualifying night${prereqNightNeeded !== 1 ? "s" : ""} before rewards begin.`,
           segments: [
             {
               label: "Requirement Progress",
               value: 0,
-              formula: `${remaining} night${remaining !== 1 ? "s" : ""} needed (this booking provides ${booking.numNights})`,
-              description: `After this stay, you will have ${currentNightCount} of ${prereqNightNeeded} required nights.`,
+              formula: fulfilled
+                ? `${prereqNightNeeded} of ${prereqNightNeeded} pre-qualifying nights complete — this booking adds ${booking.numNights}`
+                : `${currentNightCount} of ${prereqNightNeeded} nights complete — this booking adds ${booking.numNights}, ${remainingAfterThis} more needed`,
+              description: fulfilled
+                ? `This booking fulfills the prerequisite! The promotion will apply starting on your next qualifying stay.`
+                : `You'll need ${remainingAfterThis} more qualifying night${remainingAfterThis !== 1 ? "s" : ""} after this booking to unlock the promotion.`,
             },
           ],
         });
@@ -256,44 +260,78 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
 
       // Tier information
       if (bp.promotion.tiers && bp.promotion.tiers.length > 0) {
-        const tierSegments: CalculationSegment[] = bp.promotion.tiers.map((t, tIdx) => {
-          const rewardParts = t.benefits.map((b) => {
-            const val = Number(b.value);
-            if (b.rewardType === "points") return `${val.toLocaleString()} pts`;
-            if (b.rewardType === "cashback")
-              return b.valueType === "percentage" ? `${val}%` : formatCurrency(val);
-            if (b.rewardType === "eqn") return `${val} EQN${val !== 1 ? "s" : ""}`;
-            return b.rewardType;
-          });
+        const tiersByStays = bp.promotion.tiers.some((t) => t.minStays !== null);
 
-          let rangeLabel = "";
-          if (t.minStays !== null) {
-            rangeLabel =
-              t.maxStays === null
-                ? `Stay ${t.minStays}+`
-                : t.minStays === t.maxStays
-                  ? `Stay ${t.minStays}`
-                  : `Stays ${t.minStays}-${t.maxStays}`;
-          } else if (t.minNights !== null) {
-            rangeLabel =
-              t.maxNights === null
-                ? `Night ${t.minNights}+`
-                : t.minNights === t.maxNights
-                  ? `Night ${t.minNights}`
-                  : `Nights ${t.minNights}-${t.maxNights}`;
-          }
+        // For tier-based pre-qualifying (no explicit prerequisite), show where the user
+        // currently stands in the progression so they understand why this is pre-qualifying.
+        const currentPositionSegment: CalculationSegment | null =
+          !prereqStayNeeded && !prereqNightNeeded
+            ? tiersByStays
+              ? (() => {
+                  const firstTierStart = Math.min(
+                    ...bp.promotion.tiers.map((t) => t.minStays ?? Infinity)
+                  );
+                  return {
+                    label: "Your Current Position",
+                    value: 0,
+                    formula: `Stay ${currentStayCount} of campaign (tier rewards begin at stay ${firstTierStart})`,
+                    description: `This is eligible stay #${currentStayCount} in this campaign. This booking counts — keep going to unlock tier rewards starting at stay ${firstTierStart}.`,
+                  };
+                })()
+              : (() => {
+                  const firstTierStart = Math.min(
+                    ...bp.promotion.tiers.map((t) => t.minNights ?? Infinity)
+                  );
+                  return {
+                    label: "Your Current Position",
+                    value: 0,
+                    formula: `Night ${currentNightCount} of campaign (tier rewards begin at night ${firstTierStart})`,
+                    description: `You've accumulated ${currentNightCount} night${currentNightCount !== 1 ? "s" : ""} in this campaign. Tier rewards begin at night ${firstTierStart}.`,
+                  };
+                })()
+            : null;
 
-          return {
-            label: `Tier ${tIdx + 1}: ${rangeLabel}`,
-            value: 0,
-            formula: rewardParts.join(" + "),
-            description: `Future rewards you will earn at this tier.`,
-          };
-        });
+        const tierSegments: CalculationSegment[] = [
+          ...(currentPositionSegment ? [currentPositionSegment] : []),
+          ...bp.promotion.tiers.map((t, tIdx) => {
+            const rewardParts = t.benefits.map((b) => {
+              const val = Number(b.value);
+              if (b.rewardType === "points") return `${val.toLocaleString()} pts`;
+              if (b.rewardType === "cashback")
+                return b.valueType === "percentage" ? `${val}%` : formatCurrency(val);
+              if (b.rewardType === "eqn") return `${val} EQN${val !== 1 ? "s" : ""}`;
+              return b.rewardType;
+            });
+
+            let rangeLabel = "";
+            if (t.minStays !== null) {
+              rangeLabel =
+                t.maxStays === null
+                  ? `Stay ${t.minStays}+`
+                  : t.minStays === t.maxStays
+                    ? `Stay ${t.minStays}`
+                    : `Stays ${t.minStays}-${t.maxStays}`;
+            } else if (t.minNights !== null) {
+              rangeLabel =
+                t.maxNights === null
+                  ? `Night ${t.minNights}+`
+                  : t.minNights === t.maxNights
+                    ? `Night ${t.minNights}`
+                    : `Nights ${t.minNights}-${t.maxNights}`;
+            }
+
+            return {
+              label: `Tier ${tIdx + 1}: ${rangeLabel}`,
+              value: 0,
+              formula: rewardParts.join(" + "),
+              description: `Rewards you will earn when you reach this tier.`,
+            };
+          }),
+        ];
 
         groups.push({
           name: "Promotion Tiers",
-          description: "This is a tiered promotion. You will earn more as you complete more stays.",
+          description: "Future rewards you'll earn as you complete more stays in this campaign.",
           segments: tierSegments,
         });
       }
