@@ -6,11 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { NetCostBreakdown, CalculationDetail } from "@/lib/net-cost";
 import { formatCurrency } from "@/lib/utils";
@@ -100,6 +103,11 @@ function CalculationInfo({ calc }: { calc: CalculationDetail | undefined }) {
           <DialogTitle>{calc.label}</DialogTitle>
         </DialogHeader>
         {content}
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="outline">Close</Button>
+          </DialogClose>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
