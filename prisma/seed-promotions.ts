@@ -46,7 +46,6 @@ export async function seedPromotions() {
             rewardType: "cashback",
             valueType: "percentage",
             value: "10",
-            pointsMultiplierBasis: "base_only",
             sortOrder: 0,
           },
         ],
@@ -71,7 +70,6 @@ export async function seedPromotions() {
             rewardType: "eqn",
             valueType: "fixed",
             value: "1",
-            pointsMultiplierBasis: "base_only",
             sortOrder: 0,
             restrictions: {
               create: {},
@@ -92,7 +90,6 @@ export async function seedPromotions() {
             rewardType: "points",
             valueType: "fixed",
             value: "3000",
-            pointsMultiplierBasis: "base_only",
             sortOrder: 0,
             restrictions: {
               create: {
@@ -107,7 +104,6 @@ export async function seedPromotions() {
             rewardType: "points",
             valueType: "fixed",
             value: "1000",
-            pointsMultiplierBasis: "base_only",
             sortOrder: 1,
             restrictions: {
               create: {
@@ -148,7 +144,6 @@ export async function seedPromotions() {
                   rewardType: "points",
                   valueType: "fixed",
                   value: "5000",
-                  pointsMultiplierBasis: "base_only",
                   sortOrder: 0,
                 },
               ],
@@ -165,7 +160,6 @@ export async function seedPromotions() {
                   rewardType: "points",
                   valueType: "fixed",
                   value: "7500",
-                  pointsMultiplierBasis: "base_only",
                   sortOrder: 0,
                 },
               ],
@@ -182,7 +176,6 @@ export async function seedPromotions() {
                   rewardType: "points",
                   valueType: "fixed",
                   value: "10000",
-                  pointsMultiplierBasis: "base_only",
                   sortOrder: 0,
                 },
               ],
@@ -219,7 +212,6 @@ export async function seedPromotions() {
             rewardType: "points",
             valueType: "fixed",
             value: "5000",
-            pointsMultiplierBasis: "base_only",
             sortOrder: 0,
             restrictions: {
               create: {
@@ -248,14 +240,12 @@ export async function seedPromotions() {
             rewardType: "points",
             valueType: "fixed",
             value: "1500",
-            pointsMultiplierBasis: "base_only",
             sortOrder: 0,
           },
           {
             rewardType: "eqn",
             valueType: "fixed",
             value: "1",
-            pointsMultiplierBasis: "base_only",
             sortOrder: 1,
             restrictions: {
               create: {
@@ -283,7 +273,6 @@ export async function seedPromotions() {
             rewardType: "points",
             valueType: "fixed",
             value: "500",
-            pointsMultiplierBasis: null,
             sortOrder: 0,
           },
         ],
