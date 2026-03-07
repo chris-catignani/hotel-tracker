@@ -193,8 +193,9 @@ test.describe("Pre-qualifying Promotion Details", () => {
     // Tier group: current position segment + tier rewards
     await expect(popover.getByText(/Promotion Tiers/i)).toBeVisible();
     await expect(popover.getByText(/Your Current Position/i)).toBeVisible();
-    await expect(popover.getByText(/Stay 1 of campaign/i)).toBeVisible();
-    await expect(popover.getByText(/tier rewards begin at stay 2/i)).toBeVisible();
+    await expect(
+      popover.getByText(/Stay 1 of campaign.*tier rewards begin at stay 2/i)
+    ).toBeVisible();
     await expect(popover.getByText(/Tier 1: Stay 2/i)).toBeVisible();
     await expect(popover.getByText(/5,000 pts/i)).toBeVisible();
     await expect(popover.getByText(/Tier 2: Stay 3\+/i)).toBeVisible();

@@ -1007,6 +1007,7 @@ describe("net-cost", () => {
 
         expect(prereqGroup).toBeDefined();
         expect(prereqGroup!.description).toContain("1 pre-qualifying stay");
+        expect(prereqGroup!.segments[0].hideValue).toBe(true);
         expect(prereqGroup!.segments[0].formula).toContain("1 of 1 pre-qualifying stays complete");
         expect(prereqGroup!.segments[0].formula).toContain("this booking is #1");
         expect(prereqGroup!.segments[0].description).toContain(
@@ -1039,6 +1040,7 @@ describe("net-cost", () => {
 
         expect(prereqGroup).toBeDefined();
         expect(prereqGroup!.description).toContain("2 pre-qualifying stays");
+        expect(prereqGroup!.segments[0].hideValue).toBe(true);
         expect(prereqGroup!.segments[0].formula).toContain("1 of 2 stays complete");
         expect(prereqGroup!.segments[0].formula).toContain("1 more needed");
         expect(prereqGroup!.segments[0].description).toContain(
@@ -1155,19 +1157,25 @@ describe("net-cost", () => {
         const tierGroup = promo.groups.find((g) => g.name === "Promotion Tiers");
 
         expect(tierGroup).toBeDefined();
-        // First segment: current position
+        // First segment: current position (no $0 clutter, no "this booking counts" text)
         const positionSegment = tierGroup!.segments[0];
         expect(positionSegment.label).toBe("Your Current Position");
+        expect(positionSegment.hideValue).toBe(true);
         expect(positionSegment.formula).toContain("Stay 1 of campaign");
         expect(positionSegment.formula).toContain("tier rewards begin at stay 2");
         expect(positionSegment.description).toContain("eligible stay #1");
-        // Subsequent segments: tier rewards
+        expect(positionSegment.description).not.toContain("This booking counts");
+        // Subsequent segments: tier rewards (no $0 values, no redundant benefit group)
         const tier1 = tierGroup!.segments[1];
         expect(tier1.label).toContain("Stay 2");
+        expect(tier1.hideValue).toBe(true);
         expect(tier1.formula).toContain("5,000 pts");
         const tier2 = tierGroup!.segments[2];
         expect(tier2.label).toContain("Stay 3+");
+        expect(tier2.hideValue).toBe(true);
         expect(tier2.formula).toContain("7,500 pts");
+        // Benefit group is suppressed — tier table already explains the rewards
+        expect(promo.groups).toHaveLength(1);
       });
 
       it("does NOT show current position segment when a prerequisite is also present", () => {
@@ -1210,8 +1218,11 @@ describe("net-cost", () => {
           (s) => s.label === "Your Current Position"
         );
         expect(hasPositionSegment).toBe(false);
-        // Still shows the tier rewards
+        // Still shows the tier rewards (with hideValue, no redundant benefit group)
         expect(tierGroup!.segments[0].label).toContain("Stay 2+");
+        expect(tierGroup!.segments[0].hideValue).toBe(true);
+        // Only 2 groups: Prerequisite Stays + Promotion Tiers (benefit group suppressed)
+        expect(promo.groups).toHaveLength(2);
       });
     });
   });

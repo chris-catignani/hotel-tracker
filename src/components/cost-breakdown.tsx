@@ -49,9 +49,11 @@ function CalculationInfo({ calc }: { calc: CalculationDetail | undefined }) {
                 <div key={`${segment.label}-${segmentIdx}`} className="space-y-1.5">
                   <div className="flex justify-between items-start gap-4">
                     <span className="text-xs font-semibold">{segment.label}</span>
-                    <span className="text-xs font-mono font-bold whitespace-nowrap text-foreground/80">
-                      {formatCurrency(segment.value)}
-                    </span>
+                    {!segment.hideValue && (
+                      <span className="text-xs font-mono font-bold whitespace-nowrap text-foreground/80">
+                        {formatCurrency(segment.value)}
+                      </span>
+                    )}
                   </div>
                   {segment.description && (
                     <p className="text-[11px] text-muted-foreground leading-relaxed pl-0.5 italic">

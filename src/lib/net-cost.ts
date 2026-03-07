@@ -9,6 +9,7 @@ const ORPHANED_PROMOTION_DESCRIPTION =
 export interface CalculationSegment {
   label: string;
   value: number;
+  hideValue?: boolean;
   formula: string;
   description: string;
 }
@@ -226,6 +227,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
             {
               label: "Requirement Progress",
               value: 0,
+              hideValue: true,
               formula: fulfilled
                 ? `${prereqStayNeeded} of ${prereqStayNeeded} pre-qualifying stays complete — this booking is #${currentStayCount}`
                 : `${currentStayCount} of ${prereqStayNeeded} stays complete — this booking is #${currentStayCount}, ${remainingAfterThis} more needed`,
@@ -247,6 +249,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
             {
               label: "Requirement Progress",
               value: 0,
+              hideValue: true,
               formula: fulfilled
                 ? `${prereqNightNeeded} of ${prereqNightNeeded} pre-qualifying nights complete — this booking adds ${booking.numNights}`
                 : `${currentNightCount} of ${prereqNightNeeded} nights complete — this booking adds ${booking.numNights}, ${remainingAfterThis} more needed`,
@@ -274,8 +277,9 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
                   return {
                     label: "Your Current Position",
                     value: 0,
+                    hideValue: true,
                     formula: `Stay ${currentStayCount} of campaign (tier rewards begin at stay ${firstTierStart})`,
-                    description: `This is eligible stay #${currentStayCount} in this campaign. This booking counts — keep going to unlock tier rewards starting at stay ${firstTierStart}.`,
+                    description: `This is eligible stay #${currentStayCount} in this campaign. Keep going to unlock tier rewards starting at stay ${firstTierStart}.`,
                   };
                 })()
               : (() => {
@@ -285,6 +289,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
                   return {
                     label: "Your Current Position",
                     value: 0,
+                    hideValue: true,
                     formula: `Night ${currentNightCount} of campaign (tier rewards begin at night ${firstTierStart})`,
                     description: `You've accumulated ${currentNightCount} night${currentNightCount !== 1 ? "s" : ""} in this campaign. Tier rewards begin at night ${firstTierStart}.`,
                   };
@@ -323,6 +328,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
             return {
               label: `Tier ${tIdx + 1}: ${rangeLabel}`,
               value: 0,
+              hideValue: true,
               formula: rewardParts.join(" + "),
               description: `Rewards you will earn when you reach this tier.`,
             };
@@ -344,6 +350,10 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
       const isOrphaned =
         (ba.isOrphaned ?? isPromoOrphaned) && !(ba.isPreQualifying ?? isPromoPreQualifying);
       const isPreQualifying = ba.isPreQualifying ?? isPromoPreQualifying;
+
+      // For tier-based pre-qualifying promotions the tier table already explains the
+      // rewards for each stay, so skip the per-benefit group to avoid duplication.
+      if (isPreQualifying && bp.promotion.tiers && bp.promotion.tiers.length > 0) continue;
 
       const restrictions = b.restrictions || bp.promotion.restrictions;
       const isSpanned = !!(restrictions?.spanStays && restrictions?.minNightsRequired);
