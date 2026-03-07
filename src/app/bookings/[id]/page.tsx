@@ -27,6 +27,8 @@ import { CostBreakdown } from "@/components/cost-breakdown";
 interface BookingPromotionBenefit {
   appliedValue: string | number;
   eligibleNightsAtBooking?: number | null;
+  eligibleStayCount?: number | null;
+  eligibleNightCount?: number | null;
   promotionBenefit: {
     rewardType: string;
     valueType: string;
@@ -45,6 +47,8 @@ interface BookingPromotion {
   promotionId: string;
   appliedValue: string | number;
   eligibleNightsAtBooking?: number | null;
+  eligibleStayCount?: number | null;
+  eligibleNightCount?: number | null;
   autoApplied: boolean;
   verified: boolean;
   promotion: {
@@ -59,6 +63,18 @@ interface BookingPromotion {
       valueType: string;
       value: string | number;
       certType: string | null;
+    }[];
+    tiers?: {
+      minStays: number | null;
+      maxStays: number | null;
+      minNights: number | null;
+      maxNights: number | null;
+      benefits: {
+        rewardType: string;
+        valueType: string;
+        value: string | number;
+        certType: string | null;
+      }[];
     }[];
   };
   benefitApplications: BookingPromotionBenefit[];

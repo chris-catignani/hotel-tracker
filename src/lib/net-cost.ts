@@ -9,6 +9,7 @@ const ORPHANED_PROMOTION_DESCRIPTION =
 export interface CalculationSegment {
   label: string;
   value: number;
+  hideValue?: boolean;
   formula: string;
   description: string;
 }
@@ -29,6 +30,8 @@ export interface CalculationDetail {
 export interface NetCostBookingPromotionBenefit {
   appliedValue: string | number;
   eligibleNightsAtBooking?: number | null;
+  eligibleStayCount?: number | null;
+  eligibleNightCount?: number | null;
   isOrphaned?: boolean;
   isPreQualifying?: boolean;
   promotionBenefit: {
@@ -101,6 +104,8 @@ export interface NetCostBooking {
     autoApplied?: boolean;
     verified?: boolean;
     eligibleNightsAtBooking?: number | null;
+    eligibleStayCount?: number | null;
+    eligibleNightCount?: number | null;
     isOrphaned?: boolean;
     isPreQualifying?: boolean;
     promotion: {
@@ -121,6 +126,18 @@ export interface NetCostBooking {
         valueType: string;
         value: string | number;
         certType: string | null;
+      }[];
+      tiers?: {
+        minStays: number | null;
+        maxStays: number | null;
+        minNights: number | null;
+        maxNights: number | null;
+        benefits: {
+          rewardType: string;
+          valueType: string;
+          value: string | number;
+          certType: string | null;
+        }[];
       }[];
     };
     benefitApplications?: NetCostBookingPromotionBenefit[];
@@ -191,6 +208,201 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
     const isPromoOrphaned = bp.isOrphaned ?? false;
     const isPromoPreQualifying = bp.isPreQualifying ?? false;
 
+    // Prerequisite information
+    const promoRestrictions = bp.promotion.restrictions;
+    const prereqStayNeeded = promoRestrictions?.prerequisiteStayCount || 0;
+    const prereqNightNeeded = promoRestrictions?.prerequisiteNightCount || 0;
+
+    const currentStayCount = bp.eligibleStayCount ?? 0;
+    const currentNightCount = bp.eligibleNightCount ?? 0;
+
+    if (isPromoPreQualifying) {
+      if (prereqStayNeeded > 0) {
+        const remainingAfterThis = prereqStayNeeded - currentStayCount;
+        const fulfilled = remainingAfterThis <= 0;
+        groups.push({
+          name: "Prerequisite Stays",
+          description: `This promotion requires ${prereqStayNeeded} pre-qualifying stay${prereqStayNeeded !== 1 ? "s" : ""} before rewards begin.`,
+          segments: [
+            {
+              label: "Requirement Progress",
+              value: 0,
+              hideValue: true,
+              formula: fulfilled
+                ? `${prereqStayNeeded} of ${prereqStayNeeded} pre-qualifying stays complete — this booking is #${currentStayCount}`
+                : `${currentStayCount} of ${prereqStayNeeded} stays complete — this booking is #${currentStayCount}, ${remainingAfterThis} more needed`,
+              description: fulfilled
+                ? `This booking fulfills the prerequisite! The promotion will apply starting on your next qualifying stay.`
+                : `You'll need ${remainingAfterThis} more qualifying stay${remainingAfterThis !== 1 ? "s" : ""} after this one to unlock the promotion.`,
+            },
+          ],
+        });
+      }
+
+      if (prereqNightNeeded > 0) {
+        const remainingAfterThis = prereqNightNeeded - currentNightCount;
+        const fulfilled = remainingAfterThis <= 0;
+        groups.push({
+          name: "Prerequisite Nights",
+          description: `This promotion requires ${prereqNightNeeded} pre-qualifying night${prereqNightNeeded !== 1 ? "s" : ""} before rewards begin.`,
+          segments: [
+            {
+              label: "Requirement Progress",
+              value: 0,
+              hideValue: true,
+              formula: fulfilled
+                ? `${prereqNightNeeded} of ${prereqNightNeeded} pre-qualifying nights complete — this booking adds ${booking.numNights}`
+                : `${currentNightCount} of ${prereqNightNeeded} nights complete — this booking adds ${booking.numNights}, ${remainingAfterThis} more needed`,
+              description: fulfilled
+                ? `This booking fulfills the prerequisite! The promotion will apply starting on your next qualifying stay.`
+                : `You'll need ${remainingAfterThis} more qualifying night${remainingAfterThis !== 1 ? "s" : ""} after this booking to unlock the promotion.`,
+            },
+          ],
+        });
+      }
+
+      // Tier information
+      if (bp.promotion.tiers && bp.promotion.tiers.length > 0) {
+        const tiersByStays = bp.promotion.tiers.some((t) => t.minStays !== null);
+
+        // For tier-based pre-qualifying (no explicit prerequisite), show where the user
+        // currently stands in the progression so they understand why this is pre-qualifying.
+        const currentPositionSegment: CalculationSegment | null =
+          !prereqStayNeeded && !prereqNightNeeded
+            ? tiersByStays
+              ? (() => {
+                  const firstTierStart = Math.min(
+                    ...bp.promotion.tiers.map((t) => t.minStays ?? Infinity)
+                  );
+                  return {
+                    label: "Your Current Position",
+                    value: 0,
+                    hideValue: true,
+                    formula: `Stay ${currentStayCount} of campaign (tier rewards begin at stay ${firstTierStart})`,
+                    description: `This is eligible stay #${currentStayCount} in this campaign. Keep going to unlock tier rewards starting at stay ${firstTierStart}.`,
+                  };
+                })()
+              : (() => {
+                  const firstTierStart = Math.min(
+                    ...bp.promotion.tiers.map((t) => t.minNights ?? Infinity)
+                  );
+                  return {
+                    label: "Your Current Position",
+                    value: 0,
+                    hideValue: true,
+                    formula: `Night ${currentNightCount} of campaign (tier rewards begin at night ${firstTierStart})`,
+                    description: `You've accumulated ${currentNightCount} night${currentNightCount !== 1 ? "s" : ""} in this campaign. Tier rewards begin at night ${firstTierStart}.`,
+                  };
+                })()
+            : null;
+
+        const tierSegments: CalculationSegment[] = [
+          ...(currentPositionSegment ? [currentPositionSegment] : []),
+          ...bp.promotion.tiers.map((t, tIdx) => {
+            const rewardParts = t.benefits.map((b) => {
+              const val = Number(b.value);
+              if (b.rewardType === "points") return `${val.toLocaleString()} pts`;
+              if (b.rewardType === "cashback")
+                return b.valueType === "percentage" ? `${val}%` : formatCurrency(val);
+              if (b.rewardType === "eqn") return `${val} EQN${val !== 1 ? "s" : ""}`;
+              return b.rewardType;
+            });
+
+            let rangeLabel = "";
+            if (t.minStays !== null) {
+              rangeLabel =
+                t.maxStays === null
+                  ? `Stay ${t.minStays}+`
+                  : t.minStays === t.maxStays
+                    ? `Stay ${t.minStays}`
+                    : `Stays ${t.minStays}-${t.maxStays}`;
+            } else if (t.minNights !== null) {
+              rangeLabel =
+                t.maxNights === null
+                  ? `Night ${t.minNights}+`
+                  : t.minNights === t.maxNights
+                    ? `Night ${t.minNights}`
+                    : `Nights ${t.minNights}-${t.maxNights}`;
+            }
+
+            return {
+              label: `Tier ${tIdx + 1}: ${rangeLabel}`,
+              value: 0,
+              hideValue: true,
+              formula: rewardParts.join(" + "),
+              description: `Rewards you will earn when you reach this tier.`,
+            };
+          }),
+        ];
+
+        groups.push({
+          name: "Promotion Tiers",
+          description: "Future rewards you'll earn as you complete more stays in this campaign.",
+          segments: tierSegments,
+        });
+      }
+    }
+
+    // For actively-earning tiered promotions, show what future tiers will earn.
+    if (
+      !isPromoPreQualifying &&
+      !isPromoOrphaned &&
+      bp.promotion.tiers &&
+      bp.promotion.tiers.length > 1
+    ) {
+      const currentStayCount = bp.eligibleStayCount ?? 0;
+      const currentNightCount = bp.eligibleNightCount ?? 0;
+      const tiersByStays = bp.promotion.tiers.some((t) => t.minStays !== null);
+
+      const futureTiers = bp.promotion.tiers.filter((t) =>
+        tiersByStays ? (t.minStays ?? 0) > currentStayCount : (t.minNights ?? 0) > currentNightCount
+      );
+
+      if (futureTiers.length > 0) {
+        const futureSegments: CalculationSegment[] = futureTiers.map((t, tIdx) => {
+          const rewardParts = t.benefits.map((b) => {
+            const val = Number(b.value);
+            if (b.rewardType === "points") return `${val.toLocaleString()} pts`;
+            if (b.rewardType === "cashback")
+              return b.valueType === "percentage" ? `${val}%` : formatCurrency(val);
+            if (b.rewardType === "eqn") return `${val} EQN${val !== 1 ? "s" : ""}`;
+            return b.rewardType;
+          });
+
+          let rangeLabel = "";
+          if (t.minStays !== null) {
+            rangeLabel =
+              t.maxStays === null
+                ? `Stay ${t.minStays}+`
+                : t.minStays === t.maxStays
+                  ? `Stay ${t.minStays}`
+                  : `Stays ${t.minStays}–${t.maxStays}`;
+          } else if (t.minNights !== null) {
+            rangeLabel =
+              t.maxNights === null
+                ? `Night ${t.minNights}+`
+                : t.minNights === t.maxNights
+                  ? `Night ${t.minNights}`
+                  : `Nights ${t.minNights}–${t.maxNights}`;
+          }
+
+          return {
+            label: tIdx === 0 ? `Next: ${rangeLabel}` : rangeLabel,
+            value: 0,
+            hideValue: true,
+            formula: rewardParts.join(" + "),
+            description: "",
+          };
+        });
+
+        groups.push({
+          name: "Upcoming Tiers",
+          description: "",
+          segments: futureSegments,
+        });
+      }
+    }
+
     for (const ba of benefits) {
       const b = ba.promotionBenefit;
       const bValue = Number(b.value);
@@ -198,6 +410,10 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
       const isOrphaned =
         (ba.isOrphaned ?? isPromoOrphaned) && !(ba.isPreQualifying ?? isPromoPreQualifying);
       const isPreQualifying = ba.isPreQualifying ?? isPromoPreQualifying;
+
+      // For tier-based pre-qualifying promotions the tier table already explains the
+      // rewards for each stay, so skip the per-benefit group to avoid duplication.
+      if (isPreQualifying && bp.promotion.tiers && bp.promotion.tiers.length > 0) continue;
 
       const restrictions = b.restrictions || bp.promotion.restrictions;
       const isSpanned = !!(restrictions?.spanStays && restrictions?.minNightsRequired);
@@ -395,7 +611,10 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
             : "";
 
         const isMaxedOutOverall =
-          bApplied < 0.01 && expectedValuePerNight * nightsInStay > 0.01 && !isOrphaned;
+          bApplied < 0.01 &&
+          expectedValuePerNight * nightsInStay > 0.01 &&
+          !isOrphaned &&
+          !isPreQualifying;
 
         const proportionalSuffix =
           pendingRatio && !isMaxedOutOverall
@@ -447,7 +666,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
             break;
         }
 
-        const isMaxedOutOverall = isCapped && bApplied < 0.01 && !isOrphaned;
+        const isMaxedOutOverall = isCapped && bApplied < 0.01 && !isOrphaned && !isPreQualifying;
         const multiplierPrefix = appliedMultiplier > 1 ? `${appliedMultiplier} × ` : "";
         const capSuffix = isCapped ? " (capped)" : "";
 
@@ -505,6 +724,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
         benefitSegments.push({
           label: `Benefit: ${b.rewardType}`,
           value: bApplied,
+          hideValue: isPreQualifying || undefined,
           formula: isMaxedOutOverall
             ? ""
             : `${benefitFormula} = ${formatCurrency(bApplied)}` +

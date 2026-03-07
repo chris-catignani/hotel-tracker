@@ -974,4 +974,365 @@ describe("net-cost", () => {
       );
     });
   });
+
+  describe("pre-qualifying promotions", () => {
+    const preQualifyingBase = {
+      ...mockBaseBooking,
+      numNights: 2,
+    };
+
+    describe("prerequisite stay count", () => {
+      it("shows fulfilled message when this booking completes the prerequisite", () => {
+        const booking: NetCostBooking = {
+          ...preQualifyingBase,
+          bookingPromotions: [
+            {
+              appliedValue: 0,
+              isPreQualifying: true,
+              eligibleStayCount: 1, // this booking is stay #1, prior = 0
+              eligibleNightCount: 2,
+              promotion: {
+                name: "Test Prereq Promo",
+                restrictions: { prerequisiteStayCount: 1 },
+                benefits: [],
+              },
+              benefitApplications: [],
+            },
+          ],
+        };
+
+        const breakdown = getNetCostBreakdown(booking);
+        const promo = breakdown.promotions[0];
+        const prereqGroup = promo.groups.find((g) => g.name === "Prerequisite Stays");
+
+        expect(prereqGroup).toBeDefined();
+        expect(prereqGroup!.description).toContain("1 pre-qualifying stay");
+        expect(prereqGroup!.segments[0].hideValue).toBe(true);
+        expect(prereqGroup!.segments[0].formula).toContain("1 of 1 pre-qualifying stays complete");
+        expect(prereqGroup!.segments[0].formula).toContain("this booking is #1");
+        expect(prereqGroup!.segments[0].description).toContain(
+          "This booking fulfills the prerequisite"
+        );
+      });
+
+      it("shows remaining count when more stays are needed after this booking", () => {
+        const booking: NetCostBooking = {
+          ...preQualifyingBase,
+          bookingPromotions: [
+            {
+              appliedValue: 0,
+              isPreQualifying: true,
+              eligibleStayCount: 1, // stay #1, need 2 total
+              eligibleNightCount: 2,
+              promotion: {
+                name: "Test Prereq Promo",
+                restrictions: { prerequisiteStayCount: 2 },
+                benefits: [],
+              },
+              benefitApplications: [],
+            },
+          ],
+        };
+
+        const breakdown = getNetCostBreakdown(booking);
+        const promo = breakdown.promotions[0];
+        const prereqGroup = promo.groups.find((g) => g.name === "Prerequisite Stays");
+
+        expect(prereqGroup).toBeDefined();
+        expect(prereqGroup!.description).toContain("2 pre-qualifying stays");
+        expect(prereqGroup!.segments[0].hideValue).toBe(true);
+        expect(prereqGroup!.segments[0].formula).toContain("1 of 2 stays complete");
+        expect(prereqGroup!.segments[0].formula).toContain("1 more needed");
+        expect(prereqGroup!.segments[0].description).toContain(
+          "1 more qualifying stay after this one"
+        );
+      });
+    });
+
+    describe("prerequisite night count", () => {
+      it("shows fulfilled message when this booking completes the prerequisite nights", () => {
+        const booking: NetCostBooking = {
+          ...preQualifyingBase,
+          numNights: 3,
+          bookingPromotions: [
+            {
+              appliedValue: 0,
+              isPreQualifying: true,
+              eligibleStayCount: 1,
+              eligibleNightCount: 3,
+              promotion: {
+                name: "Test Night Prereq",
+                restrictions: { prerequisiteNightCount: 3 },
+                benefits: [],
+              },
+              benefitApplications: [],
+            },
+          ],
+        };
+
+        const breakdown = getNetCostBreakdown(booking);
+        const promo = breakdown.promotions[0];
+        const prereqGroup = promo.groups.find((g) => g.name === "Prerequisite Nights");
+
+        expect(prereqGroup).toBeDefined();
+        expect(prereqGroup!.segments[0].formula).toContain("3 of 3 pre-qualifying nights complete");
+        expect(prereqGroup!.segments[0].formula).toContain("this booking adds 3");
+        expect(prereqGroup!.segments[0].description).toContain(
+          "This booking fulfills the prerequisite"
+        );
+      });
+
+      it("shows remaining count when more nights are needed", () => {
+        const booking: NetCostBooking = {
+          ...preQualifyingBase,
+          numNights: 2,
+          bookingPromotions: [
+            {
+              appliedValue: 0,
+              isPreQualifying: true,
+              eligibleStayCount: 1,
+              eligibleNightCount: 2,
+              promotion: {
+                name: "Test Night Prereq",
+                restrictions: { prerequisiteNightCount: 5 },
+                benefits: [],
+              },
+              benefitApplications: [],
+            },
+          ],
+        };
+
+        const breakdown = getNetCostBreakdown(booking);
+        const promo = breakdown.promotions[0];
+        const prereqGroup = promo.groups.find((g) => g.name === "Prerequisite Nights");
+
+        expect(prereqGroup).toBeDefined();
+        expect(prereqGroup!.segments[0].formula).toContain("2 of 5 nights complete");
+        expect(prereqGroup!.segments[0].formula).toContain("3 more needed");
+      });
+    });
+
+    describe("upcoming tiers for actively-earning tiered promotions", () => {
+      const tieredPromo = {
+        name: "GHA Multi Brand",
+        restrictions: null,
+        benefits: [],
+        tiers: [
+          {
+            minStays: 2,
+            maxStays: 2,
+            minNights: null,
+            maxNights: null,
+            benefits: [{ rewardType: "points", valueType: "fixed", value: "5000", certType: null }],
+          },
+          {
+            minStays: 3,
+            maxStays: 3,
+            minNights: null,
+            maxNights: null,
+            benefits: [{ rewardType: "points", valueType: "fixed", value: "7500", certType: null }],
+          },
+          {
+            minStays: 4,
+            maxStays: null,
+            minNights: null,
+            maxNights: null,
+            benefits: [
+              { rewardType: "points", valueType: "fixed", value: "10000", certType: null },
+            ],
+          },
+        ],
+      };
+
+      it("shows upcoming tiers when on an intermediate tier", () => {
+        const booking: NetCostBooking = {
+          ...preQualifyingBase,
+          bookingPromotions: [
+            {
+              appliedValue: 50,
+              isPreQualifying: false,
+              isOrphaned: false,
+              eligibleStayCount: 2, // stay #2 — earning tier 1
+              eligibleNightCount: 4,
+              promotion: tieredPromo,
+              benefitApplications: [
+                {
+                  appliedValue: 50,
+                  promotionBenefit: {
+                    rewardType: "points",
+                    valueType: "fixed",
+                    value: "5000",
+                    certType: null,
+                  },
+                },
+              ],
+            },
+          ],
+        };
+
+        const breakdown = getNetCostBreakdown(booking);
+        const promo = breakdown.promotions[0];
+        const upcomingGroup = promo.groups.find((g) => g.name === "Upcoming Tiers");
+
+        expect(upcomingGroup).toBeDefined();
+        expect(upcomingGroup!.segments).toHaveLength(2); // tier 2 and tier 3
+
+        // First future tier labelled "Next:"
+        expect(upcomingGroup!.segments[0].label).toBe("Next: Stay 3");
+        expect(upcomingGroup!.segments[0].formula).toContain("7,500 pts");
+        expect(upcomingGroup!.segments[0].hideValue).toBe(true);
+
+        // Second future tier
+        expect(upcomingGroup!.segments[1].label).toBe("Stay 4+");
+        expect(upcomingGroup!.segments[1].formula).toContain("10,000 pts");
+      });
+
+      it("shows no upcoming tiers group when on the last tier", () => {
+        const booking: NetCostBooking = {
+          ...preQualifyingBase,
+          bookingPromotions: [
+            {
+              appliedValue: 100,
+              isPreQualifying: false,
+              isOrphaned: false,
+              eligibleStayCount: 5, // stay #5 — last tier (4+)
+              eligibleNightCount: 10,
+              promotion: tieredPromo,
+              benefitApplications: [
+                {
+                  appliedValue: 100,
+                  promotionBenefit: {
+                    rewardType: "points",
+                    valueType: "fixed",
+                    value: "10000",
+                    certType: null,
+                  },
+                },
+              ],
+            },
+          ],
+        };
+
+        const breakdown = getNetCostBreakdown(booking);
+        const promo = breakdown.promotions[0];
+        const upcomingGroup = promo.groups.find((g) => g.name === "Upcoming Tiers");
+
+        expect(upcomingGroup).toBeUndefined();
+      });
+    });
+
+    describe("tier-based pre-qualifying (no explicit prerequisite)", () => {
+      it("shows current position and full tier table when stay doesn't match any tier", () => {
+        const booking: NetCostBooking = {
+          ...preQualifyingBase,
+          bookingPromotions: [
+            {
+              appliedValue: 0,
+              isPreQualifying: true,
+              eligibleStayCount: 1, // stay #1, tiers start at 2
+              eligibleNightCount: 2,
+              promotion: {
+                name: "GHA Multi Brand",
+                restrictions: null,
+                benefits: [],
+                tiers: [
+                  {
+                    minStays: 2,
+                    maxStays: 2,
+                    minNights: null,
+                    maxNights: null,
+                    benefits: [
+                      { rewardType: "points", valueType: "fixed", value: "5000", certType: null },
+                    ],
+                  },
+                  {
+                    minStays: 3,
+                    maxStays: null,
+                    minNights: null,
+                    maxNights: null,
+                    benefits: [
+                      { rewardType: "points", valueType: "fixed", value: "7500", certType: null },
+                    ],
+                  },
+                ],
+              },
+              benefitApplications: [],
+            },
+          ],
+        };
+
+        const breakdown = getNetCostBreakdown(booking);
+        const promo = breakdown.promotions[0];
+        const tierGroup = promo.groups.find((g) => g.name === "Promotion Tiers");
+
+        expect(tierGroup).toBeDefined();
+        // First segment: current position (no $0 clutter, no "this booking counts" text)
+        const positionSegment = tierGroup!.segments[0];
+        expect(positionSegment.label).toBe("Your Current Position");
+        expect(positionSegment.hideValue).toBe(true);
+        expect(positionSegment.formula).toContain("Stay 1 of campaign");
+        expect(positionSegment.formula).toContain("tier rewards begin at stay 2");
+        expect(positionSegment.description).toContain("eligible stay #1");
+        expect(positionSegment.description).not.toContain("This booking counts");
+        // Subsequent segments: tier rewards (no $0 values, no redundant benefit group)
+        const tier1 = tierGroup!.segments[1];
+        expect(tier1.label).toContain("Stay 2");
+        expect(tier1.hideValue).toBe(true);
+        expect(tier1.formula).toContain("5,000 pts");
+        const tier2 = tierGroup!.segments[2];
+        expect(tier2.label).toContain("Stay 3+");
+        expect(tier2.hideValue).toBe(true);
+        expect(tier2.formula).toContain("7,500 pts");
+        // Benefit group is suppressed — tier table already explains the rewards
+        expect(promo.groups).toHaveLength(1);
+      });
+
+      it("does NOT show current position segment when a prerequisite is also present", () => {
+        const booking: NetCostBooking = {
+          ...preQualifyingBase,
+          bookingPromotions: [
+            {
+              appliedValue: 0,
+              isPreQualifying: true,
+              eligibleStayCount: 1,
+              eligibleNightCount: 2,
+              promotion: {
+                name: "Prereq + Tiers Promo",
+                restrictions: { prerequisiteStayCount: 1 },
+                benefits: [],
+                tiers: [
+                  {
+                    minStays: 2,
+                    maxStays: null,
+                    minNights: null,
+                    maxNights: null,
+                    benefits: [
+                      { rewardType: "points", valueType: "fixed", value: "5000", certType: null },
+                    ],
+                  },
+                ],
+              },
+              benefitApplications: [],
+            },
+          ],
+        };
+
+        const breakdown = getNetCostBreakdown(booking);
+        const promo = breakdown.promotions[0];
+        const tierGroup = promo.groups.find((g) => g.name === "Promotion Tiers");
+
+        expect(tierGroup).toBeDefined();
+        // No "Your Current Position" segment — prereq group already explains the status
+        const hasPositionSegment = tierGroup!.segments.some(
+          (s) => s.label === "Your Current Position"
+        );
+        expect(hasPositionSegment).toBe(false);
+        // Still shows the tier rewards (with hideValue, no redundant benefit group)
+        expect(tierGroup!.segments[0].label).toContain("Stay 2+");
+        expect(tierGroup!.segments[0].hideValue).toBe(true);
+        // Only 2 groups: Prerequisite Stays + Promotion Tiers (benefit group suppressed)
+        expect(promo.groups).toHaveLength(2);
+      });
+    });
+  });
 });

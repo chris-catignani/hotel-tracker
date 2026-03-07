@@ -348,6 +348,8 @@ export interface BookingPromotion {
   autoApplied: boolean;
   verified: boolean;
   eligibleNightsAtBooking?: number | null; // Cumulative nights including current stay
+  eligibleStayCount?: number | null;
+  eligibleNightCount?: number | null;
   isOrphaned?: boolean;
   isPreQualifying?: boolean;
   promotion: Promotion;
@@ -360,6 +362,8 @@ export interface BookingPromotionBenefit {
   promotionBenefitId: string;
   appliedValue: string | number;
   eligibleNightsAtBooking?: number | null; // Cumulative nights including current stay
+  eligibleStayCount?: number | null;
+  eligibleNightCount?: number | null;
   isOrphaned?: boolean;
   isPreQualifying?: boolean;
   promotionBenefit: PromotionBenefit;
