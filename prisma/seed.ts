@@ -1,6 +1,9 @@
 import { PrismaClient, PointCategory } from "@prisma/client";
+import { hash } from "bcryptjs";
 import { HOTEL_ID, SUB_BRAND_ID } from "../src/lib/constants";
 import { CREDIT_CARD_ID, SHOPPING_PORTAL_ID, OTA_AGENCY_ID } from "./seed-ids";
+import { seedBookings } from "./seed-bookings";
+import { seedPromotions } from "./seed-promotions";
 
 const prisma = new PrismaClient();
 
@@ -76,6 +79,7 @@ const SUB_BRAND_MAP: Record<string, string> = {
   "Park Hyatt": SUB_BRAND_ID.HYATT.PARK_HYATT,
   "Hyatt Centric": SUB_BRAND_ID.HYATT.HYATT_CENTRIC,
   "Hyatt Place": SUB_BRAND_ID.HYATT.HYATT_PLACE,
+  "Hyatt House": SUB_BRAND_ID.HYATT.HYATT_HOUSE,
   "Holiday Inn Express": SUB_BRAND_ID.IHG.HOLIDAY_INN_EXPRESS,
   "Hotel Indigo": SUB_BRAND_ID.IHG.HOTEL_INDIGO,
   Sunway: SUB_BRAND_ID.GHA_DISCOVERY.SUNWAY,
@@ -127,20 +131,36 @@ async function upsertSubBrands(hotelChainId: string, subBrands: SubBrandData[]) 
   }
 }
 
-async function upsertUserStatus(hotelChainId: string, statusName: string) {
+async function upsertUserStatus(hotelChainId: string, statusName: string, userId: string) {
   const eliteStatus = await prisma.hotelChainEliteStatus.findFirst({
     where: { hotelChainId, name: statusName },
   });
   if (eliteStatus) {
     await prisma.userStatus.upsert({
-      where: { hotelChainId },
+      where: { userId_hotelChainId: { userId, hotelChainId } },
       update: { eliteStatusId: eliteStatus.id },
-      create: { hotelChainId, eliteStatusId: eliteStatus.id },
+      create: { userId, hotelChainId, eliteStatusId: eliteStatus.id },
     });
   }
 }
 
 async function main() {
+  // Seed admin user
+  const adminEmail = process.env.SEED_ADMIN_EMAIL || "admin@example.com";
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD || "admin123";
+  const hashedPassword = await hash(adminPassword, 12);
+  const adminUser = await prisma.user.upsert({
+    where: { email: adminEmail },
+    update: { role: "ADMIN" },
+    create: {
+      email: adminEmail,
+      password: hashedPassword,
+      name: "Admin",
+      role: "ADMIN",
+    },
+  });
+  const ADMIN_USER_ID = adminUser.id;
+
   // PointTypes
   const pointTypeData = [
     {
@@ -585,12 +605,12 @@ async function main() {
   ]);
 
   // Seed UserStatus
-  await upsertUserStatus(HOTEL_ID.ACCOR, "Platinum");
-  await upsertUserStatus(HOTEL_ID.MARRIOTT, "Titanium");
-  await upsertUserStatus(HOTEL_ID.HYATT, "Globalist");
-  await upsertUserStatus(HOTEL_ID.HILTON, "Diamond");
-  await upsertUserStatus(HOTEL_ID.IHG, "Diamond");
-  await upsertUserStatus(HOTEL_ID.GHA_DISCOVERY, "Titanium");
+  await upsertUserStatus(HOTEL_ID.ACCOR, "Platinum", ADMIN_USER_ID);
+  await upsertUserStatus(HOTEL_ID.MARRIOTT, "Titanium", ADMIN_USER_ID);
+  await upsertUserStatus(HOTEL_ID.HYATT, "Globalist", ADMIN_USER_ID);
+  await upsertUserStatus(HOTEL_ID.HILTON, "Diamond", ADMIN_USER_ID);
+  await upsertUserStatus(HOTEL_ID.IHG, "Diamond", ADMIN_USER_ID);
+  await upsertUserStatus(HOTEL_ID.GHA_DISCOVERY, "Titanium", ADMIN_USER_ID);
 
   // Credit Cards
   await prisma.creditCard.upsert({
@@ -701,6 +721,9 @@ async function main() {
       pointTypeId: POINT_TYPE_ID.AVIOS,
     },
   });
+
+  await seedBookings(ADMIN_USER_ID);
+  await seedPromotions(ADMIN_USER_ID);
 
   console.log("Seed data created successfully");
 }

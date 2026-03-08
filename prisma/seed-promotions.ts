@@ -4,8 +4,8 @@ import { CREDIT_CARD_ID } from "./seed-ids";
 
 const prisma = new PrismaClient();
 
-export async function seedPromotions() {
-  const promotions: Prisma.PromotionCreateInput[] = [
+export async function seedPromotions(userId: string) {
+  const promotions: Omit<Prisma.PromotionCreateInput, "user">[] = [
     {
       name: "IHG 2x Promo",
       type: "loyalty",
@@ -282,12 +282,12 @@ export async function seedPromotions() {
 
   for (const promo of promotions) {
     const existing = await prisma.promotion.findFirst({
-      where: { name: promo.name },
+      where: { name: promo.name, userId },
     });
 
     if (!existing) {
       await prisma.promotion.create({
-        data: promo,
+        data: { ...promo, user: { connect: { id: userId } } },
       });
     } else {
       // Update existing promotion if needed
@@ -298,10 +298,10 @@ export async function seedPromotions() {
   console.log("Promotions seeded successfully");
 
   // Seed BookingPromotion application logic moved from seed-bookings.ts
-  await seedBookingPromotions();
+  await seedBookingPromotions(userId);
 }
 
-async function seedBookingPromotions() {
+async function seedBookingPromotions(userId: string) {
   const bookingPromosData = [
     {
       bookingId: "ctshv1is5aacu6rwsrsebfyxi",
@@ -642,7 +642,7 @@ async function seedBookingPromotions() {
 
   for (const bp of bookingPromosData) {
     const promotion = await prisma.promotion.findFirst({
-      where: { name: bp.promotionName },
+      where: { name: bp.promotionName, userId },
       include: { benefits: true, tiers: { include: { benefits: true } } },
     });
 
@@ -696,7 +696,8 @@ async function seedBookingPromotions() {
 }
 
 if (require.main === module) {
-  seedPromotions()
+  const standaloneUserId = process.env.SEED_USER_ID ?? "";
+  seedPromotions(standaloneUserId)
     .catch((e) => {
       console.error(e);
       process.exit(1);

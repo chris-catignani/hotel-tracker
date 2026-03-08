@@ -13,6 +13,11 @@ enum PointCategory {
   transferable
 }
 
+enum UserRole {
+  USER
+  ADMIN
+}
+
 enum BookingSourceType {
   direct_web
   direct_app
@@ -50,6 +55,63 @@ enum SubBrandRestrictionMode {
   exclude
 }
 
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime? @map("email_verified")
+  image         String?
+  password      String?
+  role          UserRole  @default(USER)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  accounts      Account[]
+  sessions      Session[]
+  bookings      Booking[]
+  promotions    Promotion[]
+  userStatuses  UserStatus[]
+  userPromotions UserPromotion[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
 model PointType {
   id              String           @id @default(cuid())
   name            String
@@ -73,7 +135,7 @@ model HotelChain {
   promotions            Promotion[]
   hotelChainSubBrands   HotelChainSubBrand[]
   eliteStatuses         HotelChainEliteStatus[]
-  userStatus            UserStatus?
+  userStatuses          UserStatus[]
   creditCardRewardRules CreditCardRewardRule[]
   promotionRestrictions PromotionRestrictions[]
 
@@ -110,11 +172,14 @@ model HotelChainEliteStatus {
 
 model UserStatus {
   id            String                 @id @default(cuid())
-  hotelChainId  String                 @unique @map("hotel_chain_id")
+  userId        String                 @map("user_id")
+  user          User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hotelChainId  String                 @map("hotel_chain_id")
   hotelChain    HotelChain             @relation(fields: [hotelChainId], references: [id], onDelete: Cascade)
   eliteStatusId String?                @map("elite_status_id")
   eliteStatus   HotelChainEliteStatus? @relation(fields: [eliteStatusId], references: [id])
 
+  @@unique([userId, hotelChainId])
   @@map("user_statuses")
 }
 
@@ -157,6 +222,8 @@ model OtaAgency {
 
 model Booking {
   id                    String               @id @default(cuid())
+  userId                String               @map("user_id")
+  user                  User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   hotelChainId          String               @map("hotel_chain_id")
   hotelChain            HotelChain           @relation(fields: [hotelChainId], references: [id])
   hotelChainSubBrandId  String?              @map("hotel_chain_sub_brand_id")
@@ -291,6 +358,8 @@ model PromotionRestrictionTieInCard {
 
 model Promotion {
   id               String                 @id @default(cuid())
+  userId           String                 @map("user_id")
+  user             User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   name             String
   type             PromotionType
   hotelChainId     String?                @map("hotel_chain_id")
@@ -314,6 +383,8 @@ model Promotion {
 
 model UserPromotion {
   id               String    @id @default(cuid())
+  userId           String    @map("user_id")
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   promotionId      String    @unique @map("promotion_id")
   registrationDate DateTime  @map("registration_date") @db.Date
   promotion        Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)

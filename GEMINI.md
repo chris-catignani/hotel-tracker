@@ -10,6 +10,17 @@ This file provides foundational mandates for Gemini CLI (gemini-cli) when workin
 
 - **Single-user bookings and promotions:** Each user has their own isolated bookings and promotions. Promotions and bookings are NOT shared across users. This means race conditions in redemption constraint checks are not a concern — no need to implement database-level serialization or row-level locking.
 
+## Authentication & Authorization
+
+- **Library:** Auth.js v5 (`next-auth@beta`), JWT session strategy
+- **Credentials provider** is used (email/password). Note: Credentials requires JWT sessions — database sessions are not supported with this provider in Auth.js v5.
+- **`AUTH_SECRET`** env var is required and must be set in all environments (dev, test, prod). Generate with `openssl rand -base64 32`.
+- **Middleware:** `src/middleware.ts` protects all routes. Unauthenticated requests redirect to `/login`.
+- **Auth helpers:** `src/lib/auth-utils.ts` — always use `getAuthenticatedUserId()` to get the current user's ID in API routes; use `requireAdmin()` to guard admin-only write operations.
+- **IDOR protection:** When fetching user-owned resources by ID, ALWAYS use `findFirst({ where: { id, userId } })`. Never use `findUnique({ where: { id } })` alone, as it does not verify ownership.
+- **Ownership verification:** For PUT/DELETE on user resources, always verify ownership with a `findFirst` check before any writes — do NOT rely solely on the update/delete `where` clause.
+- **E2E auth:** Tests use a Playwright `storageState` saved by `e2e/auth.setup.ts`. The `AUTH_SECRET` must be in `.env` for the test server to sign/verify JWT cookies.
+
 ## Engineering Mandates
 
 - **Savings Explanations:** When adding new promotion types, portal reward options, or modifying loyalty logic, you **MUST** update the `getNetCostBreakdown` function in `src/lib/net-cost.ts` to include detailed, human-readable explanations (description and formula) for the new logic.

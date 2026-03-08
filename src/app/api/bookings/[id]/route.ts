@@ -11,15 +11,21 @@ import {
 import { reevaluateSubsequentBookings } from "@/lib/promotion-matching-helpers";
 import { apiError } from "@/lib/api-error";
 import { calculatePoints } from "@/lib/loyalty-utils";
+import { getAuthenticatedUserId } from "@/lib/auth-utils";
+import { normalizeUserStatuses } from "@/lib/normalize-response";
 
-async function getFullBookingWithUsage(id: string) {
-  const booking = await prisma.booking.findUnique({
-    where: { id: id },
+async function getFullBookingWithUsage(id: string, userId: string) {
+  const booking = await prisma.booking.findFirst({
+    where: { id, userId },
     include: {
       hotelChain: {
         include: {
           pointType: true,
-          userStatus: { include: { eliteStatus: true } },
+          userStatuses: {
+            where: { userId },
+            include: { eliteStatus: true },
+            take: 1,
+          },
         },
       },
       hotelChainSubBrand: true,
@@ -98,16 +104,22 @@ async function getFullBookingWithUsage(id: string) {
     };
   });
 
-  return {
+  const result = {
     ...booking,
     bookingPromotions: enhancedBookingPromotions,
   };
+
+  return normalizeUserStatuses(result);
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const userIdOrResponse = await getAuthenticatedUserId();
+    if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
+    const userId = userIdOrResponse;
+
     const { id } = await params;
-    const booking = await getFullBookingWithUsage(id);
+    const booking = await getFullBookingWithUsage(id, userId);
 
     if (!booking) {
       return apiError("Booking not found", null, 404, request);
@@ -121,7 +133,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const userIdOrResponse = await getAuthenticatedUserId();
+    if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
+    const userId = userIdOrResponse;
+
     const { id } = await params;
+
+    const exists = await prisma.booking.findFirst({ where: { id, userId }, select: { id: true } });
+    if (!exists) return apiError("Booking not found", null, 404, request);
+
     const body = await request.json();
     const {
       hotelChainId,
@@ -184,8 +204,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
       if (resolvedHotelChainId || resolvedPretax) {
         // Fetch current booking to fill in missing values
-        const current = await prisma.booking.findUnique({
-          where: { id: id },
+        const current = await prisma.booking.findFirst({
+          where: { id, userId },
         });
         const finalHotelChainId = resolvedHotelChainId ?? current?.hotelChainId;
         const finalPretax = resolvedPretax ?? (current ? Number(current.pretaxCost) : null);
@@ -197,7 +217,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         if (finalHotelChainId && finalPretax) {
           // Fetch UserStatus for this chain
           const userStatus = await prisma.userStatus.findUnique({
-            where: { hotelChainId: finalHotelChainId },
+            where: { userId_hotelChainId: { userId, hotelChainId: finalHotelChainId } },
             include: { eliteStatus: true },
           });
 
@@ -270,7 +290,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const booking = await prisma.booking.update({
-      where: { id: id },
+      where: { id },
       data,
     });
 
@@ -281,7 +301,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     await reevaluateSubsequentBookings(booking.id, appliedPromoIds);
 
     // Fetch the booking with all relations to return
-    const fullBooking = await getFullBookingWithUsage(booking.id);
+    const fullBooking = await getFullBookingWithUsage(booking.id, userId);
 
     return NextResponse.json(fullBooking);
   } catch (error) {
@@ -294,11 +314,15 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userIdOrResponse = await getAuthenticatedUserId();
+    if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
+    const userId = userIdOrResponse;
+
     const { id } = await params;
 
-    // Find booking and its applied promotions before deleting
-    const booking = await prisma.booking.findUnique({
-      where: { id },
+    // Find booking and its applied promotions before deleting (also verifies ownership)
+    const booking = await prisma.booking.findFirst({
+      where: { id, userId },
       select: {
         checkIn: true,
         bookingPromotions: { select: { promotionId: true } },
@@ -310,8 +334,6 @@ export async function DELETE(
     }
 
     // Capture promotion IDs and find affected subsequent bookings BEFORE deleting.
-    // A booking with no promotions cannot affect any subsequent booking's priorUsage
-    // (fetchPromotionUsage only reads BookingPromotion records), so no cascade is needed.
     const appliedPromoIds = booking.bookingPromotions.map((bp) => bp.promotionId);
     let subsequentBookingIds: string[] = [];
     if (appliedPromoIds.length > 0) {
@@ -332,7 +354,7 @@ export async function DELETE(
     });
 
     await prisma.booking.delete({
-      where: { id: id },
+      where: { id },
     });
 
     // Re-evaluate subsequent bookings

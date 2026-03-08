@@ -30,7 +30,7 @@ interface BookingSeedData {
   benefits: { benefitType: string; dollarValue?: number | string | null }[];
 }
 
-export async function seedBookings() {
+export async function seedBookings(userId: string) {
   const bookings: BookingSeedData[] = [
     {
       id: "clas2mljema779deuxi5mhuee",
@@ -412,6 +412,7 @@ export async function seedBookings() {
       where: { id: b.id },
       update: {
         ...payload,
+        userId,
         certificates: {
           deleteMany: {},
           ...payload.certificates,
@@ -421,7 +422,7 @@ export async function seedBookings() {
           ...payload.benefits,
         },
       },
-      create: payload,
+      create: { ...payload, userId },
     });
   }
 
@@ -429,7 +430,8 @@ export async function seedBookings() {
 }
 
 if (require.main === module) {
-  seedBookings()
+  const standaloneUserId = process.env.SEED_USER_ID ?? "";
+  seedBookings(standaloneUserId)
     .catch((e) => {
       console.error(e);
       process.exit(1);

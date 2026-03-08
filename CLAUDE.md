@@ -10,7 +10,6 @@ npm run build        # Production build
 npm run lint         # Run ESLint
 
 npm run db:push      # Push schema changes to DB + clear .next cache (use for schema changes)
-npm run db:migrate   # Create and apply migrations (named migrations)
 npm run db:generate  # Regenerate Prisma client only
 npm run db:seed      # Seed reference data (hotels, cards, portals)
 
@@ -141,6 +140,17 @@ The app is fully responsive with a mobile-first approach:
 - `src/lib/navigation.ts` — `NAV_ITEMS` array used by both `Sidebar` and `MobileHeader`
 - `src/lib/loyalty-utils.ts` — `calculatePointsFromChain()` for client-side loyalty points calculation
 - `src/lib/loyalty-recalculation.ts` — Server-side batch re-calculation of loyalty points (e.g. after hotel rates change)
+
+### Authentication & Authorization
+
+- **Library:** Auth.js v5 (`next-auth@beta`), JWT session strategy (not database sessions — Credentials provider requires JWT)
+- **`AUTH_SECRET`** env var required; generate with `openssl rand -base64 32`
+- **Admin user** seeded via `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` env vars
+- **Middleware:** `src/middleware.ts` protects all routes except `/login` and `/api/auth/*`
+- **Auth helpers:** `src/lib/auth-utils.ts` — `getAuthenticatedUserId()` returns the current user's ID or a 401 `NextResponse`; `requireAdmin()` returns `undefined` for admins or a 403 `NextResponse`
+- **Scoping:** All user-data API routes (bookings, promotions, user-statuses) are scoped to `userId`
+- **Role-gating:** Reference data routes (hotel-chains, cards, portals, etc.) require `ADMIN` role for writes
+- **IDOR protection:** Use `findFirst({ where: { id, userId } })` — never `findUnique` with only an `id` field, as it does not verify ownership
 
 ### Important Gotchas
 

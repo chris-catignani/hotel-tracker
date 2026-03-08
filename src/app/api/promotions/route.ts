@@ -10,6 +10,7 @@ import {
   PromotionRestrictionsFormData,
 } from "@/lib/types";
 import { buildRestrictionsCreateData, buildBenefitCreateData } from "@/lib/promotion-api-helpers";
+import { getAuthenticatedUserId } from "@/lib/auth-utils";
 
 const PROMOTION_INCLUDE = {
   hotelChain: true,
@@ -40,6 +41,9 @@ const PROMOTION_INCLUDE = {
 
 export async function GET(request: NextRequest) {
   try {
+    const userIdOrResponse = await getAuthenticatedUserId();
+    if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
+
     const { searchParams } = new URL(request.url);
     const type = searchParams.get("type");
 
@@ -61,6 +65,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const userIdOrResponse = await getAuthenticatedUserId();
+    if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
+    const userId = userIdOrResponse;
+
     const body = await request.json();
     const {
       name,
@@ -86,6 +94,7 @@ export async function POST(request: NextRequest) {
         data: {
           name,
           type,
+          user: { connect: { id: userId } },
           hotelChain: hotelChainId ? { connect: { id: hotelChainId } } : undefined,
           creditCard: creditCardId ? { connect: { id: creditCardId } } : undefined,
           shoppingPortal: shoppingPortalId ? { connect: { id: shoppingPortalId } } : undefined,
@@ -123,6 +132,7 @@ export async function POST(request: NextRequest) {
         await tx.userPromotion.create({
           data: {
             promotionId: created.id,
+            userId,
             registrationDate: new Date(registrationDate),
           },
         });

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { CreditCardRewardRuleFormData } from "@/lib/types";
+import { requireAdmin } from "@/lib/auth-utils";
 
 const CARD_INCLUDE = {
   pointType: true,
@@ -30,6 +31,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const adminError = await requireAdmin();
+    if (adminError instanceof NextResponse) return adminError;
+
     const { name, rewardType, rewardRate, pointTypeId, rewardRules } = await request.json();
 
     const card = await prisma.creditCard.create({

@@ -2,10 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { recalculateLoyaltyForHotelChain } from "@/lib/loyalty-recalculation";
+import { getAuthenticatedUserId } from "@/lib/auth-utils";
 
 export async function GET(request: NextRequest) {
   try {
+    const userIdOrResponse = await getAuthenticatedUserId();
+    if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
+    const userId = userIdOrResponse;
+
     const statuses = await prisma.userStatus.findMany({
+      where: { userId },
       include: {
         hotelChain: true,
         eliteStatus: true,
@@ -24,11 +30,15 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const userIdOrResponse = await getAuthenticatedUserId();
+    if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
+    const userId = userIdOrResponse;
+
     const { hotelChainId, eliteStatusId } = await request.json();
 
     // Check if status is actually changing
     const existing = await prisma.userStatus.findUnique({
-      where: { hotelChainId: hotelChainId },
+      where: { userId_hotelChainId: { userId, hotelChainId } },
       select: { eliteStatusId: true },
     });
 
@@ -46,10 +56,11 @@ export async function POST(request: NextRequest) {
     }
 
     const status = await prisma.userStatus.upsert({
-      where: { hotelChainId: hotelChainId },
+      where: { userId_hotelChainId: { userId, hotelChainId } },
       update: { eliteStatusId: eliteStatusId ? eliteStatusId : null },
       create: {
-        hotelChainId: hotelChainId,
+        userId,
+        hotelChainId,
         eliteStatusId: eliteStatusId ? eliteStatusId : null,
       },
       include: {
@@ -60,7 +71,7 @@ export async function POST(request: NextRequest) {
 
     // Only recalculate if the elite status changed
     if (!existing || existing.eliteStatusId !== status.eliteStatusId) {
-      await recalculateLoyaltyForHotelChain(hotelChainId);
+      await recalculateLoyaltyForHotelChain(hotelChainId, userId);
     }
 
     return NextResponse.json(status);

@@ -10,6 +10,7 @@ import {
   PromotionRestrictionsFormData,
 } from "@/lib/types";
 import { buildRestrictionsCreateData, buildBenefitCreateData } from "@/lib/promotion-api-helpers";
+import { getAuthenticatedUserId } from "@/lib/auth-utils";
 
 const PROMOTION_INCLUDE = {
   hotelChain: true,
@@ -40,9 +41,13 @@ const PROMOTION_INCLUDE = {
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const userIdOrResponse = await getAuthenticatedUserId();
+    if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
+
+    const userId = userIdOrResponse;
     const { id } = await params;
-    const promotion = await prisma.promotion.findUnique({
-      where: { id: id },
+    const promotion = await prisma.promotion.findFirst({
+      where: { id, userId },
       include: PROMOTION_INCLUDE,
     });
 
@@ -58,7 +63,17 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const userIdOrResponse = await getAuthenticatedUserId();
+    if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
+    const userId = userIdOrResponse;
     const { id } = await params;
+
+    const exists = await prisma.promotion.findFirst({
+      where: { id, userId },
+      select: { id: true },
+    });
+    if (!exists) return apiError("Promotion not found", null, 404, request);
+
     const body = await request.json();
     const {
       name,
@@ -245,7 +260,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
           await tx.userPromotion.upsert({
             where: { promotionId: id },
             update: { registrationDate: new Date(registrationDate) },
-            create: { promotionId: id, registrationDate: new Date(registrationDate) },
+            create: { promotionId: id, userId, registrationDate: new Date(registrationDate) },
           });
         } else {
           await tx.userPromotion.deleteMany({ where: { promotionId: id } });
@@ -272,7 +287,17 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userIdOrResponse = await getAuthenticatedUserId();
+    if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
+    const userId = userIdOrResponse;
+
     const { id } = await params;
+
+    const exists = await prisma.promotion.findFirst({
+      where: { id, userId },
+      select: { id: true },
+    });
+    if (!exists) return apiError("Promotion not found", null, 404, request);
 
     // Find bookings that currently have this promotion applied
     const affectedBookings = await prisma.booking.findMany({
