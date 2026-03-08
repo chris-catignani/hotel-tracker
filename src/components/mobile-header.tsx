@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Menu } from "lucide-react";
+import { Menu, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -12,6 +12,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { NavItemsList } from "@/components/nav-items-list";
+import { signOut } from "next-auth/react";
 
 export function MobileHeader() {
   const [open, setOpen] = useState(false);
@@ -34,8 +35,20 @@ export function MobileHeader() {
               Navigation menu for mobile devices
             </SheetDescription>
           </SheetHeader>
-          <div className="p-4">
-            <NavItemsList onItemClick={() => setOpen(false)} />
+          <div className="flex flex-col h-[calc(100%-3.5rem)]">
+            <div className="flex-1 p-4">
+              <NavItemsList onItemClick={() => setOpen(false)} />
+            </div>
+            <div className="border-t p-4">
+              <Button
+                variant="ghost"
+                className="w-full justify-start gap-2 text-muted-foreground"
+                onClick={() => signOut({ callbackUrl: "/login" })}
+              >
+                <LogOut className="size-4" />
+                Sign out
+              </Button>
+            </div>
           </div>
         </SheetContent>
       </Sheet>

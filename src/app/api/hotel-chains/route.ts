@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
+import { getAuthenticatedUserId, requireAdmin } from "@/lib/auth-utils";
+import { normalizeUserStatuses } from "@/lib/normalize-response";
 
 export async function GET(request: NextRequest) {
   try {
+    const userIdOrResponse = await getAuthenticatedUserId();
+    if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
+    const userId = userIdOrResponse;
+
     const hotelChains = await prisma.hotelChain.findMany({
       include: {
         pointType: true,
@@ -17,10 +23,12 @@ export async function GET(request: NextRequest) {
             eliteTierLevel: "asc",
           },
         },
-        userStatus: {
+        userStatuses: {
+          where: { userId },
           include: {
             eliteStatus: true,
           },
+          take: 1,
         },
       },
       orderBy: {
@@ -28,7 +36,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(hotelChains);
+    return NextResponse.json(normalizeUserStatuses(hotelChains));
   } catch (error) {
     return apiError("Failed to fetch hotel chains", error, 500, request);
   }
@@ -36,6 +44,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const adminError = await requireAdmin();
+    if (adminError instanceof NextResponse) return adminError;
+
     const body = await request.json();
     const { name, loyaltyProgram, basePointRate, pointTypeId } = body;
 
@@ -49,11 +60,13 @@ export async function POST(request: NextRequest) {
       include: {
         pointType: true,
         eliteStatuses: { orderBy: { eliteTierLevel: "asc" } },
-        userStatus: { include: { eliteStatus: true } },
+        userStatuses: {
+          take: 0,
+        },
       },
     });
 
-    return NextResponse.json(hotelChain, { status: 201 });
+    return NextResponse.json(normalizeUserStatuses(hotelChain), { status: 201 });
   } catch (error) {
     return apiError("Failed to create hotel chain", error, 500, request);
   }

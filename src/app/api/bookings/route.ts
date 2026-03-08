@@ -5,54 +5,68 @@ import { reevaluateSubsequentBookings } from "@/lib/promotion-matching-helpers";
 import { apiError } from "@/lib/api-error";
 import { calculatePoints } from "@/lib/loyalty-utils";
 import { CertType, BenefitType } from "@prisma/client";
+import { getAuthenticatedUserId } from "@/lib/auth-utils";
+import { normalizeUserStatuses } from "@/lib/normalize-response";
+
+const BOOKING_INCLUDE = (userId: string) =>
+  ({
+    hotelChain: {
+      include: {
+        pointType: true,
+        userStatuses: {
+          where: { userId },
+          include: { eliteStatus: true },
+          take: 1,
+        },
+      },
+    },
+    hotelChainSubBrand: true,
+    creditCard: { include: { pointType: true, rewardRules: true } },
+    shoppingPortal: { include: { pointType: true } },
+    bookingPromotions: {
+      include: {
+        promotion: {
+          include: {
+            restrictions: true,
+            benefits: { orderBy: { sortOrder: "asc" } },
+            tiers: {
+              include: {
+                benefits: { orderBy: { sortOrder: "asc" } },
+              },
+            },
+          },
+        },
+        benefitApplications: {
+          include: {
+            promotionBenefit: {
+              include: {
+                restrictions: true,
+              },
+            },
+          },
+        },
+      },
+    },
+    certificates: true,
+    otaAgency: true,
+    benefits: true,
+  }) as const;
 
 export async function GET(request: NextRequest) {
   try {
+    const userIdOrResponse = await getAuthenticatedUserId();
+    if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
+    const userId = userIdOrResponse;
+
     const bookings = await prisma.booking.findMany({
-      include: {
-        hotelChain: {
-          include: {
-            pointType: true,
-            userStatus: { include: { eliteStatus: true } },
-          },
-        },
-        hotelChainSubBrand: true,
-        creditCard: { include: { pointType: true, rewardRules: true } },
-        shoppingPortal: { include: { pointType: true } },
-        bookingPromotions: {
-          include: {
-            promotion: {
-              include: {
-                restrictions: true,
-                benefits: { orderBy: { sortOrder: "asc" } },
-                tiers: {
-                  include: {
-                    benefits: { orderBy: { sortOrder: "asc" } },
-                  },
-                },
-              },
-            },
-            benefitApplications: {
-              include: {
-                promotionBenefit: {
-                  include: {
-                    restrictions: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-        certificates: true,
-        otaAgency: true,
-        benefits: true,
-      },
+      where: { userId },
+      include: BOOKING_INCLUDE(userId),
       orderBy: {
         checkIn: "asc",
       },
     });
 
-    return NextResponse.json(bookings);
+    return NextResponse.json(normalizeUserStatuses(bookings));
   } catch (error) {
     return apiError("Failed to fetch bookings", error, 500, request);
   }
@@ -60,6 +74,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const userIdOrResponse = await getAuthenticatedUserId();
+    if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
+    const userId = userIdOrResponse;
+
     const body = await request.json();
     const {
       hotelChainId,
@@ -93,7 +111,7 @@ export async function POST(request: NextRequest) {
     if (calculatedPoints == null && hotelChainId && pretaxCost) {
       // Fetch UserStatus for this chain
       const userStatus = await prisma.userStatus.findUnique({
-        where: { hotelChainId: hotelChainId },
+        where: { userId_hotelChainId: { userId, hotelChainId } },
         include: { eliteStatus: true },
       });
 
@@ -130,6 +148,7 @@ export async function POST(request: NextRequest) {
 
     const booking = await prisma.booking.create({
       data: {
+        userId,
         hotelChainId: hotelChainId,
         hotelChainSubBrandId: hotelChainSubBrandId || null,
         propertyName,
@@ -180,47 +199,10 @@ export async function POST(request: NextRequest) {
     // Fetch the booking with all relations to return
     const fullBooking = await prisma.booking.findUnique({
       where: { id: booking.id },
-      include: {
-        hotelChain: {
-          include: {
-            pointType: true,
-            userStatus: { include: { eliteStatus: true } },
-          },
-        },
-        hotelChainSubBrand: true,
-        creditCard: { include: { pointType: true, rewardRules: true } },
-        shoppingPortal: { include: { pointType: true } },
-        bookingPromotions: {
-          include: {
-            promotion: {
-              include: {
-                restrictions: true,
-                benefits: { orderBy: { sortOrder: "asc" } },
-                tiers: {
-                  include: {
-                    benefits: { orderBy: { sortOrder: "asc" } },
-                  },
-                },
-              },
-            },
-            benefitApplications: {
-              include: {
-                promotionBenefit: {
-                  include: {
-                    restrictions: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-        certificates: true,
-        otaAgency: true,
-        benefits: true,
-      },
+      include: BOOKING_INCLUDE(userId),
     });
 
-    return NextResponse.json(fullBooking, { status: 201 });
+    return NextResponse.json(normalizeUserStatuses(fullBooking), { status: 201 });
   } catch (error) {
     return apiError("Failed to create booking", error, 500, request);
   }
