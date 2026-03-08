@@ -46,7 +46,7 @@ export const CURRENCIES = [
   "SGD",
   "HKD",
   "MYR",
-  "NTD",
+  "TWD",
   "THB",
   "IDR",
   "NZD",

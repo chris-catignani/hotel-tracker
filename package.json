@@ -11,6 +11,7 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push && rm -rf .next",
     "db:seed": "npx tsx prisma/seed.ts",
+    "rates:refresh": "npx tsx scripts/refresh-exchange-rates.ts",
     "postinstall": "prisma generate",
     "test": "vitest run",
     "test:e2e": "playwright test",
