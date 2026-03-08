@@ -1,6 +1,8 @@
 import { PrismaClient, PointCategory } from "@prisma/client";
 import { HOTEL_ID, SUB_BRAND_ID } from "../src/lib/constants";
 import { CREDIT_CARD_ID, SHOPPING_PORTAL_ID, OTA_AGENCY_ID } from "./seed-ids";
+import { seedBookings } from "./seed-bookings";
+import { seedPromotions } from "./seed-promotions";
 
 const prisma = new PrismaClient();
 
@@ -76,6 +78,7 @@ const SUB_BRAND_MAP: Record<string, string> = {
   "Park Hyatt": SUB_BRAND_ID.HYATT.PARK_HYATT,
   "Hyatt Centric": SUB_BRAND_ID.HYATT.HYATT_CENTRIC,
   "Hyatt Place": SUB_BRAND_ID.HYATT.HYATT_PLACE,
+  "Hyatt House": SUB_BRAND_ID.HYATT.HYATT_HOUSE,
   "Holiday Inn Express": SUB_BRAND_ID.IHG.HOLIDAY_INN_EXPRESS,
   "Hotel Indigo": SUB_BRAND_ID.IHG.HOTEL_INDIGO,
   Sunway: SUB_BRAND_ID.GHA_DISCOVERY.SUNWAY,
@@ -718,6 +721,9 @@ async function main() {
       pointTypeId: POINT_TYPE_ID.AVIOS,
     },
   });
+
+  await seedBookings(ADMIN_USER_ID);
+  await seedPromotions(ADMIN_USER_ID);
 
   console.log("Seed data created successfully");
 }
