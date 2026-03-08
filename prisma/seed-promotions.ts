@@ -5,7 +5,7 @@ import { CREDIT_CARD_ID } from "./seed-ids";
 const prisma = new PrismaClient();
 
 export async function seedPromotions(userId: string) {
-  const promotions: Prisma.PromotionCreateInput[] = [
+  const promotions: Omit<Prisma.PromotionCreateInput, "user">[] = [
     {
       name: "IHG 2x Promo",
       type: "loyalty",

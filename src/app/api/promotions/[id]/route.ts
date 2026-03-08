@@ -260,7 +260,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
           await tx.userPromotion.upsert({
             where: { promotionId: id },
             update: { registrationDate: new Date(registrationDate) },
-            create: { promotionId: id, registrationDate: new Date(registrationDate) },
+            create: { promotionId: id, userId, registrationDate: new Date(registrationDate) },
           });
         } else {
           await tx.userPromotion.deleteMany({ where: { promotionId: id } });

@@ -52,6 +52,7 @@ jobs:
         env:
           DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/hotel_tracker_test"
           NEXT_PUBLIC_DEBUG: "false"
+          AUTH_SECRET: "ci-test-secret-not-used-in-production-32x"
 
       - name: Cache Playwright Browsers
         uses: actions/cache@v4
@@ -69,3 +70,6 @@ jobs:
         env:
           DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/hotel_tracker_test"
           DATABASE_URL_TEST: "postgresql://postgres:postgres@localhost:5432/hotel_tracker_test"
+          AUTH_SECRET: "ci-test-secret-not-used-in-production-32x"
+          SEED_ADMIN_EMAIL: "admin@example.com"
+          SEED_ADMIN_PASSWORD: "admin123"

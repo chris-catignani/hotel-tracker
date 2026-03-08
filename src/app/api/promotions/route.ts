@@ -67,6 +67,7 @@ export async function POST(request: NextRequest) {
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
+    const userId = userIdOrResponse;
 
     const body = await request.json();
     const {
@@ -130,6 +131,7 @@ export async function POST(request: NextRequest) {
         await tx.userPromotion.create({
           data: {
             promotionId: created.id,
+            userId,
             registrationDate: new Date(registrationDate),
           },
         });

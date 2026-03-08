@@ -354,7 +354,7 @@ export async function DELETE(
     });
 
     await prisma.booking.delete({
-      where: { id, userId },
+      where: { id },
     });
 
     // Re-evaluate subsequent bookings

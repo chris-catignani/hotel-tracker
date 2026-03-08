@@ -172,8 +172,8 @@ model HotelChainEliteStatus {
 
 model UserStatus {
   id            String                 @id @default(cuid())
-  userId        String?                @map("user_id")
-  user          User?                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String                 @map("user_id")
+  user          User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   hotelChainId  String                 @map("hotel_chain_id")
   hotelChain    HotelChain             @relation(fields: [hotelChainId], references: [id], onDelete: Cascade)
   eliteStatusId String?                @map("elite_status_id")
@@ -222,8 +222,8 @@ model OtaAgency {
 
 model Booking {
   id                    String               @id @default(cuid())
-  userId                String?              @map("user_id")
-  user                  User?                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId                String               @map("user_id")
+  user                  User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   hotelChainId          String               @map("hotel_chain_id")
   hotelChain            HotelChain           @relation(fields: [hotelChainId], references: [id])
   hotelChainSubBrandId  String?              @map("hotel_chain_sub_brand_id")
@@ -358,8 +358,8 @@ model PromotionRestrictionTieInCard {
 
 model Promotion {
   id               String                 @id @default(cuid())
-  userId           String?                @map("user_id")
-  user             User?                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           String                 @map("user_id")
+  user             User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   name             String
   type             PromotionType
   hotelChainId     String?                @map("hotel_chain_id")
@@ -383,8 +383,8 @@ model Promotion {
 
 model UserPromotion {
   id               String    @id @default(cuid())
-  userId           String?   @map("user_id")
-  user             User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           String    @map("user_id")
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   promotionId      String    @unique @map("promotion_id")
   registrationDate DateTime  @map("registration_date") @db.Date
   promotion        Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
