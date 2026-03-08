@@ -8,6 +8,7 @@ import { CertType, BenefitType } from "@prisma/client";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
 import { fetchExchangeRate, getCurrentRate } from "@/lib/exchange-rate";
+import { enrichBookingWithRate } from "@/lib/booking-enrichment";
 
 const BOOKING_INCLUDE = (userId: string) =>
   ({
@@ -52,67 +53,6 @@ const BOOKING_INCLUDE = (userId: string) =>
     otaAgency: true,
     benefits: true,
   }) as const;
-
-async function enrichBookingWithRate<
-  T extends {
-    currency: string;
-    exchangeRate: unknown;
-    checkIn: Date | string;
-    loyaltyPointsEarned: number | null;
-    pretaxCost: unknown;
-    hotelChain: {
-      basePointRate?: unknown;
-      userStatuses?: { eliteStatus: unknown }[];
-    };
-    hotelChainSubBrand?: { basePointRate?: unknown } | null;
-  },
->(booking: T) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const checkIn = booking.checkIn instanceof Date ? booking.checkIn : new Date(booking.checkIn);
-  const isFuture = checkIn > today;
-  const isNonUsd = booking.currency !== "USD";
-  const isFutureEstimate = isFuture && isNonUsd;
-
-  let resolvedRate: number | null = booking.exchangeRate ? Number(booking.exchangeRate) : null;
-  if (resolvedRate == null && !isFutureEstimate) resolvedRate = 1; // USD or past with no rate
-  if (resolvedRate == null && isFutureEstimate) {
-    resolvedRate = await getCurrentRate(booking.currency);
-  }
-
-  // Compute dynamic loyalty for future non-USD bookings where points haven't been locked
-  let loyaltyPointsEstimated = false;
-  let loyaltyPointsEarned = booking.loyaltyPointsEarned;
-  if (booking.loyaltyPointsEarned == null && resolvedRate != null) {
-    const { calculatePoints } = await import("@/lib/loyalty-utils");
-    const basePointRate =
-      booking.hotelChainSubBrand?.basePointRate != null
-        ? Number(booking.hotelChainSubBrand.basePointRate)
-        : booking.hotelChain.basePointRate != null
-          ? Number(booking.hotelChain.basePointRate)
-          : null;
-    const eliteStatus = (booking.hotelChain.userStatuses?.[0]?.eliteStatus ?? null) as {
-      isFixed: boolean;
-      fixedRate: string | number | null;
-      bonusPercentage: string | number | null;
-    } | null;
-    const usdPretax = Number(booking.pretaxCost) * resolvedRate;
-    loyaltyPointsEarned = calculatePoints({
-      pretaxCost: usdPretax,
-      basePointRate,
-      eliteStatus: eliteStatus ?? null,
-    });
-    loyaltyPointsEstimated = true;
-  }
-
-  return {
-    ...booking,
-    exchangeRate: resolvedRate,
-    loyaltyPointsEarned,
-    isFutureEstimate,
-    loyaltyPointsEstimated,
-  };
-}
 
 export async function GET(request: NextRequest) {
   try {

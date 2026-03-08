@@ -14,65 +14,7 @@ import { calculatePoints } from "@/lib/loyalty-utils";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
 import { fetchExchangeRate, getCurrentRate } from "@/lib/exchange-rate";
-
-async function enrichBookingWithRate<
-  T extends {
-    currency: string;
-    exchangeRate: unknown;
-    checkIn: Date | string;
-    loyaltyPointsEarned: number | null;
-    pretaxCost: unknown;
-    hotelChain: {
-      basePointRate?: unknown;
-      userStatuses?: { eliteStatus: unknown }[];
-    };
-    hotelChainSubBrand?: { basePointRate?: unknown } | null;
-  },
->(booking: T) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const checkIn = booking.checkIn instanceof Date ? booking.checkIn : new Date(booking.checkIn);
-  const isFuture = checkIn > today;
-  const isNonUsd = booking.currency !== "USD";
-  const isFutureEstimate = isFuture && isNonUsd;
-
-  let resolvedRate: number | null = booking.exchangeRate ? Number(booking.exchangeRate) : null;
-  if (resolvedRate == null && !isFutureEstimate) resolvedRate = 1;
-  if (resolvedRate == null && isFutureEstimate) {
-    resolvedRate = await getCurrentRate(booking.currency);
-  }
-
-  let loyaltyPointsEstimated = false;
-  let loyaltyPointsEarned = booking.loyaltyPointsEarned;
-  if (booking.loyaltyPointsEarned == null && resolvedRate != null) {
-    const basePointRate =
-      booking.hotelChainSubBrand?.basePointRate != null
-        ? Number(booking.hotelChainSubBrand.basePointRate)
-        : booking.hotelChain.basePointRate != null
-          ? Number(booking.hotelChain.basePointRate)
-          : null;
-    const eliteStatus = (booking.hotelChain.userStatuses?.[0]?.eliteStatus ?? null) as {
-      isFixed: boolean;
-      fixedRate: string | number | null;
-      bonusPercentage: string | number | null;
-    } | null;
-    const usdPretax = Number(booking.pretaxCost) * resolvedRate;
-    loyaltyPointsEarned = calculatePoints({
-      pretaxCost: usdPretax,
-      basePointRate,
-      eliteStatus: eliteStatus ?? null,
-    });
-    loyaltyPointsEstimated = true;
-  }
-
-  return {
-    ...booking,
-    exchangeRate: resolvedRate,
-    loyaltyPointsEarned,
-    isFutureEstimate,
-    loyaltyPointsEstimated,
-  };
-}
+import { enrichBookingWithRate } from "@/lib/booking-enrichment";
 
 async function getFullBookingWithUsage(id: string, userId: string) {
   const booking = await prisma.booking.findFirst({

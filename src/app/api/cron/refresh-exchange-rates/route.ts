@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     // Validate cron secret
     const authHeader = request.headers.get("Authorization");
     const cronSecret = process.env.CRON_SECRET;
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -49,7 +49,9 @@ export async function GET(request: NextRequest) {
         upsertResults.push(`${currency}=>${rate.toFixed(6)}`);
       }
     } catch (err) {
-      upsertResults.push(`BATCH_FETCH=>ERROR: ${err}`);
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("Cron job failed during batch rate fetch:", err);
+      upsertResults.push(`BATCH_FETCH=>ERROR: ${message}`);
     }
 
     // Step 2: Lock in exchange rates for past-due future bookings
@@ -103,7 +105,8 @@ export async function GET(request: NextRequest) {
           data: { exchangeRate: rate, loyaltyPointsEarned },
         });
         lockedBookingIds.push(booking.id);
-      } catch {
+      } catch (err) {
+        console.error(`Failed to lock rate for booking ${booking.id}:`, err);
         // Skip this booking on error; will retry next cron run
       }
     }

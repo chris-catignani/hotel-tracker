@@ -1,7 +1,6 @@
 import prisma from "@/lib/prisma";
 import { calculatePoints } from "./loyalty-utils";
 import { reevaluateBookings } from "./promotion-matching";
-import { getCurrentRate } from "./exchange-rate";
 
 /**
  * Re-calculates loyalty points for all upcoming bookings of a specific hotel chain.
@@ -54,12 +53,14 @@ export async function recalculateLoyaltyForHotelChain(
   const bookingIds = bookings.map((b) => b.id);
   const userStatus = hotelChain.userStatuses[0] ?? null;
 
-  // Pre-fetch current rates for any non-USD currencies in this batch
+  // Pre-fetch current rates for any non-USD currencies in this batch (single query)
   const nonUsdCurrencies = [...new Set(bookings.map((b) => b.currency).filter((c) => c !== "USD"))];
   const rateCache = new Map<string, number>();
-  for (const curr of nonUsdCurrencies) {
-    const rate = await getCurrentRate(curr);
-    if (rate != null) rateCache.set(curr, rate);
+  if (nonUsdCurrencies.length > 0) {
+    const ratesFromDb = await prisma.exchangeRate.findMany({
+      where: { fromCurrency: { in: nonUsdCurrencies }, toCurrency: "USD" },
+    });
+    for (const row of ratesFromDb) rateCache.set(row.fromCurrency, Number(row.rate));
   }
 
   const updateOperations = bookings.map((booking) => {
