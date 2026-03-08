@@ -6,7 +6,8 @@
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function normalizeUserStatuses(obj: any): any {
   if (Array.isArray(obj)) return obj.map(normalizeUserStatuses);
-  if (obj && typeof obj === "object") {
+  // Only recurse into plain objects — leave Decimal, Date, etc. untouched
+  if (obj && typeof obj === "object" && obj.constructor === Object) {
     const result: Record<string, unknown> = {};
     for (const [key, val] of Object.entries(obj)) {
       if (key === "userStatuses") {
