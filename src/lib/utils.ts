@@ -7,13 +7,16 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Formats a number as a currency string (USD).
+ * Formats a number as a currency string.
+ * Defaults to USD. Pass a currency code (e.g., "EUR") for other currencies.
  */
-export function formatCurrency(amount: number): string {
-  return `$${amount.toLocaleString("en-US", {
+export function formatCurrency(amount: number, currency = "USD"): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  })}`;
+  }).format(amount);
 }
 
 /**

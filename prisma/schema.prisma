@@ -244,7 +244,7 @@ model Booking {
   loyaltyPointsEarned   Int?                 @map("loyalty_points_earned")
   pointsRedeemed        Int?                 @map("points_redeemed")
   currency              String               @default("USD")
-  originalAmount        Decimal?             @map("original_amount") @db.Decimal(10, 2)
+  exchangeRate          Decimal?             @map("exchange_rate") @db.Decimal(12, 6)
   bookingSource         BookingSourceType?   @map("booking_source")
   otaAgencyId           String?              @map("ota_agency_id")
   otaAgency             OtaAgency?           @relation(fields: [otaAgencyId], references: [id])
@@ -456,6 +456,17 @@ model BookingPromotionBenefit {
   eligibleNightsAtBooking Int?        @map("eligible_nights_at_booking")
 
   @@map("booking_promotion_benefits")
+}
+
+model ExchangeRate {
+  id           Int      @id @default(autoincrement())
+  fromCurrency String   @map("from_currency")
+  toCurrency   String   @map("to_currency")
+  rate         Decimal  @db.Decimal(12, 6)
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@unique([fromCurrency, toCurrency])
+  @@map("exchange_rates")
 }
 
 model CreditCardRewardRule {

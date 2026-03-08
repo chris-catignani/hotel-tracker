@@ -60,6 +60,9 @@ interface Booking {
   portalCashbackOnTotal: boolean;
   loyaltyPointsEarned: number | null;
   pointsRedeemed: number | null;
+  currency: string;
+  exchangeRate: string | number | null;
+  isFutureEstimate?: boolean;
   notes: string | null;
   createdAt: string;
   bookingSource: string | null;
@@ -237,7 +240,8 @@ export default function BookingsPage() {
               </TableHeader>
               <TableBody>
                 {bookings.map((booking) => {
-                  const totalCost = Number(booking.totalCost);
+                  const exchangeRate = booking.exchangeRate ? Number(booking.exchangeRate) : 1;
+                  const usdTotalCost = Number(booking.totalCost) * exchangeRate;
                   const netCost = calculateNetCost(booking);
 
                   return (
@@ -258,7 +262,9 @@ export default function BookingsPage() {
                         {formatSourceColumn(booking)}
                       </TableCell>
                       <TableCell className="text-right">
-                        {totalCost > 0 ? formatCurrency(totalCost) : "—"}
+                        {usdTotalCost > 0
+                          ? `${formatCurrency(usdTotalCost)}${booking.isFutureEstimate ? " (est.)" : ""}`
+                          : "—"}
                       </TableCell>
                       <TableCell className="text-right text-sm">
                         {booking.pointsRedeemed
@@ -269,7 +275,7 @@ export default function BookingsPage() {
                         {formatCerts(booking.certificates, true)}
                       </TableCell>
                       <TableCell
-                        className={`text-right font-medium ${netCost < totalCost ? "text-green-600" : ""}`}
+                        className={`text-right font-medium ${netCost < usdTotalCost ? "text-green-600" : ""}`}
                         data-testid="booking-net-per-night"
                       >
                         {formatCurrency(netCost / booking.numNights)}

@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { calculatePoints } from "./loyalty-utils";
 import { reevaluateBookings } from "./promotion-matching";
+import { getCurrentRate } from "./exchange-rate";
 
 /**
  * Re-calculates loyalty points for all upcoming bookings of a specific hotel chain.
@@ -26,7 +27,8 @@ export async function recalculateLoyaltyForHotelChain(
 
   if (!hotelChain) return;
 
-  // 2. Find all future bookings for this chain and user
+  // 2. Find all past bookings for this chain and user (where exchangeRate is locked in)
+  // Future bookings have exchangeRate = null; their loyalty is computed dynamically at read time
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -35,23 +37,41 @@ export async function recalculateLoyaltyForHotelChain(
       hotelChainId,
       userId,
       checkIn: {
-        gte: today,
+        lte: today,
       },
     },
     select: {
       id: true,
       pretaxCost: true,
+      currency: true,
+      exchangeRate: true,
     },
   });
 
   if (bookings.length === 0) return;
 
-  // 3. Prepare update operations
+  // 3. Prepare update operations using USD pretax cost (native × exchangeRate)
   const bookingIds = bookings.map((b) => b.id);
   const userStatus = hotelChain.userStatuses[0] ?? null;
+
+  // Pre-fetch current rates for any non-USD currencies in this batch
+  const nonUsdCurrencies = [...new Set(bookings.map((b) => b.currency).filter((c) => c !== "USD"))];
+  const rateCache = new Map<string, number>();
+  for (const curr of nonUsdCurrencies) {
+    const rate = await getCurrentRate(curr);
+    if (rate != null) rateCache.set(curr, rate);
+  }
+
   const updateOperations = bookings.map((booking) => {
+    const rate =
+      booking.currency === "USD"
+        ? 1
+        : ((booking.exchangeRate ? Number(booking.exchangeRate) : null) ??
+          rateCache.get(booking.currency) ??
+          1);
+    const usdPretax = Number(booking.pretaxCost) * rate;
     const newPoints = calculatePoints({
-      pretaxCost: Number(booking.pretaxCost),
+      pretaxCost: usdPretax,
       basePointRate: hotelChain.basePointRate ? Number(hotelChain.basePointRate) : null,
       eliteStatus: userStatus?.eliteStatus,
     });

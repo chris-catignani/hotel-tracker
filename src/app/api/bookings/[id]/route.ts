@@ -13,6 +13,66 @@ import { apiError } from "@/lib/api-error";
 import { calculatePoints } from "@/lib/loyalty-utils";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
+import { fetchRateFromFrankfurter, getCurrentRate } from "@/lib/exchange-rate";
+
+async function enrichBookingWithRate<
+  T extends {
+    currency: string;
+    exchangeRate: unknown;
+    checkIn: Date | string;
+    loyaltyPointsEarned: number | null;
+    pretaxCost: unknown;
+    hotelChain: {
+      basePointRate?: unknown;
+      userStatuses?: { eliteStatus: unknown }[];
+    };
+    hotelChainSubBrand?: { basePointRate?: unknown } | null;
+  },
+>(booking: T) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const checkIn = booking.checkIn instanceof Date ? booking.checkIn : new Date(booking.checkIn);
+  const isFuture = checkIn > today;
+  const isNonUsd = booking.currency !== "USD";
+  const isFutureEstimate = isFuture && isNonUsd;
+
+  let resolvedRate: number | null = booking.exchangeRate ? Number(booking.exchangeRate) : null;
+  if (resolvedRate == null && !isFutureEstimate) resolvedRate = 1;
+  if (resolvedRate == null && isFutureEstimate) {
+    resolvedRate = await getCurrentRate(booking.currency);
+  }
+
+  let loyaltyPointsEstimated = false;
+  let loyaltyPointsEarned = booking.loyaltyPointsEarned;
+  if (booking.loyaltyPointsEarned == null && resolvedRate != null) {
+    const basePointRate =
+      booking.hotelChainSubBrand?.basePointRate != null
+        ? Number(booking.hotelChainSubBrand.basePointRate)
+        : booking.hotelChain.basePointRate != null
+          ? Number(booking.hotelChain.basePointRate)
+          : null;
+    const eliteStatus = (booking.hotelChain.userStatuses?.[0]?.eliteStatus ?? null) as {
+      isFixed: boolean;
+      fixedRate: string | number | null;
+      bonusPercentage: string | number | null;
+    } | null;
+    const usdPretax = Number(booking.pretaxCost) * resolvedRate;
+    loyaltyPointsEarned = calculatePoints({
+      pretaxCost: usdPretax,
+      basePointRate,
+      eliteStatus: eliteStatus ?? null,
+    });
+    loyaltyPointsEstimated = true;
+  }
+
+  return {
+    ...booking,
+    exchangeRate: resolvedRate,
+    loyaltyPointsEarned,
+    isFutureEstimate,
+    loyaltyPointsEstimated,
+  };
+}
 
 async function getFullBookingWithUsage(id: string, userId: string) {
   const booking = await prisma.booking.findFirst({
@@ -109,7 +169,8 @@ async function getFullBookingWithUsage(id: string, userId: string) {
     bookingPromotions: enhancedBookingPromotions,
   };
 
-  return normalizeUserStatuses(result);
+  const normalized = normalizeUserStatuses(result) as typeof result;
+  return enrichBookingWithRate(normalized);
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -159,7 +220,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       loyaltyPointsEarned,
       pointsRedeemed,
       currency,
-      originalAmount,
       certificates,
       bookingSource,
       otaAgencyId,
@@ -188,16 +248,38 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (portalCashbackOnTotal !== undefined) data.portalCashbackOnTotal = portalCashbackOnTotal;
     if (pointsRedeemed !== undefined)
       data.pointsRedeemed = pointsRedeemed ? Number(pointsRedeemed) : null;
-    if (currency !== undefined) data.currency = currency;
-    if (originalAmount !== undefined)
-      data.originalAmount = originalAmount ? Number(originalAmount) : null;
     if (notes !== undefined) data.notes = notes || null;
     if (bookingSource !== undefined) {
       data.bookingSource = bookingSource || null;
       data.otaAgencyId = bookingSource === "ota" && otaAgencyId ? otaAgencyId : null;
     }
 
+    // Resolve exchange rate when currency or checkIn changes
+    if (currency !== undefined || checkIn !== undefined) {
+      const current = await prisma.booking.findFirst({ where: { id, userId } });
+      const finalCurrency = currency ?? current?.currency ?? "USD";
+      const finalCheckIn = checkIn ? new Date(checkIn) : (current?.checkIn ?? new Date());
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const isPast = finalCheckIn <= today;
+
+      if (finalCurrency === "USD") {
+        data.currency = finalCurrency;
+        data.exchangeRate = 1;
+      } else if (isPast) {
+        data.currency = finalCurrency;
+        const checkInStr = finalCheckIn.toISOString().split("T")[0];
+        data.exchangeRate = await fetchRateFromFrankfurter(finalCurrency, checkInStr);
+      } else {
+        data.currency = finalCurrency;
+        data.exchangeRate = null;
+      }
+    } else if (currency !== undefined) {
+      data.currency = currency;
+    }
+
     // Auto-calculate loyalty points if not explicitly provided but hotel/pretax changed
+    // Only for past/USD bookings (where exchange rate is locked)
     if (loyaltyPointsEarned === undefined || loyaltyPointsEarned === null) {
       const resolvedHotelChainId = hotelChainId;
       const resolvedPretax = pretaxCost !== undefined ? Number(pretaxCost) : undefined;
@@ -207,49 +289,67 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         const current = await prisma.booking.findFirst({
           where: { id, userId },
         });
-        const finalHotelChainId = resolvedHotelChainId ?? current?.hotelChainId;
-        const finalPretax = resolvedPretax ?? (current ? Number(current.pretaxCost) : null);
-        const finalHotelChainSubBrandId =
-          hotelChainSubBrandId !== undefined
-            ? hotelChainSubBrandId || null
-            : (current?.hotelChainSubBrandId ?? null);
+        const finalCurrency = (data.currency as string | undefined) ?? current?.currency ?? "USD";
+        const finalCheckIn = checkIn ? new Date(checkIn) : (current?.checkIn ?? new Date());
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const isPast = finalCheckIn <= today;
+        const shouldCompute = finalCurrency === "USD" || isPast;
 
-        if (finalHotelChainId && finalPretax) {
-          // Fetch UserStatus for this chain
-          const userStatus = await prisma.userStatus.findUnique({
-            where: { userId_hotelChainId: { userId, hotelChainId: finalHotelChainId } },
-            include: { eliteStatus: true },
-          });
+        if (shouldCompute) {
+          const finalHotelChainId = resolvedHotelChainId ?? current?.hotelChainId;
+          const finalPretax = resolvedPretax ?? (current ? Number(current.pretaxCost) : null);
+          const finalHotelChainSubBrandId =
+            hotelChainSubBrandId !== undefined
+              ? hotelChainSubBrandId || null
+              : (current?.hotelChainSubBrandId ?? null);
 
-          let basePointRate: number | null = null;
-          if (finalHotelChainSubBrandId) {
-            const subBrand = await prisma.hotelChainSubBrand.findUnique({
-              where: { id: finalHotelChainSubBrandId },
+          if (finalHotelChainId && finalPretax) {
+            // Resolve exchange rate for USD calculation
+            const resolvedRate = data.exchangeRate
+              ? Number(data.exchangeRate)
+              : current?.exchangeRate
+                ? Number(current.exchangeRate)
+                : finalCurrency === "USD"
+                  ? 1
+                  : ((await getCurrentRate(finalCurrency)) ?? 1);
+
+            const userStatus = await prisma.userStatus.findUnique({
+              where: { userId_hotelChainId: { userId, hotelChainId: finalHotelChainId } },
+              include: { eliteStatus: true },
             });
-            if (subBrand?.basePointRate != null) {
-              basePointRate = Number(subBrand.basePointRate);
-            }
-          }
-          if (basePointRate == null) {
-            const hotelChain = await prisma.hotelChain.findUnique({
-              where: { id: finalHotelChainId },
-            });
-            if (hotelChain?.basePointRate != null) {
-              basePointRate = Number(hotelChain.basePointRate);
-            }
-          }
 
-          data.loyaltyPointsEarned = calculatePoints({
-            pretaxCost: Number(finalPretax),
-            basePointRate,
-            eliteStatus: userStatus?.eliteStatus
-              ? {
-                  bonusPercentage: userStatus.eliteStatus.bonusPercentage,
-                  fixedRate: userStatus.eliteStatus.fixedRate,
-                  isFixed: userStatus.eliteStatus.isFixed,
-                }
-              : null,
-          });
+            let basePointRate: number | null = null;
+            if (finalHotelChainSubBrandId) {
+              const subBrand = await prisma.hotelChainSubBrand.findUnique({
+                where: { id: finalHotelChainSubBrandId },
+              });
+              if (subBrand?.basePointRate != null) {
+                basePointRate = Number(subBrand.basePointRate);
+              }
+            }
+            if (basePointRate == null) {
+              const hotelChain = await prisma.hotelChain.findUnique({
+                where: { id: finalHotelChainId },
+              });
+              if (hotelChain?.basePointRate != null) {
+                basePointRate = Number(hotelChain.basePointRate);
+              }
+            }
+
+            const usdPretax = finalPretax * resolvedRate;
+            data.loyaltyPointsEarned = calculatePoints({
+              pretaxCost: usdPretax,
+              basePointRate,
+              eliteStatus: userStatus?.eliteStatus
+                ? {
+                    bonusPercentage: userStatus.eliteStatus.bonusPercentage,
+                    fixedRate: userStatus.eliteStatus.fixedRate,
+                    isFixed: userStatus.eliteStatus.isFixed,
+                  }
+                : null,
+            });
+          }
         }
       }
     }

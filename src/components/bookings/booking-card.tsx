@@ -15,6 +15,8 @@ interface BookingCardProps {
     checkIn: string;
     checkOut: string;
     numNights: number;
+    currency?: string;
+    isFutureEstimate?: boolean;
     hotelChainSubBrand?: { name: string } | null;
   };
   onDelete?: (id: string) => void;
@@ -23,7 +25,8 @@ interface BookingCardProps {
 
 export function BookingCard({ booking, onDelete, showActions = false }: BookingCardProps) {
   const netCost = calculateNetCost(booking);
-  const totalCost = Number(booking.totalCost);
+  const exchangeRate = booking.exchangeRate ? Number(booking.exchangeRate) : 1;
+  const usdTotalCost = Number(booking.totalCost) * exchangeRate;
 
   return (
     <Card className="overflow-hidden" data-testid={`booking-card-${booking.id}`}>
@@ -52,7 +55,7 @@ export function BookingCard({ booking, onDelete, showActions = false }: BookingC
             </div>
             <div className="text-right shrink-0">
               <div
-                className={`text-lg font-bold ${netCost < totalCost ? "text-green-600" : ""}`}
+                className={`text-lg font-bold ${netCost < usdTotalCost ? "text-green-600" : ""}`}
                 data-testid="booking-card-net-night"
               >
                 {formatCurrency(netCost / booking.numNights)}
@@ -80,7 +83,9 @@ export function BookingCard({ booking, onDelete, showActions = false }: BookingC
               <div className="leading-tight">
                 <span className="text-xs text-muted-foreground block">Cash Spent</span>
                 <span className="font-medium">
-                  {totalCost > 0 ? formatCurrency(totalCost) : "—"}
+                  {usdTotalCost > 0
+                    ? `${formatCurrency(usdTotalCost)}${booking.isFutureEstimate ? " (est.)" : ""}`
+                    : "—"}
                 </span>
               </div>
             </div>

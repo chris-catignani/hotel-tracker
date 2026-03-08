@@ -21,6 +21,10 @@ vi.mock("./promotion-matching", () => ({
   reevaluateBookings: vi.fn(),
 }));
 
+vi.mock("./exchange-rate", () => ({
+  getCurrentRate: vi.fn().mockResolvedValue(1),
+}));
+
 const prismaMock = prisma as unknown as {
   hotelChain: { findUnique: Mock };
   booking: { findMany: Mock; update: Mock };
@@ -50,10 +54,10 @@ describe("loyalty-recalculation", () => {
     };
     prismaMock.hotelChain.findUnique.mockResolvedValue(mockChain);
 
-    // 2. Mock future bookings
+    // 2. Mock past bookings (USD, exchangeRate = 1)
     const mockBookings = [
-      { id: "101", pretaxCost: 100 }, // Expected: 1500
-      { id: "102", pretaxCost: 200 }, // Expected: 3000
+      { id: "101", pretaxCost: 100, currency: "USD", exchangeRate: 1 }, // Expected: 1500
+      { id: "102", pretaxCost: 200, currency: "USD", exchangeRate: 1 }, // Expected: 3000
     ];
     prismaMock.booking.findMany.mockResolvedValue(mockBookings);
 
