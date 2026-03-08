@@ -10,7 +10,6 @@ npm run build        # Production build
 npm run lint         # Run ESLint
 
 npm run db:push      # Push schema changes to DB + clear .next cache (use for schema changes)
-npm run db:migrate   # Create and apply migrations (named migrations)
 npm run db:generate  # Regenerate Prisma client only
 npm run db:seed      # Seed reference data (hotels, cards, portals)
 

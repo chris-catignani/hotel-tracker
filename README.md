@@ -51,15 +51,11 @@ If you need to create the database first:
 psql -U postgres -c "CREATE DATABASE hotel_tracker;"
 ```
 
-### 3. Run database migrations
-
-Apply the Prisma migrations to your database:
+### 3. Push schema to database
 
 ```bash
-npm run db:migrate
+npm run db:push
 ```
-
-If starting fresh from scratch without existing migrations, use `npx prisma db push` instead.
 
 ### Authentication Setup
 
@@ -182,7 +178,7 @@ If a test fails, Playwright is configured to record a video and a "trace" (inter
 3. Add a Postgres database (Neon or Vercel Postgres) from the Vercel dashboard
 4. Vercel will automatically set `DATABASE_URL` -- ensure it matches your Prisma config
 5. Add a build command override if needed: `npx prisma generate && next build`
-6. After the first deploy, run migrations: `npx prisma db push`
+6. After the first deploy, push the schema: `npx prisma db push`
 7. Add required environment variables in Vercel project settings:
    - `AUTH_SECRET`: Generate with `openssl rand -base64 32`
    - `SEED_ADMIN_EMAIL`: Your admin email
