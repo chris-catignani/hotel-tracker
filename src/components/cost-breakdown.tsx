@@ -231,7 +231,11 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
                       <span className="text-muted-foreground">{p.name}</span>
                       {(p.isOrphaned ||
                         p.groups.some((g) =>
-                          g.segments.some((s) => s.description?.includes("(orphaned)"))
+                          g.segments.some(
+                            (s) =>
+                              s.description?.includes("(orphaned)") ||
+                              s.formula?.includes("(orphaned)")
+                          )
                         )) && (
                         <Badge variant="warning" className="text-[9px] h-4 px-1 py-0 font-medium">
                           Orphaned
