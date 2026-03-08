@@ -108,6 +108,65 @@ describe("CostBreakdown", () => {
     expect(screen.queryByText("Promo 1")).not.toBeInTheDocument();
   });
 
+  it("should show Orphaned badge when promotion isOrphaned=true", async () => {
+    const user = userEvent.setup();
+    const orphanedBreakdown = {
+      ...mockBreakdown,
+      promotions: [{ ...mockBreakdown.promotions[0], isOrphaned: true }],
+    };
+    await act(async () => {
+      render(<CostBreakdown breakdown={orphanedBreakdown} />);
+    });
+    await user.click(screen.getByRole("button", { name: /Promotion Savings/i }));
+    expect(screen.getByText("Orphaned")).toBeInTheDocument();
+  });
+
+  it("should show Orphaned badge when a segment formula contains '(orphaned)'", async () => {
+    const user = userEvent.setup();
+    const breakdown = {
+      ...mockBreakdown,
+      promotions: [
+        {
+          ...mockBreakdown.promotions[0],
+          isOrphaned: false,
+          groups: [
+            {
+              name: "3,000 Bonus Points",
+              segments: [
+                {
+                  label: "Full Reward Cycle (3/3 nights)",
+                  value: 60,
+                  formula: "60",
+                  description: "desc",
+                },
+                {
+                  label: "Orphaned Reward Cycle (1/3 nights)",
+                  value: 0,
+                  formula: "(1 of 3 nights) × 3,000 bonus pts × 2¢ = $0.00 (orphaned)",
+                  description: "There are not enough future bookings to fulfill this promotion.",
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    await act(async () => {
+      render(<CostBreakdown breakdown={breakdown} />);
+    });
+    await user.click(screen.getByRole("button", { name: /Promotion Savings/i }));
+    expect(screen.getByText("Orphaned")).toBeInTheDocument();
+  });
+
+  it("should not show Orphaned badge when promotion is neither orphaned nor has orphaned segments", async () => {
+    const user = userEvent.setup();
+    await act(async () => {
+      render(<CostBreakdown breakdown={mockBreakdown} />);
+    });
+    await user.click(screen.getByRole("button", { name: /Promotion Savings/i }));
+    expect(screen.queryByText("Orphaned")).not.toBeInTheDocument();
+  });
+
   it("should not render components with 0 value", async () => {
     const zeroBreakdown = {
       ...mockBreakdown,

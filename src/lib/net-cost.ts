@@ -472,6 +472,11 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
           const totalCyclesEarned = Math.floor(cumulativeAtEnd / minNights);
           const totalValueFromCycles = totalCyclesEarned * bValue;
           isBenefitCapExhausted = totalValueFromCycles >= Number(maxRedemptionVal) - 0.001;
+        } else {
+          // No explicit cap: if the benefit is NOT orphaned, a $0 partial cycle means
+          // bApplied was exhausted by completed cycles → treat as capped.
+          // If the benefit IS orphaned, the partial cycle is missing future stays → stays orphaned.
+          isBenefitCapExhausted = !isOrphaned;
         }
 
         let nightsAccountedFor = 0;
@@ -488,7 +493,6 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
 
           const segmentEndProgress = (currentStart + nightsInThisSegment) % minNights;
           const isCycleFinished = segmentEndProgress === 0;
-          const isSegmentOrphaned = isOrphaned && !isCycleFinished;
 
           // 'Fill Up' strategy: Give this segment its full expected value until we run out of bApplied
           const expectedSegmentValue = expectedValuePerNight * nightsInThisSegment;
@@ -497,11 +501,21 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
 
           const isSegmentCapped =
             expectedSegmentValue > 0 && segmentValue < expectedSegmentValue - 0.001;
-          // Capped to $0 takes priority over orphaned — but only when the cap was truly
-          // exhausted (computed above). If the partial cycle is $0 because the campaign
-          // ran out of eligible nights (not cap), show it as Orphaned.
-          const isMaxedOut =
-            isSegmentCapped && segmentValue < 0.01 && (!isOrphaned || isBenefitCapExhausted);
+
+          const isCappedToZero = isSegmentCapped && segmentValue < 0.01;
+
+          // A partial cycle is "orphaned" if:
+          //   - the promotion/benefit is marked orphaned, OR
+          //   - the cap is NOT exhausted but the segment is $0 (ran out of bApplied without
+          //     hitting the cap — cycle simply can't be completed with remaining eligible nights)
+          // Pre-qualifying takes precedence: if this stay is pre-qualifying, don't mark as orphaned.
+          const isSegmentOrphaned =
+            !isCycleFinished &&
+            (isOrphaned || (!isPreQualifying && !isBenefitCapExhausted && isCappedToZero));
+
+          // Show "Capped Reward Cycle" only when the benefit cap was truly exhausted.
+          // If the partial cycle is $0 because eligible nights ran out (not cap), show as Orphaned.
+          const isMaxedOut = isCappedToZero && isBenefitCapExhausted;
 
           let label = "";
           let description = "";

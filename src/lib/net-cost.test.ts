@@ -865,6 +865,37 @@ describe("net-cost", () => {
       const segments = breakdown.promotions[0].groups[0].segments;
       expect(segments[2].label).toBe("Orphaned Reward Cycle (1/3 nights)");
     });
+
+    it("isOrphaned=false, cap NOT exhausted → $0 partial cycle shows as Orphaned not Capped", () => {
+      // This is the regression case: bApplied exhausted by 2 complete cycles, 1 night remainder.
+      // isOrphaned=false on the booking promotion, but cap (21000 pts) is far from exhausted
+      // (floor(7/3) × 3000 = 6000 < 21000). The partial cycle must show as Orphaned, not Capped.
+      const booking = makeSpanBooking(7, 120, 21000, false);
+      const breakdown = getNetCostBreakdown(booking);
+      const segments = breakdown.promotions[0].groups[0].segments;
+
+      expect(segments).toHaveLength(3);
+      expect(segments[0].label).toBe("Full Reward Cycle (3/3 nights)");
+      expect(segments[1].label).toBe("Full Reward Cycle (3/3 nights)");
+      expect(segments[2].label).toBe("Orphaned Reward Cycle (1/3 nights)");
+      expect(segments[2].value).toBe(0);
+      expect(segments[2].formula).toContain("(orphaned)");
+    });
+
+    it("isOrphaned=false, no cap → $0 partial cycle is Maxed Out (bApplied exhausted)", () => {
+      // Without a cap and isOrphaned=false, a $0 partial cycle means bApplied ran out → Maxed Out.
+      // Label is "Capped Reward Cycle" because the segment is capped by the exhausted bApplied budget.
+      const booking = makeSpanBooking(7, 120, null, false);
+      const breakdown = getNetCostBreakdown(booking);
+      const segments = breakdown.promotions[0].groups[0].segments;
+
+      expect(segments[2].label).toBe("Capped Reward Cycle (1/3 nights)");
+      expect(segments[2].value).toBe(0);
+      expect(segments[2].formula).toBe("");
+      expect(segments[2].description).toBe(
+        "This segment no longer applies because the promotion has been maxed out."
+      );
+    });
   });
 
   describe("Capped and Maxed Out Promotions (Issue #157)", () => {
