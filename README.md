@@ -53,15 +53,33 @@ psql -U postgres -c "CREATE DATABASE hotel_tracker;"
 
 ### 3. Run database migrations
 
-Push the Prisma schema to your database:
+Apply the Prisma migrations to your database:
 
 ```bash
-npx prisma db push
+npm run db:migrate
+```
+
+If starting fresh from scratch without existing migrations, use `npx prisma db push` instead.
+
+### Authentication Setup
+
+Copy `.env.example` to `.env` and set a strong `AUTH_SECRET`:
+
+```bash
+openssl rand -base64 32
+```
+
+Add to `.env`:
+
+```
+AUTH_SECRET="<your-generated-secret>"
+SEED_ADMIN_EMAIL="your@email.com"
+SEED_ADMIN_PASSWORD="your-secure-password"
 ```
 
 ### 4. Seed reference data (optional)
 
-Loads sample hotel chains (Hilton, Marriott, Hyatt, IHG), credit cards (Amex Platinum, Chase Sapphire Reserve, Capital One Venture X), and shopping portals (Rakuten, TopCashback):
+Loads sample hotel chains, credit cards, shopping portals, bookings, and promotions. Also creates the first admin user using `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD` from `.env`.
 
 ```bash
 npm run db:seed
@@ -136,7 +154,11 @@ npm run test:e2e:ui     # Run tests with interactive UI
 
 The E2E suite automatically resets and seeds the test database before running.
 
-### 3. Debugging Failures
+### 3. Auth Setup for E2E Tests
+
+`AUTH_SECRET` must be set in your `.env` file for E2E tests to work. The test server needs it to sign and verify JWT cookies.
+
+### 4. Debugging Failures
 
 If a test fails, Playwright is configured to record a video and a "trace" (interactive debug log).
 
@@ -161,7 +183,19 @@ If a test fails, Playwright is configured to record a video and a "trace" (inter
 4. Vercel will automatically set `DATABASE_URL` -- ensure it matches your Prisma config
 5. Add a build command override if needed: `npx prisma generate && next build`
 6. After the first deploy, run migrations: `npx prisma db push`
-7. Seed the database if desired: `npm run db:seed`
+7. Add required environment variables in Vercel project settings:
+   - `AUTH_SECRET`: Generate with `openssl rand -base64 32`
+   - `SEED_ADMIN_EMAIL`: Your admin email
+   - `SEED_ADMIN_PASSWORD`: A strong password
+8. Run `npm run db:seed` via Vercel's one-off task runner or a local connection to the production DB to create the admin user.
+
+## Managing Users
+
+The app is single-admin by default. To create additional users:
+
+- **Self-registration is closed.** New users can be created via the `POST /api/auth/register` endpoint (see source for payload shape).
+- **Admin users only** can write to reference data (hotel chains, credit cards, portals, etc.). Regular users can manage their own bookings and promotions.
+- To promote a user to admin, update the `role` column in the `users` table: `UPDATE users SET role = 'ADMIN' WHERE email = 'user@example.com';`
 
 ## Tech Stack
 

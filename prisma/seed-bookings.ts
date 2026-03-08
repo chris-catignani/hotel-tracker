@@ -430,7 +430,8 @@ export async function seedBookings(userId: string) {
 }
 
 if (require.main === module) {
-  seedBookings()
+  const standaloneUserId = process.env.SEED_USER_ID ?? "";
+  seedBookings(standaloneUserId)
     .catch((e) => {
       console.error(e);
       process.exit(1);

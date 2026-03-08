@@ -1,4 +1,5 @@
 import { PrismaClient, PointCategory } from "@prisma/client";
+import { hash } from "bcryptjs";
 import { HOTEL_ID, SUB_BRAND_ID } from "../src/lib/constants";
 import { CREDIT_CARD_ID, SHOPPING_PORTAL_ID, OTA_AGENCY_ID } from "./seed-ids";
 import { seedBookings } from "./seed-bookings";
@@ -147,7 +148,6 @@ async function main() {
   // Seed admin user
   const adminEmail = process.env.SEED_ADMIN_EMAIL || "admin@example.com";
   const adminPassword = process.env.SEED_ADMIN_PASSWORD || "admin123";
-  const { hash } = await import("bcryptjs");
   const hashedPassword = await hash(adminPassword, 12);
   const adminUser = await prisma.user.upsert({
     where: { email: adminEmail },

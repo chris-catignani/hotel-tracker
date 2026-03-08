@@ -696,7 +696,8 @@ async function seedBookingPromotions(userId: string) {
 }
 
 if (require.main === module) {
-  seedPromotions()
+  const standaloneUserId = process.env.SEED_USER_ID ?? "";
+  seedPromotions(standaloneUserId)
     .catch((e) => {
       console.error(e);
       process.exit(1);

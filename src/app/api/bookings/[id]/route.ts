@@ -15,7 +15,7 @@ import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
 
 async function getFullBookingWithUsage(id: string, userId: string) {
-  const booking = await prisma.booking.findUnique({
+  const booking = await prisma.booking.findFirst({
     where: { id, userId },
     include: {
       hotelChain: {
@@ -138,6 +138,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const userId = userIdOrResponse;
 
     const { id } = await params;
+
+    const exists = await prisma.booking.findFirst({ where: { id, userId }, select: { id: true } });
+    if (!exists) return apiError("Booking not found", null, 404, request);
+
     const body = await request.json();
     const {
       hotelChainId,
@@ -200,7 +204,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
       if (resolvedHotelChainId || resolvedPretax) {
         // Fetch current booking to fill in missing values
-        const current = await prisma.booking.findUnique({
+        const current = await prisma.booking.findFirst({
           where: { id, userId },
         });
         const finalHotelChainId = resolvedHotelChainId ?? current?.hotelChainId;
@@ -286,7 +290,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const booking = await prisma.booking.update({
-      where: { id, userId },
+      where: { id },
       data,
     });
 
@@ -316,8 +320,8 @@ export async function DELETE(
 
     const { id } = await params;
 
-    // Find booking and its applied promotions before deleting
-    const booking = await prisma.booking.findUnique({
+    // Find booking and its applied promotions before deleting (also verifies ownership)
+    const booking = await prisma.booking.findFirst({
       where: { id, userId },
       select: {
         checkIn: true,

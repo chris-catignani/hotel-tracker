@@ -33,13 +33,26 @@ export default defineConfig({
   /* Configure projects for major browsers */
   projects: [
     {
+      name: "setup",
+      testMatch: "**/auth.setup.ts",
+    },
+
+    {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: "e2e/.auth/admin.json",
+      },
+      dependencies: ["setup"],
     },
 
     {
       name: "webkit",
-      use: { ...devices["Desktop Safari"] },
+      use: {
+        ...devices["Desktop Safari"],
+        storageState: "e2e/.auth/admin.json",
+      },
+      dependencies: ["setup"],
     },
   ],
 
@@ -53,6 +66,9 @@ export default defineConfig({
     env: {
       DATABASE_URL: process.env.DATABASE_URL_TEST || "",
       NEXT_PUBLIC_DEBUG: "false",
+      AUTH_SECRET: process.env.AUTH_SECRET || "",
+      SEED_ADMIN_EMAIL: process.env.SEED_ADMIN_EMAIL || "",
+      SEED_ADMIN_PASSWORD: process.env.SEED_ADMIN_PASSWORD || "",
     },
   },
 });
