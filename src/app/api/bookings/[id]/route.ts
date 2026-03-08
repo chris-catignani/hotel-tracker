@@ -13,7 +13,7 @@ import { apiError } from "@/lib/api-error";
 import { calculatePoints } from "@/lib/loyalty-utils";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
-import { fetchRateFromFrankfurter, getCurrentRate } from "@/lib/exchange-rate";
+import { fetchExchangeRate, getCurrentRate } from "@/lib/exchange-rate";
 
 async function enrichBookingWithRate<
   T extends {
@@ -269,7 +269,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       } else if (isPast) {
         data.currency = finalCurrency;
         const checkInStr = finalCheckIn.toISOString().split("T")[0];
-        data.exchangeRate = await fetchRateFromFrankfurter(finalCurrency, checkInStr);
+        data.exchangeRate = await fetchExchangeRate(finalCurrency, checkInStr);
       } else {
         data.currency = finalCurrency;
         data.exchangeRate = null;

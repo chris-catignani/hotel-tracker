@@ -7,7 +7,7 @@ import { calculatePoints } from "@/lib/loyalty-utils";
 import { CertType, BenefitType } from "@prisma/client";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
-import { fetchRateFromFrankfurter, getCurrentRate } from "@/lib/exchange-rate";
+import { fetchExchangeRate, getCurrentRate } from "@/lib/exchange-rate";
 
 const BOOKING_INCLUDE = (userId: string) =>
   ({
@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
       resolvedExchangeRate = 1;
     } else if (isPast) {
       const checkInStr = checkInDate.toISOString().split("T")[0];
-      resolvedExchangeRate = await fetchRateFromFrankfurter(resolvedCurrency, checkInStr);
+      resolvedExchangeRate = await fetchExchangeRate(resolvedCurrency, checkInStr);
     }
     // future non-USD: resolvedExchangeRate stays null
 

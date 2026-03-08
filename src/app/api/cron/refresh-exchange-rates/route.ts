@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { fetchRateFromFrankfurter } from "@/lib/exchange-rate";
+import { fetchExchangeRate } from "@/lib/exchange-rate";
 import { apiError } from "@/lib/api-error";
 import { CURRENCIES } from "@/lib/constants";
 import { calculatePoints } from "@/lib/loyalty-utils";
+
+const RATES_CDN =
+  "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json";
+const RATES_FALLBACK = "https://latest.currency-api.pages.dev/v1/currencies/usd.json";
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,22 +22,34 @@ export async function GET(request: NextRequest) {
     today.setHours(0, 0, 0, 0);
     const todayStr = today.toISOString().split("T")[0];
 
-    // Step 1: Fetch all current rates from Frankfurter and upsert into ExchangeRate table
+    // Step 1: Fetch all current rates in one request and upsert into ExchangeRate table
     const nonUsdCurrencies = CURRENCIES.filter((c) => c !== "USD");
     const upsertResults: string[] = [];
 
-    for (const currency of nonUsdCurrencies) {
-      try {
-        const rate = await fetchRateFromFrankfurter(currency, "latest");
+    try {
+      let ratesRes = await fetch(RATES_CDN, { cache: "no-store" });
+      if (!ratesRes.ok) ratesRes = await fetch(RATES_FALLBACK, { cache: "no-store" });
+      if (!ratesRes.ok) throw new Error(`Rates API error: ${ratesRes.status}`);
+
+      const ratesData = (await ratesRes.json()) as { usd: Record<string, number> };
+      const rawRates = ratesData.usd; // 1 USD = X foreign
+
+      for (const currency of nonUsdCurrencies) {
+        const usdPerForeign = rawRates[currency.toLowerCase()];
+        if (typeof usdPerForeign !== "number" || isNaN(usdPerForeign) || usdPerForeign === 0) {
+          upsertResults.push(`${currency}=>NOT_FOUND`);
+          continue;
+        }
+        const rate = 1 / usdPerForeign; // 1 foreign = X USD
         await prisma.exchangeRate.upsert({
           where: { fromCurrency_toCurrency: { fromCurrency: currency, toCurrency: "USD" } },
           update: { rate },
           create: { fromCurrency: currency, toCurrency: "USD", rate },
         });
-        upsertResults.push(`${currency}=>${rate}`);
-      } catch {
-        upsertResults.push(`${currency}=>ERROR`);
+        upsertResults.push(`${currency}=>${rate.toFixed(6)}`);
       }
+    } catch (err) {
+      upsertResults.push(`BATCH_FETCH=>ERROR: ${err}`);
     }
 
     // Step 2: Lock in exchange rates for past-due future bookings
@@ -62,7 +78,7 @@ export async function GET(request: NextRequest) {
     for (const booking of pastDueBookings) {
       try {
         const checkInStr = booking.checkIn.toISOString().split("T")[0];
-        const rate = await fetchRateFromFrankfurter(booking.currency, checkInStr);
+        const rate = await fetchExchangeRate(booking.currency, checkInStr);
 
         // Compute loyalty points if not overridden
         let loyaltyPointsEarned = booking.loyaltyPointsEarned;

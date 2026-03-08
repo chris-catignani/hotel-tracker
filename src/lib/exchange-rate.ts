@@ -1,29 +1,38 @@
 import prisma from "@/lib/prisma";
 
+const CDN_BASE = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api";
+const FALLBACK_BASE = "https://{date}.currency-api.pages.dev";
+
 /**
- * Fetch rate from Frankfurter API: 1 fromCurrency = X USD.
+ * Fetch rate from fawazahmed0/exchange-api: 1 fromCurrency = X USD.
  * Pass a date string (YYYY-MM-DD) for historical rates, or "latest" for current.
+ * Historical data available from approximately March 2024 onward.
  */
-export async function fetchRateFromFrankfurter(
+export async function fetchExchangeRate(
   fromCurrency: string,
   date: string | "latest"
 ): Promise<number> {
   if (fromCurrency === "USD") return 1;
 
-  const url =
-    date === "latest"
-      ? `https://api.frankfurter.app/latest?from=${fromCurrency}&to=USD`
-      : `https://api.frankfurter.app/${date}?from=${fromCurrency}&to=USD`;
+  const currency = fromCurrency.toLowerCase();
+  const dateStr = date === "latest" ? "latest" : date;
+  const path = `/v1/currencies/${currency}.json`;
 
-  const res = await fetch(url, { cache: "no-store" });
+  const primaryUrl = `${CDN_BASE}@${dateStr}${path}`;
+  const fallbackUrl = `${FALLBACK_BASE.replace("{date}", dateStr)}${path}`;
+
+  let res = await fetch(primaryUrl, { cache: "no-store" });
   if (!res.ok) {
-    throw new Error(`Frankfurter API error: ${res.status} ${res.statusText}`);
+    res = await fetch(fallbackUrl, { cache: "no-store" });
+  }
+  if (!res.ok) {
+    throw new Error(`Exchange rate API error for ${fromCurrency}: ${res.status}`);
   }
 
-  const data = (await res.json()) as { rates: { USD: number } };
-  const rate = data.rates?.USD;
+  const data = (await res.json()) as Record<string, Record<string, number>>;
+  const rate = data[currency]?.usd;
   if (typeof rate !== "number" || isNaN(rate)) {
-    throw new Error(`Invalid rate returned from Frankfurter for ${fromCurrency}`);
+    throw new Error(`Invalid rate returned for ${fromCurrency}`);
   }
 
   return rate;
