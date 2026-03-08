@@ -9,6 +9,9 @@ export default auth((req) => {
     req.nextUrl.pathname.startsWith("/api/auth");
 
   if (!isAuthRoute && !isLoggedIn) {
+    if (req.nextUrl.pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     return NextResponse.redirect(new URL("/login", req.url));
   }
   return NextResponse.next();

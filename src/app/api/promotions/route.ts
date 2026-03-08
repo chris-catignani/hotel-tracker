@@ -94,6 +94,7 @@ export async function POST(request: NextRequest) {
         data: {
           name,
           type,
+          user: { connect: { id: userId } },
           hotelChain: hotelChainId ? { connect: { id: hotelChainId } } : undefined,
           creditCard: creditCardId ? { connect: { id: creditCardId } } : undefined,
           shoppingPortal: shoppingPortalId ? { connect: { id: shoppingPortalId } } : undefined,
