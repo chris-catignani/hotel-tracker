@@ -37,14 +37,16 @@ describe("loyalty-recalculation", () => {
     const mockChain = {
       id: "1",
       basePointRate: 10,
-      userStatus: {
-        eliteStatus: {
-          name: "Platinum",
-          bonusPercentage: 0.5,
-          isFixed: false,
-          fixedRate: null,
+      userStatuses: [
+        {
+          eliteStatus: {
+            name: "Platinum",
+            bonusPercentage: 0.5,
+            isFixed: false,
+            fixedRate: null,
+          },
         },
-      },
+      ],
     };
     prismaMock.hotelChain.findUnique.mockResolvedValue(mockChain);
 
@@ -56,7 +58,7 @@ describe("loyalty-recalculation", () => {
     prismaMock.booking.findMany.mockResolvedValue(mockBookings);
 
     // 3. Run the recalculation
-    await recalculateLoyaltyForHotelChain("1");
+    await recalculateLoyaltyForHotelChain("1", "user-1");
 
     // 4. Verify transaction was called with updates
     expect(prismaMock.$transaction).toHaveBeenCalled();
@@ -68,14 +70,14 @@ describe("loyalty-recalculation", () => {
 
   it("should return early if chain not found", async () => {
     prismaMock.hotelChain.findUnique.mockResolvedValue(null);
-    await recalculateLoyaltyForHotelChain("1");
+    await recalculateLoyaltyForHotelChain("1", "user-1");
     expect(prismaMock.booking.findMany).not.toHaveBeenCalled();
   });
 
   it("should return early if no future bookings found", async () => {
-    prismaMock.hotelChain.findUnique.mockResolvedValue({ id: "1" });
+    prismaMock.hotelChain.findUnique.mockResolvedValue({ id: "1", userStatuses: [] });
     prismaMock.booking.findMany.mockResolvedValue([]);
-    await recalculateLoyaltyForHotelChain("1");
+    await recalculateLoyaltyForHotelChain("1", "user-1");
     expect(prismaMock.$transaction).not.toHaveBeenCalled();
   });
 });

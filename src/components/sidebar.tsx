@@ -1,6 +1,9 @@
 "use client";
 
 import { NavItemsList } from "@/components/nav-items-list";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
+import { signOut } from "next-auth/react";
 
 export function Sidebar() {
   return (
@@ -13,6 +16,16 @@ export function Sidebar() {
       </div>
       <div className="flex-1 p-4 overflow-y-auto">
         <NavItemsList />
+      </div>
+      <div className="border-t p-4">
+        <Button
+          variant="ghost"
+          className="w-full justify-start gap-2 text-muted-foreground"
+          onClick={() => signOut({ callbackUrl: "/login" })}
+        >
+          <LogOut className="size-4" />
+          Sign out
+        </Button>
       </div>
     </aside>
   );

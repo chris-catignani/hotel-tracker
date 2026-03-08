@@ -10,6 +10,7 @@ import {
   PromotionRestrictionsFormData,
 } from "@/lib/types";
 import { buildRestrictionsCreateData, buildBenefitCreateData } from "@/lib/promotion-api-helpers";
+import { getAuthenticatedUserId } from "@/lib/auth-utils";
 
 const PROMOTION_INCLUDE = {
   hotelChain: true,
@@ -40,6 +41,9 @@ const PROMOTION_INCLUDE = {
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const userIdOrResponse = await getAuthenticatedUserId();
+    if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
+
     const { id } = await params;
     const promotion = await prisma.promotion.findUnique({
       where: { id: id },
@@ -58,6 +62,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const userIdOrResponse = await getAuthenticatedUserId();
+    if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
     const { id } = await params;
     const body = await request.json();
     const {
@@ -272,6 +278,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userIdOrResponse = await getAuthenticatedUserId();
+    if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
+
     const { id } = await params;
 
     // Find bookings that currently have this promotion applied

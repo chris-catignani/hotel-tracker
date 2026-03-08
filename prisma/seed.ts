@@ -127,20 +127,37 @@ async function upsertSubBrands(hotelChainId: string, subBrands: SubBrandData[]) 
   }
 }
 
-async function upsertUserStatus(hotelChainId: string, statusName: string) {
+async function upsertUserStatus(hotelChainId: string, statusName: string, userId: string) {
   const eliteStatus = await prisma.hotelChainEliteStatus.findFirst({
     where: { hotelChainId, name: statusName },
   });
   if (eliteStatus) {
     await prisma.userStatus.upsert({
-      where: { hotelChainId },
+      where: { userId_hotelChainId: { userId, hotelChainId } },
       update: { eliteStatusId: eliteStatus.id },
-      create: { hotelChainId, eliteStatusId: eliteStatus.id },
+      create: { userId, hotelChainId, eliteStatusId: eliteStatus.id },
     });
   }
 }
 
 async function main() {
+  // Seed admin user
+  const adminEmail = process.env.SEED_ADMIN_EMAIL || "admin@example.com";
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD || "admin123";
+  const { hash } = await import("bcryptjs");
+  const hashedPassword = await hash(adminPassword, 12);
+  const adminUser = await prisma.user.upsert({
+    where: { email: adminEmail },
+    update: { role: "ADMIN" },
+    create: {
+      email: adminEmail,
+      password: hashedPassword,
+      name: "Admin",
+      role: "ADMIN",
+    },
+  });
+  const ADMIN_USER_ID = adminUser.id;
+
   // PointTypes
   const pointTypeData = [
     {
@@ -585,12 +602,12 @@ async function main() {
   ]);
 
   // Seed UserStatus
-  await upsertUserStatus(HOTEL_ID.ACCOR, "Platinum");
-  await upsertUserStatus(HOTEL_ID.MARRIOTT, "Titanium");
-  await upsertUserStatus(HOTEL_ID.HYATT, "Globalist");
-  await upsertUserStatus(HOTEL_ID.HILTON, "Diamond");
-  await upsertUserStatus(HOTEL_ID.IHG, "Diamond");
-  await upsertUserStatus(HOTEL_ID.GHA_DISCOVERY, "Titanium");
+  await upsertUserStatus(HOTEL_ID.ACCOR, "Platinum", ADMIN_USER_ID);
+  await upsertUserStatus(HOTEL_ID.MARRIOTT, "Titanium", ADMIN_USER_ID);
+  await upsertUserStatus(HOTEL_ID.HYATT, "Globalist", ADMIN_USER_ID);
+  await upsertUserStatus(HOTEL_ID.HILTON, "Diamond", ADMIN_USER_ID);
+  await upsertUserStatus(HOTEL_ID.IHG, "Diamond", ADMIN_USER_ID);
+  await upsertUserStatus(HOTEL_ID.GHA_DISCOVERY, "Titanium", ADMIN_USER_ID);
 
   // Credit Cards
   await prisma.creditCard.upsert({

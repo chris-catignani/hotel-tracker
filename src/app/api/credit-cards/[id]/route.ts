@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { CreditCardRewardRuleFormData } from "@/lib/types";
+import { requireAdmin } from "@/lib/auth-utils";
 
 const CARD_INCLUDE = {
   pointType: true,
@@ -15,6 +16,9 @@ const CARD_INCLUDE = {
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const adminError = await requireAdmin();
+    if (adminError instanceof NextResponse) return adminError;
+
     const { id } = await params;
     const body = await request.json();
     const { name, rewardType, rewardRate, pointTypeId, rewardRules } = body;
@@ -69,6 +73,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const adminError = await requireAdmin();
+    if (adminError instanceof NextResponse) return adminError;
+
     const { id } = await params;
     await prisma.creditCard.update({
       where: { id: id },

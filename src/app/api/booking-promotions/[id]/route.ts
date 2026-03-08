@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
+import { getAuthenticatedUserId } from "@/lib/auth-utils";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const userIdOrResponse = await getAuthenticatedUserId();
+    if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
+
     const { id } = await params;
     const bookingPromotion = await prisma.bookingPromotion.findUnique({
       where: { id: id },
@@ -37,6 +41,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const userIdOrResponse = await getAuthenticatedUserId();
+    if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
+
     const { id } = await params;
     const { verified } = await request.json();
 

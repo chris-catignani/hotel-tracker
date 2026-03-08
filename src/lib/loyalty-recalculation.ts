@@ -6,28 +6,34 @@ import { reevaluateBookings } from "./promotion-matching";
  * Re-calculates loyalty points for all upcoming bookings of a specific hotel chain.
  * This is triggered when the chain's base rate or the user's status for that chain changes.
  */
-export async function recalculateLoyaltyForHotelChain(hotelChainId: string): Promise<void> {
+export async function recalculateLoyaltyForHotelChain(
+  hotelChainId: string,
+  userId: string
+): Promise<void> {
   // 1. Fetch chain and its current user status/elite details
   const hotelChain = await prisma.hotelChain.findUnique({
     where: { id: hotelChainId },
     include: {
-      userStatus: {
+      userStatuses: {
+        where: { userId },
         include: {
           eliteStatus: true,
         },
+        take: 1,
       },
     },
   });
 
   if (!hotelChain) return;
 
-  // 2. Find all future bookings for this chain
+  // 2. Find all future bookings for this chain and user
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   const bookings = await prisma.booking.findMany({
     where: {
       hotelChainId,
+      userId,
       checkIn: {
         gte: today,
       },
@@ -42,11 +48,12 @@ export async function recalculateLoyaltyForHotelChain(hotelChainId: string): Pro
 
   // 3. Prepare update operations
   const bookingIds = bookings.map((b) => b.id);
+  const userStatus = hotelChain.userStatuses[0] ?? null;
   const updateOperations = bookings.map((booking) => {
     const newPoints = calculatePoints({
       pretaxCost: Number(booking.pretaxCost),
       basePointRate: hotelChain.basePointRate ? Number(hotelChain.basePointRate) : null,
-      eliteStatus: hotelChain.userStatus?.eliteStatus,
+      eliteStatus: userStatus?.eliteStatus,
     });
     return prisma.booking.update({
       where: { id: booking.id },

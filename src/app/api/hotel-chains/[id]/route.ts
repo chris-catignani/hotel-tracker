@@ -2,9 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { recalculateLoyaltyForHotelChain } from "@/lib/loyalty-recalculation";
+import { getAuthenticatedUserId, requireAdmin } from "@/lib/auth-utils";
+import { normalizeUserStatuses } from "@/lib/normalize-response";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const userIdOrResponse = await getAuthenticatedUserId();
+    if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
+    const userId = userIdOrResponse;
+
     const { id } = await params;
     const hotelChain = await prisma.hotelChain.findUnique({
       where: { id: id },
@@ -12,11 +18,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         pointType: true,
         hotelChainSubBrands: true,
         eliteStatuses: true,
-        userStatus: { include: { eliteStatus: true } },
+        userStatuses: {
+          where: { userId },
+          include: { eliteStatus: true },
+          take: 1,
+        },
       },
     });
     if (!hotelChain) return apiError("Hotel chain not found", null, 404, request);
-    return NextResponse.json(hotelChain);
+    return NextResponse.json(normalizeUserStatuses(hotelChain));
   } catch (error) {
     return apiError("Failed to fetch hotel chain", error, 500, request);
   }
@@ -24,6 +34,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const adminError = await requireAdmin();
+    if (adminError instanceof NextResponse) return adminError;
+
+    const userIdOrResponse = await getAuthenticatedUserId();
+    if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
+    const userId = userIdOrResponse;
+
     const { id } = await params;
     const body = await request.json();
     const { name, loyaltyProgram, basePointRate, pointTypeId } = body;
@@ -47,16 +64,20 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       include: {
         pointType: true,
         eliteStatuses: { orderBy: { eliteTierLevel: "asc" } },
-        userStatus: { include: { eliteStatus: true } },
+        userStatuses: {
+          where: { userId },
+          include: { eliteStatus: true },
+          take: 1,
+        },
       },
     });
 
     // Recalculate loyalty points if the base rate changed
     if (basePointRate !== undefined && Number(existing?.basePointRate) !== Number(basePointRate)) {
-      await recalculateLoyaltyForHotelChain(id);
+      await recalculateLoyaltyForHotelChain(id, userId);
     }
 
-    return NextResponse.json(hotelChain);
+    return NextResponse.json(normalizeUserStatuses(hotelChain));
   } catch (error) {
     return apiError("Failed to update hotel chain", error, 500, request);
   }
@@ -67,6 +88,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const adminError = await requireAdmin();
+    if (adminError instanceof NextResponse) return adminError;
+
     const { id } = await params;
 
     // Check for existing bookings

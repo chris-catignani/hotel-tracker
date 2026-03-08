@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
+import { requireAdmin } from "@/lib/auth-utils";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -17,6 +18,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const adminError = await requireAdmin();
+    if (adminError instanceof NextResponse) return adminError;
+
     const { id } = await params;
     const { name } = await request.json();
     const agency = await prisma.otaAgency.update({
@@ -34,6 +38,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const adminError = await requireAdmin();
+    if (adminError instanceof NextResponse) return adminError;
+
     const { id } = await params;
     // Check if being used by any bookings
     const count = await prisma.booking.count({
