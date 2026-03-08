@@ -502,6 +502,8 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
           const isSegmentCapped =
             expectedSegmentValue > 0 && segmentValue < expectedSegmentValue - 0.001;
 
+          const isCappedToZero = isSegmentCapped && segmentValue < 0.01;
+
           // A partial cycle is "orphaned" if:
           //   - the promotion/benefit is marked orphaned, OR
           //   - the cap is NOT exhausted but the segment is $0 (ran out of bApplied without
@@ -509,15 +511,11 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
           // Pre-qualifying takes precedence: if this stay is pre-qualifying, don't mark as orphaned.
           const isSegmentOrphaned =
             !isCycleFinished &&
-            (isOrphaned ||
-              (!isPreQualifying &&
-                !isBenefitCapExhausted &&
-                segmentValue < 0.01 &&
-                isSegmentCapped));
+            (isOrphaned || (!isPreQualifying && !isBenefitCapExhausted && isCappedToZero));
 
           // Show "Capped Reward Cycle" only when the benefit cap was truly exhausted.
           // If the partial cycle is $0 because eligible nights ran out (not cap), show as Orphaned.
-          const isMaxedOut = isSegmentCapped && segmentValue < 0.01 && isBenefitCapExhausted;
+          const isMaxedOut = isCappedToZero && isBenefitCapExhausted;
 
           let label = "";
           let description = "";
