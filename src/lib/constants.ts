@@ -50,6 +50,7 @@ export const CURRENCIES = [
   "THB",
   "IDR",
   "NZD",
+  "KRW",
 ];
 
 export const PAYMENT_TYPES = [
