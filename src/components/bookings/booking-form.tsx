@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +22,7 @@ import {
   PaymentType,
   ShoppingPortal,
 } from "@/lib/types";
+import { bookingFormReducer, INITIAL_STATE } from "./booking-form-reducer";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -33,32 +34,6 @@ function diffDays(checkIn: string, checkOut: string): number {
   const end = new Date(checkOut);
   const diff = end.getTime() - start.getTime();
   return Math.max(0, Math.round(diff / (1000 * 60 * 60 * 24)));
-}
-
-function toDateInputValue(dateStr: string): string {
-  if (!dateStr) return "";
-  const date = new Date(dateStr);
-  const year = date.getUTCFullYear();
-  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
-  const day = String(date.getUTCDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function toPaymentType(
-  totalCost: string | number,
-  pointsRedeemed: number | null,
-  certificates: { certType: string }[]
-): PaymentType {
-  const hasCash = Number(totalCost) > 0;
-  const hasPoints = pointsRedeemed != null && Number(pointsRedeemed) > 0;
-  const hasCert = certificates.length > 0;
-  if (hasCash && hasPoints && hasCert) return "cash_points_cert";
-  if (hasCash && hasPoints) return "cash_points";
-  if (hasCash && hasCert) return "cash_cert";
-  if (hasPoints && hasCert) return "points_cert";
-  if (hasPoints) return "points";
-  if (hasCert) return "cert";
-  return "cash";
 }
 
 // ---------------------------------------------------------------------------
@@ -88,52 +63,45 @@ export function BookingForm({
   const [portals, setPortals] = useState<ShoppingPortal[]>([]);
   const [otaAgencies, setOtaAgencies] = useState<OtaAgency[]>([]);
 
-  // Validation state
-  const [showErrors, setShowErrors] = useState(false);
-
   // Exchange rate state
   const [exchangeRates, setExchangeRates] = useState<Record<string, number>>({});
 
-  // Form fields
-  const [hotelChainId, setHotelChainId] = useState("");
-  const [hotelChainSubBrandId, setHotelChainSubBrandId] = useState("none");
-  const [propertyName, setPropertyName] = useState("");
-  const [checkIn, setCheckIn] = useState("");
-  const [checkOut, setCheckOut] = useState("");
-  const [paymentType, setPaymentType] = useState<PaymentType>("cash");
-  const [pretaxCost, setPretaxCost] = useState("");
-  const [totalCost, setTotalCost] = useState("");
-  const [currency, setCurrency] = useState("USD");
-  const [pointsRedeemed, setPointsRedeemed] = useState("");
-  const [certificates, setCertificates] = useState<string[]>([]);
-  const [creditCardId, setCreditCardId] = useState("none");
-  const [shoppingPortalId, setShoppingPortalId] = useState("none");
-  const [portalCashbackRate, setPortalCashbackRate] = useState("");
-  const [portalCashbackOnTotal, setPortalCashbackOnTotal] = useState(false);
-  const [bookingSource, setBookingSource] = useState("");
-  const [otaAgencyId, setOtaAgencyId] = useState("none");
-  const [benefits, setBenefits] = useState<{ type: string; label: string; dollarValue: string }[]>(
-    []
-  );
-  const [notes, setNotes] = useState("");
+  // Form state
+  const [state, dispatch] = useReducer(bookingFormReducer, INITIAL_STATE);
+
+  const {
+    hotelChainId,
+    hotelChainSubBrandId,
+    propertyName,
+    checkIn,
+    checkOut,
+    paymentType,
+    pretaxCost,
+    totalCost,
+    currency,
+    pointsRedeemed,
+    certificates,
+    creditCardId,
+    shoppingPortalId,
+    portalCashbackRate,
+    portalCashbackOnTotal,
+    bookingSource,
+    otaAgencyId,
+    benefits,
+    notes,
+    showErrors,
+  } = state;
 
   const handleCheckInChange = (date?: Date) => {
-    const newCheckInStr = date ? format(date, "yyyy-MM-dd") : "";
-    setCheckIn(newCheckInStr);
-
-    if (date) {
-      const currentCheckOut = checkOut ? new Date(checkOut) : null;
-      const minCheckOut = new Date(date);
-      minCheckOut.setDate(minCheckOut.getDate() + 1);
-
-      if (!currentCheckOut || currentCheckOut <= date) {
-        setCheckOut(format(minCheckOut, "yyyy-MM-dd"));
-      }
-    }
+    dispatch({ type: "SET_CHECK_IN", date });
   };
 
   const handleCheckOutChange = (date?: Date) => {
-    setCheckOut(date ? format(date, "yyyy-MM-dd") : "");
+    dispatch({
+      type: "SET_FIELD",
+      field: "checkOut",
+      value: date ? format(date, "yyyy-MM-dd") : "",
+    });
   };
 
   const checkInDate = useMemo(() => (checkIn ? parseISO(checkIn) : undefined), [checkIn]);
@@ -142,47 +110,7 @@ export function BookingForm({
   // Populate from initialData if present
   useEffect(() => {
     if (initialData && portals.length > 0) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setHotelChainId(initialData.hotelChainId);
-      setHotelChainSubBrandId(
-        initialData.hotelChainSubBrandId ? initialData.hotelChainSubBrandId : "none"
-      );
-      setPropertyName(initialData.propertyName);
-      setCheckIn(toDateInputValue(initialData.checkIn));
-      setCheckOut(toDateInputValue(initialData.checkOut));
-      setPaymentType(
-        toPaymentType(initialData.totalCost, initialData.pointsRedeemed, initialData.certificates)
-      );
-      setPretaxCost(String(Number(initialData.pretaxCost)));
-      setTotalCost(String(Number(initialData.totalCost)));
-      setCurrency(initialData.currency || "USD");
-      setCreditCardId(initialData.creditCardId ? initialData.creditCardId : "none");
-      setShoppingPortalId(initialData.shoppingPortalId ? initialData.shoppingPortalId : "none");
-      const portalForBooking = initialData.shoppingPortalId
-        ? portals.find((p) => p.id === initialData.shoppingPortalId)
-        : null;
-      setPortalCashbackRate(
-        initialData.portalCashbackRate
-          ? portalForBooking?.rewardType === "points"
-            ? String(Number(initialData.portalCashbackRate))
-            : String(Number(initialData.portalCashbackRate) * 100)
-          : ""
-      );
-      setPortalCashbackOnTotal(initialData.portalCashbackOnTotal ?? false);
-      if (initialData.pointsRedeemed != null) {
-        setPointsRedeemed(String(initialData.pointsRedeemed));
-      }
-      setCertificates(initialData.certificates.map((c) => c.certType));
-      setBookingSource(initialData.bookingSource || "");
-      setOtaAgencyId(initialData.otaAgencyId ? initialData.otaAgencyId : "none");
-      setBenefits(
-        initialData.benefits.map((b) => ({
-          type: b.benefitType,
-          label: b.label || "",
-          dollarValue: b.dollarValue != null ? String(Number(b.dollarValue)) : "",
-        }))
-      );
-      setNotes(initialData.notes || "");
+      dispatch({ type: "LOAD_INITIAL_DATA", initialData, portals });
     }
   }, [initialData, portals]);
 
@@ -237,24 +165,6 @@ export function BookingForm({
     fetchReferenceData();
   }, [fetchReferenceData]);
 
-  const handlePaymentTypeChange = (v: PaymentType) => {
-    setPaymentType(v);
-    if (!v.includes("points")) setPointsRedeemed("");
-    if (!v.includes("cert")) setCertificates([]);
-  };
-
-  const addCertificate = () => setCertificates((prev) => [...prev, ""]);
-  const updateCertificate = (idx: number, value: string) =>
-    setCertificates((prev) => prev.map((c, i) => (i === idx ? value : c)));
-  const removeCertificate = (idx: number) =>
-    setCertificates((prev) => prev.filter((_, i) => i !== idx));
-
-  const addBenefit = () =>
-    setBenefits((prev) => [...prev, { type: "", label: "", dollarValue: "" }]);
-  const updateBenefit = (idx: number, field: string, value: string) =>
-    setBenefits((prev) => prev.map((b, i) => (i === idx ? { ...b, [field]: value } : b)));
-  const removeBenefit = (idx: number) => setBenefits((prev) => prev.filter((_, i) => i !== idx));
-
   const { errors, isValid } = useMemo(() => {
     const errs = {
       hotelChainId: !hotelChainId ? "Hotel chain is required" : "",
@@ -305,7 +215,7 @@ export function BookingForm({
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setShowErrors(true);
+    dispatch({ type: "SET_FIELD", field: "showErrors", value: true });
 
     if (!isValid) return;
 
@@ -362,17 +272,7 @@ export function BookingForm({
               <AppSelect
                 value={hotelChainId}
                 error={showErrors ? errors.hotelChainId : ""}
-                onValueChange={(val) => {
-                  setHotelChainId(val);
-                  setHotelChainSubBrandId("none");
-                  setCertificates((prev) =>
-                    prev.filter((cert) => {
-                      if (!cert) return true;
-                      const opt = CERT_TYPE_OPTIONS.find((o) => o.value === cert);
-                      return opt && opt.hotelChainId === val;
-                    })
-                  );
-                }}
+                onValueChange={(val) => dispatch({ type: "SET_HOTEL_CHAIN_ID", hotelChainId: val })}
                 options={hotelChains.map((chain) => ({
                   label: chain.name,
                   value: chain.id,
@@ -387,7 +287,9 @@ export function BookingForm({
               <Label htmlFor="hotelChainSubBrandId">Sub-brand</Label>
               <AppSelect
                 value={!hotelChainId ? "" : hotelChainSubBrandId}
-                onValueChange={setHotelChainSubBrandId}
+                onValueChange={(val) =>
+                  dispatch({ type: "SET_FIELD", field: "hotelChainSubBrandId", value: val })
+                }
                 disabled={
                   !hotelChainId ||
                   (hotelChains.find((h) => h.id === hotelChainId)?.hotelChainSubBrands.length ??
@@ -412,7 +314,9 @@ export function BookingForm({
               <Input
                 id="propertyName"
                 value={propertyName}
-                onChange={(e) => setPropertyName(e.target.value)}
+                onChange={(e) =>
+                  dispatch({ type: "SET_FIELD", field: "propertyName", value: e.target.value })
+                }
                 placeholder="e.g. Marriott Downtown Chicago"
                 error={showErrors ? errors.propertyName : ""}
               />
@@ -459,7 +363,9 @@ export function BookingForm({
             <Label htmlFor="paymentType">Payment Type</Label>
             <AppSelect
               value={paymentType}
-              onValueChange={(v) => handlePaymentTypeChange(v as PaymentType)}
+              onValueChange={(v) =>
+                dispatch({ type: "SET_PAYMENT_TYPE", paymentType: v as PaymentType })
+              }
               options={[...PAYMENT_TYPES]}
               data-testid="payment-type-select"
             />
@@ -477,7 +383,9 @@ export function BookingForm({
                     step="0.01"
                     min="0"
                     value={pretaxCost}
-                    onChange={(e) => setPretaxCost(e.target.value)}
+                    onChange={(e) =>
+                      dispatch({ type: "SET_FIELD", field: "pretaxCost", value: e.target.value })
+                    }
                     placeholder="0.00"
                     error={showErrors ? errors.pretaxCost : ""}
                   />
@@ -500,7 +408,9 @@ export function BookingForm({
                     step="0.01"
                     min="0"
                     value={totalCost}
-                    onChange={(e) => setTotalCost(e.target.value)}
+                    onChange={(e) =>
+                      dispatch({ type: "SET_FIELD", field: "totalCost", value: e.target.value })
+                    }
                     placeholder="0.00"
                     error={showErrors ? errors.totalCost : ""}
                   />
@@ -519,7 +429,9 @@ export function BookingForm({
                   <Label>Currency</Label>
                   <CurrencyCombobox
                     value={currency}
-                    onValueChange={setCurrency}
+                    onValueChange={(val) =>
+                      dispatch({ type: "SET_FIELD", field: "currency", value: val })
+                    }
                     data-testid="currency-select"
                   />
                   {currency !== "USD" && currentRate !== 1 && (
@@ -552,7 +464,9 @@ export function BookingForm({
                 type="number"
                 min="0"
                 value={pointsRedeemed}
-                onChange={(e) => setPointsRedeemed(e.target.value)}
+                onChange={(e) =>
+                  dispatch({ type: "SET_FIELD", field: "pointsRedeemed", value: e.target.value })
+                }
                 placeholder="e.g. 40000"
                 error={showErrors ? errors.pointsRedeemed : ""}
               />
@@ -568,7 +482,9 @@ export function BookingForm({
                   <div className="flex items-center gap-2">
                     <AppSelect
                       value={cert}
-                      onValueChange={(v) => updateCertificate(idx, v)}
+                      onValueChange={(v) =>
+                        dispatch({ type: "UPDATE_CERTIFICATE", index: idx, value: v })
+                      }
                       options={CERT_TYPE_OPTIONS.filter((opt) => opt.hotelChainId === hotelChainId)}
                       placeholder="Select certificate type..."
                       className="flex-1"
@@ -579,7 +495,7 @@ export function BookingForm({
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => removeCertificate(idx)}
+                      onClick={() => dispatch({ type: "REMOVE_CERTIFICATE", index: idx })}
                     >
                       ×
                     </Button>
@@ -587,7 +503,12 @@ export function BookingForm({
                 </div>
               ))}
               <div className="space-y-1">
-                <Button type="button" variant="outline" size="sm" onClick={addCertificate}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => dispatch({ type: "ADD_CERTIFICATE" })}
+                >
                   + Add Certificate
                 </Button>
                 {showErrors && certificates.length === 0 && (
@@ -605,10 +526,7 @@ export function BookingForm({
               <Label htmlFor="bookingSource">Booking Source</Label>
               <AppSelect
                 value={bookingSource || "none"}
-                onValueChange={(v) => {
-                  setBookingSource(v === "none" ? "" : v);
-                  if (v !== "ota") setOtaAgencyId("none");
-                }}
+                onValueChange={(v) => dispatch({ type: "SET_BOOKING_SOURCE", bookingSource: v })}
                 options={[{ label: "Not specified", value: "none" }, ...BOOKING_SOURCE_OPTIONS]}
                 placeholder="Where was this booked? (optional)"
                 data-testid="booking-source-select"
@@ -618,7 +536,9 @@ export function BookingForm({
               <Label htmlFor="creditCardId">Credit Card</Label>
               <AppSelect
                 value={creditCardId}
-                onValueChange={setCreditCardId}
+                onValueChange={(val) =>
+                  dispatch({ type: "SET_FIELD", field: "creditCardId", value: val })
+                }
                 options={[
                   { label: "None", value: "none" },
                   ...creditCards.map((card) => ({
@@ -637,7 +557,9 @@ export function BookingForm({
               <Label htmlFor="otaAgencyId">OTA Agency</Label>
               <AppSelect
                 value={otaAgencyId}
-                onValueChange={setOtaAgencyId}
+                onValueChange={(val) =>
+                  dispatch({ type: "SET_FIELD", field: "otaAgencyId", value: val })
+                }
                 options={[
                   { label: "Not specified", value: "none" },
                   ...otaAgencies.map((a) => ({
@@ -657,7 +579,9 @@ export function BookingForm({
               <Label htmlFor="shoppingPortalId">Shopping Portal</Label>
               <AppSelect
                 value={shoppingPortalId}
-                onValueChange={setShoppingPortalId}
+                onValueChange={(val) =>
+                  dispatch({ type: "SET_FIELD", field: "shoppingPortalId", value: val })
+                }
                 options={[
                   { label: "None", value: "none" },
                   ...portals.map((portal) => ({
@@ -686,7 +610,13 @@ export function BookingForm({
                   step="0.01"
                   min="0"
                   value={portalCashbackRate}
-                  onChange={(e) => setPortalCashbackRate(e.target.value)}
+                  onChange={(e) =>
+                    dispatch({
+                      type: "SET_FIELD",
+                      field: "portalCashbackRate",
+                      value: e.target.value,
+                    })
+                  }
                   placeholder={(() => {
                     const portal = portals.find((p) => p.id === shoppingPortalId);
                     return portal?.rewardType === "points" ? "e.g. 5.0" : "e.g. 6.75";
@@ -697,7 +627,13 @@ export function BookingForm({
                     type="checkbox"
                     id="portalCashbackOnTotal"
                     checked={portalCashbackOnTotal}
-                    onChange={(e) => setPortalCashbackOnTotal(e.target.checked)}
+                    onChange={(e) =>
+                      dispatch({
+                        type: "SET_FIELD",
+                        field: "portalCashbackOnTotal",
+                        value: e.target.checked,
+                      })
+                    }
                   />
                   <Label htmlFor="portalCashbackOnTotal" className="font-normal text-xs">
                     Apply to total (default: pre-tax)
@@ -728,12 +664,19 @@ export function BookingForm({
             <div className="space-y-3">
               {benefits.map((benefit, idx) => (
                 <div
-                  key={idx}
+                  key={benefit._id}
                   className="flex flex-wrap sm:flex-nowrap items-center gap-2 p-3 border rounded-lg sm:p-0 sm:border-none sm:rounded-none"
                 >
                   <AppSelect
                     value={benefit.type || "none"}
-                    onValueChange={(v) => updateBenefit(idx, "type", v === "none" ? "" : v)}
+                    onValueChange={(v) =>
+                      dispatch({
+                        type: "UPDATE_BENEFIT",
+                        index: idx,
+                        field: "type",
+                        value: v === "none" ? "" : v,
+                      })
+                    }
                     options={[{ label: "Select type...", value: "none" }, ...BENEFIT_TYPE_OPTIONS]}
                     placeholder="Select type..."
                     className="w-full sm:w-56 shrink-0"
@@ -742,7 +685,14 @@ export function BookingForm({
                   {benefit.type === "other" && (
                     <Input
                       value={benefit.label}
-                      onChange={(e) => updateBenefit(idx, "label", e.target.value)}
+                      onChange={(e) =>
+                        dispatch({
+                          type: "UPDATE_BENEFIT",
+                          index: idx,
+                          field: "label",
+                          value: e.target.value,
+                        })
+                      }
                       placeholder="Description"
                       className="flex-1 min-w-[120px]"
                     />
@@ -753,7 +703,14 @@ export function BookingForm({
                       step="0.01"
                       min="0"
                       value={benefit.dollarValue}
-                      onChange={(e) => updateBenefit(idx, "dollarValue", e.target.value)}
+                      onChange={(e) =>
+                        dispatch({
+                          type: "UPDATE_BENEFIT",
+                          index: idx,
+                          field: "dollarValue",
+                          value: e.target.value,
+                        })
+                      }
                       placeholder="$ value"
                       className="flex-1 sm:w-36 shrink-0"
                     />
@@ -762,7 +719,7 @@ export function BookingForm({
                       variant="outline"
                       size="sm"
                       className="shrink-0"
-                      onClick={() => removeBenefit(idx)}
+                      onClick={() => dispatch({ type: "REMOVE_BENEFIT", index: idx })}
                     >
                       ×
                     </Button>
@@ -770,7 +727,12 @@ export function BookingForm({
                 </div>
               ))}
             </div>
-            <Button type="button" variant="outline" size="sm" onClick={addBenefit}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => dispatch({ type: "ADD_BENEFIT" })}
+            >
               + Add Benefit
             </Button>
           </div>
@@ -781,7 +743,9 @@ export function BookingForm({
             <Textarea
               id="notes"
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              onChange={(e) =>
+                dispatch({ type: "SET_FIELD", field: "notes", value: e.target.value })
+              }
               placeholder="Any additional notes..."
               rows={3}
             />
