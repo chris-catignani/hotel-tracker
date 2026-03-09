@@ -128,6 +128,7 @@ export interface PromotionRestrictionsData {
   tieInRequiresPayment: boolean;
   allowedPaymentTypes: string[];
   allowedBookingSources: string[];
+  allowedCountryCodes: string[];
   hotelChainId: string | null;
   prerequisiteStayCount: number | null;
   prerequisiteNightCount: number | null;
@@ -152,6 +153,7 @@ export interface PromotionRestrictionsFormData {
   tieInRequiresPayment: boolean;
   allowedPaymentTypes: string[];
   allowedBookingSources: string[];
+  allowedCountryCodes: string[];
   hotelChainId: string;
   prerequisiteStayCount: string;
   prerequisiteNightCount: string;
@@ -177,6 +179,7 @@ export const EMPTY_RESTRICTIONS: PromotionRestrictionsFormData = {
   tieInRequiresPayment: false,
   allowedPaymentTypes: [],
   allowedBookingSources: [],
+  allowedCountryCodes: [],
   hotelChainId: "",
   prerequisiteStayCount: "",
   prerequisiteNightCount: "",

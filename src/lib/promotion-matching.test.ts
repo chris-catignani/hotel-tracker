@@ -52,6 +52,7 @@ function makeRestrictions(overrides: Partial<TestRestrictions> = {}): TestRestri
     tieInRequiresPayment: false,
     allowedPaymentTypes: [],
     allowedBookingSources: [],
+    allowedCountryCodes: [],
     prerequisiteStayCount: null,
     prerequisiteNightCount: null,
     subBrandRestrictions: [],
@@ -2014,5 +2015,51 @@ describe("promotion-matching architecture: Core vs Fulfillment", () => {
     const match2 = calculateMatchedPromotions(mockBooking, [tieredPromo], priorUsage);
     expect(match2).toHaveLength(1);
     expect(match2[0].appliedValue).toBe(100);
+  });
+});
+
+describe("geography restriction (structural match)", () => {
+  const geoPromo = makePromo({
+    restrictions: makeRestrictions({ allowedCountryCodes: ["US", "CA"] }),
+  });
+
+  it("matches when booking countryCode is in allowedCountryCodes", () => {
+    const booking = { ...mockBooking, countryCode: "US" };
+    const results = calculateMatchedPromotions(booking, [geoPromo], new Map());
+    expect(results).toHaveLength(1);
+  });
+
+  it("is invisible when booking countryCode is not in allowedCountryCodes", () => {
+    const booking = { ...mockBooking, countryCode: "GB" };
+    const results = calculateMatchedPromotions(booking, [geoPromo], new Map());
+    expect(results).toHaveLength(0);
+  });
+
+  it("is invisible when booking has no countryCode (null)", () => {
+    const booking = { ...mockBooking, countryCode: null };
+    const results = calculateMatchedPromotions(booking, [geoPromo], new Map());
+    expect(results).toHaveLength(0);
+  });
+
+  it("is invisible when booking has no countryCode (undefined)", () => {
+    const booking = { ...mockBooking, countryCode: undefined };
+    const results = calculateMatchedPromotions(booking, [geoPromo], new Map());
+    expect(results).toHaveLength(0);
+  });
+
+  it("shows for all bookings when allowedCountryCodes is empty (no restriction)", () => {
+    const openPromo = makePromo({
+      restrictions: makeRestrictions({ allowedCountryCodes: [] }),
+    });
+    const bookingNoGeo = { ...mockBooking, countryCode: null };
+    const bookingWithGeo = { ...mockBooking, countryCode: "JP" };
+    expect(calculateMatchedPromotions(bookingNoGeo, [openPromo], new Map())).toHaveLength(1);
+    expect(calculateMatchedPromotions(bookingWithGeo, [openPromo], new Map())).toHaveLength(1);
+  });
+
+  it("shows for all bookings when promotion has no restrictions object", () => {
+    const unrestrictedPromo = makePromo({ restrictions: null });
+    const booking = { ...mockBooking, countryCode: null };
+    expect(calculateMatchedPromotions(booking, [unrestrictedPromo], new Map())).toHaveLength(1);
   });
 });

@@ -11,6 +11,7 @@ import { X } from "lucide-react";
 import type { PromotionRestrictionsFormData } from "@/lib/types";
 import { AppSelect } from "@/components/ui/app-select";
 import { BOOKING_SOURCE_LABELS } from "@/lib/constants";
+import { COUNTRIES, countryName } from "@/lib/countries";
 
 // ─── Types & constants ────────────────────────────────────────────────────────
 
@@ -26,11 +27,13 @@ export type RestrictionKey =
   | "payment_type"
   | "prerequisite"
   | "booking_source"
-  | "hotel_chain";
+  | "hotel_chain"
+  | "geography";
 
 /** Canonical display order — cards and picker options always follow this order. */
 export const RESTRICTION_ORDER: RestrictionKey[] = [
   "hotel_chain",
+  "geography",
   "booking_source",
   "payment_type",
   "min_spend",
@@ -70,6 +73,7 @@ export const RESTRICTION_LABELS: Record<RestrictionKey, string> = {
   prerequisite: "Promotion Prerequisites",
   booking_source: "Booking Source",
   hotel_chain: "Hotel Chain Restriction",
+  geography: "Country Restriction",
 };
 
 // ─── Auto-detect active restrictions from saved restrictions data ─────────────
@@ -94,6 +98,7 @@ export function deriveActiveRestrictions(
   if (r.subBrandIncludeIds.length > 0 || r.subBrandExcludeIds.length > 0)
     keys.add("sub_brand_scope");
   if (r.prerequisiteStayCount || r.prerequisiteNightCount) keys.add("prerequisite");
+  if (r.allowedCountryCodes && r.allowedCountryCodes.length > 0) keys.add("geography");
   return keys;
 }
 
@@ -717,6 +722,44 @@ export function SubBrandScopeCard({
           placeholder={`Select sub-brands to ${mode}...`}
           searchPlaceholder="Search sub-brands..."
         />
+      </div>
+    </RestrictionCard>
+  );
+}
+
+export function GeographyRestrictionCard({
+  allowedCountryCodes,
+  onCountryCodesChange,
+  onRemove,
+}: {
+  allowedCountryCodes: string[];
+  onCountryCodesChange: (codes: string[]) => void;
+  onRemove: () => void;
+}) {
+  const options = COUNTRIES.map((c) => ({ value: c.code, label: `${c.code} — ${c.name}` }));
+
+  return (
+    <RestrictionCard title="Country Restriction" testId="geography" onRemove={onRemove}>
+      <p className="text-xs text-muted-foreground mb-3">
+        Only applies to bookings at hotels in the selected countries. Bookings without a confirmed
+        location are always excluded.
+      </p>
+      <div className="space-y-2">
+        <Label>Allowed Countries</Label>
+        <AppSelect
+          multiple
+          value={allowedCountryCodes}
+          onValueChange={onCountryCodesChange}
+          options={options}
+          placeholder="Select countries..."
+          searchPlaceholder="Search countries..."
+          data-testid="geography-country-select"
+        />
+        {allowedCountryCodes.length > 0 && (
+          <p className="text-xs text-muted-foreground">
+            {allowedCountryCodes.map((c) => countryName(c)).join(", ")}
+          </p>
+        )}
       </div>
     </RestrictionCard>
   );
