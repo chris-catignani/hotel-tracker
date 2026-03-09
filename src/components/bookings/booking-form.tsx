@@ -95,6 +95,9 @@ export function BookingForm({
   // Validation state
   const [showErrors, setShowErrors] = useState(false);
 
+  // Exchange rate state
+  const [exchangeRates, setExchangeRates] = useState<Record<string, number>>({});
+
   // Form fields
   const [hotelChainId, setHotelChainId] = useState("");
   const [hotelChainSubBrandId, setHotelChainSubBrandId] = useState("none");
@@ -105,7 +108,6 @@ export function BookingForm({
   const [pretaxCost, setPretaxCost] = useState("");
   const [totalCost, setTotalCost] = useState("");
   const [currency, setCurrency] = useState("USD");
-  const [originalAmount, setOriginalAmount] = useState("");
   const [pointsRedeemed, setPointsRedeemed] = useState("");
   const [certificates, setCertificates] = useState<string[]>([]);
   const [creditCardId, setCreditCardId] = useState("none");
@@ -158,9 +160,6 @@ export function BookingForm({
       setPretaxCost(String(Number(initialData.pretaxCost)));
       setTotalCost(String(Number(initialData.totalCost)));
       setCurrency(initialData.currency || "USD");
-      setOriginalAmount(
-        initialData.originalAmount ? String(Number(initialData.originalAmount)) : ""
-      );
       setCreditCardId(initialData.creditCardId ? initialData.creditCardId : "none");
       setShoppingPortalId(initialData.shoppingPortalId ? initialData.shoppingPortalId : "none");
       const portalForBooking = initialData.shoppingPortalId
@@ -201,29 +200,40 @@ export function BookingForm({
   const taxAmount =
     pretaxCost && totalCost ? (Number(totalCost) - Number(pretaxCost)).toFixed(2) : "0.00";
 
+  // Convert native pretax cost to USD for loyalty calculation
+  const currentRate = exchangeRates[currency] ?? 1;
+  const usdPretaxCost = pretaxCost ? String(Number(pretaxCost) * currentRate) : "";
+
   const loyaltyPointsEarned = useMemo(
     () =>
       calculatePointsFromChain({
         hotelChainId,
         hotelChainSubBrandId,
-        pretaxCost,
+        pretaxCost: usdPretaxCost,
         hotelChains,
       }),
-    [hotelChainId, hotelChainSubBrandId, pretaxCost, hotelChains]
+    [hotelChainId, hotelChainSubBrandId, usdPretaxCost, hotelChains]
   );
 
   // Fetch reference data
   const fetchReferenceData = useCallback(async () => {
-    const [hotelChainsRes, cardsRes, portalsRes, agenciesRes] = await Promise.all([
+    const [hotelChainsRes, cardsRes, portalsRes, agenciesRes, ratesRes] = await Promise.all([
       fetch("/api/hotel-chains"),
       fetch("/api/credit-cards"),
       fetch("/api/portals"),
       fetch("/api/ota-agencies"),
+      fetch("/api/exchange-rates"),
     ]);
     if (hotelChainsRes.ok) setHotelChains(await hotelChainsRes.json());
     if (cardsRes.ok) setCreditCards(await cardsRes.json());
     if (portalsRes.ok) setPortals(await portalsRes.json());
     if (agenciesRes.ok) setOtaAgencies(await agenciesRes.json());
+    if (ratesRes.ok) {
+      const rates = (await ratesRes.json()) as { fromCurrency: string; rate: string | number }[];
+      const rateMap: Record<string, number> = { USD: 1 };
+      for (const r of rates) rateMap[r.fromCurrency] = Number(r.rate);
+      setExchangeRates(rateMap);
+    }
   }, []);
 
   useEffect(() => {
@@ -314,8 +324,6 @@ export function BookingForm({
       taxAmount: hasCash ? Number(taxAmount) : 0,
       totalCost: hasCash ? Number(totalCost) : 0,
       currency: hasCash ? currency : "USD",
-      originalAmount:
-        hasCash && currency !== "USD" && originalAmount ? Number(originalAmount) : null,
       pointsRedeemed: hasPoints && pointsRedeemed ? Number(pointsRedeemed) : null,
       certificates: hasCert ? certificates.filter((c) => c.trim()) : [],
       creditCardId: creditCardId === "none" ? null : creditCardId,
@@ -495,7 +503,7 @@ export function BookingForm({
           {hasCash && (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="pretaxCost">Pre-tax Cost (USD) *</Label>
+                <Label htmlFor="pretaxCost">Pre-tax Cost ({currency}) *</Label>
                 <Input
                   id="pretaxCost"
                   type="number"
@@ -508,7 +516,7 @@ export function BookingForm({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="totalCost">Total Cost (USD) *</Label>
+                <Label htmlFor="totalCost">Total Cost ({currency}) *</Label>
                 <Input
                   id="totalCost"
                   type="number"
@@ -534,21 +542,39 @@ export function BookingForm({
                   options={CURRENCIES.map((c) => ({ label: c, value: c }))}
                   data-testid="currency-select"
                 />
-              </div>
-              {currency !== "USD" && (
-                <div className="space-y-2">
-                  <Label htmlFor="originalAmount">Original Amount ({currency})</Label>
-                  <Input
-                    id="originalAmount"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={originalAmount}
-                    onChange={(e) => setOriginalAmount(e.target.value)}
-                    placeholder="0.00"
-                  />
+                {currency !== "USD" && currentRate !== 1 && (
                   <p className="text-xs text-muted-foreground">
-                    USD amounts above are used for all calculations.
+                    Approx. rate: 1 {currency} = {currentRate.toFixed(4)} USD (refreshed daily)
+                  </p>
+                )}
+                {currency !== "USD" && currentRate === 1 && (
+                  <p className="text-xs text-muted-foreground">
+                    Exchange rate not available yet. Costs stored in {currency}; USD amounts
+                    computed at check-in.
+                  </p>
+                )}
+              </div>
+              {currency !== "USD" && pretaxCost && currentRate !== 1 && (
+                <div className="space-y-2">
+                  <Label>Approximate USD Equivalents</Label>
+                  <p className="text-sm text-muted-foreground pt-2">
+                    Pre-tax: ≈{" "}
+                    {new Intl.NumberFormat("en-US", {
+                      style: "currency",
+                      currency: "USD",
+                    }).format(Number(pretaxCost) * currentRate)}
+                  </p>
+                  {totalCost && (
+                    <p className="text-sm text-muted-foreground">
+                      Total: ≈{" "}
+                      {new Intl.NumberFormat("en-US", {
+                        style: "currency",
+                        currency: "USD",
+                      }).format(Number(totalCost) * currentRate)}
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    For past stays, the exact check-in date rate will be used.
                   </p>
                 </div>
               )}

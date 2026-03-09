@@ -35,6 +35,8 @@ interface BookingWithRelations {
   pretaxCost: string;
   taxAmount: string;
   totalCost: string;
+  currency: string;
+  exchangeRate: string | number | null;
   portalCashbackRate: string | null;
   portalCashbackOnTotal: boolean;
   loyaltyPointsEarned: number | null;
@@ -223,9 +225,10 @@ export default function DashboardPage() {
         acc[chain].pointsRedeemed += b.pointsRedeemed ?? 0;
         acc[chain].certs += b.certificates.length;
         acc[chain].totalNet += calculateNetCost(b);
-        // Only cash bookings contribute to spend/savings
+        // Only cash bookings contribute to spend/savings (use USD totalCost)
+        const usdTotalCost = Number(b.totalCost) * (Number(b.exchangeRate) || 1);
         if (Number(b.totalCost) > 0) {
-          acc[chain].totalSpend += Number(b.totalCost);
+          acc[chain].totalSpend += usdTotalCost;
           acc[chain].totalSavings += calcTotalSavings(b);
         }
         return acc;
@@ -282,7 +285,10 @@ export default function DashboardPage() {
   const totalBookings = bookings.length;
   // Only cash bookings (totalCost > 0) contribute to spend/savings/avg stats
   const cashBookings = bookings.filter((b) => Number(b.totalCost) > 0);
-  const totalSpend = cashBookings.reduce((sum, b) => sum + Number(b.totalCost), 0);
+  const totalSpend = cashBookings.reduce(
+    (sum, b) => sum + Number(b.totalCost) * (Number(b.exchangeRate) || 1),
+    0
+  );
   const totalSavings = bookings.reduce((sum, b) => sum + calcTotalSavings(b), 0);
   const totalNights = bookings.reduce((sum, b) => sum + b.numNights, 0);
   const cashNights = cashBookings.reduce((sum, b) => sum + b.numNights, 0);
@@ -292,8 +298,8 @@ export default function DashboardPage() {
   const totalPointsRedeemed = bookings.reduce((sum, b) => sum + (b.pointsRedeemed ?? 0), 0);
   const totalCertificates = bookings.reduce((sum, b) => sum + b.certificates.length, 0);
   const totalCombinedSpend = bookings.reduce((sum, b) => {
-    const { pointsRedeemedValue, certsValue } = getNetCostBreakdown(b);
-    return sum + Number(b.totalCost) + pointsRedeemedValue + certsValue;
+    const { totalCost: usdTotalCost, pointsRedeemedValue, certsValue } = getNetCostBreakdown(b);
+    return sum + usdTotalCost + pointsRedeemedValue + certsValue;
   }, 0);
 
   const recentBookings = bookings.slice(0, 5);

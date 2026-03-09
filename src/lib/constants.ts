@@ -46,10 +46,11 @@ export const CURRENCIES = [
   "SGD",
   "HKD",
   "MYR",
-  "NTD",
+  "TWD",
   "THB",
   "IDR",
   "NZD",
+  "KRW",
 ];
 
 export const PAYMENT_TYPES = [

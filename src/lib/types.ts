@@ -302,7 +302,9 @@ export interface Booking {
   taxAmount: string | number;
   totalCost: string | number;
   currency: string;
-  originalAmount: string | number | null;
+  exchangeRate: string | number | null;
+  isFutureEstimate?: boolean;
+  loyaltyPointsEstimated?: boolean;
   creditCardId: string | null;
   shoppingPortalId: string | null;
   portalCashbackRate: string | number | null;
@@ -327,7 +329,6 @@ export interface BookingFormData {
   taxAmount: number;
   totalCost: number;
   currency: string;
-  originalAmount: number | null;
   pointsRedeemed: number | null;
   certificates: string[];
   creditCardId: string | null;

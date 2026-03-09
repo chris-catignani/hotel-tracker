@@ -102,7 +102,9 @@ interface Booking extends Omit<NetCostBooking, "bookingPromotions"> {
   checkOut: string;
   numNights: number;
   currency: string;
-  originalAmount: string | number | null;
+  exchangeRate: string | number | null;
+  isFutureEstimate?: boolean;
+  loyaltyPointsEstimated?: boolean;
   creditCardId: string | null;
   shoppingPortalId: string | null;
   notes: string | null;
@@ -302,25 +304,47 @@ export default function BookingDetailPage() {
             {totalCost > 0 && (
               <div>
                 <p className="text-sm text-muted-foreground">Pre-tax Cost</p>
-                <p className="font-medium">{formatCurrency(Number(booking.pretaxCost))}</p>
+                {booking.currency !== "USD" ? (
+                  <>
+                    <p className="font-medium">
+                      {formatCurrency(Number(booking.pretaxCost), booking.currency)}
+                    </p>
+                    {booking.exchangeRate != null && (
+                      <p className="text-sm text-muted-foreground">
+                        ≈{" "}
+                        {formatCurrency(Number(booking.pretaxCost) * Number(booking.exchangeRate))}
+                        {booking.isFutureEstimate ? " (est.)" : ""}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="font-medium">{formatCurrency(Number(booking.pretaxCost))}</p>
+                )}
               </div>
             )}
             {totalCost > 0 && (
               <div>
                 <p className="text-sm text-muted-foreground">Total Cost</p>
-                <p className="font-medium">{formatCurrency(totalCost)}</p>
-              </div>
-            )}
-            {booking.currency !== "USD" && booking.originalAmount != null && (
-              <div>
-                <p className="text-sm text-muted-foreground">Original Amount</p>
-                <p className="font-medium">
-                  {Number(booking.originalAmount).toLocaleString("en-US", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}{" "}
-                  {booking.currency}
-                </p>
+                {booking.currency !== "USD" ? (
+                  <>
+                    <p className="font-medium" data-testid="total-cost-native">
+                      {formatCurrency(totalCost, booking.currency)}
+                    </p>
+                    {booking.exchangeRate != null && (
+                      <p
+                        className="text-sm text-muted-foreground"
+                        data-testid="total-cost-usd-equivalent"
+                      >
+                        ≈ {formatCurrency(totalCost * Number(booking.exchangeRate))}
+                        {booking.isFutureEstimate ? " (est.)" : ""}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="font-medium" data-testid="total-cost-usd">
+                    {formatCurrency(totalCost)}
+                  </p>
+                )}
               </div>
             )}
             {booking.creditCard && (
@@ -345,7 +369,11 @@ export default function BookingDetailPage() {
             {booking.loyaltyPointsEarned != null && (
               <div>
                 <p className="text-sm text-muted-foreground">Loyalty Points Earned</p>
-                <p className="font-medium">{booking.loyaltyPointsEarned.toLocaleString()}</p>
+                <p className="font-medium" data-testid="loyalty-points-earned">
+                  {booking.loyaltyPointsEstimated ? "~" : ""}
+                  {booking.loyaltyPointsEarned.toLocaleString()}
+                  {booking.loyaltyPointsEstimated ? " (est.)" : ""}
+                </p>
               </div>
             )}
             {booking.pointsRedeemed != null && (

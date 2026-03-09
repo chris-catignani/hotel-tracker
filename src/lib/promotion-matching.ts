@@ -8,6 +8,7 @@ import {
 } from "@prisma/client";
 import { DEFAULT_EQN_VALUE } from "./constants";
 import { certPointsValue } from "./cert-types";
+import { getCurrentRate } from "./exchange-rate";
 
 export type PromotionUsage = {
   count: number;
@@ -118,6 +119,8 @@ export interface MatchingBooking {
   numNights: number;
   pretaxCost: string | number | Prisma.Decimal;
   totalCost: string | number | Prisma.Decimal;
+  currency?: string;
+  exchangeRate?: string | number | Prisma.Decimal | null;
   pointsRedeemed: number | null;
   loyaltyPointsEarned: number | null;
   _count?: { certificates: number };
@@ -377,7 +380,8 @@ const PerStayHideRules: Record<string, PromotionRule> = {
     if (
       promo.type === PromotionType.credit_card &&
       promo.restrictions?.minSpend != null &&
-      Number(booking.totalCost) < Number(promo.restrictions.minSpend)
+      Number(booking.totalCost) * Number(booking.exchangeRate ?? 1) <
+        Number(promo.restrictions.minSpend)
     ) {
       return { valid: false };
     }
@@ -642,7 +646,7 @@ export function calculateMatchedPromotions(
           if (
             promo.type === PromotionType.credit_card &&
             br?.minSpend != null &&
-            Number(booking.totalCost) < Number(br.minSpend)
+            Number(booking.totalCost) * Number(booking.exchangeRate ?? 1) < Number(br.minSpend)
           ) {
             return null;
           }
@@ -776,12 +780,14 @@ export function calculateMatchedPromotions(
         !isBenefitMaxedOut &&
         !isActuallyPreQualifying
       ) {
+        const usdTotalCost = Number(booking.totalCost) * Number(booking.exchangeRate ?? 1);
+        const usdPretaxCost = Number(booking.pretaxCost) * Number(booking.exchangeRate ?? 1);
         switch (benefit.rewardType) {
           case PromotionRewardType.cashback:
             if (benefit.valueType === PromotionBenefitValueType.fixed) {
               appliedValue = benefitValue;
             } else if (benefit.valueType === PromotionBenefitValueType.percentage) {
-              appliedValue = (Number(booking.totalCost) * benefitValue) / 100;
+              appliedValue = (usdTotalCost * benefitValue) / 100;
             }
             break;
           case PromotionRewardType.points:
@@ -791,7 +797,7 @@ export function calculateMatchedPromotions(
               const baseRate = booking.hotelChain?.basePointRate;
               const basisPoints =
                 isBaseOnly && baseRate != null
-                  ? Number(booking.pretaxCost) * Number(baseRate)
+                  ? usdPretaxCost * Number(baseRate)
                   : Number(booking.loyaltyPointsEarned || 0);
               appliedValue = basisPoints * (benefitValue - 1) * centsPerPoint;
               benefitBonusPoints = Math.round(basisPoints * (benefitValue - 1));
@@ -873,13 +879,15 @@ export function calculateMatchedPromotions(
           (br?.spanStays && br.minNightsRequired ? br.minNightsRequired : null) ??
           (r?.spanStays && r.minNightsRequired ? r.minNightsRequired : null);
         if (minNights && minNights > 0) {
+          const usdTotalCostSpan = Number(booking.totalCost) * Number(booking.exchangeRate ?? 1);
+          const usdPretaxCostSpan = Number(booking.pretaxCost) * Number(booking.exchangeRate ?? 1);
           // Calculate full benefit value first
           switch (benefit.rewardType) {
             case PromotionRewardType.cashback:
               if (benefit.valueType === PromotionBenefitValueType.fixed) {
                 appliedValue = benefitValue;
               } else if (benefit.valueType === PromotionBenefitValueType.percentage) {
-                appliedValue = (Number(booking.totalCost) * benefitValue) / 100;
+                appliedValue = (usdTotalCostSpan * benefitValue) / 100;
               }
               break;
             case PromotionRewardType.points:
@@ -889,7 +897,7 @@ export function calculateMatchedPromotions(
                 const baseRate = booking.hotelChain?.basePointRate;
                 const basisPoints =
                   isBaseOnly && baseRate != null
-                    ? Number(booking.pretaxCost) * Number(baseRate)
+                    ? usdPretaxCostSpan * Number(baseRate)
                     : Number(booking.loyaltyPointsEarned || 0);
                 appliedValue = basisPoints * (benefitValue - 1) * centsPerPoint;
                 benefitBonusPoints = Math.round(basisPoints * (benefitValue - 1));
@@ -1581,6 +1589,18 @@ export async function matchPromotionsForBooking(bookingId: string): Promise<stri
     throw new Error(`Booking with id ${bookingId} not found`);
   }
 
+  // Resolve exchange rate for USD-based cost calculations
+  // For past/USD bookings, exchangeRate is already set; for future non-USD, fetch current rate
+  let resolvedExchangeRate: number = 1;
+  if (booking.currency === "USD") {
+    resolvedExchangeRate = 1;
+  } else if (booking.exchangeRate != null) {
+    resolvedExchangeRate = Number(booking.exchangeRate);
+  } else {
+    resolvedExchangeRate = (await getCurrentRate(booking.currency)) ?? 1;
+  }
+  const bookingWithRate = { ...booking, exchangeRate: resolvedExchangeRate };
+
   const activePromotions = (
     await prisma.promotion.findMany({
       include: PROMOTIONS_INCLUDE,
@@ -1594,9 +1614,9 @@ export async function matchPromotionsForBooking(bookingId: string): Promise<stri
   const constrainedPromos = getConstrainedPromotions(activePromotions);
 
   // Fetch prior usage excluding current booking
-  const priorUsage = await fetchPromotionUsage(constrainedPromos, booking, bookingId);
+  const priorUsage = await fetchPromotionUsage(constrainedPromos, bookingWithRate, bookingId);
 
-  const matched = calculateMatchedPromotions(booking, activePromotions, priorUsage);
+  const matched = calculateMatchedPromotions(bookingWithRate, activePromotions, priorUsage);
   await applyMatchedPromotions(bookingId, matched);
   return matched.map((m) => m.promotionId);
 }

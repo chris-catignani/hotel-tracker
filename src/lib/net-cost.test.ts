@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getNetCostBreakdown, NetCostBooking } from "./net-cost";
+import { getNetCostBreakdown, toUSD, NetCostBooking } from "./net-cost";
 import { HotelChain } from "./types";
 
 describe("net-cost", () => {
@@ -33,6 +33,86 @@ describe("net-cost", () => {
     expect(result.netCost).toBe(100);
     expect(result.promoSavings).toBe(0);
     expect(result.portalCashback).toBe(0);
+  });
+
+  describe("toUSD helper", () => {
+    it("returns amount unchanged when rate is 1 (USD)", () => {
+      expect(toUSD(100, 1)).toBe(100);
+    });
+
+    it("converts native amount to USD using exchange rate", () => {
+      expect(toUSD(1000, 0.00073)).toBeCloseTo(0.73);
+    });
+  });
+
+  describe("Non-USD currency calculations (exchangeRate applied)", () => {
+    // EUR booking: pretax=800 EUR, total=1000 EUR, rate=1.08 → pretax=$864, total=$1080 USD
+    const eurBooking: NetCostBooking = {
+      ...mockBaseBooking,
+      currency: "EUR",
+      exchangeRate: 1.08,
+      pretaxCost: 800,
+      totalCost: 1000,
+      loyaltyPointsEarned: 0,
+    };
+
+    it("converts totalCost to USD for netCost calculation", () => {
+      const result = getNetCostBreakdown(eurBooking);
+      expect(result.totalCost).toBeCloseTo(1080); // 1000 EUR * 1.08
+      expect(result.netCost).toBeCloseTo(1080);
+    });
+
+    it("applies portal cashback on USD-converted pre-tax cost", () => {
+      const booking: NetCostBooking = {
+        ...eurBooking,
+        shoppingPortal: { name: "Rakuten", rewardType: "cashback", pointType: null },
+        portalCashbackRate: 0.05, // 5%
+        portalCashbackOnTotal: false,
+      };
+      // pretax USD = 800 * 1.08 = 864; cashback = 864 * 0.05 = 43.20
+      const result = getNetCostBreakdown(booking);
+      expect(result.portalCashback).toBeCloseTo(43.2);
+      expect(result.netCost).toBeCloseTo(1080 - 43.2);
+    });
+
+    it("applies portal cashback on USD-converted total cost when portalCashbackOnTotal=true", () => {
+      const booking: NetCostBooking = {
+        ...eurBooking,
+        shoppingPortal: { name: "Rakuten", rewardType: "cashback", pointType: null },
+        portalCashbackRate: 0.1, // 10%
+        portalCashbackOnTotal: true,
+      };
+      // total USD = 1000 * 1.08 = 1080; cashback = 1080 * 0.1 = 108
+      const result = getNetCostBreakdown(booking);
+      expect(result.portalCashback).toBeCloseTo(108);
+    });
+
+    it("applies card reward on USD-converted total cost", () => {
+      const booking: NetCostBooking = {
+        ...eurBooking,
+        creditCard: {
+          name: "Chase Sapphire",
+          rewardRate: 0.01,
+          pointType: { name: "Ultimate Rewards", centsPerPoint: 0.02 },
+        },
+      };
+      // total USD = 1080; reward = 1080 * 0.01 * 0.02 = 0.216
+      const result = getNetCostBreakdown(booking);
+      expect(result.cardReward).toBeCloseTo(0.216);
+    });
+
+    it("treats null exchangeRate as 1 (USD fallback) for cost calculations", () => {
+      const booking: NetCostBooking = {
+        ...mockBaseBooking,
+        currency: "SGD",
+        exchangeRate: null,
+        pretaxCost: 500,
+        totalCost: 600,
+      };
+      const result = getNetCostBreakdown(booking);
+      // exchangeRate defaults to 1 → costs treated as-is
+      expect(result.totalCost).toBe(600);
+    });
   });
 
   it("should apply fixed cashback promotions", () => {

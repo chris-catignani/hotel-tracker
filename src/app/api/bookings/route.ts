@@ -7,6 +7,8 @@ import { calculatePoints } from "@/lib/loyalty-utils";
 import { CertType, BenefitType } from "@prisma/client";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
+import { fetchExchangeRate, getCurrentRate } from "@/lib/exchange-rate";
+import { enrichBookingWithRate } from "@/lib/booking-enrichment";
 
 const BOOKING_INCLUDE = (userId: string) =>
   ({
@@ -66,7 +68,10 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(normalizeUserStatuses(bookings));
+    const normalized = normalizeUserStatuses(bookings) as (typeof bookings)[number][];
+    const enriched = await Promise.all(normalized.map(enrichBookingWithRate));
+
+    return NextResponse.json(enriched);
   } catch (error) {
     return apiError("Failed to fetch bookings", error, 500, request);
   }
@@ -95,7 +100,6 @@ export async function POST(request: NextRequest) {
       loyaltyPointsEarned,
       pointsRedeemed,
       currency,
-      originalAmount,
       certificates,
       bookingSource,
       otaAgencyId,
@@ -104,11 +108,32 @@ export async function POST(request: NextRequest) {
       hotelChainSubBrandId,
     } = body;
 
+    const resolvedCurrency: string = currency || "USD";
+    const checkInDate = new Date(checkIn);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const isPast = checkInDate <= today;
+
+    // Resolve exchange rate: 1 for USD; historical rate for past non-USD; null for future non-USD
+    let resolvedExchangeRate: number | null = null;
+    if (resolvedCurrency === "USD") {
+      resolvedExchangeRate = 1;
+    } else if (isPast) {
+      const checkInStr = checkInDate.toISOString().split("T")[0];
+      resolvedExchangeRate = await fetchExchangeRate(resolvedCurrency, checkInStr);
+    }
+    // future non-USD: resolvedExchangeRate stays null
+
+    // For loyalty points, use resolved or current rate to compute USD pretax cost
+    const rateForLoyalty = resolvedExchangeRate ?? (await getCurrentRate(resolvedCurrency)) ?? 1;
+
     // Auto-calculate loyalty points from hotel/sub-brand rates if not explicitly provided
+    // Only compute and store loyalty points when exchange rate is locked (past/USD bookings)
     let calculatedPoints: number | null =
       loyaltyPointsEarned != null ? Number(loyaltyPointsEarned) : null;
 
-    if (calculatedPoints == null && hotelChainId && pretaxCost) {
+    const shouldComputeLoyalty = resolvedExchangeRate != null; // only for past/USD
+    if (calculatedPoints == null && shouldComputeLoyalty && hotelChainId && pretaxCost) {
       // Fetch UserStatus for this chain
       const userStatus = await prisma.userStatus.findUnique({
         where: { userId_hotelChainId: { userId, hotelChainId } },
@@ -133,8 +158,9 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      const usdPretaxCost = Number(pretaxCost) * rateForLoyalty;
       calculatedPoints = calculatePoints({
-        pretaxCost: Number(pretaxCost),
+        pretaxCost: usdPretaxCost,
         basePointRate,
         eliteStatus: userStatus?.eliteStatus
           ? {
@@ -152,7 +178,7 @@ export async function POST(request: NextRequest) {
         hotelChainId: hotelChainId,
         hotelChainSubBrandId: hotelChainSubBrandId || null,
         propertyName,
-        checkIn: new Date(checkIn),
+        checkIn: checkInDate,
         checkOut: new Date(checkOut),
         numNights: Number(numNights),
         pretaxCost: Number(pretaxCost),
@@ -164,8 +190,8 @@ export async function POST(request: NextRequest) {
         portalCashbackOnTotal: portalCashbackOnTotal ?? false,
         loyaltyPointsEarned: calculatedPoints,
         pointsRedeemed: pointsRedeemed ? Number(pointsRedeemed) : null,
-        currency: currency || "USD",
-        originalAmount: originalAmount ? Number(originalAmount) : null,
+        currency: resolvedCurrency,
+        exchangeRate: resolvedExchangeRate,
         notes: notes || null,
         bookingSource: bookingSource || null,
         otaAgencyId: bookingSource === "ota" && otaAgencyId ? otaAgencyId : null,
@@ -202,7 +228,12 @@ export async function POST(request: NextRequest) {
       include: BOOKING_INCLUDE(userId),
     });
 
-    return NextResponse.json(normalizeUserStatuses(fullBooking), { status: 201 });
+    const normalizedBooking = normalizeUserStatuses(fullBooking) as typeof fullBooking;
+    const enrichedBooking = normalizedBooking
+      ? await enrichBookingWithRate(normalizedBooking)
+      : null;
+
+    return NextResponse.json(enrichedBooking, { status: 201 });
   } catch (error) {
     return apiError("Failed to create booking", error, 500, request);
   }
