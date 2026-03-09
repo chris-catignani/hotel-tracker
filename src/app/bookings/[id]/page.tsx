@@ -327,9 +327,14 @@ export default function BookingDetailPage() {
                 <p className="text-sm text-muted-foreground">Total Cost</p>
                 {booking.currency !== "USD" ? (
                   <>
-                    <p className="font-medium">{formatCurrency(totalCost, booking.currency)}</p>
+                    <p className="font-medium" data-testid="total-cost-native">
+                      {formatCurrency(totalCost, booking.currency)}
+                    </p>
                     {booking.exchangeRate != null && (
-                      <p className="text-sm text-muted-foreground">
+                      <p
+                        className="text-sm text-muted-foreground"
+                        data-testid="total-cost-usd-equivalent"
+                      >
                         ≈ {formatCurrency(totalCost * Number(booking.exchangeRate))}
                         {booking.isFutureEstimate ? " (est.)" : ""}
                       </p>
@@ -362,7 +367,7 @@ export default function BookingDetailPage() {
             {booking.loyaltyPointsEarned != null && (
               <div>
                 <p className="text-sm text-muted-foreground">Loyalty Points Earned</p>
-                <p className="font-medium">
+                <p className="font-medium" data-testid="loyalty-points-earned">
                   {booking.loyaltyPointsEstimated ? "~" : ""}
                   {booking.loyaltyPointsEarned.toLocaleString()}
                   {booking.loyaltyPointsEstimated ? " (est.)" : ""}
