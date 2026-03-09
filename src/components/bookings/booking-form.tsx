@@ -121,8 +121,8 @@ export function BookingForm({
         displayName: manualPropertyName,
         countryCode: manualCountryCode,
         city: manualCity,
-        latitude: 0,
-        longitude: 0,
+        latitude: null,
+        longitude: null,
       },
     });
   };
@@ -825,6 +825,7 @@ export function BookingForm({
         </form>
       </CardContent>
       <ManualGeoModal
+        key={manualGeoOpen ? `open-${propertyName}` : "closed"}
         open={manualGeoOpen}
         onClose={() => setManualGeoOpen(false)}
         initialPropertyName={propertyName}

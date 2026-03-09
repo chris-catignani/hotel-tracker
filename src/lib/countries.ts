@@ -202,7 +202,7 @@ export function countryName(code: string): string {
   return COUNTRIES.find((c) => c.code === code)?.name ?? code;
 }
 
-// ISO 3166-1 alpha-3 → alpha-2 mapping (used to normalize HERE API responses)
+// ISO 3166-1 alpha-3 → alpha-2 mapping (used for normalizing third-party data)
 export const ALPHA3_TO_ALPHA2: Record<string, string> = {
   AFG: "AF",
   ALB: "AL",

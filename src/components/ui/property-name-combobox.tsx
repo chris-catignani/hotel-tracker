@@ -158,7 +158,7 @@ export function PropertyNameCombobox({
         data-testid={testId}
         autoComplete="off"
         onFocus={() => {
-          if (value.trim().length >= 3 && suggestions.length >= 0) setOpen(true);
+          if (value.trim().length >= 3 && suggestions.length > 0) setOpen(true);
         }}
       />
       {loading && (

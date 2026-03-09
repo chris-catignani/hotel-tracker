@@ -94,9 +94,11 @@ test.describe("Booking Edit", () => {
   test("saves changes and redirects to the detail page", async ({ page, testBooking }) => {
     await page.goto(`/bookings/${testBooking.id}/edit`);
 
-    // Wait for the form to be fully populated from initialData before typing,
-    // so the LOAD_INITIAL_DATA dispatch doesn't overwrite what we type
-    await expect(page.getByLabel(/Property Name/i)).toHaveValue(testBooking.propertyName);
+    // Wait for the form to be fully populated from initialData before typing.
+    // The property name shows in the confirmed state (a div, not an input).
+    await expect(page.getByTestId("property-name-input-confirmed")).toContainText(
+      testBooking.propertyName
+    );
 
     // Update the notes field (simple textarea, no date picker involved)
     const uniqueNote = `E2E note ${crypto.randomUUID()}`;

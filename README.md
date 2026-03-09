@@ -6,7 +6,7 @@ Built with Next.js, Prisma, shadcn/ui, and Tailwind CSS.
 
 ## Features
 
-- **Booking management** -- Track hotel stays with pre-tax cost, taxes, credit card used, shopping portal, and loyalty points earned; property autocomplete powered by HERE Maps
+- **Booking management** -- Track hotel stays with pre-tax cost, taxes, credit card used, shopping portal, and loyalty points earned; property autocomplete powered by Google Places API
 - **Promotion tracking** -- Define promotions (hotel credits, card offers, portal bonuses, loyalty multipliers) with matching rules
 - **Auto-matching** -- Promotions automatically apply to bookings based on hotel chain, credit card, portal, date range, and spend thresholds
 - **Net cost calculation** -- See the true cost of each stay after all savings:

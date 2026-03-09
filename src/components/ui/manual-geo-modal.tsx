@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -35,19 +35,6 @@ export function ManualGeoModal({
   const [countryOpen, setCountryOpen] = useState(false);
   const [countrySearch, setCountrySearch] = useState("");
   const [showErrors, setShowErrors] = useState(false);
-
-  // Reset local modal fields when it opens; setState-in-effect is valid here since we're
-  // synchronizing from a controlled open/initialPropertyName prop, not from render.
-  useEffect(() => {
-    if (!open) return;
-    /* eslint-disable react-hooks/set-state-in-effect */
-    setPropertyName(initialPropertyName);
-    setCountryCode("");
-    setCity("");
-    setCountrySearch("");
-    setShowErrors(false);
-    /* eslint-enable react-hooks/set-state-in-effect */
-  }, [open, initialPropertyName]);
 
   const filteredCountries = COUNTRIES.filter(
     (c) =>
