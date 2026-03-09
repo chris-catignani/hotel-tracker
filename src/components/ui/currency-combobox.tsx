@@ -52,13 +52,15 @@ export function CurrencyCombobox({
           className="mb-2 h-8"
           autoFocus
         />
-        <div className="max-h-60 overflow-y-auto">
+        <div className="max-h-60 overflow-y-auto" role="listbox">
           {filtered.length === 0 ? (
             <p className="text-sm text-muted-foreground px-2 py-1">No results.</p>
           ) : (
             filtered.map((c) => (
               <button
                 key={c.code}
+                role="option"
+                aria-selected={value === c.code}
                 className={cn(
                   "flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer text-left",
                   value === c.code && "bg-accent text-accent-foreground"

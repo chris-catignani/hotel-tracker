@@ -88,12 +88,19 @@ export function BookingCard({ booking, onDelete, showActions = false }: BookingC
                     booking.currency !== "USD" ? (
                       <Popover>
                         <PopoverTrigger asChild>
-                          <button className="underline decoration-dotted cursor-pointer hover:opacity-80">
+                          <button
+                            className="underline decoration-dotted cursor-pointer hover:opacity-80"
+                            data-testid="cost-popover-trigger"
+                          >
                             {formatCurrency(usdTotalCost)}
                             {booking.isFutureEstimate ? " (est.)" : ""}
                           </button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-3 text-sm" align="center">
+                        <PopoverContent
+                          className="w-auto p-3 text-sm"
+                          align="center"
+                          data-testid="cost-popover-content"
+                        >
                           <p className="font-medium">
                             {formatCurrency(Number(booking.totalCost), booking.currency)}
                           </p>
