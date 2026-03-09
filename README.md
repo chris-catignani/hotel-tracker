@@ -6,7 +6,7 @@ Built with Next.js, Prisma, shadcn/ui, and Tailwind CSS.
 
 ## Features
 
-- **Booking management** -- Track hotel stays with pre-tax cost, taxes, credit card used, shopping portal, and loyalty points earned
+- **Booking management** -- Track hotel stays with pre-tax cost, taxes, credit card used, shopping portal, and loyalty points earned; property autocomplete powered by HERE Maps
 - **Promotion tracking** -- Define promotions (hotel credits, card offers, portal bonuses, loyalty multipliers) with matching rules
 - **Auto-matching** -- Promotions automatically apply to bookings based on hotel chain, credit card, portal, date range, and spend thresholds
 - **Net cost calculation** -- See the true cost of each stay after all savings:
@@ -20,6 +20,7 @@ Built with Next.js, Prisma, shadcn/ui, and Tailwind CSS.
 
 - **Node.js** 18+
 - **PostgreSQL** -- a running Postgres instance (local or cloud)
+- **HERE API key** -- for property name autocomplete (free tier, no credit card required)
 
 ## Local Development Setup
 
@@ -56,6 +57,20 @@ psql -U postgres -c "CREATE DATABASE hotel_tracker;"
 ```bash
 npm run db:push
 ```
+
+### HERE Maps API Setup
+
+The booking form uses HERE's Geocoding & Search API to power property name autocomplete. It's free for up to 250,000 requests/month and requires no credit card.
+
+1. Sign up at [developer.here.com](https://developer.here.com)
+2. Create a project and generate a **REST API key**
+3. Add it to `.env`:
+
+```
+HERE_API_KEY="your-here-api-key"
+```
+
+The app degrades gracefully without a key — the property name field still works as a plain text input, but autocomplete suggestions won't appear.
 
 ### Authentication Setup
 
@@ -183,6 +198,7 @@ If a test fails, Playwright is configured to record a video and a "trace" (inter
    - `AUTH_SECRET`: Generate with `openssl rand -base64 32`
    - `SEED_ADMIN_EMAIL`: Your admin email
    - `SEED_ADMIN_PASSWORD`: A strong password
+   - `HERE_API_KEY`: Your HERE REST API key (see HERE Maps API Setup above)
 8. Run `npm run db:seed` via Vercel's one-off task runner or a local connection to the production DB to create the admin user.
 
 ## Managing Users
