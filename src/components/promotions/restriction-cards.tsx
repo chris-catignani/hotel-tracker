@@ -50,6 +50,7 @@ export const RESTRICTION_ORDER: RestrictionKey[] = [
 /** Restriction keys available at the benefit level (not all apply per-benefit). */
 export const BENEFIT_RESTRICTION_ORDER: RestrictionKey[] = [
   "hotel_chain",
+  "geography",
   "booking_source",
   "payment_type",
   "min_spend",
@@ -73,7 +74,7 @@ export const RESTRICTION_LABELS: Record<RestrictionKey, string> = {
   prerequisite: "Promotion Prerequisites",
   booking_source: "Booking Source",
   hotel_chain: "Hotel Chain Restriction",
-  geography: "Country Restriction",
+  geography: "Geographic Restriction",
 };
 
 // ─── Auto-detect active restrictions from saved restrictions data ─────────────
@@ -739,7 +740,7 @@ export function GeographyRestrictionCard({
   const options = COUNTRIES.map((c) => ({ value: c.code, label: `${c.code} — ${c.name}` }));
 
   return (
-    <RestrictionCard title="Country Restriction" testId="geography" onRemove={onRemove}>
+    <RestrictionCard title="Geographic Restriction" testId="geography" onRemove={onRemove}>
       <p className="text-xs text-muted-foreground mb-3">
         Only applies to bookings at hotels in the selected countries. Bookings without a confirmed
         location are always excluded.
