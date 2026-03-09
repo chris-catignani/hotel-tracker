@@ -85,8 +85,10 @@ test.describe("Booking Edit", () => {
     await page.goto(`/bookings/${testBooking.id}/edit`);
 
     await expect(page.getByRole("heading", { name: "Edit Booking" })).toBeVisible();
-    // Property name input should be pre-filled
-    await expect(page.getByLabel(/Property Name/i)).toHaveValue(testBooking.propertyName);
+    // Property name shows in the confirmed state (a div, not an input)
+    await expect(page.getByTestId("property-name-input-confirmed")).toContainText(
+      testBooking.propertyName
+    );
     // Save Changes button should be present
     await expect(page.getByTestId("booking-form-submit")).toHaveText("Save Changes");
   });
