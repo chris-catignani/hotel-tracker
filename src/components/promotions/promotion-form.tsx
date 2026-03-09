@@ -953,7 +953,7 @@ export function PromotionForm({
                     return (
                       <GeographyRestrictionCard
                         key={key}
-                        allowedCountryCodes={restrictions.allowedCountryCodes}
+                        allowedCountryCodes={restrictions.allowedCountryCodes ?? []}
                         onCountryCodesChange={(codes) =>
                           dispatch({
                             type: "UPDATE_RESTRICTIONS",
