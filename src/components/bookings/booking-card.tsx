@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { calculateNetCost, NetCostBooking } from "@/lib/net-cost";
 import { formatCurrency, formatDate, formatCerts } from "@/lib/utils";
 import { CalendarDays, Wallet, Coins, ScrollText } from "lucide-react";
@@ -83,9 +84,39 @@ export function BookingCard({ booking, onDelete, showActions = false }: BookingC
               <div className="leading-tight">
                 <span className="text-xs text-muted-foreground block">Cash Spent</span>
                 <span className="font-medium">
-                  {usdTotalCost > 0
-                    ? `${formatCurrency(usdTotalCost)}${booking.isFutureEstimate ? " (est.)" : ""}`
-                    : "—"}
+                  {usdTotalCost > 0 ? (
+                    booking.currency !== "USD" ? (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button
+                            className="underline decoration-dotted cursor-pointer hover:opacity-80"
+                            data-testid="cost-popover-trigger"
+                          >
+                            {formatCurrency(usdTotalCost)}
+                            {booking.isFutureEstimate ? " (est.)" : ""}
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent
+                          className="w-auto p-3 text-sm"
+                          align="center"
+                          data-testid="cost-popover-content"
+                        >
+                          <p className="font-medium">
+                            {formatCurrency(Number(booking.totalCost), booking.currency)}
+                          </p>
+                          <p className="text-muted-foreground text-xs mt-0.5">
+                            {booking.isFutureEstimate
+                              ? "Estimated at current rate"
+                              : "Locked at check-in rate"}
+                          </p>
+                        </PopoverContent>
+                      </Popover>
+                    ) : (
+                      `${formatCurrency(usdTotalCost)}`
+                    )
+                  ) : (
+                    "—"
+                  )}
                 </span>
               </div>
             </div>

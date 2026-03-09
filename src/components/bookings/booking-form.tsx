@@ -11,12 +11,8 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { CERT_TYPE_OPTIONS } from "@/lib/cert-types";
 import { format, parseISO } from "date-fns";
 import { calculatePointsFromChain } from "@/lib/loyalty-utils";
-import {
-  BENEFIT_TYPE_OPTIONS,
-  BOOKING_SOURCE_OPTIONS,
-  CURRENCIES,
-  PAYMENT_TYPES,
-} from "@/lib/constants";
+import { BENEFIT_TYPE_OPTIONS, BOOKING_SOURCE_OPTIONS, PAYMENT_TYPES } from "@/lib/constants";
+import { CurrencyCombobox } from "@/components/ui/currency-combobox";
 import {
   Booking,
   BookingFormData,
@@ -499,84 +495,80 @@ export function BookingForm({
             />
           </div>
 
-          {/* Costs */}
+          {/* Costs & Currency */}
           {hasCash && (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="pretaxCost">Pre-tax Cost ({currency}) *</Label>
-                <Input
-                  id="pretaxCost"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={pretaxCost}
-                  onChange={(e) => setPretaxCost(e.target.value)}
-                  placeholder="0.00"
-                  error={showErrors ? errors.pretaxCost : ""}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="totalCost">Total Cost ({currency}) *</Label>
-                <Input
-                  id="totalCost"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={totalCost}
-                  onChange={(e) => setTotalCost(e.target.value)}
-                  placeholder="0.00"
-                  error={showErrors ? errors.totalCost : ""}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Currency */}
-          {hasCash && (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="currency">Currency</Label>
-                <AppSelect
-                  value={currency}
-                  onValueChange={setCurrency}
-                  options={CURRENCIES.map((c) => ({ label: c, value: c }))}
-                  data-testid="currency-select"
-                />
-                {currency !== "USD" && currentRate !== 1 && (
-                  <p className="text-xs text-muted-foreground">
-                    Approx. rate: 1 {currency} = {currentRate.toFixed(4)} USD (refreshed daily)
-                  </p>
-                )}
-                {currency !== "USD" && currentRate === 1 && (
-                  <p className="text-xs text-muted-foreground">
-                    Exchange rate not available yet. Costs stored in {currency}; USD amounts
-                    computed at check-in.
-                  </p>
-                )}
-              </div>
-              {currency !== "USD" && pretaxCost && currentRate !== 1 && (
+            <div className="space-y-1">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div className="space-y-2">
-                  <Label>Approximate USD Equivalents</Label>
-                  <p className="text-sm text-muted-foreground pt-2">
-                    Pre-tax: ≈{" "}
-                    {new Intl.NumberFormat("en-US", {
-                      style: "currency",
-                      currency: "USD",
-                    }).format(Number(pretaxCost) * currentRate)}
-                  </p>
-                  {totalCost && (
-                    <p className="text-sm text-muted-foreground">
-                      Total: ≈{" "}
+                  <Label htmlFor="pretaxCost">Pre-tax Cost *</Label>
+                  <Input
+                    id="pretaxCost"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={pretaxCost}
+                    onChange={(e) => setPretaxCost(e.target.value)}
+                    placeholder="0.00"
+                    error={showErrors ? errors.pretaxCost : ""}
+                  />
+                  {currency !== "USD" && pretaxCost && currentRate !== 1 && (
+                    <p className="text-xs text-muted-foreground">
+                      ≈{" "}
                       {new Intl.NumberFormat("en-US", {
                         style: "currency",
                         currency: "USD",
-                      }).format(Number(totalCost) * currentRate)}
+                      }).format(Number(pretaxCost) * currentRate)}{" "}
+                      USD
                     </p>
                   )}
-                  <p className="text-xs text-muted-foreground">
-                    For past stays, the exact check-in date rate will be used.
-                  </p>
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="totalCost">Total Cost *</Label>
+                  <Input
+                    id="totalCost"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={totalCost}
+                    onChange={(e) => setTotalCost(e.target.value)}
+                    placeholder="0.00"
+                    error={showErrors ? errors.totalCost : ""}
+                  />
+                  {currency !== "USD" && totalCost && currentRate !== 1 && (
+                    <p className="text-xs text-muted-foreground">
+                      ≈{" "}
+                      {new Intl.NumberFormat("en-US", {
+                        style: "currency",
+                        currency: "USD",
+                      }).format(Number(totalCost) * currentRate)}{" "}
+                      USD
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label>Currency</Label>
+                  <CurrencyCombobox
+                    value={currency}
+                    onValueChange={setCurrency}
+                    data-testid="currency-select"
+                  />
+                  {currency !== "USD" && currentRate !== 1 && (
+                    <p className="text-xs text-muted-foreground">
+                      1 {currency} = {currentRate.toFixed(4)} USD (refreshed daily)
+                    </p>
+                  )}
+                  {currency !== "USD" && currentRate === 1 && (
+                    <p className="text-xs text-muted-foreground">
+                      Exchange rate not available yet. Costs stored in {currency}; USD amounts
+                      computed at check-in.
+                    </p>
+                  )}
+                </div>
+              </div>
+              {currency !== "USD" && currentRate !== 1 && (
+                <p className="text-xs text-muted-foreground">
+                  For past stays, the exact check-in date rate will be used.
+                </p>
               )}
             </div>
           )}
