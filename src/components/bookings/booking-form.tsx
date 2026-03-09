@@ -726,7 +726,7 @@ export function BookingForm({
           <div className="space-y-2">
             <Label>Booking Benefits</Label>
             {benefits.map((benefit, idx) => (
-              <div key={idx} className="flex items-start gap-2">
+              <div key={idx} className="flex items-center gap-2">
                 <AppSelect
                   value={benefit.type || "none"}
                   onValueChange={(v) => updateBenefit(idx, "type", v === "none" ? "" : v)}
