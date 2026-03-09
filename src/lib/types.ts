@@ -266,6 +266,18 @@ export interface PromotionFormData {
 }
 
 // ---------------------------------------------------------------------------
+// Geo Types
+// ---------------------------------------------------------------------------
+
+export interface GeoResult {
+  displayName: string;
+  city: string;
+  countryCode: string;
+  latitude: number | null;
+  longitude: number | null;
+}
+
+// ---------------------------------------------------------------------------
 // Booking Related Types
 // ---------------------------------------------------------------------------
 
@@ -311,6 +323,8 @@ export interface Booking {
   portalCashbackOnTotal: boolean;
   loyaltyPointsEarned: number | null;
   pointsRedeemed: number | null;
+  countryCode: string | null;
+  city: string | null;
   notes: string | null;
   certificates: BookingCertificate[];
   bookingSource: string | null;
@@ -338,6 +352,10 @@ export interface BookingFormData {
   loyaltyPointsEarned: number | null;
   bookingSource: string | null;
   otaAgencyId: string | null;
+  countryCode: string | null;
+  city: string | null;
+  latitude: number | null;
+  longitude: number | null;
   benefits: {
     benefitType: string;
     label: string | null;

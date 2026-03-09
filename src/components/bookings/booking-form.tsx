@@ -13,10 +13,13 @@ import { format, parseISO } from "date-fns";
 import { calculatePointsFromChain } from "@/lib/loyalty-utils";
 import { BENEFIT_TYPE_OPTIONS, BOOKING_SOURCE_OPTIONS, PAYMENT_TYPES } from "@/lib/constants";
 import { CurrencyCombobox } from "@/components/ui/currency-combobox";
+import { PropertyNameCombobox } from "@/components/ui/property-name-combobox";
+import { ManualGeoModal } from "@/components/ui/manual-geo-modal";
 import {
   Booking,
   BookingFormData,
   CreditCard,
+  GeoResult,
   HotelChain,
   OtaAgency,
   PaymentType,
@@ -69,10 +72,17 @@ export function BookingForm({
   // Form state
   const [state, dispatch] = useReducer(bookingFormReducer, INITIAL_STATE);
 
+  const [manualGeoOpen, setManualGeoOpen] = useState(false);
+
   const {
     hotelChainId,
     hotelChainSubBrandId,
     propertyName,
+    geoConfirmed,
+    countryCode,
+    city,
+    latitude,
+    longitude,
     checkIn,
     checkOut,
     paymentType,
@@ -91,6 +101,31 @@ export function BookingForm({
     notes,
     showErrors,
   } = state;
+
+  const handleGeoSelect = (result: GeoResult) => {
+    dispatch({ type: "SET_PROPERTY_GEO", result });
+  };
+
+  const handleManualPropertyEdit = () => {
+    dispatch({ type: "CLEAR_GEO" });
+  };
+
+  const handleManualGeoConfirm = (
+    manualPropertyName: string,
+    manualCountryCode: string,
+    manualCity: string
+  ) => {
+    dispatch({
+      type: "SET_PROPERTY_GEO",
+      result: {
+        displayName: manualPropertyName,
+        countryCode: manualCountryCode,
+        city: manualCity,
+        latitude: null,
+        longitude: null,
+      },
+    });
+  };
 
   const handleCheckInChange = (date?: Date) => {
     dispatch({ type: "SET_CHECK_IN", date });
@@ -168,7 +203,11 @@ export function BookingForm({
   const { errors, isValid } = useMemo(() => {
     const errs = {
       hotelChainId: !hotelChainId ? "Hotel chain is required" : "",
-      propertyName: !propertyName.trim() ? "Property name is required" : "",
+      propertyName: !propertyName.trim()
+        ? "Property name is required"
+        : !geoConfirmed
+          ? "Please select your property from the list or enter details manually"
+          : "",
       checkIn: !checkIn ? "Check-in date is required" : "",
       checkOut: !checkOut
         ? "Check-out date is required"
@@ -201,6 +240,7 @@ export function BookingForm({
   }, [
     hotelChainId,
     propertyName,
+    geoConfirmed,
     checkIn,
     checkOut,
     hasCash,
@@ -223,6 +263,10 @@ export function BookingForm({
       hotelChainId: hotelChainId,
       hotelChainSubBrandId: hotelChainSubBrandId === "none" ? null : hotelChainSubBrandId,
       propertyName,
+      countryCode: countryCode || null,
+      city: city || null,
+      latitude: latitude ?? null,
+      longitude: longitude ?? null,
       checkIn,
       checkOut,
       numNights: Number(numNights),
@@ -311,14 +355,21 @@ export function BookingForm({
 
             <div className="space-y-2">
               <Label htmlFor="propertyName">Property Name *</Label>
-              <Input
+              <PropertyNameCombobox
                 id="propertyName"
                 value={propertyName}
-                onChange={(e) =>
-                  dispatch({ type: "SET_FIELD", field: "propertyName", value: e.target.value })
+                confirmed={geoConfirmed}
+                countryCode={countryCode}
+                city={city}
+                onValueChange={(val) =>
+                  dispatch({ type: "SET_FIELD", field: "propertyName", value: val })
                 }
-                placeholder="e.g. Marriott Downtown Chicago"
+                onGeoSelect={handleGeoSelect}
+                onManualEdit={handleManualPropertyEdit}
+                onReset={() => dispatch({ type: "RESET_PROPERTY" })}
+                onCantFind={() => setManualGeoOpen(true)}
                 error={showErrors ? errors.propertyName : ""}
+                data-testid="property-name-input"
               />
             </div>
           </div>
@@ -773,6 +824,13 @@ export function BookingForm({
           </div>
         </form>
       </CardContent>
+      <ManualGeoModal
+        key={manualGeoOpen ? `open-${propertyName}` : "closed"}
+        open={manualGeoOpen}
+        onClose={() => setManualGeoOpen(false)}
+        initialPropertyName={propertyName}
+        onConfirm={handleManualGeoConfirm}
+      />
     </Card>
   );
 }

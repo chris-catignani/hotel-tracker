@@ -10,6 +10,16 @@ This file provides foundational mandates for Gemini CLI (gemini-cli) when workin
 
 - **Single-user bookings and promotions:** Each user has their own isolated bookings and promotions. Promotions and bookings are NOT shared across users. This means race conditions in redemption constraint checks are not a concern — no need to implement database-level serialization or row-level locking.
 
+## Geo Property Search
+
+- **API:** Google Places API (New) — `POST https://places.googleapis.com/v1/places:searchText` with `includedType: lodging`. Requires `GOOGLE_PLACES_API_KEY` env var (free tier ~$200/month credit; billing account required).
+- **Server proxy:** `GET /api/geo/search?q=...` — authenticated route in `src/app/api/geo/search/route.ts`. Checks `GeoCache` first, calls Google on miss, caches results.
+- **`geo-lookup.ts`:** `searchProperties(query)` — core search logic. Returns `[]` gracefully if API key is unset.
+- **`countries.ts`:** Static `COUNTRIES` list (ISO 3166-1 alpha-2), `countryName()` helper, and `ALPHA3_TO_ALPHA2` map.
+- **Booking form:** Property name uses `PropertyNameCombobox` (confirmed/unconfirmed states) + `ManualGeoModal` ("Can't find your hotel?" fallback). `geoConfirmed` must be `true` to submit — free-form text is blocked by form validation.
+- **Booking schema:** `countryCode String?` (ISO alpha-2) and `city String?` on `Booking`. Populated on confirm; null if not confirmed (geo-restricted promotions are hidden for null-country bookings).
+- **`GeoCache` model:** Caches results by normalized query key. Clear with `DELETE FROM geo_cache;` after switching API providers.
+
 ## Authentication & Authorization
 
 - **Library:** Auth.js v5 (`next-auth@beta`), JWT session strategy

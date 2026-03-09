@@ -248,6 +248,8 @@ model Booking {
   bookingSource         BookingSourceType?   @map("booking_source")
   otaAgencyId           String?              @map("ota_agency_id")
   otaAgency             OtaAgency?           @relation(fields: [otaAgencyId], references: [id])
+  countryCode           String?              @map("country_code")
+  city                  String?
   notes                 String?
   createdAt             DateTime             @default(now()) @map("created_at")
   bookingPromotions     BookingPromotion[]
@@ -467,6 +469,15 @@ model ExchangeRate {
 
   @@unique([fromCurrency, toCurrency])
   @@map("exchange_rates")
+}
+
+model GeoCache {
+  id         Int      @id @default(autoincrement())
+  queryKey   String   @unique @map("query_key")
+  results    Json
+  resolvedAt DateTime @default(now()) @map("resolved_at")
+
+  @@map("geo_cache")
 }
 
 model CreditCardRewardRule {

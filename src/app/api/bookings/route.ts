@@ -106,6 +106,8 @@ export async function POST(request: NextRequest) {
       benefits,
       notes,
       hotelChainSubBrandId,
+      countryCode,
+      city,
     } = body;
 
     const resolvedCurrency: string = currency || "USD";
@@ -192,6 +194,8 @@ export async function POST(request: NextRequest) {
         pointsRedeemed: pointsRedeemed ? Number(pointsRedeemed) : null,
         currency: resolvedCurrency,
         exchangeRate: resolvedExchangeRate,
+        countryCode: countryCode || null,
+        city: city || null,
         notes: notes || null,
         bookingSource: bookingSource || null,
         otaAgencyId: bookingSource === "ota" && otaAgencyId ? otaAgencyId : null,

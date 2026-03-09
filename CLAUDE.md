@@ -32,6 +32,7 @@ After schema changes: restart the dev server to pick up the new Prisma client.
 RESTful routes with Next.js `route.ts` handlers:
 
 - `bookings/` — GET list, POST create; `[id]/` — GET, PUT, DELETE
+- `geo/search/` — GET (authenticated); proxies Google Places API, caches in `GeoCache`. Requires `GOOGLE_PLACES_API_KEY` env var
 - `hotel-chains/` — GET list, POST; `[id]/` — GET, PUT, DELETE; `[id]/hotel-chain-sub-brands/` — GET, POST
 - `hotel-chain-sub-brands/[id]/` — PUT, DELETE
 - `credit-cards/` — GET list, POST; `[id]/` — PUT, DELETE
@@ -48,6 +49,8 @@ RESTful routes with Next.js `route.ts` handlers:
 - `promotion-matching.ts` — Core logic: fetches booking, evaluates active promotions against matching criteria (hotel, card, portal, date range, min spend), calculates `appliedValue`, writes `BookingPromotion` records
 - `api-error.ts` — Server error responses; includes stack trace in dev, generic message in prod
 - `client-error.ts` — Client-side error extraction; verbose with `NEXT_PUBLIC_DEBUG=true`
+- `geo-lookup.ts` — `searchProperties(query)`: checks `GeoCache`, calls Google Places API (New) on miss, caches results. Requires `GOOGLE_PLACES_API_KEY` env var; returns `[]` gracefully if unset
+- `countries.ts` — Static `COUNTRIES` list (ISO 3166-1 alpha-2), `countryName()` helper, and `ALPHA3_TO_ALPHA2` map (used if ever needing to normalize third-party alpha-3 codes)
 
 ### Data Model
 
@@ -60,7 +63,8 @@ ShoppingPortal ← Booking
 
 Key fields:
 
-- `Booking`: `pretaxCost`, `taxAmount`, `totalCost`, `portalCashbackRate`, `portalCashbackOnTotal`, `loyaltyPointsEarned`, `pointsRedeemed`, `currency`, `originalAmount`, `bookingSource` (enum: direct_web/direct_app/ota/other), `otaAgencyId`
+- `Booking`: `pretaxCost`, `taxAmount`, `totalCost`, `portalCashbackRate`, `portalCashbackOnTotal`, `loyaltyPointsEarned`, `pointsRedeemed`, `currency`, `originalAmount`, `bookingSource` (enum: direct_web/direct_app/ota/other), `otaAgencyId`, `countryCode` (ISO alpha-2), `city` — geo fields populated when user confirms a property via autocomplete or manual entry
+- `GeoCache`: caches Google Places API results keyed by normalized query string to avoid repeat API calls
 - `BookingBenefit`: `benefitType` (enum: free_breakfast/dining_credit/spa_credit/room_upgrade/late_checkout/early_checkin/other), `label`, `dollarValue` — tracks non-cash perks received per booking
 - `OtaAgency`: simple `name` model; referenced by bookings when `bookingSource = ota`
 - `UserStatus`: one row per hotel chain; tracks the user's current elite tier via `eliteStatusId → HotelChainEliteStatus`
@@ -155,6 +159,8 @@ The app is fully responsive with a mobile-first approach:
 ### Important Gotchas
 
 - Prisma `Decimal` fields return as strings from API responses — always wrap with `Number()`
+- **Property name geo confirmation:** The booking form requires the user to select a property from the Google Places autocomplete or use the "Can't find your hotel?" manual entry modal. Free-form text submission is blocked by validation (`geoConfirmed` must be `true`). The `PropertyNameCombobox` component handles the confirmed/unconfirmed UI states; `ManualGeoModal` handles the fallback path.
+- After switching geo API providers: clear the `GeoCache` table (`DELETE FROM geo_cache;`) to flush stale cached results
 - Settings page uses controlled `Dialog` components with separate open/edit state variables
 - `db:push` clears `.next` cache automatically; dev server restart still required after schema changes
 - PostgreSQL on WSL2: start with `sudo service postgresql start` if not running

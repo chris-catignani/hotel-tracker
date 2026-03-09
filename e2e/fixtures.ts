@@ -58,6 +58,8 @@ export const test = base.extend<TestFixtures>({
         totalCost: 480,
         currency: "USD",
         bookingSource: "direct_web",
+        countryCode: "US",
+        city: "New York",
       },
     });
     const booking = await res.json();

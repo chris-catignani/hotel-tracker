@@ -6,7 +6,7 @@ Built with Next.js, Prisma, shadcn/ui, and Tailwind CSS.
 
 ## Features
 
-- **Booking management** -- Track hotel stays with pre-tax cost, taxes, credit card used, shopping portal, and loyalty points earned
+- **Booking management** -- Track hotel stays with pre-tax cost, taxes, credit card used, shopping portal, and loyalty points earned; property autocomplete powered by Google Places API
 - **Promotion tracking** -- Define promotions (hotel credits, card offers, portal bonuses, loyalty multipliers) with matching rules
 - **Auto-matching** -- Promotions automatically apply to bookings based on hotel chain, credit card, portal, date range, and spend thresholds
 - **Net cost calculation** -- See the true cost of each stay after all savings:
@@ -20,6 +20,7 @@ Built with Next.js, Prisma, shadcn/ui, and Tailwind CSS.
 
 - **Node.js** 18+
 - **PostgreSQL** -- a running Postgres instance (local or cloud)
+- **Google Places API key** -- for property name autocomplete (~$200/month free credit; billing account required)
 
 ## Local Development Setup
 
@@ -56,6 +57,24 @@ psql -U postgres -c "CREATE DATABASE hotel_tracker;"
 ```bash
 npm run db:push
 ```
+
+### Google Places API Setup
+
+The booking form uses the Google Places API (New) to power property name autocomplete, with `includedType: lodging` so only hotels appear in results.
+
+1. Go to [console.cloud.google.com](https://console.cloud.google.com) and create or select a project
+2. Enable the **Places API (New)** (not the legacy Places API)
+3. Create an API key under **APIs & Services → Credentials**
+4. Optionally restrict the key to **Places API (New)** to limit exposure
+5. Add it to `.env`:
+
+```
+GOOGLE_PLACES_API_KEY="your-google-places-api-key"
+```
+
+The app degrades gracefully without a key — the property name field still works as a plain text input, but autocomplete suggestions won't appear.
+
+> **Pricing:** Google provides ~$200/month in free credit. Only Basic tier fields are requested (display name, address components, location), which are billed at $32/1,000 requests — roughly 6,000 free searches per month. A billing account is required even for the free tier.
 
 ### Authentication Setup
 
@@ -183,6 +202,7 @@ If a test fails, Playwright is configured to record a video and a "trace" (inter
    - `AUTH_SECRET`: Generate with `openssl rand -base64 32`
    - `SEED_ADMIN_EMAIL`: Your admin email
    - `SEED_ADMIN_PASSWORD`: A strong password
+   - `GOOGLE_PLACES_API_KEY`: Your Google Places API key (see Google Places API Setup above)
 8. Run `npm run db:seed` via Vercel's one-off task runner or a local connection to the production DB to create the admin user.
 
 ## Managing Users

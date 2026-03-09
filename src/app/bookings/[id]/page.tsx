@@ -107,6 +107,8 @@ interface Booking extends Omit<NetCostBooking, "bookingPromotions"> {
   loyaltyPointsEstimated?: boolean;
   creditCardId: string | null;
   shoppingPortalId: string | null;
+  countryCode: string | null;
+  city: string | null;
   notes: string | null;
   createdAt: string;
   bookingSource: string | null;
@@ -279,6 +281,14 @@ export default function BookingDetailPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Loyalty Program</p>
                 <p className="font-medium">{booking.hotelChain.loyaltyProgram}</p>
+              </div>
+            )}
+            {(booking.city || booking.countryCode) && (
+              <div>
+                <p className="text-sm text-muted-foreground">Location</p>
+                <p className="font-medium" data-testid="booking-location">
+                  {[booking.city, booking.countryCode].filter(Boolean).join(", ")}
+                </p>
               </div>
             )}
             <div>
