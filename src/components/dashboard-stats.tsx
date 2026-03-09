@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatCurrency } from "@/lib/utils";
 
 interface DashboardStatsProps {
   totalBookings: number;
@@ -8,13 +9,6 @@ interface DashboardStatsProps {
   avgNetCostPerNight: number;
   totalPointsRedeemed: number;
   totalCertificates: number;
-}
-
-function formatDollars(amount: number) {
-  return `$${amount.toLocaleString("en-US", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  })}`;
 }
 
 export function DashboardStats({
@@ -32,11 +26,26 @@ export function DashboardStats({
   ];
 
   const statsAfter = [
-    { label: "Total Savings", value: formatDollars(totalSavings) },
-    { label: "Avg Net Cost / Night", value: formatDollars(avgNetCostPerNight) },
+    {
+      label: "Total Savings",
+      value: formatCurrency(totalSavings, "USD", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }),
+    },
+    {
+      label: "Avg Net Cost / Night",
+      value: formatCurrency(avgNetCostPerNight, "USD", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }),
+    },
   ];
 
-  const cashDisplay = totalSpend > 0 ? `$${Math.round(totalSpend).toLocaleString("en-US")}` : "—";
+  const cashDisplay =
+    totalSpend > 0
+      ? formatCurrency(totalSpend, "USD", { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+      : "—";
   const pointsDisplay =
     totalPointsRedeemed > 0 ? `${totalPointsRedeemed.toLocaleString("en-US")} pts` : "—";
   const certsDisplay =
