@@ -15,6 +15,7 @@ export interface BookingFormState {
   hotelChainId: string;
   hotelChainSubBrandId: string;
   propertyName: string;
+  geoConfirmed: boolean;
   countryCode: string | null;
   city: string | null;
   latitude: number | null;
@@ -76,6 +77,7 @@ export const INITIAL_STATE: BookingFormState = {
   hotelChainId: "",
   hotelChainSubBrandId: "none",
   propertyName: "",
+  geoConfirmed: false,
   countryCode: null,
   city: null,
   latitude: null,
@@ -111,6 +113,7 @@ export function buildInitialState(
     hotelChainId: initialData.hotelChainId,
     hotelChainSubBrandId: initialData.hotelChainSubBrandId ?? "none",
     propertyName: initialData.propertyName,
+    geoConfirmed: initialData.countryCode != null,
     countryCode: initialData.countryCode ?? null,
     city: initialData.city ?? null,
     latitude: null,
@@ -181,6 +184,7 @@ export type Action =
   | { type: "SET_BOOKING_SOURCE"; bookingSource: string }
   | { type: "SET_PROPERTY_GEO"; result: GeoResult }
   | { type: "CLEAR_GEO" }
+  | { type: "RESET_PROPERTY" }
   | { type: "ADD_CERTIFICATE" }
   | { type: "UPDATE_CERTIFICATE"; index: number; value: string }
   | { type: "REMOVE_CERTIFICATE"; index: number }
@@ -245,6 +249,7 @@ export function bookingFormReducer(state: BookingFormState, action: Action): Boo
       return {
         ...state,
         propertyName: action.result.displayName,
+        geoConfirmed: true,
         countryCode: action.result.countryCode || null,
         city: action.result.city || null,
         latitude: action.result.latitude,
@@ -254,6 +259,18 @@ export function bookingFormReducer(state: BookingFormState, action: Action): Boo
     case "CLEAR_GEO":
       return {
         ...state,
+        geoConfirmed: false,
+        countryCode: null,
+        city: null,
+        latitude: null,
+        longitude: null,
+      };
+
+    case "RESET_PROPERTY":
+      return {
+        ...state,
+        propertyName: "",
+        geoConfirmed: false,
         countryCode: null,
         city: null,
         latitude: null,

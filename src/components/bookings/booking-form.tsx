@@ -13,8 +13,8 @@ import { format, parseISO } from "date-fns";
 import { calculatePointsFromChain } from "@/lib/loyalty-utils";
 import { BENEFIT_TYPE_OPTIONS, BOOKING_SOURCE_OPTIONS, PAYMENT_TYPES } from "@/lib/constants";
 import { CurrencyCombobox } from "@/components/ui/currency-combobox";
-import { MapPin } from "lucide-react";
 import { PropertyNameCombobox } from "@/components/ui/property-name-combobox";
+import { ManualGeoModal } from "@/components/ui/manual-geo-modal";
 import {
   Booking,
   BookingFormData,
@@ -72,10 +72,13 @@ export function BookingForm({
   // Form state
   const [state, dispatch] = useReducer(bookingFormReducer, INITIAL_STATE);
 
+  const [manualGeoOpen, setManualGeoOpen] = useState(false);
+
   const {
     hotelChainId,
     hotelChainSubBrandId,
     propertyName,
+    geoConfirmed,
     countryCode,
     city,
     latitude,
@@ -105,6 +108,23 @@ export function BookingForm({
 
   const handleManualPropertyEdit = () => {
     dispatch({ type: "CLEAR_GEO" });
+  };
+
+  const handleManualGeoConfirm = (
+    manualPropertyName: string,
+    manualCountryCode: string,
+    manualCity: string
+  ) => {
+    dispatch({
+      type: "SET_PROPERTY_GEO",
+      result: {
+        displayName: manualPropertyName,
+        countryCode: manualCountryCode,
+        city: manualCity,
+        latitude: 0,
+        longitude: 0,
+      },
+    });
   };
 
   const handleCheckInChange = (date?: Date) => {
@@ -183,7 +203,11 @@ export function BookingForm({
   const { errors, isValid } = useMemo(() => {
     const errs = {
       hotelChainId: !hotelChainId ? "Hotel chain is required" : "",
-      propertyName: !propertyName.trim() ? "Property name is required" : "",
+      propertyName: !propertyName.trim()
+        ? "Property name is required"
+        : !geoConfirmed
+          ? "Please select your property from the list or enter details manually"
+          : "",
       checkIn: !checkIn ? "Check-in date is required" : "",
       checkOut: !checkOut
         ? "Check-out date is required"
@@ -216,6 +240,7 @@ export function BookingForm({
   }, [
     hotelChainId,
     propertyName,
+    geoConfirmed,
     checkIn,
     checkOut,
     hasCash,
@@ -333,20 +358,19 @@ export function BookingForm({
               <PropertyNameCombobox
                 id="propertyName"
                 value={propertyName}
+                confirmed={geoConfirmed}
+                countryCode={countryCode}
+                city={city}
                 onValueChange={(val) =>
                   dispatch({ type: "SET_FIELD", field: "propertyName", value: val })
                 }
                 onGeoSelect={handleGeoSelect}
                 onManualEdit={handleManualPropertyEdit}
+                onReset={() => dispatch({ type: "RESET_PROPERTY" })}
+                onCantFind={() => setManualGeoOpen(true)}
                 error={showErrors ? errors.propertyName : ""}
                 data-testid="property-name-input"
               />
-              {countryCode && (
-                <p className="text-xs text-muted-foreground">
-                  <MapPin className="inline h-3 w-3 mr-0.5" />
-                  {[city, countryCode].filter(Boolean).join(", ")}
-                </p>
-              )}
             </div>
           </div>
 
@@ -800,6 +824,12 @@ export function BookingForm({
           </div>
         </form>
       </CardContent>
+      <ManualGeoModal
+        open={manualGeoOpen}
+        onClose={() => setManualGeoOpen(false)}
+        initialPropertyName={propertyName}
+        onConfirm={handleManualGeoConfirm}
+      />
     </Card>
   );
 }

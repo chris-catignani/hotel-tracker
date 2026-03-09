@@ -13,21 +13,37 @@ vi.mock("@/components/ui/property-name-combobox", () => ({
   PropertyNameCombobox: ({
     id,
     value,
+    confirmed,
     onValueChange,
+    onReset,
     "data-testid": testId,
   }: {
     id?: string;
     value: string;
+    confirmed: boolean;
     onValueChange: (v: string) => void;
+    onReset: () => void;
     "data-testid"?: string;
-  }) => (
-    <input
-      id={id}
-      data-testid={testId}
-      value={value}
-      onChange={(e) => onValueChange(e.target.value)}
-    />
-  ),
+  }) =>
+    confirmed ? (
+      <div data-testid={testId ? `${testId}-confirmed` : undefined}>
+        <span>{value}</span>
+        <button data-testid={testId ? `${testId}-reset` : undefined} onClick={onReset}>
+          Reset
+        </button>
+      </div>
+    ) : (
+      <input
+        id={id}
+        data-testid={testId}
+        value={value}
+        onChange={(e) => onValueChange(e.target.value)}
+      />
+    ),
+}));
+
+vi.mock("@/components/ui/manual-geo-modal", () => ({
+  ManualGeoModal: () => null,
 }));
 
 vi.mock("@/components/ui/date-picker", () => ({
