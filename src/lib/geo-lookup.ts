@@ -27,7 +27,7 @@ function extractComponent(
   types: string[]
 ): GoogleAddressComponent | undefined {
   for (const type of types) {
-    const match = components.find((c) => c.types.includes(type));
+    const match = components.find((c) => c.types?.includes(type));
     if (match) return match;
   }
 }
@@ -53,6 +53,8 @@ function mapGooglePlace(place: GooglePlace): GeoResult {
 }
 
 export async function searchProperties(query: string): Promise<GeoResult[]> {
+  console.log(query);
+
   const normalized = query.trim().toLowerCase();
   if (normalized.length < 3) return [];
 
