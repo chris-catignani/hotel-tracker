@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useReducer, useState, useMemo } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,17 +17,14 @@ import {
   PromotionFormData,
   PromotionType,
   PromotionBenefitFormData,
-  PromotionTierFormData,
   PromotionRestrictionsFormData,
   PromotionRestrictionsData,
-  EMPTY_RESTRICTIONS,
 } from "@/lib/types";
-import { BenefitRow, DEFAULT_BENEFIT } from "./benefit-row";
+import { BenefitRow } from "./benefit-row";
 import {
   RestrictionKey,
   RESTRICTION_ORDER,
   RESTRICTION_LABELS,
-  deriveActiveRestrictions,
   PaymentTypeCard,
   MinSpendCard,
   BookByDateCard,
@@ -41,6 +38,13 @@ import {
   BookingSourceCard,
   HotelChainRestrictionCard,
 } from "./restriction-cards";
+import {
+  promotionFormReducer,
+  buildInitialState,
+  toFormBenefit,
+  toFormTier,
+  InitialFormData,
+} from "./promotion-form-reducer";
 
 interface HotelChainSubBrand {
   id: string;
@@ -74,46 +78,6 @@ interface PromotionFormProps {
   submitLabel: string;
 }
 
-function mapApiRestrictionsToForm(
-  r: PromotionRestrictionsData | PromotionRestrictionsFormData | null | undefined
-): PromotionRestrictionsFormData {
-  if (!r) return { ...EMPTY_RESTRICTIONS };
-  // Short-circuit if already mapped to form data (edit page pre-maps before passing)
-  if ("subBrandIncludeIds" in r) return r as PromotionRestrictionsFormData;
-  return {
-    minSpend: r.minSpend != null ? String(r.minSpend) : "",
-    minNightsRequired: r.minNightsRequired != null ? String(r.minNightsRequired) : "",
-    nightsStackable: r.nightsStackable ?? false,
-    spanStays: r.spanStays ?? false,
-    maxStayCount: r.maxStayCount != null ? String(r.maxStayCount) : "",
-    maxRewardCount: r.maxRewardCount != null ? String(r.maxRewardCount) : "",
-    maxRedemptionValue: r.maxRedemptionValue != null ? String(r.maxRedemptionValue) : "",
-    maxTotalBonusPoints: r.maxTotalBonusPoints != null ? String(r.maxTotalBonusPoints) : "",
-    oncePerSubBrand: r.oncePerSubBrand ?? false,
-    bookByDate: r.bookByDate ? new Date(r.bookByDate).toISOString().split("T")[0] : "",
-    registrationDeadline: r.registrationDeadline
-      ? new Date(r.registrationDeadline).toISOString().split("T")[0]
-      : "",
-    validDaysAfterRegistration:
-      r.validDaysAfterRegistration != null ? String(r.validDaysAfterRegistration) : "",
-    registrationDate: "", // comes from userPromotions, set separately
-    tieInRequiresPayment: r.tieInRequiresPayment ?? false,
-    allowedPaymentTypes: r.allowedPaymentTypes ?? [],
-    allowedBookingSources: r.allowedBookingSources ?? [],
-    hotelChainId: r.hotelChainId ?? "",
-    prerequisiteStayCount: r.prerequisiteStayCount != null ? String(r.prerequisiteStayCount) : "",
-    prerequisiteNightCount:
-      r.prerequisiteNightCount != null ? String(r.prerequisiteNightCount) : "",
-    subBrandIncludeIds: (r.subBrandRestrictions ?? [])
-      .filter((s) => s.mode === "include")
-      .map((s) => s.hotelChainSubBrandId),
-    subBrandExcludeIds: (r.subBrandRestrictions ?? [])
-      .filter((s) => s.mode === "exclude")
-      .map((s) => s.hotelChainSubBrandId),
-    tieInCreditCardIds: (r.tieInCards ?? []).map((c) => c.creditCardId),
-  };
-}
-
 export function PromotionForm({
   initialData,
   onSubmit,
@@ -122,69 +86,35 @@ export function PromotionForm({
   description: _description,
   submitLabel,
 }: PromotionFormProps) {
-  // ── Validation state ─────────────────────────────────────────────────────────
+  // ── Form state (useReducer) ───────────────────────────────────────────────
+  const [state, dispatch] = useReducer(
+    promotionFormReducer,
+    initialData as InitialFormData | undefined,
+    buildInitialState
+  );
+
+  const {
+    name,
+    type,
+    hotelChainId,
+    creditCardId,
+    shoppingPortalId,
+    benefits,
+    isTiered,
+    tierRequirementType,
+    tiers,
+    startDate,
+    endDate,
+    restrictions,
+    activeRestrictions,
+  } = state;
+
+  // ── UI-only state (useState) ──────────────────────────────────────────────
   const [showErrors, setShowErrors] = useState(false);
-
-  // ── Core fields ──────────────────────────────────────────────────────────────
-  const [name, setName] = useState(initialData?.name || "");
-  const [type, setType] = useState<PromotionType>(
-    (initialData?.type as PromotionType) || "loyalty"
-  );
-
-  // ── Type-specific linking ────────────────────────────────────────────────────
-  const [hotelChainId, setHotelChainId] = useState<string>(
-    initialData?.hotelChainId ? initialData.hotelChainId : ""
-  );
-  const [creditCardId, setCreditCardId] = useState<string>(
-    initialData?.creditCardId ? initialData.creditCardId : ""
-  );
-  const [shoppingPortalId, setShoppingPortalId] = useState<string>(
-    initialData?.shoppingPortalId ? initialData.shoppingPortalId : ""
-  );
-
-  // ── Benefits ─────────────────────────────────────────────────────────────────
-  const [benefits, setBenefits] = useState<PromotionBenefitFormData[]>(
-    initialData?.benefits && initialData.benefits.length > 0
-      ? initialData.benefits
-      : [{ ...DEFAULT_BENEFIT }]
-  );
-  const [isTiered, setIsTiered] = useState(
-    () => (initialData?.tiers && initialData.tiers.length > 0) ?? false
-  );
   const [activeTierTab, setActiveTierTab] = useState("tier-0");
-  const [tierRequirementType, setTierRequirementType] = useState<"stays" | "nights">(
-    initialData?.tierRequirementType || "stays"
-  );
-  const [tiers, setTiers] = useState<PromotionTierFormData[]>(
-    initialData?.tiers && initialData.tiers.length > 0
-      ? initialData.tiers
-      : [
-          {
-            minStays: null,
-            maxStays: null,
-            minNights: null,
-            maxNights: null,
-            benefits: [{ ...DEFAULT_BENEFIT }],
-          },
-        ]
-  );
-
-  // ── Date range ───────────────────────────────────────────────────────────────
-  const [startDate, setStartDate] = useState(initialData?.startDate || "");
-  const [endDate, setEndDate] = useState(initialData?.endDate || "");
-
-  // ── Restrictions (single object) ─────────────────────────────────────────────
-  const [restrictions, setRestrictions] = useState<PromotionRestrictionsFormData>(() =>
-    mapApiRestrictionsToForm(initialData?.restrictions)
-  );
-
-  // ── Restriction picker state ─────────────────────────────────────────────────
-  const [activeRestrictions, setActiveRestrictions] = useState<Set<RestrictionKey>>(() =>
-    deriveActiveRestrictions(mapApiRestrictionsToForm(initialData?.restrictions))
-  );
   const [pickerOpen, setPickerOpen] = useState(false);
 
-  // ── Reference data ───────────────────────────────────────────────────────────
+  // ── Reference data ────────────────────────────────────────────────────────
   const [hotelChains, setHotelChains] = useState<HotelChain[]>([]);
   const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
   const [portals, setPortals] = useState<ShoppingPortal[]>([]);
@@ -207,36 +137,11 @@ export function PromotionForm({
   // Sync form state when initialData arrives (Edit mode — data fetched async)
   useEffect(() => {
     if (initialData) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (initialData.name !== undefined) setName(initialData.name);
-      if (initialData.type !== undefined) setType(initialData.type as PromotionType);
-      if (initialData.hotelChainId !== undefined)
-        setHotelChainId(initialData.hotelChainId ? initialData.hotelChainId : "");
-      if (initialData.creditCardId !== undefined)
-        setCreditCardId(initialData.creditCardId ? initialData.creditCardId : "");
-      if (initialData.shoppingPortalId !== undefined)
-        setShoppingPortalId(initialData.shoppingPortalId ? initialData.shoppingPortalId : "");
-      if (initialData.benefits !== undefined && initialData.benefits.length > 0)
-        setBenefits(initialData.benefits);
-      if (initialData.tiers !== undefined) {
-        const hasTiers = initialData.tiers.length > 0;
-        setIsTiered(hasTiers);
-        if (hasTiers) {
-          setTiers(initialData.tiers);
-          if (initialData.tierRequirementType) {
-            setTierRequirementType(initialData.tierRequirementType);
-          }
-        }
-      }
-      if (initialData.startDate !== undefined) setStartDate(initialData.startDate || "");
-      if (initialData.endDate !== undefined) setEndDate(initialData.endDate || "");
-      const mappedRestrictions = mapApiRestrictionsToForm(initialData.restrictions);
-      setRestrictions(mappedRestrictions);
-      setActiveRestrictions(deriveActiveRestrictions(mappedRestrictions));
+      dispatch({ type: "LOAD_INITIAL_DATA", initialData: initialData as InitialFormData });
     }
   }, [initialData]);
 
-  // ── Validation ───────────────────────────────────────────────────────────────
+  // ── Validation ────────────────────────────────────────────────────────────
 
   const { errors, isValid, benefitErrors, tierErrors } = useMemo(() => {
     const validateBenefit = (b: PromotionBenefitFormData) => ({
@@ -273,158 +178,7 @@ export function PromotionForm({
     return { errors: errs, isValid: valid, benefitErrors: bErrors, tierErrors: tErrors };
   }, [name, type, hotelChainId, creditCardId, shoppingPortalId, isTiered, benefits, tiers]);
 
-  // ── Restriction helpers ──────────────────────────────────────────────────────
-
-  const updateRestrictions = (updates: Partial<PromotionRestrictionsFormData>) => {
-    setRestrictions((prev) => ({ ...prev, ...updates }));
-  };
-
-  const addRestriction = (key: RestrictionKey) => {
-    setActiveRestrictions((prev) => new Set([...prev, key]));
-    setPickerOpen(false);
-  };
-
-  const removeRestriction = (key: RestrictionKey) => {
-    setActiveRestrictions((prev) => {
-      const next = new Set(prev);
-      next.delete(key);
-      return next;
-    });
-    switch (key) {
-      case "min_spend":
-        updateRestrictions({ minSpend: "" });
-        break;
-      case "book_by_date":
-        updateRestrictions({ bookByDate: "" });
-        break;
-      case "min_nights":
-        updateRestrictions({ minNightsRequired: "", nightsStackable: false, spanStays: false });
-        break;
-      case "redemption_caps":
-        updateRestrictions({
-          maxStayCount: "",
-          maxRewardCount: "",
-          maxRedemptionValue: "",
-          maxTotalBonusPoints: "",
-        });
-        break;
-      case "tie_in_cards":
-        updateRestrictions({ tieInCreditCardIds: [], tieInRequiresPayment: false });
-        break;
-      case "registration":
-        updateRestrictions({
-          registrationDeadline: "",
-          validDaysAfterRegistration: "",
-          registrationDate: "",
-        });
-        break;
-      case "payment_type":
-        updateRestrictions({ allowedPaymentTypes: [] });
-        break;
-      case "booking_source":
-        updateRestrictions({ allowedBookingSources: [] });
-        break;
-      case "hotel_chain":
-        updateRestrictions({ hotelChainId: "" });
-        break;
-      case "sub_brand_scope":
-        updateRestrictions({ subBrandIncludeIds: [], subBrandExcludeIds: [] });
-        break;
-    }
-  };
-
-  // ── Benefit handlers ─────────────────────────────────────────────────────────
-
-  const handleBenefitChange = (index: number, updated: PromotionBenefitFormData) => {
-    setBenefits((prev) => prev.map((b, i) => (i === index ? updated : b)));
-  };
-
-  const handleBenefitRemove = (index: number) => {
-    setBenefits((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleAddBenefit = () => {
-    setBenefits((prev) => [...prev, { ...DEFAULT_BENEFIT, sortOrder: prev.length }]);
-  };
-
-  // ── Tier handlers ────────────────────────────────────────────────────────────
-
-  const handleTierChange = (tierIndex: number, updated: PromotionTierFormData) => {
-    setTiers((prev) => prev.map((t, i) => (i === tierIndex ? updated : t)));
-  };
-
-  const handleTierRemove = (tierIndex: number) => {
-    setTiers((prev) => prev.filter((_, i) => i !== tierIndex));
-  };
-
-  const handleAddTier = () => {
-    setTiers((prev) => {
-      const last = prev[prev.length - 1];
-
-      if (tierRequirementType === "stays") {
-        const lastMax = last?.maxStays ?? last?.minStays ?? 0;
-        return [
-          ...prev,
-          {
-            minStays: lastMax + 1,
-            maxStays: null,
-            minNights: null,
-            maxNights: null,
-            benefits: [{ ...DEFAULT_BENEFIT }],
-          },
-        ];
-      } else {
-        const lastMax = last?.maxNights ?? last?.minNights ?? 0;
-        return [
-          ...prev,
-          {
-            minStays: null,
-            maxStays: null,
-            minNights: lastMax + 1,
-            maxNights: null,
-            benefits: [{ ...DEFAULT_BENEFIT }],
-          },
-        ];
-      }
-    });
-  };
-
-  const handleTierBenefitChange = (
-    tierIndex: number,
-    benefitIndex: number,
-    updated: PromotionBenefitFormData
-  ) => {
-    setTiers((prev) =>
-      prev.map((t, i) =>
-        i === tierIndex
-          ? { ...t, benefits: t.benefits.map((b, bi) => (bi === benefitIndex ? updated : b)) }
-          : t
-      )
-    );
-  };
-
-  const handleTierBenefitRemove = (tierIndex: number, benefitIndex: number) => {
-    setTiers((prev) =>
-      prev.map((t, i) =>
-        i === tierIndex ? { ...t, benefits: t.benefits.filter((_, bi) => bi !== benefitIndex) } : t
-      )
-    );
-  };
-
-  const handleTierAddBenefit = (tierIndex: number) => {
-    setTiers((prev) =>
-      prev.map((t, i) =>
-        i === tierIndex
-          ? {
-              ...t,
-              benefits: [...t.benefits, { ...DEFAULT_BENEFIT, sortOrder: t.benefits.length }],
-            }
-          : t
-      )
-    );
-  };
-
-  // ── Submit ───────────────────────────────────────────────────────────────────
+  // ── Submit ────────────────────────────────────────────────────────────────
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -432,7 +186,7 @@ export function PromotionForm({
 
     if (!isValid) return;
 
-    const withSortOrder = (bs: PromotionBenefitFormData[]) =>
+    const withSortOrder = (bs: ReturnType<typeof toFormBenefit>[]) =>
       bs.map((b, i) => ({ ...b, sortOrder: i }));
 
     // Build the restrictions payload (null if no restrictions are active)
@@ -502,7 +256,7 @@ export function PromotionForm({
     const body: PromotionFormData = {
       name,
       type,
-      benefits: isTiered ? [] : withSortOrder(benefits),
+      benefits: isTiered ? [] : withSortOrder(benefits.map(toFormBenefit)),
       tiers: isTiered
         ? [...tiers]
             .sort((a, b) => {
@@ -510,14 +264,17 @@ export function PromotionForm({
               const bVal = tierRequirementType === "stays" ? b.minStays : b.minNights;
               return (aVal ?? 0) - (bVal ?? 0);
             })
-            .map((tier) => ({
-              ...tier,
-              minStays: tierRequirementType === "stays" ? tier.minStays : null,
-              maxStays: tierRequirementType === "stays" ? tier.maxStays : null,
-              minNights: tierRequirementType === "nights" ? tier.minNights : null,
-              maxNights: tierRequirementType === "nights" ? tier.maxNights : null,
-              benefits: withSortOrder(tier.benefits),
-            }))
+            .map((tier) => {
+              const formTier = toFormTier(tier);
+              return {
+                ...formTier,
+                minStays: tierRequirementType === "stays" ? tier.minStays : null,
+                maxStays: tierRequirementType === "stays" ? tier.maxStays : null,
+                minNights: tierRequirementType === "nights" ? tier.minNights : null,
+                maxNights: tierRequirementType === "nights" ? tier.maxNights : null,
+                benefits: withSortOrder(formTier.benefits),
+              };
+            })
         : [],
       tierRequirementType: isTiered ? tierRequirementType : undefined,
       restrictions: finalRestrictions,
@@ -538,7 +295,7 @@ export function PromotionForm({
     await onSubmit(body);
   };
 
-  // ── Derived values ───────────────────────────────────────────────────────────
+  // ── Derived values ────────────────────────────────────────────────────────
 
   const startDateObj = startDate ? parseISO(startDate) : undefined;
   const endDateObj = endDate ? parseISO(endDate) : undefined;
@@ -549,7 +306,7 @@ export function PromotionForm({
   const showSubBrandScopeOption =
     type === "loyalty" && !!hotelChainId && selectedChainSubBrands.length > 0;
 
-  // ── Render ───────────────────────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div className="max-w-4xl mx-auto pb-20">
@@ -573,7 +330,9 @@ export function PromotionForm({
                 <Input
                   id="name"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) =>
+                    dispatch({ type: "SET_FIELD", field: "name", value: e.target.value })
+                  }
                   placeholder="e.g. Summer Bonus Offer"
                   error={showErrors ? errors.name : ""}
                   data-testid="promotion-name-input"
@@ -585,7 +344,9 @@ export function PromotionForm({
                 <Label>Promotion Type</Label>
                 <AppSelect
                   value={type}
-                  onValueChange={(v) => setType(v as PromotionType)}
+                  onValueChange={(v) =>
+                    dispatch({ type: "SET_FIELD", field: "type", value: v as PromotionType })
+                  }
                   options={[
                     { label: "Loyalty Program", value: "loyalty" },
                     { label: "Credit Card", value: "credit_card" },
@@ -605,8 +366,11 @@ export function PromotionForm({
                   value={hotelChainId}
                   error={showErrors ? errors.hotelChainId : ""}
                   onValueChange={(v) => {
-                    setHotelChainId(v);
-                    updateRestrictions({ subBrandIncludeIds: [], subBrandExcludeIds: [] });
+                    dispatch({ type: "SET_FIELD", field: "hotelChainId", value: v });
+                    dispatch({
+                      type: "UPDATE_RESTRICTIONS",
+                      updates: { subBrandIncludeIds: [], subBrandExcludeIds: [] },
+                    });
                   }}
                   options={hotelChains.map((chain) => ({ label: chain.name, value: chain.id }))}
                   placeholder="Select hotel chain..."
@@ -621,7 +385,9 @@ export function PromotionForm({
                 <AppSelect
                   value={creditCardId}
                   error={showErrors ? errors.creditCardId : ""}
-                  onValueChange={setCreditCardId}
+                  onValueChange={(v) =>
+                    dispatch({ type: "SET_FIELD", field: "creditCardId", value: v })
+                  }
                   options={creditCards.map((card) => ({ label: card.name, value: card.id }))}
                   placeholder="Select credit card..."
                   data-testid="credit-card-select"
@@ -635,7 +401,9 @@ export function PromotionForm({
                 <AppSelect
                   value={shoppingPortalId}
                   error={showErrors ? errors.shoppingPortalId : ""}
-                  onValueChange={setShoppingPortalId}
+                  onValueChange={(v) =>
+                    dispatch({ type: "SET_FIELD", field: "shoppingPortalId", value: v })
+                  }
                   options={portals.map((portal) => ({ label: portal.name, value: portal.id }))}
                   placeholder="Select portal..."
                   data-testid="shopping-portal-select"
@@ -658,7 +426,9 @@ export function PromotionForm({
                   id="isTiered"
                   type="checkbox"
                   checked={isTiered}
-                  onChange={(e) => setIsTiered(e.target.checked)}
+                  onChange={(e) =>
+                    dispatch({ type: "SET_FIELD", field: "isTiered", value: e.target.checked })
+                  }
                   className="size-4 rounded border-gray-300"
                   data-testid="promotion-is-tiered"
                 />
@@ -690,7 +460,7 @@ export function PromotionForm({
               <div className="space-y-3">
                 {benefits.map((benefit, index) => (
                   <BenefitRow
-                    key={index}
+                    key={benefit._id}
                     benefit={benefit}
                     index={index}
                     canRemove={benefits.length > 1}
@@ -698,8 +468,10 @@ export function PromotionForm({
                     subBrands={selectedChainSubBrands}
                     creditCards={creditCards}
                     hotelChains={hotelChains}
-                    onChange={handleBenefitChange}
-                    onRemove={handleBenefitRemove}
+                    onChange={(i, updated) =>
+                      dispatch({ type: "UPDATE_BENEFIT", index: i, benefit: updated })
+                    }
+                    onRemove={(i) => dispatch({ type: "REMOVE_BENEFIT", index: i })}
                     errors={showErrors ? benefitErrors[index] : undefined}
                   />
                 ))}
@@ -707,7 +479,7 @@ export function PromotionForm({
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={handleAddBenefit}
+                  onClick={() => dispatch({ type: "ADD_BENEFIT" })}
                   data-testid="benefit-add"
                 >
                   <Plus className="size-4 mr-2" />
@@ -729,7 +501,13 @@ export function PromotionForm({
                     </div>
                     <Tabs
                       value={tierRequirementType}
-                      onValueChange={(val) => setTierRequirementType(val as "stays" | "nights")}
+                      onValueChange={(val) =>
+                        dispatch({
+                          type: "SET_FIELD",
+                          field: "tierRequirementType",
+                          value: val as "stays" | "nights",
+                        })
+                      }
                       className="w-full sm:w-[240px]"
                     >
                       <TabsList className="grid w-full grid-cols-2">
@@ -743,9 +521,9 @@ export function PromotionForm({
                 <Tabs value={activeTierTab} onValueChange={setActiveTierTab} className="w-full">
                   <div className="flex items-center justify-between mb-4 overflow-x-auto pb-2">
                     <TabsList className="bg-muted/50 p-1">
-                      {tiers.map((_, idx) => (
+                      {tiers.map((tier, idx) => (
                         <TabsTrigger
-                          key={idx}
+                          key={tier._id}
                           value={`tier-${idx}`}
                           className="px-4 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
                         >
@@ -758,7 +536,7 @@ export function PromotionForm({
                       variant="ghost"
                       size="sm"
                       onClick={() => {
-                        handleAddTier();
+                        dispatch({ type: "ADD_TIER" });
                         setActiveTierTab(`tier-${tiers.length}`);
                       }}
                       className="text-primary hover:bg-primary/5 ml-2 shrink-0"
@@ -770,7 +548,7 @@ export function PromotionForm({
 
                   {tiers.map((tier, tierIndex) => (
                     <TabsContent
-                      key={tierIndex}
+                      key={tier._id}
                       value={`tier-${tierIndex}`}
                       className="space-y-6 animate-in fade-in zoom-in-95 duration-200"
                     >
@@ -790,7 +568,7 @@ export function PromotionForm({
                               variant="ghost"
                               size="sm"
                               onClick={() => {
-                                handleTierRemove(tierIndex);
+                                dispatch({ type: "REMOVE_TIER", tierIndex });
                                 setActiveTierTab(`tier-${Math.max(0, tierIndex - 1)}`);
                               }}
                               className="text-destructive hover:text-destructive hover:bg-destructive/10"
@@ -834,10 +612,14 @@ export function PromotionForm({
                                     const val = e.target.value
                                       ? parseInt(e.target.value, 10)
                                       : null;
-                                    handleTierChange(tierIndex, {
-                                      ...tier,
-                                      [tierRequirementType === "stays" ? "minStays" : "minNights"]:
-                                        val,
+                                    dispatch({
+                                      type: "UPDATE_TIER",
+                                      tierIndex,
+                                      updates: {
+                                        [tierRequirementType === "stays"
+                                          ? "minStays"
+                                          : "minNights"]: val,
+                                      },
                                     });
                                   }}
                                   placeholder={
@@ -865,10 +647,14 @@ export function PromotionForm({
                                     const val = e.target.value
                                       ? parseInt(e.target.value, 10)
                                       : null;
-                                    handleTierChange(tierIndex, {
-                                      ...tier,
-                                      [tierRequirementType === "stays" ? "maxStays" : "maxNights"]:
-                                        val,
+                                    dispatch({
+                                      type: "UPDATE_TIER",
+                                      tierIndex,
+                                      updates: {
+                                        [tierRequirementType === "stays"
+                                          ? "maxStays"
+                                          : "maxNights"]: val,
+                                      },
                                     });
                                   }}
                                   placeholder="Any"
@@ -884,7 +670,7 @@ export function PromotionForm({
                           <div className="space-y-3">
                             {tier.benefits.map((benefit, benefitIndex) => (
                               <BenefitRow
-                                key={benefitIndex}
+                                key={benefit._id}
                                 benefit={benefit}
                                 index={benefitIndex}
                                 canRemove={tier.benefits.length > 1}
@@ -893,9 +679,20 @@ export function PromotionForm({
                                 creditCards={creditCards}
                                 hotelChains={hotelChains}
                                 onChange={(bi, updated) =>
-                                  handleTierBenefitChange(tierIndex, bi, updated)
+                                  dispatch({
+                                    type: "UPDATE_TIER_BENEFIT",
+                                    tierIndex,
+                                    benefitIndex: bi,
+                                    benefit: updated,
+                                  })
                                 }
-                                onRemove={(bi) => handleTierBenefitRemove(tierIndex, bi)}
+                                onRemove={(bi) =>
+                                  dispatch({
+                                    type: "REMOVE_TIER_BENEFIT",
+                                    tierIndex,
+                                    benefitIndex: bi,
+                                  })
+                                }
                                 errors={
                                   showErrors
                                     ? tierErrors[tierIndex].benefits[benefitIndex]
@@ -907,7 +704,7 @@ export function PromotionForm({
                               type="button"
                               variant="outline"
                               size="sm"
-                              onClick={() => handleTierAddBenefit(tierIndex)}
+                              onClick={() => dispatch({ type: "ADD_TIER_BENEFIT", tierIndex })}
                               className="w-full border-dashed py-6 hover:bg-primary/5 hover:text-primary transition-all group"
                             >
                               <Plus className="size-4 mr-2 group-hover:scale-110 transition-transform" />
@@ -937,7 +734,13 @@ export function PromotionForm({
                 <DatePicker
                   id="startDate"
                   date={startDateObj}
-                  setDate={(date) => setStartDate(date ? format(date, "yyyy-MM-dd") : "")}
+                  setDate={(date) =>
+                    dispatch({
+                      type: "SET_FIELD",
+                      field: "startDate",
+                      value: date ? format(date, "yyyy-MM-dd") : "",
+                    })
+                  }
                   placeholder="Stays on/after..."
                 />
               </div>
@@ -946,7 +749,13 @@ export function PromotionForm({
                 <DatePicker
                   id="endDate"
                   date={endDateObj}
-                  setDate={(date) => setEndDate(date ? format(date, "yyyy-MM-dd") : "")}
+                  setDate={(date) =>
+                    dispatch({
+                      type: "SET_FIELD",
+                      field: "endDate",
+                      value: date ? format(date, "yyyy-MM-dd") : "",
+                    })
+                  }
                   placeholder="Stays on/before..."
                 />
               </div>
@@ -1008,7 +817,10 @@ export function PromotionForm({
                               key={k}
                               type="button"
                               disabled={isActive}
-                              onClick={() => addRestriction(k)}
+                              onClick={() => {
+                                dispatch({ type: "ADD_RESTRICTION", key: k });
+                                setPickerOpen(false);
+                              }}
                               className={`w-full text-left px-2 py-1.5 rounded-md text-sm transition-colors flex items-center justify-between ${
                                 isActive
                                   ? "opacity-40 cursor-not-allowed bg-muted/30"
@@ -1038,7 +850,10 @@ export function PromotionForm({
                               key={k}
                               type="button"
                               disabled={isActive}
-                              onClick={() => addRestriction(k)}
+                              onClick={() => {
+                                dispatch({ type: "ADD_RESTRICTION", key: k });
+                                setPickerOpen(false);
+                              }}
                               className={`w-full text-left px-2 py-1.5 rounded-md text-sm transition-colors flex items-center justify-between ${
                                 isActive
                                   ? "opacity-40 cursor-not-allowed bg-muted/30"
@@ -1076,7 +891,10 @@ export function PromotionForm({
                                 key={k}
                                 type="button"
                                 disabled={isActive}
-                                onClick={() => addRestriction(k)}
+                                onClick={() => {
+                                  dispatch({ type: "ADD_RESTRICTION", key: k });
+                                  setPickerOpen(false);
+                                }}
                                 className={`w-full text-left px-2 py-1.5 rounded-md text-sm transition-colors flex items-center justify-between ${
                                   isActive
                                     ? "opacity-40 cursor-not-allowed bg-muted/30"
@@ -1108,13 +926,18 @@ export function PromotionForm({
                         hotelChainId={restrictions.hotelChainId}
                         hotelChains={hotelChains}
                         onHotelChainChange={(val) => {
-                          updateRestrictions({
-                            hotelChainId: val,
-                            subBrandIncludeIds: [],
-                            subBrandExcludeIds: [],
+                          dispatch({
+                            type: "UPDATE_RESTRICTIONS",
+                            updates: {
+                              hotelChainId: val,
+                              subBrandIncludeIds: [],
+                              subBrandExcludeIds: [],
+                            },
                           });
                         }}
-                        onRemove={() => removeRestriction("hotel_chain")}
+                        onRemove={() =>
+                          dispatch({ type: "REMOVE_RESTRICTION", key: "hotel_chain" })
+                        }
                       />
                     );
 
@@ -1124,9 +947,14 @@ export function PromotionForm({
                         key={key}
                         allowedBookingSources={restrictions.allowedBookingSources}
                         onAllowedBookingSourcesChange={(sources) =>
-                          updateRestrictions({ allowedBookingSources: sources })
+                          dispatch({
+                            type: "UPDATE_RESTRICTIONS",
+                            updates: { allowedBookingSources: sources },
+                          })
                         }
-                        onRemove={() => removeRestriction("booking_source")}
+                        onRemove={() =>
+                          dispatch({ type: "REMOVE_RESTRICTION", key: "booking_source" })
+                        }
                       />
                     );
 
@@ -1136,9 +964,14 @@ export function PromotionForm({
                         key={key}
                         allowedPaymentTypes={restrictions.allowedPaymentTypes}
                         onAllowedPaymentTypesChange={(types) =>
-                          updateRestrictions({ allowedPaymentTypes: types })
+                          dispatch({
+                            type: "UPDATE_RESTRICTIONS",
+                            updates: { allowedPaymentTypes: types },
+                          })
                         }
-                        onRemove={() => removeRestriction("payment_type")}
+                        onRemove={() =>
+                          dispatch({ type: "REMOVE_RESTRICTION", key: "payment_type" })
+                        }
                       />
                     );
 
@@ -1148,11 +981,21 @@ export function PromotionForm({
                         key={key}
                         prerequisiteStayCount={restrictions.prerequisiteStayCount}
                         prerequisiteNightCount={restrictions.prerequisiteNightCount}
-                        onStayCountChange={(v) => updateRestrictions({ prerequisiteStayCount: v })}
-                        onNightCountChange={(v) =>
-                          updateRestrictions({ prerequisiteNightCount: v })
+                        onStayCountChange={(v) =>
+                          dispatch({
+                            type: "UPDATE_RESTRICTIONS",
+                            updates: { prerequisiteStayCount: v },
+                          })
                         }
-                        onRemove={() => removeRestriction("prerequisite")}
+                        onNightCountChange={(v) =>
+                          dispatch({
+                            type: "UPDATE_RESTRICTIONS",
+                            updates: { prerequisiteNightCount: v },
+                          })
+                        }
+                        onRemove={() =>
+                          dispatch({ type: "REMOVE_RESTRICTION", key: "prerequisite" })
+                        }
                       />
                     );
 
@@ -1161,8 +1004,10 @@ export function PromotionForm({
                       <MinSpendCard
                         key={key}
                         minSpend={restrictions.minSpend}
-                        onMinSpendChange={(v) => updateRestrictions({ minSpend: v })}
-                        onRemove={() => removeRestriction("min_spend")}
+                        onMinSpendChange={(v) =>
+                          dispatch({ type: "UPDATE_RESTRICTIONS", updates: { minSpend: v } })
+                        }
+                        onRemove={() => dispatch({ type: "REMOVE_RESTRICTION", key: "min_spend" })}
                       />
                     );
 
@@ -1172,9 +1017,14 @@ export function PromotionForm({
                         key={key}
                         bookByDate={restrictions.bookByDate}
                         onBookByDateChange={(date) =>
-                          updateRestrictions({ bookByDate: date ? format(date, "yyyy-MM-dd") : "" })
+                          dispatch({
+                            type: "UPDATE_RESTRICTIONS",
+                            updates: { bookByDate: date ? format(date, "yyyy-MM-dd") : "" },
+                          })
                         }
-                        onRemove={() => removeRestriction("book_by_date")}
+                        onRemove={() =>
+                          dispatch({ type: "REMOVE_RESTRICTION", key: "book_by_date" })
+                        }
                       />
                     );
 
@@ -1185,10 +1035,22 @@ export function PromotionForm({
                         minNightsRequired={restrictions.minNightsRequired}
                         nightsStackable={restrictions.nightsStackable}
                         spanStays={restrictions.spanStays}
-                        onMinNightsChange={(v) => updateRestrictions({ minNightsRequired: v })}
-                        onNightsStackableChange={(v) => updateRestrictions({ nightsStackable: v })}
-                        onSpanStaysChange={(v) => updateRestrictions({ spanStays: v })}
-                        onRemove={() => removeRestriction("min_nights")}
+                        onMinNightsChange={(v) =>
+                          dispatch({
+                            type: "UPDATE_RESTRICTIONS",
+                            updates: { minNightsRequired: v },
+                          })
+                        }
+                        onNightsStackableChange={(v) =>
+                          dispatch({
+                            type: "UPDATE_RESTRICTIONS",
+                            updates: { nightsStackable: v },
+                          })
+                        }
+                        onSpanStaysChange={(v) =>
+                          dispatch({ type: "UPDATE_RESTRICTIONS", updates: { spanStays: v } })
+                        }
+                        onRemove={() => dispatch({ type: "REMOVE_RESTRICTION", key: "min_nights" })}
                       />
                     );
 
@@ -1200,15 +1062,27 @@ export function PromotionForm({
                         maxRewardCount={restrictions.maxRewardCount}
                         maxRedemptionValue={restrictions.maxRedemptionValue}
                         maxTotalBonusPoints={restrictions.maxTotalBonusPoints}
-                        onMaxStayCountChange={(v) => updateRestrictions({ maxStayCount: v })}
-                        onMaxRewardCountChange={(v) => updateRestrictions({ maxRewardCount: v })}
+                        onMaxStayCountChange={(v) =>
+                          dispatch({ type: "UPDATE_RESTRICTIONS", updates: { maxStayCount: v } })
+                        }
+                        onMaxRewardCountChange={(v) =>
+                          dispatch({ type: "UPDATE_RESTRICTIONS", updates: { maxRewardCount: v } })
+                        }
                         onMaxRedemptionValueChange={(v) =>
-                          updateRestrictions({ maxRedemptionValue: v })
+                          dispatch({
+                            type: "UPDATE_RESTRICTIONS",
+                            updates: { maxRedemptionValue: v },
+                          })
                         }
                         onMaxTotalBonusPointsChange={(v) =>
-                          updateRestrictions({ maxTotalBonusPoints: v })
+                          dispatch({
+                            type: "UPDATE_RESTRICTIONS",
+                            updates: { maxTotalBonusPoints: v },
+                          })
                         }
-                        onRemove={() => removeRestriction("redemption_caps")}
+                        onRemove={() =>
+                          dispatch({ type: "REMOVE_RESTRICTION", key: "redemption_caps" })
+                        }
                       />
                     );
 
@@ -1216,7 +1090,9 @@ export function PromotionForm({
                     return (
                       <OncePerSubBrandCard
                         key={key}
-                        onRemove={() => removeRestriction("once_per_sub_brand")}
+                        onRemove={() =>
+                          dispatch({ type: "REMOVE_RESTRICTION", key: "once_per_sub_brand" })
+                        }
                       />
                     );
 
@@ -1228,16 +1104,24 @@ export function PromotionForm({
                         tieInCreditCardIds={restrictions.tieInCreditCardIds}
                         tieInRequiresPayment={restrictions.tieInRequiresPayment}
                         onTieInCreditCardIdsChange={(ids) => {
-                          updateRestrictions({
-                            tieInCreditCardIds: ids,
-                            tieInRequiresPayment:
-                              ids.length === 0 ? false : restrictions.tieInRequiresPayment,
+                          dispatch({
+                            type: "UPDATE_RESTRICTIONS",
+                            updates: {
+                              tieInCreditCardIds: ids,
+                              tieInRequiresPayment:
+                                ids.length === 0 ? false : restrictions.tieInRequiresPayment,
+                            },
                           });
                         }}
                         onTieInRequiresPaymentChange={(v) =>
-                          updateRestrictions({ tieInRequiresPayment: v })
+                          dispatch({
+                            type: "UPDATE_RESTRICTIONS",
+                            updates: { tieInRequiresPayment: v },
+                          })
                         }
-                        onRemove={() => removeRestriction("tie_in_cards")}
+                        onRemove={() =>
+                          dispatch({ type: "REMOVE_RESTRICTION", key: "tie_in_cards" })
+                        }
                       />
                     );
 
@@ -1249,19 +1133,28 @@ export function PromotionForm({
                         validDaysAfterRegistration={restrictions.validDaysAfterRegistration}
                         registrationDate={restrictions.registrationDate}
                         onRegistrationDeadlineChange={(date) =>
-                          updateRestrictions({
-                            registrationDeadline: date ? format(date, "yyyy-MM-dd") : "",
+                          dispatch({
+                            type: "UPDATE_RESTRICTIONS",
+                            updates: {
+                              registrationDeadline: date ? format(date, "yyyy-MM-dd") : "",
+                            },
                           })
                         }
                         onValidDaysChange={(v) =>
-                          updateRestrictions({ validDaysAfterRegistration: v })
-                        }
-                        onRegistrationDateChange={(date) =>
-                          updateRestrictions({
-                            registrationDate: date ? format(date, "yyyy-MM-dd") : "",
+                          dispatch({
+                            type: "UPDATE_RESTRICTIONS",
+                            updates: { validDaysAfterRegistration: v },
                           })
                         }
-                        onRemove={() => removeRestriction("registration")}
+                        onRegistrationDateChange={(date) =>
+                          dispatch({
+                            type: "UPDATE_RESTRICTIONS",
+                            updates: { registrationDate: date ? format(date, "yyyy-MM-dd") : "" },
+                          })
+                        }
+                        onRemove={() =>
+                          dispatch({ type: "REMOVE_RESTRICTION", key: "registration" })
+                        }
                       />
                     );
 
@@ -1273,12 +1166,20 @@ export function PromotionForm({
                         subBrandIncludeIds={restrictions.subBrandIncludeIds}
                         subBrandExcludeIds={restrictions.subBrandExcludeIds}
                         onIncludeIdsChange={(ids) =>
-                          updateRestrictions({ subBrandIncludeIds: ids })
+                          dispatch({
+                            type: "UPDATE_RESTRICTIONS",
+                            updates: { subBrandIncludeIds: ids },
+                          })
                         }
                         onExcludeIdsChange={(ids) =>
-                          updateRestrictions({ subBrandExcludeIds: ids })
+                          dispatch({
+                            type: "UPDATE_RESTRICTIONS",
+                            updates: { subBrandExcludeIds: ids },
+                          })
                         }
-                        onRemove={() => removeRestriction("sub_brand_scope")}
+                        onRemove={() =>
+                          dispatch({ type: "REMOVE_RESTRICTION", key: "sub_brand_scope" })
+                        }
                       />
                     );
 
