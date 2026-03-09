@@ -355,8 +355,8 @@ export function BookingForm({
       </CardHeader>
       <CardContent>
         <form onSubmit={handleFormSubmit} className="space-y-6">
-          {/* Hotel Chain + Property Name */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {/* Hotel Chain + Sub-brand + Property Name */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="hotelChainId">Hotel Chain *</Label>
               <AppSelect
@@ -381,6 +381,32 @@ export function BookingForm({
                 data-testid="hotel-chain-select"
               />
             </div>
+
+            {/* Sub-brand selector */}
+            <div className="space-y-2">
+              <Label htmlFor="hotelChainSubBrandId">Sub-brand</Label>
+              <AppSelect
+                value={!hotelChainId ? "" : hotelChainSubBrandId}
+                onValueChange={setHotelChainSubBrandId}
+                disabled={
+                  !hotelChainId ||
+                  (hotelChains.find((h) => h.id === hotelChainId)?.hotelChainSubBrands.length ??
+                    0) === 0
+                }
+                options={[
+                  { label: "None / Not applicable", value: "none" },
+                  ...(hotelChains
+                    .find((h) => h.id === hotelChainId)
+                    ?.hotelChainSubBrands.map((sb) => ({
+                      label: sb.name,
+                      value: sb.id,
+                    })) || []),
+                ]}
+                placeholder={!hotelChainId ? "Select chain first..." : "Select sub-brand..."}
+                data-testid="sub-brand-select"
+              />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="propertyName">Property Name *</Label>
               <Input
@@ -392,62 +418,6 @@ export function BookingForm({
               />
             </div>
           </div>
-
-          {/* Sub-brand selector */}
-          {hotelChains.find((h) => h.id === hotelChainId)?.hotelChainSubBrands.length ? (
-            <div className="space-y-2">
-              <Label htmlFor="hotelChainSubBrandId">Sub-brand</Label>
-              <AppSelect
-                value={hotelChainSubBrandId}
-                onValueChange={setHotelChainSubBrandId}
-                options={[
-                  { label: "None / Not applicable", value: "none" },
-                  ...(hotelChains
-                    .find((h) => h.id === hotelChainId)
-                    ?.hotelChainSubBrands.map((sb) => ({
-                      label: sb.name,
-                      value: sb.id,
-                    })) || []),
-                ]}
-                placeholder="Select sub-brand..."
-                data-testid="sub-brand-select"
-              />
-            </div>
-          ) : null}
-
-          {/* Booking Source */}
-          <div className="space-y-2">
-            <Label htmlFor="bookingSource">Booking Source</Label>
-            <AppSelect
-              value={bookingSource || "none"}
-              onValueChange={(v) => {
-                setBookingSource(v === "none" ? "" : v);
-                if (v !== "ota") setOtaAgencyId("none");
-              }}
-              options={[{ label: "Not specified", value: "none" }, ...BOOKING_SOURCE_OPTIONS]}
-              placeholder="Where was this booked? (optional)"
-              data-testid="booking-source-select"
-            />
-          </div>
-
-          {bookingSource === "ota" && (
-            <div className="space-y-2">
-              <Label htmlFor="otaAgencyId">OTA Agency</Label>
-              <AppSelect
-                value={otaAgencyId}
-                onValueChange={setOtaAgencyId}
-                options={[
-                  { label: "Not specified", value: "none" },
-                  ...otaAgencies.map((a) => ({
-                    label: a.name,
-                    value: a.id,
-                  })),
-                ]}
-                placeholder="Select agency..."
-                data-testid="ota-agency-select"
-              />
-            </div>
-          )}
 
           {/* Dates */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -629,8 +599,21 @@ export function BookingForm({
             </div>
           )}
 
-          {/* Cards & Portals */}
+          {/* Source & Credit Card */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="bookingSource">Booking Source</Label>
+              <AppSelect
+                value={bookingSource || "none"}
+                onValueChange={(v) => {
+                  setBookingSource(v === "none" ? "" : v);
+                  if (v !== "ota") setOtaAgencyId("none");
+                }}
+                options={[{ label: "Not specified", value: "none" }, ...BOOKING_SOURCE_OPTIONS]}
+                placeholder="Where was this booked? (optional)"
+                data-testid="booking-source-select"
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="creditCardId">Credit Card</Label>
               <AppSelect
@@ -647,6 +630,29 @@ export function BookingForm({
                 data-testid="credit-card-select"
               />
             </div>
+          </div>
+
+          {bookingSource === "ota" && (
+            <div className="space-y-2">
+              <Label htmlFor="otaAgencyId">OTA Agency</Label>
+              <AppSelect
+                value={otaAgencyId}
+                onValueChange={setOtaAgencyId}
+                options={[
+                  { label: "Not specified", value: "none" },
+                  ...otaAgencies.map((a) => ({
+                    label: a.name,
+                    value: a.id,
+                  })),
+                ]}
+                placeholder="Select agency..."
+                data-testid="ota-agency-select"
+              />
+            </div>
+          )}
+
+          {/* Portal & Rate */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="shoppingPortalId">Shopping Portal</Label>
               <AppSelect
@@ -663,45 +669,43 @@ export function BookingForm({
                 data-testid="shopping-portal-select"
               />
             </div>
-          </div>
-
-          {/* Portal Rate */}
-          {shoppingPortalId !== "none" && (
-            <div className="space-y-2">
-              {(() => {
-                const portal = portals.find((p) => p.id === shoppingPortalId);
-                const isPoints = portal?.rewardType === "points";
-                return (
-                  <Label htmlFor="portalCashbackRate">
-                    {isPoints ? "Points Rate (pts/$)" : "Cashback Rate (%)"}
-                  </Label>
-                );
-              })()}
-              <Input
-                id="portalCashbackRate"
-                type="number"
-                step="0.01"
-                min="0"
-                value={portalCashbackRate}
-                onChange={(e) => setPortalCashbackRate(e.target.value)}
-                placeholder={(() => {
+            {shoppingPortalId !== "none" && (
+              <div className="space-y-2">
+                {(() => {
                   const portal = portals.find((p) => p.id === shoppingPortalId);
-                  return portal?.rewardType === "points" ? "e.g. 5.0" : "e.g. 6.75";
+                  const isPoints = portal?.rewardType === "points";
+                  return (
+                    <Label htmlFor="portalCashbackRate">
+                      {isPoints ? "Points Rate (pts/$)" : "Cashback Rate (%)"}
+                    </Label>
+                  );
                 })()}
-              />
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="portalCashbackOnTotal"
-                  checked={portalCashbackOnTotal}
-                  onChange={(e) => setPortalCashbackOnTotal(e.target.checked)}
+                <Input
+                  id="portalCashbackRate"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={portalCashbackRate}
+                  onChange={(e) => setPortalCashbackRate(e.target.value)}
+                  placeholder={(() => {
+                    const portal = portals.find((p) => p.id === shoppingPortalId);
+                    return portal?.rewardType === "points" ? "e.g. 5.0" : "e.g. 6.75";
+                  })()}
                 />
-                <Label htmlFor="portalCashbackOnTotal" className="font-normal">
-                  Apply rate to total cost (default: pre-tax cost)
-                </Label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="portalCashbackOnTotal"
+                    checked={portalCashbackOnTotal}
+                    onChange={(e) => setPortalCashbackOnTotal(e.target.checked)}
+                  />
+                  <Label htmlFor="portalCashbackOnTotal" className="font-normal text-xs">
+                    Apply to total (default: pre-tax)
+                  </Label>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Loyalty Points */}
           <div className="space-y-2">

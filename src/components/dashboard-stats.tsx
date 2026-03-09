@@ -12,8 +12,8 @@ interface DashboardStatsProps {
 
 function formatDollars(amount: number) {
   return `$${amount.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   })}`;
 }
 

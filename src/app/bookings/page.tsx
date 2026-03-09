@@ -108,27 +108,6 @@ interface Booking {
 }
 
 // ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function formatSourceColumn(booking: {
-  bookingSource: string | null;
-  otaAgency: { name: string } | null;
-}): string {
-  switch (booking.bookingSource) {
-    case "direct_web":
-    case "direct_app":
-      return "Direct";
-    case "ota":
-      return booking.otaAgency ? booking.otaAgency.name : "OTA";
-    case "other":
-      return "Other";
-    default:
-      return "—";
-  }
-}
-
-// ---------------------------------------------------------------------------
 // Bookings Page
 // ---------------------------------------------------------------------------
 
@@ -231,7 +210,6 @@ export default function BookingsPage() {
                   <TableHead>Check-in</TableHead>
                   <TableHead>Check-out</TableHead>
                   <TableHead>Nights</TableHead>
-                  <TableHead className="hidden sm:table-cell">Source</TableHead>
                   <TableHead className="text-right">Cash</TableHead>
                   <TableHead className="text-right">Points</TableHead>
                   <TableHead className="text-right">Certs</TableHead>
@@ -259,9 +237,6 @@ export default function BookingsPage() {
                       <TableCell>{formatDate(booking.checkIn)}</TableCell>
                       <TableCell>{formatDate(booking.checkOut)}</TableCell>
                       <TableCell>{booking.numNights}</TableCell>
-                      <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">
-                        {formatSourceColumn(booking)}
-                      </TableCell>
                       <TableCell className="text-right">
                         {usdTotalCost > 0 ? (
                           booking.currency !== "USD" ? (
@@ -271,7 +246,10 @@ export default function BookingsPage() {
                                   className="underline decoration-dotted cursor-pointer hover:text-foreground/80"
                                   data-testid="cost-popover-trigger"
                                 >
-                                  {formatCurrency(usdTotalCost)}
+                                  {formatCurrency(usdTotalCost, "USD", {
+                                    minimumFractionDigits: 0,
+                                    maximumFractionDigits: 0,
+                                  })}
                                   {booking.isFutureEstimate ? " (est.)" : ""}
                                 </button>
                               </PopoverTrigger>
@@ -281,7 +259,10 @@ export default function BookingsPage() {
                                 data-testid="cost-popover-content"
                               >
                                 <p className="font-medium">
-                                  {formatCurrency(Number(booking.totalCost), booking.currency)}
+                                  {formatCurrency(Number(booking.totalCost), booking.currency, {
+                                    minimumFractionDigits: 0,
+                                    maximumFractionDigits: 0,
+                                  })}
                                 </p>
                                 <p className="text-muted-foreground text-xs mt-0.5">
                                   {booking.isFutureEstimate
@@ -291,7 +272,10 @@ export default function BookingsPage() {
                               </PopoverContent>
                             </Popover>
                           ) : (
-                            formatCurrency(usdTotalCost)
+                            formatCurrency(usdTotalCost, "USD", {
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0,
+                            })
                           )
                         ) : (
                           "—"
@@ -309,7 +293,10 @@ export default function BookingsPage() {
                         className={`text-right font-medium ${netCost < usdTotalCost ? "text-green-600" : ""}`}
                         data-testid="booking-net-per-night"
                       >
-                        {formatCurrency(netCost / booking.numNights)}
+                        {formatCurrency(netCost / booking.numNights, "USD", {
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0,
+                        })}
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">

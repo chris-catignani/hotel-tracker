@@ -38,7 +38,7 @@ test.describe("Net Cost Consistency", () => {
 
     // Net Cost Calculation: 250 - (250 * 10 * 0.02) = 250 - 50 = 200
     // Net/Night: 200 / 2 = 100
-    const expectedNetPerNight = "$100.00";
+    const expectedNetPerNight = "$100";
     const expectedNetCost = "$200.00";
 
     const bookingRes = await request.post("/api/bookings", {
@@ -108,7 +108,7 @@ test.describe("Net Cost Consistency", () => {
 
     // Net Cost Calculation: 300 - 50 = 250
     // Net/Night: 250 / 2 = 125
-    const expectedNetPerNight = "$125.00";
+    const expectedNetPerNight = "$125";
     const expectedNetCost = "$250.00";
 
     const bookingRes = await request.post("/api/bookings", {
@@ -165,8 +165,8 @@ test.describe("Net Cost Consistency", () => {
     const pointsEarned = 2275;
 
     // Net Cost Calculation: 400 - (2275 * 0.02) = 400 - 45.50 = 354.50
-    // Net/Night: 354.50 / 2 = 177.25
-    const expectedNetPerNight = "$177.25";
+    // Net/Night: 354.50 / 2 = 177.25 -> 177
+    const expectedNetPerNight = "$177";
     const expectedNetCost = "$354.50";
 
     const bookingRes = await request.post("/api/bookings", {
@@ -229,7 +229,7 @@ test.describe("Net Cost Consistency", () => {
     // Cashback = 200 * 5 * 0.02 = $20.00
     // Net Cost = 300 - 20 = 280
     // Net/Night = 280 / 1 = 280
-    const expectedNetPerNight = "$280.00";
+    const expectedNetPerNight = "$280";
     const expectedNetCost = "$280.00";
 
     const bookingRes = await request.post("/api/bookings", {

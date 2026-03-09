@@ -23,8 +23,8 @@ describe("DashboardStats", () => {
     expect(screen.getByTestId("stat-value-total-nights")).toHaveTextContent("12");
 
     // Formatted currency
-    expect(screen.getByTestId("stat-value-total-savings")).toHaveTextContent("$450.75");
-    expect(screen.getByTestId("stat-value-avg-net-cost-/-night")).toHaveTextContent("$104.21");
+    expect(screen.getByTestId("stat-value-total-savings")).toHaveTextContent("$451");
+    expect(screen.getByTestId("stat-value-avg-net-cost-/-night")).toHaveTextContent("$104");
 
     // Spend breakdown
     expect(screen.getByTestId("stat-value-cash")).toHaveTextContent("$1,251");
@@ -46,11 +46,11 @@ describe("DashboardStats", () => {
       render(<DashboardStats {...zeroProps} />);
     });
 
-    // Basic counts show "0", currency shows "$0.00"
+    // Basic counts show "0", currency shows "$0"
     expect(screen.getByTestId("stat-value-total-bookings")).toHaveTextContent("0");
     expect(screen.getByTestId("stat-value-total-nights")).toHaveTextContent("0");
-    expect(screen.getByTestId("stat-value-total-savings")).toHaveTextContent("$0.00");
-    expect(screen.getByTestId("stat-value-avg-net-cost-/-night")).toHaveTextContent("$0.00");
+    expect(screen.getByTestId("stat-value-total-savings")).toHaveTextContent("$0");
+    expect(screen.getByTestId("stat-value-avg-net-cost-/-night")).toHaveTextContent("$0");
 
     // Spend breakdown shows em-dash for zero values
     expect(screen.getByTestId("stat-value-cash")).toHaveTextContent("—");

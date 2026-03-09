@@ -51,8 +51,8 @@ describe("BookingCard", () => {
     expect(screen.getByText("Grand Hyatt")).toBeInTheDocument();
 
     // Check formatting
-    expect(screen.getByText("03/01/2026 (3n)")).toBeInTheDocument();
-    expect(screen.getByText("$900.00")).toBeInTheDocument();
+    expect(screen.getByText("03/01/26 (3n)")).toBeInTheDocument();
+    expect(screen.getByText("$900")).toBeInTheDocument();
   });
 
   it("shows delete button when showActions and onDelete are provided", async () => {
@@ -81,6 +81,6 @@ describe("BookingCard", () => {
     // Net Cost = 900 - 45 - 54 - 112.5 = 688.5
     // Net/Night = 688.5 / 3 = 229.5
 
-    expect(screen.getByTestId("booking-card-net-night")).toHaveTextContent("$229.50");
+    expect(screen.getByTestId("booking-card-net-night")).toHaveTextContent("$230");
   });
 });
