@@ -48,14 +48,14 @@ export function formatDateRange(startDate: string | null, endDate: string | null
     ? new Date(startDate).toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
-        year: "numeric",
+        year: "2-digit",
       })
     : "No start date";
   const end = endDate
     ? new Date(endDate).toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
-        year: "numeric",
+        year: "2-digit",
       })
     : "Ongoing";
   return `${start} - ${end}`;

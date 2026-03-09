@@ -59,7 +59,10 @@ export function BookingCard({ booking, onDelete, showActions = false }: BookingC
                 className={`text-lg font-bold ${netCost < usdTotalCost ? "text-green-600" : ""}`}
                 data-testid="booking-card-net-night"
               >
-                {formatCurrency(netCost / booking.numNights)}
+                {formatCurrency(netCost / booking.numNights, "USD", {
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 0,
+                })}
                 <span className="text-[10px] font-normal text-muted-foreground block leading-none">
                   per night (net)
                 </span>
@@ -92,7 +95,10 @@ export function BookingCard({ booking, onDelete, showActions = false }: BookingC
                             className="underline decoration-dotted cursor-pointer hover:opacity-80"
                             data-testid="cost-popover-trigger"
                           >
-                            {formatCurrency(usdTotalCost)}
+                            {formatCurrency(usdTotalCost, "USD", {
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0,
+                            })}
                             {booking.isFutureEstimate ? " (est.)" : ""}
                           </button>
                         </PopoverTrigger>
@@ -102,7 +108,10 @@ export function BookingCard({ booking, onDelete, showActions = false }: BookingC
                           data-testid="cost-popover-content"
                         >
                           <p className="font-medium">
-                            {formatCurrency(Number(booking.totalCost), booking.currency)}
+                            {formatCurrency(Number(booking.totalCost), booking.currency, {
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0,
+                            })}
                           </p>
                           <p className="text-muted-foreground text-xs mt-0.5">
                             {booking.isFutureEstimate
@@ -112,7 +121,7 @@ export function BookingCard({ booking, onDelete, showActions = false }: BookingC
                         </PopoverContent>
                       </Popover>
                     ) : (
-                      `${formatCurrency(usdTotalCost)}`
+                      `${formatCurrency(usdTotalCost, "USD", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
                     )
                   ) : (
                     "—"

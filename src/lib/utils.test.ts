@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { cn, formatCurrency } from "./utils";
+import { cn, formatCurrency, formatDate } from "./utils";
 
 describe("utils", () => {
   describe("cn", () => {
@@ -19,6 +19,23 @@ describe("utils", () => {
 
     it("should handle large numbers correctly", () => {
       expect(formatCurrency(1000000)).toBe("$1,000,000.00");
+    });
+
+    it("should support rounding to zero decimal places", () => {
+      expect(
+        formatCurrency(1234.56, "USD", { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+      ).toBe("$1,235");
+      expect(formatCurrency(0, "USD", { minimumFractionDigits: 0, maximumFractionDigits: 0 })).toBe(
+        "$0"
+      );
+    });
+  });
+
+  describe("formatDate", () => {
+    it("should format dates as MM/DD/YY", () => {
+      expect(formatDate("2026-03-09")).toBe("03/09/26");
+      expect(formatDate("1999-12-31")).toBe("12/31/99");
+      expect(formatDate("2000-01-01")).toBe("01/01/00");
     });
   });
 });

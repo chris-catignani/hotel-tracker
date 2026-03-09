@@ -392,7 +392,12 @@ export default function DashboardPage() {
                               </div>
                             </TableCell>
                             <TableCell className="text-right">
-                              {total > 0 ? formatDollars(total) : "—"}
+                              {total > 0
+                                ? formatDollars(total, "USD", {
+                                    minimumFractionDigits: 0,
+                                    maximumFractionDigits: 0,
+                                  })
+                                : "—"}
                             </TableCell>
                             <TableCell className="text-right text-sm">
                               {booking.pointsRedeemed
@@ -408,7 +413,10 @@ export default function DashboardPage() {
                               }`}
                               data-testid="booking-net-per-night"
                             >
-                              {formatDollars(netCost / booking.numNights)}
+                              {formatDollars(netCost / booking.numNights, "USD", {
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0,
+                              })}
                             </TableCell>
                           </TableRow>
                         );
@@ -508,7 +516,10 @@ export default function DashboardPage() {
                           <div className="flex justify-between text-sm">
                             <span>{item.label}</span>
                             <span className="font-medium text-green-600">
-                              {formatDollars(item.value)}
+                              {formatDollars(item.value, "USD", {
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0,
+                              })}
                             </span>
                           </div>
                           <div className="h-3 rounded-full bg-secondary">
@@ -524,7 +535,12 @@ export default function DashboardPage() {
                       <div className="pt-2 border-t">
                         <div className="flex justify-between font-medium">
                           <span>Total Savings</span>
-                          <span className="text-green-600">{formatDollars(totalSavings)}</span>
+                          <span className="text-green-600">
+                            {formatDollars(totalSavings, "USD", {
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0,
+                            })}
+                          </span>
                         </div>
                         <div className="flex justify-between text-sm text-muted-foreground mt-1">
                           <span>Effective Savings Rate</span>
@@ -572,14 +588,22 @@ export default function DashboardPage() {
                       <div className="text-xs text-muted-foreground uppercase tracking-wider">
                         Cash Spent
                       </div>
-                      <div className="text-sm font-medium">{formatDollars(summary.totalSpend)}</div>
+                      <div className="text-sm font-medium">
+                        {formatDollars(summary.totalSpend, "USD", {
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0,
+                        })}
+                      </div>
                     </div>
                     <div>
                       <div className="text-xs text-muted-foreground uppercase tracking-wider">
                         Total Savings
                       </div>
                       <div className="text-sm font-medium text-green-600">
-                        {formatDollars(summary.totalSavings)}
+                        {formatDollars(summary.totalSavings, "USD", {
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0,
+                        })}
                       </div>
                     </div>
                     <div>
@@ -606,7 +630,10 @@ export default function DashboardPage() {
                       </div>
                       <div className="text-sm font-medium">
                         {summary.totalNights > 0
-                          ? formatDollars(summary.totalNet / summary.totalNights)
+                          ? formatDollars(summary.totalNet / summary.totalNights, "USD", {
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0,
+                            })
                           : "—"}
                       </div>
                     </div>
@@ -677,7 +704,10 @@ export default function DashboardPage() {
                       <TableCell className="text-right">{summary.count}</TableCell>
                       <TableCell className="text-right">{summary.totalNights}</TableCell>
                       <TableCell className="text-right">
-                        {formatDollars(summary.totalSpend)}
+                        {formatDollars(summary.totalSpend, "USD", {
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0,
+                        })}
                       </TableCell>
                       <TableCell className="text-right text-sm">
                         {(() => {
@@ -693,11 +723,17 @@ export default function DashboardPage() {
                         })()}
                       </TableCell>
                       <TableCell className="text-right text-green-600">
-                        {formatDollars(summary.totalSavings)}
+                        {formatDollars(summary.totalSavings, "USD", {
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0,
+                        })}
                       </TableCell>
                       <TableCell className="text-right">
                         {summary.totalNights > 0
-                          ? formatDollars(summary.totalNet / summary.totalNights)
+                          ? formatDollars(summary.totalNet / summary.totalNights, "USD", {
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0,
+                            })
                           : "—"}
                       </TableCell>
                     </TableRow>

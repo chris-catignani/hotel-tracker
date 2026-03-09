@@ -10,24 +10,30 @@ export function cn(...inputs: ClassValue[]) {
  * Formats a number as a currency string.
  * Defaults to USD. Pass a currency code (e.g., "EUR") for other currencies.
  */
-export function formatCurrency(amount: number, currency = "USD"): string {
+export function formatCurrency(
+  amount: number,
+  currency = "USD",
+  options: { minimumFractionDigits?: number; maximumFractionDigits?: number } = {}
+): string {
+  const { minimumFractionDigits = 2, maximumFractionDigits = 2 } = options;
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits,
+    maximumFractionDigits,
   }).format(amount);
 }
 
 /**
- * Formats a date string into MM/DD/YYYY format.
+ * Formats a date string into MM/DD/YY format.
  */
 export function formatDate(dateStr: string): string {
   const date = new Date(dateStr);
   const month = String(date.getUTCMonth() + 1).padStart(2, "0");
   const day = String(date.getUTCDate()).padStart(2, "0");
   const year = date.getUTCFullYear();
-  return `${month}/${day}/${year}`;
+  const yearStr = String(year).slice(-2);
+  return `${month}/${day}/${yearStr}`;
 }
 
 /**

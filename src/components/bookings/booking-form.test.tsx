@@ -1,8 +1,7 @@
-import { render, screen, act } from "@testing-library/react";
+import { render, screen, act, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { BookingForm } from "./booking-form";
-import { HotelChain } from "@/lib/types";
 import { calculatePointsFromChain } from "@/lib/loyalty-utils";
 
 // Mock the external dependencies
@@ -39,11 +38,22 @@ vi.mock("@/components/ui/date-picker", () => ({
   ),
 }));
 
-const mockHotelChains: HotelChain[] = [
+const mockHotelChains = [
   {
-    id: "1",
-    name: "Marriott",
-    loyaltyProgram: "Bonvoy",
+    id: "chain-1",
+    name: "Chain 1",
+    loyaltyProgram: "Program 1",
+    basePointRate: 10,
+    pointTypeId: "1",
+    pointType: { id: "1", name: "Points", category: "hotel", centsPerPoint: 0.01 },
+    hotelChainSubBrands: [{ id: "sb-1", name: "Sub 1" }],
+    eliteStatuses: [],
+    userStatus: null,
+  },
+  {
+    id: "chain-2",
+    name: "Chain 2",
+    loyaltyProgram: "Program 2",
     basePointRate: 10,
     pointTypeId: "1",
     pointType: { id: "1", name: "Points", category: "hotel", centsPerPoint: 0.01 },
@@ -55,10 +65,6 @@ const mockHotelChains: HotelChain[] = [
 
 describe("BookingForm", () => {
   const defaultProps = {
-    hotelChains: mockHotelChains,
-    creditCards: [],
-    portals: [],
-    otaAgencies: [],
     onSubmit: vi.fn(),
     onCancel: vi.fn(),
     submitting: false,
@@ -70,9 +76,17 @@ describe("BookingForm", () => {
     vi.clearAllMocks();
     vi.mocked(calculatePointsFromChain).mockReturnValue("1000");
     // Mock global fetch
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => [],
+    global.fetch = vi.fn().mockImplementation((url) => {
+      if (url === "/api/hotel-chains") {
+        return Promise.resolve({
+          ok: true,
+          json: async () => mockHotelChains,
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: async () => [],
+      });
     });
   });
 
@@ -120,5 +134,39 @@ describe("BookingForm", () => {
     });
 
     expect(defaultProps.onCancel).toHaveBeenCalled();
+  });
+
+  it("Sub-brand selector is always visible but disabled if no chain or no sub-brands", async () => {
+    const user = userEvent.setup();
+    await act(async () => {
+      render(<BookingForm {...defaultProps} />);
+    });
+
+    // 1. Initially disabled (no chain selected)
+    const subBrandSelector = screen.getByTestId("sub-brand-select");
+    expect(subBrandSelector).toBeDisabled();
+    expect(await screen.findByText("Select chain first...")).toBeInTheDocument();
+
+    // 2. Select chain with sub-brands -> should enable
+    const hotelChainSelector = screen.getByTestId("hotel-chain-select");
+    await user.click(hotelChainSelector);
+    const optionChain1 = await screen.findByRole("option", { name: "Chain 1" });
+    await user.click(optionChain1);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("sub-brand-select")).not.toBeDisabled();
+    });
+    // Defaults to "none" which is "None / Not applicable"
+    expect(screen.getByText("None / Not applicable")).toBeInTheDocument();
+
+    // 3. Select chain without sub-brands -> should disable again
+    await user.click(screen.getByTestId("hotel-chain-select"));
+    const optionChain2 = await screen.findByRole("option", { name: "Chain 2" });
+    await user.click(optionChain2);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("sub-brand-select")).toBeDisabled();
+    });
+    expect(screen.getByText("None / Not applicable")).toBeInTheDocument();
   });
 });
