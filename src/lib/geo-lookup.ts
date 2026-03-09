@@ -53,8 +53,6 @@ function mapGooglePlace(place: GooglePlace): GeoResult {
 }
 
 export async function searchProperties(query: string): Promise<GeoResult[]> {
-  console.log(query);
-
   const normalized = query.trim().toLowerCase();
   if (normalized.length < 3) return [];
 
