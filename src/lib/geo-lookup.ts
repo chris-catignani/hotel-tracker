@@ -1,41 +1,36 @@
 import prisma from "@/lib/prisma";
 import { GeoResult } from "@/lib/types";
+import { ALPHA3_TO_ALPHA2 } from "@/lib/countries";
 
-const NOMINATIM_URL = "https://nominatim.openstreetmap.org";
-const USER_AGENT = "hotel-tracker/1.0 (personal travel tracking app)";
+const HERE_GEOCODE_URL = "https://geocode.search.hereapi.com/v1/geocode";
 
-interface NominatimResult {
-  place_id: number;
-  display_name: string;
-  lat: string;
-  lon: string;
+interface HereItem {
+  title: string;
   address: {
-    hotel?: string;
-    amenity?: string;
     city?: string;
-    town?: string;
-    village?: string;
-    municipality?: string;
-    state?: string;
-    country_code?: string;
+    county?: string;
+    countryCode?: string; // ISO 3166-1 alpha-3 e.g. "MYS"
+  };
+  position: {
+    lat: number;
+    lng: number;
   };
 }
 
-function extractCity(address: NominatimResult["address"]): string {
-  return address.city ?? address.town ?? address.village ?? address.municipality ?? "";
+interface HereResponse {
+  items: HereItem[];
 }
 
-function mapNominatimResult(result: NominatimResult): GeoResult {
-  const namePart =
-    result.address.hotel ?? result.address.amenity ?? result.display_name.split(",")[0].trim();
-  const city = extractCity(result.address);
-  const countryCode = (result.address.country_code ?? "").toUpperCase();
+function mapHereItem(item: HereItem): GeoResult {
+  const alpha3 = item.address.countryCode ?? "";
+  const countryCode = ALPHA3_TO_ALPHA2[alpha3] ?? alpha3.slice(0, 2).toUpperCase();
+  const city = item.address.city ?? item.address.county ?? "";
   return {
-    displayName: namePart,
+    displayName: item.title,
     city,
     countryCode,
-    latitude: parseFloat(result.lat),
-    longitude: parseFloat(result.lon),
+    latitude: item.position.lat,
+    longitude: item.position.lng,
   };
 }
 
@@ -49,27 +44,29 @@ export async function searchProperties(query: string): Promise<GeoResult[]> {
     return cached.results as unknown as GeoResult[];
   }
 
-  // Call Nominatim
-  const params = new URLSearchParams({
-    q: query,
-    format: "json",
-    limit: "5",
-    addressdetails: "1",
-    featuretype: "amenity",
-  });
-
-  const res = await fetch(`${NOMINATIM_URL}/search?${params}`, {
-    headers: { "User-Agent": USER_AGENT },
-  });
-
-  if (!res.ok) {
+  const apiKey = process.env.HERE_API_KEY;
+  if (!apiKey) {
+    console.warn("HERE_API_KEY is not set — geo search unavailable");
     return [];
   }
 
-  const data = (await res.json()) as NominatimResult[];
-  const results: GeoResult[] = data.map(mapNominatimResult);
+  const params = new URLSearchParams({
+    q: query,
+    lang: "en",
+    limit: "5",
+    apiKey,
+  });
 
-  // Cache results (upsert to handle race conditions)
+  const res = await fetch(`${HERE_GEOCODE_URL}?${params}`);
+  if (!res.ok) {
+    console.error(`HERE API error: ${res.status} ${res.statusText}`);
+    return [];
+  }
+
+  const data = (await res.json()) as HereResponse;
+  const results: GeoResult[] = data.items.map(mapHereItem);
+
+  // Cache results
   await prisma.geoCache.upsert({
     where: { queryKey: normalized },
     create: {
