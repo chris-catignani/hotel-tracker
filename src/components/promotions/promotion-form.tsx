@@ -879,39 +879,43 @@ export function PromotionForm({
                         <p className="px-2 pb-1 text-[11px] font-medium text-muted-foreground/70">
                           Scope
                         </p>
-                        {["hotel_chain", "sub_brand_scope", "tie_in_cards", "booking_source"].map(
-                          (key) => {
-                            const k = key as RestrictionKey;
-                            if (k === "sub_brand_scope") {
-                              const hasChain =
-                                type === "loyalty" || activeRestrictions.has("hotel_chain");
-                              if (!hasChain) return null;
-                            }
-                            if (k === "hotel_chain" && type === "loyalty") return null;
-                            if (k === "tie_in_cards" && type === "credit_card") return null;
-                            const isActive = activeRestrictions.has(k);
-                            return (
-                              <button
-                                key={k}
-                                type="button"
-                                disabled={isActive}
-                                onClick={() => {
-                                  dispatch({ type: "ADD_RESTRICTION", key: k });
-                                  setPickerOpen(false);
-                                }}
-                                className={`w-full text-left px-2 py-1.5 rounded-md text-sm transition-colors flex items-center justify-between ${
-                                  isActive
-                                    ? "opacity-40 cursor-not-allowed bg-muted/30"
-                                    : "hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                                }`}
-                                data-testid={`restriction-option-${k}`}
-                              >
-                                {RESTRICTION_LABELS[k]}
-                                {!isActive && <Plus className="size-3 text-muted-foreground/50" />}
-                              </button>
-                            );
+                        {[
+                          "hotel_chain",
+                          "geography",
+                          "sub_brand_scope",
+                          "tie_in_cards",
+                          "booking_source",
+                        ].map((key) => {
+                          const k = key as RestrictionKey;
+                          if (k === "sub_brand_scope") {
+                            const hasChain =
+                              type === "loyalty" || activeRestrictions.has("hotel_chain");
+                            if (!hasChain) return null;
                           }
-                        )}
+                          if (k === "hotel_chain" && type === "loyalty") return null;
+                          if (k === "tie_in_cards" && type === "credit_card") return null;
+                          const isActive = activeRestrictions.has(k);
+                          return (
+                            <button
+                              key={k}
+                              type="button"
+                              disabled={isActive}
+                              onClick={() => {
+                                dispatch({ type: "ADD_RESTRICTION", key: k });
+                                setPickerOpen(false);
+                              }}
+                              className={`w-full text-left px-2 py-1.5 rounded-md text-sm transition-colors flex items-center justify-between ${
+                                isActive
+                                  ? "opacity-40 cursor-not-allowed bg-muted/30"
+                                  : "hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                              }`}
+                              data-testid={`restriction-option-${k}`}
+                            >
+                              {RESTRICTION_LABELS[k]}
+                              {!isActive && <Plus className="size-3 text-muted-foreground/50" />}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
