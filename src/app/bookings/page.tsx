@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { BookingCard } from "@/components/bookings/booking-card";
 import { formatCurrency, formatDate, formatCerts } from "@/lib/utils";
 
@@ -262,9 +263,32 @@ export default function BookingsPage() {
                         {formatSourceColumn(booking)}
                       </TableCell>
                       <TableCell className="text-right">
-                        {usdTotalCost > 0
-                          ? `${formatCurrency(usdTotalCost)}${booking.isFutureEstimate ? " (est.)" : ""}`
-                          : "—"}
+                        {usdTotalCost > 0 ? (
+                          booking.currency !== "USD" ? (
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <button className="underline decoration-dotted cursor-pointer hover:text-foreground/80">
+                                  {formatCurrency(usdTotalCost)}
+                                  {booking.isFutureEstimate ? " (est.)" : ""}
+                                </button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-3 text-sm" align="end">
+                                <p className="font-medium">
+                                  {formatCurrency(Number(booking.totalCost), booking.currency)}
+                                </p>
+                                <p className="text-muted-foreground text-xs mt-0.5">
+                                  {booking.isFutureEstimate
+                                    ? "Estimated at current rate"
+                                    : "Locked at check-in rate"}
+                                </p>
+                              </PopoverContent>
+                            </Popover>
+                          ) : (
+                            formatCurrency(usdTotalCost)
+                          )
+                        ) : (
+                          "—"
+                        )}
                       </TableCell>
                       <TableCell className="text-right text-sm">
                         {booking.pointsRedeemed
