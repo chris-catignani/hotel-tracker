@@ -41,6 +41,7 @@ export function PropertyNameCombobox({
   const [suggestions, setSuggestions] = useState<GeoResult[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [searchError, setSearchError] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -48,16 +49,26 @@ export function PropertyNameCombobox({
     if (query.trim().length < 3) {
       setSuggestions([]);
       setOpen(false);
+      setSearchError(false);
       return;
     }
     setLoading(true);
+    setSearchError(false);
     try {
       const res = await fetch(`/api/geo/search?q=${encodeURIComponent(query)}`);
       if (res.ok) {
         const data: GeoResult[] = await res.json();
         setSuggestions(data);
-        setOpen(true); // always open when we have results or not (to show "Can't find?")
+        setOpen(true);
+      } else {
+        setSuggestions([]);
+        setSearchError(true);
+        setOpen(false);
       }
+    } catch {
+      setSuggestions([]);
+      setSearchError(true);
+      setOpen(false);
     } finally {
       setLoading(false);
     }
@@ -154,6 +165,12 @@ export function PropertyNameCombobox({
         <div className="absolute right-2 top-1/2 -translate-y-1/2">
           <div className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
         </div>
+      )}
+      {searchError && (
+        <p className="mt-1 text-sm text-destructive">
+          Property search unavailable — use &ldquo;Can&apos;t find your hotel?&rdquo; to enter
+          details manually.
+        </p>
       )}
       {showDropdown && (
         <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-md">
