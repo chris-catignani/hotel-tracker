@@ -106,7 +106,7 @@ export function AppSelect({
   };
 
   return (
-    <div className="w-full space-y-1">
+    <div className={cn("w-full space-y-1", className)}>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
@@ -117,8 +117,7 @@ export function AppSelect({
             className={cn(
               "w-full justify-between font-normal min-h-10 h-auto py-2 px-3 transition-colors",
               (error || props["aria-invalid"]) &&
-                "border-destructive ring-destructive/20 focus-visible:ring-destructive/50",
-              className
+                "border-destructive ring-destructive/20 focus-visible:ring-destructive/50"
             )}
             disabled={disabled}
             {...props}

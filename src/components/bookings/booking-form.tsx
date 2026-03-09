@@ -725,43 +725,51 @@ export function BookingForm({
           {/* Benefits */}
           <div className="space-y-2">
             <Label>Booking Benefits</Label>
-            {benefits.map((benefit, idx) => (
-              <div key={idx} className="flex items-start gap-2">
-                <AppSelect
-                  value={benefit.type || "none"}
-                  onValueChange={(v) => updateBenefit(idx, "type", v === "none" ? "" : v)}
-                  options={[{ label: "Select type...", value: "none" }, ...BENEFIT_TYPE_OPTIONS]}
-                  placeholder="Select type..."
-                  className="w-48"
-                  data-testid={`benefit-type-select-${idx}`}
-                />
-                {benefit.type === "other" && (
-                  <Input
-                    value={benefit.label}
-                    onChange={(e) => updateBenefit(idx, "label", e.target.value)}
-                    placeholder="Description"
-                    className="flex-1"
-                  />
-                )}
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={benefit.dollarValue}
-                  onChange={(e) => updateBenefit(idx, "dollarValue", e.target.value)}
-                  placeholder="$ value"
-                  className="w-32"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => removeBenefit(idx)}
+            <div className="space-y-3">
+              {benefits.map((benefit, idx) => (
+                <div
+                  key={idx}
+                  className="flex flex-wrap sm:flex-nowrap items-center gap-2 p-3 border rounded-lg sm:p-0 sm:border-none sm:rounded-none"
                 >
-                  ×
-                </Button>
-              </div>
-            ))}
+                  <AppSelect
+                    value={benefit.type || "none"}
+                    onValueChange={(v) => updateBenefit(idx, "type", v === "none" ? "" : v)}
+                    options={[{ label: "Select type...", value: "none" }, ...BENEFIT_TYPE_OPTIONS]}
+                    placeholder="Select type..."
+                    className="w-full sm:w-56 shrink-0"
+                    data-testid={`benefit-type-select-${idx}`}
+                  />
+                  {benefit.type === "other" && (
+                    <Input
+                      value={benefit.label}
+                      onChange={(e) => updateBenefit(idx, "label", e.target.value)}
+                      placeholder="Description"
+                      className="flex-1 min-w-[120px]"
+                    />
+                  )}
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={benefit.dollarValue}
+                      onChange={(e) => updateBenefit(idx, "dollarValue", e.target.value)}
+                      placeholder="$ value"
+                      className="flex-1 sm:w-36 shrink-0"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="shrink-0"
+                      onClick={() => removeBenefit(idx)}
+                    >
+                      ×
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
             <Button type="button" variant="outline" size="sm" onClick={addBenefit}>
               + Add Benefit
             </Button>
