@@ -1,5 +1,5 @@
 import { format, parseISO } from "date-fns";
-import { PaymentType, Booking, ShoppingPortal } from "@/lib/types";
+import { PaymentType, Booking, ShoppingPortal, GeoResult } from "@/lib/types";
 import { CERT_TYPE_OPTIONS } from "@/lib/cert-types";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -15,6 +15,10 @@ export interface BookingFormState {
   hotelChainId: string;
   hotelChainSubBrandId: string;
   propertyName: string;
+  countryCode: string | null;
+  city: string | null;
+  latitude: number | null;
+  longitude: number | null;
   checkIn: string;
   checkOut: string;
   paymentType: PaymentType;
@@ -72,6 +76,10 @@ export const INITIAL_STATE: BookingFormState = {
   hotelChainId: "",
   hotelChainSubBrandId: "none",
   propertyName: "",
+  countryCode: null,
+  city: null,
+  latitude: null,
+  longitude: null,
   checkIn: "",
   checkOut: "",
   paymentType: "cash",
@@ -103,6 +111,10 @@ export function buildInitialState(
     hotelChainId: initialData.hotelChainId,
     hotelChainSubBrandId: initialData.hotelChainSubBrandId ?? "none",
     propertyName: initialData.propertyName,
+    countryCode: initialData.countryCode ?? null,
+    city: initialData.city ?? null,
+    latitude: null,
+    longitude: null,
     checkIn: toDateInputValue(initialData.checkIn),
     checkOut: toDateInputValue(initialData.checkOut),
     paymentType: toPaymentType(
@@ -167,6 +179,8 @@ export type Action =
   | { type: "SET_PAYMENT_TYPE"; paymentType: PaymentType }
   | { type: "SET_HOTEL_CHAIN_ID"; hotelChainId: string }
   | { type: "SET_BOOKING_SOURCE"; bookingSource: string }
+  | { type: "SET_PROPERTY_GEO"; result: GeoResult }
+  | { type: "CLEAR_GEO" }
   | { type: "ADD_CERTIFICATE" }
   | { type: "UPDATE_CERTIFICATE"; index: number; value: string }
   | { type: "REMOVE_CERTIFICATE"; index: number }
@@ -225,6 +239,25 @@ export function bookingFormReducer(state: BookingFormState, action: Action): Boo
         ...state,
         bookingSource: action.bookingSource === "none" ? "" : action.bookingSource,
         otaAgencyId: action.bookingSource !== "ota" ? "none" : state.otaAgencyId,
+      };
+
+    case "SET_PROPERTY_GEO":
+      return {
+        ...state,
+        propertyName: action.result.displayName,
+        countryCode: action.result.countryCode || null,
+        city: action.result.city || null,
+        latitude: action.result.latitude,
+        longitude: action.result.longitude,
+      };
+
+    case "CLEAR_GEO":
+      return {
+        ...state,
+        countryCode: null,
+        city: null,
+        latitude: null,
+        longitude: null,
       };
 
     case "ADD_CERTIFICATE":

@@ -168,6 +168,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       benefits,
       notes,
       hotelChainSubBrandId,
+      countryCode,
+      city,
     } = body;
 
     const data: Record<string, unknown> = {};
@@ -191,6 +193,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (pointsRedeemed !== undefined)
       data.pointsRedeemed = pointsRedeemed ? Number(pointsRedeemed) : null;
     if (notes !== undefined) data.notes = notes || null;
+    if (countryCode !== undefined) data.countryCode = countryCode || null;
+    if (city !== undefined) data.city = city || null;
     if (bookingSource !== undefined) {
       data.bookingSource = bookingSource || null;
       data.otaAgencyId = bookingSource === "ota" && otaAgencyId ? otaAgencyId : null;

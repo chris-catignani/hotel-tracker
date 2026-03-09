@@ -13,10 +13,13 @@ import { format, parseISO } from "date-fns";
 import { calculatePointsFromChain } from "@/lib/loyalty-utils";
 import { BENEFIT_TYPE_OPTIONS, BOOKING_SOURCE_OPTIONS, PAYMENT_TYPES } from "@/lib/constants";
 import { CurrencyCombobox } from "@/components/ui/currency-combobox";
+import { MapPin } from "lucide-react";
+import { PropertyNameCombobox } from "@/components/ui/property-name-combobox";
 import {
   Booking,
   BookingFormData,
   CreditCard,
+  GeoResult,
   HotelChain,
   OtaAgency,
   PaymentType,
@@ -73,6 +76,10 @@ export function BookingForm({
     hotelChainId,
     hotelChainSubBrandId,
     propertyName,
+    countryCode,
+    city,
+    latitude,
+    longitude,
     checkIn,
     checkOut,
     paymentType,
@@ -91,6 +98,14 @@ export function BookingForm({
     notes,
     showErrors,
   } = state;
+
+  const handleGeoSelect = (result: GeoResult) => {
+    dispatch({ type: "SET_PROPERTY_GEO", result });
+  };
+
+  const handleManualPropertyEdit = () => {
+    dispatch({ type: "CLEAR_GEO" });
+  };
 
   const handleCheckInChange = (date?: Date) => {
     dispatch({ type: "SET_CHECK_IN", date });
@@ -223,6 +238,10 @@ export function BookingForm({
       hotelChainId: hotelChainId,
       hotelChainSubBrandId: hotelChainSubBrandId === "none" ? null : hotelChainSubBrandId,
       propertyName,
+      countryCode: countryCode || null,
+      city: city || null,
+      latitude: latitude ?? null,
+      longitude: longitude ?? null,
       checkIn,
       checkOut,
       numNights: Number(numNights),
@@ -311,15 +330,23 @@ export function BookingForm({
 
             <div className="space-y-2">
               <Label htmlFor="propertyName">Property Name *</Label>
-              <Input
+              <PropertyNameCombobox
                 id="propertyName"
                 value={propertyName}
-                onChange={(e) =>
-                  dispatch({ type: "SET_FIELD", field: "propertyName", value: e.target.value })
+                onValueChange={(val) =>
+                  dispatch({ type: "SET_FIELD", field: "propertyName", value: val })
                 }
-                placeholder="e.g. Marriott Downtown Chicago"
+                onGeoSelect={handleGeoSelect}
+                onManualEdit={handleManualPropertyEdit}
                 error={showErrors ? errors.propertyName : ""}
+                data-testid="property-name-input"
               />
+              {countryCode && (
+                <p className="text-xs text-muted-foreground">
+                  <MapPin className="inline h-3 w-3 mr-0.5" />
+                  {[city, countryCode].filter(Boolean).join(", ")}
+                </p>
+              )}
             </div>
           </div>
 

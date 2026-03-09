@@ -9,6 +9,27 @@ vi.mock("@/lib/loyalty-utils", () => ({
   calculatePointsFromChain: vi.fn(),
 }));
 
+vi.mock("@/components/ui/property-name-combobox", () => ({
+  PropertyNameCombobox: ({
+    id,
+    value,
+    onValueChange,
+    "data-testid": testId,
+  }: {
+    id?: string;
+    value: string;
+    onValueChange: (v: string) => void;
+    "data-testid"?: string;
+  }) => (
+    <input
+      id={id}
+      data-testid={testId}
+      value={value}
+      onChange={(e) => onValueChange(e.target.value)}
+    />
+  ),
+}));
+
 vi.mock("@/components/ui/date-picker", () => ({
   DatePicker: ({
     setDate,
