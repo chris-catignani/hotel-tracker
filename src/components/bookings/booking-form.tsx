@@ -732,7 +732,7 @@ export function BookingForm({
                   onValueChange={(v) => updateBenefit(idx, "type", v === "none" ? "" : v)}
                   options={[{ label: "Select type...", value: "none" }, ...BENEFIT_TYPE_OPTIONS]}
                   placeholder="Select type..."
-                  className="w-48"
+                  className="w-56 shrink-0"
                   data-testid={`benefit-type-select-${idx}`}
                 />
                 {benefit.type === "other" && (
@@ -740,7 +740,7 @@ export function BookingForm({
                     value={benefit.label}
                     onChange={(e) => updateBenefit(idx, "label", e.target.value)}
                     placeholder="Description"
-                    className="flex-1"
+                    className="flex-1 min-w-[120px]"
                   />
                 )}
                 <Input
@@ -750,12 +750,13 @@ export function BookingForm({
                   value={benefit.dollarValue}
                   onChange={(e) => updateBenefit(idx, "dollarValue", e.target.value)}
                   placeholder="$ value"
-                  className="w-32"
+                  className="w-36 shrink-0"
                 />
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
+                  className="shrink-0"
                   onClick={() => removeBenefit(idx)}
                 >
                   ×
