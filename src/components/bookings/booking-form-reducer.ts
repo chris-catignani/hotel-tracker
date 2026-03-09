@@ -252,8 +252,8 @@ export function bookingFormReducer(state: BookingFormState, action: Action): Boo
         geoConfirmed: true,
         countryCode: action.result.countryCode || null,
         city: action.result.city || null,
-        latitude: action.result.latitude,
-        longitude: action.result.longitude,
+        latitude: action.result.latitude ?? null,
+        longitude: action.result.longitude ?? null,
       };
 
     case "CLEAR_GEO":

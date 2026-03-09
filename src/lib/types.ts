@@ -273,8 +273,8 @@ export interface GeoResult {
   displayName: string;
   city: string;
   countryCode: string;
-  latitude: number;
-  longitude: number;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 // ---------------------------------------------------------------------------
