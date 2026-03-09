@@ -35,8 +35,12 @@ function extractComponent(
 function mapGooglePlace(place: GooglePlace): GeoResult {
   const components = place.addressComponents ?? [];
   const city =
-    extractComponent(components, ["locality", "postal_town", "administrative_area_level_2"])
-      ?.longText ?? "";
+    extractComponent(components, [
+      "locality",
+      "postal_town",
+      "administrative_area_level_2",
+      "administrative_area_level_1",
+    ])?.longText ?? "";
   const countryCode = extractComponent(components, ["country"])?.shortText ?? ""; // already ISO alpha-2
 
   return {
