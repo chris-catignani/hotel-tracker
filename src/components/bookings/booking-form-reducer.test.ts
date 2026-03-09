@@ -413,4 +413,82 @@ describe("bookingFormReducer", () => {
       expect(next.showErrors).toBe(false);
     });
   });
+
+  describe("geo actions", () => {
+    it("SET_PROPERTY_GEO sets all geo fields and marks geoConfirmed", () => {
+      const next = bookingFormReducer(INITIAL_STATE, {
+        type: "SET_PROPERTY_GEO",
+        result: {
+          displayName: "Park Hyatt Kuala Lumpur",
+          city: "Kuala Lumpur",
+          countryCode: "MY",
+          latitude: 3.1419,
+          longitude: 101.7008,
+        },
+      });
+      expect(next.propertyName).toBe("Park Hyatt Kuala Lumpur");
+      expect(next.countryCode).toBe("MY");
+      expect(next.city).toBe("Kuala Lumpur");
+      expect(next.latitude).toBe(3.1419);
+      expect(next.longitude).toBe(101.7008);
+      expect(next.geoConfirmed).toBe(true);
+    });
+
+    it("CLEAR_GEO clears geo fields and sets geoConfirmed to false", () => {
+      const confirmed = bookingFormReducer(INITIAL_STATE, {
+        type: "SET_PROPERTY_GEO",
+        result: {
+          displayName: "Some Hotel",
+          city: "London",
+          countryCode: "GB",
+          latitude: 51.5,
+          longitude: -0.1,
+        },
+      });
+      expect(confirmed.geoConfirmed).toBe(true);
+
+      const cleared = bookingFormReducer(confirmed, { type: "CLEAR_GEO" });
+      expect(cleared.geoConfirmed).toBe(false);
+      expect(cleared.countryCode).toBeNull();
+      expect(cleared.city).toBeNull();
+      expect(cleared.latitude).toBeNull();
+      expect(cleared.longitude).toBeNull();
+      // propertyName is preserved (user is still typing)
+      expect(cleared.propertyName).toBe("Some Hotel");
+    });
+
+    it("RESET_PROPERTY clears propertyName and all geo fields", () => {
+      const confirmed = bookingFormReducer(INITIAL_STATE, {
+        type: "SET_PROPERTY_GEO",
+        result: {
+          displayName: "Some Hotel",
+          city: "London",
+          countryCode: "GB",
+          latitude: 51.5,
+          longitude: -0.1,
+        },
+      });
+      const reset = bookingFormReducer(confirmed, { type: "RESET_PROPERTY" });
+      expect(reset.propertyName).toBe("");
+      expect(reset.geoConfirmed).toBe(false);
+      expect(reset.countryCode).toBeNull();
+      expect(reset.city).toBeNull();
+      expect(reset.latitude).toBeNull();
+      expect(reset.longitude).toBeNull();
+    });
+
+    it("buildInitialState sets geoConfirmed true when booking has countryCode", () => {
+      const booking = makeBooking({ countryCode: "SG", city: "Singapore" } as Partial<Booking>);
+      const state = buildInitialState(booking, []);
+      expect(state.geoConfirmed).toBe(true);
+      expect(state.countryCode).toBe("SG");
+      expect(state.city).toBe("Singapore");
+    });
+
+    it("buildInitialState sets geoConfirmed false when booking has no countryCode", () => {
+      const state = buildInitialState(makeBooking(), []);
+      expect(state.geoConfirmed).toBe(false);
+      expect(state.countryCode).toBeNull();
+    });
+  });
 });

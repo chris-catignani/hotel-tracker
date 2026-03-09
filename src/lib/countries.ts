@@ -92,6 +92,8 @@ export const COUNTRIES: Country[] = [
   { code: "KZ", name: "Kazakhstan" },
   { code: "KE", name: "Kenya" },
   { code: "KI", name: "Kiribati" },
+  { code: "KR", name: "South Korea" },
+  { code: "KP", name: "North Korea" },
   { code: "KW", name: "Kuwait" },
   { code: "KG", name: "Kyrgyzstan" },
   { code: "LA", name: "Laos" },

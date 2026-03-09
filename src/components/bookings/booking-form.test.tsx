@@ -16,6 +16,7 @@ vi.mock("@/components/ui/property-name-combobox", () => ({
     confirmed,
     onValueChange,
     onReset,
+    error,
     "data-testid": testId,
   }: {
     id?: string;
@@ -23,6 +24,7 @@ vi.mock("@/components/ui/property-name-combobox", () => ({
     confirmed: boolean;
     onValueChange: (v: string) => void;
     onReset: () => void;
+    error?: string;
     "data-testid"?: string;
   }) =>
     confirmed ? (
@@ -33,12 +35,15 @@ vi.mock("@/components/ui/property-name-combobox", () => ({
         </button>
       </div>
     ) : (
-      <input
-        id={id}
-        data-testid={testId}
-        value={value}
-        onChange={(e) => onValueChange(e.target.value)}
-      />
+      <>
+        <input
+          id={id}
+          data-testid={testId}
+          value={value}
+          onChange={(e) => onValueChange(e.target.value)}
+        />
+        {error && <p>{error}</p>}
+      </>
     ),
 }));
 
@@ -129,6 +134,30 @@ describe("BookingForm", () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+  });
+
+  it("shows geo confirmation error when property name is typed but not confirmed", async () => {
+    const user = userEvent.setup();
+    await act(async () => {
+      render(<BookingForm {...defaultProps} />);
+    });
+
+    // Type a property name without confirming via autocomplete
+    const propertyInput = screen.getByTestId("property-name-input");
+    await act(async () => {
+      await user.type(propertyInput, "Park Hyatt");
+    });
+
+    // Submit the form to trigger validation
+    const submitButton = screen.getByTestId("booking-form-submit");
+    await act(async () => {
+      await user.click(submitButton);
+    });
+
+    expect(
+      screen.getByText(/please select your property from the list or enter details manually/i)
+    ).toBeInTheDocument();
+    expect(defaultProps.onSubmit).not.toHaveBeenCalled();
   });
 
   it("renders correctly with basic fields", async () => {
