@@ -287,6 +287,7 @@ describe("REMOVE_RESTRICTION", () => {
       key: "redemption_caps",
     });
     expect(next.restrictions.maxStayCount).toBe("");
+    expect(next.restrictions.maxRewardCount).toBe("");
     expect(next.restrictions.maxRedemptionValue).toBe("");
     expect(next.restrictions.maxTotalBonusPoints).toBe("");
   });
