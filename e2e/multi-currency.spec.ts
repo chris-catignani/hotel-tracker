@@ -42,8 +42,8 @@ test.describe("Multi-Currency Support", () => {
       await expect(page.getByTestId("total-cost-native")).not.toBeAttached();
       await expect(page.getByTestId("total-cost-usd-equivalent")).not.toBeAttached();
 
-      // Should still show the total cost as plain text
-      await expect(page.getByText("$220.00")).toBeVisible();
+      // Should still show the total cost in the USD cost element
+      await expect(page.getByTestId("total-cost-usd")).toHaveText("$220.00");
     } finally {
       await request.delete(`/api/bookings/${booking.id}`);
     }

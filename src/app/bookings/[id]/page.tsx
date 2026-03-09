@@ -341,7 +341,9 @@ export default function BookingDetailPage() {
                     )}
                   </>
                 ) : (
-                  <p className="font-medium">{formatCurrency(totalCost)}</p>
+                  <p className="font-medium" data-testid="total-cost-usd">
+                    {formatCurrency(totalCost)}
+                  </p>
                 )}
               </div>
             )}
