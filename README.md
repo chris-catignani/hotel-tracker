@@ -20,7 +20,7 @@ Built with Next.js, Prisma, shadcn/ui, and Tailwind CSS.
 
 - **Node.js** 18+
 - **PostgreSQL** -- a running Postgres instance (local or cloud)
-- **HERE API key** -- for property name autocomplete (free tier, no credit card required)
+- **Google Places API key** -- for property name autocomplete (~$200/month free credit; billing account required)
 
 ## Local Development Setup
 
@@ -58,19 +58,23 @@ psql -U postgres -c "CREATE DATABASE hotel_tracker;"
 npm run db:push
 ```
 
-### HERE Maps API Setup
+### Google Places API Setup
 
-The booking form uses HERE's Geocoding & Search API to power property name autocomplete. It's free for up to 250,000 requests/month and requires no credit card.
+The booking form uses the Google Places API (New) to power property name autocomplete, with `includedType: lodging` so only hotels appear in results.
 
-1. Sign up at [developer.here.com](https://developer.here.com)
-2. Create a project and generate a **REST API key**
-3. Add it to `.env`:
+1. Go to [console.cloud.google.com](https://console.cloud.google.com) and create or select a project
+2. Enable the **Places API (New)** (not the legacy Places API)
+3. Create an API key under **APIs & Services → Credentials**
+4. Optionally restrict the key to **Places API (New)** to limit exposure
+5. Add it to `.env`:
 
 ```
-HERE_API_KEY="your-here-api-key"
+GOOGLE_PLACES_API_KEY="your-google-places-api-key"
 ```
 
 The app degrades gracefully without a key — the property name field still works as a plain text input, but autocomplete suggestions won't appear.
+
+> **Pricing:** Google provides ~$200/month in free credit. Only Basic tier fields are requested (display name, address components, location), which are billed at $32/1,000 requests — roughly 6,000 free searches per month. A billing account is required even for the free tier.
 
 ### Authentication Setup
 
@@ -198,7 +202,7 @@ If a test fails, Playwright is configured to record a video and a "trace" (inter
    - `AUTH_SECRET`: Generate with `openssl rand -base64 32`
    - `SEED_ADMIN_EMAIL`: Your admin email
    - `SEED_ADMIN_PASSWORD`: A strong password
-   - `HERE_API_KEY`: Your HERE REST API key (see HERE Maps API Setup above)
+   - `GOOGLE_PLACES_API_KEY`: Your Google Places API key (see Google Places API Setup above)
 8. Run `npm run db:seed` via Vercel's one-off task runner or a local connection to the production DB to create the admin user.
 
 ## Managing Users

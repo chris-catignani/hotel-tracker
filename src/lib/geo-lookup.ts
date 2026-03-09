@@ -1,36 +1,50 @@
 import prisma from "@/lib/prisma";
 import { GeoResult } from "@/lib/types";
-import { ALPHA3_TO_ALPHA2 } from "@/lib/countries";
 
-const HERE_GEOCODE_URL = "https://geocode.search.hereapi.com/v1/geocode";
+const GOOGLE_PLACES_URL = "https://places.googleapis.com/v1/places:searchText";
 
-interface HereItem {
-  title: string;
-  address: {
-    city?: string;
-    county?: string;
-    countryCode?: string; // ISO 3166-1 alpha-3 e.g. "MYS"
-  };
-  position: {
-    lat: number;
-    lng: number;
-  };
+// Only request the fields we need — keeps us in the Basic tier (cheapest)
+const FIELD_MASK = "places.displayName,places.addressComponents,places.location";
+
+interface GoogleAddressComponent {
+  longText: string;
+  shortText: string;
+  types: string[];
 }
 
-interface HereResponse {
-  items: HereItem[];
+interface GooglePlace {
+  displayName: { text: string };
+  addressComponents: GoogleAddressComponent[];
+  location: { latitude: number; longitude: number };
 }
 
-function mapHereItem(item: HereItem): GeoResult {
-  const alpha3 = item.address.countryCode ?? "";
-  const countryCode = ALPHA3_TO_ALPHA2[alpha3] ?? alpha3.slice(0, 2).toUpperCase();
-  const city = item.address.city ?? item.address.county ?? "";
+interface GooglePlacesResponse {
+  places?: GooglePlace[];
+}
+
+function extractComponent(
+  components: GoogleAddressComponent[],
+  types: string[]
+): GoogleAddressComponent | undefined {
+  for (const type of types) {
+    const match = components.find((c) => c.types.includes(type));
+    if (match) return match;
+  }
+}
+
+function mapGooglePlace(place: GooglePlace): GeoResult {
+  const components = place.addressComponents ?? [];
+  const city =
+    extractComponent(components, ["locality", "postal_town", "administrative_area_level_2"])
+      ?.longText ?? "";
+  const countryCode = extractComponent(components, ["country"])?.shortText ?? ""; // already ISO alpha-2
+
   return {
-    displayName: item.title,
+    displayName: place.displayName.text,
     city,
     countryCode,
-    latitude: item.position.lat,
-    longitude: item.position.lng,
+    latitude: place.location.latitude,
+    longitude: place.location.longitude,
   };
 }
 
@@ -44,27 +58,34 @@ export async function searchProperties(query: string): Promise<GeoResult[]> {
     return cached.results as unknown as GeoResult[];
   }
 
-  const apiKey = process.env.HERE_API_KEY;
+  const apiKey = process.env.GOOGLE_PLACES_API_KEY;
   if (!apiKey) {
-    console.warn("HERE_API_KEY is not set — geo search unavailable");
+    console.warn("GOOGLE_PLACES_API_KEY is not set — geo search unavailable");
     return [];
   }
 
-  const params = new URLSearchParams({
-    q: query,
-    lang: "en",
-    limit: "5",
-    apiKey,
+  const res = await fetch(GOOGLE_PLACES_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Goog-Api-Key": apiKey,
+      "X-Goog-FieldMask": FIELD_MASK,
+    },
+    body: JSON.stringify({
+      textQuery: query,
+      languageCode: "en",
+      maxResultCount: 5,
+      includedType: "lodging",
+    }),
   });
 
-  const res = await fetch(`${HERE_GEOCODE_URL}?${params}`);
   if (!res.ok) {
-    console.error(`HERE API error: ${res.status} ${res.statusText}`);
+    console.error(`Google Places API error: ${res.status} ${res.statusText}`);
     return [];
   }
 
-  const data = (await res.json()) as HereResponse;
-  const results: GeoResult[] = data.items.map(mapHereItem);
+  const data = (await res.json()) as GooglePlacesResponse;
+  const results: GeoResult[] = (data.places ?? []).map(mapGooglePlace);
 
   // Cache results
   await prisma.geoCache.upsert({

@@ -16,15 +16,15 @@ import { searchProperties } from "@/lib/geo-lookup";
 const mockFindUnique = vi.mocked(prisma.geoCache.findUnique);
 const mockUpsert = vi.mocked(prisma.geoCache.upsert);
 
-const HERE_RESPONSE = {
-  items: [
+const GOOGLE_RESPONSE = {
+  places: [
     {
-      title: "Marriott Times Square",
-      address: {
-        city: "New York",
-        countryCode: "USA", // HERE returns alpha-3
-      },
-      position: { lat: 40.758, lng: -73.9855 },
+      displayName: { text: "Marriott Times Square" },
+      addressComponents: [
+        { longText: "New York", shortText: "New York", types: ["locality"] },
+        { longText: "United States", shortText: "US", types: ["country"] },
+      ],
+      location: { latitude: 40.758, longitude: -73.9855 },
     },
   ],
 };
@@ -32,7 +32,7 @@ const HERE_RESPONSE = {
 const EXPECTED_RESULT: GeoResult = {
   displayName: "Marriott Times Square",
   city: "New York",
-  countryCode: "US", // converted to alpha-2
+  countryCode: "US",
   latitude: 40.758,
   longitude: -73.9855,
 };
@@ -41,7 +41,7 @@ describe("searchProperties", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mockUpsert.mockResolvedValue({} as never);
-    vi.stubEnv("HERE_API_KEY", "test-api-key");
+    vi.stubEnv("GOOGLE_PLACES_API_KEY", "test-api-key");
   });
 
   it("returns empty array for short queries", async () => {
@@ -50,7 +50,7 @@ describe("searchProperties", () => {
     expect(mockFindUnique).not.toHaveBeenCalled();
   });
 
-  it("returns cached results without calling HERE", async () => {
+  it("returns cached results without calling Google", async () => {
     mockFindUnique.mockResolvedValue({
       id: 1,
       queryKey: "marriott times",
@@ -63,18 +63,24 @@ describe("searchProperties", () => {
     expect(mockFindUnique).toHaveBeenCalledWith({ where: { queryKey: "marriott times" } });
   });
 
-  it("calls HERE API on cache miss and caches the result", async () => {
+  it("calls Google Places API on cache miss and caches the result", async () => {
     mockFindUnique.mockResolvedValue(null);
 
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => HERE_RESPONSE,
+      json: async () => GOOGLE_RESPONSE,
     });
     vi.stubGlobal("fetch", mockFetch);
 
     const results = await searchProperties("Marriott Times Square");
 
-    expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining("geocode.search.hereapi.com"));
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("places.googleapis.com"),
+      expect.objectContaining({
+        method: "POST",
+        body: expect.stringContaining("Marriott Times Square"),
+      })
+    );
     expect(results).toHaveLength(1);
     expect(results[0].displayName).toBe("Marriott Times Square");
     expect(results[0].countryCode).toBe("US");
@@ -82,59 +88,23 @@ describe("searchProperties", () => {
     expect(mockUpsert).toHaveBeenCalled();
   });
 
-  it("converts HERE alpha-3 country codes to alpha-2", async () => {
+  it("sends includedType=lodging to filter for hotels only", async () => {
     mockFindUnique.mockResolvedValue(null);
 
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({
-        items: [
-          {
-            title: "Park Hyatt Kuala Lumpur",
-            address: { city: "Kuala Lumpur", countryCode: "MYS" },
-            position: { lat: 3.1419, lng: 101.7008 },
-          },
-          {
-            title: "The Serangoon House",
-            address: { city: "Singapore", countryCode: "SGP" },
-            position: { lat: 1.3113, lng: 103.8547 },
-          },
-          {
-            title: "ibis Styles Ambassador",
-            address: { city: "Incheon", countryCode: "KOR" },
-            position: { lat: 37.481, lng: 126.42 },
-          },
-        ],
-      }),
+      json: async () => ({ places: [] }),
     });
     vi.stubGlobal("fetch", mockFetch);
 
-    const results = await searchProperties("Park Hyatt");
-    expect(results[0].countryCode).toBe("MY");
-    expect(results[1].countryCode).toBe("SG");
-    expect(results[2].countryCode).toBe("KR");
+    await searchProperties("Park Hyatt Kuala Lumpur");
+
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(body.includedType).toBe("lodging");
+    expect(body.languageCode).toBe("en");
   });
 
-  it("returns empty array when HERE API returns non-ok response", async () => {
-    mockFindUnique.mockResolvedValue(null);
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({ ok: false, status: 401, statusText: "Unauthorized" })
-    );
-
-    const results = await searchProperties("Marriott Times Square");
-    expect(results).toEqual([]);
-  });
-
-  it("returns empty array when HERE_API_KEY is not set", async () => {
-    vi.stubEnv("HERE_API_KEY", "");
-    mockFindUnique.mockResolvedValue(null);
-
-    const results = await searchProperties("Marriott Times Square");
-    expect(results).toEqual([]);
-  });
-
-  it("falls back to county when city is missing from address", async () => {
+  it("returns country code as ISO alpha-2 directly from Google response", async () => {
     mockFindUnique.mockResolvedValue(null);
 
     vi.stubGlobal(
@@ -142,19 +112,84 @@ describe("searchProperties", () => {
       vi.fn().mockResolvedValue({
         ok: true,
         json: async () => ({
-          items: [
+          places: [
             {
-              title: "Some Resort",
-              address: { county: "Maui County", countryCode: "USA" },
-              position: { lat: 20.7, lng: -156.4 },
+              displayName: { text: "Park Hyatt Kuala Lumpur" },
+              addressComponents: [
+                { longText: "Kuala Lumpur", shortText: "Kuala Lumpur", types: ["locality"] },
+                { longText: "Malaysia", shortText: "MY", types: ["country"] },
+              ],
+              location: { latitude: 3.1419, longitude: 101.7008 },
+            },
+            {
+              displayName: { text: "The Serangoon House" },
+              addressComponents: [
+                { longText: "Singapore", shortText: "Singapore", types: ["locality"] },
+                { longText: "Singapore", shortText: "SG", types: ["country"] },
+              ],
+              location: { latitude: 1.3113, longitude: 103.8547 },
             },
           ],
         }),
       })
     );
 
-    const results = await searchProperties("Some Resort Maui");
-    expect(results[0].city).toBe("Maui County");
-    expect(results[0].countryCode).toBe("US");
+    const results = await searchProperties("Park Hyatt");
+    expect(results[0].countryCode).toBe("MY");
+    expect(results[1].countryCode).toBe("SG");
+  });
+
+  it("returns empty array when Google API returns non-ok response", async () => {
+    mockFindUnique.mockResolvedValue(null);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: false, status: 403, statusText: "Forbidden" })
+    );
+
+    const results = await searchProperties("Marriott Times Square");
+    expect(results).toEqual([]);
+  });
+
+  it("returns empty array when GOOGLE_PLACES_API_KEY is not set", async () => {
+    vi.stubEnv("GOOGLE_PLACES_API_KEY", "");
+    mockFindUnique.mockResolvedValue(null);
+
+    const results = await searchProperties("Marriott Times Square");
+    expect(results).toEqual([]);
+  });
+
+  it("returns empty array when Google returns no places", async () => {
+    mockFindUnique.mockResolvedValue(null);
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) }));
+
+    const results = await searchProperties("xyzzy hotel nonexistent");
+    expect(results).toEqual([]);
+  });
+
+  it("falls back to postal_town when locality is missing", async () => {
+    mockFindUnique.mockResolvedValue(null);
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          places: [
+            {
+              displayName: { text: "Some Country Hotel" },
+              addressComponents: [
+                { longText: "Surrey", shortText: "Surrey", types: ["postal_town"] },
+                { longText: "United Kingdom", shortText: "GB", types: ["country"] },
+              ],
+              location: { latitude: 51.3, longitude: -0.4 },
+            },
+          ],
+        }),
+      })
+    );
+
+    const results = await searchProperties("Some Country Hotel Surrey");
+    expect(results[0].city).toBe("Surrey");
+    expect(results[0].countryCode).toBe("GB");
   });
 });
