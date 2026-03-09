@@ -294,8 +294,7 @@ describe("bookingFormReducer", () => {
     });
 
     it("filters out certificates that don't belong to the new chain", () => {
-      // Use a cert type that exists in CERT_TYPE_OPTIONS — fallback: if cert is unknown, it's kept (no opt found)
-      // We test the filter by adding an empty cert (always kept) and a non-matching cert (removed if matched to different chain)
+      // Empty certs are always kept; certs with no matching CERT_TYPE_OPTIONS entry are removed
       const state: BookingFormState = {
         ...INITIAL_STATE,
         hotelChainId: "chain-1",
@@ -305,8 +304,8 @@ describe("bookingFormReducer", () => {
         type: "SET_HOTEL_CHAIN_ID",
         hotelChainId: "chain-2",
       });
-      // empty cert always kept; "unknown_cert_for_chain1" has no matching opt so it's also kept
-      expect(next.certificates).toContain("");
+      // The empty cert is kept; "unknown_cert_for_chain1" has no matching CERT_TYPE_OPTIONS entry so it is removed
+      expect(next.certificates).toEqual([""]);
     });
   });
 
