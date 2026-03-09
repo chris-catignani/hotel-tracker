@@ -267,12 +267,19 @@ export default function BookingsPage() {
                           booking.currency !== "USD" ? (
                             <Popover>
                               <PopoverTrigger asChild>
-                                <button className="underline decoration-dotted cursor-pointer hover:text-foreground/80">
+                                <button
+                                  className="underline decoration-dotted cursor-pointer hover:text-foreground/80"
+                                  data-testid="cost-popover-trigger"
+                                >
                                   {formatCurrency(usdTotalCost)}
                                   {booking.isFutureEstimate ? " (est.)" : ""}
                                 </button>
                               </PopoverTrigger>
-                              <PopoverContent className="w-auto p-3 text-sm" align="end">
+                              <PopoverContent
+                                className="w-auto p-3 text-sm"
+                                align="end"
+                                data-testid="cost-popover-content"
+                              >
                                 <p className="font-medium">
                                   {formatCurrency(Number(booking.totalCost), booking.currency)}
                                 </p>

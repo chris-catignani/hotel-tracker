@@ -158,4 +158,53 @@ test.describe("Multi-Currency Support", () => {
       await request.delete(`/api/bookings/${booking.id}`);
     }
   });
+
+  test("clicking non-USD price in bookings list shows native currency popover", async ({
+    page,
+    request,
+  }) => {
+    const chains = await request.get("/api/hotel-chains");
+    const chain = (await chains.json())[0];
+
+    const propertyName = `EUR Popover Test ${crypto.randomUUID()}`;
+    const bookingRes = await request.post("/api/bookings", {
+      data: {
+        hotelChainId: chain.id,
+        propertyName,
+        checkIn: "2024-06-01",
+        checkOut: "2024-06-03",
+        numNights: 2,
+        pretaxCost: 180,
+        taxAmount: 20,
+        totalCost: 200,
+        currency: "EUR",
+        bookingSource: "direct_web",
+      },
+    });
+    expect(bookingRes.ok()).toBeTruthy();
+    const booking = await bookingRes.json();
+
+    try {
+      await page.goto("/bookings");
+
+      const row = page.getByTestId(`booking-row-${booking.id}`);
+      await expect(row).toBeVisible();
+
+      // The cost cell should show a clickable trigger (dotted underline)
+      const trigger = row.getByTestId("cost-popover-trigger");
+      await expect(trigger).toBeVisible();
+
+      // Click to open popover
+      await trigger.click();
+
+      // Popover should show the native EUR amount
+      const popover = page.getByTestId("cost-popover-content");
+      await expect(popover).toBeVisible();
+      await expect(popover).toContainText("€");
+      await expect(popover).toContainText("200");
+      await expect(popover).toContainText("Locked at check-in rate");
+    } finally {
+      await request.delete(`/api/bookings/${booking.id}`);
+    }
+  });
 });
