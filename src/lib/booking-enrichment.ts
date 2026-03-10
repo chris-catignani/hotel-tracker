@@ -1,5 +1,5 @@
 import { calculatePoints } from "@/lib/loyalty-utils";
-import { getCurrentRate } from "@/lib/exchange-rate";
+import { getCurrentRate, resolveCalcCurrencyRate } from "@/lib/exchange-rate";
 
 type EnrichableBooking = {
   currency: string;
@@ -20,6 +20,7 @@ type EnrichableBooking = {
  * - Past/USD bookings: uses the stored exchangeRate.
  * - Future non-USD bookings: looks up the current cached rate and marks isFutureEstimate=true.
  * - Loyalty points: computed dynamically when not yet locked (future non-USD).
+ * - calcCurrencyToUsdRate: enriched on hotelChain for use in cost breakdown formulas.
  */
 export async function enrichBookingWithRate<T extends EnrichableBooking>(booking: T) {
   const today = new Date();
@@ -35,6 +36,10 @@ export async function enrichBookingWithRate<T extends EnrichableBooking>(booking
     resolvedRate = await getCurrentRate(booking.currency);
   }
 
+  // Always resolve calcCurrencyToUsdRate so it's available for cost breakdown formulas
+  const calcCurrency = booking.hotelChain.calculationCurrency ?? "USD";
+  const calcCurrencyToUsdRate = await resolveCalcCurrencyRate(calcCurrency);
+
   let loyaltyPointsEstimated = false;
   let loyaltyPointsEarned = booking.loyaltyPointsEarned;
   if (booking.loyaltyPointsEarned == null && resolvedRate != null) {
@@ -49,11 +54,6 @@ export async function enrichBookingWithRate<T extends EnrichableBooking>(booking
       fixedRate: string | number | null;
       bonusPercentage: string | number | null;
     } | null;
-    const calcCurrency = booking.hotelChain.calculationCurrency ?? "USD";
-    let calcCurrencyToUsdRate: number | null = null;
-    if (calcCurrency !== "USD") {
-      calcCurrencyToUsdRate = await getCurrentRate(calcCurrency);
-    }
     const usdPretax = Number(booking.pretaxCost) * resolvedRate;
     loyaltyPointsEarned = calculatePoints({
       pretaxCost: usdPretax,
@@ -71,5 +71,9 @@ export async function enrichBookingWithRate<T extends EnrichableBooking>(booking
     loyaltyPointsEarned,
     isFutureEstimate,
     loyaltyPointsEstimated,
+    hotelChain: {
+      ...booking.hotelChain,
+      calcCurrencyToUsdRate,
+    },
   };
 }

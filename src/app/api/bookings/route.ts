@@ -7,7 +7,7 @@ import { calculatePoints } from "@/lib/loyalty-utils";
 import { CertType, BenefitType } from "@prisma/client";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
-import { fetchExchangeRate, getCurrentRate } from "@/lib/exchange-rate";
+import { fetchExchangeRate, getCurrentRate, resolveCalcCurrencyRate } from "@/lib/exchange-rate";
 import { enrichBookingWithRate } from "@/lib/booking-enrichment";
 
 const BOOKING_INCLUDE = (userId: string) =>
@@ -154,13 +154,7 @@ export async function POST(request: NextRequest) {
 
       // Resolve calc currency rate if chain uses non-USD rates (e.g., EUR for Accor)
       const calcCurrency = hotelChain?.calculationCurrency ?? "USD";
-      let calcCurrencyToUsdRate: number | null = null;
-      if (calcCurrency !== "USD") {
-        calcCurrencyToUsdRate = await getCurrentRate(calcCurrency);
-        if (calcCurrencyToUsdRate == null) {
-          calcCurrencyToUsdRate = await fetchExchangeRate(calcCurrency, "latest");
-        }
-      }
+      const calcCurrencyToUsdRate = await resolveCalcCurrencyRate(calcCurrency);
 
       const usdPretaxCost = Number(pretaxCost) * rateForLoyalty;
       calculatedPoints = calculatePoints({

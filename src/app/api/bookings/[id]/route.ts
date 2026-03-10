@@ -13,7 +13,7 @@ import { apiError } from "@/lib/api-error";
 import { calculatePoints } from "@/lib/loyalty-utils";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
-import { fetchExchangeRate, getCurrentRate } from "@/lib/exchange-rate";
+import { fetchExchangeRate, getCurrentRate, resolveCalcCurrencyRate } from "@/lib/exchange-rate";
 import { enrichBookingWithRate } from "@/lib/booking-enrichment";
 
 async function getFullBookingWithUsage(id: string, userId: string) {
@@ -277,13 +277,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
             // Resolve calc currency rate if chain uses non-USD rates (e.g., EUR for Accor)
             const calcCurrency = hotelChain?.calculationCurrency ?? "USD";
-            let calcCurrencyToUsdRate: number | null = null;
-            if (calcCurrency !== "USD") {
-              calcCurrencyToUsdRate = await getCurrentRate(calcCurrency);
-              if (calcCurrencyToUsdRate == null) {
-                calcCurrencyToUsdRate = await fetchExchangeRate(calcCurrency, "latest");
-              }
-            }
+            const calcCurrencyToUsdRate = await resolveCalcCurrencyRate(calcCurrency);
 
             const usdPretax = finalPretax * resolvedRate;
             data.loyaltyPointsEarned = calculatePoints({

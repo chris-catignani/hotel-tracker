@@ -46,9 +46,11 @@ export async function GET(request: NextRequest) {
       ),
     ];
     const calcRateCache = new Map<string, number | null>();
-    for (const curr of calcCurrencies) {
-      if (curr) calcRateCache.set(curr, await getCurrentRate(curr));
-    }
+    await Promise.all(
+      calcCurrencies.map(async (curr) => {
+        if (curr) calcRateCache.set(curr, await getCurrentRate(curr));
+      })
+    );
 
     const enriched = hotelChains.map((h) => ({
       ...h,

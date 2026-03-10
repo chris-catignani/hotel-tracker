@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import { recalculateLoyaltyForHotelChain } from "./loyalty-recalculation";
 import prisma from "./prisma";
 import { reevaluateBookings } from "./promotion-matching";
-import { getCurrentRate } from "./exchange-rate";
+import { resolveCalcCurrencyRate } from "./exchange-rate";
 
 // Mock the dependencies
 vi.mock("./prisma", () => ({
@@ -25,6 +25,7 @@ vi.mock("./promotion-matching", () => ({
 vi.mock("./exchange-rate", () => ({
   getCurrentRate: vi.fn().mockResolvedValue(1),
   fetchExchangeRate: vi.fn().mockResolvedValue(1),
+  resolveCalcCurrencyRate: vi.fn().mockResolvedValue(null),
 }));
 
 const prismaMock = prisma as unknown as {
@@ -32,7 +33,7 @@ const prismaMock = prisma as unknown as {
   booking: { findMany: Mock; update: Mock };
   $transaction: Mock;
 };
-const getCurrentRateMock = getCurrentRate as unknown as Mock;
+const resolveCalcCurrencyRateMock = resolveCalcCurrencyRate as unknown as Mock;
 
 describe("loyalty-recalculation", () => {
   beforeEach(() => {
@@ -99,7 +100,7 @@ describe("loyalty-recalculation", () => {
     prismaMock.hotelChain.findUnique.mockResolvedValue(mockChain);
 
     // 1 EUR = 1.1 USD
-    getCurrentRateMock.mockResolvedValue(1.1);
+    resolveCalcCurrencyRateMock.mockResolvedValue(1.1);
 
     // USD booking: $110 pretax, exchangeRate = 1 (USD)
     // USD pretax = 110 * 1 = 110 USD
