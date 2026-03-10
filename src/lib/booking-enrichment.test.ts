@@ -177,6 +177,39 @@ describe("enrichBookingWithRate", () => {
       expect(result.loyaltyPointsEarned).toBeNull();
       expect(result.loyaltyPointsEstimated).toBe(false);
     });
+
+    it("passes calculationCurrency and calcCurrencyToUsdRate when chain uses non-USD rates", async () => {
+      // KRW booking, chain with EUR calculationCurrency
+      mockGetCurrentRate
+        .mockResolvedValueOnce(0.00067) // KRW→USD rate
+        .mockResolvedValueOnce(1.1); // EUR→USD rate
+      mockCalculatePoints.mockReturnValueOnce(175);
+
+      const booking = {
+        ...baseBooking,
+        currency: "KRW",
+        exchangeRate: null,
+        checkIn: futureDateStr,
+        loyaltyPointsEarned: null,
+        pretaxCost: "119000",
+        hotelChain: {
+          basePointRate: 1.25,
+          calculationCurrency: "EUR",
+          userStatuses: [],
+        },
+      };
+
+      await enrichBookingWithRate(booking);
+
+      expect(mockGetCurrentRate).toHaveBeenCalledWith("KRW");
+      expect(mockGetCurrentRate).toHaveBeenCalledWith("EUR");
+      expect(mockCalculatePoints).toHaveBeenCalledWith(
+        expect.objectContaining({
+          calculationCurrency: "EUR",
+          calcCurrencyToUsdRate: 1.1,
+        })
+      );
+    });
   });
 
   describe("future USD booking", () => {

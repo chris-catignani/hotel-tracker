@@ -136,27 +136,29 @@ export async function POST(request: NextRequest) {
 
     const shouldComputeLoyalty = resolvedExchangeRate != null; // only for past/USD
     if (calculatedPoints == null && shouldComputeLoyalty && hotelChainId && pretaxCost) {
-      // Fetch UserStatus for this chain
-      const userStatus = await prisma.userStatus.findUnique({
-        where: { userId_hotelChainId: { userId, hotelChainId } },
-        include: { eliteStatus: true },
-      });
+      // Fetch UserStatus and hotel chain in parallel
+      const [userStatus, hotelChain, subBrand] = await Promise.all([
+        prisma.userStatus.findUnique({
+          where: { userId_hotelChainId: { userId, hotelChainId } },
+          include: { eliteStatus: true },
+        }),
+        prisma.hotelChain.findUnique({ where: { id: hotelChainId } }),
+        hotelChainSubBrandId
+          ? prisma.hotelChainSubBrand.findUnique({ where: { id: hotelChainSubBrandId } })
+          : null,
+      ]);
 
-      let basePointRate: number | null = null;
-      if (hotelChainSubBrandId) {
-        const subBrand = await prisma.hotelChainSubBrand.findUnique({
-          where: { id: hotelChainSubBrandId },
-        });
-        if (subBrand?.basePointRate != null) {
-          basePointRate = Number(subBrand.basePointRate);
-        }
-      }
-      if (basePointRate == null) {
-        const hotelChain = await prisma.hotelChain.findUnique({
-          where: { id: hotelChainId },
-        });
-        if (hotelChain?.basePointRate != null) {
-          basePointRate = Number(hotelChain.basePointRate);
+      const basePointRate =
+        (subBrand?.basePointRate != null ? Number(subBrand.basePointRate) : null) ??
+        (hotelChain?.basePointRate != null ? Number(hotelChain.basePointRate) : null);
+
+      // Resolve calc currency rate if chain uses non-USD rates (e.g., EUR for Accor)
+      const calcCurrency = hotelChain?.calculationCurrency ?? "USD";
+      let calcCurrencyToUsdRate: number | null = null;
+      if (calcCurrency !== "USD") {
+        calcCurrencyToUsdRate = await getCurrentRate(calcCurrency);
+        if (calcCurrencyToUsdRate == null) {
+          calcCurrencyToUsdRate = await fetchExchangeRate(calcCurrency, "latest");
         }
       }
 
@@ -164,6 +166,8 @@ export async function POST(request: NextRequest) {
       calculatedPoints = calculatePoints({
         pretaxCost: usdPretaxCost,
         basePointRate,
+        calculationCurrency: calcCurrency,
+        calcCurrencyToUsdRate,
         eliteStatus: userStatus?.eliteStatus
           ? {
               bonusPercentage: userStatus.eliteStatus.bonusPercentage,

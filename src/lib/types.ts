@@ -42,6 +42,8 @@ export interface HotelChain {
   name: string;
   loyaltyProgram: string | null;
   basePointRate: number | null;
+  calculationCurrency: string;
+  calcCurrencyToUsdRate?: number | null; // enriched from API; 1 calcCurrency = X USD
   pointTypeId: string | null;
   pointType: PointType | null;
   hotelChainSubBrands: HotelChainSubBrand[];

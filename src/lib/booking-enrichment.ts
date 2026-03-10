@@ -9,6 +9,7 @@ type EnrichableBooking = {
   pretaxCost: unknown;
   hotelChain: {
     basePointRate?: unknown;
+    calculationCurrency?: string | null;
     userStatuses?: { eliteStatus: unknown }[];
   };
   hotelChainSubBrand?: { basePointRate?: unknown } | null;
@@ -48,10 +49,17 @@ export async function enrichBookingWithRate<T extends EnrichableBooking>(booking
       fixedRate: string | number | null;
       bonusPercentage: string | number | null;
     } | null;
+    const calcCurrency = booking.hotelChain.calculationCurrency ?? "USD";
+    let calcCurrencyToUsdRate: number | null = null;
+    if (calcCurrency !== "USD") {
+      calcCurrencyToUsdRate = await getCurrentRate(calcCurrency);
+    }
     const usdPretax = Number(booking.pretaxCost) * resolvedRate;
     loyaltyPointsEarned = calculatePoints({
       pretaxCost: usdPretax,
       basePointRate,
+      calculationCurrency: calcCurrency,
+      calcCurrencyToUsdRate,
       eliteStatus: eliteStatus ?? null,
     });
     loyaltyPointsEstimated = true;

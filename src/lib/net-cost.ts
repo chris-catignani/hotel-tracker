@@ -80,6 +80,7 @@ export interface NetCostBooking {
     name: string;
     loyaltyProgram: string | null;
     basePointRate: string | number | null;
+    calculationCurrency?: string | null;
     pointType: { name: string; centsPerPoint: string | number } | null;
     userStatus?: {
       eliteStatus: {
@@ -951,11 +952,14 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
       const basePoints = Math.round(pretaxCost * baseRate);
       const bonusPoints = Math.round(basePoints * bonusPct);
 
+      const calcCurrency = booking.hotelChain.calculationCurrency ?? "USD";
+      const costBasisNote =
+        calcCurrency !== "USD" ? `pre-tax cost (calculated in ${calcCurrency})` : "pre-tax cost";
       loyaltySegments.push({
         label: "Base Loyalty Points",
         value: basePoints * centsPerPoint,
         formula: `${formatCurrency(pretaxCost)} (pre-tax) × ${baseRate}x = ${basePoints.toLocaleString()} pts`,
-        description: "Standard earning rate for this hotel chain.",
+        description: `Standard earning rate for this hotel chain, applied to the ${costBasisNote}.`,
       });
 
       loyaltySegments.push({

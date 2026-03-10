@@ -57,5 +57,53 @@ describe("loyalty-utils", () => {
         })
       ).toBe(1050);
     });
+
+    it("should convert USD to calc currency before applying base rate", () => {
+      // 110 USD, rate 1 EUR = 1.1 USD → 100 EUR, at 2.5 pts/EUR = 250 pts
+      expect(
+        calculatePoints({
+          pretaxCost: 110,
+          basePointRate: 2.5,
+          calculationCurrency: "EUR",
+          calcCurrencyToUsdRate: 1.1,
+        })
+      ).toBe(250);
+    });
+
+    it("should apply elite bonus on EUR-converted cost", () => {
+      // 110 USD → 100 EUR, 2.5 pts/EUR base, 76% bonus → round(100 * 2.5 * 1.76) = 440 pts
+      expect(
+        calculatePoints({
+          pretaxCost: 110,
+          basePointRate: 2.5,
+          calculationCurrency: "EUR",
+          calcCurrencyToUsdRate: 1.1,
+          eliteStatus: { isFixed: false, fixedRate: null, bonusPercentage: 0.76 },
+        })
+      ).toBe(440);
+    });
+
+    it("should ignore calculationCurrency when calcCurrencyToUsdRate is not provided", () => {
+      // Falls back to USD pretaxCost when rate is missing
+      expect(
+        calculatePoints({
+          pretaxCost: 100,
+          basePointRate: 2.5,
+          calculationCurrency: "EUR",
+          calcCurrencyToUsdRate: null,
+        })
+      ).toBe(250);
+    });
+
+    it("should not convert when calculationCurrency is USD", () => {
+      expect(
+        calculatePoints({
+          pretaxCost: 100,
+          basePointRate: 10,
+          calculationCurrency: "USD",
+          calcCurrencyToUsdRate: 1.1, // should be ignored
+        })
+      ).toBe(1000);
+    });
   });
 });
