@@ -15,6 +15,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AppSelect } from "@/components/ui/app-select";
+import { CurrencyCombobox } from "@/components/ui/currency-combobox";
 import {
   Table,
   TableBody,
@@ -36,6 +37,7 @@ export function HotelChainsTab() {
   const [name, setName] = useState("");
   const [loyaltyProgram, setLoyaltyProgram] = useState("");
   const [basePointRate, setBasePointRate] = useState("");
+  const [calculationCurrency, setCalculationCurrency] = useState("USD");
   const [pointTypeId, setPointTypeId] = useState("none");
   const [error, setError] = useState<string | null>(null);
 
@@ -44,6 +46,7 @@ export function HotelChainsTab() {
   const [editName, setEditName] = useState("");
   const [editLoyaltyProgram, setEditLoyaltyProgram] = useState("");
   const [editBasePointRate, setEditBasePointRate] = useState("");
+  const [editCalculationCurrency, setEditCalculationCurrency] = useState("USD");
   const [editPointTypeId, setEditPointTypeId] = useState("none");
 
   // Hotel chain sub-brands management
@@ -78,6 +81,7 @@ export function HotelChainsTab() {
         name,
         loyaltyProgram: loyaltyProgram || null,
         basePointRate: basePointRate ? Number(basePointRate) : null,
+        calculationCurrency,
         pointTypeId: pointTypeId !== "none" ? pointTypeId : null,
       }),
     });
@@ -85,6 +89,7 @@ export function HotelChainsTab() {
       setName("");
       setLoyaltyProgram("");
       setBasePointRate("");
+      setCalculationCurrency("USD");
       setPointTypeId("none");
       setOpen(false);
       fetchData();
@@ -98,6 +103,7 @@ export function HotelChainsTab() {
     setEditName(hotelChain.name);
     setEditLoyaltyProgram(hotelChain.loyaltyProgram || "");
     setEditBasePointRate(hotelChain.basePointRate != null ? String(hotelChain.basePointRate) : "");
+    setEditCalculationCurrency(hotelChain.calculationCurrency ?? "USD");
     setEditPointTypeId(hotelChain.pointTypeId != null ? hotelChain.pointTypeId : "none");
     setEditOpen(true);
   };
@@ -112,6 +118,7 @@ export function HotelChainsTab() {
         name: editName,
         loyaltyProgram: editLoyaltyProgram || null,
         basePointRate: editBasePointRate ? Number(editBasePointRate) : null,
+        calculationCurrency: editCalculationCurrency,
         pointTypeId: editPointTypeId !== "none" ? editPointTypeId : null,
       }),
     });
@@ -197,15 +204,25 @@ export function HotelChainsTab() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="hotel-base-rate">Base Point Rate (per $1)</Label>
-                <Input
-                  id="hotel-base-rate"
-                  type="number"
-                  step="0.1"
-                  value={basePointRate}
-                  onChange={(e) => setBasePointRate(e.target.value)}
-                  placeholder="e.g. 10"
-                />
+                <Label htmlFor="hotel-base-rate">Base Point Rate</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="hotel-base-rate"
+                    type="number"
+                    step="0.1"
+                    value={basePointRate}
+                    onChange={(e) => setBasePointRate(e.target.value)}
+                    placeholder={`pts per 1 ${calculationCurrency}`}
+                    className="flex-1"
+                  />
+                  <CurrencyCombobox
+                    value={calculationCurrency}
+                    onValueChange={setCalculationCurrency}
+                    compact
+                    className="w-20 shrink-0"
+                    data-testid="hotel-calc-currency-select"
+                  />
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="hotel-point-type">Point Type</Label>
@@ -260,15 +277,25 @@ export function HotelChainsTab() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-hotel-base-rate">Base Point Rate (per $1)</Label>
-              <Input
-                id="edit-hotel-base-rate"
-                type="number"
-                step="0.1"
-                value={editBasePointRate}
-                onChange={(e) => setEditBasePointRate(e.target.value)}
-                placeholder="e.g. 10"
-              />
+              <Label htmlFor="edit-hotel-base-rate">Base Point Rate</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="edit-hotel-base-rate"
+                  type="number"
+                  step="0.1"
+                  value={editBasePointRate}
+                  onChange={(e) => setEditBasePointRate(e.target.value)}
+                  placeholder={`pts per 1 ${editCalculationCurrency}`}
+                  className="flex-1"
+                />
+                <CurrencyCombobox
+                  value={editCalculationCurrency}
+                  onValueChange={setEditCalculationCurrency}
+                  compact
+                  className="w-20 shrink-0"
+                  data-testid="edit-hotel-calc-currency-select"
+                />
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-hotel-point-type">Point Type</Label>
@@ -302,6 +329,11 @@ export function HotelChainsTab() {
             <DialogTitle>Sub-brands — {sbHotelChain?.name}</DialogTitle>
             <DialogDescription>
               Manage sub-brands with optional point rate overrides (blank = inherit from chain).
+              {sbHotelChain?.calculationCurrency && sbHotelChain.calculationCurrency !== "USD" && (
+                <span className="block mt-1 text-xs">
+                  Rates are in {sbHotelChain.calculationCurrency} (inherited from chain).
+                </span>
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
@@ -320,7 +352,10 @@ export function HotelChainsTab() {
                     <div className="flex-1">
                       <p className="text-sm font-medium">{sb.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        Base Rate: {sb.basePointRate ?? "Inherit"}
+                        Base Rate:{" "}
+                        {sb.basePointRate != null
+                          ? `${sb.basePointRate} pts/${sbHotelChain.calculationCurrency ?? "USD"}`
+                          : "Inherit"}
                       </p>
                     </div>
                     <Button
@@ -348,7 +383,7 @@ export function HotelChainsTab() {
               </div>
               <div className="space-y-1">
                 <Label htmlFor="sb-base-rate" className="text-xs">
-                  Base Rate (per $1)
+                  Base Rate (pts per 1 {sbHotelChain?.calculationCurrency ?? "USD"})
                 </Label>
                 <Input
                   id="sb-base-rate"
@@ -396,7 +431,11 @@ export function HotelChainsTab() {
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-medium">Base Rate</p>
-                      <p className="text-lg font-bold">{hotelChain.basePointRate ?? "-"}</p>
+                      <p className="text-lg font-bold">
+                        {hotelChain.basePointRate != null
+                          ? `${hotelChain.basePointRate} pts/${hotelChain.calculationCurrency ?? "USD"}`
+                          : "-"}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center justify-between text-sm">
@@ -440,7 +479,11 @@ export function HotelChainsTab() {
                       {hotelChain.name}
                     </TableCell>
                     <TableCell>{hotelChain.loyaltyProgram ?? "-"}</TableCell>
-                    <TableCell>{hotelChain.basePointRate ?? "-"}</TableCell>
+                    <TableCell>
+                      {hotelChain.basePointRate != null
+                        ? `${hotelChain.basePointRate} pts/${hotelChain.calculationCurrency ?? "USD"}`
+                        : "-"}
+                    </TableCell>
                     <TableCell>{hotelChain.pointType?.name ?? "—"}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">

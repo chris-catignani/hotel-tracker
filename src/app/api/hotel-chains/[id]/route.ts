@@ -4,6 +4,7 @@ import { apiError } from "@/lib/api-error";
 import { recalculateLoyaltyForHotelChain } from "@/lib/loyalty-recalculation";
 import { getAuthenticatedUserId, requireAdmin } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
+import { parseCalculationCurrency } from "@/app/api/hotel-chains/route";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -43,19 +44,34 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     const { id } = await params;
     const body = await request.json();
-    const { name, loyaltyProgram, basePointRate, pointTypeId } = body;
+    const { name, loyaltyProgram, basePointRate, calculationCurrency, pointTypeId } = body;
 
-    // Check if basePointRate is changing to avoid unnecessary recalculations
+    // Check if rate-affecting fields are changing to avoid unnecessary recalculations
     const existing = await prisma.hotelChain.findUnique({
       where: { id: id },
-      select: { basePointRate: true },
+      select: { basePointRate: true, calculationCurrency: true },
     });
+
+    let resolvedCurrency: string | undefined;
+    if (calculationCurrency !== undefined) {
+      const parsed = parseCalculationCurrency(calculationCurrency);
+      if (parsed === null) {
+        return apiError(
+          "Invalid calculationCurrency: must be a 3-letter ISO 4217 code",
+          null,
+          400,
+          request
+        );
+      }
+      resolvedCurrency = parsed;
+    }
 
     const data: Record<string, unknown> = {};
     if (name !== undefined) data.name = name;
     if (loyaltyProgram !== undefined) data.loyaltyProgram = loyaltyProgram || null;
     if (basePointRate !== undefined)
       data.basePointRate = basePointRate != null ? Number(basePointRate) : null;
+    if (resolvedCurrency !== undefined) data.calculationCurrency = resolvedCurrency;
     if (pointTypeId !== undefined) data.pointTypeId = pointTypeId || null;
 
     const hotelChain = await prisma.hotelChain.update({
@@ -72,8 +88,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       },
     });
 
-    // Recalculate loyalty points if the base rate changed
-    if (basePointRate !== undefined && Number(existing?.basePointRate) !== Number(basePointRate)) {
+    // Recalculate loyalty points if the base rate or calculation currency changed
+    const rateChanged =
+      basePointRate !== undefined && Number(existing?.basePointRate) !== Number(basePointRate);
+    const currencyChanged =
+      resolvedCurrency !== undefined &&
+      (existing?.calculationCurrency ?? "USD") !== resolvedCurrency;
+    if (rateChanged || currencyChanged) {
       await recalculateLoyaltyForHotelChain(id, userId);
     }
 

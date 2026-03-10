@@ -66,19 +66,37 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/** Normalises and validates a raw calculationCurrency value from a request body.
+ *  Returns the resolved 3-letter code, or null if the value is invalid. */
+export function parseCalculationCurrency(raw: unknown): string | null {
+  const value = (typeof raw === "string" ? raw : null) || "USD";
+  return /^[A-Z]{3}$/.test(value) ? value : null;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const adminError = await requireAdmin();
     if (adminError instanceof NextResponse) return adminError;
 
     const body = await request.json();
-    const { name, loyaltyProgram, basePointRate, pointTypeId } = body;
+    const { name, loyaltyProgram, basePointRate, calculationCurrency, pointTypeId } = body;
+
+    const resolvedCurrency = parseCalculationCurrency(calculationCurrency);
+    if (resolvedCurrency === null) {
+      return apiError(
+        "Invalid calculationCurrency: must be a 3-letter ISO 4217 code",
+        null,
+        400,
+        request
+      );
+    }
 
     const hotelChain = await prisma.hotelChain.create({
       data: {
         name,
         loyaltyProgram,
         basePointRate: basePointRate != null ? Number(basePointRate) : null,
+        calculationCurrency: resolvedCurrency,
         pointTypeId: pointTypeId || null,
       },
       include: {
