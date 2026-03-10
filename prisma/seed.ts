@@ -4,6 +4,7 @@ import { HOTEL_ID, SUB_BRAND_ID } from "../src/lib/constants";
 import { CREDIT_CARD_ID, SHOPPING_PORTAL_ID, OTA_AGENCY_ID } from "./seed-ids";
 import { seedBookings } from "./seed-bookings";
 import { seedPromotions } from "./seed-promotions";
+import { recalculateLoyaltyForHotelChain } from "../src/lib/loyalty-recalculation";
 
 const prisma = new PrismaClient();
 
@@ -762,6 +763,12 @@ async function main() {
 
   await seedBookings(ADMIN_USER_ID);
   await seedPromotions(ADMIN_USER_ID);
+
+  // Recalculate loyalty points for all chains so stored values reflect current
+  // rates and elite statuses (including Accor's EUR-denominated calculation)
+  for (const hotelId of Object.values(HOTEL_ID)) {
+    await recalculateLoyaltyForHotelChain(hotelId, ADMIN_USER_ID);
+  }
 
   console.log("Seed data created successfully");
 }
