@@ -515,10 +515,17 @@ export default function DashboardPage() {
                         <div className="flex justify-between font-medium">
                           <span>Total Savings</span>
                           <span className="text-green-600">
-                            {formatDollars(totalSavings, "USD", {
-                              minimumFractionDigits: 0,
-                              maximumFractionDigits: 0,
-                            })}
+                            {formatDollars(
+                              totalPromoSavings +
+                                totalPortalCashback +
+                                totalCardRewards +
+                                totalLoyaltyPointsValue,
+                              "USD",
+                              {
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0,
+                              }
+                            )}
                           </span>
                         </div>
                         <div className="flex justify-between text-sm text-muted-foreground mt-1">
