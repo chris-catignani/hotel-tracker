@@ -92,6 +92,7 @@ export interface NetCostBooking {
       } | null;
     } | null;
   };
+  hotelChainSubBrand?: { basePointRate: string | number | null } | null;
   creditCard: {
     name: string;
     rewardRate: string | number;
@@ -942,13 +943,19 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
     const loyaltySegments: CalculationSegment[] = [];
     const elite = booking.hotelChain.userStatus?.eliteStatus;
 
+    // Sub-brand rate overrides chain rate (e.g. ibis Styles overrides Accor's standard rate)
+    const effectiveBasePointRate =
+      booking.hotelChainSubBrand?.basePointRate != null
+        ? booking.hotelChainSubBrand.basePointRate
+        : booking.hotelChain.basePointRate;
+
     if (
       elite &&
       !elite.isFixed &&
       elite.bonusPercentage != null &&
-      booking.hotelChain.basePointRate != null
+      effectiveBasePointRate != null
     ) {
-      const baseRate = Number(booking.hotelChain.basePointRate);
+      const baseRate = Number(effectiveBasePointRate);
       const bonusPct = Number(elite.bonusPercentage);
       const calcCurrency = booking.hotelChain.calculationCurrency ?? "USD";
       const calcCurrencyToUsdRate = booking.hotelChain.calcCurrencyToUsdRate ?? null;
