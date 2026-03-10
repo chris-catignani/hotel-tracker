@@ -66,6 +66,13 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/** Normalises and validates a raw calculationCurrency value from a request body.
+ *  Returns the resolved 3-letter code, or null if the value is invalid. */
+export function parseCalculationCurrency(raw: unknown): string | null {
+  const value = (typeof raw === "string" ? raw : null) || "USD";
+  return /^[A-Z]{3}$/.test(value) ? value : null;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const adminError = await requireAdmin();
@@ -74,8 +81,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { name, loyaltyProgram, basePointRate, calculationCurrency, pointTypeId } = body;
 
-    const resolvedCurrency: string = calculationCurrency || "USD";
-    if (!/^[A-Z]{3}$/.test(resolvedCurrency)) {
+    const resolvedCurrency = parseCalculationCurrency(calculationCurrency);
+    if (resolvedCurrency === null) {
       return apiError(
         "Invalid calculationCurrency: must be a 3-letter ISO 4217 code",
         null,

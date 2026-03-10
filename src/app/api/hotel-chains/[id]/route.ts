@@ -4,6 +4,7 @@ import { apiError } from "@/lib/api-error";
 import { recalculateLoyaltyForHotelChain } from "@/lib/loyalty-recalculation";
 import { getAuthenticatedUserId, requireAdmin } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
+import { parseCalculationCurrency } from "@/app/api/hotel-chains/route";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -51,9 +52,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       select: { basePointRate: true, calculationCurrency: true },
     });
 
+    let resolvedCurrency: string | undefined;
     if (calculationCurrency !== undefined) {
-      const resolvedCurrency: string = calculationCurrency || "USD";
-      if (!/^[A-Z]{3}$/.test(resolvedCurrency)) {
+      const parsed = parseCalculationCurrency(calculationCurrency);
+      if (parsed === null) {
         return apiError(
           "Invalid calculationCurrency: must be a 3-letter ISO 4217 code",
           null,
@@ -61,6 +63,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
           request
         );
       }
+      resolvedCurrency = parsed;
     }
 
     const data: Record<string, unknown> = {};
@@ -68,7 +71,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (loyaltyProgram !== undefined) data.loyaltyProgram = loyaltyProgram || null;
     if (basePointRate !== undefined)
       data.basePointRate = basePointRate != null ? Number(basePointRate) : null;
-    if (calculationCurrency !== undefined) data.calculationCurrency = calculationCurrency || "USD";
+    if (resolvedCurrency !== undefined) data.calculationCurrency = resolvedCurrency;
     if (pointTypeId !== undefined) data.pointTypeId = pointTypeId || null;
 
     const hotelChain = await prisma.hotelChain.update({
@@ -89,8 +92,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const rateChanged =
       basePointRate !== undefined && Number(existing?.basePointRate) !== Number(basePointRate);
     const currencyChanged =
-      calculationCurrency !== undefined &&
-      (existing?.calculationCurrency ?? "USD") !== (calculationCurrency || "USD");
+      resolvedCurrency !== undefined &&
+      (existing?.calculationCurrency ?? "USD") !== resolvedCurrency;
     if (rateChanged || currencyChanged) {
       await recalculateLoyaltyForHotelChain(id, userId);
     }
