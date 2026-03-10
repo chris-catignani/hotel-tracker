@@ -492,21 +492,25 @@ export default function DashboardPage() {
                       label: "Promotion Savings",
                       value: totalPromoSavings,
                       color: "bg-blue-500",
+                      testId: "savings-breakdown-promo",
                     },
                     {
                       label: "Portal Cashback",
                       value: totalPortalCashback,
                       color: "bg-green-500",
+                      testId: "savings-breakdown-portal",
                     },
                     {
                       label: "Card Rewards",
                       value: totalCardRewards,
                       color: "bg-purple-500",
+                      testId: "savings-breakdown-card",
                     },
                     {
                       label: "Loyalty Points Value",
                       value: totalLoyaltyPointsValue,
                       color: "bg-orange-500",
+                      testId: "savings-breakdown-loyalty",
                     },
                   ];
 
@@ -518,7 +522,7 @@ export default function DashboardPage() {
                         <div key={item.label} className="space-y-1">
                           <div className="flex justify-between text-sm">
                             <span>{item.label}</span>
-                            <span className="font-medium text-green-600">
+                            <span className="font-medium text-green-600" data-testid={item.testId}>
                               {formatDollars(item.value, "USD", {
                                 minimumFractionDigits: 0,
                                 maximumFractionDigits: 0,
@@ -538,7 +542,7 @@ export default function DashboardPage() {
                       <div className="pt-2 border-t">
                         <div className="flex justify-between font-medium">
                           <span>Total Savings</span>
-                          <span className="text-green-600">
+                          <span className="text-green-600" data-testid="savings-breakdown-total">
                             {formatDollars(totalSavings, "USD", {
                               minimumFractionDigits: 0,
                               maximumFractionDigits: 0,
