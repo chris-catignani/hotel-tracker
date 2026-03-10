@@ -11,12 +11,16 @@ import { Check, ChevronsUpDown } from "lucide-react";
 interface CurrencyComboboxProps {
   value: string;
   onValueChange: (value: string) => void;
+  className?: string;
+  compact?: boolean;
   "data-testid"?: string;
 }
 
 export function CurrencyCombobox({
   value,
   onValueChange,
+  className,
+  compact = false,
   "data-testid": testId,
 }: CurrencyComboboxProps) {
   const [open, setOpen] = useState(false);
@@ -37,10 +41,16 @@ export function CurrencyCombobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between font-normal"
+          className={cn("w-full justify-between font-normal", className)}
           data-testid={testId}
         >
-          {selected ? `${selected.code} — ${selected.name}` : "Select currency"}
+          {selected
+            ? compact
+              ? selected.code
+              : `${selected.code} — ${selected.name}`
+            : compact
+              ? "—"
+              : "Select currency"}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>

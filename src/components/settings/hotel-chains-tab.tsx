@@ -218,6 +218,8 @@ export function HotelChainsTab() {
                   <CurrencyCombobox
                     value={calculationCurrency}
                     onValueChange={setCalculationCurrency}
+                    compact
+                    className="w-20 shrink-0"
                     data-testid="hotel-calc-currency-select"
                   />
                 </div>
@@ -289,6 +291,8 @@ export function HotelChainsTab() {
                 <CurrencyCombobox
                   value={editCalculationCurrency}
                   onValueChange={setEditCalculationCurrency}
+                  compact
+                  className="w-20 shrink-0"
                   data-testid="edit-hotel-calc-currency-select"
                 />
               </div>
