@@ -278,6 +278,28 @@ export async function seedPromotions(userId: string) {
         ],
       },
     },
+    {
+      name: "Accor APAC 2026",
+      type: "loyalty",
+      startDate: new Date("2026-01-01"),
+      endDate: new Date("2026-05-15"),
+      hotelChain: { connect: { id: HOTEL_ID.ACCOR } },
+      restrictions: {
+        create: {
+          allowedCountryCodes: ["KR"],
+        },
+      },
+      benefits: {
+        create: [
+          {
+            rewardType: "points",
+            valueType: "fixed",
+            value: "2026",
+            sortOrder: 0,
+          },
+        ],
+      },
+    },
   ];
 
   for (const promo of promotions) {

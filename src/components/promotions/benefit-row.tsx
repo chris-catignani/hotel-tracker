@@ -30,6 +30,7 @@ import {
   SubBrandScopeCard,
   BookingSourceCard,
   HotelChainRestrictionCard,
+  GeographyRestrictionCard,
 } from "./restriction-cards";
 
 const CERT_OPTIONS = CERT_TYPE_OPTIONS.map((o) => ({ value: o.value, label: o.label }));
@@ -353,6 +354,7 @@ export function BenefitRow({
                   </p>
                   {[
                     { key: "hotel_chain", label: "Hotel Chain Restriction" },
+                    { key: "geography", label: "Geographic Restriction" },
                     { key: "sub_brand_scope", label: "Sub-Brand Scope" },
                     { key: "tie_in_cards", label: "Tie-In Credit Cards" },
                     { key: "booking_source", label: "Booking Source" },
@@ -406,6 +408,13 @@ export function BenefitRow({
                   });
                 }}
                 onRemove={() => removeBenefitRestriction("hotel_chain")}
+              />
+            )}
+            {visibleRestrictionKeys.has("geography") && (
+              <GeographyRestrictionCard
+                allowedCountryCodes={benefit.restrictions?.allowedCountryCodes ?? []}
+                onCountryCodesChange={(codes) => updateRestrictions({ allowedCountryCodes: codes })}
+                onRemove={() => removeBenefitRestriction("geography")}
               />
             )}
             {visibleRestrictionKeys.has("booking_source") && (

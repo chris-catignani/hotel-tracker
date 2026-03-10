@@ -66,6 +66,7 @@ type MatchingRestrictions = {
   tieInRequiresPayment: boolean;
   allowedPaymentTypes: string[];
   allowedBookingSources: string[];
+  allowedCountryCodes: string[];
   hotelChainId: string | null;
   prerequisiteStayCount: number | null;
   prerequisiteNightCount: number | null;
@@ -121,6 +122,7 @@ export interface MatchingBooking {
   totalCost: string | number | Prisma.Decimal;
   currency?: string;
   exchangeRate?: string | number | Prisma.Decimal | null;
+  countryCode?: string | null;
   pointsRedeemed: number | null;
   loyaltyPointsEarned: number | null;
   _count?: { certificates: number };
@@ -334,6 +336,13 @@ const CorePromotionRules: Record<string, PromotionRule> = {
       return { valid: r.hotelChainId === booking.hotelChainId };
     }
     return { valid: true };
+  },
+
+  geography: (booking, promo) => {
+    const codes = promo.restrictions?.allowedCountryCodes ?? [];
+    if (codes.length === 0) return { valid: true }; // no restriction
+    if (!booking.countryCode) return { valid: false }; // no geo data → hidden
+    return { valid: codes.includes(booking.countryCode) };
   },
 
   tieInCard: (booking, promo) => {

@@ -91,6 +91,7 @@ export function mapApiRestrictionsToForm(
     tieInRequiresPayment: r.tieInRequiresPayment ?? false,
     allowedPaymentTypes: r.allowedPaymentTypes ?? [],
     allowedBookingSources: r.allowedBookingSources ?? [],
+    allowedCountryCodes: r.allowedCountryCodes ?? [],
     hotelChainId: r.hotelChainId ?? "",
     prerequisiteStayCount: r.prerequisiteStayCount != null ? String(r.prerequisiteStayCount) : "",
     prerequisiteNightCount:

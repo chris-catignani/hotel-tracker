@@ -173,6 +173,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
                 tieInRequiresPayment: restrictions.tieInRequiresPayment ?? false,
                 allowedPaymentTypes: restrictions.allowedPaymentTypes ?? [],
                 allowedBookingSources: restrictions.allowedBookingSources ?? [],
+                allowedCountryCodes: restrictions.allowedCountryCodes ?? [],
                 hotelChainId: restrictions.hotelChainId || null,
                 subBrandRestrictions: {
                   create: [
