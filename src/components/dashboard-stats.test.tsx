@@ -8,7 +8,9 @@ describe("DashboardStats", () => {
     totalSpend: 1250.5,
     totalSavings: 450.75,
     totalNights: 12,
-    avgNetCostPerNight: 104.21,
+    avgCashNetCostPerNight: 104.21,
+    avgPointsPerNight: 35000,
+    avgCertsPerNight: 1.5,
     totalPointsRedeemed: 25000,
     totalCertificates: 2,
   };
@@ -24,21 +26,27 @@ describe("DashboardStats", () => {
 
     // Formatted currency
     expect(screen.getByTestId("stat-value-total-savings")).toHaveTextContent("$451");
-    expect(screen.getByTestId("stat-value-avg-net-cost-/-night")).toHaveTextContent("$104");
 
     // Spend breakdown
     expect(screen.getByTestId("stat-value-cash")).toHaveTextContent("$1,251");
     expect(screen.getByTestId("stat-value-points")).toHaveTextContent("25,000 pts");
     expect(screen.getByTestId("stat-value-certs")).toHaveTextContent("2 certs");
+
+    // Avg / Night breakdown
+    expect(screen.getByTestId("stat-value-avg-cash-net-per-night")).toHaveTextContent("$104");
+    expect(screen.getByTestId("stat-value-avg-points-per-night")).toHaveTextContent("35,000 pts");
+    expect(screen.getByTestId("stat-value-avg-certs-per-night")).toHaveTextContent("1.5");
   });
 
-  it("handles zero values and empty states correctly", async () => {
+  it("handles null avg values and zero spend correctly", async () => {
     const zeroProps = {
       totalBookings: 0,
       totalSpend: 0,
       totalSavings: 0,
       totalNights: 0,
-      avgNetCostPerNight: 0,
+      avgCashNetCostPerNight: null,
+      avgPointsPerNight: null,
+      avgCertsPerNight: null,
       totalPointsRedeemed: 0,
       totalCertificates: 0,
     };
@@ -46,16 +54,19 @@ describe("DashboardStats", () => {
       render(<DashboardStats {...zeroProps} />);
     });
 
-    // Basic counts show "0", currency shows "$0"
     expect(screen.getByTestId("stat-value-total-bookings")).toHaveTextContent("0");
     expect(screen.getByTestId("stat-value-total-nights")).toHaveTextContent("0");
     expect(screen.getByTestId("stat-value-total-savings")).toHaveTextContent("$0");
-    expect(screen.getByTestId("stat-value-avg-net-cost-/-night")).toHaveTextContent("$0");
 
     // Spend breakdown shows em-dash for zero values
     expect(screen.getByTestId("stat-value-cash")).toHaveTextContent("—");
     expect(screen.getByTestId("stat-value-points")).toHaveTextContent("—");
     expect(screen.getByTestId("stat-value-certs")).toHaveTextContent("—");
+
+    // Avg / Night breakdown shows em-dash when null
+    expect(screen.getByTestId("stat-value-avg-cash-net-per-night")).toHaveTextContent("—");
+    expect(screen.getByTestId("stat-value-avg-points-per-night")).toHaveTextContent("—");
+    expect(screen.getByTestId("stat-value-avg-certs-per-night")).toHaveTextContent("—");
   });
 
   it("handles singular certificate correctly", async () => {
@@ -74,5 +85,12 @@ describe("DashboardStats", () => {
     });
     expect(screen.getByText("$1,000,000")).toBeInTheDocument();
     expect(screen.getByText("1,250,000 pts")).toBeInTheDocument();
+  });
+
+  it("strips trailing zeros from avg certs display", async () => {
+    await act(async () => {
+      render(<DashboardStats {...defaultProps} avgCertsPerNight={2.0} />);
+    });
+    expect(screen.getByTestId("stat-value-avg-certs-per-night")).toHaveTextContent("2");
   });
 });

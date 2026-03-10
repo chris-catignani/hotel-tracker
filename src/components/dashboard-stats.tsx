@@ -6,7 +6,9 @@ interface DashboardStatsProps {
   totalSpend: number;
   totalSavings: number;
   totalNights: number;
-  avgNetCostPerNight: number;
+  avgCashNetCostPerNight: number | null;
+  avgPointsPerNight: number | null;
+  avgCertsPerNight: number | null;
   totalPointsRedeemed: number;
   totalCertificates: number;
 }
@@ -16,7 +18,9 @@ export function DashboardStats({
   totalSpend,
   totalSavings,
   totalNights,
-  avgNetCostPerNight,
+  avgCashNetCostPerNight,
+  avgPointsPerNight,
+  avgCertsPerNight,
   totalPointsRedeemed,
   totalCertificates,
 }: DashboardStatsProps) {
@@ -33,13 +37,6 @@ export function DashboardStats({
         maximumFractionDigits: 0,
       }),
     },
-    {
-      label: "Avg Net Cost / Night",
-      value: formatCurrency(avgNetCostPerNight, "USD", {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }),
-    },
   ];
 
   const cashDisplay =
@@ -50,6 +47,20 @@ export function DashboardStats({
     totalPointsRedeemed > 0 ? `${totalPointsRedeemed.toLocaleString("en-US")} pts` : "—";
   const certsDisplay =
     totalCertificates > 0 ? `${totalCertificates} cert${totalCertificates !== 1 ? "s" : ""}` : "—";
+
+  const avgCashDisplay =
+    avgCashNetCostPerNight != null
+      ? formatCurrency(avgCashNetCostPerNight, "USD", {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        })
+      : "—";
+  const avgPointsDisplay =
+    avgPointsPerNight != null
+      ? `${Math.round(avgPointsPerNight).toLocaleString("en-US")} pts`
+      : "—";
+  const avgCertsDisplay =
+    avgCertsPerNight != null ? avgCertsPerNight.toFixed(2).replace(/\.?0+$/, "") : "—";
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6 items-stretch">
@@ -94,6 +105,35 @@ export function DashboardStats({
               <div className="text-sm text-muted-foreground">Certs</div>
               <div className="text-base font-bold" data-testid="stat-value-certs">
                 {certsDisplay}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      <Card className="lg:col-span-2">
+        <CardHeader className="p-4 pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground text-center">
+            Avg / Night
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 pt-0 flex-1 flex items-center">
+          <div className="flex justify-evenly w-full">
+            <div className="text-center">
+              <div className="text-sm text-muted-foreground">Cash</div>
+              <div className="text-base font-bold" data-testid="stat-value-avg-cash-net-per-night">
+                {avgCashDisplay}
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-sm text-muted-foreground">Points</div>
+              <div className="text-base font-bold" data-testid="stat-value-avg-points-per-night">
+                {avgPointsDisplay}
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-sm text-muted-foreground">Certs</div>
+              <div className="text-base font-bold" data-testid="stat-value-avg-certs-per-night">
+                {avgCertsDisplay}
               </div>
             </div>
           </div>

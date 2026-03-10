@@ -292,8 +292,27 @@ export default function DashboardPage() {
   );
   const totalSavings = bookings.reduce((sum, b) => sum + calcTotalSavings(b), 0);
   const totalNights = bookings.reduce((sum, b) => sum + b.numNights, 0);
-  const avgNetCostPerNight =
-    totalNights > 0 ? bookings.reduce((sum, b) => sum + calculateNetCost(b), 0) / totalNights : 0;
+
+  const cashStays = bookings.filter((b) => Number(b.totalCost) > 0);
+  const cashStayNights = cashStays.reduce((sum, b) => sum + b.numNights, 0);
+  const avgCashNetCostPerNight =
+    cashStayNights > 0
+      ? cashStays.reduce((sum, b) => sum + calculateNetCost(b), 0) / cashStayNights
+      : null;
+
+  const pointsStays = bookings.filter((b) => (b.pointsRedeemed ?? 0) > 0);
+  const pointsStayNights = pointsStays.reduce((sum, b) => sum + b.numNights, 0);
+  const avgPointsPerNight =
+    pointsStayNights > 0
+      ? pointsStays.reduce((sum, b) => sum + (b.pointsRedeemed ?? 0), 0) / pointsStayNights
+      : null;
+
+  const certStays = bookings.filter((b) => b.certificates.length > 0);
+  const certStayNights = certStays.reduce((sum, b) => sum + b.numNights, 0);
+  const avgCertsPerNight =
+    certStayNights > 0
+      ? certStays.reduce((sum, b) => sum + b.certificates.length, 0) / certStayNights
+      : null;
 
   const totalPointsRedeemed = bookings.reduce((sum, b) => sum + (b.pointsRedeemed ?? 0), 0);
   const totalCertificates = bookings.reduce((sum, b) => sum + b.certificates.length, 0);
@@ -316,7 +335,9 @@ export default function DashboardPage() {
         totalSpend={totalSpend}
         totalSavings={totalSavings}
         totalNights={totalNights}
-        avgNetCostPerNight={avgNetCostPerNight}
+        avgCashNetCostPerNight={avgCashNetCostPerNight}
+        avgPointsPerNight={avgPointsPerNight}
+        avgCertsPerNight={avgCertsPerNight}
         totalPointsRedeemed={totalPointsRedeemed}
         totalCertificates={totalCertificates}
       />
