@@ -284,7 +284,7 @@ export default function DashboardPage() {
   }
 
   const totalBookings = bookings.length;
-  // Only cash bookings (totalCost > 0) contribute to spend/savings/avg stats
+  // Only cash bookings (totalCost > 0) contribute to total spend
   const cashBookings = bookings.filter((b) => Number(b.totalCost) > 0);
   const totalSpend = cashBookings.reduce(
     (sum, b) => sum + Number(b.totalCost) * (Number(b.exchangeRate) || 1),
@@ -292,9 +292,8 @@ export default function DashboardPage() {
   );
   const totalSavings = bookings.reduce((sum, b) => sum + calcTotalSavings(b), 0);
   const totalNights = bookings.reduce((sum, b) => sum + b.numNights, 0);
-  const cashNights = cashBookings.reduce((sum, b) => sum + b.numNights, 0);
   const avgNetCostPerNight =
-    cashNights > 0 ? cashBookings.reduce((sum, b) => sum + calculateNetCost(b), 0) / cashNights : 0;
+    totalNights > 0 ? bookings.reduce((sum, b) => sum + calculateNetCost(b), 0) / totalNights : 0;
 
   const totalPointsRedeemed = bookings.reduce((sum, b) => sum + (b.pointsRedeemed ?? 0), 0);
   const totalCertificates = bookings.reduce((sum, b) => sum + b.certificates.length, 0);
