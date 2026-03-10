@@ -6,6 +6,7 @@ import { DashboardStats } from "@/components/dashboard-stats";
 import { PaymentTypeBreakdown } from "@/components/payment-type-breakdown";
 import { SubBrandBreakdown } from "@/components/sub-brand-breakdown";
 import { calculateNetCost, getNetCostBreakdown } from "@/lib/net-cost";
+import { certPointsValue } from "@/lib/cert-types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -226,11 +227,11 @@ export default function DashboardPage() {
         acc[chain].pointsRedeemed += b.pointsRedeemed ?? 0;
         acc[chain].certs += b.certificates.length;
         acc[chain].totalNet += calculateNetCost(b);
-        // Only cash bookings contribute to spend/savings (use USD totalCost)
+        acc[chain].totalSavings += calcTotalSavings(b);
+        // Only cash bookings contribute to spend
         const usdTotalCost = Number(b.totalCost) * (Number(b.exchangeRate) || 1);
         if (Number(b.totalCost) > 0) {
           acc[chain].totalSpend += usdTotalCost;
-          acc[chain].totalSavings += calcTotalSavings(b);
         }
         return acc;
       },
@@ -284,7 +285,7 @@ export default function DashboardPage() {
   }
 
   const totalBookings = bookings.length;
-  // Only cash bookings (totalCost > 0) contribute to spend/savings/avg stats
+  // Only cash bookings (totalCost > 0) contribute to total spend
   const cashBookings = bookings.filter((b) => Number(b.totalCost) > 0);
   const totalSpend = cashBookings.reduce(
     (sum, b) => sum + Number(b.totalCost) * (Number(b.exchangeRate) || 1),
@@ -292,9 +293,37 @@ export default function DashboardPage() {
   );
   const totalSavings = bookings.reduce((sum, b) => sum + calcTotalSavings(b), 0);
   const totalNights = bookings.reduce((sum, b) => sum + b.numNights, 0);
-  const cashNights = cashBookings.reduce((sum, b) => sum + b.numNights, 0);
-  const avgNetCostPerNight =
-    cashNights > 0 ? cashBookings.reduce((sum, b) => sum + calculateNetCost(b), 0) / cashNights : 0;
+
+  // Exclude mixed-payment bookings from avg/night — each stay must use exactly one payment type
+  const isMixedPayment = (b: BookingWithRelations) =>
+    [Number(b.totalCost) > 0, (b.pointsRedeemed ?? 0) > 0, b.certificates.length > 0].filter(
+      Boolean
+    ).length > 1;
+  const avgNightSkippedCount = bookings.filter(isMixedPayment).length;
+
+  const cashStays = bookings.filter((b) => Number(b.totalCost) > 0 && !isMixedPayment(b));
+  const cashStayNights = cashStays.reduce((sum, b) => sum + b.numNights, 0);
+  const avgCashNetCostPerNight =
+    cashStayNights > 0
+      ? cashStays.reduce((sum, b) => sum + calculateNetCost(b), 0) / cashStayNights
+      : null;
+
+  const pointsStays = bookings.filter((b) => (b.pointsRedeemed ?? 0) > 0 && !isMixedPayment(b));
+  const pointsStayNights = pointsStays.reduce((sum, b) => sum + b.numNights, 0);
+  const avgPointsPerNight =
+    pointsStayNights > 0
+      ? pointsStays.reduce((sum, b) => sum + (b.pointsRedeemed ?? 0), 0) / pointsStayNights
+      : null;
+
+  const certStays = bookings.filter((b) => b.certificates.length > 0 && !isMixedPayment(b));
+  const certStayNights = certStays.reduce((sum, b) => sum + b.numNights, 0);
+  const avgCertPointsPerNight =
+    certStayNights > 0
+      ? certStays.reduce(
+          (sum, b) => sum + b.certificates.reduce((s, c) => s + certPointsValue(c.certType), 0),
+          0
+        ) / certStayNights
+      : null;
 
   const totalPointsRedeemed = bookings.reduce((sum, b) => sum + (b.pointsRedeemed ?? 0), 0);
   const totalCertificates = bookings.reduce((sum, b) => sum + b.certificates.length, 0);
@@ -317,7 +346,10 @@ export default function DashboardPage() {
         totalSpend={totalSpend}
         totalSavings={totalSavings}
         totalNights={totalNights}
-        avgNetCostPerNight={avgNetCostPerNight}
+        avgCashNetCostPerNight={avgCashNetCostPerNight}
+        avgPointsPerNight={avgPointsPerNight}
+        avgCertPointsPerNight={avgCertPointsPerNight}
+        avgNightSkippedCount={avgNightSkippedCount}
         totalPointsRedeemed={totalPointsRedeemed}
         totalCertificates={totalCertificates}
       />
@@ -435,7 +467,7 @@ export default function DashboardPage() {
             <CardTitle>Savings Breakdown</CardTitle>
           </CardHeader>
           <CardContent>
-            {cashBookings.length === 0 ? (
+            {bookings.length === 0 ? (
               <EmptyState
                 icon={Wallet}
                 title="No savings data"
@@ -446,65 +478,47 @@ export default function DashboardPage() {
             ) : (
               <div className="space-y-4">
                 {(() => {
-                  const totalPromoSavings = cashBookings.reduce(
-                    (sum, b) =>
-                      sum + b.bookingPromotions.reduce((s, bp) => s + Number(bp.appliedValue), 0),
-                    0
+                  const totals = bookings.reduce(
+                    (acc, b) => {
+                      const { promoSavings, portalCashback, cardReward, loyaltyPointsValue } =
+                        getNetCostBreakdown(b);
+                      acc.promoSavings += promoSavings;
+                      acc.portalCashback += portalCashback;
+                      acc.cardRewards += cardReward;
+                      acc.loyaltyPointsValue += loyaltyPointsValue;
+                      return acc;
+                    },
+                    { promoSavings: 0, portalCashback: 0, cardRewards: 0, loyaltyPointsValue: 0 }
                   );
-                  const totalPortalCashback = cashBookings.reduce((sum, b) => {
-                    const portalBasis = b.portalCashbackOnTotal
-                      ? Number(b.totalCost)
-                      : Number(b.pretaxCost);
-                    const portalRate = Number(b.portalCashbackRate || 0);
-                    if (b.shoppingPortal?.rewardType === "points") {
-                      return (
-                        sum +
-                        portalRate *
-                          portalBasis *
-                          Number(b.shoppingPortal.pointType?.centsPerPoint ?? 0)
-                      );
-                    }
-                    return sum + portalRate * portalBasis;
-                  }, 0);
-                  const totalCardRewards = cashBookings.reduce(
-                    (sum, b) =>
-                      sum +
-                      (b.creditCard
-                        ? Number(b.totalCost) *
-                          Number(b.creditCard.rewardRate) *
-                          Number(b.creditCard.pointType?.centsPerPoint ?? 0)
-                        : 0),
-                    0
-                  );
-                  const totalLoyaltyPointsValue = cashBookings.reduce(
-                    (sum, b) =>
-                      sum +
-                      (b.loyaltyPointsEarned && b.hotelChain.pointType
-                        ? b.loyaltyPointsEarned * Number(b.hotelChain.pointType.centsPerPoint)
-                        : 0),
-                    0
-                  );
+                  const totalPromoSavings = totals.promoSavings;
+                  const totalPortalCashback = totals.portalCashback;
+                  const totalCardRewards = totals.cardRewards;
+                  const totalLoyaltyPointsValue = totals.loyaltyPointsValue;
 
                   const items = [
                     {
                       label: "Promotion Savings",
                       value: totalPromoSavings,
                       color: "bg-blue-500",
+                      testId: "savings-breakdown-promo",
                     },
                     {
                       label: "Portal Cashback",
                       value: totalPortalCashback,
                       color: "bg-green-500",
+                      testId: "savings-breakdown-portal",
                     },
                     {
                       label: "Card Rewards",
                       value: totalCardRewards,
                       color: "bg-purple-500",
+                      testId: "savings-breakdown-card",
                     },
                     {
                       label: "Loyalty Points Value",
                       value: totalLoyaltyPointsValue,
                       color: "bg-orange-500",
+                      testId: "savings-breakdown-loyalty",
                     },
                   ];
 
@@ -516,7 +530,7 @@ export default function DashboardPage() {
                         <div key={item.label} className="space-y-1">
                           <div className="flex justify-between text-sm">
                             <span>{item.label}</span>
-                            <span className="font-medium text-green-600">
+                            <span className="font-medium text-green-600" data-testid={item.testId}>
                               {formatDollars(item.value, "USD", {
                                 minimumFractionDigits: 0,
                                 maximumFractionDigits: 0,
@@ -536,7 +550,7 @@ export default function DashboardPage() {
                       <div className="pt-2 border-t">
                         <div className="flex justify-between font-medium">
                           <span>Total Savings</span>
-                          <span className="text-green-600">
+                          <span className="text-green-600" data-testid="savings-breakdown-total">
                             {formatDollars(totalSavings, "USD", {
                               minimumFractionDigits: 0,
                               maximumFractionDigits: 0,
