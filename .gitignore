@@ -52,3 +52,4 @@ test-results/
 blob-report/
 playwright/.cache/
 e2e/.auth/
+.env*.local
