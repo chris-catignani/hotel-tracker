@@ -203,7 +203,47 @@ If a test fails, Playwright is configured to record a video and a "trace" (inter
    - `SEED_ADMIN_EMAIL`: Your admin email
    - `SEED_ADMIN_PASSWORD`: A strong password
    - `GOOGLE_PLACES_API_KEY`: Your Google Places API key (see Google Places API Setup above)
+   - `CRON_SECRET`: Generate with `openssl rand -base64 32` (used to authenticate the exchange rate cron job)
 8. Run `npm run db:seed` via Vercel's one-off task runner or a local connection to the production DB to create the admin user.
+
+## Exchange Rate Cron Job
+
+The app supports non-USD bookings. Exchange rates are stored in the `ExchangeRate` table and refreshed daily via a Vercel Cron Job.
+
+### How it works
+
+- **Schedule:** daily at midnight UTC (`0 0 * * *`), configured in `vercel.json`
+- **Endpoint:** `GET /api/cron/refresh-exchange-rates`
+- **What it does:**
+  1. Fetches current rates for all supported currencies (via a free public CDN) and upserts them into the `ExchangeRate` table
+  2. Locks in the historical check-in-date rate for any non-USD future bookings whose check-in date has now passed, and recalculates loyalty points in USD at that rate
+
+### Setup on Vercel
+
+1. Generate a secret token:
+   ```bash
+   openssl rand -base64 32
+   ```
+2. Add it as an environment variable in your Vercel project settings:
+
+   ```
+   CRON_SECRET="<your-generated-secret>"
+   ```
+
+   Vercel automatically sends this as `Authorization: Bearer <secret>` when invoking the cron endpoint. The endpoint returns `401` for any request missing a valid token.
+
+3. The cron job is defined in `vercel.json` and Vercel will activate it automatically on deploy — no additional configuration needed.
+
+### Initial data population
+
+The `ExchangeRate` table starts empty. After your first deploy, trigger the cron manually to populate it:
+
+```bash
+curl -X GET https://<your-vercel-domain>/api/cron/refresh-exchange-rates \
+  -H "Authorization: Bearer <your-cron-secret>"
+```
+
+After that, Vercel will keep rates up to date automatically each night.
 
 ## Managing Users
 
