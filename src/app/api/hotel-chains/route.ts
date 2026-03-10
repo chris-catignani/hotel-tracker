@@ -70,13 +70,14 @@ export async function POST(request: NextRequest) {
     if (adminError instanceof NextResponse) return adminError;
 
     const body = await request.json();
-    const { name, loyaltyProgram, basePointRate, pointTypeId } = body;
+    const { name, loyaltyProgram, basePointRate, calculationCurrency, pointTypeId } = body;
 
     const hotelChain = await prisma.hotelChain.create({
       data: {
         name,
         loyaltyProgram,
         basePointRate: basePointRate != null ? Number(basePointRate) : null,
+        calculationCurrency: calculationCurrency || "USD",
         pointTypeId: pointTypeId || null,
       },
       include: {

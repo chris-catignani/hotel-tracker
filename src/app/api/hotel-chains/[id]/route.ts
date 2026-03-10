@@ -43,12 +43,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     const { id } = await params;
     const body = await request.json();
-    const { name, loyaltyProgram, basePointRate, pointTypeId } = body;
+    const { name, loyaltyProgram, basePointRate, calculationCurrency, pointTypeId } = body;
 
-    // Check if basePointRate is changing to avoid unnecessary recalculations
+    // Check if rate-affecting fields are changing to avoid unnecessary recalculations
     const existing = await prisma.hotelChain.findUnique({
       where: { id: id },
-      select: { basePointRate: true },
+      select: { basePointRate: true, calculationCurrency: true },
     });
 
     const data: Record<string, unknown> = {};
@@ -56,6 +56,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (loyaltyProgram !== undefined) data.loyaltyProgram = loyaltyProgram || null;
     if (basePointRate !== undefined)
       data.basePointRate = basePointRate != null ? Number(basePointRate) : null;
+    if (calculationCurrency !== undefined) data.calculationCurrency = calculationCurrency || "USD";
     if (pointTypeId !== undefined) data.pointTypeId = pointTypeId || null;
 
     const hotelChain = await prisma.hotelChain.update({
@@ -72,8 +73,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       },
     });
 
-    // Recalculate loyalty points if the base rate changed
-    if (basePointRate !== undefined && Number(existing?.basePointRate) !== Number(basePointRate)) {
+    // Recalculate loyalty points if the base rate or calculation currency changed
+    const rateChanged =
+      basePointRate !== undefined && Number(existing?.basePointRate) !== Number(basePointRate);
+    const currencyChanged =
+      calculationCurrency !== undefined &&
+      (existing?.calculationCurrency ?? "USD") !== (calculationCurrency || "USD");
+    if (rateChanged || currencyChanged) {
       await recalculateLoyaltyForHotelChain(id, userId);
     }
 
