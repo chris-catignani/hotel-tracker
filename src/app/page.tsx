@@ -446,44 +446,22 @@ export default function DashboardPage() {
             ) : (
               <div className="space-y-4">
                 {(() => {
-                  const totalPromoSavings = cashBookings.reduce(
-                    (sum, b) =>
-                      sum + b.bookingPromotions.reduce((s, bp) => s + Number(bp.appliedValue), 0),
-                    0
+                  const totals = cashBookings.reduce(
+                    (acc, b) => {
+                      const { promoSavings, portalCashback, cardReward, loyaltyPointsValue } =
+                        getNetCostBreakdown(b);
+                      acc.promoSavings += promoSavings;
+                      acc.portalCashback += portalCashback;
+                      acc.cardRewards += cardReward;
+                      acc.loyaltyPointsValue += loyaltyPointsValue;
+                      return acc;
+                    },
+                    { promoSavings: 0, portalCashback: 0, cardRewards: 0, loyaltyPointsValue: 0 }
                   );
-                  const totalPortalCashback = cashBookings.reduce((sum, b) => {
-                    const portalBasis = b.portalCashbackOnTotal
-                      ? Number(b.totalCost)
-                      : Number(b.pretaxCost);
-                    const portalRate = Number(b.portalCashbackRate || 0);
-                    if (b.shoppingPortal?.rewardType === "points") {
-                      return (
-                        sum +
-                        portalRate *
-                          portalBasis *
-                          Number(b.shoppingPortal.pointType?.centsPerPoint ?? 0)
-                      );
-                    }
-                    return sum + portalRate * portalBasis;
-                  }, 0);
-                  const totalCardRewards = cashBookings.reduce(
-                    (sum, b) =>
-                      sum +
-                      (b.creditCard
-                        ? Number(b.totalCost) *
-                          Number(b.creditCard.rewardRate) *
-                          Number(b.creditCard.pointType?.centsPerPoint ?? 0)
-                        : 0),
-                    0
-                  );
-                  const totalLoyaltyPointsValue = cashBookings.reduce(
-                    (sum, b) =>
-                      sum +
-                      (b.loyaltyPointsEarned && b.hotelChain.pointType
-                        ? b.loyaltyPointsEarned * Number(b.hotelChain.pointType.centsPerPoint)
-                        : 0),
-                    0
-                  );
+                  const totalPromoSavings = totals.promoSavings;
+                  const totalPortalCashback = totals.portalCashback;
+                  const totalCardRewards = totals.cardRewards;
+                  const totalLoyaltyPointsValue = totals.loyaltyPointsValue;
 
                   const items = [
                     {
