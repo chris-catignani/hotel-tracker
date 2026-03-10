@@ -446,7 +446,7 @@ export default function DashboardPage() {
             ) : (
               <div className="space-y-4">
                 {(() => {
-                  const totals = cashBookings.reduce(
+                  const totals = bookings.reduce(
                     (acc, b) => {
                       const { promoSavings, portalCashback, cardReward, loyaltyPointsValue } =
                         getNetCostBreakdown(b);
@@ -515,17 +515,10 @@ export default function DashboardPage() {
                         <div className="flex justify-between font-medium">
                           <span>Total Savings</span>
                           <span className="text-green-600">
-                            {formatDollars(
-                              totalPromoSavings +
-                                totalPortalCashback +
-                                totalCardRewards +
-                                totalLoyaltyPointsValue,
-                              "USD",
-                              {
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0,
-                              }
-                            )}
+                            {formatDollars(totalSavings, "USD", {
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0,
+                            })}
                           </span>
                         </div>
                         <div className="flex justify-between text-sm text-muted-foreground mt-1">
