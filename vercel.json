@@ -1,6 +1,11 @@
 {
   "git": {
-    "deploymentEnabled": false
+    "deploymentEnabled": true
   },
-  "crons": [{ "path": "/api/cron/refresh-exchange-rates", "schedule": "0 0 * * *" }]
+  "crons": [
+    {
+      "path": "/api/cron/refresh-exchange-rates",
+      "schedule": "0 0 * * *"
+    }
+  ]
 }
