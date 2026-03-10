@@ -10,7 +10,7 @@ import {
 } from "@/lib/promotion-matching";
 import { reevaluateSubsequentBookings } from "@/lib/promotion-matching-helpers";
 import { apiError } from "@/lib/api-error";
-import { calculatePoints } from "@/lib/loyalty-utils";
+import { calculatePoints, resolveBasePointRate } from "@/lib/loyalty-utils";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
 import { fetchExchangeRate, getCurrentRate, resolveCalcCurrencyRate } from "@/lib/exchange-rate";
@@ -271,9 +271,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
                 : null,
             ]);
 
-            const basePointRate =
-              (subBrand?.basePointRate != null ? Number(subBrand.basePointRate) : null) ??
-              (hotelChain?.basePointRate != null ? Number(hotelChain.basePointRate) : null);
+            const basePointRate = resolveBasePointRate(hotelChain, subBrand);
 
             // Resolve calc currency rate if chain uses non-USD rates (e.g., EUR for Accor)
             const calcCurrency = hotelChain?.calculationCurrency ?? "USD";

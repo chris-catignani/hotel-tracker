@@ -45,6 +45,7 @@ describe("loyalty-recalculation", () => {
     const mockChain = {
       id: "1",
       basePointRate: 10,
+      hotelChainSubBrands: [],
       userStatuses: [
         {
           eliteStatus: {
@@ -60,8 +61,8 @@ describe("loyalty-recalculation", () => {
 
     // 2. Mock past bookings (USD, exchangeRate = 1)
     const mockBookings = [
-      { id: "101", pretaxCost: 100, currency: "USD", exchangeRate: 1 }, // Expected: 1500
-      { id: "102", pretaxCost: 200, currency: "USD", exchangeRate: 1 }, // Expected: 3000
+      { id: "101", pretaxCost: 100, currency: "USD", exchangeRate: 1, hotelChainSubBrandId: null }, // Expected: 1500
+      { id: "102", pretaxCost: 200, currency: "USD", exchangeRate: 1, hotelChainSubBrandId: null }, // Expected: 3000
     ];
     prismaMock.booking.findMany.mockResolvedValue(mockBookings);
 
@@ -83,7 +84,11 @@ describe("loyalty-recalculation", () => {
   });
 
   it("should return early if no future bookings found", async () => {
-    prismaMock.hotelChain.findUnique.mockResolvedValue({ id: "1", userStatuses: [] });
+    prismaMock.hotelChain.findUnique.mockResolvedValue({
+      id: "1",
+      userStatuses: [],
+      hotelChainSubBrands: [],
+    });
     prismaMock.booking.findMany.mockResolvedValue([]);
     await recalculateLoyaltyForHotelChain("1", "user-1");
     expect(prismaMock.$transaction).not.toHaveBeenCalled();
@@ -95,6 +100,7 @@ describe("loyalty-recalculation", () => {
       id: "accor",
       basePointRate: 2.5,
       calculationCurrency: "EUR",
+      hotelChainSubBrands: [],
       userStatuses: [{ eliteStatus: null }],
     };
     prismaMock.hotelChain.findUnique.mockResolvedValue(mockChain);
@@ -106,7 +112,9 @@ describe("loyalty-recalculation", () => {
     // USD pretax = 110 * 1 = 110 USD
     // EUR pretax = 110 / 1.1 = 100 EUR
     // Points = round(100 * 2.5) = 250
-    const mockBookings = [{ id: "b1", pretaxCost: 110, currency: "USD", exchangeRate: 1 }];
+    const mockBookings = [
+      { id: "b1", pretaxCost: 110, currency: "USD", exchangeRate: 1, hotelChainSubBrandId: null },
+    ];
     prismaMock.booking.findMany.mockResolvedValue(mockBookings);
 
     await recalculateLoyaltyForHotelChain("accor", "user-1");
@@ -115,6 +123,30 @@ describe("loyalty-recalculation", () => {
       expect.objectContaining({
         data: { loyaltyPointsEarned: 250 },
       })
+    );
+  });
+
+  it("should use sub-brand basePointRate when booking has a sub-brand override", async () => {
+    // Chain rate: 10 pts/$, sub-brand rate: 5 pts/$
+    const mockChain = {
+      id: "1",
+      basePointRate: 10,
+      hotelChainSubBrands: [{ id: "sb1", basePointRate: 5 }],
+      userStatuses: [{ eliteStatus: null }],
+    };
+    prismaMock.hotelChain.findUnique.mockResolvedValue(mockChain);
+
+    // Booking linked to sub-brand sb1 — should use 5 pts/$, not 10
+    const mockBookings = [
+      { id: "b1", pretaxCost: 100, currency: "USD", exchangeRate: 1, hotelChainSubBrandId: "sb1" },
+    ];
+    prismaMock.booking.findMany.mockResolvedValue(mockBookings);
+
+    await recalculateLoyaltyForHotelChain("1", "user-1");
+
+    // round(100 * 5) = 500, not round(100 * 10) = 1000
+    expect(prismaMock.booking.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { loyaltyPointsEarned: 500 } })
     );
   });
 });

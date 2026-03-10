@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma";
 import { fetchExchangeRate } from "@/lib/exchange-rate";
 import { apiError } from "@/lib/api-error";
 import { CURRENCIES } from "@/lib/constants";
-import { calculatePoints } from "@/lib/loyalty-utils";
+import { calculatePoints, resolveBasePointRate } from "@/lib/loyalty-utils";
 
 const RATES_CDN =
   "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json";
@@ -86,11 +86,10 @@ export async function GET(request: NextRequest) {
         let loyaltyPointsEarned = booking.loyaltyPointsEarned;
         if (loyaltyPointsEarned == null) {
           const userStatus = booking.hotelChain.userStatuses[0] ?? null;
-          const basePointRate = booking.hotelChainSubBrand?.basePointRate
-            ? Number(booking.hotelChainSubBrand.basePointRate)
-            : booking.hotelChain.basePointRate
-              ? Number(booking.hotelChain.basePointRate)
-              : null;
+          const basePointRate = resolveBasePointRate(
+            booking.hotelChain,
+            booking.hotelChainSubBrand
+          );
 
           const usdPretaxCost = Number(booking.pretaxCost) * rate;
           loyaltyPointsEarned = calculatePoints({

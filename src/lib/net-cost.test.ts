@@ -447,6 +447,30 @@ describe("net-cost", () => {
     );
   });
 
+  it("should use sub-brand basePointRate in loyalty breakdown when present", () => {
+    // Regression: breakdown was using chain rate (2.5) instead of sub-brand rate (1.25)
+    // for chains like Accor where sub-brands have lower earn rates.
+    const booking: NetCostBooking = {
+      ...mockBaseBooking,
+      pretaxCost: 100,
+      totalCost: 100,
+      loyaltyPointsEarned: 150, // round(100 * 1.25 * 1.2) = 150 (sub-brand rate with elite bonus)
+      hotelChain: {
+        ...mockBaseBooking.hotelChain,
+        basePointRate: 2.5, // chain rate — should NOT be used
+        userStatus: {
+          eliteStatus: { name: "Silver", isFixed: false, bonusPercentage: 0.2, fixedRate: null },
+        },
+      },
+      hotelChainSubBrand: { basePointRate: 1.25 }, // sub-brand rate — should be used
+    };
+    const result = getNetCostBreakdown(booking);
+    // Base segment should use 1.25, not 2.5
+    const segments = result.loyaltyPointsCalc?.groups[0].segments ?? [];
+    expect(segments[0].formula).toContain("1.25x"); // sub-brand rate in formula
+    expect(segments[0].formula).not.toContain("2.5x"); // chain rate not used
+  });
+
   it("should calculate points redeemed value", () => {
     const booking: NetCostBooking = {
       ...mockBaseBooking,

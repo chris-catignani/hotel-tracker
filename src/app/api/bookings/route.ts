@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma";
 import { matchPromotionsForBooking } from "@/lib/promotion-matching";
 import { reevaluateSubsequentBookings } from "@/lib/promotion-matching-helpers";
 import { apiError } from "@/lib/api-error";
-import { calculatePoints } from "@/lib/loyalty-utils";
+import { calculatePoints, resolveBasePointRate } from "@/lib/loyalty-utils";
 import { CertType, BenefitType } from "@prisma/client";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
@@ -148,9 +148,7 @@ export async function POST(request: NextRequest) {
           : null,
       ]);
 
-      const basePointRate =
-        (subBrand?.basePointRate != null ? Number(subBrand.basePointRate) : null) ??
-        (hotelChain?.basePointRate != null ? Number(hotelChain.basePointRate) : null);
+      const basePointRate = resolveBasePointRate(hotelChain, subBrand);
 
       // Resolve calc currency rate if chain uses non-USD rates (e.g., EUR for Accor)
       const calcCurrency = hotelChain?.calculationCurrency ?? "USD";

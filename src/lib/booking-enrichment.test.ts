@@ -6,9 +6,10 @@ vi.mock("./exchange-rate", () => ({
   resolveCalcCurrencyRate: vi.fn().mockResolvedValue(null),
 }));
 
-vi.mock("./loyalty-utils", () => ({
-  calculatePoints: vi.fn(),
-}));
+vi.mock("./loyalty-utils", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./loyalty-utils")>();
+  return { ...actual, calculatePoints: vi.fn() };
+});
 
 import { getCurrentRate, resolveCalcCurrencyRate } from "./exchange-rate";
 import { calculatePoints } from "./loyalty-utils";
@@ -134,6 +135,32 @@ describe("enrichBookingWithRate", () => {
       expect(mockCalculatePoints).toHaveBeenCalledWith(
         expect.objectContaining({ pretaxCost: 500 * 0.74 })
       );
+    });
+
+    it("reads elite status from normalized userStatus (singular) when userStatuses array is absent", async () => {
+      // This is the bug case: normalizeUserStatuses() converts userStatuses[] → userStatus
+      // before enrichBookingWithRate is called, so the array is no longer present.
+      mockGetCurrentRate.mockResolvedValueOnce(0.74);
+      mockCalculatePoints.mockReturnValueOnce(648);
+
+      const eliteStatus = { isFixed: false, bonusPercentage: 0.75, fixedRate: null };
+      const booking = {
+        ...baseBooking,
+        currency: "SGD",
+        exchangeRate: null,
+        checkIn: futureDateStr,
+        loyaltyPointsEarned: null,
+        pretaxCost: "500",
+        hotelChain: {
+          basePointRate: 10,
+          // userStatus (singular) — the normalized form; no userStatuses array
+          userStatus: { eliteStatus },
+        },
+      };
+
+      await enrichBookingWithRate(booking);
+
+      expect(mockCalculatePoints).toHaveBeenCalledWith(expect.objectContaining({ eliteStatus }));
     });
 
     it("uses subBrand basePointRate when available for estimated loyalty", async () => {

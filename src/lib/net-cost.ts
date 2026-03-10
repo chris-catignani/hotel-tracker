@@ -1,6 +1,7 @@
 import { certPointsValue } from "@/lib/cert-types";
 import { formatCurrency } from "@/lib/utils";
 import { DEFAULT_EQN_VALUE } from "@/lib/constants";
+import { resolveBasePointRate } from "@/lib/loyalty-utils";
 
 const DEFAULT_CENTS_PER_POINT = 0.01;
 const ORPHANED_PROMOTION_DESCRIPTION =
@@ -92,6 +93,7 @@ export interface NetCostBooking {
       } | null;
     } | null;
   };
+  hotelChainSubBrand?: { basePointRate: string | number | null } | null;
   creditCard: {
     name: string;
     rewardRate: string | number;
@@ -706,12 +708,11 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
           const centsStr = formatCents(hotelCentsPerPoint);
           if (b.valueType === "multiplier") {
             const isBaseOnly = !b.pointsMultiplierBasis || b.pointsMultiplierBasis === "base_only";
-            const baseRate = booking.hotelChain.basePointRate
-              ? Number(booking.hotelChain.basePointRate)
-              : 0;
+            const effectiveBaseRate =
+              resolveBasePointRate(booking.hotelChain, booking.hotelChainSubBrand) ?? 0;
             const basisPoints =
-              isBaseOnly && baseRate > 0
-                ? Math.round(pretaxCost * baseRate)
+              isBaseOnly && effectiveBaseRate > 0
+                ? Math.round(pretaxCost * effectiveBaseRate)
                 : booking.loyaltyPointsEarned || 0;
             const basisLabel = isBaseOnly ? "(base rate only)" : "(incl. elite bonus)";
             benefitFormula = `${basisPoints.toLocaleString()} pts ${basisLabel} × (${bValue} - 1) × ${centsStr}¢${capSuffix}`;
@@ -942,13 +943,18 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
     const loyaltySegments: CalculationSegment[] = [];
     const elite = booking.hotelChain.userStatus?.eliteStatus;
 
+    const effectiveBasePointRate = resolveBasePointRate(
+      booking.hotelChain,
+      booking.hotelChainSubBrand
+    );
+
     if (
       elite &&
       !elite.isFixed &&
       elite.bonusPercentage != null &&
-      booking.hotelChain.basePointRate != null
+      effectiveBasePointRate != null
     ) {
-      const baseRate = Number(booking.hotelChain.basePointRate);
+      const baseRate = effectiveBasePointRate;
       const bonusPct = Number(elite.bonusPercentage);
       const calcCurrency = booking.hotelChain.calculationCurrency ?? "USD";
       const calcCurrencyToUsdRate = booking.hotelChain.calcCurrencyToUsdRate ?? null;

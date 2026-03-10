@@ -1,5 +1,16 @@
 import { Prisma } from "@prisma/client";
 
+type RateHolder = { basePointRate?: unknown } | null | undefined;
+
+/**
+ * Resolves the effective base point rate for a booking, preferring the
+ * sub-brand override over the chain-level rate.
+ */
+export function resolveBasePointRate(chain: RateHolder, subBrand?: RateHolder): number | null {
+  const raw = subBrand?.basePointRate != null ? subBrand.basePointRate : chain?.basePointRate;
+  return raw != null ? Number(raw) : null;
+}
+
 interface CalculationInput {
   pretaxCost: number; // always in USD
   basePointRate: number | null;
@@ -91,12 +102,12 @@ export function calculatePointsFromChain({
       ? hotelChain.hotelChainSubBrands.find((sb) => sb.id === hotelChainSubBrandId)
       : null;
 
-  const basePointRate = Number(subBrand?.basePointRate ?? hotelChain.basePointRate ?? null);
+  const basePointRate = resolveBasePointRate(hotelChain, subBrand);
   const eliteStatus = hotelChain.userStatus?.eliteStatus;
 
   const points = calculatePoints({
     pretaxCost: Number(pretaxCost),
-    basePointRate: !isNaN(basePointRate) ? basePointRate : null,
+    basePointRate,
     calculationCurrency: hotelChain.calculationCurrency ?? "USD",
     calcCurrencyToUsdRate: hotelChain.calcCurrencyToUsdRate ?? null,
     eliteStatus: eliteStatus
