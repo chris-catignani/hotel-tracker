@@ -6,6 +6,7 @@ import { DashboardStats } from "@/components/dashboard-stats";
 import { PaymentTypeBreakdown } from "@/components/payment-type-breakdown";
 import { SubBrandBreakdown } from "@/components/sub-brand-breakdown";
 import { calculateNetCost, getNetCostBreakdown } from "@/lib/net-cost";
+import { certPointsValue } from "@/lib/cert-types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -309,9 +310,12 @@ export default function DashboardPage() {
 
   const certStays = bookings.filter((b) => b.certificates.length > 0);
   const certStayNights = certStays.reduce((sum, b) => sum + b.numNights, 0);
-  const avgCertsPerNight =
+  const avgCertPointsPerNight =
     certStayNights > 0
-      ? certStays.reduce((sum, b) => sum + b.certificates.length, 0) / certStayNights
+      ? certStays.reduce(
+          (sum, b) => sum + b.certificates.reduce((s, c) => s + certPointsValue(c.certType), 0),
+          0
+        ) / certStayNights
       : null;
 
   const totalPointsRedeemed = bookings.reduce((sum, b) => sum + (b.pointsRedeemed ?? 0), 0);
@@ -337,7 +341,7 @@ export default function DashboardPage() {
         totalNights={totalNights}
         avgCashNetCostPerNight={avgCashNetCostPerNight}
         avgPointsPerNight={avgPointsPerNight}
-        avgCertsPerNight={avgCertsPerNight}
+        avgCertPointsPerNight={avgCertPointsPerNight}
         totalPointsRedeemed={totalPointsRedeemed}
         totalCertificates={totalCertificates}
       />

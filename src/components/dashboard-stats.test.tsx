@@ -10,7 +10,7 @@ describe("DashboardStats", () => {
     totalNights: 12,
     avgCashNetCostPerNight: 104.21,
     avgPointsPerNight: 35000,
-    avgCertsPerNight: 1.5,
+    avgCertPointsPerNight: 40000,
     totalPointsRedeemed: 25000,
     totalCertificates: 2,
   };
@@ -35,7 +35,7 @@ describe("DashboardStats", () => {
     // Avg / Night breakdown
     expect(screen.getByTestId("stat-value-avg-cash-net-per-night")).toHaveTextContent("$104");
     expect(screen.getByTestId("stat-value-avg-points-per-night")).toHaveTextContent("35,000 pts");
-    expect(screen.getByTestId("stat-value-avg-certs-per-night")).toHaveTextContent("1.5");
+    expect(screen.getByTestId("stat-value-avg-certs-per-night")).toHaveTextContent("40,000 pts");
   });
 
   it("handles null avg values and zero spend correctly", async () => {
@@ -46,7 +46,7 @@ describe("DashboardStats", () => {
       totalNights: 0,
       avgCashNetCostPerNight: null,
       avgPointsPerNight: null,
-      avgCertsPerNight: null,
+      avgCertPointsPerNight: null,
       totalPointsRedeemed: 0,
       totalCertificates: 0,
     };
@@ -85,12 +85,5 @@ describe("DashboardStats", () => {
     });
     expect(screen.getByText("$1,000,000")).toBeInTheDocument();
     expect(screen.getByText("1,250,000 pts")).toBeInTheDocument();
-  });
-
-  it("strips trailing zeros from avg certs display", async () => {
-    await act(async () => {
-      render(<DashboardStats {...defaultProps} avgCertsPerNight={2.0} />);
-    });
-    expect(screen.getByTestId("stat-value-avg-certs-per-night")).toHaveTextContent("2");
   });
 });

@@ -8,7 +8,7 @@ interface DashboardStatsProps {
   totalNights: number;
   avgCashNetCostPerNight: number | null;
   avgPointsPerNight: number | null;
-  avgCertsPerNight: number | null;
+  avgCertPointsPerNight: number | null;
   totalPointsRedeemed: number;
   totalCertificates: number;
 }
@@ -20,7 +20,7 @@ export function DashboardStats({
   totalNights,
   avgCashNetCostPerNight,
   avgPointsPerNight,
-  avgCertsPerNight,
+  avgCertPointsPerNight,
   totalPointsRedeemed,
   totalCertificates,
 }: DashboardStatsProps) {
@@ -60,7 +60,9 @@ export function DashboardStats({
       ? `${Math.round(avgPointsPerNight).toLocaleString("en-US")} pts`
       : "—";
   const avgCertsDisplay =
-    avgCertsPerNight != null ? avgCertsPerNight.toFixed(2).replace(/\.?0+$/, "") : "—";
+    avgCertPointsPerNight != null
+      ? `${Math.round(avgCertPointsPerNight).toLocaleString("en-US")} pts`
+      : "—";
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6 items-stretch">
