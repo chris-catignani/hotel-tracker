@@ -1,6 +1,8 @@
 import { calculatePoints } from "@/lib/loyalty-utils";
 import { getCurrentRate, resolveCalcCurrencyRate } from "@/lib/exchange-rate";
 
+type EliteStatusShape = { eliteStatus: unknown };
+
 type EnrichableBooking = {
   currency: string;
   exchangeRate: unknown;
@@ -10,7 +12,10 @@ type EnrichableBooking = {
   hotelChain: {
     basePointRate?: unknown;
     calculationCurrency?: string | null;
-    userStatuses?: { eliteStatus: unknown }[];
+    // Pre-normalization (array from Prisma include)
+    userStatuses?: EliteStatusShape[];
+    // Post-normalization (normalizeUserStatuses converts array → singular)
+    userStatus?: EliteStatusShape | null;
   };
   hotelChainSubBrand?: { basePointRate?: unknown } | null;
 };
@@ -49,7 +54,12 @@ export async function enrichBookingWithRate<T extends EnrichableBooking>(booking
         : booking.hotelChain.basePointRate != null
           ? Number(booking.hotelChain.basePointRate)
           : null;
-    const eliteStatus = (booking.hotelChain.userStatuses?.[0]?.eliteStatus ?? null) as {
+    // Support both pre-normalization (userStatuses[]) and post-normalization (userStatus)
+    const eliteStatusRaw =
+      booking.hotelChain.userStatuses?.[0]?.eliteStatus ??
+      booking.hotelChain.userStatus?.eliteStatus ??
+      null;
+    const eliteStatus = eliteStatusRaw as {
       isFixed: boolean;
       fixedRate: string | number | null;
       bonusPercentage: string | number | null;

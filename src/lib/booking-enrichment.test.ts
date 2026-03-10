@@ -136,6 +136,32 @@ describe("enrichBookingWithRate", () => {
       );
     });
 
+    it("reads elite status from normalized userStatus (singular) when userStatuses array is absent", async () => {
+      // This is the bug case: normalizeUserStatuses() converts userStatuses[] → userStatus
+      // before enrichBookingWithRate is called, so the array is no longer present.
+      mockGetCurrentRate.mockResolvedValueOnce(0.74);
+      mockCalculatePoints.mockReturnValueOnce(648);
+
+      const eliteStatus = { isFixed: false, bonusPercentage: 0.75, fixedRate: null };
+      const booking = {
+        ...baseBooking,
+        currency: "SGD",
+        exchangeRate: null,
+        checkIn: futureDateStr,
+        loyaltyPointsEarned: null,
+        pretaxCost: "500",
+        hotelChain: {
+          basePointRate: 10,
+          // userStatus (singular) — the normalized form; no userStatuses array
+          userStatus: { eliteStatus },
+        },
+      };
+
+      await enrichBookingWithRate(booking);
+
+      expect(mockCalculatePoints).toHaveBeenCalledWith(expect.objectContaining({ eliteStatus }));
+    });
+
     it("uses subBrand basePointRate when available for estimated loyalty", async () => {
       mockGetCurrentRate.mockResolvedValueOnce(0.5);
       mockCalculatePoints.mockReturnValueOnce(200);
