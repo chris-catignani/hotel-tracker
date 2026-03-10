@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
+import { AlertTriangle } from "lucide-react";
 
 interface DashboardStatsProps {
   totalBookings: number;
@@ -9,6 +10,7 @@ interface DashboardStatsProps {
   avgCashNetCostPerNight: number | null;
   avgPointsPerNight: number | null;
   avgCertPointsPerNight: number | null;
+  avgNightSkippedCount: number;
   totalPointsRedeemed: number;
   totalCertificates: number;
 }
@@ -21,6 +23,7 @@ export function DashboardStats({
   avgCashNetCostPerNight,
   avgPointsPerNight,
   avgCertPointsPerNight,
+  avgNightSkippedCount,
   totalPointsRedeemed,
   totalCertificates,
 }: DashboardStatsProps) {
@@ -118,7 +121,7 @@ export function DashboardStats({
             Avg / Night
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-4 pt-0 flex-1 flex items-center">
+        <CardContent className="p-4 pt-0 flex-1 flex flex-col justify-center gap-3">
           <div className="flex justify-evenly w-full">
             <div className="text-center">
               <div className="text-sm text-muted-foreground">Cash</div>
@@ -139,6 +142,19 @@ export function DashboardStats({
               </div>
             </div>
           </div>
+          {avgNightSkippedCount > 0 && (
+            <div
+              className="p-2 bg-amber-50 border border-amber-200 rounded-md flex items-start gap-2 text-amber-800"
+              data-testid="avg-night-skipped-warning"
+            >
+              <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+              <div className="text-xs">
+                <span className="font-semibold">{avgNightSkippedCount}</span> combination{" "}
+                {avgNightSkippedCount === 1 ? "booking" : "bookings"} excluded — mixed payment types
+                not supported.
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
       {statsAfter.map((stat) => (

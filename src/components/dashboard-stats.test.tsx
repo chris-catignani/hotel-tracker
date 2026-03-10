@@ -11,6 +11,7 @@ describe("DashboardStats", () => {
     avgCashNetCostPerNight: 104.21,
     avgPointsPerNight: 35000,
     avgCertPointsPerNight: 40000,
+    avgNightSkippedCount: 0,
     totalPointsRedeemed: 25000,
     totalCertificates: 2,
   };
@@ -47,6 +48,7 @@ describe("DashboardStats", () => {
       avgCashNetCostPerNight: null,
       avgPointsPerNight: null,
       avgCertPointsPerNight: null,
+      avgNightSkippedCount: 0,
       totalPointsRedeemed: 0,
       totalCertificates: 0,
     };
@@ -75,6 +77,33 @@ describe("DashboardStats", () => {
     });
     expect(screen.getByText("1 cert")).toBeInTheDocument();
     expect(screen.queryByText("1 certs")).not.toBeInTheDocument();
+  });
+
+  it("does not show skipped warning when avgNightSkippedCount is 0", async () => {
+    await act(async () => {
+      render(<DashboardStats {...defaultProps} avgNightSkippedCount={0} />);
+    });
+    expect(screen.queryByTestId("avg-night-skipped-warning")).not.toBeInTheDocument();
+  });
+
+  it("shows skipped warning with correct count for combination bookings", async () => {
+    await act(async () => {
+      render(<DashboardStats {...defaultProps} avgNightSkippedCount={3} />);
+    });
+    const warning = screen.getByTestId("avg-night-skipped-warning");
+    expect(warning).toBeInTheDocument();
+    expect(warning).toHaveTextContent("3");
+    expect(warning).toHaveTextContent("combination bookings excluded");
+  });
+
+  it("shows singular form in skipped warning for one combination booking", async () => {
+    await act(async () => {
+      render(<DashboardStats {...defaultProps} avgNightSkippedCount={1} />);
+    });
+    const warning = screen.getByTestId("avg-night-skipped-warning");
+    expect(warning).toHaveTextContent("1");
+    expect(warning).toHaveTextContent("combination booking excluded");
+    expect(warning).not.toHaveTextContent("bookings");
   });
 
   it("formats large numbers with commas", async () => {

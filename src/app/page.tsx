@@ -294,21 +294,28 @@ export default function DashboardPage() {
   const totalSavings = bookings.reduce((sum, b) => sum + calcTotalSavings(b), 0);
   const totalNights = bookings.reduce((sum, b) => sum + b.numNights, 0);
 
-  const cashStays = bookings.filter((b) => Number(b.totalCost) > 0);
+  // Exclude mixed-payment bookings from avg/night — each stay must use exactly one payment type
+  const isMixedPayment = (b: BookingWithRelations) =>
+    [Number(b.totalCost) > 0, (b.pointsRedeemed ?? 0) > 0, b.certificates.length > 0].filter(
+      Boolean
+    ).length > 1;
+  const avgNightSkippedCount = bookings.filter(isMixedPayment).length;
+
+  const cashStays = bookings.filter((b) => Number(b.totalCost) > 0 && !isMixedPayment(b));
   const cashStayNights = cashStays.reduce((sum, b) => sum + b.numNights, 0);
   const avgCashNetCostPerNight =
     cashStayNights > 0
       ? cashStays.reduce((sum, b) => sum + calculateNetCost(b), 0) / cashStayNights
       : null;
 
-  const pointsStays = bookings.filter((b) => (b.pointsRedeemed ?? 0) > 0);
+  const pointsStays = bookings.filter((b) => (b.pointsRedeemed ?? 0) > 0 && !isMixedPayment(b));
   const pointsStayNights = pointsStays.reduce((sum, b) => sum + b.numNights, 0);
   const avgPointsPerNight =
     pointsStayNights > 0
       ? pointsStays.reduce((sum, b) => sum + (b.pointsRedeemed ?? 0), 0) / pointsStayNights
       : null;
 
-  const certStays = bookings.filter((b) => b.certificates.length > 0);
+  const certStays = bookings.filter((b) => b.certificates.length > 0 && !isMixedPayment(b));
   const certStayNights = certStays.reduce((sum, b) => sum + b.numNights, 0);
   const avgCertPointsPerNight =
     certStayNights > 0
@@ -342,6 +349,7 @@ export default function DashboardPage() {
         avgCashNetCostPerNight={avgCashNetCostPerNight}
         avgPointsPerNight={avgPointsPerNight}
         avgCertPointsPerNight={avgCertPointsPerNight}
+        avgNightSkippedCount={avgNightSkippedCount}
         totalPointsRedeemed={totalPointsRedeemed}
         totalCertificates={totalCertificates}
       />
