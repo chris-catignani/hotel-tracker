@@ -352,7 +352,6 @@ async function main() {
     { name: "Residence Inn", basePointRate: 5 },
     { name: "Ritz-Carlton Reserve" },
     { name: "Sheraton" },
-    { name: "Sonder" },
     { name: "SpringHill Suites" },
     { name: "St. Regis" },
     { name: "StudioRes", basePointRate: 5 },
