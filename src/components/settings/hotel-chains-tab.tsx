@@ -204,7 +204,7 @@ export function HotelChainsTab() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Base Point Rate</Label>
+                <Label htmlFor="hotel-base-rate">Base Point Rate</Label>
                 <div className="flex gap-2">
                   <Input
                     id="hotel-base-rate"
@@ -275,7 +275,7 @@ export function HotelChainsTab() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Base Point Rate</Label>
+              <Label htmlFor="edit-hotel-base-rate">Base Point Rate</Label>
               <div className="flex gap-2">
                 <Input
                   id="edit-hotel-base-rate"

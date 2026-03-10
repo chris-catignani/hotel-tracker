@@ -72,12 +72,22 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { name, loyaltyProgram, basePointRate, calculationCurrency, pointTypeId } = body;
 
+    const resolvedCurrency: string = calculationCurrency || "USD";
+    if (!/^[A-Z]{3}$/.test(resolvedCurrency)) {
+      return apiError(
+        "Invalid calculationCurrency: must be a 3-letter ISO 4217 code",
+        null,
+        400,
+        request
+      );
+    }
+
     const hotelChain = await prisma.hotelChain.create({
       data: {
         name,
         loyaltyProgram,
         basePointRate: basePointRate != null ? Number(basePointRate) : null,
-        calculationCurrency: calculationCurrency || "USD",
+        calculationCurrency: resolvedCurrency,
         pointTypeId: pointTypeId || null,
       },
       include: {
