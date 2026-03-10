@@ -155,11 +155,7 @@ test.describe("Dashboard", () => {
         totalCost: 0,
         currency: "USD",
         bookingSource: "direct_web",
-        certificates: [
-          { certType: "marriott_35k" },
-          { certType: "marriott_35k" },
-          { certType: "marriott_35k" },
-        ],
+        certificates: ["marriott_35k", "marriott_35k", "marriott_35k"],
       },
     });
     expect(bookingRes.ok()).toBeTruthy();
