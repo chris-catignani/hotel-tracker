@@ -51,6 +51,18 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       select: { basePointRate: true, calculationCurrency: true },
     });
 
+    if (calculationCurrency !== undefined) {
+      const resolvedCurrency: string = calculationCurrency || "USD";
+      if (!/^[A-Z]{3}$/.test(resolvedCurrency)) {
+        return apiError(
+          "Invalid calculationCurrency: must be a 3-letter ISO 4217 code",
+          null,
+          400,
+          request
+        );
+      }
+    }
+
     const data: Record<string, unknown> = {};
     if (name !== undefined) data.name = name;
     if (loyaltyProgram !== undefined) data.loyaltyProgram = loyaltyProgram || null;
