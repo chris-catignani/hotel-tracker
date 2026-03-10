@@ -3,16 +3,18 @@ import { enrichBookingWithRate } from "./booking-enrichment";
 
 vi.mock("./exchange-rate", () => ({
   getCurrentRate: vi.fn(),
+  resolveCalcCurrencyRate: vi.fn().mockResolvedValue(null),
 }));
 
 vi.mock("./loyalty-utils", () => ({
   calculatePoints: vi.fn(),
 }));
 
-import { getCurrentRate } from "./exchange-rate";
+import { getCurrentRate, resolveCalcCurrencyRate } from "./exchange-rate";
 import { calculatePoints } from "./loyalty-utils";
 
 const mockGetCurrentRate = getCurrentRate as Mock;
+const mockResolveCalcCurrencyRate = resolveCalcCurrencyRate as Mock;
 const mockCalculatePoints = calculatePoints as Mock;
 
 const pastDate = new Date("2024-06-01T00:00:00Z");
@@ -176,6 +178,38 @@ describe("enrichBookingWithRate", () => {
       expect(mockCalculatePoints).not.toHaveBeenCalled();
       expect(result.loyaltyPointsEarned).toBeNull();
       expect(result.loyaltyPointsEstimated).toBe(false);
+    });
+
+    it("passes calculationCurrency and calcCurrencyToUsdRate when chain uses non-USD rates", async () => {
+      // KRW booking, chain with EUR calculationCurrency
+      mockGetCurrentRate.mockResolvedValueOnce(0.00067); // KRW→USD rate
+      mockResolveCalcCurrencyRate.mockResolvedValueOnce(1.1); // EUR→USD rate
+      mockCalculatePoints.mockReturnValueOnce(175);
+
+      const booking = {
+        ...baseBooking,
+        currency: "KRW",
+        exchangeRate: null,
+        checkIn: futureDateStr,
+        loyaltyPointsEarned: null,
+        pretaxCost: "119000",
+        hotelChain: {
+          basePointRate: 1.25,
+          calculationCurrency: "EUR",
+          userStatuses: [],
+        },
+      };
+
+      await enrichBookingWithRate(booking);
+
+      expect(mockGetCurrentRate).toHaveBeenCalledWith("KRW");
+      expect(mockResolveCalcCurrencyRate).toHaveBeenCalledWith("EUR");
+      expect(mockCalculatePoints).toHaveBeenCalledWith(
+        expect.objectContaining({
+          calculationCurrency: "EUR",
+          calcCurrencyToUsdRate: 1.1,
+        })
+      );
     });
   });
 

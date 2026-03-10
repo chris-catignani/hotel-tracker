@@ -129,6 +129,7 @@ model HotelChain {
   name                  String
   loyaltyProgram        String?                 @map("loyalty_program")
   basePointRate         Decimal?                @map("base_point_rate") @db.Decimal(10, 4)
+  calculationCurrency   String                  @default("USD") @map("calculation_currency")
   pointTypeId           String?                 @map("point_type_id")
   pointType             PointType?              @relation(fields: [pointTypeId], references: [id])
   bookings              Booking[]

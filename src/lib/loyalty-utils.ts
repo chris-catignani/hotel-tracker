@@ -1,8 +1,10 @@
 import { Prisma } from "@prisma/client";
 
 interface CalculationInput {
-  pretaxCost: number;
+  pretaxCost: number; // always in USD
   basePointRate: number | null;
+  calculationCurrency?: string | null; // if set and !== "USD", convert pretaxCost to that currency first
+  calcCurrencyToUsdRate?: number | null; // 1 calcCurrency = X USD
   eliteStatus?: {
     isFixed: boolean;
     fixedRate: number | string | Prisma.Decimal | null;
@@ -12,40 +14,52 @@ interface CalculationInput {
 
 /**
  * Centralized logic for calculating loyalty points based on elite status.
+ * pretaxCost is expected in USD. If calculationCurrency is set and differs from USD,
+ * the cost is converted to that currency before applying the base rate.
  */
 export function calculatePoints({
   pretaxCost,
   basePointRate,
+  calculationCurrency,
+  calcCurrencyToUsdRate,
   eliteStatus,
 }: CalculationInput): number {
   if (basePointRate == null && (!eliteStatus || !eliteStatus.isFixed)) {
     return 0;
   }
 
+  // Convert to calculation currency if needed (e.g., USD → EUR for Accor)
+  const effectivePretaxCost =
+    calculationCurrency && calculationCurrency !== "USD" && calcCurrencyToUsdRate
+      ? pretaxCost / calcCurrencyToUsdRate
+      : pretaxCost;
+
   const baseRate = Number(basePointRate || 0);
 
   if (eliteStatus) {
     if (eliteStatus.isFixed && eliteStatus.fixedRate != null) {
       // Fixed rate (e.g. GHA Discovery 7%)
-      return Math.round(pretaxCost * Number(eliteStatus.fixedRate));
+      return Math.round(effectivePretaxCost * Number(eliteStatus.fixedRate));
     } else if (eliteStatus.bonusPercentage != null) {
       // Percentage bonus on base (e.g. Marriott 50% bonus)
       const bonusMultiplier = 1 + Number(eliteStatus.bonusPercentage);
-      return Math.round(pretaxCost * baseRate * bonusMultiplier);
+      return Math.round(effectivePretaxCost * baseRate * bonusMultiplier);
     }
   }
 
   // Fallback to just base rate
-  return Math.round(pretaxCost * baseRate);
+  return Math.round(effectivePretaxCost * baseRate);
 }
 
 interface LoyaltyCalculationParams {
   hotelChainId: string;
   hotelChainSubBrandId: string;
-  pretaxCost: string;
+  pretaxCost: string; // in USD
   hotelChains: {
     id: string;
     basePointRate: number | null;
+    calculationCurrency?: string | null;
+    calcCurrencyToUsdRate?: number | null;
     hotelChainSubBrands: { id: string; basePointRate: number | null }[];
     userStatus: {
       eliteStatus: {
@@ -83,6 +97,8 @@ export function calculatePointsFromChain({
   const points = calculatePoints({
     pretaxCost: Number(pretaxCost),
     basePointRate: !isNaN(basePointRate) ? basePointRate : null,
+    calculationCurrency: hotelChain.calculationCurrency ?? "USD",
+    calcCurrencyToUsdRate: hotelChain.calcCurrencyToUsdRate ?? null,
     eliteStatus: eliteStatus
       ? {
           isFixed: eliteStatus.isFixed,

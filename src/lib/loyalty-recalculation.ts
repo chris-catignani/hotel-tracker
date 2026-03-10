@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { calculatePoints } from "./loyalty-utils";
 import { reevaluateBookings } from "./promotion-matching";
+import { resolveCalcCurrencyRate } from "./exchange-rate";
 
 /**
  * Re-calculates loyalty points for all upcoming bookings of a specific hotel chain.
@@ -25,6 +26,10 @@ export async function recalculateLoyaltyForHotelChain(
   });
 
   if (!hotelChain) return;
+
+  // Resolve calc currency rate if needed (e.g., EUR for Accor)
+  const calcCurrency = hotelChain.calculationCurrency ?? "USD";
+  const calcCurrencyToUsdRate = await resolveCalcCurrencyRate(calcCurrency);
 
   // 2. Find all past bookings for this chain and user (where exchangeRate is locked in)
   // Future bookings have exchangeRate = null; their loyalty is computed dynamically at read time
@@ -74,6 +79,8 @@ export async function recalculateLoyaltyForHotelChain(
     const newPoints = calculatePoints({
       pretaxCost: usdPretax,
       basePointRate: hotelChain.basePointRate ? Number(hotelChain.basePointRate) : null,
+      calculationCurrency: calcCurrency,
+      calcCurrencyToUsdRate,
       eliteStatus: userStatus?.eliteStatus,
     });
     return prisma.booking.update({

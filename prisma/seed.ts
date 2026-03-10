@@ -4,6 +4,7 @@ import { HOTEL_ID, SUB_BRAND_ID } from "../src/lib/constants";
 import { CREDIT_CARD_ID, SHOPPING_PORTAL_ID, OTA_AGENCY_ID } from "./seed-ids";
 import { seedBookings } from "./seed-bookings";
 import { seedPromotions } from "./seed-promotions";
+import { recalculateLoyaltyForHotelChain } from "../src/lib/loyalty-recalculation";
 
 const prisma = new PrismaClient();
 
@@ -251,6 +252,7 @@ async function main() {
       name: "Hilton",
       loyaltyProgram: "Hilton Honors",
       basePointRate: 10,
+      calculationCurrency: "USD",
       pointTypeId: POINT_TYPE_ID.HILTON_HONORS,
     },
     create: {
@@ -258,6 +260,7 @@ async function main() {
       name: "Hilton",
       loyaltyProgram: "Hilton Honors",
       basePointRate: 10,
+      calculationCurrency: "USD",
       pointTypeId: POINT_TYPE_ID.HILTON_HONORS,
     },
   });
@@ -304,6 +307,7 @@ async function main() {
       name: "Marriott",
       loyaltyProgram: "Marriott Bonvoy",
       basePointRate: 10,
+      calculationCurrency: "USD",
       pointTypeId: POINT_TYPE_ID.MARRIOTT_BONVOY,
     },
     create: {
@@ -311,6 +315,7 @@ async function main() {
       name: "Marriott",
       loyaltyProgram: "Marriott Bonvoy",
       basePointRate: 10,
+      calculationCurrency: "USD",
       pointTypeId: POINT_TYPE_ID.MARRIOTT_BONVOY,
     },
   });
@@ -370,6 +375,7 @@ async function main() {
       name: "Hyatt",
       loyaltyProgram: "World of Hyatt",
       basePointRate: 5,
+      calculationCurrency: "USD",
       pointTypeId: POINT_TYPE_ID.WORLD_OF_HYATT,
     },
     create: {
@@ -377,6 +383,7 @@ async function main() {
       name: "Hyatt",
       loyaltyProgram: "World of Hyatt",
       basePointRate: 5,
+      calculationCurrency: "USD",
       pointTypeId: POINT_TYPE_ID.WORLD_OF_HYATT,
     },
   });
@@ -427,6 +434,7 @@ async function main() {
       name: "IHG",
       loyaltyProgram: "IHG One Rewards",
       basePointRate: 10,
+      calculationCurrency: "USD",
       pointTypeId: POINT_TYPE_ID.IHG_ONE_REWARDS,
     },
     create: {
@@ -434,6 +442,7 @@ async function main() {
       name: "IHG",
       loyaltyProgram: "IHG One Rewards",
       basePointRate: 10,
+      calculationCurrency: "USD",
       pointTypeId: POINT_TYPE_ID.IHG_ONE_REWARDS,
     },
   });
@@ -472,6 +481,7 @@ async function main() {
       name: "GHA Discovery",
       loyaltyProgram: "GHA Discovery",
       basePointRate: 4,
+      calculationCurrency: "USD",
       pointTypeId: POINT_TYPE_ID.DISCOVERY_DOLLARS,
     },
     create: {
@@ -479,6 +489,7 @@ async function main() {
       name: "GHA Discovery",
       loyaltyProgram: "GHA Discovery",
       basePointRate: 4,
+      calculationCurrency: "USD",
       pointTypeId: POINT_TYPE_ID.DISCOVERY_DOLLARS,
     },
   });
@@ -552,14 +563,19 @@ async function main() {
     { name: "Viceroy" },
   ]);
 
-  // Accor
-  const ACCOR_BASE_RATE = 25 / 12; // ~2.0833
+  // Accor — rates are expressed per EUR (calculationCurrency: "EUR")
+  // Standard brands: 25 pts/€10 = 2.5 pts/€1
+  // Mid-tier brands: 12.5 pts/€10 = 1.25 pts/€1
+  // Economy brands: 10 pts/€10 = 1.0 pts/€1
+  // Budget brands: 5 pts/€10 = 0.5 pts/€1
+  const ACCOR_BASE_RATE = 25 / 10; // 2.5 pts/€1
   await prisma.hotelChain.upsert({
     where: { id: HOTEL_ID.ACCOR },
     update: {
       name: "Accor",
       loyaltyProgram: "ALL - Accor Live Limitless",
       basePointRate: ACCOR_BASE_RATE,
+      calculationCurrency: "EUR",
       pointTypeId: POINT_TYPE_ID.ACCOR_ALL,
     },
     create: {
@@ -567,6 +583,7 @@ async function main() {
       name: "Accor",
       loyaltyProgram: "ALL - Accor Live Limitless",
       basePointRate: ACCOR_BASE_RATE,
+      calculationCurrency: "EUR",
       pointTypeId: POINT_TYPE_ID.ACCOR_ALL,
     },
   });
@@ -579,12 +596,12 @@ async function main() {
   await upsertSubBrands(HOTEL_ID.ACCOR, [
     { name: "21c Museum" },
     { name: "25hours" },
-    { name: "Adagio", basePointRate: 10 / 12 },
-    { name: "Adagio Access", basePointRate: 5 / 12 },
+    { name: "Adagio", basePointRate: 10 / 10 },
+    { name: "Adagio Access", basePointRate: 5 / 10 },
     { name: "Angsana" },
     { name: "Art Series" },
     { name: "Banyan Tree" },
-    { name: "BreakFree", basePointRate: 12.5 / 12 },
+    { name: "BreakFree", basePointRate: 12.5 / 10 },
     { name: "Cassia" },
     { name: "Delano" },
     { name: "Dhawa" },
@@ -593,15 +610,15 @@ async function main() {
     { name: "Fairmont" },
     { name: "Folio" },
     { name: "Grand Mercure" },
-    { name: "Greet", basePointRate: 12.5 / 12 },
+    { name: "Greet", basePointRate: 12.5 / 10 },
     { name: "Handwritten Collection" },
     { name: "Homm" },
-    { name: "hotelF1", basePointRate: 5 / 12 },
+    { name: "hotelF1", basePointRate: 5 / 10 },
     { name: "Hyde" },
-    { name: "ibis", basePointRate: 12.5 / 12 },
-    { name: "ibis budget", basePointRate: 5 / 12 },
-    { name: "ibis Styles", basePointRate: 12.5 / 12 },
-    { name: "Jo&Joe", basePointRate: 12.5 / 12 },
+    { name: "ibis", basePointRate: 12.5 / 10 },
+    { name: "ibis budget", basePointRate: 5 / 10 },
+    { name: "ibis Styles", basePointRate: 12.5 / 10 },
+    { name: "Jo&Joe", basePointRate: 12.5 / 10 },
     { name: "Mama Shelter" },
     { name: "Mantis" },
     { name: "Mantra" },
@@ -746,6 +763,12 @@ async function main() {
 
   await seedBookings(ADMIN_USER_ID);
   await seedPromotions(ADMIN_USER_ID);
+
+  // Recalculate loyalty points for all chains so stored values reflect current
+  // rates and elite statuses (including Accor's EUR-denominated calculation)
+  for (const hotelId of Object.values(HOTEL_ID)) {
+    await recalculateLoyaltyForHotelChain(hotelId, ADMIN_USER_ID);
+  }
 
   console.log("Seed data created successfully");
 }

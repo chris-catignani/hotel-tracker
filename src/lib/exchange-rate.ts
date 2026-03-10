@@ -51,3 +51,15 @@ export async function getCurrentRate(fromCurrency: string): Promise<number | nul
 
   return row ? Number(row.rate) : null;
 }
+
+/**
+ * Resolve the rate for a hotel chain's calculationCurrency (e.g. EUR for Accor).
+ * Checks the DB cache first; falls back to a live API fetch if not cached.
+ * Returns null for USD (no conversion needed).
+ */
+export async function resolveCalcCurrencyRate(currency: string): Promise<number | null> {
+  if (currency === "USD") return null;
+  const cached = await getCurrentRate(currency);
+  if (cached != null) return cached;
+  return fetchExchangeRate(currency, "latest");
+}

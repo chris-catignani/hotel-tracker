@@ -7,7 +7,7 @@ import { calculatePoints } from "@/lib/loyalty-utils";
 import { CertType, BenefitType } from "@prisma/client";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
-import { fetchExchangeRate, getCurrentRate } from "@/lib/exchange-rate";
+import { fetchExchangeRate, getCurrentRate, resolveCalcCurrencyRate } from "@/lib/exchange-rate";
 import { enrichBookingWithRate } from "@/lib/booking-enrichment";
 
 const BOOKING_INCLUDE = (userId: string) =>
@@ -136,34 +136,32 @@ export async function POST(request: NextRequest) {
 
     const shouldComputeLoyalty = resolvedExchangeRate != null; // only for past/USD
     if (calculatedPoints == null && shouldComputeLoyalty && hotelChainId && pretaxCost) {
-      // Fetch UserStatus for this chain
-      const userStatus = await prisma.userStatus.findUnique({
-        where: { userId_hotelChainId: { userId, hotelChainId } },
-        include: { eliteStatus: true },
-      });
+      // Fetch UserStatus and hotel chain in parallel
+      const [userStatus, hotelChain, subBrand] = await Promise.all([
+        prisma.userStatus.findUnique({
+          where: { userId_hotelChainId: { userId, hotelChainId } },
+          include: { eliteStatus: true },
+        }),
+        prisma.hotelChain.findUnique({ where: { id: hotelChainId } }),
+        hotelChainSubBrandId
+          ? prisma.hotelChainSubBrand.findUnique({ where: { id: hotelChainSubBrandId } })
+          : null,
+      ]);
 
-      let basePointRate: number | null = null;
-      if (hotelChainSubBrandId) {
-        const subBrand = await prisma.hotelChainSubBrand.findUnique({
-          where: { id: hotelChainSubBrandId },
-        });
-        if (subBrand?.basePointRate != null) {
-          basePointRate = Number(subBrand.basePointRate);
-        }
-      }
-      if (basePointRate == null) {
-        const hotelChain = await prisma.hotelChain.findUnique({
-          where: { id: hotelChainId },
-        });
-        if (hotelChain?.basePointRate != null) {
-          basePointRate = Number(hotelChain.basePointRate);
-        }
-      }
+      const basePointRate =
+        (subBrand?.basePointRate != null ? Number(subBrand.basePointRate) : null) ??
+        (hotelChain?.basePointRate != null ? Number(hotelChain.basePointRate) : null);
+
+      // Resolve calc currency rate if chain uses non-USD rates (e.g., EUR for Accor)
+      const calcCurrency = hotelChain?.calculationCurrency ?? "USD";
+      const calcCurrencyToUsdRate = await resolveCalcCurrencyRate(calcCurrency);
 
       const usdPretaxCost = Number(pretaxCost) * rateForLoyalty;
       calculatedPoints = calculatePoints({
         pretaxCost: usdPretaxCost,
         basePointRate,
+        calculationCurrency: calcCurrency,
+        calcCurrencyToUsdRate,
         eliteStatus: userStatus?.eliteStatus
           ? {
               bonusPercentage: userStatus.eliteStatus.bonusPercentage,

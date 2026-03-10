@@ -80,6 +80,8 @@ export interface NetCostBooking {
     name: string;
     loyaltyProgram: string | null;
     basePointRate: string | number | null;
+    calculationCurrency?: string | null;
+    calcCurrencyToUsdRate?: number | null;
     pointType: { name: string; centsPerPoint: string | number } | null;
     userStatus?: {
       eliteStatus: {
@@ -948,14 +950,23 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
     ) {
       const baseRate = Number(booking.hotelChain.basePointRate);
       const bonusPct = Number(elite.bonusPercentage);
-      const basePoints = Math.round(pretaxCost * baseRate);
+      const calcCurrency = booking.hotelChain.calculationCurrency ?? "USD";
+      const calcCurrencyToUsdRate = booking.hotelChain.calcCurrencyToUsdRate ?? null;
+      // Convert USD pretax cost to the chain's calculation currency (e.g., EUR for Accor)
+      const effectivePretaxCost =
+        calcCurrency !== "USD" && calcCurrencyToUsdRate
+          ? pretaxCost / calcCurrencyToUsdRate
+          : pretaxCost;
+      const basePoints = Math.round(effectivePretaxCost * baseRate);
       const bonusPoints = Math.round(basePoints * bonusPct);
 
+      const costBasisNote =
+        calcCurrency !== "USD" ? `pre-tax cost (calculated in ${calcCurrency})` : "pre-tax cost";
       loyaltySegments.push({
         label: "Base Loyalty Points",
         value: basePoints * centsPerPoint,
-        formula: `${formatCurrency(pretaxCost)} (pre-tax) × ${baseRate}x = ${basePoints.toLocaleString()} pts`,
-        description: "Standard earning rate for this hotel chain.",
+        formula: `${formatCurrency(effectivePretaxCost)} (pre-tax) × ${baseRate}x = ${basePoints.toLocaleString()} pts`,
+        description: `Standard earning rate for this hotel chain, applied to the ${costBasisNote}.`,
       });
 
       loyaltySegments.push({
