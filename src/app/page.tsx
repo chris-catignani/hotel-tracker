@@ -226,11 +226,11 @@ export default function DashboardPage() {
         acc[chain].pointsRedeemed += b.pointsRedeemed ?? 0;
         acc[chain].certs += b.certificates.length;
         acc[chain].totalNet += calculateNetCost(b);
-        // Only cash bookings contribute to spend/savings (use USD totalCost)
+        acc[chain].totalSavings += calcTotalSavings(b);
+        // Only cash bookings contribute to spend
         const usdTotalCost = Number(b.totalCost) * (Number(b.exchangeRate) || 1);
         if (Number(b.totalCost) > 0) {
           acc[chain].totalSpend += usdTotalCost;
-          acc[chain].totalSavings += calcTotalSavings(b);
         }
         return acc;
       },
@@ -435,7 +435,7 @@ export default function DashboardPage() {
             <CardTitle>Savings Breakdown</CardTitle>
           </CardHeader>
           <CardContent>
-            {cashBookings.length === 0 ? (
+            {bookings.length === 0 ? (
               <EmptyState
                 icon={Wallet}
                 title="No savings data"
