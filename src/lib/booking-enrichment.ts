@@ -1,4 +1,4 @@
-import { calculatePoints } from "@/lib/loyalty-utils";
+import { calculatePoints, resolveBasePointRate } from "@/lib/loyalty-utils";
 import { getCurrentRate, resolveCalcCurrencyRate } from "@/lib/exchange-rate";
 
 type EliteStatusShape = { eliteStatus: unknown };
@@ -48,12 +48,7 @@ export async function enrichBookingWithRate<T extends EnrichableBooking>(booking
   let loyaltyPointsEstimated = false;
   let loyaltyPointsEarned = booking.loyaltyPointsEarned;
   if (booking.loyaltyPointsEarned == null && resolvedRate != null) {
-    const basePointRate =
-      booking.hotelChainSubBrand?.basePointRate != null
-        ? Number(booking.hotelChainSubBrand.basePointRate)
-        : booking.hotelChain.basePointRate != null
-          ? Number(booking.hotelChain.basePointRate)
-          : null;
+    const basePointRate = resolveBasePointRate(booking.hotelChain, booking.hotelChainSubBrand);
     // Support both pre-normalization (userStatuses[]) and post-normalization (userStatus)
     const eliteStatusRaw =
       booking.hotelChain.userStatuses?.[0]?.eliteStatus ??

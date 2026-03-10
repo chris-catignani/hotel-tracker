@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { calculatePoints } from "./loyalty-utils";
+import { calculatePoints, resolveBasePointRate } from "./loyalty-utils";
 import { reevaluateBookings } from "./promotion-matching";
 import { resolveCalcCurrencyRate } from "./exchange-rate";
 
@@ -22,6 +22,7 @@ export async function recalculateLoyaltyForHotelChain(
         },
         take: 1,
       },
+      hotelChainSubBrands: { select: { id: true, basePointRate: true } },
     },
   });
 
@@ -49,6 +50,7 @@ export async function recalculateLoyaltyForHotelChain(
       pretaxCost: true,
       currency: true,
       exchangeRate: true,
+      hotelChainSubBrandId: true,
     },
   });
 
@@ -76,9 +78,13 @@ export async function recalculateLoyaltyForHotelChain(
           rateCache.get(booking.currency) ??
           1);
     const usdPretax = Number(booking.pretaxCost) * rate;
+    const subBrand = hotelChain.hotelChainSubBrands.find(
+      (sb) => sb.id === booking.hotelChainSubBrandId
+    );
+    const basePointRate = resolveBasePointRate(hotelChain, subBrand);
     const newPoints = calculatePoints({
       pretaxCost: usdPretax,
-      basePointRate: hotelChain.basePointRate ? Number(hotelChain.basePointRate) : null,
+      basePointRate,
       calculationCurrency: calcCurrency,
       calcCurrencyToUsdRate,
       eliteStatus: userStatus?.eliteStatus,

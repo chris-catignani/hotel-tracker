@@ -47,7 +47,7 @@ interface BookingCertificate {
 interface Booking {
   id: string;
   hotelChainId: string;
-  hotelChainSubBrand: { id: string; name: string } | null;
+  hotelChainSubBrand: { id: string; name: string; basePointRate: string | number | null } | null;
   propertyName: string;
   checkIn: string;
   checkOut: string;

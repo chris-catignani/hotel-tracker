@@ -6,9 +6,10 @@ vi.mock("./exchange-rate", () => ({
   resolveCalcCurrencyRate: vi.fn().mockResolvedValue(null),
 }));
 
-vi.mock("./loyalty-utils", () => ({
-  calculatePoints: vi.fn(),
-}));
+vi.mock("./loyalty-utils", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./loyalty-utils")>();
+  return { ...actual, calculatePoints: vi.fn() };
+});
 
 import { getCurrentRate, resolveCalcCurrencyRate } from "./exchange-rate";
 import { calculatePoints } from "./loyalty-utils";

@@ -7,6 +7,7 @@ import {
   Prisma,
 } from "@prisma/client";
 import { DEFAULT_EQN_VALUE } from "./constants";
+import { resolveBasePointRate } from "./loyalty-utils";
 import { certPointsValue } from "./cert-types";
 import { getCurrentRate } from "./exchange-rate";
 
@@ -131,6 +132,9 @@ export interface MatchingBooking {
     pointType?: {
       centsPerPoint: string | number | Prisma.Decimal | null;
     } | null;
+  } | null;
+  hotelChainSubBrand?: {
+    basePointRate?: string | number | Prisma.Decimal | null;
   } | null;
   creditCard?: {
     pointType?: {
@@ -803,7 +807,7 @@ export function calculateMatchedPromotions(
             if (benefit.valueType === PromotionBenefitValueType.multiplier) {
               const isBaseOnly =
                 !benefit.pointsMultiplierBasis || benefit.pointsMultiplierBasis === "base_only";
-              const baseRate = booking.hotelChain?.basePointRate;
+              const baseRate = resolveBasePointRate(booking.hotelChain, booking.hotelChainSubBrand);
               const basisPoints =
                 isBaseOnly && baseRate != null
                   ? usdPretaxCost * Number(baseRate)
@@ -903,7 +907,10 @@ export function calculateMatchedPromotions(
               if (benefit.valueType === PromotionBenefitValueType.multiplier) {
                 const isBaseOnly =
                   !benefit.pointsMultiplierBasis || benefit.pointsMultiplierBasis === "base_only";
-                const baseRate = booking.hotelChain?.basePointRate;
+                const baseRate =
+                  booking.hotelChainSubBrand?.basePointRate != null
+                    ? booking.hotelChainSubBrand.basePointRate
+                    : booking.hotelChain?.basePointRate;
                 const basisPoints =
                   isBaseOnly && baseRate != null
                     ? usdPretaxCostSpan * Number(baseRate)

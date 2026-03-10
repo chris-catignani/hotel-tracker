@@ -63,6 +63,7 @@ interface BookingWithRelations {
   hotelChainSubBrand?: {
     id: string;
     name: string;
+    basePointRate: string | number | null;
   } | null;
   creditCard: {
     id: string;
