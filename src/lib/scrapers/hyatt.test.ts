@@ -83,19 +83,34 @@ describe("HyattFetcher.fetchPrice", () => {
     expect(result?.awardPrice).toBeNull();
   });
 
-  it("returns null when API responds with non-ok status", async () => {
+  it("throws HyattFetchError when API responds with 403", async () => {
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: false,
       status: 403,
     } as Response);
 
-    const result = await fetcher.fetchPrice({
-      property: makeProperty(),
-      checkIn: "2026-06-01",
-      checkOut: "2026-06-03",
-    });
+    await expect(
+      fetcher.fetchPrice({
+        property: makeProperty(),
+        checkIn: "2026-06-01",
+        checkOut: "2026-06-03",
+      })
+    ).rejects.toThrow("403");
+  });
 
-    expect(result).toBeNull();
+  it("throws HyattFetchError with rate limit message on 429", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: false,
+      status: 429,
+    } as Response);
+
+    await expect(
+      fetcher.fetchPrice({
+        property: makeProperty(),
+        checkIn: "2026-06-01",
+        checkOut: "2026-06-03",
+      })
+    ).rejects.toThrow("Rate limited");
   });
 
   it("returns null when property has no spiritCode", async () => {

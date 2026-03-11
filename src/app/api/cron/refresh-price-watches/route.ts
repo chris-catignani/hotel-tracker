@@ -29,7 +29,9 @@ export async function GET(request: NextRequest) {
     today.setHours(0, 0, 0, 0);
 
     // Build fetchers
-    const fetchers: PriceFetcher[] = [createHyattFetcher()].filter(Boolean) as PriceFetcher[];
+    const fetchers: PriceFetcher[] = [createHyattFetcher()].filter(
+      (f): f is NonNullable<typeof f> => f !== null
+    );
 
     // Find all enabled watches that have at least one upcoming booking
     const watches = await prisma.priceWatch.findMany({
@@ -95,10 +97,11 @@ export async function GET(request: NextRequest) {
           snapshotCount++;
 
           // Check thresholds and send alert if met
+          const cashThresholdNum = pwb.cashThreshold !== null ? Number(pwb.cashThreshold) : null;
           const cashHit =
-            pwb.cashThreshold !== null &&
+            cashThresholdNum !== null &&
             result.cashPrice !== null &&
-            result.cashPrice <= Number(pwb.cashThreshold);
+            result.cashPrice <= cashThresholdNum;
           const awardHit =
             pwb.awardThreshold !== null &&
             result.awardPrice !== null &&

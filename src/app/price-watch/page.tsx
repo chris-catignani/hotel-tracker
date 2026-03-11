@@ -16,6 +16,8 @@ import {
 } from "@/components/ui/table";
 import { RefreshCw, Loader2, Trash2 } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { ErrorBanner } from "@/components/ui/error-banner";
+import { extractApiError } from "@/lib/client-error";
 
 interface PriceSnapshot {
   cashPrice: string | number | null;
@@ -62,6 +64,7 @@ export default function PriceWatchPage() {
   const [refreshingId, setRefreshingId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const loadWatches = useCallback(async () => {
     setLoading(true);
@@ -80,6 +83,7 @@ export default function PriceWatchPage() {
 
   const handleToggle = async (watch: PriceWatch, enabled: boolean) => {
     setTogglingId(watch.id);
+    setError(null);
     const res = await fetch(`/api/price-watches/${watch.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -88,20 +92,24 @@ export default function PriceWatchPage() {
     if (res.ok) {
       const updated = await res.json();
       setWatches((prev) => prev.map((w) => (w.id === watch.id ? updated : w)));
+    } else {
+      setError(await extractApiError(res, "Failed to update price watch."));
     }
     setTogglingId(null);
   };
 
   const handleRefresh = async (watch: PriceWatch) => {
     setRefreshingId(watch.id);
+    setError(null);
     const res = await fetch(`/api/price-watches/${watch.id}/refresh`, { method: "POST" });
     if (res.ok) {
-      // Reload this specific watch
       const watchRes = await fetch(`/api/price-watches/${watch.id}`);
       if (watchRes.ok) {
         const updated = await watchRes.json();
         setWatches((prev) => prev.map((w) => (w.id === watch.id ? updated : w)));
       }
+    } else {
+      setError(await extractApiError(res, "Failed to refresh price watch."));
     }
     setRefreshingId(null);
   };
@@ -109,8 +117,13 @@ export default function PriceWatchPage() {
   const handleDelete = async (watch: PriceWatch) => {
     if (!confirm(`Stop watching prices for ${watch.property.name}?`)) return;
     setDeletingId(watch.id);
+    setError(null);
     const res = await fetch(`/api/price-watches/${watch.id}`, { method: "DELETE" });
-    if (res.ok) setWatches((prev) => prev.filter((w) => w.id !== watch.id));
+    if (res.ok) {
+      setWatches((prev) => prev.filter((w) => w.id !== watch.id));
+    } else {
+      setError(await extractApiError(res, "Failed to delete price watch."));
+    }
     setDeletingId(null);
   };
 
@@ -130,6 +143,8 @@ export default function PriceWatchPage() {
           Monitor hotel rates and get alerted when prices drop below your thresholds.
         </p>
       </div>
+
+      <ErrorBanner error={error} onDismiss={() => setError(null)} />
 
       {watches.length === 0 ? (
         <Card>

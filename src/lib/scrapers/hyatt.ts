@@ -27,6 +27,16 @@ import type {
 
 const HYATT_RATES_URL = "https://www.hyatt.com/shop/service/rooms/roomrates";
 
+export class HyattFetchError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number
+  ) {
+    super(message);
+    this.name = "HyattFetchError";
+  }
+}
+
 interface HyattRoomRate {
   lowestAvgPointValue?: number;
   lowestAveragePrice?: { value: number; currency: string };
@@ -71,8 +81,14 @@ async function fetchHyattRates(
   });
 
   if (!res.ok) {
-    console.error(`[HyattFetcher] HTTP ${res.status} for ${spiritCode}`);
-    return null;
+    const message =
+      res.status === 429
+        ? `[HyattFetcher] Rate limited (429) for ${spiritCode} — wait a few minutes and try again`
+        : res.status === 403
+          ? `[HyattFetcher] Unauthorized (403) for ${spiritCode} — session cookie may have expired`
+          : `[HyattFetcher] HTTP ${res.status} for ${spiritCode}`;
+    console.error(message);
+    throw new HyattFetchError(message, res.status);
   }
 
   return (await res.json()) as HyattRatesResponse;

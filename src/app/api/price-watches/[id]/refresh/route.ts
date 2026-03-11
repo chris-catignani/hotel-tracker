@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
-import { createHyattFetcher } from "@/lib/scrapers/hyatt";
+import { createHyattFetcher, HyattFetchError } from "@/lib/scrapers/hyatt";
 import { selectFetcher, type PriceFetcher } from "@/lib/price-fetcher";
 
 const RATE_LIMIT_MINUTES = 5;
@@ -94,6 +94,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     return NextResponse.json({ snapshots });
   } catch (error) {
+    if (error instanceof HyattFetchError) {
+      const status = error.status === 429 ? 429 : error.status === 403 ? 403 : 502;
+      return NextResponse.json({ error: error.message }, { status });
+    }
     return apiError("Failed to refresh price watch", error, 500, request);
   }
 }

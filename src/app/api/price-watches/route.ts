@@ -87,20 +87,28 @@ export async function POST(request: NextRequest) {
 
     // Optionally link a booking with per-booking config
     if (bookingId) {
+      // IDOR protection: verify the booking belongs to the authenticated user
+      const booking = await prisma.booking.findFirst({ where: { id: bookingId, userId } });
+      if (!booking) return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+
+      const resolvedCashThreshold = cashThreshold != null ? Number(cashThreshold) : null;
+      const resolvedAwardThreshold = awardThreshold != null ? Number(awardThreshold) : null;
+      const resolvedFlexibility = Number(dateFlexibilityDays) || 0;
+
       await prisma.priceWatchBooking.upsert({
         where: { bookingId },
         update: {
           priceWatchId: watch.id,
-          cashThreshold: cashThreshold != null ? Number(cashThreshold) : null,
-          awardThreshold: awardThreshold != null ? Number(awardThreshold) : null,
-          dateFlexibilityDays: Number(dateFlexibilityDays) || 0,
+          cashThreshold: resolvedCashThreshold,
+          awardThreshold: resolvedAwardThreshold,
+          dateFlexibilityDays: resolvedFlexibility,
         },
         create: {
           priceWatchId: watch.id,
           bookingId,
-          cashThreshold: cashThreshold != null ? Number(cashThreshold) : null,
-          awardThreshold: awardThreshold != null ? Number(awardThreshold) : null,
-          dateFlexibilityDays: Number(dateFlexibilityDays) || 0,
+          cashThreshold: resolvedCashThreshold,
+          awardThreshold: resolvedAwardThreshold,
+          dateFlexibilityDays: resolvedFlexibility,
         },
       });
     }

@@ -10,6 +10,15 @@ import { Resend } from "resend";
 
 let _resend: Resend | null = null;
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
+}
+
 function getResend(): Resend | null {
   if (!process.env.RESEND_API_KEY) return null;
   if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY);
@@ -37,9 +46,16 @@ export async function sendPriceDropAlert(params: PriceDropAlertParams): Promise<
     return;
   }
 
+  const appUrl = process.env.NEXTAUTH_URL ?? process.env.APP_URL ?? "";
+  const safePropertyName = escapeHtml(params.propertyName);
+  const safeCheckIn = escapeHtml(params.checkIn);
+  const safeCheckOut = escapeHtml(params.checkOut);
+  // bookingId is a cuid() — alphanumeric, no escaping risk, but escape for safety
+  const safeBookingId = escapeHtml(params.bookingId);
+
   const lines: string[] = [
-    `<h2>Price Drop Alert: ${params.propertyName}</h2>`,
-    `<p>Dates: ${params.checkIn} → ${params.checkOut}</p>`,
+    `<h2>Price Drop Alert: ${safePropertyName}</h2>`,
+    `<p>Dates: ${safeCheckIn} → ${safeCheckOut}</p>`,
   ];
 
   if (params.cashPrice !== null && params.cashThreshold !== null) {
@@ -53,14 +69,14 @@ export async function sendPriceDropAlert(params: PriceDropAlertParams): Promise<
     );
   }
 
-  lines.push(
-    `<p><a href="${process.env.NEXTAUTH_URL ?? "https://your-app.vercel.app"}/bookings/${params.bookingId}">View Booking</a></p>`
-  );
+  if (appUrl) {
+    lines.push(`<p><a href="${appUrl}/bookings/${safeBookingId}">View Booking</a></p>`);
+  }
 
   await resend.emails.send({
     from,
     to: params.to,
-    subject: `Price drop detected: ${params.propertyName}`,
+    subject: `Price drop detected: ${safePropertyName}`,
     html: lines.join("\n"),
   });
 }
