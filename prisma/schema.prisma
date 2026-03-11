@@ -516,6 +516,7 @@ model Property {
   bookings     Booking[]
   priceWatches PriceWatch[]
 
+  @@unique([name, hotelChainId])
   @@map("properties")
 }
 
