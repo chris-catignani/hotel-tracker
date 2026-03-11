@@ -70,6 +70,7 @@ model User {
   promotions    Promotion[]
   userStatuses  UserStatus[]
   userPromotions UserPromotion[]
+  priceWatches  PriceWatch[]
 
   @@map("users")
 }
@@ -139,6 +140,7 @@ model HotelChain {
   userStatuses          UserStatus[]
   creditCardRewardRules CreditCardRewardRule[]
   promotionRestrictions PromotionRestrictions[]
+  properties            Property[]
 
   @@map("hotel_chains")
 }
@@ -229,7 +231,8 @@ model Booking {
   hotelChain            HotelChain           @relation(fields: [hotelChainId], references: [id])
   hotelChainSubBrandId  String?              @map("hotel_chain_sub_brand_id")
   hotelChainSubBrand    HotelChainSubBrand?  @relation(fields: [hotelChainSubBrandId], references: [id])
-  propertyName          String               @map("property_name")
+  propertyId            String               @map("property_id")
+  property              Property             @relation(fields: [propertyId], references: [id])
   checkIn               DateTime             @map("check_in") @db.Date
   checkOut              DateTime             @map("check_out") @db.Date
   numNights             Int                  @map("num_nights")
@@ -249,13 +252,12 @@ model Booking {
   bookingSource         BookingSourceType?   @map("booking_source")
   otaAgencyId           String?              @map("ota_agency_id")
   otaAgency             OtaAgency?           @relation(fields: [otaAgencyId], references: [id])
-  countryCode           String?              @map("country_code")
-  city                  String?
   notes                 String?
   createdAt             DateTime             @default(now()) @map("created_at")
   bookingPromotions     BookingPromotion[]
   certificates          BookingCertificate[]
   benefits              BookingBenefit[]
+  priceWatchBooking     PriceWatchBooking?
 
   @@index([checkIn])
   @@index([createdAt])
@@ -495,4 +497,69 @@ model CreditCardRewardRule {
   createdAt    DateTime                 @default(now()) @map("created_at")
 
   @@map("credit_card_reward_rules")
+}
+
+model Property {
+  id           String      @id @default(cuid())
+  name         String
+  placeId      String?     @unique @map("place_id")
+  hotelChainId String?     @map("hotel_chain_id")
+  hotelChain   HotelChain? @relation(fields: [hotelChainId], references: [id])
+  countryCode  String?     @map("country_code")
+  city         String?
+  address      String?
+  latitude     Float?
+  longitude    Float?
+  starRating   Float?      @map("star_rating")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  bookings     Booking[]
+  priceWatches PriceWatch[]
+
+  @@map("properties")
+}
+
+model PriceWatch {
+  id            String              @id @default(cuid())
+  userId        String              @map("user_id")
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  propertyId    String              @map("property_id")
+  property      Property            @relation(fields: [propertyId], references: [id])
+  isEnabled     Boolean             @default(true) @map("is_enabled")
+  lastCheckedAt DateTime?           @map("last_checked_at")
+  createdAt     DateTime            @default(now()) @map("created_at")
+  bookings      PriceWatchBooking[]
+  snapshots     PriceSnapshot[]
+
+  @@unique([userId, propertyId])
+  @@map("price_watches")
+}
+
+model PriceWatchBooking {
+  id                  String     @id @default(cuid())
+  priceWatchId        String     @map("price_watch_id")
+  priceWatch          PriceWatch @relation(fields: [priceWatchId], references: [id], onDelete: Cascade)
+  bookingId           String     @unique @map("booking_id")
+  booking             Booking    @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  dateFlexibilityDays Int        @default(0) @map("date_flexibility_days")
+  cashThreshold       Decimal?   @map("cash_threshold") @db.Decimal(10, 2)
+  awardThreshold      Int?       @map("award_threshold")
+  createdAt           DateTime   @default(now()) @map("created_at")
+
+  @@map("price_watch_bookings")
+}
+
+model PriceSnapshot {
+  id           String     @id @default(cuid())
+  priceWatchId String     @map("price_watch_id")
+  priceWatch   PriceWatch @relation(fields: [priceWatchId], references: [id], onDelete: Cascade)
+  checkIn      DateTime   @map("check_in") @db.Date
+  checkOut     DateTime   @map("check_out") @db.Date
+  cashPrice    Decimal?   @map("cash_price") @db.Decimal(10, 2)
+  cashCurrency String     @default("USD") @map("cash_currency")
+  awardPrice   Int?       @map("award_price")
+  source       String
+  fetchedAt    DateTime   @default(now()) @map("fetched_at")
+
+  @@index([priceWatchId, fetchedAt])
+  @@map("price_snapshots")
 }

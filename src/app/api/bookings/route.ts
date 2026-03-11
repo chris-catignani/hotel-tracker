@@ -52,6 +52,8 @@ const BOOKING_INCLUDE = (userId: string) =>
     certificates: true,
     otaAgency: true,
     benefits: true,
+    property: true,
+    priceWatchBooking: true,
   }) as const;
 
 export async function GET(request: NextRequest) {
@@ -86,7 +88,14 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       hotelChainId,
+      propertyId: bodyPropertyId,
       propertyName,
+      placeId,
+      countryCode,
+      city,
+      address,
+      latitude,
+      longitude,
       checkIn,
       checkOut,
       numNights,
@@ -106,9 +115,34 @@ export async function POST(request: NextRequest) {
       benefits,
       notes,
       hotelChainSubBrandId,
-      countryCode,
-      city,
     } = body;
+
+    // Resolve propertyId: use provided id, or upsert a property from geo fields
+    let propertyId: string = bodyPropertyId;
+    if (!propertyId && propertyName) {
+      const existing = placeId
+        ? await prisma.property.findUnique({ where: { placeId } })
+        : await prisma.property.findFirst({
+            where: { name: propertyName, hotelChainId: hotelChainId ?? undefined },
+          });
+      if (existing) {
+        propertyId = existing.id;
+      } else {
+        const created = await prisma.property.create({
+          data: {
+            name: propertyName,
+            placeId: placeId || null,
+            hotelChainId: hotelChainId || null,
+            countryCode: countryCode || null,
+            city: city || null,
+            address: address || null,
+            latitude: latitude ?? null,
+            longitude: longitude ?? null,
+          },
+        });
+        propertyId = created.id;
+      }
+    }
 
     const resolvedCurrency: string = currency || "USD";
     const checkInDate = new Date(checkIn);
@@ -175,7 +209,7 @@ export async function POST(request: NextRequest) {
         userId,
         hotelChainId: hotelChainId,
         hotelChainSubBrandId: hotelChainSubBrandId || null,
-        propertyName,
+        propertyId,
         checkIn: checkInDate,
         checkOut: new Date(checkOut),
         numNights: Number(numNights),
@@ -190,8 +224,6 @@ export async function POST(request: NextRequest) {
         pointsRedeemed: pointsRedeemed ? Number(pointsRedeemed) : null,
         currency: resolvedCurrency,
         exchangeRate: resolvedExchangeRate,
-        countryCode: countryCode || null,
-        city: city || null,
         notes: notes || null,
         bookingSource: bookingSource || null,
         otaAgencyId: bookingSource === "ota" && otaAgencyId ? otaAgencyId : null,

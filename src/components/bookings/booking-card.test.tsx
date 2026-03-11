@@ -6,7 +6,7 @@ import { BookingCard } from "./booking-card";
 describe("BookingCard", () => {
   const mockBooking = {
     id: "1",
-    propertyName: "Grand Hyatt New York",
+    property: { name: "Grand Hyatt New York" },
     checkIn: "2026-03-01",
     checkOut: "2026-03-04",
     numNights: 3,

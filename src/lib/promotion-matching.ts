@@ -124,6 +124,7 @@ export interface MatchingBooking {
   currency?: string;
   exchangeRate?: string | number | Prisma.Decimal | null;
   countryCode?: string | null;
+  property?: { countryCode?: string | null } | null;
   pointsRedeemed: number | null;
   loyaltyPointsEarned: number | null;
   _count?: { certificates: number };
@@ -345,8 +346,9 @@ const CorePromotionRules: Record<string, PromotionRule> = {
   geography: (booking, promo) => {
     const codes = promo.restrictions?.allowedCountryCodes ?? [];
     if (codes.length === 0) return { valid: true }; // no restriction
-    if (!booking.countryCode) return { valid: false }; // no geo data → hidden
-    return { valid: codes.includes(booking.countryCode) };
+    const countryCode = booking.countryCode ?? booking.property?.countryCode;
+    if (!countryCode) return { valid: false }; // no geo data → hidden
+    return { valid: codes.includes(countryCode) };
   },
 
   tieInCard: (booking, promo) => {

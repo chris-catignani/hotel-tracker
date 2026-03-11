@@ -77,10 +77,13 @@ export function BookingForm({
   const {
     hotelChainId,
     hotelChainSubBrandId,
+    propertyId,
     propertyName,
+    placeId,
     geoConfirmed,
     countryCode,
     city,
+    address,
     latitude,
     longitude,
     checkIn,
@@ -118,9 +121,11 @@ export function BookingForm({
     dispatch({
       type: "SET_PROPERTY_GEO",
       result: {
+        placeId: null,
         displayName: manualPropertyName,
         countryCode: manualCountryCode,
         city: manualCity,
+        address: null,
         latitude: null,
         longitude: null,
       },
@@ -262,9 +267,12 @@ export function BookingForm({
     const body = {
       hotelChainId: hotelChainId,
       hotelChainSubBrandId: hotelChainSubBrandId === "none" ? null : hotelChainSubBrandId,
+      propertyId: propertyId || undefined,
       propertyName,
+      placeId: placeId || null,
       countryCode: countryCode || null,
       city: city || null,
+      address: address || null,
       latitude: latitude ?? null,
       longitude: longitude ?? null,
       checkIn,

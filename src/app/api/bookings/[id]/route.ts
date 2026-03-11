@@ -70,6 +70,8 @@ async function getFullBookingWithUsage(id: string, userId: string) {
       certificates: true,
       otaAgency: true,
       benefits: true,
+      property: true,
+      priceWatchBooking: true,
     },
   });
 
@@ -148,7 +150,14 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const body = await request.json();
     const {
       hotelChainId,
+      propertyId,
       propertyName,
+      placeId,
+      countryCode,
+      city,
+      address,
+      latitude,
+      longitude,
       checkIn,
       checkOut,
       numNights,
@@ -168,15 +177,44 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       benefits,
       notes,
       hotelChainSubBrandId,
-      countryCode,
-      city,
     } = body;
+
+    // Resolve propertyId: use provided id, or upsert a property from geo fields
+    let resolvedPropertyId: string | undefined = propertyId;
+    if (!resolvedPropertyId && propertyName) {
+      const chainId =
+        hotelChainId ??
+        (await prisma.booking.findFirst({ where: { id, userId }, select: { hotelChainId: true } }))
+          ?.hotelChainId;
+      const existing = placeId
+        ? await prisma.property.findUnique({ where: { placeId } })
+        : await prisma.property.findFirst({
+            where: { name: propertyName, hotelChainId: chainId ?? undefined },
+          });
+      if (existing) {
+        resolvedPropertyId = existing.id;
+      } else {
+        const created = await prisma.property.create({
+          data: {
+            name: propertyName,
+            placeId: placeId || null,
+            hotelChainId: chainId || null,
+            countryCode: countryCode || null,
+            city: city || null,
+            address: address || null,
+            latitude: latitude ?? null,
+            longitude: longitude ?? null,
+          },
+        });
+        resolvedPropertyId = created.id;
+      }
+    }
 
     const data: Record<string, unknown> = {};
     if (hotelChainId !== undefined) data.hotelChainId = hotelChainId;
     if (hotelChainSubBrandId !== undefined)
       data.hotelChainSubBrandId = hotelChainSubBrandId || null;
-    if (propertyName !== undefined) data.propertyName = propertyName;
+    if (resolvedPropertyId !== undefined) data.propertyId = resolvedPropertyId;
     if (checkIn !== undefined) data.checkIn = new Date(checkIn);
     if (checkOut !== undefined) data.checkOut = new Date(checkOut);
     if (numNights !== undefined) data.numNights = Number(numNights);
@@ -193,8 +231,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (pointsRedeemed !== undefined)
       data.pointsRedeemed = pointsRedeemed ? Number(pointsRedeemed) : null;
     if (notes !== undefined) data.notes = notes || null;
-    if (countryCode !== undefined) data.countryCode = countryCode || null;
-    if (city !== undefined) data.city = city || null;
     if (bookingSource !== undefined) {
       data.bookingSource = bookingSource || null;
       data.otaAgencyId = bookingSource === "ota" && otaAgencyId ? otaAgencyId : null;

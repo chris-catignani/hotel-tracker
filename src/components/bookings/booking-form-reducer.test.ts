@@ -17,7 +17,20 @@ function makeBooking(overrides: Partial<Booking> = {}): Booking {
     id: "b1",
     hotelChainId: "chain-1",
     hotelChainSubBrandId: null,
-    propertyName: "Test Hotel",
+    propertyId: "prop-1",
+    property: {
+      id: "prop-1",
+      name: "Test Hotel",
+      placeId: null,
+      hotelChainId: "chain-1",
+      countryCode: null,
+      city: null,
+      address: null,
+      latitude: null,
+      longitude: null,
+      starRating: null,
+      createdAt: "2026-01-01T00:00:00.000Z",
+    },
     checkIn: "2026-03-01T00:00:00.000Z",
     checkOut: "2026-03-05T00:00:00.000Z",
     numNights: 4,
@@ -402,7 +415,22 @@ describe("bookingFormReducer", () => {
 
   describe("LOAD_INITIAL_DATA", () => {
     it("replaces all form state with data from the booking", () => {
-      const booking = makeBooking({ propertyName: "Loaded Hotel", currency: "EUR" });
+      const booking = makeBooking({
+        property: {
+          id: "prop-1",
+          name: "Loaded Hotel",
+          placeId: null,
+          hotelChainId: "chain-1",
+          countryCode: null,
+          city: null,
+          address: null,
+          latitude: null,
+          longitude: null,
+          starRating: null,
+          createdAt: "2026-01-01T00:00:00.000Z",
+        },
+        currency: "EUR",
+      });
       const next = bookingFormReducer(INITIAL_STATE, {
         type: "LOAD_INITIAL_DATA",
         initialData: booking,
@@ -419,9 +447,11 @@ describe("bookingFormReducer", () => {
       const next = bookingFormReducer(INITIAL_STATE, {
         type: "SET_PROPERTY_GEO",
         result: {
+          placeId: "abc123",
           displayName: "Park Hyatt Kuala Lumpur",
           city: "Kuala Lumpur",
           countryCode: "MY",
+          address: "123 Jalan Test, Kuala Lumpur",
           latitude: 3.1419,
           longitude: 101.7008,
         },
@@ -438,9 +468,11 @@ describe("bookingFormReducer", () => {
       const confirmed = bookingFormReducer(INITIAL_STATE, {
         type: "SET_PROPERTY_GEO",
         result: {
+          placeId: null,
           displayName: "Some Hotel",
           city: "London",
           countryCode: "GB",
+          address: null,
           latitude: 51.5,
           longitude: -0.1,
         },
@@ -461,9 +493,11 @@ describe("bookingFormReducer", () => {
       const confirmed = bookingFormReducer(INITIAL_STATE, {
         type: "SET_PROPERTY_GEO",
         result: {
+          placeId: null,
           displayName: "Some Hotel",
           city: "London",
           countryCode: "GB",
+          address: null,
           latitude: 51.5,
           longitude: -0.1,
         },
@@ -477,17 +511,31 @@ describe("bookingFormReducer", () => {
       expect(reset.longitude).toBeNull();
     });
 
-    it("buildInitialState sets geoConfirmed true when booking has countryCode", () => {
-      const booking = makeBooking({ countryCode: "SG", city: "Singapore" } as Partial<Booking>);
+    it("buildInitialState populates geo from booking.property", () => {
+      const booking = makeBooking({
+        property: {
+          id: "prop-1",
+          name: "Test Hotel",
+          placeId: null,
+          hotelChainId: "chain-1",
+          countryCode: "SG",
+          city: "Singapore",
+          address: null,
+          latitude: null,
+          longitude: null,
+          starRating: null,
+          createdAt: "2026-01-01T00:00:00.000Z",
+        },
+      });
       const state = buildInitialState(booking, []);
       expect(state.geoConfirmed).toBe(true);
       expect(state.countryCode).toBe("SG");
       expect(state.city).toBe("Singapore");
     });
 
-    it("buildInitialState sets geoConfirmed false when booking has no countryCode", () => {
+    it("buildInitialState sets geoConfirmed true even when property has no countryCode", () => {
       const state = buildInitialState(makeBooking(), []);
-      expect(state.geoConfirmed).toBe(false);
+      expect(state.geoConfirmed).toBe(true); // existing bookings always confirmed
       expect(state.countryCode).toBeNull();
     });
   });

@@ -275,11 +275,61 @@ export interface PromotionFormData {
 // ---------------------------------------------------------------------------
 
 export interface GeoResult {
+  placeId: string | null;
   displayName: string;
   city: string;
   countryCode: string;
+  address: string | null;
   latitude: number | null;
   longitude: number | null;
+}
+
+export interface Property {
+  id: string;
+  name: string;
+  placeId: string | null;
+  hotelChainId: string | null;
+  countryCode: string | null;
+  city: string | null;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  starRating: number | null;
+  createdAt: string;
+}
+
+export interface PriceWatch {
+  id: string;
+  userId: string;
+  propertyId: string;
+  property: Property;
+  isEnabled: boolean;
+  lastCheckedAt: string | null;
+  createdAt: string;
+  bookings: PriceWatchBooking[];
+  snapshots?: PriceSnapshot[];
+}
+
+export interface PriceWatchBooking {
+  id: string;
+  priceWatchId: string;
+  bookingId: string;
+  dateFlexibilityDays: number;
+  cashThreshold: string | number | null;
+  awardThreshold: number | null;
+  createdAt: string;
+}
+
+export interface PriceSnapshot {
+  id: string;
+  priceWatchId: string;
+  checkIn: string;
+  checkOut: string;
+  cashPrice: string | number | null;
+  cashCurrency: string;
+  awardPrice: number | null;
+  source: string;
+  fetchedAt: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -311,7 +361,8 @@ export interface Booking {
   id: string;
   hotelChainId: string;
   hotelChainSubBrandId: string | null;
-  propertyName: string;
+  propertyId: string;
+  property: Property;
   checkIn: string;
   checkOut: string;
   numNights: number;
@@ -328,19 +379,25 @@ export interface Booking {
   portalCashbackOnTotal: boolean;
   loyaltyPointsEarned: number | null;
   pointsRedeemed: number | null;
-  countryCode: string | null;
-  city: string | null;
   notes: string | null;
   certificates: BookingCertificate[];
   bookingSource: string | null;
   otaAgencyId: string | null;
   benefits: BookingBenefit[];
+  priceWatchBooking?: PriceWatchBooking | null;
 }
 
 export interface BookingFormData {
   hotelChainId: string;
   hotelChainSubBrandId: string | null;
-  propertyName: string;
+  propertyId?: string;
+  propertyName?: string;
+  placeId?: string | null;
+  countryCode?: string | null;
+  city?: string | null;
+  address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   checkIn: string;
   checkOut: string;
   numNights: number;
@@ -357,10 +414,6 @@ export interface BookingFormData {
   loyaltyPointsEarned: number | null;
   bookingSource: string | null;
   otaAgencyId: string | null;
-  countryCode: string | null;
-  city: string | null;
-  latitude: number | null;
-  longitude: number | null;
   benefits: {
     benefitType: string;
     label: string | null;

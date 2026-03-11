@@ -97,7 +97,7 @@ interface Booking extends Omit<NetCostBooking, "bookingPromotions"> {
   id: string;
   hotelChainId: string;
   hotelChainSubBrand: { id: string; name: string; basePointRate: string | number | null } | null;
-  propertyName: string;
+  property: { name: string; city: string | null; countryCode: string | null };
   checkIn: string;
   checkOut: string;
   numNights: number;
@@ -107,8 +107,6 @@ interface Booking extends Omit<NetCostBooking, "bookingPromotions"> {
   loyaltyPointsEstimated?: boolean;
   creditCardId: string | null;
   shoppingPortalId: string | null;
-  countryCode: string | null;
-  city: string | null;
   notes: string | null;
   createdAt: string;
   bookingSource: string | null;
@@ -261,7 +259,7 @@ export default function BookingDetailPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            {booking.propertyName}
+            {booking.property.name}
             {typeBadge && <Badge variant="secondary">{typeBadge}</Badge>}
           </CardTitle>
         </CardHeader>
@@ -283,11 +281,11 @@ export default function BookingDetailPage() {
                 <p className="font-medium">{booking.hotelChain.loyaltyProgram}</p>
               </div>
             )}
-            {(booking.city || booking.countryCode) && (
+            {(booking.property.city || booking.property.countryCode) && (
               <div>
                 <p className="text-sm text-muted-foreground">Location</p>
                 <p className="font-medium" data-testid="booking-location">
-                  {[booking.city, booking.countryCode].filter(Boolean).join(", ")}
+                  {[booking.property.city, booking.property.countryCode].filter(Boolean).join(", ")}
                 </p>
               </div>
             )}
