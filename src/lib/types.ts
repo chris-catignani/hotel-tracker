@@ -288,6 +288,7 @@ export interface Property {
   id: string;
   name: string;
   placeId: string | null;
+  chainPropertyId: string | null; // spiritCode for Hyatt, Amadeus ID for others
   hotelChainId: string | null;
   countryCode: string | null;
   city: string | null;
