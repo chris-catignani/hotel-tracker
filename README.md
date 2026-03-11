@@ -14,6 +14,7 @@ Built with Next.js, Prisma, shadcn/ui, and Tailwind CSS.
   Net Cost = Total Cost - Promotions - Portal Cashback - Card Rewards
   ```
 - **Dashboard** -- Summary stats, savings breakdown by category, and per-hotel-chain analysis
+- **Price Watch** -- Monitor live hotel rates (cash + award) for upcoming stays; email alerts when prices drop below your thresholds
 - **Settings** -- Manage your hotel chains, credit cards, and shopping portals
 
 ## Prerequisites
@@ -120,6 +121,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | `/promotions`           | All promotions with type-based tabs                       |
 | `/promotions/new`       | Add a new promotion                                       |
 | `/promotions/[id]/edit` | Edit a promotion                                          |
+| `/price-watch`          | All price watches with latest rates and alert thresholds  |
 | `/settings`             | Manage hotels, credit cards, and shopping portals         |
 
 ## Database Schema
@@ -203,7 +205,10 @@ If a test fails, Playwright is configured to record a video and a "trace" (inter
    - `SEED_ADMIN_EMAIL`: Your admin email
    - `SEED_ADMIN_PASSWORD`: A strong password
    - `GOOGLE_PLACES_API_KEY`: Your Google Places API key (see Google Places API Setup above)
-   - `CRON_SECRET`: Generate with `openssl rand -base64 32` (used to authenticate the exchange rate cron job)
+   - `CRON_SECRET`: Generate with `openssl rand -base64 32` (used to authenticate cron endpoints)
+   - `RESEND_API_KEY`: From [resend.com](https://resend.com) (required for price drop email alerts)
+   - `RESEND_FROM_EMAIL`: Verified sender address on Resend (required for price drop email alerts)
+   - `HYATT_SESSION_COOKIE`: Browser session cookie from hyatt.com (required for Hyatt price monitoring — see [Price Watch Setup](#price-watch-setup))
 8. Run `npm run db:seed` via Vercel's one-off task runner or a local connection to the production DB to create the admin user.
 
 ## Exchange Rate Cron Job
@@ -244,6 +249,88 @@ curl -X GET https://<your-vercel-domain>/api/cron/refresh-exchange-rates \
 ```
 
 After that, Vercel will keep rates up to date automatically each night.
+
+## Price Watch Setup
+
+The price watch feature monitors live hotel room rates (cash and award/points) for upcoming stays and sends email alerts when prices drop below your configured thresholds.
+
+### Supported Chains
+
+| Chain  | Cash Rates | Award Rates | Notes                             |
+| ------ | ---------- | ----------- | --------------------------------- |
+| Hyatt  | ✅         | ✅          | Uses session cookie + spirit code |
+| Others | —          | —           | Not yet supported                 |
+
+### Email Alerts (Resend)
+
+1. Create a free account at [resend.com](https://resend.com)
+2. Add and verify a sender domain (or use the Resend test address)
+3. Create an API key
+4. Add to your environment:
+   ```
+   RESEND_API_KEY="re_..."
+   RESEND_FROM_EMAIL="alerts@yourdomain.com"
+   ```
+
+### Hyatt Rate Monitoring
+
+Hyatt rates are fetched from Hyatt's internal API using an anonymous browser session cookie. No Hyatt account is required.
+
+#### Step 1 — Get the session cookie
+
+1. Open [hyatt.com](https://www.hyatt.com) in your browser (no need to log in)
+2. Open DevTools → **Network** tab → reload the page
+3. Click any request to `hyatt.com` → **Headers** → **Request Headers**
+4. Copy the entire value of the `Cookie:` header
+5. Set it as an environment variable:
+   ```
+   HYATT_SESSION_COOKIE="your_cookie_string_here"
+   ```
+
+The cookie typically expires after hours to days. When expired, price fetches silently return no data until the cookie is refreshed.
+
+#### Step 2 — Set the spirit code on a property
+
+The Hyatt API identifies properties by a **spirit code** — a 5-character lowercase string visible in every Hyatt property URL:
+
+```
+https://www.hyatt.com/en-US/hotel/illinois/park-hyatt-chicago/chiph
+                                                                ^^^^^
+                                                           spiritCode = "chiph"
+```
+
+Set it on the property via the API:
+
+```bash
+curl -X PUT https://your-app.vercel.app/api/properties/{propertyId} \
+  -H "Content-Type: application/json" \
+  -d '{"chainPropertyId": "chiph"}'
+```
+
+#### Step 3 — Enable price watch on a booking
+
+1. Open a booking's detail page
+2. Scroll to the **Price Watch** section
+3. Toggle it on and optionally set cash/award thresholds
+4. Click **Check Now** to fetch current prices immediately
+
+### Cron Schedule (GitHub Actions)
+
+Price watches run daily via GitHub Actions (not Vercel Cron, to avoid the 50MB Playwright bundle limit). The workflow is defined in `.github/workflows/refresh-price-watches.yml` and runs at **6am UTC**.
+
+Add these secrets to your GitHub repository (**Settings → Secrets → Actions**):
+
+| Secret        | Value                                                   |
+| ------------- | ------------------------------------------------------- |
+| `APP_URL`     | Your production URL, e.g. `https://your-app.vercel.app` |
+| `CRON_SECRET` | Same value as the `CRON_SECRET` env var in Vercel       |
+
+You can also trigger the workflow manually from the **Actions** tab, or call the endpoint directly:
+
+```bash
+curl -X GET https://your-app.vercel.app/api/cron/refresh-price-watches \
+  -H "Authorization: Bearer <your-cron-secret>"
+```
 
 ## Managing Users
 

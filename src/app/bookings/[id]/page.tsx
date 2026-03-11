@@ -19,6 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { CostBreakdown } from "@/components/cost-breakdown";
+import { BookingPriceWatch } from "@/components/price-watch/booking-price-watch";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -93,11 +94,26 @@ interface BookingBenefit {
 }
 
 // Ensure Booking interface matches NetCostBooking for the breakdown logic
+interface PriceWatchBookingData {
+  id: string;
+  priceWatchId: string;
+  cashThreshold: string | number | null;
+  awardThreshold: number | null;
+  dateFlexibilityDays: number;
+}
+
 interface Booking extends Omit<NetCostBooking, "bookingPromotions"> {
   id: string;
   hotelChainId: string;
   hotelChainSubBrand: { id: string; name: string; basePointRate: string | number | null } | null;
-  property: { name: string; city: string | null; countryCode: string | null };
+  property: {
+    id: string;
+    name: string;
+    city: string | null;
+    countryCode: string | null;
+    chainPropertyId: string | null;
+  };
+  propertyId: string;
   checkIn: string;
   checkOut: string;
   numNights: number;
@@ -115,6 +131,7 @@ interface Booking extends Omit<NetCostBooking, "bookingPromotions"> {
   certificates: BookingCertificate[];
   benefits: BookingBenefit[];
   bookingPromotions: BookingPromotion[];
+  priceWatchBooking: PriceWatchBookingData | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -184,9 +201,7 @@ export default function BookingDetailPage() {
   const fetchBooking = useCallback(async () => {
     setLoading(true);
     const res = await fetch(`/api/bookings/${id}`);
-    if (res.ok) {
-      setBooking(await res.json());
-    }
+    if (res.ok) setBooking(await res.json());
     setLoading(false);
   }, [id]);
 
@@ -552,6 +567,18 @@ export default function BookingDetailPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Price Watch */}
+      <BookingPriceWatch
+        bookingId={booking.id}
+        propertyId={booking.propertyId}
+        hotelChainId={booking.hotelChainId}
+        checkIn={booking.checkIn}
+        checkOut={booking.checkOut}
+        totalCost={booking.totalCost}
+        currency={booking.currency}
+        initialWatchBooking={booking.priceWatchBooking}
+      />
     </div>
   );
 }

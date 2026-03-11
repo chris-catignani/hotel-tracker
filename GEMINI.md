@@ -14,11 +14,20 @@ This file provides foundational mandates for Gemini CLI (gemini-cli) when workin
 
 - **API:** Google Places API (New) — `POST https://places.googleapis.com/v1/places:searchText` with `includedType: lodging`. Requires `GOOGLE_PLACES_API_KEY` env var (free tier ~$200/month credit; billing account required).
 - **Server proxy:** `GET /api/geo/search?q=...` — authenticated route in `src/app/api/geo/search/route.ts`. Checks `GeoCache` first, calls Google on miss, caches results.
-- **`geo-lookup.ts`:** `searchProperties(query)` — core search logic. Returns `[]` gracefully if API key is unset.
+- **`geo-lookup.ts`:** `searchProperties(query)` — core search logic. Returns `[]` gracefully if API key is unset. Returns `placeId`, `displayName`, `city`, `countryCode`, `address`, `latitude`, `longitude`.
 - **`countries.ts`:** Static `COUNTRIES` list (ISO 3166-1 alpha-2), `countryName()` helper, and `ALPHA3_TO_ALPHA2` map.
 - **Booking form:** Property name uses `PropertyNameCombobox` (confirmed/unconfirmed states) + `ManualGeoModal` ("Can't find your hotel?" fallback). `geoConfirmed` must be `true` to submit — free-form text is blocked by form validation.
-- **Booking schema:** `countryCode String?` (ISO alpha-2) and `city String?` on `Booking`. Populated on confirm; null if not confirmed (geo-restricted promotions are hidden for null-country bookings).
+- **Property model:** Geo data lives on `Property`, not `Booking`. `Booking.propertyId` (required FK) links to a `Property` row. The booking API calls `findOrCreateProperty()` (in `src/lib/property-utils.ts`) to upsert a Property from geo fields. When checking geography in promotion matching, use `booking.property?.countryCode` — NOT `booking.countryCode` (that field no longer exists).
 - **`GeoCache` model:** Caches results by normalized query key. Clear with `DELETE FROM geo_cache;` after switching API providers.
+
+## Price Watch
+
+- **Architecture:** `PriceWatch` (per user/property) → `PriceWatchBooking` (per booking, holds thresholds) → `PriceSnapshot` (per price fetch).
+- **Fetcher abstraction:** `src/lib/price-fetcher.ts` — `PriceFetcher` interface with `canFetch(property)` and `fetchPrice(params)`. Add new chain scrapers to `src/lib/scrapers/`.
+- **Hyatt scraper:** `src/lib/scrapers/hyatt.ts` — uses `HYATT_SESSION_COOKIE` env var + `Property.chainPropertyId` (spiritCode). Returns lowest cash price and award points. Returns `null` if cookie not set.
+- **Email:** `src/lib/email.ts` — `sendPriceDropAlert()` via Resend. Requires `RESEND_API_KEY` and `RESEND_FROM_EMAIL`.
+- **Cron:** `GET /api/cron/refresh-price-watches` (Bearer `CRON_SECRET`). Runs via GitHub Actions (`.github/workflows/refresh-price-watches.yml`) at 6am UTC — NOT Vercel Cron (Playwright bundle too large for Vercel serverless). Add `APP_URL` and `CRON_SECRET` to GitHub repo secrets.
+- **`chainPropertyId`:** Stored on `Property`. For Hyatt: the 5-char lowercase spiritCode from the property URL (e.g. `chiph` from `.../park-hyatt-chicago/chiph`). Set via `PUT /api/properties/[id]`.
 
 ## Authentication & Authorization
 

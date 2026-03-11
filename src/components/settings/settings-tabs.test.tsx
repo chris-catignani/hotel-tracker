@@ -21,6 +21,12 @@ vi.mock("./shopping-portals-tab", () => ({
 vi.mock("./ota-agencies-tab", () => ({
   OtaAgenciesTab: () => <div data-testid="mock-ota-agencies" />,
 }));
+vi.mock("./properties-tab", () => ({
+  PropertiesTab: () => <div data-testid="mock-properties" />,
+}));
+vi.mock("next-auth/react", () => ({
+  useSession: () => ({ data: { user: { role: "ADMIN" } } }),
+}));
 
 describe("SettingsPage Tabs", () => {
   afterEach(() => {

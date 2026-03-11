@@ -1,0 +1,21 @@
+name: Refresh Price Watches
+
+on:
+  schedule:
+    - cron: "0 6 * * *" # 6am UTC daily
+  workflow_dispatch: # allow manual trigger
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger price watch refresh
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X GET "${{ secrets.APP_URL }}/api/cron/refresh-price-watches" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
+          echo "Response code: $response"
+          if [ "$response" != "200" ]; then
+            echo "Cron job failed with status $response"
+            exit 1
+          fi
