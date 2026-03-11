@@ -79,15 +79,15 @@ test.describe("Geo Property Search — Booking with location data", () => {
     });
     expect(createRes.ok()).toBeTruthy();
     const created = await createRes.json();
-    expect(created.countryCode).toBe("GB");
-    expect(created.city).toBe("London");
+    expect(created.property.countryCode).toBe("GB");
+    expect(created.property.city).toBe("London");
 
     // Verify GET returns the geo data too
     const getRes = await request.get(`/api/bookings/${created.id}`);
     expect(getRes.ok()).toBeTruthy();
     const fetched = await getRes.json();
-    expect(fetched.countryCode).toBe("GB");
-    expect(fetched.city).toBe("London");
+    expect(fetched.property.countryCode).toBe("GB");
+    expect(fetched.property.city).toBe("London");
 
     // Cleanup
     await request.delete(`/api/bookings/${created.id}`);
@@ -112,7 +112,7 @@ test.describe("Geo Property Search — Booking with location data", () => {
       },
     });
     const created = await createRes.json();
-    expect(created.countryCode).toBeNull();
+    expect(created.property.countryCode).toBeNull();
 
     // Update with geo data
     const putRes = await request.put(`/api/bookings/${created.id}`, {
@@ -120,8 +120,8 @@ test.describe("Geo Property Search — Booking with location data", () => {
     });
     expect(putRes.ok()).toBeTruthy();
     const updated = await putRes.json();
-    expect(updated.countryCode).toBe("MY");
-    expect(updated.city).toBe("Kuala Lumpur");
+    expect(updated.property.countryCode).toBe("MY");
+    expect(updated.property.city).toBe("Kuala Lumpur");
 
     // Cleanup
     await request.delete(`/api/bookings/${created.id}`);

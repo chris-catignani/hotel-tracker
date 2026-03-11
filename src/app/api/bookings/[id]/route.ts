@@ -356,6 +356,29 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       }
     }
 
+    // If geo fields are provided without a propertyName, update the existing property in place
+    if (
+      !resolvedPropertyId &&
+      (countryCode !== undefined || city !== undefined || address !== undefined)
+    ) {
+      const current = await prisma.booking.findFirst({
+        where: { id, userId },
+        select: { propertyId: true },
+      });
+      if (current?.propertyId) {
+        await prisma.property.update({
+          where: { id: current.propertyId },
+          data: {
+            ...(countryCode !== undefined && { countryCode: countryCode || null }),
+            ...(city !== undefined && { city: city || null }),
+            ...(address !== undefined && { address: address || null }),
+            ...(latitude !== undefined && { latitude: latitude ?? null }),
+            ...(longitude !== undefined && { longitude: longitude ?? null }),
+          },
+        });
+      }
+    }
+
     const booking = await prisma.booking.update({
       where: { id },
       data,
