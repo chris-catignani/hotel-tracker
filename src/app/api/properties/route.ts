@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 
-/** GET /api/properties?hotelChainId=&name= — search properties */
+/** GET /api/properties?hotelChainId=&name=&includeChain= — search properties */
 export async function GET(request: NextRequest) {
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
@@ -12,12 +12,14 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const hotelChainId = searchParams.get("hotelChainId");
     const name = searchParams.get("name");
+    const includeChain = searchParams.get("includeChain") === "true";
 
     const properties = await prisma.property.findMany({
       where: {
         ...(hotelChainId ? { hotelChainId } : {}),
         ...(name ? { name: { contains: name, mode: "insensitive" } } : {}),
       },
+      include: includeChain ? { hotelChain: { select: { name: true } } } : undefined,
       orderBy: { name: "asc" },
     });
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { useSession } from "next-auth/react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserStatusTab } from "@/components/settings/user-status-tab";
 import { PointTypesTab } from "@/components/settings/point-types-tab";
@@ -7,8 +8,12 @@ import { HotelChainsTab } from "@/components/settings/hotel-chains-tab";
 import { CreditCardsTab } from "@/components/settings/credit-cards-tab";
 import { ShoppingPortalsTab } from "@/components/settings/shopping-portals-tab";
 import { OtaAgenciesTab } from "@/components/settings/ota-agencies-tab";
+import { PropertiesTab } from "@/components/settings/properties-tab";
 
 export default function SettingsPage() {
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === "ADMIN";
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Settings</h1>
@@ -21,6 +26,7 @@ export default function SettingsPage() {
             <TabsTrigger value="credit-cards">Credit Cards</TabsTrigger>
             <TabsTrigger value="portals">Shopping Portals</TabsTrigger>
             <TabsTrigger value="ota-agencies">OTA Agencies</TabsTrigger>
+            {isAdmin && <TabsTrigger value="properties">Properties</TabsTrigger>}
           </TabsList>
         </div>
         <TabsContent value="my-status" data-testid="tab-my-status">
@@ -41,6 +47,11 @@ export default function SettingsPage() {
         <TabsContent value="ota-agencies" data-testid="tab-ota-agencies">
           <OtaAgenciesTab />
         </TabsContent>
+        {isAdmin && (
+          <TabsContent value="properties" data-testid="tab-properties">
+            <PropertiesTab />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
