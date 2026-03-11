@@ -4,7 +4,8 @@ import { GeoResult } from "@/lib/types";
 const GOOGLE_PLACES_URL = "https://places.googleapis.com/v1/places:searchText";
 
 // Only request the fields we need — keeps us in the Basic tier (cheapest)
-const FIELD_MASK = "places.displayName,places.addressComponents,places.location";
+const FIELD_MASK =
+  "places.id,places.displayName,places.addressComponents,places.formattedAddress,places.location";
 
 interface GoogleAddressComponent {
   longText: string;
@@ -13,8 +14,10 @@ interface GoogleAddressComponent {
 }
 
 interface GooglePlace {
+  id: string;
   displayName: { text: string };
   addressComponents: GoogleAddressComponent[];
+  formattedAddress?: string;
   location: { latitude: number; longitude: number };
 }
 
@@ -44,9 +47,11 @@ function mapGooglePlace(place: GooglePlace): GeoResult {
   const countryCode = extractComponent(components, ["country"])?.shortText ?? ""; // already ISO alpha-2
 
   return {
+    placeId: place.id ?? null,
     displayName: place.displayName.text,
     city,
     countryCode,
+    address: place.formattedAddress ?? null,
     latitude: place.location.latitude,
     longitude: place.location.longitude,
   };

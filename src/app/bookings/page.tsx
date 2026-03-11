@@ -48,7 +48,7 @@ interface Booking {
   id: string;
   hotelChainId: string;
   hotelChainSubBrand: { id: string; name: string; basePointRate: string | number | null } | null;
-  propertyName: string;
+  property: { name: string };
   checkIn: string;
   checkOut: string;
   numNights: number;
@@ -226,7 +226,7 @@ export default function BookingsPage() {
                   return (
                     <TableRow key={booking.id} data-testid={`booking-row-${booking.id}`}>
                       <TableCell>
-                        <div>{booking.propertyName}</div>
+                        <div>{booking.property.name}</div>
                         {booking.hotelChainSubBrand && (
                           <div className="text-xs text-muted-foreground">
                             {booking.hotelChainSubBrand.name}

@@ -9,6 +9,7 @@ import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
 import { fetchExchangeRate, getCurrentRate, resolveCalcCurrencyRate } from "@/lib/exchange-rate";
 import { enrichBookingWithRate } from "@/lib/booking-enrichment";
+import { findOrCreateProperty } from "@/lib/property-utils";
 
 const BOOKING_INCLUDE = (userId: string) =>
   ({
@@ -52,6 +53,8 @@ const BOOKING_INCLUDE = (userId: string) =>
     certificates: true,
     otaAgency: true,
     benefits: true,
+    property: true,
+    priceWatchBooking: true,
   }) as const;
 
 export async function GET(request: NextRequest) {
@@ -86,7 +89,14 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       hotelChainId,
+      propertyId: bodyPropertyId,
       propertyName,
+      placeId,
+      countryCode,
+      city,
+      address,
+      latitude,
+      longitude,
       checkIn,
       checkOut,
       numNights,
@@ -106,9 +116,22 @@ export async function POST(request: NextRequest) {
       benefits,
       notes,
       hotelChainSubBrandId,
-      countryCode,
-      city,
     } = body;
+
+    // Resolve propertyId: use provided id, or find/create from geo fields
+    let propertyId: string = bodyPropertyId;
+    if (!propertyId && propertyName) {
+      propertyId = await findOrCreateProperty({
+        propertyName,
+        placeId,
+        hotelChainId,
+        countryCode,
+        city,
+        address,
+        latitude,
+        longitude,
+      });
+    }
 
     const resolvedCurrency: string = currency || "USD";
     const checkInDate = new Date(checkIn);
@@ -175,7 +198,7 @@ export async function POST(request: NextRequest) {
         userId,
         hotelChainId: hotelChainId,
         hotelChainSubBrandId: hotelChainSubBrandId || null,
-        propertyName,
+        propertyId,
         checkIn: checkInDate,
         checkOut: new Date(checkOut),
         numNights: Number(numNights),
@@ -190,8 +213,6 @@ export async function POST(request: NextRequest) {
         pointsRedeemed: pointsRedeemed ? Number(pointsRedeemed) : null,
         currency: resolvedCurrency,
         exchangeRate: resolvedExchangeRate,
-        countryCode: countryCode || null,
-        city: city || null,
         notes: notes || null,
         bookingSource: bookingSource || null,
         otaAgencyId: bookingSource === "ota" && otaAgencyId ? otaAgencyId : null,

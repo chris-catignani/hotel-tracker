@@ -43,6 +43,7 @@ const BOOKING_INCLUDE = {
   hotelChainSubBrand: true,
   creditCard: { include: { pointType: true } },
   shoppingPortal: true,
+  property: { select: { countryCode: true } },
   _count: { select: { certificates: true } },
   bookingPromotions: {
     include: {
@@ -123,7 +124,7 @@ export interface MatchingBooking {
   totalCost: string | number | Prisma.Decimal;
   currency?: string;
   exchangeRate?: string | number | Prisma.Decimal | null;
-  countryCode?: string | null;
+  property?: { countryCode?: string | null } | null;
   pointsRedeemed: number | null;
   loyaltyPointsEarned: number | null;
   _count?: { certificates: number };
@@ -345,8 +346,9 @@ const CorePromotionRules: Record<string, PromotionRule> = {
   geography: (booking, promo) => {
     const codes = promo.restrictions?.allowedCountryCodes ?? [];
     if (codes.length === 0) return { valid: true }; // no restriction
-    if (!booking.countryCode) return { valid: false }; // no geo data → hidden
-    return { valid: codes.includes(booking.countryCode) };
+    const countryCode = booking.property?.countryCode;
+    if (!countryCode) return { valid: false }; // no geo data → hidden
+    return { valid: codes.includes(countryCode) };
   },
 
   tieInCard: (booking, promo) => {

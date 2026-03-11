@@ -14,10 +14,14 @@ export type BenefitItem = {
 export interface BookingFormState {
   hotelChainId: string;
   hotelChainSubBrandId: string;
+  // Property display + geo fields (sent to API for upsert when propertyId is unknown)
+  propertyId: string | null; // set when editing an existing booking
   propertyName: string;
+  placeId: string | null;
   geoConfirmed: boolean;
   countryCode: string | null;
   city: string | null;
+  address: string | null;
   latitude: number | null;
   longitude: number | null;
   checkIn: string;
@@ -76,10 +80,13 @@ export function toPaymentType(
 export const INITIAL_STATE: BookingFormState = {
   hotelChainId: "",
   hotelChainSubBrandId: "none",
+  propertyId: null,
   propertyName: "",
+  placeId: null,
   geoConfirmed: false,
   countryCode: null,
   city: null,
+  address: null,
   latitude: null,
   longitude: null,
   checkIn: "",
@@ -112,12 +119,15 @@ export function buildInitialState(
   return {
     hotelChainId: initialData.hotelChainId,
     hotelChainSubBrandId: initialData.hotelChainSubBrandId ?? "none",
-    propertyName: initialData.propertyName,
-    geoConfirmed: initialData.countryCode != null,
-    countryCode: initialData.countryCode ?? null,
-    city: initialData.city ?? null,
-    latitude: null,
-    longitude: null,
+    propertyId: initialData.propertyId,
+    propertyName: initialData.property.name,
+    placeId: initialData.property.placeId,
+    geoConfirmed: true, // existing bookings always have a confirmed property
+    countryCode: initialData.property.countryCode ?? null,
+    city: initialData.property.city ?? null,
+    address: initialData.property.address ?? null,
+    latitude: initialData.property.latitude ?? null,
+    longitude: initialData.property.longitude ?? null,
     checkIn: toDateInputValue(initialData.checkIn),
     checkOut: toDateInputValue(initialData.checkOut),
     paymentType: toPaymentType(
@@ -248,10 +258,13 @@ export function bookingFormReducer(state: BookingFormState, action: Action): Boo
     case "SET_PROPERTY_GEO":
       return {
         ...state,
+        propertyId: null, // will be resolved by API on submit
         propertyName: action.result.displayName,
+        placeId: action.result.placeId ?? null,
         geoConfirmed: true,
         countryCode: action.result.countryCode || null,
         city: action.result.city || null,
+        address: action.result.address ?? null,
         latitude: action.result.latitude ?? null,
         longitude: action.result.longitude ?? null,
       };
@@ -260,8 +273,10 @@ export function bookingFormReducer(state: BookingFormState, action: Action): Boo
       return {
         ...state,
         geoConfirmed: false,
+        placeId: null,
         countryCode: null,
         city: null,
+        address: null,
         latitude: null,
         longitude: null,
       };
@@ -269,10 +284,13 @@ export function bookingFormReducer(state: BookingFormState, action: Action): Boo
     case "RESET_PROPERTY":
       return {
         ...state,
+        propertyId: null,
         propertyName: "",
+        placeId: null,
         geoConfirmed: false,
         countryCode: null,
         city: null,
+        address: null,
         latitude: null,
         longitude: null,
       };

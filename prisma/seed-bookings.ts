@@ -422,10 +422,21 @@ export async function seedBookings(userId: string) {
   ];
 
   for (const b of bookings) {
-    const { certificates, benefits, ...bookingData } = b;
+    const { certificates, benefits, propertyName, countryCode, city, ...bookingData } = b;
+
+    // Find or create a Property row for this booking (keyed by name + chain)
+    let property = await prisma.property.findFirst({
+      where: { name: propertyName, hotelChainId: bookingData.hotelChainId },
+    });
+    if (!property) {
+      property = await prisma.property.create({
+        data: { name: propertyName, hotelChainId: bookingData.hotelChainId, countryCode, city },
+      });
+    }
 
     const payload = {
       ...bookingData,
+      propertyId: property.id,
       bookingSource: bookingData.bookingSource as BookingSourceType,
       certificates: {
         create: certificates.map((c) => ({ certType: c.certType as CertType })),

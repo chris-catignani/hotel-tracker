@@ -10,7 +10,7 @@ async function main() {
 
   const bookings = await prisma.booking.findMany({
     orderBy: { checkIn: "asc" },
-    select: { id: true, propertyName: true, checkIn: true },
+    select: { id: true, property: { select: { name: true } }, checkIn: true },
   });
 
   console.log(`Found ${bookings.length} bookings to process.`);
@@ -23,7 +23,7 @@ async function main() {
     const dateStr = new Date(booking.checkIn).toLocaleDateString();
 
     process.stdout.write(
-      `[${i + 1}/${bookings.length}] Processing: ${booking.propertyName} (${dateStr})... `
+      `[${i + 1}/${bookings.length}] Processing: ${booking.property.name} (${dateStr})... `
     );
 
     try {

@@ -29,7 +29,7 @@ interface BookingCertificate {
 
 interface BookingWithRelations {
   id: string;
-  propertyName: string;
+  property: { name: string };
   checkIn: string;
   checkOut: string;
   numNights: number;
@@ -200,7 +200,7 @@ export default function DashboardPage() {
     fetch("/api/bookings")
       .then((res) => res.json())
       .then((data) => {
-        setBookings(data);
+        setBookings(Array.isArray(data) ? data : []);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -411,7 +411,7 @@ export default function DashboardPage() {
                                 href={`/bookings/${booking.id}`}
                                 className="font-medium hover:underline"
                               >
-                                {booking.propertyName}
+                                {booking.property.name}
                               </Link>
                               <div className="text-xs text-muted-foreground mt-0.5">
                                 {booking.hotelChain.name}
