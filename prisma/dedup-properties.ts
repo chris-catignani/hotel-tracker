@@ -43,23 +43,17 @@ async function main() {
         console.log(`    Moved ${updated.count} booking(s) → ${keep.id}`);
       }
 
-      // Re-point price watches
-      const existingWatch = await prisma.priceWatch.findUnique({
-        where: {
-          userId_propertyId: {
-            userId:
-              (await prisma.priceWatch.findFirst({ where: { propertyId: dup.id } }))?.userId ?? "",
-            propertyId: keep.id,
-          },
-        },
-      });
-
+      // Re-point price watches — check per-user since multiple users may watch the same property
       const dupWatches = await prisma.priceWatch.findMany({ where: { propertyId: dup.id } });
       for (const w of dupWatches) {
-        if (existingWatch) {
-          // Already a watch for this user+keep property — delete the duplicate watch
+        const existingWatchForUser = await prisma.priceWatch.findUnique({
+          where: { userId_propertyId: { userId: w.userId, propertyId: keep.id } },
+        });
+        if (existingWatchForUser) {
+          // This user already has a watch on the canonical property — delete the duplicate
           await prisma.priceWatch.delete({ where: { id: w.id } });
         } else {
+          // Re-point to the canonical property
           await prisma.priceWatch.update({ where: { id: w.id }, data: { propertyId: keep.id } });
         }
       }

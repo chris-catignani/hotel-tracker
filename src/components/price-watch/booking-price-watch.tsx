@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,7 +48,6 @@ interface BookingPriceWatchProps {
   checkOut: string;
   totalCost: string | number;
   currency: string;
-  initialWatch: PriceWatchData | null;
   initialWatchBooking: PriceWatchBookingData | null;
 }
 
@@ -59,11 +58,21 @@ export function BookingPriceWatch({
   checkOut,
   totalCost,
   currency,
-  initialWatch,
   initialWatchBooking,
 }: BookingPriceWatchProps) {
-  const [watch, setWatch] = useState<PriceWatchData | null>(initialWatch);
+  const [watch, setWatch] = useState<PriceWatchData | null>(null);
   const [, setWatchBooking] = useState<PriceWatchBookingData | null>(initialWatchBooking);
+
+  // Load the full watch data on mount if a PriceWatchBooking exists
+  const loadWatch = useCallback(async (priceWatchId: string) => {
+    const res = await fetch(`/api/price-watches/${priceWatchId}`);
+    if (res.ok) setWatch(await res.json());
+  }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (initialWatchBooking) loadWatch(initialWatchBooking.priceWatchId);
+  }, [initialWatchBooking, loadWatch]);
   const [cashThreshold, setCashThreshold] = useState(
     initialWatchBooking?.cashThreshold != null
       ? String(Number(initialWatchBooking.cashThreshold))

@@ -87,12 +87,34 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       }
     }
 
-    await prisma.priceWatch.update({
+    const updatedWatch = await prisma.priceWatch.update({
       where: { id },
       data: { lastCheckedAt: new Date() },
+      include: {
+        property: true,
+        bookings: {
+          include: {
+            booking: {
+              select: {
+                id: true,
+                checkIn: true,
+                checkOut: true,
+                numNights: true,
+                totalCost: true,
+                currency: true,
+                hotelChain: { select: { name: true } },
+              },
+            },
+          },
+        },
+        snapshots: {
+          orderBy: { fetchedAt: "desc" as const },
+          take: 5,
+        },
+      },
     });
 
-    return NextResponse.json({ snapshots });
+    return NextResponse.json(updatedWatch);
   } catch (error) {
     if (error instanceof HyattFetchError) {
       const status = error.status === 429 ? 429 : error.status === 403 ? 403 : 502;

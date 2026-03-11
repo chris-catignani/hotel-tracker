@@ -103,11 +103,8 @@ export default function PriceWatchPage() {
     setError(null);
     const res = await fetch(`/api/price-watches/${watch.id}/refresh`, { method: "POST" });
     if (res.ok) {
-      const watchRes = await fetch(`/api/price-watches/${watch.id}`);
-      if (watchRes.ok) {
-        const updated = await watchRes.json();
-        setWatches((prev) => prev.map((w) => (w.id === watch.id ? updated : w)));
-      }
+      const updated = await res.json();
+      setWatches((prev) => prev.map((w) => (w.id === watch.id ? updated : w)));
     } else {
       setError(await extractApiError(res, "Failed to refresh price watch."));
     }
