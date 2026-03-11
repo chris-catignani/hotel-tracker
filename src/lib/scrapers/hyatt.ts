@@ -61,7 +61,7 @@ async function fetchHyattRates(
     checkoutDate: checkOut,
     rate: "Standard",
     rateFilter: "woh",
-    location: spiritCode,
+    // 'location' param omitted — spiritCode in the URL path is the definitive identifier
   });
 
   const url = `${HYATT_RATES_URL}/${spiritCode}?${params}`;
