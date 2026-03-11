@@ -9,6 +9,7 @@ import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
 import { fetchExchangeRate, getCurrentRate, resolveCalcCurrencyRate } from "@/lib/exchange-rate";
 import { enrichBookingWithRate } from "@/lib/booking-enrichment";
+import { findOrCreateProperty } from "@/lib/property-utils";
 
 const BOOKING_INCLUDE = (userId: string) =>
   ({
@@ -117,31 +118,19 @@ export async function POST(request: NextRequest) {
       hotelChainSubBrandId,
     } = body;
 
-    // Resolve propertyId: use provided id, or upsert a property from geo fields
+    // Resolve propertyId: use provided id, or find/create from geo fields
     let propertyId: string = bodyPropertyId;
     if (!propertyId && propertyName) {
-      const existing = placeId
-        ? await prisma.property.findUnique({ where: { placeId } })
-        : await prisma.property.findFirst({
-            where: { name: propertyName, hotelChainId: hotelChainId ?? undefined },
-          });
-      if (existing) {
-        propertyId = existing.id;
-      } else {
-        const created = await prisma.property.create({
-          data: {
-            name: propertyName,
-            placeId: placeId || null,
-            hotelChainId: hotelChainId || null,
-            countryCode: countryCode || null,
-            city: city || null,
-            address: address || null,
-            latitude: latitude ?? null,
-            longitude: longitude ?? null,
-          },
-        });
-        propertyId = created.id;
-      }
+      propertyId = await findOrCreateProperty({
+        propertyName,
+        placeId,
+        hotelChainId,
+        countryCode,
+        city,
+        address,
+        latitude,
+        longitude,
+      });
     }
 
     const resolvedCurrency: string = currency || "USD";

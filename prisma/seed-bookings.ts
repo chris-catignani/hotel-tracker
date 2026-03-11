@@ -424,29 +424,15 @@ export async function seedBookings(userId: string) {
   for (const b of bookings) {
     const { certificates, benefits, propertyName, countryCode, city, ...bookingData } = b;
 
-    // Upsert a Property row for this booking (keyed by name + chain)
-    const property = await prisma.property.upsert({
-      where: {
-        // No unique constraint on (name, hotelChainId) — find by name+chain manually
-        id:
-          (
-            await prisma.property.findFirst({
-              where: {
-                name: propertyName,
-                hotelChainId: bookingData.hotelChainId,
-              },
-              select: { id: true },
-            })
-          )?.id ?? "",
-      },
-      update: {},
-      create: {
-        name: propertyName,
-        hotelChainId: bookingData.hotelChainId,
-        countryCode,
-        city,
-      },
+    // Find or create a Property row for this booking (keyed by name + chain)
+    let property = await prisma.property.findFirst({
+      where: { name: propertyName, hotelChainId: bookingData.hotelChainId },
     });
+    if (!property) {
+      property = await prisma.property.create({
+        data: { name: propertyName, hotelChainId: bookingData.hotelChainId, countryCode, city },
+      });
+    }
 
     const payload = {
       ...bookingData,
