@@ -200,7 +200,7 @@ export default function DashboardPage() {
     fetch("/api/bookings")
       .then((res) => res.json())
       .then((data) => {
-        setBookings(data);
+        setBookings(Array.isArray(data) ? data : []);
         setLoading(false);
       })
       .catch(() => setLoading(false));
