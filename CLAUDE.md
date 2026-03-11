@@ -42,6 +42,9 @@ RESTful routes with Next.js `route.ts` handlers:
 - `booking-promotions/[id]/` — PUT (update `appliedValue`/`verified`)
 - `point-types/` — GET list, POST; `[id]/` — PUT, DELETE
 - `user-statuses/` — GET list, PUT (upsert elite status per hotel chain)
+- `properties/` — GET search; `[id]/` — PUT (update `chainPropertyId`)
+- `price-watches/` — GET list, POST upsert+link booking; `[id]/` — GET, PUT (toggle), DELETE; `[id]/refresh/` — POST (manual fetch, 5-min rate limit); `[id]/snapshots/` — GET history
+- `cron/refresh-price-watches/` — GET (Bearer `CRON_SECRET`); fetches prices for all enabled watches, saves snapshots, sends email alerts
 
 ### Key Library Files (`src/lib/`)
 
@@ -49,21 +52,33 @@ RESTful routes with Next.js `route.ts` handlers:
 - `promotion-matching.ts` — Core logic: fetches booking, evaluates active promotions against matching criteria (hotel, card, portal, date range, min spend), calculates `appliedValue`, writes `BookingPromotion` records
 - `api-error.ts` — Server error responses; includes stack trace in dev, generic message in prod
 - `client-error.ts` — Client-side error extraction; verbose with `NEXT_PUBLIC_DEBUG=true`
-- `geo-lookup.ts` — `searchProperties(query)`: checks `GeoCache`, calls Google Places API (New) on miss, caches results. Requires `GOOGLE_PLACES_API_KEY` env var; returns `[]` gracefully if unset
+- `geo-lookup.ts` — `searchProperties(query)`: checks `GeoCache`, calls Google Places API (New) on miss, caches results. Requires `GOOGLE_PLACES_API_KEY` env var; returns `[]` gracefully if unset. Now returns `placeId` and `address` in results (both Basic tier).
 - `countries.ts` — Static `COUNTRIES` list (ISO 3166-1 alpha-2), `countryName()` helper, and `ALPHA3_TO_ALPHA2` map (used if ever needing to normalize third-party alpha-3 codes)
+- `property-utils.ts` — `findOrCreateProperty()`: finds an existing Property by `placeId` or `(name, hotelChainId)`, or creates one. Used by booking POST/PUT to resolve `propertyId`.
+- `price-fetcher.ts` — `PriceFetcher` interface (`canFetch`, `fetchPrice`) and `selectFetcher()`. Add new chain scrapers here.
+- `scrapers/hyatt.ts` — `HyattFetcher`: calls `hyatt.com/shop/service/rooms/roomrates/{spiritCode}` with `HYATT_SESSION_COOKIE`. `createHyattFetcher()` returns `null` if env var not set.
+- `email.ts` — `sendPriceDropAlert()` via Resend. Requires `RESEND_API_KEY` and `RESEND_FROM_EMAIL` env vars; skips silently if unset.
 
 ### Data Model
 
 ```
-Hotel          ← Booking → CreditCard
-                    ↓
-               BookingPromotion ← Promotion
+HotelChain ← Property ← Booking → CreditCard
+                 ↓           ↓
+            PriceWatch   BookingPromotion ← Promotion
+                 ↓
+        PriceWatchBooking (per booking thresholds)
+                 ↓
+          PriceSnapshot (fetched prices)
 ShoppingPortal ← Booking
 ```
 
 Key fields:
 
-- `Booking`: `pretaxCost`, `taxAmount`, `totalCost`, `portalCashbackRate`, `portalCashbackOnTotal`, `loyaltyPointsEarned`, `pointsRedeemed`, `currency`, `originalAmount`, `bookingSource` (enum: direct_web/direct_app/ota/other), `otaAgencyId`, `countryCode` (ISO alpha-2), `city` — geo fields populated when user confirms a property via autocomplete or manual entry
+- `Booking`: `propertyId → Property` (required), `pretaxCost`, `taxAmount`, `totalCost`, `portalCashbackRate`, `portalCashbackOnTotal`, `loyaltyPointsEarned`, `pointsRedeemed`, `currency`, `bookingSource` (enum: direct_web/direct_app/ota/other), `otaAgencyId`. Geo data (`countryCode`, `city`, `address`, `latitude`, `longitude`) is now on `Property`, not `Booking`.
+- `Property`: normalized hotel property entity. `name`, `placeId` (Google Places ID, unique), `chainPropertyId` (chain-specific scraper ID — spiritCode for Hyatt), `hotelChainId`, `countryCode`, `city`, `address`, `latitude`, `longitude`, `starRating`
+- `PriceWatch`: one per user per property (`@@unique([userId, propertyId])`). `isEnabled`, `lastCheckedAt`. Links to `PriceWatchBooking[]` and `PriceSnapshot[]`.
+- `PriceWatchBooking`: per-booking config linked to a `PriceWatch`. `cashThreshold`, `awardThreshold`, `dateFlexibilityDays`. One per booking (`bookingId` is unique).
+- `PriceSnapshot`: one row per price fetch. `checkIn`, `checkOut`, `cashPrice`, `cashCurrency`, `awardPrice`, `source` (e.g. `"hyatt_scraper"`), `fetchedAt`.
 - `GeoCache`: caches Google Places API results keyed by normalized query string to avoid repeat API calls
 - `BookingBenefit`: `benefitType` (enum: free_breakfast/dining_credit/spa_credit/room_upgrade/late_checkout/early_checkin/other), `label`, `dollarValue` — tracks non-cash perks received per booking
 - `OtaAgency`: simple `name` model; referenced by bookings when `bookingSource = ota`
@@ -124,6 +139,7 @@ Calculated server-side in the booking API and client-side in the booking form (u
 - `/` — Dashboard (stats, recent bookings, savings breakdown, hotel chain summary)
 - `/bookings`, `/bookings/new`, `/bookings/[id]`, `/bookings/[id]/edit`
 - `/promotions`, `/promotions/new`, `/promotions/[id]/edit`
+- `/price-watch` — All price watches with latest cash/award prices, toggle, manual refresh, delete
 - `/settings` — Tabs: My Status (first), Point Types, Hotel Chains, Credit Cards, Shopping Portals, OTA Agencies
 
 ### Mobile Design
@@ -159,7 +175,8 @@ The app is fully responsive with a mobile-first approach:
 ### Important Gotchas
 
 - Prisma `Decimal` fields return as strings from API responses — always wrap with `Number()`
-- **Property name geo confirmation:** The booking form requires the user to select a property from the Google Places autocomplete or use the "Can't find your hotel?" manual entry modal. Free-form text submission is blocked by validation (`geoConfirmed` must be `true`). The `PropertyNameCombobox` component handles the confirmed/unconfirmed UI states; `ManualGeoModal` handles the fallback path.
+- **Property name geo confirmation:** The booking form requires the user to select a property from the Google Places autocomplete or use the "Can't find your hotel?" manual entry modal. Free-form text submission is blocked by validation (`geoConfirmed` must be `true`). The `PropertyNameCombobox` component handles the confirmed/unconfirmed UI states; `ManualGeoModal` handles the fallback path. On confirm, the form stores geo fields in state; the booking API calls `findOrCreateProperty()` to upsert a `Property` row and returns `propertyId`.
+- **`Booking.propertyId` is required** — all bookings must have a linked `Property`. Geo data (`countryCode`, `city`, etc.) lives on `Property`, not on `Booking`. When accessing geo data from a booking, use `booking.property.countryCode` etc.
 - After switching geo API providers: clear the `GeoCache` table (`DELETE FROM geo_cache;`) to flush stale cached results
 - Settings page uses controlled `Dialog` components with separate open/edit state variables
 - `db:push` clears `.next` cache automatically; dev server restart still required after schema changes
