@@ -47,6 +47,7 @@ interface BookingFormProps {
   initialData?: Booking;
   onSubmit: (data: BookingFormData) => Promise<void>;
   onCancel: () => void;
+  onCurrencyChange?: (currency: string) => void;
   submitting: boolean;
   submitLabel: string;
   title: string;
@@ -56,6 +57,7 @@ export function BookingForm({
   initialData,
   onSubmit,
   onCancel,
+  onCurrencyChange,
   submitting,
   submitLabel,
   title,
@@ -204,6 +206,10 @@ export function BookingForm({
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchReferenceData();
   }, [fetchReferenceData]);
+
+  useEffect(() => {
+    onCurrencyChange?.(currency);
+  }, [currency, onCurrencyChange]);
 
   const { errors, isValid } = useMemo(() => {
     const errs = {

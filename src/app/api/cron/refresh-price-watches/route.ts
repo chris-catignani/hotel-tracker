@@ -15,6 +15,7 @@ import { apiError } from "@/lib/api-error";
 import { createHyattFetcher } from "@/lib/scrapers/hyatt";
 import { selectFetcher, type PriceFetcher } from "@/lib/price-fetcher";
 import { sendPriceDropAlert } from "@/lib/email";
+import { getCurrentRate } from "@/lib/exchange-rate";
 
 export async function GET(request: NextRequest) {
   try {
@@ -62,6 +63,7 @@ export async function GET(request: NextRequest) {
     });
 
     const results: { watchId: string; property: string; snapshots: number; alerts: number }[] = [];
+    const ratesCache = new Map<string, number | null>();
 
     for (const watch of watches) {
       const fetcher = selectFetcher(watch.property, fetchers);
@@ -96,12 +98,26 @@ export async function GET(request: NextRequest) {
           });
           snapshotCount++;
 
-          // Check thresholds and send alert if met
+          // Check thresholds and send alert if met.
+          // Convert scraped cash price to the booking's currency before comparing,
+          // since scrapers return USD but the threshold is stored in booking currency.
           const cashThresholdNum = pwb.cashThreshold !== null ? Number(pwb.cashThreshold) : null;
+          let cashPriceInBookingCurrency = result.cashPrice;
+          if (result.cashPrice !== null && result.cashCurrency !== pwb.booking.currency) {
+            const bookingCurrency = pwb.booking.currency;
+            if (!ratesCache.has(bookingCurrency)) {
+              ratesCache.set(bookingCurrency, await getCurrentRate(bookingCurrency));
+            }
+            const rate = ratesCache.get(bookingCurrency);
+            if (rate != null && rate > 0) {
+              // rate = 1 bookingCurrency in USD, so: bookingCurrencyPrice = usdPrice / rate
+              cashPriceInBookingCurrency = result.cashPrice / rate;
+            }
+          }
           const cashHit =
             cashThresholdNum !== null &&
-            result.cashPrice !== null &&
-            result.cashPrice <= cashThresholdNum;
+            cashPriceInBookingCurrency !== null &&
+            cashPriceInBookingCurrency <= cashThresholdNum;
           const awardHit =
             pwb.awardThreshold !== null &&
             result.awardPrice !== null &&

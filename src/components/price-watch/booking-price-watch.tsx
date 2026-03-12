@@ -190,7 +190,7 @@ export function BookingPriceWatch({
           <div>
             <p className="font-medium text-sm">Monitor prices for this stay</p>
             <p className="text-xs text-muted-foreground">
-              {checkIn} → {checkOut}
+              {formatDate(checkIn)} → {formatDate(checkOut)}
             </p>
           </div>
           <Switch

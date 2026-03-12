@@ -14,7 +14,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { RefreshCw, Loader2, Trash2 } from "lucide-react";
+import { RefreshCw, Loader2, Trash2, Pencil, Check, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { extractApiError } from "@/lib/client-error";
@@ -58,6 +59,85 @@ interface PriceWatch {
   snapshots: PriceSnapshot[];
 }
 
+function SpiritCodeEditor({
+  propertyId,
+  chainPropertyId,
+  isEditing,
+  editingValue,
+  isSaving,
+  onEdit,
+  onSave,
+  onCancel,
+  onValueChange,
+  className,
+}: {
+  propertyId: string;
+  chainPropertyId: string | null;
+  isEditing: boolean;
+  editingValue: string;
+  isSaving: boolean;
+  onEdit: () => void;
+  onSave: () => void;
+  onCancel: () => void;
+  onValueChange: (value: string) => void;
+  className?: string;
+}) {
+  if (isEditing) {
+    return (
+      <div className={`flex items-center gap-1 ${className ?? ""}`}>
+        <Input
+          value={editingValue}
+          onChange={(e) => onValueChange(e.target.value)}
+          placeholder="e.g. chiph"
+          className="h-7 text-xs w-28"
+          data-testid={`spirit-code-input-${propertyId}`}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") onSave();
+            if (e.key === "Escape") onCancel();
+          }}
+        />
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-7 w-7 p-0"
+          onClick={onSave}
+          disabled={isSaving}
+        >
+          {isSaving ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <Check className="h-3 w-3 text-green-600" />
+          )}
+        </Button>
+        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={onCancel}>
+          <X className="h-3 w-3 text-muted-foreground" />
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`flex items-center gap-1 ${className ?? ""}`}>
+      {chainPropertyId ? (
+        <span className="text-xs text-muted-foreground font-mono">{chainPropertyId}</span>
+      ) : (
+        <Badge variant="outline" className="text-xs text-amber-600 border-amber-300">
+          Spirit code needed
+        </Badge>
+      )}
+      <Button
+        size="sm"
+        variant="ghost"
+        className="h-6 w-6 p-0"
+        onClick={onEdit}
+        data-testid={`edit-spirit-code-${propertyId}`}
+      >
+        <Pencil className="h-3 w-3 text-muted-foreground" />
+      </Button>
+    </div>
+  );
+}
+
 export default function PriceWatchPage() {
   const [watches, setWatches] = useState<PriceWatch[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,6 +145,9 @@ export default function PriceWatchPage() {
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [editingPropertyId, setEditingPropertyId] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState("");
+  const [savingPropertyId, setSavingPropertyId] = useState<string | null>(null);
 
   const loadWatches = useCallback(async () => {
     setLoading(true);
@@ -122,6 +205,41 @@ export default function PriceWatchPage() {
       setError(await extractApiError(res, "Failed to delete price watch."));
     }
     setDeletingId(null);
+  };
+
+  const handleEditChainPropertyId = (propertyId: string, current: string | null) => {
+    setEditingPropertyId(propertyId);
+    setEditingValue(current ?? "");
+  };
+
+  const handleCancelEdit = () => {
+    setEditingPropertyId(null);
+    setEditingValue("");
+  };
+
+  const handleSaveChainPropertyId = async (propertyId: string) => {
+    setSavingPropertyId(propertyId);
+    setError(null);
+    const res = await fetch(`/api/properties/${propertyId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chainPropertyId: editingValue.trim() || null }),
+    });
+    if (res.ok) {
+      const saved = editingValue.trim() || null;
+      setWatches((prev) =>
+        prev.map((w) =>
+          w.property.id === propertyId
+            ? { ...w, property: { ...w.property, chainPropertyId: saved } }
+            : w
+        )
+      );
+      setEditingPropertyId(null);
+      setEditingValue("");
+    } else {
+      setError(await extractApiError(res, "Failed to save spirit code."));
+    }
+    setSavingPropertyId(null);
   };
 
   if (loading) {
@@ -221,11 +339,19 @@ export default function PriceWatchPage() {
                       <p className="text-xs text-muted-foreground">No price data yet</p>
                     )}
 
-                    {!watch.property.chainPropertyId && (
-                      <Badge variant="outline" className="text-xs text-amber-600 border-amber-300">
-                        Spirit code needed
-                      </Badge>
-                    )}
+                    <SpiritCodeEditor
+                      propertyId={watch.property.id}
+                      chainPropertyId={watch.property.chainPropertyId}
+                      isEditing={editingPropertyId === watch.property.id}
+                      editingValue={editingValue}
+                      isSaving={savingPropertyId === watch.property.id}
+                      onEdit={() =>
+                        handleEditChainPropertyId(watch.property.id, watch.property.chainPropertyId)
+                      }
+                      onSave={() => handleSaveChainPropertyId(watch.property.id)}
+                      onCancel={handleCancelEdit}
+                      onValueChange={setEditingValue}
+                    />
 
                     <div className="flex gap-2">
                       <Button
@@ -290,14 +416,23 @@ export default function PriceWatchPage() {
                             .filter(Boolean)
                             .join(", ")}
                         </div>
-                        {!watch.property.chainPropertyId && (
-                          <Badge
-                            variant="outline"
-                            className="text-xs text-amber-600 border-amber-300 mt-1"
-                          >
-                            Spirit code needed
-                          </Badge>
-                        )}
+                        <SpiritCodeEditor
+                          propertyId={watch.property.id}
+                          chainPropertyId={watch.property.chainPropertyId}
+                          isEditing={editingPropertyId === watch.property.id}
+                          editingValue={editingValue}
+                          isSaving={savingPropertyId === watch.property.id}
+                          onEdit={() =>
+                            handleEditChainPropertyId(
+                              watch.property.id,
+                              watch.property.chainPropertyId
+                            )
+                          }
+                          onSave={() => handleSaveChainPropertyId(watch.property.id)}
+                          onCancel={handleCancelEdit}
+                          onValueChange={setEditingValue}
+                          className="mt-1"
+                        />
                       </TableCell>
                       <TableCell>
                         <div className="space-y-0.5">

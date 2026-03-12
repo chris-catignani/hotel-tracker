@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { BookingForm } from "@/components/bookings/booking-form";
+import { BookingPriceWatch } from "@/components/price-watch/booking-price-watch";
 import { Booking, BookingFormData } from "@/lib/types";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { extractApiError } from "@/lib/client-error";
@@ -68,14 +69,26 @@ export default function EditBookingPage() {
       <ErrorBanner error={error} onDismiss={() => setError(null)} />
 
       {booking ? (
-        <BookingForm
-          initialData={booking}
-          onSubmit={handleSubmit}
-          onCancel={() => router.push(`/bookings/${id}`)}
-          submitting={submitting}
-          submitLabel="Save Changes"
-          title="Booking Details"
-        />
+        <>
+          <BookingForm
+            initialData={booking}
+            onSubmit={handleSubmit}
+            onCancel={() => router.push(`/bookings/${id}`)}
+            submitting={submitting}
+            submitLabel="Save Changes"
+            title="Booking Details"
+          />
+          <BookingPriceWatch
+            bookingId={booking.id}
+            propertyId={booking.propertyId}
+            hotelChainId={booking.hotelChainId}
+            checkIn={booking.checkIn}
+            checkOut={booking.checkOut}
+            totalCost={booking.totalCost}
+            currency={booking.currency}
+            initialWatchBooking={booking.priceWatchBooking ?? null}
+          />
+        </>
       ) : (
         <p className="text-muted-foreground">Booking not found.</p>
       )}
