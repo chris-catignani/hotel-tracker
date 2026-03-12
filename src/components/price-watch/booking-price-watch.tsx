@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Fragment } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -105,6 +105,15 @@ export function BookingPriceWatch({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showRooms, setShowRooms] = useState(false);
+  const [expandedRooms, setExpandedRooms] = useState<Set<string>>(new Set());
+
+  const toggleRoom = (roomId: string) =>
+    setExpandedRooms((prev) => {
+      const next = new Set(prev);
+      if (next.has(roomId)) next.delete(roomId);
+      else next.add(roomId);
+      return next;
+    });
 
   const isEnabled = watch?.isEnabled ?? false;
   const latestSnapshot = watch?.snapshots?.[0] ?? null;
@@ -278,86 +287,157 @@ export function BookingPriceWatch({
                   Checked {formatDate(latestSnapshot.fetchedAt)}
                 </p>
 
-                {latestSnapshot.rooms.length > 0 && (
-                  <div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full justify-between h-7 text-xs px-2"
-                      onClick={() => setShowRooms((v) => !v)}
-                      data-testid="toggle-room-rates"
-                    >
-                      All room rates ({latestSnapshot.rooms.length})
-                      {showRooms ? (
-                        <ChevronUp className="h-3 w-3" />
-                      ) : (
-                        <ChevronDown className="h-3 w-3" />
-                      )}
-                    </Button>
-                    {showRooms && (
-                      <div className="mt-2 overflow-x-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="text-xs">Room</TableHead>
-                              <TableHead className="text-xs">Rate Plan</TableHead>
-                              <TableHead className="text-xs">Refundable</TableHead>
-                              <TableHead className="text-xs text-right">Cash</TableHead>
-                              <TableHead className="text-xs text-right">Award</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {latestSnapshot.rooms.map((room) => (
-                              <TableRow key={room.id} data-testid="room-rate-row">
-                                <TableCell className="text-xs py-1.5">{room.roomName}</TableCell>
-                                <TableCell className="text-xs py-1.5">
-                                  <span>{room.ratePlanName}</span>
-                                  {room.isCorporate && (
-                                    <Badge
-                                      variant="outline"
-                                      className="ml-1 text-[10px] px-1 py-0 border-blue-300 text-blue-700"
-                                    >
-                                      Corp
-                                    </Badge>
-                                  )}
-                                </TableCell>
-                                <TableCell className="text-xs py-1.5">
-                                  {room.awardPrice != null ? (
-                                    <span className="text-muted-foreground">—</span>
-                                  ) : room.isRefundable ? (
-                                    <Badge
-                                      variant="outline"
-                                      className="text-[10px] px-1 py-0 border-green-300 text-green-700"
-                                    >
-                                      Yes
-                                    </Badge>
-                                  ) : (
-                                    <Badge
-                                      variant="outline"
-                                      className="text-[10px] px-1 py-0 border-orange-300 text-orange-700"
-                                    >
-                                      No
-                                    </Badge>
-                                  )}
-                                </TableCell>
-                                <TableCell className="text-xs py-1.5 text-right">
-                                  {room.cashPrice != null
-                                    ? formatCurrency(Number(room.cashPrice), room.cashCurrency)
-                                    : "—"}
-                                </TableCell>
-                                <TableCell className="text-xs py-1.5 text-right">
-                                  {room.awardPrice != null
-                                    ? `${room.awardPrice.toLocaleString()} pts`
-                                    : "—"}
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
+                {latestSnapshot.rooms.length > 0 &&
+                  (() => {
+                    // Group rooms by roomId
+                    const groups = latestSnapshot.rooms.reduce<
+                      Record<
+                        string,
+                        { roomId: string; roomName: string; rates: PriceSnapshotRoom[] }
+                      >
+                    >((acc, r) => {
+                      if (!acc[r.roomId])
+                        acc[r.roomId] = { roomId: r.roomId, roomName: r.roomName, rates: [] };
+                      acc[r.roomId].rates.push(r);
+                      return acc;
+                    }, {});
+                    const roomGroups = Object.values(groups);
+
+                    return (
+                      <div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full justify-between h-7 text-xs px-2"
+                          onClick={() => setShowRooms((v) => !v)}
+                          data-testid="toggle-room-rates"
+                        >
+                          All room rates ({roomGroups.length} room types)
+                          {showRooms ? (
+                            <ChevronUp className="h-3 w-3" />
+                          ) : (
+                            <ChevronDown className="h-3 w-3" />
+                          )}
+                        </Button>
+                        {showRooms && (
+                          <div className="mt-2 overflow-x-auto">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead className="text-xs w-4" />
+                                  <TableHead className="text-xs">Room</TableHead>
+                                  <TableHead className="text-xs text-right">From (cash)</TableHead>
+                                  <TableHead className="text-xs text-right">Award</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {roomGroups.map(({ roomId, roomName, rates }) => {
+                                  const cashRates = rates.filter((r) => r.cashPrice != null);
+                                  const awardRate = rates.find((r) => r.awardPrice != null);
+                                  const lowestRefundable = cashRates
+                                    .filter((r) => r.isRefundable)
+                                    .reduce<PriceSnapshotRoom | null>(
+                                      (best, r) =>
+                                        best === null ||
+                                        Number(r.cashPrice) < Number(best.cashPrice)
+                                          ? r
+                                          : best,
+                                      null
+                                    );
+                                  const isExpanded = expandedRooms.has(roomId);
+
+                                  return (
+                                    <Fragment key={roomId}>
+                                      {/* Summary row */}
+                                      <TableRow
+                                        key={roomId}
+                                        className="cursor-pointer hover:bg-muted/50"
+                                        onClick={() => toggleRoom(roomId)}
+                                        data-testid="room-group-row"
+                                      >
+                                        <TableCell className="py-1.5 pr-0">
+                                          {isExpanded ? (
+                                            <ChevronUp className="h-3 w-3 text-muted-foreground" />
+                                          ) : (
+                                            <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                                          )}
+                                        </TableCell>
+                                        <TableCell className="text-xs py-1.5 font-medium">
+                                          {roomName}
+                                        </TableCell>
+                                        <TableCell className="text-xs py-1.5 text-right">
+                                          {lowestRefundable != null
+                                            ? formatCurrency(
+                                                Number(lowestRefundable.cashPrice),
+                                                lowestRefundable.cashCurrency
+                                              )
+                                            : "—"}
+                                        </TableCell>
+                                        <TableCell className="text-xs py-1.5 text-right">
+                                          {awardRate != null
+                                            ? `${awardRate.awardPrice!.toLocaleString()} pts`
+                                            : "—"}
+                                        </TableCell>
+                                      </TableRow>
+
+                                      {/* Expanded rate plan rows */}
+                                      {isExpanded &&
+                                        cashRates.map((r) => (
+                                          <TableRow
+                                            key={r.id}
+                                            className="bg-muted/30"
+                                            data-testid="room-rate-row"
+                                          >
+                                            <TableCell className="py-1" />
+                                            <TableCell className="text-xs py-1 pl-4 text-muted-foreground">
+                                              {r.ratePlanName}
+                                              {r.isCorporate && (
+                                                <Badge
+                                                  variant="outline"
+                                                  className="ml-1 text-[10px] px-1 py-0 border-blue-300 text-blue-700"
+                                                >
+                                                  Corp
+                                                </Badge>
+                                              )}
+                                            </TableCell>
+                                            <TableCell className="text-xs py-1 text-right">
+                                              <span>
+                                                {formatCurrency(
+                                                  Number(r.cashPrice),
+                                                  r.cashCurrency
+                                                )}
+                                              </span>
+                                              <span className="ml-1">
+                                                {r.isRefundable ? (
+                                                  <Badge
+                                                    variant="outline"
+                                                    className="text-[10px] px-1 py-0 border-green-300 text-green-700"
+                                                  >
+                                                    Ref
+                                                  </Badge>
+                                                ) : (
+                                                  <Badge
+                                                    variant="outline"
+                                                    className="text-[10px] px-1 py-0 border-orange-300 text-orange-700"
+                                                  >
+                                                    NR
+                                                  </Badge>
+                                                )}
+                                              </span>
+                                            </TableCell>
+                                            <TableCell className="py-1" />
+                                          </TableRow>
+                                        ))}
+                                    </Fragment>
+                                  );
+                                })}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                )}
+                    );
+                  })()}
               </div>
             )}
 
