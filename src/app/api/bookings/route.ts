@@ -59,6 +59,7 @@ const BOOKING_INCLUDE = (userId: string) =>
 
 export async function GET(request: NextRequest) {
   try {
+    throw new Error("Sentry test error — delete me");
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
     const userId = userIdOrResponse;
