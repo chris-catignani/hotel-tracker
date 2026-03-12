@@ -2,8 +2,8 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import { PrismaClient } from "@prisma/client";
-import { createHyattFetcher } from "../src/lib/scrapers/hyatt";
-import { runPriceWatchRefresh } from "../src/lib/price-watch-refresh";
+import { createHyattFetcher } from "@/lib/scrapers/hyatt";
+import { runPriceWatchRefresh } from "@/lib/price-watch-refresh";
 
 const prisma = new PrismaClient();
 
