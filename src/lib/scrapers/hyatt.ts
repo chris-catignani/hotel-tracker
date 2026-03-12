@@ -47,6 +47,7 @@ interface HyattRoomRate {
   };
   ratePlans?: Array<{
     id?: string;
+    name?: string;
     rate?: number;
     points?: number;
     ratePlanType?: string;
@@ -211,7 +212,7 @@ export function parseCashRates(data: HyattRatesResponse): RoomRate[] {
             roomId: roomKey,
             roomName,
             ratePlanCode: plan.id ?? "STANDARD",
-            ratePlanName: plan.ratePlanType ?? plan.ratePlanCategory ?? plan.id ?? "Standard Rate",
+            ratePlanName: plan.name ?? plan.ratePlanType ?? plan.id ?? "Standard Rate",
             cashPrice: plan.rate,
             cashCurrency: plan.currencyCode ?? currency,
             awardPrice: null,
