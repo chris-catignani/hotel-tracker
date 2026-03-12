@@ -9,13 +9,24 @@ jobs:
   refresh:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger price watch refresh
-        run: |
-          response=$(curl -s -o /dev/null -w "%{http_code}" \
-            -X GET "${{ secrets.APP_URL }}/api/cron/refresh-price-watches" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
-          echo "Response code: $response"
-          if [ "$response" != "200" ]; then
-            echo "Cron job failed with status $response"
-            exit 1
-          fi
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright Browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: Run price watch refresh (with XVFB)
+        run: xvfb-run npx tsx src/workers/refresh-price-watches.ts
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
+          CI: true

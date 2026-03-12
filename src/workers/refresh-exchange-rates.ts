@@ -3,7 +3,7 @@
  * Run locally with: npm run rates:refresh
  */
 import { PrismaClient } from "@prisma/client";
-import { CURRENCIES } from "../src/lib/constants";
+import { CURRENCIES } from "@/lib/constants";
 
 const prisma = new PrismaClient();
 

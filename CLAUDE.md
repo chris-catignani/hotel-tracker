@@ -43,8 +43,8 @@ RESTful routes with Next.js `route.ts` handlers:
 - `point-types/` — GET list, POST; `[id]/` — PUT, DELETE
 - `user-statuses/` — GET list, PUT (upsert elite status per hotel chain)
 - `properties/` — GET search; `[id]/` — PUT (update `chainPropertyId`)
-- `price-watches/` — GET list, POST upsert+link booking; `[id]/` — GET, PUT (toggle), DELETE; `[id]/refresh/` — POST (manual fetch, 5-min rate limit); `[id]/snapshots/` — GET history
-- `cron/refresh-price-watches/` — GET (Bearer `CRON_SECRET`); fetches prices for all enabled watches, saves snapshots, sends email alerts
+- `price-watches/` — GET list, POST upsert+link booking; `[id]/` — GET, PUT (toggle), DELETE; `[id]/snapshots/` — GET history
+- `cron/refresh-exchange-rates/` — GET (Bearer `CRON_SECRET`); refreshes exchange rates from public CDN
 
 ### Key Library Files (`src/lib/`)
 
@@ -56,7 +56,8 @@ RESTful routes with Next.js `route.ts` handlers:
 - `countries.ts` — Static `COUNTRIES` list (ISO 3166-1 alpha-2), `countryName()` helper, and `ALPHA3_TO_ALPHA2` map (used if ever needing to normalize third-party alpha-3 codes)
 - `property-utils.ts` — `findOrCreateProperty()`: finds an existing Property by `placeId` or `(name, hotelChainId)`, or creates one. Used by booking POST/PUT to resolve `propertyId`.
 - `price-fetcher.ts` — `PriceFetcher` interface (`canFetch`, `fetchPrice`) and `selectFetcher()`. Add new chain scrapers here.
-- `scrapers/hyatt.ts` — `HyattFetcher`: calls `hyatt.com/shop/service/rooms/roomrates/{spiritCode}` with `HYATT_SESSION_COOKIE`. `createHyattFetcher()` returns `null` if env var not set.
+- `price-watch-refresh.ts` — `runPriceWatchRefresh(fetchers)`: core shared logic for price refresh runs — queries watches, fetches prices, saves snapshots, converts currencies, sends alerts. Used by both `src/workers/refresh-price-watches.ts` and indirectly by tests.
+- `scrapers/hyatt.ts` — `HyattFetcher`: launches Chromium in "App Mode" (`--app=<url>`) to bypass Kasada bot detection. Always non-headless; in CI `xvfb-run` provides a virtual display. No session cookie required. `parseHyattRates(data)` exported for unit testing. Debug utility: `scripts/debug-hyatt.ts`.
 - `email.ts` — `sendPriceDropAlert()` via Resend. Requires `RESEND_API_KEY` and `RESEND_FROM_EMAIL` env vars; skips silently if unset.
 
 ### Data Model
@@ -78,7 +79,7 @@ Key fields:
 - `Property`: normalized hotel property entity. `name`, `placeId` (Google Places ID, unique), `chainPropertyId` (chain-specific scraper ID — spiritCode for Hyatt), `hotelChainId`, `countryCode`, `city`, `address`, `latitude`, `longitude`, `starRating`
 - `PriceWatch`: one per user per property (`@@unique([userId, propertyId])`). `isEnabled`, `lastCheckedAt`. Links to `PriceWatchBooking[]` and `PriceSnapshot[]`.
 - `PriceWatchBooking`: per-booking config linked to a `PriceWatch`. `cashThreshold`, `awardThreshold`, `dateFlexibilityDays`. One per booking (`bookingId` is unique).
-- `PriceSnapshot`: one row per price fetch. `checkIn`, `checkOut`, `cashPrice`, `cashCurrency`, `awardPrice`, `source` (e.g. `"hyatt_scraper"`), `fetchedAt`.
+- `PriceSnapshot`: one row per price fetch. `checkIn`, `checkOut`, `cashPrice`, `cashCurrency`, `awardPrice`, `source` (e.g. `"hyatt_browser"`), `fetchedAt`.
 - `GeoCache`: caches Google Places API results keyed by normalized query string to avoid repeat API calls
 - `BookingBenefit`: `benefitType` (enum: free_breakfast/dining_credit/spa_credit/room_upgrade/late_checkout/early_checkin/other), `label`, `dollarValue` — tracks non-cash perks received per booking
 - `OtaAgency`: simple `name` model; referenced by bookings when `bookingSource = ota`
@@ -139,7 +140,7 @@ Calculated server-side in the booking API and client-side in the booking form (u
 - `/` — Dashboard (stats, recent bookings, savings breakdown, hotel chain summary)
 - `/bookings`, `/bookings/new`, `/bookings/[id]`, `/bookings/[id]/edit`
 - `/promotions`, `/promotions/new`, `/promotions/[id]/edit`
-- `/price-watch` — All price watches with latest cash/award prices, toggle, manual refresh, delete
+- `/price-watch` — All price watches with latest cash/award prices, toggle, spirit code editor, delete
 - `/settings` — Tabs: My Status (first), Point Types, Hotel Chains, Credit Cards, Shopping Portals, OTA Agencies
 
 ### Mobile Design
@@ -152,6 +153,15 @@ The app is fully responsive with a mobile-first approach:
 - **Forms:** Responsive grid (`grid-cols-1 sm:grid-cols-2`); sticky bottom action bar on mobile, static on desktop.
 - **DatePicker:** Larger tap targets on mobile (`h-11 md:h-9`, `text-base md:text-sm`).
 - **Pattern for dual view:** Settings tabs and the bookings list show card views on mobile and table views on desktop using `md:hidden` / `hidden md:block`.
+
+### Background Workers (`src/workers/`)
+
+Standalone Node.js scripts that run outside the web server. Run directly via `tsx` (not bundled by Next.js).
+
+- `refresh-price-watches.ts` — Daily price watch refresh. Runs via GitHub Actions (`.github/workflows/refresh-price-watches.yml`) at 6am UTC using `xvfb-run npx tsx src/workers/refresh-price-watches.ts`. Trigger manually: `npm run prices:refresh`.
+- `refresh-exchange-rates.ts` — Refreshes `ExchangeRate` table from public CDN. Run manually: `npm run rates:refresh`.
+
+> **Note:** `scripts/` contains dev/debug utilities only (`debug-hyatt.ts`, `trigger-price-refresh.sh`, etc.). Production jobs live in `src/workers/`.
 
 ### Shared Utilities
 

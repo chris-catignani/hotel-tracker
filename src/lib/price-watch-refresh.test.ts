@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { NextRequest } from "next/server";
 
 vi.mock("@/lib/prisma", () => ({
   default: {
@@ -8,27 +7,15 @@ vi.mock("@/lib/prisma", () => ({
   },
 }));
 
-vi.mock("@/lib/scrapers/hyatt", () => ({ createHyattFetcher: vi.fn(() => null) }));
 vi.mock("@/lib/price-fetcher", () => ({ selectFetcher: vi.fn() }));
 vi.mock("@/lib/email", () => ({ sendPriceDropAlert: vi.fn() }));
 vi.mock("@/lib/exchange-rate", () => ({ getCurrentRate: vi.fn() }));
-vi.mock("@/lib/api-error", () => ({
-  apiError: vi.fn(() => new Response(JSON.stringify({ error: "error" }), { status: 500 })),
-}));
 
 import prisma from "@/lib/prisma";
 import { selectFetcher } from "@/lib/price-fetcher";
 import { sendPriceDropAlert } from "@/lib/email";
 import { getCurrentRate } from "@/lib/exchange-rate";
-import { GET } from "./route";
-
-const SECRET = "test-secret";
-
-function makeRequest(secret = SECRET) {
-  return new NextRequest("http://localhost/api/cron/refresh-price-watches", {
-    headers: { Authorization: `Bearer ${secret}` },
-  });
-}
+import { runPriceWatchRefresh } from "./price-watch-refresh";
 
 function makeWatch({
   currency = "USD",
@@ -59,14 +46,13 @@ const USD_SCRAPER_RESULT = {
   cashPrice: 250,
   cashCurrency: "USD",
   awardPrice: 20000,
-  source: "hyatt_scraper",
+  source: "hyatt_browser",
 };
 
 const mockFetcher = { canFetch: vi.fn(() => true), fetchPrice: vi.fn() };
 
 beforeEach(() => {
   vi.clearAllMocks();
-  process.env.CRON_SECRET = SECRET;
   vi.mocked(prisma.priceWatch.update).mockResolvedValue({} as never);
   vi.mocked(prisma.priceSnapshot.create).mockResolvedValue({} as never);
   vi.mocked(selectFetcher).mockReturnValue(mockFetcher);
@@ -75,42 +61,26 @@ beforeEach(() => {
   vi.mocked(getCurrentRate).mockResolvedValue(null);
 });
 
-describe("GET /api/cron/refresh-price-watches", () => {
-  describe("authentication", () => {
-    it("returns 401 when Authorization header is missing", async () => {
-      const req = new NextRequest("http://localhost/api/cron/refresh-price-watches");
-      const res = await GET(req);
-      expect(res.status).toBe(401);
-    });
-
-    it("returns 401 when Authorization header is wrong", async () => {
-      const res = await GET(makeRequest("wrong-secret"));
-      expect(res.status).toBe(401);
-    });
-  });
-
+describe("runPriceWatchRefresh", () => {
   describe("USD booking — no currency conversion needed", () => {
     it("fires alert when scraper price is below the USD threshold", async () => {
       vi.mocked(prisma.priceWatch.findMany).mockResolvedValue([makeWatch()] as never);
 
-      const res = await GET(makeRequest());
-      const body = await res.json();
+      const result = await runPriceWatchRefresh([]);
 
-      expect(body.results[0].alerts).toBe(1);
+      expect(result.results[0].alerts).toBe(1);
       expect(sendPriceDropAlert).toHaveBeenCalledOnce();
-      // Should not have looked up any exchange rate for a USD booking
       expect(getCurrentRate).not.toHaveBeenCalled();
     });
 
     it("does not fire alert when scraper price is above the USD threshold", async () => {
       vi.mocked(prisma.priceWatch.findMany).mockResolvedValue([
-        makeWatch({ cashThreshold: "200" }), // threshold is 200, price is 250
+        makeWatch({ cashThreshold: "200" }), // threshold 200, price 250 → no alert
       ] as never);
 
-      const res = await GET(makeRequest());
-      const body = await res.json();
+      const result = await runPriceWatchRefresh([]);
 
-      expect(body.results[0].alerts).toBe(0);
+      expect(result.results[0].alerts).toBe(0);
       expect(sendPriceDropAlert).not.toHaveBeenCalled();
     });
   });
@@ -122,13 +92,12 @@ describe("GET /api/cron/refresh-price-watches", () => {
       vi.mocked(prisma.priceWatch.findMany).mockResolvedValue([
         makeWatch({ currency: "EUR", cashThreshold: "230" }),
       ] as never);
-      vi.mocked(getCurrentRate).mockResolvedValue(1.08); // 1 EUR = 1.08 USD
+      vi.mocked(getCurrentRate).mockResolvedValue(1.08);
 
-      const res = await GET(makeRequest());
-      const body = await res.json();
+      const result = await runPriceWatchRefresh([]);
 
       expect(getCurrentRate).toHaveBeenCalledWith("EUR");
-      expect(body.results[0].alerts).toBe(0);
+      expect(result.results[0].alerts).toBe(0);
       expect(sendPriceDropAlert).not.toHaveBeenCalled();
     });
 
@@ -140,54 +109,47 @@ describe("GET /api/cron/refresh-price-watches", () => {
       ] as never);
       vi.mocked(getCurrentRate).mockResolvedValue(1.08);
 
-      const res = await GET(makeRequest());
-      const body = await res.json();
+      const result = await runPriceWatchRefresh([]);
 
       expect(getCurrentRate).toHaveBeenCalledWith("EUR");
-      expect(body.results[0].alerts).toBe(1);
+      expect(result.results[0].alerts).toBe(1);
       expect(sendPriceDropAlert).toHaveBeenCalledOnce();
     });
 
     it("falls back to raw comparison when exchange rate is unavailable", async () => {
-      // EUR booking, threshold €230, rate unavailable
-      // Falls back to comparing $250 USD directly against €230 → fires alert (250 > 230, no alert)
+      // EUR booking, threshold €230, rate unavailable → raw $250 > €230 → no alert
       vi.mocked(prisma.priceWatch.findMany).mockResolvedValue([
         makeWatch({ currency: "EUR", cashThreshold: "230" }),
       ] as never);
-      vi.mocked(getCurrentRate).mockResolvedValue(null); // rate not cached
+      vi.mocked(getCurrentRate).mockResolvedValue(null);
 
-      const res = await GET(makeRequest());
-      const body = await res.json();
+      const result = await runPriceWatchRefresh([]);
 
       expect(getCurrentRate).toHaveBeenCalledWith("EUR");
-      // Raw: 250 > 230 → no alert
-      expect(body.results[0].alerts).toBe(0);
+      expect(result.results[0].alerts).toBe(0);
     });
   });
 
   describe("award threshold", () => {
     it("fires alert when award price is below the award threshold", async () => {
       vi.mocked(prisma.priceWatch.findMany).mockResolvedValue([
-        makeWatch({ cashThreshold: "500", awardThreshold: 25000 }), // cash threshold not met (250 < 500), award met (20000 < 25000)
+        makeWatch({ cashThreshold: "500", awardThreshold: 25000 }), // cash not met (250 < 500 ✓), award met (20000 < 25000 ✓)
       ] as never);
 
-      const res = await GET(makeRequest());
-      const body = await res.json();
+      const result = await runPriceWatchRefresh([]);
 
-      expect(body.results[0].alerts).toBe(1);
+      expect(result.results[0].alerts).toBe(1);
       expect(sendPriceDropAlert).toHaveBeenCalledOnce();
     });
 
     it("does not fire alert when award price is above the award threshold", async () => {
       vi.mocked(prisma.priceWatch.findMany).mockResolvedValue([
-        // cash threshold null so it can't trigger; award 20000 > 15000 → no alert
-        makeWatch({ cashThreshold: null as unknown as string, awardThreshold: 15000 }),
+        makeWatch({ cashThreshold: null as unknown as string, awardThreshold: 15000 }), // 20000 > 15000 → no alert
       ] as never);
 
-      const res = await GET(makeRequest());
-      const body = await res.json();
+      const result = await runPriceWatchRefresh([]);
 
-      expect(body.results[0].alerts).toBe(0);
+      expect(result.results[0].alerts).toBe(0);
       expect(sendPriceDropAlert).not.toHaveBeenCalled();
     });
   });
@@ -197,11 +159,10 @@ describe("GET /api/cron/refresh-price-watches", () => {
       vi.mocked(prisma.priceWatch.findMany).mockResolvedValue([makeWatch()] as never);
       vi.mocked(selectFetcher).mockReturnValue(null);
 
-      const res = await GET(makeRequest());
-      const body = await res.json();
+      const result = await runPriceWatchRefresh([]);
 
-      expect(body.results[0].snapshots).toBe(0);
-      expect(body.results[0].alerts).toBe(0);
+      expect(result.results[0].snapshots).toBe(0);
+      expect(result.results[0].alerts).toBe(0);
       expect(prisma.priceSnapshot.create).not.toHaveBeenCalled();
       expect(sendPriceDropAlert).not.toHaveBeenCalled();
     });

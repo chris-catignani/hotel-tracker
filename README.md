@@ -208,7 +208,6 @@ If a test fails, Playwright is configured to record a video and a "trace" (inter
    - `CRON_SECRET`: Generate with `openssl rand -base64 32` (used to authenticate cron endpoints)
    - `RESEND_API_KEY`: From [resend.com](https://resend.com) (required for price drop email alerts)
    - `RESEND_FROM_EMAIL`: Verified sender address on Resend (required for price drop email alerts)
-   - `HYATT_SESSION_COOKIE`: Browser session cookie from hyatt.com (required for Hyatt price monitoring — see [Price Watch Setup](#price-watch-setup))
 8. Run `npm run db:seed` via Vercel's one-off task runner or a local connection to the production DB to create the admin user.
 
 ## Exchange Rate Cron Job
@@ -256,10 +255,10 @@ The price watch feature monitors live hotel room rates (cash and award/points) f
 
 ### Supported Chains
 
-| Chain  | Cash Rates | Award Rates | Notes                             |
-| ------ | ---------- | ----------- | --------------------------------- |
-| Hyatt  | ✅         | ✅          | Uses session cookie + spirit code |
-| Others | —          | —           | Not yet supported                 |
+| Chain  | Cash Rates | Award Rates | Notes                         |
+| ------ | ---------- | ----------- | ----------------------------- |
+| Hyatt  | ✅         | ✅          | Uses Playwright + spirit code |
+| Others | —          | —           | Not yet supported             |
 
 ### Email Alerts (Resend)
 
@@ -274,20 +273,11 @@ The price watch feature monitors live hotel room rates (cash and award/points) f
 
 ### Hyatt Rate Monitoring
 
-Hyatt rates are fetched from Hyatt's internal API using an anonymous browser session cookie. No Hyatt account is required.
+Hyatt rates are fetched using an automated browser (Playwright) that bypasses bot detection by launching in "App Mode" directly to the Hyatt rates API.
 
-#### Step 1 — Get the session cookie
+#### Step 1 — Requirement
 
-1. Open [hyatt.com](https://www.hyatt.com) in your browser (no need to log in)
-2. Open DevTools → **Network** tab → reload the page
-3. Click any request to `hyatt.com` → **Headers** → **Request Headers**
-4. Copy the entire value of the `Cookie:` header
-5. Set it as an environment variable:
-   ```
-   HYATT_SESSION_COOKIE="your_cookie_string_here"
-   ```
-
-The cookie typically expires after hours to days. When expired, price fetches silently return no data until the cookie is refreshed.
+No session cookies or environment variables are required for Hyatt monitoring. The scraper runs a headed (non-headless) Chromium instance locally.
 
 #### Step 2 — Set the spirit code on a property
 
@@ -299,7 +289,7 @@ https://www.hyatt.com/en-US/hotel/illinois/park-hyatt-chicago/chiph
                                                            spiritCode = "chiph"
 ```
 
-Set it on the property via the API:
+Set it on the property via the **Price Watch** page — click the pencil icon next to a watch and type the spirit code. Or via the API:
 
 ```bash
 curl -X PUT https://your-app.vercel.app/api/properties/{propertyId} \
@@ -309,27 +299,42 @@ curl -X PUT https://your-app.vercel.app/api/properties/{propertyId} \
 
 #### Step 3 — Enable price watch on a booking
 
-1. Open a booking's detail page
+1. Open a booking's detail or edit page
 2. Scroll to the **Price Watch** section
 3. Toggle it on and optionally set cash/award thresholds
-4. Click **Check Now** to fetch current prices immediately
+
+#### Debugging
+
+If you encounter issues with Hyatt price fetching, you can run the standalone debug script to test the bypass logic:
+
+```bash
+npx tsx scripts/debug-hyatt.ts
+```
 
 ### Cron Schedule (GitHub Actions)
 
-Price watches run daily via GitHub Actions (not Vercel Cron, to avoid the 50MB Playwright bundle limit). The workflow is defined in `.github/workflows/refresh-price-watches.yml` and runs at **6am UTC**.
+Price watches run daily via GitHub Actions. This design is necessary because the Playwright-based scraper requires a full Linux environment and virtual display (`xvfb`) to bypass Hyatt's bot detection, which exceeds the capabilities of serverless functions (e.g. Vercel).
+
+The workflow is defined in `.github/workflows/refresh-price-watches.yml` and runs at **6am UTC**.
 
 Add these secrets to your GitHub repository (**Settings → Secrets → Actions**):
 
-| Secret        | Value                                                   |
-| ------------- | ------------------------------------------------------- |
-| `APP_URL`     | Your production URL, e.g. `https://your-app.vercel.app` |
-| `CRON_SECRET` | Same value as the `CRON_SECRET` env var in Vercel       |
+| Secret              | Value                                      |
+| ------------------- | ------------------------------------------ |
+| `DATABASE_URL`      | Your production Postgres connection string |
+| `RESEND_API_KEY`    | Your Resend API key                        |
+| `RESEND_FROM_EMAIL` | Your verified Resend sender email          |
 
-You can also trigger the workflow manually from the **Actions** tab, or call the endpoint directly:
+You can also trigger the workflow manually from the **Actions** tab.
+
+#### Local Execution
+
+To run the full refresh manually on your local machine:
 
 ```bash
-curl -X GET https://your-app.vercel.app/api/cron/refresh-price-watches \
-  -H "Authorization: Bearer <your-cron-secret>"
+npm run prices:refresh
+# or to dispatch it on GitHub Actions:
+./scripts/trigger-price-refresh.sh
 ```
 
 ## Managing Users
