@@ -20,6 +20,7 @@ export default function NewBookingPage() {
   const [priceWatchEnabled, setPriceWatchEnabled] = useState(false);
   const [cashThreshold, setCashThreshold] = useState("");
   const [awardThreshold, setAwardThreshold] = useState("");
+  const [formCurrency, setFormCurrency] = useState("USD");
 
   const handleSubmit = async (data: BookingFormData) => {
     setError(null);
@@ -66,6 +67,7 @@ export default function NewBookingPage() {
       <BookingForm
         onSubmit={handleSubmit}
         onCancel={() => router.push("/bookings")}
+        onCurrencyChange={setFormCurrency}
         submitting={submitting}
         submitLabel="Create Booking"
         title="Booking Details"
@@ -96,7 +98,7 @@ export default function NewBookingPage() {
           {priceWatchEnabled && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label className="text-xs">Cash alert below (USD)</Label>
+                <Label className="text-xs">Cash alert below ({formCurrency})</Label>
                 <Input
                   type="number"
                   placeholder="e.g. 300"
