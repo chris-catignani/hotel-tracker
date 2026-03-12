@@ -20,8 +20,9 @@ export function apiError(
   console.error(`${reqContext}API ERROR: ${message}`, error);
 
   // Report to Sentry (no-op if DSN not configured)
+  // void discards the string return value (event ID) so it doesn't affect type inference
   if (error) {
-    Sentry.captureException(error instanceof Error ? error : new Error(String(error)), {
+    void Sentry.captureException(error instanceof Error ? error : new Error(String(error)), {
       extra: { message, path: request?.nextUrl.pathname },
     });
   }
