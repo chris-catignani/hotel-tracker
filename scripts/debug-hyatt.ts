@@ -12,7 +12,6 @@ async function debugHyattBrowser() {
       name: "Hyatt Place KL Bukit Jalil",
       hotelChainId: HOTEL_ID.HYATT,
       chainPropertyId: spiritCode,
-      displayName: "Hyatt Place KL Bukit Jalil",
       address: null,
       placeId: null,
       city: null,
@@ -28,7 +27,7 @@ async function debugHyattBrowser() {
   };
 
   console.log(`--- DEBUG HYATT BROWSER ---`);
-  console.log(`Property: ${params.property.displayName} (${spiritCode})`);
+  console.log(`Property: ${params.property.name} (${spiritCode})`);
   console.log(`Dates: ${params.checkIn} to ${params.checkOut}`);
 
   const result = await fetcher.fetchPrice(params);

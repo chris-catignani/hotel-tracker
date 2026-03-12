@@ -18,6 +18,14 @@ import type {
 
 const HYATT_RATES_API_URL = "https://www.hyatt.com/shop/service/rooms/roomrates";
 
+// BROWSER_INITIALIZATION_WAIT_MS: It can take a moment for the browser's
+// app mode window to initialize and make the request.
+const BROWSER_INITIALIZATION_WAIT_MS = 1500;
+
+// Rate plan constants for refundability checks
+const NON_REFUNDABLE_PENALTY_CODE = "CNR"; // Cancellation Not Refundable
+const ADVANCE_PURCHASE_RATE_CODE = "ADPR"; // Advance Purchase
+
 export class HyattFetchError extends Error {
   constructor(
     message: string,
@@ -34,6 +42,7 @@ interface HyattRoomRate {
   currencyCode?: string;
   lowestAvgPointValue?: number;
   ratePlans?: Array<{
+    id?: string;
     rate?: number;
     points?: number;
     ratePlanType?: string;
@@ -92,9 +101,12 @@ export class HyattFetcher implements PriceFetcher {
     });
 
     try {
-      await new Promise((r) => setTimeout(r, 1500));
+      // Find the page opened by the --app flag
+      await new Promise((r) => setTimeout(r, BROWSER_INITIALIZATION_WAIT_MS));
       const pages = context.pages();
       const page = pages.length > 0 ? pages[0] : await context.newPage();
+
+      console.log(`[HyattFetcher] Waiting for rates response...`);
 
       const responsePromise = page.waitForResponse(
         (response) =>
@@ -134,22 +146,20 @@ export class HyattFetcher implements PriceFetcher {
     let lowestAward: number | null = null;
 
     for (const room of rooms) {
-      // 1. Check for Award Rates
       if (room.lowestAvgPointValue != null) {
         if (lowestAward === null || room.lowestAvgPointValue < lowestAward) {
           lowestAward = room.lowestAvgPointValue;
         }
       }
 
-      // 2. Check for Cash Rates
-      // We prefer searching ratePlans for more detail (like refundability)
       let foundCashInPlans = false;
       if (room.ratePlans) {
         for (const plan of room.ratePlans) {
           if (plan.rate != null && plan.rate > 0) {
             // Check if refundable: basically anything not marked non-refundable or AP (Advance Purchase)
-            // Common non-refundable penaltyCode is 'CNR'. Most others (48H, 24H, 1DC) are refundable.
-            const isNonRefundable = plan.penaltyCode === "CNR" || plan.id?.includes("ADPR");
+            const isNonRefundable =
+              plan.penaltyCode === NON_REFUNDABLE_PENALTY_CODE ||
+              plan.id?.includes(ADVANCE_PURCHASE_RATE_CODE);
 
             if (!isNonRefundable) {
               if (lowestCash === null || plan.rate < lowestCash) {
@@ -162,9 +172,7 @@ export class HyattFetcher implements PriceFetcher {
         }
       }
 
-      // 3. Fallback to summary cash fields if no detailed plans found
       if (!foundCashInPlans) {
-        // Prefer lowestPublicRate or lowestCashRate
         const summaryPrice = room.lowestPublicRate ?? room.lowestCashRate;
         if (summaryPrice != null && summaryPrice > 0) {
           if (lowestCash === null || summaryPrice < lowestCash) {

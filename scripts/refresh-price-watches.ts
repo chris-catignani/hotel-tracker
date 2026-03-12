@@ -60,6 +60,8 @@ async function refreshAllWatches() {
         continue;
       }
 
+      // Note: We process bookings sequentially to avoid triggering Hyatt's bot detection
+      // with multiple simultaneous browser launches/API calls.
       for (const pwb of watch.bookings) {
         const checkIn = new Date(pwb.booking.checkIn);
         const checkInStr = checkIn.toISOString().split("T")[0];
