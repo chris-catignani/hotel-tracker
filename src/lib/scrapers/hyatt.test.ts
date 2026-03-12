@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { HyattFetcher } from "./hyatt";
+import { HyattFetcher, parseHyattRates } from "./hyatt";
 import { HOTEL_ID } from "@/lib/constants";
 
 const makeProperty = (overrides = {}) => ({
@@ -26,10 +26,7 @@ describe("HyattFetcher.canFetch", () => {
   });
 });
 
-describe("HyattFetcher.parseRates (private logic)", () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const fetcher = new HyattFetcher() as any;
-
+describe("parseHyattRates", () => {
   it("returns parsed cash and award prices from API response", () => {
     const data = {
       roomRates: {
@@ -48,7 +45,7 @@ describe("HyattFetcher.parseRates (private logic)", () => {
       },
     };
 
-    const result = fetcher.parseRates(data);
+    const result = parseHyattRates(data);
 
     expect(result).not.toBeNull();
     expect(result?.cashPrice).toBe(280);
@@ -68,12 +65,11 @@ describe("HyattFetcher.parseRates (private logic)", () => {
       },
     };
 
-    const result = fetcher.parseRates(data);
+    const result = parseHyattRates(data);
     expect(result?.cashPrice).toBe(250); // Should pick the refundable one even if more expensive
   });
 
-  it("returns null prices when roomRates is empty", () => {
-    const result = fetcher.parseRates({ roomRates: {} });
-    expect(result).toBeNull();
+  it("returns null when roomRates is empty", () => {
+    expect(parseHyattRates({ roomRates: {} })).toBeNull();
   });
 });

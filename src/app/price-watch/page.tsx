@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { RefreshCw, Loader2, Trash2, Pencil, Check, X } from "lucide-react";
+import { Loader2, Trash2, Pencil, Check, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { ErrorBanner } from "@/components/ui/error-banner";
@@ -141,7 +141,6 @@ function SpiritCodeEditor({
 export default function PriceWatchPage() {
   const [watches, setWatches] = useState<PriceWatch[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshingId, setRefreshingId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -179,19 +178,6 @@ export default function PriceWatchPage() {
       setError(await extractApiError(res, "Failed to update price watch."));
     }
     setTogglingId(null);
-  };
-
-  const handleRefresh = async (watch: PriceWatch) => {
-    setRefreshingId(watch.id);
-    setError(null);
-    const res = await fetch(`/api/price-watches/${watch.id}/refresh`, { method: "POST" });
-    if (res.ok) {
-      const updated = await res.json();
-      setWatches((prev) => prev.map((w) => (w.id === watch.id ? updated : w)));
-    } else {
-      setError(await extractApiError(res, "Failed to refresh price watch."));
-    }
-    setRefreshingId(null);
   };
 
   const handleDelete = async (watch: PriceWatch) => {
@@ -353,34 +339,18 @@ export default function PriceWatchPage() {
                       onValueChange={setEditingValue}
                     />
 
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleRefresh(watch)}
-                        disabled={refreshingId === watch.id}
-                        className="flex-1"
-                      >
-                        {refreshingId === watch.id ? (
-                          <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                        ) : (
-                          <RefreshCw className="h-3 w-3 mr-1" />
-                        )}
-                        Refresh
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleDelete(watch)}
-                        disabled={deletingId === watch.id}
-                      >
-                        {deletingId === watch.id ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-3 w-3" />
-                        )}
-                      </Button>
-                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleDelete(watch)}
+                      disabled={deletingId === watch.id}
+                    >
+                      {deletingId === watch.id ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-3 w-3" />
+                      )}
+                    </Button>
                   </CardContent>
                 </Card>
               );
@@ -473,34 +443,19 @@ export default function PriceWatchPage() {
                         />
                       </TableCell>
                       <TableCell>
-                        <div className="flex gap-1">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleRefresh(watch)}
-                            disabled={refreshingId === watch.id}
-                            data-testid={`refresh-watch-${watch.id}`}
-                          >
-                            {refreshingId === watch.id ? (
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                            ) : (
-                              <RefreshCw className="h-3 w-3" />
-                            )}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleDelete(watch)}
-                            disabled={deletingId === watch.id}
-                            data-testid={`delete-watch-${watch.id}`}
-                          >
-                            {deletingId === watch.id ? (
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                            ) : (
-                              <Trash2 className="h-3 w-3" />
-                            )}
-                          </Button>
-                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDelete(watch)}
+                          disabled={deletingId === watch.id}
+                          data-testid={`delete-watch-${watch.id}`}
+                        >
+                          {deletingId === watch.id ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3 w-3" />
+                          )}
+                        </Button>
                       </TableCell>
                     </TableRow>
                   );

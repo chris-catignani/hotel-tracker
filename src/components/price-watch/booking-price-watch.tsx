@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Eye, RefreshCw, Loader2 } from "lucide-react";
+import { Eye, Loader2 } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { extractApiError } from "@/lib/client-error";
 
@@ -81,7 +81,6 @@ export function BookingPriceWatch({
     initialWatchBooking?.awardThreshold != null ? String(initialWatchBooking.awardThreshold) : ""
   );
   const [saving, setSaving] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const isEnabled = watch?.isEnabled ?? false;
@@ -155,26 +154,6 @@ export function BookingPriceWatch({
     }
   };
 
-  const handleRefresh = async () => {
-    if (!watch) return;
-    setError(null);
-    setRefreshing(true);
-    try {
-      const res = await fetch(`/api/price-watches/${watch.id}/refresh`, { method: "POST" });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: "Refresh failed" }));
-        throw new Error(err.error ?? "Refresh failed");
-      }
-      // Reload watch to get new snapshot
-      const watchRes = await fetch(`/api/price-watches/${watch.id}`);
-      if (watchRes.ok) setWatch(await watchRes.json());
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Refresh failed");
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -237,26 +216,10 @@ export function BookingPriceWatch({
               </div>
             </div>
 
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={handleSaveThresholds} disabled={saving}>
-                {saving ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
-                Save Thresholds
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleRefresh}
-                disabled={refreshing}
-                data-testid="refresh-price-button"
-              >
-                {refreshing ? (
-                  <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                ) : (
-                  <RefreshCw className="h-3 w-3 mr-1" />
-                )}
-                Check Now
-              </Button>
-            </div>
+            <Button size="sm" variant="outline" onClick={handleSaveThresholds} disabled={saving}>
+              {saving ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+              Save Thresholds
+            </Button>
 
             {/* Latest snapshot */}
             {latestSnapshot && (
