@@ -102,16 +102,19 @@ describe("runPriceWatchRefresh", () => {
   });
 
   describe("non-USD booking — currency conversion", () => {
-    it("converts USD scraper price to booking currency before comparing", async () => {
+    it("converts USD scraper price to EUR booking currency before comparing", async () => {
       // EUR booking, threshold €230
-      // Scraper returns $250 USD; 1 EUR = 1.08 USD → $250 / 1.08 ≈ €231.48 — above threshold → no alert
+      // Scraper returns $250 USD (1 USD = 1 USD, 1 EUR = 1.08 USD) → €250/1.08 ≈ €231.48 — above threshold → no alert
       vi.mocked(prisma.priceWatch.findMany).mockResolvedValue([
         makeWatch({ currency: "EUR", cashThreshold: "230" }),
       ] as never);
-      vi.mocked(getCurrentRate).mockResolvedValue(1.08);
+      vi.mocked(getCurrentRate).mockImplementation(async (currency) =>
+        currency === "USD" ? 1 : currency === "EUR" ? 1.08 : null
+      );
 
       const result = await runPriceWatchRefresh([]);
 
+      expect(getCurrentRate).toHaveBeenCalledWith("USD");
       expect(getCurrentRate).toHaveBeenCalledWith("EUR");
       expect(result.results[0].alerts).toBe(0);
       expect(sendPriceDropAlert).not.toHaveBeenCalled();
@@ -119,21 +122,55 @@ describe("runPriceWatchRefresh", () => {
 
     it("fires alert when converted price is below the threshold", async () => {
       // EUR booking, threshold €240
-      // Scraper returns $250 USD; 1 EUR = 1.08 USD → $250 / 1.08 ≈ €231.48 — below threshold → alert
+      // Scraper returns $250 USD → €250/1.08 ≈ €231.48 — below threshold → alert
       vi.mocked(prisma.priceWatch.findMany).mockResolvedValue([
         makeWatch({ currency: "EUR", cashThreshold: "240" }),
       ] as never);
-      vi.mocked(getCurrentRate).mockResolvedValue(1.08);
+      vi.mocked(getCurrentRate).mockImplementation(async (currency) =>
+        currency === "USD" ? 1 : currency === "EUR" ? 1.08 : null
+      );
 
       const result = await runPriceWatchRefresh([]);
 
-      expect(getCurrentRate).toHaveBeenCalledWith("EUR");
+      expect(result.results[0].alerts).toBe(1);
+      expect(sendPriceDropAlert).toHaveBeenCalledOnce();
+    });
+
+    it("handles cross-currency: MYR scraper price vs EUR booking", async () => {
+      // EUR booking, threshold €200
+      // Scraper returns 1000 MYR (1 MYR = 0.21 USD, 1 EUR = 1.08 USD)
+      // 1000 MYR * 0.21 = $210 USD / 1.08 = €194.44 — below threshold → alert
+      vi.mocked(prisma.priceWatch.findMany).mockResolvedValue([
+        makeWatch({ currency: "EUR", cashThreshold: "200" }),
+      ] as never);
+      vi.mocked(mockFetcher.fetchPrice).mockResolvedValue({
+        source: "ihg_api",
+        rates: [
+          {
+            roomId: "room-1",
+            roomName: "Classic Room",
+            ratePlanCode: "IGCOR",
+            ratePlanName: "Best Flexible Rate",
+            cashPrice: 1000,
+            cashCurrency: "MYR",
+            awardPrice: null,
+            isRefundable: true,
+            isCorporate: false,
+          },
+        ],
+      });
+      vi.mocked(getCurrentRate).mockImplementation(async (currency) =>
+        currency === "MYR" ? 0.21 : currency === "EUR" ? 1.08 : null
+      );
+
+      const result = await runPriceWatchRefresh([]);
+
       expect(result.results[0].alerts).toBe(1);
       expect(sendPriceDropAlert).toHaveBeenCalledOnce();
     });
 
     it("falls back to raw comparison when exchange rate is unavailable", async () => {
-      // EUR booking, threshold €230, rate unavailable → raw $250 > €230 → no alert
+      // EUR booking, threshold €230, rates unavailable → raw $250 > €230 → no alert
       vi.mocked(prisma.priceWatch.findMany).mockResolvedValue([
         makeWatch({ currency: "EUR", cashThreshold: "230" }),
       ] as never);
@@ -141,7 +178,6 @@ describe("runPriceWatchRefresh", () => {
 
       const result = await runPriceWatchRefresh([]);
 
-      expect(getCurrentRate).toHaveBeenCalledWith("EUR");
       expect(result.results[0].alerts).toBe(0);
     });
   });
