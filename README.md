@@ -289,7 +289,7 @@ https://www.hyatt.com/en-US/hotel/illinois/park-hyatt-chicago/chiph
                                                            spiritCode = "chiph"
 ```
 
-Set it on the property via the UI (Settings -> Hotels) or via the API:
+Set it on the property via the **Price Watch** page — click the pencil icon next to a watch and type the spirit code. Or via the API:
 
 ```bash
 curl -X PUT https://your-app.vercel.app/api/properties/{propertyId} \
@@ -299,10 +299,9 @@ curl -X PUT https://your-app.vercel.app/api/properties/{propertyId} \
 
 #### Step 3 — Enable price watch on a booking
 
-1. Open a booking's detail page
+1. Open a booking's detail or edit page
 2. Scroll to the **Price Watch** section
 3. Toggle it on and optionally set cash/award thresholds
-4. Click **Check Now** to fetch current prices immediately.
 
 #### Debugging
 
@@ -333,7 +332,9 @@ You can also trigger the workflow manually from the **Actions** tab.
 To run the full refresh manually on your local machine:
 
 ```bash
-npx tsx scripts/refresh-price-watches.ts
+npm run prices:refresh
+# or to dispatch it on GitHub Actions:
+./scripts/trigger-price-refresh.sh
 ```
 
 ## Managing Users
