@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import { HyattFetcher } from "./hyatt";
 import { HOTEL_ID } from "@/lib/constants";
 
@@ -11,7 +11,7 @@ const makeProperty = (overrides = {}) => ({
 });
 
 describe("HyattFetcher.canFetch", () => {
-  const fetcher = new HyattFetcher("test-cookie");
+  const fetcher = new HyattFetcher();
 
   it("returns true for Hyatt property with spiritCode", () => {
     expect(fetcher.canFetch(makeProperty())).toBe(true);
@@ -26,100 +26,54 @@ describe("HyattFetcher.canFetch", () => {
   });
 });
 
-describe("HyattFetcher.fetchPrice", () => {
-  const fetcher = new HyattFetcher("test-cookie");
+describe("HyattFetcher.parseRates (private logic)", () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const fetcher = new HyattFetcher() as any;
 
-  beforeEach(() => {
-    vi.stubGlobal("fetch", vi.fn());
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  it("returns parsed cash and award prices from API response", async () => {
-    vi.mocked(fetch).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        roomRates: {
-          "rate-1": {
-            lowestAveragePrice: { value: 320, currency: "USD" },
-            lowestAvgPointValue: 25000,
-          },
-          "rate-2": {
-            lowestAveragePrice: { value: 280, currency: "USD" },
-            lowestAvgPointValue: 18000,
-          },
+  it("returns parsed cash and award prices from API response", () => {
+    const data = {
+      roomRates: {
+        "rate-1": {
+          lowestCashRate: 320,
+          currencyCode: "USD",
+          lowestAvgPointValue: 25000,
+          ratePlans: [{ id: "STANDARD", rate: 320, penaltyCode: "48H", currencyCode: "USD" }],
         },
-      }),
-    } as Response);
+        "rate-2": {
+          lowestCashRate: 280,
+          currencyCode: "USD",
+          lowestAvgPointValue: 18000,
+          ratePlans: [{ id: "MEMBER", rate: 280, penaltyCode: "24H", currencyCode: "USD" }],
+        },
+      },
+    };
 
-    const result = await fetcher.fetchPrice({
-      property: makeProperty(),
-      checkIn: "2026-06-01",
-      checkOut: "2026-06-03",
-    });
+    const result = fetcher.parseRates(data);
 
     expect(result).not.toBeNull();
     expect(result?.cashPrice).toBe(280);
     expect(result?.cashCurrency).toBe("USD");
     expect(result?.awardPrice).toBe(18000);
-    expect(result?.source).toBe("hyatt_scraper");
   });
 
-  it("returns null prices when roomRates is empty", async () => {
-    vi.mocked(fetch).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ roomRates: {} }),
-    } as Response);
+  it("prioritizes refundable rates over cheaper non-refundable ones", () => {
+    const data = {
+      roomRates: {
+        "room-1": {
+          ratePlans: [
+            { id: "AP", rate: 200, penaltyCode: "CNR" }, // Non-refundable (CNR)
+            { id: "STD", rate: 250, penaltyCode: "48H" }, // Refundable
+          ],
+        },
+      },
+    };
 
-    const result = await fetcher.fetchPrice({
-      property: makeProperty(),
-      checkIn: "2026-06-01",
-      checkOut: "2026-06-03",
-    });
-
-    expect(result?.cashPrice).toBeNull();
-    expect(result?.awardPrice).toBeNull();
+    const result = fetcher.parseRates(data);
+    expect(result?.cashPrice).toBe(250); // Should pick the refundable one even if more expensive
   });
 
-  it("throws HyattFetchError when API responds with 403", async () => {
-    vi.mocked(fetch).mockResolvedValueOnce({
-      ok: false,
-      status: 403,
-    } as Response);
-
-    await expect(
-      fetcher.fetchPrice({
-        property: makeProperty(),
-        checkIn: "2026-06-01",
-        checkOut: "2026-06-03",
-      })
-    ).rejects.toThrow("403");
-  });
-
-  it("throws HyattFetchError with rate limit message on 429", async () => {
-    vi.mocked(fetch).mockResolvedValueOnce({
-      ok: false,
-      status: 429,
-    } as Response);
-
-    await expect(
-      fetcher.fetchPrice({
-        property: makeProperty(),
-        checkIn: "2026-06-01",
-        checkOut: "2026-06-03",
-      })
-    ).rejects.toThrow("Rate limited");
-  });
-
-  it("returns null when property has no spiritCode", async () => {
-    const result = await fetcher.fetchPrice({
-      property: makeProperty({ chainPropertyId: null }),
-      checkIn: "2026-06-01",
-      checkOut: "2026-06-03",
-    });
-
+  it("returns null prices when roomRates is empty", () => {
+    const result = fetcher.parseRates({ roomRates: {} });
     expect(result).toBeNull();
   });
 });

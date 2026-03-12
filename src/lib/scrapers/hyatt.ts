@@ -1,22 +1,13 @@
 /**
- * Hyatt price fetcher.
+ * Hyatt price fetcher (Playwright Edition).
  *
- * Uses Hyatt's internal JSON API:
- *   GET https://www.hyatt.com/shop/service/rooms/roomrates/{spiritCode}
- *
- * Authentication: requires an anonymous browser session cookie stored in
- * the HYATT_SESSION_COOKIE environment variable. Obtain the cookie by
- * visiting hyatt.com in a browser and copying the full Cookie header value.
- * The cookie typically expires after hours–days and must be refreshed manually
- * (or via a Playwright step in CI).
- *
- * spiritCode: 5-character lowercase code visible in every Hyatt property URL.
- * Example: https://www.hyatt.com/en-US/hotel/illinois/park-hyatt-chicago/chiph
- *          → spiritCode = "chiph"
- *
- * Store the spiritCode in Property.chainPropertyId when adding a Hyatt property.
+ * Strategy: Launch a headed browser in "App Mode" directly to the API URL.
+ * This bypasses Kasada bot detection by mimicking a direct user invocation
+ * of the browser (like opening a PWA or a desktop shortcut).
  */
 
+import fs from "fs";
+import { chromium } from "playwright";
 import { HOTEL_ID } from "@/lib/constants";
 import type {
   FetchableProperty,
@@ -25,7 +16,7 @@ import type {
   PriceFetchResult,
 } from "@/lib/price-fetcher";
 
-const HYATT_RATES_URL = "https://www.hyatt.com/shop/service/rooms/roomrates";
+const HYATT_RATES_API_URL = "https://www.hyatt.com/shop/service/rooms/roomrates";
 
 export class HyattFetchError extends Error {
   constructor(
@@ -38,98 +29,25 @@ export class HyattFetchError extends Error {
 }
 
 interface HyattRoomRate {
+  lowestCashRate?: number;
+  lowestPublicRate?: number;
+  currencyCode?: string;
   lowestAvgPointValue?: number;
-  lowestAveragePrice?: { value: number; currency: string };
+  ratePlans?: Array<{
+    rate?: number;
+    points?: number;
+    ratePlanType?: string;
+    ratePlanCategory?: string;
+    penaltyCode?: string;
+    currencyCode?: string;
+  }>;
 }
 
 interface HyattRatesResponse {
   roomRates?: Record<string, HyattRoomRate>;
 }
 
-async function fetchHyattRates(
-  spiritCode: string,
-  checkIn: string,
-  checkOut: string,
-  adults: number,
-  cookie: string
-): Promise<HyattRatesResponse | null> {
-  const params = new URLSearchParams({
-    rooms: "1",
-    adults: String(adults),
-    kids: "0",
-    checkinDate: checkIn,
-    checkoutDate: checkOut,
-    rate: "Standard",
-    rateFilter: "woh",
-    // 'location' param omitted — spiritCode in the URL path is the definitive identifier
-  });
-
-  const url = `${HYATT_RATES_URL}/${spiritCode}?${params}`;
-
-  const res = await fetch(url, {
-    headers: {
-      Cookie: cookie,
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-      Accept: "application/json, text/plain, */*",
-      "Accept-Language": "en-US,en;q=0.9",
-      Referer: "https://www.hyatt.com/",
-      "Sec-Fetch-Dest": "empty",
-      "Sec-Fetch-Mode": "cors",
-      "Sec-Fetch-Site": "same-origin",
-    },
-  });
-
-  if (!res.ok) {
-    const message =
-      res.status === 429
-        ? `[HyattFetcher] Rate limited (429) for ${spiritCode} — wait a few minutes and try again`
-        : res.status === 403
-          ? `[HyattFetcher] Unauthorized (403) for ${spiritCode} — session cookie may have expired`
-          : `[HyattFetcher] HTTP ${res.status} for ${spiritCode}`;
-    console.error(message);
-    throw new HyattFetchError(message, res.status);
-  }
-
-  return (await res.json()) as HyattRatesResponse;
-}
-
-function parseRates(data: HyattRatesResponse): {
-  cashPrice: number | null;
-  cashCurrency: string;
-  awardPrice: number | null;
-} {
-  const rates = Object.values(data.roomRates ?? {});
-  if (rates.length === 0) return { cashPrice: null, cashCurrency: "USD", awardPrice: null };
-
-  let lowestCash: number | null = null;
-  let cashCurrency = "USD";
-  let lowestAward: number | null = null;
-
-  for (const rate of rates) {
-    if (rate.lowestAveragePrice?.value != null) {
-      if (lowestCash === null || rate.lowestAveragePrice.value < lowestCash) {
-        lowestCash = rate.lowestAveragePrice.value;
-        cashCurrency = rate.lowestAveragePrice.currency ?? "USD";
-      }
-    }
-    if (rate.lowestAvgPointValue != null) {
-      if (lowestAward === null || rate.lowestAvgPointValue < lowestAward) {
-        lowestAward = rate.lowestAvgPointValue;
-      }
-    }
-  }
-
-  return { cashPrice: lowestCash, cashCurrency, awardPrice: lowestAward };
-}
-
 export class HyattFetcher implements PriceFetcher {
-  private cookie: string;
-
-  constructor(cookie: string) {
-    this.cookie = cookie;
-  }
-
   canFetch(property: FetchableProperty): boolean {
     return property.hotelChainId === HOTEL_ID.HYATT && !!property.chainPropertyId;
   }
@@ -138,23 +56,129 @@ export class HyattFetcher implements PriceFetcher {
     const spiritCode = params.property.chainPropertyId;
     if (!spiritCode) return null;
 
-    const data = await fetchHyattRates(
-      spiritCode,
-      params.checkIn,
-      params.checkOut,
-      params.adults ?? 1,
-      this.cookie
-    );
-    if (!data) return null;
+    return this.fetchViaBrowser(spiritCode, params);
+  }
 
-    const { cashPrice, cashCurrency, awardPrice } = parseRates(data);
-    return { cashPrice, cashCurrency, awardPrice, source: "hyatt_scraper" };
+  private async fetchViaBrowser(
+    spiritCode: string,
+    params: FetchParams
+  ): Promise<PriceFetchResult | null> {
+    const query = new URLSearchParams({
+      rooms: "1",
+      adults: String(params.adults ?? 1),
+      kids: "0",
+      checkinDate: params.checkIn,
+      checkoutDate: params.checkOut,
+      rate: "Standard",
+      rateFilter: "woh",
+    });
+
+    const targetApiUrl = `${HYATT_RATES_API_URL}/${spiritCode}?${query.toString()}`;
+
+    const isCI = !!process.env.CI;
+    console.log(`[HyattFetcher] Launching browser for ${spiritCode} (App Mode, CI=${isCI})...`);
+
+    const userDataDir = `/tmp/hyatt-browser-${Math.random().toString(36).substring(7)}`;
+
+    const context = await chromium.launchPersistentContext(userDataDir, {
+      headless: isCI,
+      args: [
+        "--disable-blink-features=AutomationControlled",
+        "--no-sandbox",
+        "--use-gl=desktop",
+        `--app=${targetApiUrl}`,
+      ],
+      viewport: { width: 1280, height: 800 },
+    });
+
+    try {
+      await new Promise((r) => setTimeout(r, 1500));
+      const pages = context.pages();
+      const page = pages.length > 0 ? pages[0] : await context.newPage();
+
+      const responsePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes(`/roomrates/${spiritCode}`) && response.status() === 200,
+        { timeout: 60000 }
+      );
+
+      const response = await responsePromise;
+      const data = (await response.json()) as HyattRatesResponse;
+      const result = this.parseRates(data);
+
+      console.log(`[HyattFetcher] Success for ${spiritCode}`);
+      return result ? { ...result, source: "hyatt_browser" } : null;
+    } catch (err) {
+      console.error(`[HyattFetcher] App Mode fetch failed for ${spiritCode}:`, err);
+      return null;
+    } finally {
+      await context.close();
+      try {
+        if (fs.existsSync(userDataDir)) {
+          fs.rmSync(userDataDir, { recursive: true, force: true });
+        }
+      } catch {
+        // Ignore cleanup errors
+      }
+    }
+  }
+
+  private parseRates(
+    data: HyattRatesResponse
+  ): { cashPrice: number | null; cashCurrency: string; awardPrice: number | null } | null {
+    const rooms = data.roomRates ? Object.values(data.roomRates) : [];
+    if (rooms.length === 0) return null;
+
+    let lowestCash: number | null = null;
+    let cashCurrency = "USD";
+    let lowestAward: number | null = null;
+
+    for (const room of rooms) {
+      // 1. Check for Award Rates
+      if (room.lowestAvgPointValue != null) {
+        if (lowestAward === null || room.lowestAvgPointValue < lowestAward) {
+          lowestAward = room.lowestAvgPointValue;
+        }
+      }
+
+      // 2. Check for Cash Rates
+      // We prefer searching ratePlans for more detail (like refundability)
+      let foundCashInPlans = false;
+      if (room.ratePlans) {
+        for (const plan of room.ratePlans) {
+          if (plan.rate != null && plan.rate > 0) {
+            // Check if refundable: basically anything not marked non-refundable or AP (Advance Purchase)
+            // Common non-refundable penaltyCode is 'CNR'. Most others (48H, 24H, 1DC) are refundable.
+            const isNonRefundable = plan.penaltyCode === "CNR" || plan.id?.includes("ADPR");
+
+            if (!isNonRefundable) {
+              if (lowestCash === null || plan.rate < lowestCash) {
+                lowestCash = plan.rate;
+                cashCurrency = plan.currencyCode ?? room.currencyCode ?? "USD";
+                foundCashInPlans = true;
+              }
+            }
+          }
+        }
+      }
+
+      // 3. Fallback to summary cash fields if no detailed plans found
+      if (!foundCashInPlans) {
+        // Prefer lowestPublicRate or lowestCashRate
+        const summaryPrice = room.lowestPublicRate ?? room.lowestCashRate;
+        if (summaryPrice != null && summaryPrice > 0) {
+          if (lowestCash === null || summaryPrice < lowestCash) {
+            lowestCash = summaryPrice;
+            cashCurrency = room.currencyCode ?? "USD";
+          }
+        }
+      }
+    }
+
+    return { cashPrice: lowestCash, cashCurrency, awardPrice: lowestAward };
   }
 }
 
-/** Creates a HyattFetcher if HYATT_SESSION_COOKIE is set, otherwise null. */
-export function createHyattFetcher(): HyattFetcher | null {
-  const cookie = process.env.HYATT_SESSION_COOKIE;
-  if (!cookie) return null;
-  return new HyattFetcher(cookie);
+export function createHyattFetcher(): HyattFetcher {
+  return new HyattFetcher();
 }

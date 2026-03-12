@@ -24,9 +24,9 @@ This file provides foundational mandates for Gemini CLI (gemini-cli) when workin
 
 - **Architecture:** `PriceWatch` (per user/property) → `PriceWatchBooking` (per booking, holds thresholds) → `PriceSnapshot` (per price fetch).
 - **Fetcher abstraction:** `src/lib/price-fetcher.ts` — `PriceFetcher` interface with `canFetch(property)` and `fetchPrice(params)`. Add new chain scrapers to `src/lib/scrapers/`.
-- **Hyatt scraper:** `src/lib/scrapers/hyatt.ts` — uses `HYATT_SESSION_COOKIE` env var + `Property.chainPropertyId` (spiritCode). Returns lowest cash price and award points. Returns `null` if cookie not set.
+- **Hyatt scraper:** `src/lib/scrapers/hyatt.ts` — uses standard Playwright with a "Direct Launch" (App Mode) strategy to bypass Kasada bot detection. Returns lowest cash price and award points. No environment variables required for basic operation, but must run in a headed (non-headless) browser locally. See `scripts/debug-hyatt.ts` for a standalone test.
 - **Email:** `src/lib/email.ts` — `sendPriceDropAlert()` via Resend. Requires `RESEND_API_KEY` and `RESEND_FROM_EMAIL`.
-- **Cron:** `GET /api/cron/refresh-price-watches` (Bearer `CRON_SECRET`). Runs via GitHub Actions (`.github/workflows/refresh-price-watches.yml`) at 6am UTC — NOT Vercel Cron (Playwright bundle too large for Vercel serverless). Add `APP_URL` and `CRON_SECRET` to GitHub repo secrets.
+- **Cron:** `scripts/refresh-price-watches.ts` — runs via GitHub Actions (`.github/workflows/refresh-price-watches.yml`) at 6am UTC. Executes the Hyatt scraper via `xvfb-run` to bypass Kasada. Requires `DATABASE_URL`, `RESEND_API_KEY`, and `RESEND_FROM_EMAIL` set as GitHub Secrets.
 - **`chainPropertyId`:** Stored on `Property`. For Hyatt: the 5-char lowercase spiritCode from the property URL (e.g. `chiph` from `.../park-hyatt-chicago/chiph`). Set via `PUT /api/properties/[id]`.
 
 ## Authentication & Authorization

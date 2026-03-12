@@ -6,6 +6,7 @@ import { createHyattFetcher, HyattFetchError } from "@/lib/scrapers/hyatt";
 import { selectFetcher, type PriceFetcher } from "@/lib/price-fetcher";
 
 const RATE_LIMIT_MINUTES = 5;
+// ... (rest of imports)
 
 /**
  * POST /api/price-watches/[id]/refresh
@@ -48,7 +49,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json(
         {
           error:
-            "No price fetcher available for this property. Ensure HYATT_SESSION_COOKIE is set and Property.chainPropertyId is populated.",
+            "No price fetcher available for this property. Ensure Property.chainPropertyId is populated correctly.",
         },
         { status: 422 }
       );

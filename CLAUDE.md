@@ -56,7 +56,7 @@ RESTful routes with Next.js `route.ts` handlers:
 - `countries.ts` — Static `COUNTRIES` list (ISO 3166-1 alpha-2), `countryName()` helper, and `ALPHA3_TO_ALPHA2` map (used if ever needing to normalize third-party alpha-3 codes)
 - `property-utils.ts` — `findOrCreateProperty()`: finds an existing Property by `placeId` or `(name, hotelChainId)`, or creates one. Used by booking POST/PUT to resolve `propertyId`.
 - `price-fetcher.ts` — `PriceFetcher` interface (`canFetch`, `fetchPrice`) and `selectFetcher()`. Add new chain scrapers here.
-- `scrapers/hyatt.ts` — `HyattFetcher`: calls `hyatt.com/shop/service/rooms/roomrates/{spiritCode}` with `HYATT_SESSION_COOKIE`. `createHyattFetcher()` returns `null` if env var not set.
+- `scrapers/hyatt.ts` — `HyattFetcher`: launches a browser (Chromium) in "App Mode" to `hyatt.com/shop/service/rooms/roomrates/{spiritCode}`. Bypasses Kasada bot detection via direct browser invocation. No session cookie required. Must run in a headed (non-headless) browser locally. standalone debug utility at `scripts/debug-hyatt.ts`. Daily cron runs via GitHub Actions + `xvfb-run` using `scripts/refresh-price-watches.ts`.
 - `email.ts` — `sendPriceDropAlert()` via Resend. Requires `RESEND_API_KEY` and `RESEND_FROM_EMAIL` env vars; skips silently if unset.
 
 ### Data Model
