@@ -176,12 +176,10 @@ test.describe("Spirit code inline edit", () => {
     const row = page.getByTestId(`price-watch-row-${watch.id}`);
     await row.getByTestId(`edit-spirit-code-${propertyId}`).click();
 
-    // Type something, then cancel
+    // Type something, then cancel by pressing Escape
     const input = row.getByTestId(`spirit-code-input-${propertyId}`);
     await input.fill("shouldnotbesaved");
-
-    // Click the X (cancel) button — last button in the editor row
-    await row.getByRole("button").last().click();
+    await input.press("Escape");
 
     // Input should be gone
     await expect(input).not.toBeVisible();
