@@ -59,6 +59,85 @@ interface PriceWatch {
   snapshots: PriceSnapshot[];
 }
 
+function SpiritCodeEditor({
+  propertyId,
+  chainPropertyId,
+  isEditing,
+  editingValue,
+  isSaving,
+  onEdit,
+  onSave,
+  onCancel,
+  onValueChange,
+  className,
+}: {
+  propertyId: string;
+  chainPropertyId: string | null;
+  isEditing: boolean;
+  editingValue: string;
+  isSaving: boolean;
+  onEdit: () => void;
+  onSave: () => void;
+  onCancel: () => void;
+  onValueChange: (value: string) => void;
+  className?: string;
+}) {
+  if (isEditing) {
+    return (
+      <div className={`flex items-center gap-1 ${className ?? ""}`}>
+        <Input
+          value={editingValue}
+          onChange={(e) => onValueChange(e.target.value)}
+          placeholder="e.g. chiph"
+          className="h-7 text-xs w-28"
+          data-testid={`spirit-code-input-${propertyId}`}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") onSave();
+            if (e.key === "Escape") onCancel();
+          }}
+        />
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-7 w-7 p-0"
+          onClick={onSave}
+          disabled={isSaving}
+        >
+          {isSaving ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <Check className="h-3 w-3 text-green-600" />
+          )}
+        </Button>
+        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={onCancel}>
+          <X className="h-3 w-3 text-muted-foreground" />
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`flex items-center gap-1 ${className ?? ""}`}>
+      {chainPropertyId ? (
+        <span className="text-xs text-muted-foreground font-mono">{chainPropertyId}</span>
+      ) : (
+        <Badge variant="outline" className="text-xs text-amber-600 border-amber-300">
+          Spirit code needed
+        </Badge>
+      )}
+      <Button
+        size="sm"
+        variant="ghost"
+        className="h-6 w-6 p-0"
+        onClick={onEdit}
+        data-testid={`edit-spirit-code-${propertyId}`}
+      >
+        <Pencil className="h-3 w-3 text-muted-foreground" />
+      </Button>
+    </div>
+  );
+}
+
 export default function PriceWatchPage() {
   const [watches, setWatches] = useState<PriceWatch[]>([]);
   const [loading, setLoading] = useState(true);
@@ -260,71 +339,19 @@ export default function PriceWatchPage() {
                       <p className="text-xs text-muted-foreground">No price data yet</p>
                     )}
 
-                    {editingPropertyId === watch.property.id ? (
-                      <div className="flex items-center gap-1">
-                        <Input
-                          value={editingValue}
-                          onChange={(e) => setEditingValue(e.target.value)}
-                          placeholder="e.g. chiph"
-                          className="h-7 text-xs w-28"
-                          data-testid={`spirit-code-input-${watch.property.id}`}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") handleSaveChainPropertyId(watch.property.id);
-                            if (e.key === "Escape") handleCancelEdit();
-                          }}
-                        />
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-7 w-7 p-0"
-                          onClick={() => handleSaveChainPropertyId(watch.property.id)}
-                          disabled={savingPropertyId === watch.property.id}
-                        >
-                          {savingPropertyId === watch.property.id ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <Check className="h-3 w-3 text-green-600" />
-                          )}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-7 w-7 p-0"
-                          onClick={handleCancelEdit}
-                        >
-                          <X className="h-3 w-3 text-muted-foreground" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1">
-                        {watch.property.chainPropertyId ? (
-                          <span className="text-xs text-muted-foreground font-mono">
-                            {watch.property.chainPropertyId}
-                          </span>
-                        ) : (
-                          <Badge
-                            variant="outline"
-                            className="text-xs text-amber-600 border-amber-300"
-                          >
-                            Spirit code needed
-                          </Badge>
-                        )}
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-6 w-6 p-0"
-                          onClick={() =>
-                            handleEditChainPropertyId(
-                              watch.property.id,
-                              watch.property.chainPropertyId
-                            )
-                          }
-                          data-testid={`edit-spirit-code-${watch.property.id}`}
-                        >
-                          <Pencil className="h-3 w-3 text-muted-foreground" />
-                        </Button>
-                      </div>
-                    )}
+                    <SpiritCodeEditor
+                      propertyId={watch.property.id}
+                      chainPropertyId={watch.property.chainPropertyId}
+                      isEditing={editingPropertyId === watch.property.id}
+                      editingValue={editingValue}
+                      isSaving={savingPropertyId === watch.property.id}
+                      onEdit={() =>
+                        handleEditChainPropertyId(watch.property.id, watch.property.chainPropertyId)
+                      }
+                      onSave={() => handleSaveChainPropertyId(watch.property.id)}
+                      onCancel={handleCancelEdit}
+                      onValueChange={setEditingValue}
+                    />
 
                     <div className="flex gap-2">
                       <Button
@@ -389,71 +416,23 @@ export default function PriceWatchPage() {
                             .filter(Boolean)
                             .join(", ")}
                         </div>
-                        {editingPropertyId === watch.property.id ? (
-                          <div className="flex items-center gap-1 mt-1">
-                            <Input
-                              value={editingValue}
-                              onChange={(e) => setEditingValue(e.target.value)}
-                              placeholder="e.g. chiph"
-                              className="h-7 text-xs w-28"
-                              data-testid={`spirit-code-input-${watch.property.id}`}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") handleSaveChainPropertyId(watch.property.id);
-                                if (e.key === "Escape") handleCancelEdit();
-                              }}
-                            />
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-7 w-7 p-0"
-                              onClick={() => handleSaveChainPropertyId(watch.property.id)}
-                              disabled={savingPropertyId === watch.property.id}
-                            >
-                              {savingPropertyId === watch.property.id ? (
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                              ) : (
-                                <Check className="h-3 w-3 text-green-600" />
-                              )}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-7 w-7 p-0"
-                              onClick={handleCancelEdit}
-                            >
-                              <X className="h-3 w-3 text-muted-foreground" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-1 mt-1">
-                            {watch.property.chainPropertyId ? (
-                              <span className="text-xs text-muted-foreground font-mono">
-                                {watch.property.chainPropertyId}
-                              </span>
-                            ) : (
-                              <Badge
-                                variant="outline"
-                                className="text-xs text-amber-600 border-amber-300"
-                              >
-                                Spirit code needed
-                              </Badge>
-                            )}
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-6 w-6 p-0"
-                              onClick={() =>
-                                handleEditChainPropertyId(
-                                  watch.property.id,
-                                  watch.property.chainPropertyId
-                                )
-                              }
-                              data-testid={`edit-spirit-code-${watch.property.id}`}
-                            >
-                              <Pencil className="h-3 w-3 text-muted-foreground" />
-                            </Button>
-                          </div>
-                        )}
+                        <SpiritCodeEditor
+                          propertyId={watch.property.id}
+                          chainPropertyId={watch.property.chainPropertyId}
+                          isEditing={editingPropertyId === watch.property.id}
+                          editingValue={editingValue}
+                          isSaving={savingPropertyId === watch.property.id}
+                          onEdit={() =>
+                            handleEditChainPropertyId(
+                              watch.property.id,
+                              watch.property.chainPropertyId
+                            )
+                          }
+                          onSave={() => handleSaveChainPropertyId(watch.property.id)}
+                          onCancel={handleCancelEdit}
+                          onValueChange={setEditingValue}
+                          className="mt-1"
+                        />
                       </TableCell>
                       <TableCell>
                         <div className="space-y-0.5">

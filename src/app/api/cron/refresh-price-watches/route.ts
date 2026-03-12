@@ -63,6 +63,7 @@ export async function GET(request: NextRequest) {
     });
 
     const results: { watchId: string; property: string; snapshots: number; alerts: number }[] = [];
+    const ratesCache = new Map<string, number | null>();
 
     for (const watch of watches) {
       const fetcher = selectFetcher(watch.property, fetchers);
@@ -103,7 +104,11 @@ export async function GET(request: NextRequest) {
           const cashThresholdNum = pwb.cashThreshold !== null ? Number(pwb.cashThreshold) : null;
           let cashPriceInBookingCurrency = result.cashPrice;
           if (result.cashPrice !== null && result.cashCurrency !== pwb.booking.currency) {
-            const rate = await getCurrentRate(pwb.booking.currency);
+            const bookingCurrency = pwb.booking.currency;
+            if (!ratesCache.has(bookingCurrency)) {
+              ratesCache.set(bookingCurrency, await getCurrentRate(bookingCurrency));
+            }
+            const rate = ratesCache.get(bookingCurrency);
             if (rate != null && rate > 0) {
               // rate = 1 bookingCurrency in USD, so: bookingCurrencyPrice = usdPrice / rate
               cashPriceInBookingCurrency = result.cashPrice / rate;

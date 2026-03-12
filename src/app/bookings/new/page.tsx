@@ -40,17 +40,27 @@ export default function NewBookingPage() {
     const booking = await res.json();
 
     if (priceWatchEnabled) {
-      await fetch("/api/price-watches", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          propertyId: booking.propertyId,
-          isEnabled: true,
-          bookingId: booking.id,
-          cashThreshold: cashThreshold ? Number(cashThreshold) : null,
-          awardThreshold: awardThreshold ? Number(awardThreshold) : null,
-        }),
-      });
+      try {
+        const watchRes = await fetch("/api/price-watches", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            propertyId: booking.propertyId,
+            isEnabled: true,
+            bookingId: booking.id,
+            cashThreshold: cashThreshold ? Number(cashThreshold) : null,
+            awardThreshold: awardThreshold ? Number(awardThreshold) : null,
+          }),
+        });
+        if (!watchRes.ok) {
+          console.error(
+            "Failed to create price watch:",
+            await extractApiError(watchRes, "API error")
+          );
+        }
+      } catch (e) {
+        console.error("Error creating price watch:", e);
+      }
     }
 
     router.push(`/bookings/${booking.id}`);
