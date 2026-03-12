@@ -1,10 +1,15 @@
 /**
  * Core price watch refresh logic — shared between the cron API route
- * and the standalone scripts/refresh-price-watches.ts script.
+ * and the standalone src/workers/refresh-price-watches.ts script.
  */
 
 import prisma from "./prisma";
-import { selectFetcher, type PriceFetcher } from "./price-fetcher";
+import {
+  selectFetcher,
+  lowestRefundableCash,
+  lowestAward,
+  type PriceFetcher,
+} from "./price-fetcher";
 import { sendPriceDropAlert } from "./email";
 import { getCurrentRate } from "./exchange-rate";
 
@@ -72,24 +77,44 @@ export async function runPriceWatchRefresh(fetchers: PriceFetcher[]): Promise<{
       }
 
       if (result) {
-        await prisma.priceSnapshot.create({
+        // Derive summary fields from the per-room rates
+        const { price: lowestCash, currency: lowestCashCurrency } = lowestRefundableCash(
+          result.rates
+        );
+        const lowestAwardPrice = lowestAward(result.rates);
+
+        const snapshot = await prisma.priceSnapshot.create({
           data: {
             priceWatchId: watch.id,
             checkIn: new Date(checkInStr),
             checkOut: new Date(checkOutStr),
-            cashPrice: result.cashPrice,
-            cashCurrency: result.cashCurrency,
-            awardPrice: result.awardPrice,
+            lowestRefundableCashPrice: lowestCash,
+            lowestRefundableCashCurrency: lowestCashCurrency,
+            lowestAwardPrice: lowestAwardPrice,
             source: result.source,
+            rooms: {
+              create: result.rates.map((r) => ({
+                roomId: r.roomId,
+                roomName: r.roomName,
+                ratePlanCode: r.ratePlanCode,
+                ratePlanName: r.ratePlanName,
+                cashPrice: r.cashPrice,
+                cashCurrency: r.cashCurrency,
+                awardPrice: r.awardPrice,
+                isRefundable: r.isRefundable,
+                isCorporate: r.isCorporate,
+              })),
+            },
           },
         });
+        void snapshot; // snapshot created; id available if needed later
         snapshotCount++;
 
-        // Convert scraped cash price to the booking's currency before comparing,
-        // since scrapers return USD but the threshold is stored in booking currency.
+        // Convert lowest refundable cash price to the booking's currency before comparing,
+        // since scrapers return in the property's currency but the threshold is in booking currency.
         const cashThresholdNum = pwb.cashThreshold !== null ? Number(pwb.cashThreshold) : null;
-        let cashPriceInBookingCurrency = result.cashPrice;
-        if (result.cashPrice !== null && result.cashCurrency !== pwb.booking.currency) {
+        let cashPriceInBookingCurrency = lowestCash;
+        if (lowestCash !== null && lowestCashCurrency !== pwb.booking.currency) {
           const bookingCurrency = pwb.booking.currency;
           if (!ratesCache.has(bookingCurrency)) {
             ratesCache.set(bookingCurrency, await getCurrentRate(bookingCurrency));
@@ -97,7 +122,7 @@ export async function runPriceWatchRefresh(fetchers: PriceFetcher[]): Promise<{
           const rate = ratesCache.get(bookingCurrency);
           if (rate != null && rate > 0) {
             // rate = 1 bookingCurrency in USD, so: bookingCurrencyPrice = usdPrice / rate
-            cashPriceInBookingCurrency = result.cashPrice / rate;
+            cashPriceInBookingCurrency = lowestCash / rate;
           }
         }
 
@@ -107,8 +132,8 @@ export async function runPriceWatchRefresh(fetchers: PriceFetcher[]): Promise<{
           cashPriceInBookingCurrency <= cashThresholdNum;
         const awardHit =
           pwb.awardThreshold !== null &&
-          result.awardPrice !== null &&
-          result.awardPrice <= pwb.awardThreshold;
+          lowestAwardPrice !== null &&
+          lowestAwardPrice <= pwb.awardThreshold;
 
         if ((cashHit || awardHit) && watch.user.email) {
           await sendPriceDropAlert({
@@ -116,10 +141,10 @@ export async function runPriceWatchRefresh(fetchers: PriceFetcher[]): Promise<{
             propertyName: watch.property.name,
             checkIn: checkInStr,
             checkOut: checkOutStr,
-            cashPrice: result.cashPrice,
-            cashCurrency: result.cashCurrency,
+            cashPrice: lowestCash,
+            cashCurrency: lowestCashCurrency,
             cashThreshold: pwb.cashThreshold ? Number(pwb.cashThreshold) : null,
-            awardPrice: result.awardPrice,
+            awardPrice: lowestAwardPrice,
             awardThreshold: pwb.awardThreshold,
             bookingId: pwb.booking.id,
           });

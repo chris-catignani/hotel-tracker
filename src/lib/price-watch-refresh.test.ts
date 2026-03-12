@@ -7,7 +7,12 @@ vi.mock("@/lib/prisma", () => ({
   },
 }));
 
-vi.mock("@/lib/price-fetcher", () => ({ selectFetcher: vi.fn() }));
+// Partial mock: keep real lowestRefundableCash / lowestAward, only mock selectFetcher
+vi.mock("@/lib/price-fetcher", async (importActual) => {
+  const actual = await importActual<typeof import("@/lib/price-fetcher")>();
+  return { ...actual, selectFetcher: vi.fn() };
+});
+
 vi.mock("@/lib/email", () => ({ sendPriceDropAlert: vi.fn() }));
 vi.mock("@/lib/exchange-rate", () => ({ getCurrentRate: vi.fn() }));
 
@@ -42,11 +47,22 @@ function makeWatch({
   };
 }
 
+// Scraper result using the new PriceFetchResult shape
 const USD_SCRAPER_RESULT = {
-  cashPrice: 250,
-  cashCurrency: "USD",
-  awardPrice: 20000,
   source: "hyatt_browser",
+  rates: [
+    {
+      roomId: "room-1",
+      roomName: "Standard Room",
+      ratePlanCode: "STANDARD",
+      ratePlanName: "Standard Rate",
+      cashPrice: 250,
+      cashCurrency: "USD",
+      awardPrice: 20000,
+      isRefundable: true,
+      isCorporate: false,
+    },
+  ],
 };
 
 const mockFetcher = { canFetch: vi.fn(() => true), fetchPrice: vi.fn() };
@@ -54,7 +70,7 @@ const mockFetcher = { canFetch: vi.fn(() => true), fetchPrice: vi.fn() };
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(prisma.priceWatch.update).mockResolvedValue({} as never);
-  vi.mocked(prisma.priceSnapshot.create).mockResolvedValue({} as never);
+  vi.mocked(prisma.priceSnapshot.create).mockResolvedValue({ id: "snap-1" } as never);
   vi.mocked(selectFetcher).mockReturnValue(mockFetcher);
   vi.mocked(mockFetcher.fetchPrice).mockResolvedValue(USD_SCRAPER_RESULT);
   vi.mocked(sendPriceDropAlert).mockResolvedValue(undefined);

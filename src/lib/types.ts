@@ -321,16 +321,30 @@ export interface PriceWatchBooking {
   createdAt: string;
 }
 
+export interface PriceSnapshotRoom {
+  id: string;
+  roomId: string;
+  roomName: string;
+  ratePlanCode: string;
+  ratePlanName: string;
+  cashPrice: string | number | null;
+  cashCurrency: string;
+  awardPrice: number | null;
+  isRefundable: boolean;
+  isCorporate: boolean;
+}
+
 export interface PriceSnapshot {
   id: string;
   priceWatchId: string;
   checkIn: string;
   checkOut: string;
-  cashPrice: string | number | null;
-  cashCurrency: string;
-  awardPrice: number | null;
+  lowestRefundableCashPrice: string | number | null;
+  lowestRefundableCashCurrency: string;
+  lowestAwardPrice: number | null;
   source: string;
   fetchedAt: string;
+  rooms?: PriceSnapshotRoom[];
 }
 
 // ---------------------------------------------------------------------------

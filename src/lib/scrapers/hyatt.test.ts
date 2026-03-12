@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { HyattFetcher, parseHyattRates } from "./hyatt";
+import { lowestRefundableCash, lowestAward } from "@/lib/price-fetcher";
 import { HOTEL_ID } from "@/lib/constants";
 
 const makeProperty = (overrides = {}) => ({
@@ -27,7 +28,7 @@ describe("HyattFetcher.canFetch", () => {
 });
 
 describe("parseHyattRates", () => {
-  it("returns parsed cash and award prices from API response", () => {
+  it("returns a RoomRate entry per rate plan and per award room", () => {
     const data = {
       roomRates: {
         "rate-1": {
@@ -45,31 +46,62 @@ describe("parseHyattRates", () => {
       },
     };
 
-    const result = parseHyattRates(data);
+    const rates = parseHyattRates(data);
+    // 2 cash plan entries + 2 award entries
+    expect(rates).toHaveLength(4);
 
-    expect(result).not.toBeNull();
-    expect(result?.cashPrice).toBe(280);
-    expect(result?.cashCurrency).toBe("USD");
-    expect(result?.awardPrice).toBe(18000);
+    const { price: cash, currency } = lowestRefundableCash(rates);
+    expect(cash).toBe(280);
+    expect(currency).toBe("USD");
+
+    expect(lowestAward(rates)).toBe(18000);
   });
 
-  it("prioritizes refundable rates over cheaper non-refundable ones", () => {
+  it("marks non-refundable plans correctly and excludes from lowestRefundableCash", () => {
     const data = {
       roomRates: {
         "room-1": {
           ratePlans: [
-            { id: "AP", rate: 200, penaltyCode: "CNR" }, // Non-refundable (CNR)
+            { id: "AP", rate: 200, penaltyCode: "CNR" }, // Non-refundable
             { id: "STD", rate: 250, penaltyCode: "48H" }, // Refundable
           ],
         },
       },
     };
 
-    const result = parseHyattRates(data);
-    expect(result?.cashPrice).toBe(250); // Should pick the refundable one even if more expensive
+    const rates = parseHyattRates(data);
+    expect(rates).toHaveLength(2);
+
+    const nonRefundable = rates.find((r) => r.ratePlanCode === "AP");
+    expect(nonRefundable?.isRefundable).toBe(false);
+    expect(nonRefundable?.cashPrice).toBe(200);
+
+    const refundable = rates.find((r) => r.ratePlanCode === "STD");
+    expect(refundable?.isRefundable).toBe(true);
+    expect(refundable?.cashPrice).toBe(250);
+
+    // lowestRefundableCash picks the refundable one, not the cheaper non-refundable
+    const { price } = lowestRefundableCash(rates);
+    expect(price).toBe(250);
   });
 
-  it("returns null when roomRates is empty", () => {
-    expect(parseHyattRates({ roomRates: {} })).toBeNull();
+  it("returns empty array when roomRates is empty", () => {
+    expect(parseHyattRates({ roomRates: {} })).toHaveLength(0);
+  });
+
+  it("falls back to summary price when no ratePlans", () => {
+    const data = {
+      roomRates: {
+        "room-1": {
+          lowestPublicRate: 199,
+          currencyCode: "USD",
+        },
+      },
+    };
+
+    const rates = parseHyattRates(data);
+    expect(rates).toHaveLength(1);
+    expect(rates[0].cashPrice).toBe(199);
+    expect(rates[0].isRefundable).toBe(true);
   });
 });
