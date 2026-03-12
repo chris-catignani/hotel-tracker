@@ -1,6 +1,20 @@
 import "@testing-library/jest-dom";
 import { vi } from "vitest";
 
+// Mock Sentry SDKs — they attempt network I/O on init which hangs jsdom tests
+vi.mock("@sentry/nextjs", () => ({
+  init: vi.fn(),
+  captureException: vi.fn(),
+  captureMessage: vi.fn(),
+  withScope: vi.fn((cb) => cb({ setExtra: vi.fn() })),
+}));
+vi.mock("@sentry/node", () => ({
+  init: vi.fn(),
+  captureException: vi.fn(),
+  captureMessage: vi.fn(),
+  flush: vi.fn().mockResolvedValue(true),
+}));
+
 // Mock matchMedia for Radix UI
 Object.defineProperty(window, "matchMedia", {
   writable: true,

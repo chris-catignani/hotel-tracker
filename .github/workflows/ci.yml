@@ -53,6 +53,9 @@ jobs:
           DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/hotel_tracker_test"
           NEXT_PUBLIC_DEBUG: "false"
           AUTH_SECRET: "ci-test-secret-not-used-in-production-32x"
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
 
       - name: Cache Playwright Browsers
         uses: actions/cache@v4
