@@ -413,14 +413,14 @@ export function BookingPriceWatch({
                                                     variant="outline"
                                                     className="text-[10px] px-1 py-0 border-green-300 text-green-700"
                                                   >
-                                                    Ref
+                                                    Refundable
                                                   </Badge>
                                                 ) : (
                                                   <Badge
                                                     variant="outline"
                                                     className="text-[10px] px-1 py-0 border-orange-300 text-orange-700"
                                                   >
-                                                    NR
+                                                    Non-refundable
                                                   </Badge>
                                                 )}
                                               </span>
@@ -428,6 +428,23 @@ export function BookingPriceWatch({
                                             <TableCell className="py-1" />
                                           </TableRow>
                                         ))}
+                                      {/* Award rate row */}
+                                      {isExpanded && awardRate != null && (
+                                        <TableRow
+                                          key={`${roomId}-award`}
+                                          className="bg-muted/30"
+                                          data-testid="room-rate-row"
+                                        >
+                                          <TableCell className="py-1" />
+                                          <TableCell className="text-xs py-1 pl-4 text-muted-foreground">
+                                            {awardRate.ratePlanName}
+                                          </TableCell>
+                                          <TableCell className="py-1" />
+                                          <TableCell className="text-xs py-1 text-right">
+                                            {awardRate.awardPrice!.toLocaleString()} pts
+                                          </TableCell>
+                                        </TableRow>
+                                      )}
                                     </Fragment>
                                   );
                                 })}
