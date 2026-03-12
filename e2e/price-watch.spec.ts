@@ -118,3 +118,106 @@ test.describe("Price Watch API", () => {
     await request.delete(`/api/price-watches/${watch.id}`);
   });
 });
+
+test.describe("Spirit code inline edit", () => {
+  test("can set a spirit code on a property from the price watch list page", async ({
+    page,
+    request,
+    testBooking,
+  }) => {
+    // Get propertyId from the booking
+    const bookingRes = await request.get(`/api/bookings/${testBooking.id}`);
+    const booking = await bookingRes.json();
+    const propertyId = booking.propertyId;
+
+    // Create a price watch via API
+    const createRes = await request.post("/api/price-watches", {
+      data: { propertyId, isEnabled: true, bookingId: testBooking.id },
+    });
+    const watch = await createRes.json();
+
+    await page.goto("/price-watch");
+
+    // Click the edit button for this property
+    await page.getByTestId(`edit-spirit-code-${propertyId}`).first().waitFor({ state: "visible" });
+    await page.getByTestId(`edit-spirit-code-${propertyId}`).first().click();
+
+    // Type the spirit code and press Enter
+    const input = page.getByTestId(`spirit-code-input-${propertyId}`).first();
+    await input.fill("testcode");
+    await input.press("Enter");
+
+    // Input should disappear and code should be visible
+    await expect(input).not.toBeVisible();
+    await expect(page.getByText("testcode").first()).toBeVisible();
+
+    // Cleanup
+    await request.put(`/api/properties/${propertyId}`, {
+      data: { chainPropertyId: null },
+    });
+    await request.delete(`/api/price-watches/${watch.id}`);
+  });
+
+  test("cancelling edit does not save the spirit code", async ({ page, request, testBooking }) => {
+    // Get propertyId from the booking
+    const bookingRes = await request.get(`/api/bookings/${testBooking.id}`);
+    const booking = await bookingRes.json();
+    const propertyId = booking.propertyId;
+
+    // Create a price watch via API
+    const createRes = await request.post("/api/price-watches", {
+      data: { propertyId, isEnabled: true, bookingId: testBooking.id },
+    });
+    const watch = await createRes.json();
+
+    await page.goto("/price-watch");
+
+    // Click the edit button
+    await page.getByTestId(`edit-spirit-code-${propertyId}`).first().waitFor({ state: "visible" });
+    await page.getByTestId(`edit-spirit-code-${propertyId}`).first().click();
+
+    // Type something, then cancel
+    const input = page.getByTestId(`spirit-code-input-${propertyId}`).first();
+    await input.fill("shouldnotbesaved");
+
+    // Click the X (cancel) button — it is the button immediately after the check button next to the input
+    const inputContainer = input.locator("..");
+    await inputContainer.getByRole("button").last().click();
+
+    // Input should be gone
+    await expect(input).not.toBeVisible();
+
+    // The typed value should not appear on the page
+    await expect(page.getByText("shouldnotbesaved")).not.toBeVisible();
+
+    // Cleanup
+    await request.delete(`/api/price-watches/${watch.id}`);
+  });
+});
+
+test.describe("Price watch on booking pages", () => {
+  test("price watch card is visible on the new booking page", async ({ page }) => {
+    await page.goto("/bookings/new");
+    await expect(page.getByText("Price Watch")).toBeVisible();
+    await expect(page.getByTestId("new-booking-price-watch-toggle")).toBeVisible();
+  });
+
+  test("price watch toggle on new booking page reveals threshold inputs", async ({ page }) => {
+    await page.goto("/bookings/new");
+
+    // Threshold inputs should not be visible initially
+    await expect(page.getByTestId("new-booking-cash-threshold")).not.toBeVisible();
+
+    // Click the toggle
+    await page.getByTestId("new-booking-price-watch-toggle").click();
+
+    // Inputs should now be visible
+    await expect(page.getByTestId("new-booking-cash-threshold")).toBeVisible();
+    await expect(page.getByTestId("new-booking-award-threshold")).toBeVisible();
+  });
+
+  test("price watch card is visible on the edit booking page", async ({ page, testBooking }) => {
+    await page.goto(`/bookings/${testBooking.id}/edit`);
+    await expect(page.getByTestId("price-watch-toggle")).toBeVisible();
+  });
+});
