@@ -14,6 +14,7 @@ import type {
   FetchParams,
   PriceFetcher,
   PriceFetchResult,
+  RoomRate,
 } from "@/lib/price-fetcher";
 
 const HYATT_RATES_API_URL = "https://www.hyatt.com/shop/service/rooms/roomrates";
@@ -117,10 +118,10 @@ export class HyattFetcher implements PriceFetcher {
 
       const response = await responsePromise;
       const data = (await response.json()) as HyattRatesResponse;
-      const result = parseHyattRates(data);
+      const rates = parseHyattRates(data);
 
       console.log(`[HyattFetcher] Success for ${spiritCode}`);
-      return result ? { ...result, source: "hyatt_browser" } : null;
+      return rates.length > 0 ? { rates, source: "hyatt_browser" } : null;
     } catch (err) {
       console.error(`[HyattFetcher] App Mode fetch failed for ${spiritCode}:`, err);
       return null;
@@ -137,56 +138,72 @@ export class HyattFetcher implements PriceFetcher {
   }
 }
 
-/** Exported for unit testing. Parses the Hyatt room rates API response. */
-export function parseHyattRates(
-  data: HyattRatesResponse
-): { cashPrice: number | null; cashCurrency: string; awardPrice: number | null } | null {
-  const rooms = data.roomRates ? Object.values(data.roomRates) : [];
-  if (rooms.length === 0) return null;
+/** Exported for unit testing. Parses the Hyatt room rates API response into RoomRate[]. */
+export function parseHyattRates(data: HyattRatesResponse): RoomRate[] {
+  const roomEntries = data.roomRates ? Object.entries(data.roomRates) : [];
+  if (roomEntries.length === 0) return [];
 
-  let lowestCash: number | null = null;
-  let cashCurrency = "USD";
-  let lowestAward: number | null = null;
+  const result: RoomRate[] = [];
 
-  for (const room of rooms) {
-    if (room.lowestAvgPointValue != null) {
-      if (lowestAward === null || room.lowestAvgPointValue < lowestAward) {
-        lowestAward = room.lowestAvgPointValue;
-      }
-    }
+  for (const [roomKey, room] of roomEntries) {
+    const currency = room.currencyCode ?? "USD";
+    // Use ratePlanCategory from first plan as room name if available
+    const roomName = room.ratePlans?.[0]?.ratePlanCategory ?? roomKey;
 
-    let foundCashInPlans = false;
-    if (room.ratePlans) {
+    if (room.ratePlans && room.ratePlans.length > 0) {
       for (const plan of room.ratePlans) {
         if (plan.rate != null && plan.rate > 0) {
-          // Check if refundable: basically anything not marked non-refundable or AP (Advance Purchase)
           const isNonRefundable =
             plan.penaltyCode === NON_REFUNDABLE_PENALTY_CODE ||
             plan.id?.includes(ADVANCE_PURCHASE_RATE_CODE);
-
-          if (!isNonRefundable) {
-            if (lowestCash === null || plan.rate < lowestCash) {
-              lowestCash = plan.rate;
-              cashCurrency = plan.currencyCode ?? room.currencyCode ?? "USD";
-              foundCashInPlans = true;
-            }
-          }
+          result.push({
+            roomId: roomKey,
+            roomName,
+            ratePlanCode: plan.id ?? "STANDARD",
+            ratePlanName: plan.ratePlanType ?? plan.ratePlanCategory ?? plan.id ?? "Standard Rate",
+            cashPrice: plan.rate,
+            cashCurrency: plan.currencyCode ?? currency,
+            awardPrice: null,
+            isRefundable: !isNonRefundable,
+            isCorporate: false,
+          });
         }
+      }
+    } else {
+      // No rate plans — use summary price
+      const summaryPrice = room.lowestPublicRate ?? room.lowestCashRate;
+      if (summaryPrice != null && summaryPrice > 0) {
+        result.push({
+          roomId: roomKey,
+          roomName,
+          ratePlanCode: "STANDARD",
+          ratePlanName: "Standard Rate",
+          cashPrice: summaryPrice,
+          cashCurrency: currency,
+          awardPrice: null,
+          isRefundable: true,
+          isCorporate: false,
+        });
       }
     }
 
-    if (!foundCashInPlans) {
-      const summaryPrice = room.lowestPublicRate ?? room.lowestCashRate;
-      if (summaryPrice != null && summaryPrice > 0) {
-        if (lowestCash === null || summaryPrice < lowestCash) {
-          lowestCash = summaryPrice;
-          cashCurrency = room.currencyCode ?? "USD";
-        }
-      }
+    // Award rate entry (one per room if available)
+    if (room.lowestAvgPointValue != null) {
+      result.push({
+        roomId: roomKey,
+        roomName,
+        ratePlanCode: "AWARD",
+        ratePlanName: "Award Rate",
+        cashPrice: null,
+        cashCurrency: currency,
+        awardPrice: room.lowestAvgPointValue,
+        isRefundable: true,
+        isCorporate: false,
+      });
     }
   }
 
-  return { cashPrice: lowestCash, cashCurrency, awardPrice: lowestAward };
+  return result;
 }
 
 export function createHyattFetcher(): HyattFetcher {

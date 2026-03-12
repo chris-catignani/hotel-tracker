@@ -21,9 +21,9 @@ import { ErrorBanner } from "@/components/ui/error-banner";
 import { extractApiError } from "@/lib/client-error";
 
 interface PriceSnapshot {
-  cashPrice: string | number | null;
-  cashCurrency: string;
-  awardPrice: number | null;
+  lowestRefundableCashPrice: string | number | null;
+  lowestRefundableCashCurrency: string;
+  lowestAwardPrice: number | null;
   fetchedAt: string;
   source: string;
 }
@@ -307,16 +307,19 @@ export default function PriceWatchPage() {
                         <div>
                           <p className="text-xs text-muted-foreground">Cash</p>
                           <p className="font-medium">
-                            {latest.cashPrice != null
-                              ? formatCurrency(Number(latest.cashPrice), latest.cashCurrency)
+                            {latest.lowestRefundableCashPrice != null
+                              ? formatCurrency(
+                                  Number(latest.lowestRefundableCashPrice),
+                                  latest.lowestRefundableCashCurrency
+                                )
                               : "—"}
                           </p>
                         </div>
                         <div>
                           <p className="text-xs text-muted-foreground">Award</p>
                           <p className="font-medium">
-                            {latest.awardPrice != null
-                              ? `${latest.awardPrice.toLocaleString()} pts`
+                            {latest.lowestAwardPrice != null
+                              ? `${latest.lowestAwardPrice.toLocaleString()} pts`
                               : "—"}
                           </p>
                         </div>
@@ -422,13 +425,16 @@ export default function PriceWatchPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {latest?.cashPrice != null
-                          ? formatCurrency(Number(latest.cashPrice), latest.cashCurrency)
+                        {latest?.lowestRefundableCashPrice != null
+                          ? formatCurrency(
+                              Number(latest.lowestRefundableCashPrice),
+                              latest.lowestRefundableCashCurrency
+                            )
                           : "—"}
                       </TableCell>
                       <TableCell>
-                        {latest?.awardPrice != null
-                          ? `${latest.awardPrice.toLocaleString()} pts`
+                        {latest?.lowestAwardPrice != null
+                          ? `${latest.lowestAwardPrice.toLocaleString()} pts`
                           : "—"}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">

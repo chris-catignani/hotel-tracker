@@ -32,9 +32,9 @@ interface PriceWatchData {
     id: string;
     checkIn: string;
     checkOut: string;
-    cashPrice: string | number | null;
-    cashCurrency: string;
-    awardPrice: number | null;
+    lowestRefundableCashPrice: string | number | null;
+    lowestRefundableCashCurrency: string;
+    lowestAwardPrice: number | null;
     fetchedAt: string;
     source: string;
   }[];
@@ -234,10 +234,10 @@ export function BookingPriceWatch({
                   <div>
                     <p className="text-xs text-muted-foreground">Cash</p>
                     <p className="font-medium" data-testid="latest-cash-price">
-                      {latestSnapshot.cashPrice != null
+                      {latestSnapshot.lowestRefundableCashPrice != null
                         ? formatCurrency(
-                            Number(latestSnapshot.cashPrice),
-                            latestSnapshot.cashCurrency
+                            Number(latestSnapshot.lowestRefundableCashPrice),
+                            latestSnapshot.lowestRefundableCashCurrency
                           )
                         : "—"}
                     </p>
@@ -245,8 +245,8 @@ export function BookingPriceWatch({
                   <div>
                     <p className="text-xs text-muted-foreground">Award</p>
                     <p className="font-medium" data-testid="latest-award-price">
-                      {latestSnapshot.awardPrice != null
-                        ? `${latestSnapshot.awardPrice.toLocaleString()} pts`
+                      {latestSnapshot.lowestAwardPrice != null
+                        ? `${latestSnapshot.lowestAwardPrice.toLocaleString()} pts`
                         : "—"}
                     </p>
                   </div>

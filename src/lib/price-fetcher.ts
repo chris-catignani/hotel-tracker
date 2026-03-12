@@ -6,18 +6,28 @@
  * chainPropertyId, missing credentials, or the chain is unsupported).
  */
 
-export interface PriceFetchResult {
-  cashPrice: number | null; // lowest available cash rate in cashCurrency
+export interface RoomRate {
+  roomId: string; // chain-specific room ID (e.g. inventoryTypeCode for IHG, rate key for Hyatt)
+  roomName: string; // human-readable room name
+  ratePlanCode: string; // e.g. "IGCOR", "IDAP2", "IVANI", "IGNSL"
+  ratePlanName: string; // e.g. "Best Flexible Rate", "Reward Nights"
+  cashPrice: number | null; // null for pure award rates
   cashCurrency: string; // ISO currency code (e.g. "USD")
-  awardPrice: number | null; // lowest award cost in points; null if unavailable
-  source: string; // e.g. "hyatt_scraper", "manual"
+  awardPrice: number | null; // integer points; null for cash-only rates
+  isRefundable: boolean;
+  isCorporate: boolean;
+}
+
+export interface PriceFetchResult {
+  rates: RoomRate[];
+  source: string; // e.g. "hyatt_browser", "ihg_api"
 }
 
 export interface FetchableProperty {
   id: string;
   name: string;
   hotelChainId: string | null;
-  chainPropertyId: string | null; // spiritCode for Hyatt, Amadeus ID for others
+  chainPropertyId: string | null; // spiritCode for Hyatt, mnemonic for IHG
 }
 
 export interface FetchParams {
@@ -43,4 +53,35 @@ export function selectFetcher(
   fetchers: PriceFetcher[]
 ): PriceFetcher | null {
   return fetchers.find((f) => f.canFetch(property)) ?? null;
+}
+
+/** Derives the lowest refundable cash price and currency from a set of room rates. */
+export function lowestRefundableCash(rates: RoomRate[]): {
+  price: number | null;
+  currency: string;
+} {
+  let price: number | null = null;
+  let currency = "USD";
+  for (const r of rates) {
+    if (r.isRefundable && r.cashPrice !== null) {
+      if (price === null || r.cashPrice < price) {
+        price = r.cashPrice;
+        currency = r.cashCurrency;
+      }
+    }
+  }
+  return { price, currency };
+}
+
+/** Derives the lowest award price (in points) from a set of room rates. */
+export function lowestAward(rates: RoomRate[]): number | null {
+  let price: number | null = null;
+  for (const r of rates) {
+    if (r.awardPrice !== null) {
+      if (price === null || r.awardPrice < price) {
+        price = r.awardPrice;
+      }
+    }
+  }
+  return price;
 }

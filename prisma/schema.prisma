@@ -551,17 +551,36 @@ model PriceWatchBooking {
 }
 
 model PriceSnapshot {
-  id           String     @id @default(cuid())
-  priceWatchId String     @map("price_watch_id")
-  priceWatch   PriceWatch @relation(fields: [priceWatchId], references: [id], onDelete: Cascade)
-  checkIn      DateTime   @map("check_in") @db.Date
-  checkOut     DateTime   @map("check_out") @db.Date
-  cashPrice    Decimal?   @map("cash_price") @db.Decimal(10, 2)
-  cashCurrency String     @default("USD") @map("cash_currency")
-  awardPrice   Int?       @map("award_price")
-  source       String
-  fetchedAt    DateTime   @default(now()) @map("fetched_at")
+  id                           String              @id @default(cuid())
+  priceWatchId                 String              @map("price_watch_id")
+  priceWatch                   PriceWatch          @relation(fields: [priceWatchId], references: [id], onDelete: Cascade)
+  checkIn                      DateTime            @map("check_in") @db.Date
+  checkOut                     DateTime            @map("check_out") @db.Date
+  lowestRefundableCashPrice    Decimal?            @map("lowest_refundable_cash_price") @db.Decimal(10, 2)
+  lowestRefundableCashCurrency String              @default("USD") @map("lowest_refundable_cash_currency")
+  lowestAwardPrice             Int?                @map("lowest_award_price")
+  source                       String
+  fetchedAt                    DateTime            @default(now()) @map("fetched_at")
+  rooms                        PriceSnapshotRoom[]
 
   @@index([priceWatchId, fetchedAt])
   @@map("price_snapshots")
+}
+
+model PriceSnapshotRoom {
+  id              String        @id @default(cuid())
+  priceSnapshotId String        @map("price_snapshot_id")
+  priceSnapshot   PriceSnapshot @relation(fields: [priceSnapshotId], references: [id], onDelete: Cascade)
+  roomId          String        @map("room_id")
+  roomName        String        @map("room_name")
+  ratePlanCode    String        @map("rate_plan_code")
+  ratePlanName    String        @map("rate_plan_name")
+  cashPrice       Decimal?      @map("cash_price") @db.Decimal(10, 2)
+  cashCurrency    String        @default("USD") @map("cash_currency")
+  awardPrice      Int?          @map("award_price")
+  isRefundable    Boolean       @default(true) @map("is_refundable")
+  isCorporate     Boolean       @default(false) @map("is_corporate")
+
+  @@index([priceSnapshotId])
+  @@map("price_snapshot_rooms")
 }
