@@ -7,9 +7,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Eye, Loader2 } from "lucide-react";
+import { Eye, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { extractApiError } from "@/lib/client-error";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface PriceWatchBookingData {
   id: string; // PriceWatchBooking id
@@ -17,6 +25,19 @@ interface PriceWatchBookingData {
   cashThreshold: string | number | null;
   awardThreshold: number | null;
   dateFlexibilityDays: number;
+}
+
+interface PriceSnapshotRoom {
+  id: string;
+  roomId: string;
+  roomName: string;
+  ratePlanCode: string;
+  ratePlanName: string;
+  cashPrice: string | number | null;
+  cashCurrency: string;
+  awardPrice: number | null;
+  isRefundable: boolean;
+  isCorporate: boolean;
 }
 
 interface PriceWatchData {
@@ -37,6 +58,7 @@ interface PriceWatchData {
     lowestAwardPrice: number | null;
     fetchedAt: string;
     source: string;
+    rooms: PriceSnapshotRoom[];
   }[];
 }
 
@@ -82,6 +104,7 @@ export function BookingPriceWatch({
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showRooms, setShowRooms] = useState(false);
 
   const isEnabled = watch?.isEnabled ?? false;
   const latestSnapshot = watch?.snapshots?.[0] ?? null;
@@ -223,7 +246,7 @@ export function BookingPriceWatch({
 
             {/* Latest snapshot */}
             {latestSnapshot && (
-              <div className="rounded-md border p-3 space-y-1">
+              <div className="rounded-md border p-3 space-y-2">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-medium">Latest Prices</p>
                   <Badge variant="outline" className="text-xs">
@@ -232,7 +255,7 @@ export function BookingPriceWatch({
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
-                    <p className="text-xs text-muted-foreground">Cash</p>
+                    <p className="text-xs text-muted-foreground">Lowest Cash (refundable)</p>
                     <p className="font-medium" data-testid="latest-cash-price">
                       {latestSnapshot.lowestRefundableCashPrice != null
                         ? formatCurrency(
@@ -243,7 +266,7 @@ export function BookingPriceWatch({
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Award</p>
+                    <p className="text-xs text-muted-foreground">Lowest Award</p>
                     <p className="font-medium" data-testid="latest-award-price">
                       {latestSnapshot.lowestAwardPrice != null
                         ? `${latestSnapshot.lowestAwardPrice.toLocaleString()} pts`
@@ -254,6 +277,75 @@ export function BookingPriceWatch({
                 <p className="text-xs text-muted-foreground">
                   Checked {formatDate(latestSnapshot.fetchedAt)}
                 </p>
+
+                {latestSnapshot.rooms.length > 0 && (
+                  <div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full justify-between h-7 text-xs px-2"
+                      onClick={() => setShowRooms((v) => !v)}
+                      data-testid="toggle-room-rates"
+                    >
+                      All room rates ({latestSnapshot.rooms.length})
+                      {showRooms ? (
+                        <ChevronUp className="h-3 w-3" />
+                      ) : (
+                        <ChevronDown className="h-3 w-3" />
+                      )}
+                    </Button>
+                    {showRooms && (
+                      <div className="mt-2 overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="text-xs">Room</TableHead>
+                              <TableHead className="text-xs">Rate Plan</TableHead>
+                              <TableHead className="text-xs text-right">Cash</TableHead>
+                              <TableHead className="text-xs text-right">Award</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {latestSnapshot.rooms.map((room) => (
+                              <TableRow key={room.id} data-testid="room-rate-row">
+                                <TableCell className="text-xs py-1.5">{room.roomName}</TableCell>
+                                <TableCell className="text-xs py-1.5">
+                                  <span>{room.ratePlanName}</span>
+                                  {!room.isRefundable && (
+                                    <Badge
+                                      variant="outline"
+                                      className="ml-1 text-[10px] px-1 py-0 border-orange-300 text-orange-700"
+                                    >
+                                      NR
+                                    </Badge>
+                                  )}
+                                  {room.isCorporate && (
+                                    <Badge
+                                      variant="outline"
+                                      className="ml-1 text-[10px] px-1 py-0 border-blue-300 text-blue-700"
+                                    >
+                                      Corp
+                                    </Badge>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-xs py-1.5 text-right">
+                                  {room.cashPrice != null
+                                    ? formatCurrency(Number(room.cashPrice), room.cashCurrency)
+                                    : "—"}
+                                </TableCell>
+                                <TableCell className="text-xs py-1.5 text-right">
+                                  {room.awardPrice != null
+                                    ? `${room.awardPrice.toLocaleString()} pts`
+                                    : "—"}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 

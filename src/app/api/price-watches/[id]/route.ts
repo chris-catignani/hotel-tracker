@@ -23,6 +23,11 @@ const PRICE_WATCH_INCLUDE = {
   snapshots: {
     orderBy: { fetchedAt: "desc" as const },
     take: 5,
+    include: {
+      rooms: {
+        orderBy: [{ roomName: "asc" as const }, { ratePlanName: "asc" as const }],
+      },
+    },
   },
 } as const;
 
