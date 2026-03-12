@@ -70,7 +70,6 @@ export function BookingPriceWatch({
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (initialWatchBooking) loadWatch(initialWatchBooking.priceWatchId);
   }, [initialWatchBooking, loadWatch]);
   const [cashThreshold, setCashThreshold] = useState(
