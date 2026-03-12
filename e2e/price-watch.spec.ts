@@ -138,18 +138,18 @@ test.describe("Spirit code inline edit", () => {
 
     await page.goto("/price-watch");
 
-    // Click the edit button for this property
-    await page.getByTestId(`edit-spirit-code-${propertyId}`).first().waitFor({ state: "visible" });
-    await page.getByTestId(`edit-spirit-code-${propertyId}`).first().click();
+    // Scope to the desktop table row to avoid the hidden mobile card duplicate
+    const row = page.getByTestId(`price-watch-row-${watch.id}`);
+    await row.getByTestId(`edit-spirit-code-${propertyId}`).click();
 
     // Type the spirit code and press Enter
-    const input = page.getByTestId(`spirit-code-input-${propertyId}`).first();
+    const input = row.getByTestId(`spirit-code-input-${propertyId}`);
     await input.fill("testcode");
     await input.press("Enter");
 
     // Input should disappear and code should be visible
     await expect(input).not.toBeVisible();
-    await expect(page.getByText("testcode").first()).toBeVisible();
+    await expect(row.getByText("testcode")).toBeVisible();
 
     // Cleanup
     await request.put(`/api/properties/${propertyId}`, {
@@ -172,17 +172,16 @@ test.describe("Spirit code inline edit", () => {
 
     await page.goto("/price-watch");
 
-    // Click the edit button
-    await page.getByTestId(`edit-spirit-code-${propertyId}`).first().waitFor({ state: "visible" });
-    await page.getByTestId(`edit-spirit-code-${propertyId}`).first().click();
+    // Scope to the desktop table row to avoid the hidden mobile card duplicate
+    const row = page.getByTestId(`price-watch-row-${watch.id}`);
+    await row.getByTestId(`edit-spirit-code-${propertyId}`).click();
 
     // Type something, then cancel
-    const input = page.getByTestId(`spirit-code-input-${propertyId}`).first();
+    const input = row.getByTestId(`spirit-code-input-${propertyId}`);
     await input.fill("shouldnotbesaved");
 
-    // Click the X (cancel) button — it is the button immediately after the check button next to the input
-    const inputContainer = input.locator("..");
-    await inputContainer.getByRole("button").last().click();
+    // Click the X (cancel) button — last button in the editor row
+    await row.getByRole("button").last().click();
 
     // Input should be gone
     await expect(input).not.toBeVisible();
@@ -198,7 +197,10 @@ test.describe("Spirit code inline edit", () => {
 test.describe("Price watch on booking pages", () => {
   test("price watch card is visible on the new booking page", async ({ page }) => {
     await page.goto("/bookings/new");
-    await expect(page.getByText("Price Watch")).toBeVisible();
+    // Check the unique description text inside the card (avoids matching the nav link)
+    await expect(
+      page.getByText("Get alerted when cash or award prices drop below your thresholds.")
+    ).toBeVisible();
     await expect(page.getByTestId("new-booking-price-watch-toggle")).toBeVisible();
   });
 
