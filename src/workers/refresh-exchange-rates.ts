@@ -2,6 +2,10 @@
  * Populates the ExchangeRate table with current rates from fawazahmed0/exchange-api.
  * Run locally with: npm run rates:refresh
  */
+import * as Sentry from "@sentry/node";
+
+Sentry.init({ dsn: process.env.SENTRY_DSN, tracesSampleRate: 0 });
+
 import { PrismaClient } from "@prisma/client";
 import { CURRENCIES } from "@/lib/constants";
 
@@ -52,8 +56,10 @@ async function main() {
 }
 
 main()
-  .catch((e) => {
+  .catch(async (e) => {
     console.error(e);
+    Sentry.captureException(e);
+    await Sentry.flush(2000);
     process.exit(1);
   })
   .finally(() => prisma.$disconnect());
