@@ -25,7 +25,10 @@ const PRICE_WATCH_INCLUDE = {
     take: 5,
     include: {
       rooms: {
-        orderBy: [{ roomName: "asc" as const }, { ratePlanName: "asc" as const }],
+        orderBy: [{ roomName: "asc" }, { ratePlanName: "asc" }] as {
+          roomName?: "asc" | "desc";
+          ratePlanName?: "asc" | "desc";
+        }[],
       },
     },
   },
