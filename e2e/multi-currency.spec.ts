@@ -102,13 +102,9 @@ test.describe("Multi-Currency Support", () => {
 
     // Populate the ExchangeRate cache for EUR via the cron endpoint
     const cronRes = await request.get("/api/cron/refresh-exchange-rates", {
-      headers: { Authorization: `Bearer ${process.env.CRON_SECRET || "test-secret"}` },
+      headers: { Authorization: `Bearer ${process.env.CRON_SECRET || "test-cron-secret"}` },
     });
-    // If cron is not configured (no CRON_SECRET), skip rather than fail
-    if (!cronRes.ok()) {
-      test.skip();
-      return;
-    }
+    expect(cronRes.ok()).toBeTruthy();
 
     const futureCheckIn = new Date();
     futureCheckIn.setDate(futureCheckIn.getDate() + 30);
