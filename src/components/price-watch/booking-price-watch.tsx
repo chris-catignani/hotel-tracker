@@ -301,6 +301,7 @@ export function BookingPriceWatch({
                             <TableRow>
                               <TableHead className="text-xs">Room</TableHead>
                               <TableHead className="text-xs">Rate Plan</TableHead>
+                              <TableHead className="text-xs">Refundable</TableHead>
                               <TableHead className="text-xs text-right">Cash</TableHead>
                               <TableHead className="text-xs text-right">Award</TableHead>
                             </TableRow>
@@ -311,20 +312,31 @@ export function BookingPriceWatch({
                                 <TableCell className="text-xs py-1.5">{room.roomName}</TableCell>
                                 <TableCell className="text-xs py-1.5">
                                   <span>{room.ratePlanName}</span>
-                                  {!room.isRefundable && (
-                                    <Badge
-                                      variant="outline"
-                                      className="ml-1 text-[10px] px-1 py-0 border-orange-300 text-orange-700"
-                                    >
-                                      NR
-                                    </Badge>
-                                  )}
                                   {room.isCorporate && (
                                     <Badge
                                       variant="outline"
                                       className="ml-1 text-[10px] px-1 py-0 border-blue-300 text-blue-700"
                                     >
                                       Corp
+                                    </Badge>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-xs py-1.5">
+                                  {room.awardPrice != null ? (
+                                    <span className="text-muted-foreground">—</span>
+                                  ) : room.isRefundable ? (
+                                    <Badge
+                                      variant="outline"
+                                      className="text-[10px] px-1 py-0 border-green-300 text-green-700"
+                                    >
+                                      Yes
+                                    </Badge>
+                                  ) : (
+                                    <Badge
+                                      variant="outline"
+                                      className="text-[10px] px-1 py-0 border-orange-300 text-orange-700"
+                                    >
+                                      No
                                     </Badge>
                                   )}
                                 </TableCell>
