@@ -69,6 +69,7 @@ export default defineConfig({
       AUTH_SECRET: process.env.AUTH_SECRET || "",
       SEED_ADMIN_EMAIL: process.env.SEED_ADMIN_EMAIL || "",
       SEED_ADMIN_PASSWORD: process.env.SEED_ADMIN_PASSWORD || "",
+      CRON_SECRET: process.env.CRON_SECRET || "test-cron-secret",
     },
   },
 });
