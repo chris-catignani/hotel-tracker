@@ -81,16 +81,32 @@ describe("parseGhaRates", () => {
     });
   });
 
-  it("parses a refundable Fully Flexible rate by name", () => {
+  it("parses standard rates as refundable by default", () => {
     const data = {
       rooms: [
         makeRoom("D1D", "Superior Room", [
+          makeRate("IDDRRSG", "Suite Getaways", 585),
+          makeRate("IPPKGGBR", "Bed and Breakfast", 720),
+          makeRate("IDDRRMBS", "DISCOVERY Suite Getaway and enjoy our special offer", 357),
           makeRate("DAILY", "Fully Flexible Rate - Room Only", 1199),
         ]),
       ],
     };
     const rates = parseGhaRates(data);
-    expect(rates[0].isRefundable).toBe(true);
+    expect(rates.every((r) => r.isRefundable)).toBe(true);
+  });
+
+  it("parses advance purchase rates as non-refundable", () => {
+    const data = {
+      rooms: [
+        makeRoom("D1D", "Superior Room", [
+          makeRate("IDDRRMBA", "DISCOVERY Advance Purchase", 325),
+          makeRate("IDDRRADV", "Advance Purchase 20% Savings-", 468),
+        ]),
+      ],
+    };
+    const rates = parseGhaRates(data);
+    expect(rates.every((r) => !r.isRefundable)).toBe(true);
   });
 
   it("parses an early-booker rate as non-refundable", () => {

@@ -237,13 +237,13 @@ export function parseGhaRates(data: GhaRatesResponse, numNights = 1): RoomRate[]
 }
 
 /**
- * Determines refundability by rate code and name heuristic.
- * GHAPREF (member preferential) mirrors the Fully Flexible rate terms.
- * Early-booker codes are non-refundable.
+ * Determines refundability by rate name heuristic.
+ * GHA rates are refundable by default. Only "advance purchase" and "early booker"
+ * rates are explicitly non-refundable based on GHA's cancellation policy language.
  */
 function isRefundableRate(rate: GhaRate): boolean {
-  if (rate.rateCode === "GHAPREF") return true;
-  return rate.rateName.toLowerCase().includes("flexible");
+  const name = rate.rateName.toLowerCase();
+  return !name.includes("advance purchase") && !name.includes("early booker");
 }
 
 export function createGhaFetcher(): GhaFetcher {
