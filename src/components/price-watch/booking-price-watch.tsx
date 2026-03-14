@@ -477,24 +477,36 @@ export function BookingPriceWatch({
                                               {r.isRefundable ? (
                                                 <Badge
                                                   variant="outline"
-                                                  className="ml-1 text-[10px] px-1 py-0 border-green-300 text-green-700"
+                                                  className="hidden sm:inline-flex ml-1 text-[10px] px-1 py-0 border-green-300 text-green-700"
                                                 >
                                                   Refundable
                                                 </Badge>
                                               ) : (
                                                 <Badge
                                                   variant="outline"
-                                                  className="ml-1 text-[10px] px-1 py-0 border-orange-300 text-orange-700"
+                                                  className="hidden sm:inline-flex ml-1 text-[10px] px-1 py-0 border-orange-300 text-orange-700"
                                                 >
                                                   Non-refundable
                                                 </Badge>
                                               )}
                                             </TableCell>
                                             <TableCell className="text-xs py-1 text-right">
-                                              {formatCurrency(Number(r.cashPrice), r.cashCurrency, {
-                                                minimumFractionDigits: 0,
-                                                maximumFractionDigits: 0,
-                                              })}
+                                              <span className="flex items-center justify-end gap-1">
+                                                <span
+                                                  className={`sm:hidden w-2 h-2 rounded-full flex-shrink-0 ${r.isRefundable ? "bg-green-500" : "bg-orange-500"}`}
+                                                  title={
+                                                    r.isRefundable ? "Refundable" : "Non-refundable"
+                                                  }
+                                                />
+                                                {formatCurrency(
+                                                  Number(r.cashPrice),
+                                                  r.cashCurrency,
+                                                  {
+                                                    minimumFractionDigits: 0,
+                                                    maximumFractionDigits: 0,
+                                                  }
+                                                )}
+                                              </span>
                                             </TableCell>
                                             <TableCell className="py-1" />
                                           </TableRow>
