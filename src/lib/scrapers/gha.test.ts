@@ -57,7 +57,7 @@ describe("parseGhaRates", () => {
     expect(parseGhaRates({ rooms: [] })).toEqual([]);
   });
 
-  it("parses a refundable GHAPREF member rate", () => {
+  it("parses a GHAPREF member rate correctly", () => {
     const data = {
       rooms: [
         makeRoom("D1D", "Superior Room", [
@@ -76,18 +76,17 @@ describe("parseGhaRates", () => {
       cashPrice: 1079,
       cashCurrency: "AED",
       awardPrice: null,
-      isRefundable: true,
+      isRefundable: false, // no "flexible" in name; GHA API provides no cancellation data
       isCorporate: false,
     });
   });
 
-  it("parses standard rates as refundable by default", () => {
+  it("parses rates with 'flexible' in the name as refundable", () => {
     const data = {
       rooms: [
         makeRoom("D1D", "Superior Room", [
-          makeRate("IDDRRSG", "Suite Getaways", 585),
-          makeRate("IPPKGGBR", "Bed and Breakfast", 720),
-          makeRate("IDDRRMBS", "DISCOVERY Suite Getaway and enjoy our special offer", 357),
+          makeRate("IDDRRMBB", "DISCOVERY Flexible Rate", 552),
+          makeRate("IDDRNDAR", "Flexible Rate", 650),
           makeRate("DAILY", "Fully Flexible Rate - Room Only", 1199),
         ]),
       ],
@@ -96,12 +95,14 @@ describe("parseGhaRates", () => {
     expect(rates.every((r) => r.isRefundable)).toBe(true);
   });
 
-  it("parses advance purchase rates as non-refundable", () => {
+  it("parses rates without 'flexible' as non-refundable (API provides no cancellation data)", () => {
     const data = {
       rooms: [
         makeRoom("D1D", "Superior Room", [
           makeRate("IDDRRMBA", "DISCOVERY Advance Purchase", 325),
-          makeRate("IDDRRADV", "Advance Purchase 20% Savings-", 468),
+          makeRate("IDDRRSG", "Suite Getaways", 585),
+          makeRate("VBRRGP", "Best Available Rate - Room Only", 500),
+          makeRate("IPPKGGBR", "Bed and Breakfast", 720),
         ]),
       ],
     };
@@ -207,7 +208,7 @@ describe("parseGhaRates", () => {
     const data = {
       rooms: [
         makeRoom("D1D", "Superior Room", [
-          makeRate("GHAPREF", "GHA DISCOVERY Preferential Rate - Room Only", 1079, "AED", true),
+          makeRate("IDDRRMBB", "DISCOVERY Flexible Rate", 1079, "AED", true),
           makeRate("EARLY10", "Early Booker Rate", 900, "AED"), // cheaper but non-refundable
         ]),
         makeRoom("C1D", "Deluxe Room", [

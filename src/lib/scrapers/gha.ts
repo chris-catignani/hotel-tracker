@@ -238,12 +238,17 @@ export function parseGhaRates(data: GhaRatesResponse, numNights = 1): RoomRate[]
 
 /**
  * Determines refundability by rate name heuristic.
- * GHA rates are refundable by default. Only "advance purchase" and "early booker"
- * rates are explicitly non-refundable based on GHA's cancellation policy language.
+ *
+ * The GHA OSCP rates API does not return cancellation policy data, so we cannot
+ * reliably determine refundability. Refund terms vary by property — e.g. "Best
+ * Available Rate" is non-refundable at some hotels but refundable at others.
+ *
+ * Conservative default: non-refundable. We only mark a rate as refundable when
+ * the name explicitly contains "flexible", which is a high-confidence signal.
+ * This avoids misleading users into thinking they can cancel for free.
  */
 function isRefundableRate(rate: GhaRate): boolean {
-  const name = rate.rateName.toLowerCase();
-  return !name.includes("advance purchase") && !name.includes("early booker");
+  return rate.rateName.toLowerCase().includes("flexible");
 }
 
 export function createGhaFetcher(): GhaFetcher {
