@@ -7,6 +7,7 @@ Sentry.init({ dsn: process.env.SENTRY_DSN, tracesSampleRate: 0 });
 
 import { PrismaClient } from "@prisma/client";
 import { createHyattFetcher } from "@/lib/scrapers/hyatt";
+import { createIhgFetcher } from "@/lib/scrapers/ihg";
 import { runPriceWatchRefresh } from "@/lib/price-watch-refresh";
 
 const prisma = new PrismaClient();
@@ -14,7 +15,7 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("[RefreshScript] Starting daily price watch refresh...");
   try {
-    const result = await runPriceWatchRefresh([createHyattFetcher()]);
+    const result = await runPriceWatchRefresh([createHyattFetcher(), createIhgFetcher()]);
     console.log(
       `[RefreshScript] Done. ${result.watched} watches checked, results:`,
       result.results

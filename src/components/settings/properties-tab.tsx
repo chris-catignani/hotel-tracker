@@ -121,10 +121,13 @@ export function PropertiesTab() {
                   </div>
                   <div className="flex gap-2">
                     <Input
-                      placeholder="spirit code (e.g. chiph)"
+                      placeholder="spirit code (e.g. CHIPH)"
                       value={edits[property.id] ?? ""}
                       onChange={(e) =>
-                        setEdits((prev) => ({ ...prev, [property.id]: e.target.value }))
+                        setEdits((prev) => ({
+                          ...prev,
+                          [property.id]: e.target.value.toUpperCase(),
+                        }))
                       }
                       className="h-8 text-sm font-mono"
                       maxLength={20}
@@ -174,10 +177,13 @@ export function PropertiesTab() {
                     </TableCell>
                     <TableCell>
                       <Input
-                        placeholder="e.g. chiph"
+                        placeholder="e.g. CHIPH"
                         value={edits[property.id] ?? ""}
                         onChange={(e) =>
-                          setEdits((prev) => ({ ...prev, [property.id]: e.target.value }))
+                          setEdits((prev) => ({
+                            ...prev,
+                            [property.id]: e.target.value.toUpperCase(),
+                          }))
                         }
                         className="h-8 text-sm font-mono w-36"
                         maxLength={20}

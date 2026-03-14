@@ -87,8 +87,8 @@ function SpiritCodeEditor({
       <div className={`flex items-center gap-1 ${className ?? ""}`}>
         <Input
           value={editingValue}
-          onChange={(e) => onValueChange(e.target.value)}
-          placeholder="e.g. chiph"
+          onChange={(e) => onValueChange(e.target.value.toUpperCase())}
+          placeholder="e.g. CHIPH"
           className="h-7 text-xs w-28"
           data-testid={`spirit-code-input-${propertyId}`}
           onKeyDown={(e) => {
