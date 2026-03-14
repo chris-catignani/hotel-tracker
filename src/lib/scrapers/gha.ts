@@ -137,9 +137,16 @@ export class GhaFetcher implements PriceFetcher {
       return null;
     }
 
+    const numNights = Math.round(
+      (new Date(params.checkOut).getTime() - new Date(params.checkIn).getTime()) /
+        (1000 * 60 * 60 * 24)
+    );
+
     const data = (await res.json()) as GhaRatesResponse;
-    const rates = parseGhaRates(data);
-    console.log(`[GhaFetcher] Parsed ${rates.length} rates for ${meta.hotelCode}`);
+    const rates = parseGhaRates(data, numNights);
+    console.log(
+      `[GhaFetcher] Parsed ${rates.length} rates for ${meta.hotelCode} (${numNights} night(s))`
+    );
 
     return rates.length > 0 ? { rates, source: "gha_api" } : null;
   }
@@ -193,7 +200,7 @@ export class GhaFetcher implements PriceFetcher {
  * Exported for unit testing.
  * Parses room rates from a GHA OSCP rates API response.
  */
-export function parseGhaRates(data: GhaRatesResponse): RoomRate[] {
+export function parseGhaRates(data: GhaRatesResponse, numNights = 1): RoomRate[] {
   const rooms = data.rooms ?? [];
   const result: RoomRate[] = [];
 
@@ -209,7 +216,7 @@ export function parseGhaRates(data: GhaRatesResponse): RoomRate[] {
         roomName: room.roomName,
         ratePlanCode: rate.rateCode,
         ratePlanName: rate.rateName,
-        cashPrice: rate.price,
+        cashPrice: rate.price / Math.max(numNights, 1),
         cashCurrency: rate.currency,
         awardPrice: null, // GHA uses D$ cashback, not point redemptions
         isRefundable: isRefundableRate(rate),

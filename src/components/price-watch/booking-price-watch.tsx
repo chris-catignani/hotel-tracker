@@ -364,16 +364,17 @@ export function BookingPriceWatch({
 
                 {(latestSnapshot.rooms?.length ?? 0) > 0 &&
                   (() => {
-                    // Group rooms by roomId
+                    // Group rooms by roomName (a chain may return multiple roomIds for the same room type)
                     const groups = latestSnapshot.rooms.reduce<
                       Record<
                         string,
                         { roomId: string; roomName: string; rates: PriceSnapshotRoom[] }
                       >
                     >((acc, r) => {
-                      if (!acc[r.roomId])
-                        acc[r.roomId] = { roomId: r.roomId, roomName: r.roomName, rates: [] };
-                      acc[r.roomId].rates.push(r);
+                      const key = r.roomName;
+                      if (!acc[key])
+                        acc[key] = { roomId: r.roomId, roomName: r.roomName, rates: [] };
+                      acc[key].rates.push(r);
                       return acc;
                     }, {});
                     const roomGroups = Object.values(groups).sort((a, b) => {

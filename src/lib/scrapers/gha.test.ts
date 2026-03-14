@@ -117,6 +117,18 @@ describe("parseGhaRates", () => {
     expect(rates[0].awardPrice).toBeNull();
   });
 
+  it("divides total price by numNights to get per-night rate", () => {
+    const data = {
+      rooms: [
+        makeRoom("D1D", "Superior Room", [
+          makeRate("GHAPREF", "GHA DISCOVERY Preferential Rate - Room Only", 2158, "AED", true),
+        ]),
+      ],
+    };
+    const rates = parseGhaRates(data, 2);
+    expect(rates[0].cashPrice).toBe(1079);
+  });
+
   it("skips rates with zero or negative price", () => {
     const data = {
       rooms: [
