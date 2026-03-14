@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Eye, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { Eye, Loader2, ChevronDown, ChevronUp, ArrowUpDown } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { extractApiError } from "@/lib/client-error";
 import {
@@ -62,6 +62,9 @@ interface PriceWatchData {
   }[];
 }
 
+type SortColumn = "room" | "cash" | "award";
+type SortDirection = "asc" | "desc";
+
 interface BookingPriceWatchProps {
   bookingId: string;
   propertyId: string;
@@ -70,6 +73,7 @@ interface BookingPriceWatchProps {
   checkOut: string;
   totalCost: string | number;
   currency: string;
+  pointsRedeemed: number | null;
   initialWatchBooking: PriceWatchBookingData | null;
 }
 
@@ -80,6 +84,7 @@ export function BookingPriceWatch({
   checkOut,
   totalCost,
   currency,
+  pointsRedeemed,
   initialWatchBooking,
 }: BookingPriceWatchProps) {
   const [watch, setWatch] = useState<PriceWatchData | null>(null);
@@ -106,6 +111,9 @@ export function BookingPriceWatch({
   const [error, setError] = useState<string | null>(null);
   const [showRooms, setShowRooms] = useState(false);
   const [expandedRooms, setExpandedRooms] = useState<Set<string>>(new Set());
+  const defaultSortColumn: SortColumn = pointsRedeemed ? "award" : "cash";
+  const [sortColumn, setSortColumn] = useState<SortColumn>(defaultSortColumn);
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
   const toggleRoom = (roomId: string) =>
     setExpandedRooms((prev) => {
@@ -114,6 +122,24 @@ export function BookingPriceWatch({
       else next.add(roomId);
       return next;
     });
+
+  const handleSort = (col: SortColumn) => {
+    if (sortColumn === col) {
+      setSortDirection((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortColumn(col);
+      setSortDirection("asc");
+    }
+  };
+
+  const SortIcon = ({ col }: { col: SortColumn }) => {
+    if (sortColumn !== col) return <ArrowUpDown className="inline h-3 w-3 ml-1 opacity-40" />;
+    return sortDirection === "asc" ? (
+      <ChevronUp className="inline h-3 w-3 ml-1" />
+    ) : (
+      <ChevronDown className="inline h-3 w-3 ml-1" />
+    );
+  };
 
   const isEnabled = watch?.isEnabled ?? false;
   const latestSnapshot = watch?.snapshots?.[0] ?? null;
@@ -301,7 +327,35 @@ export function BookingPriceWatch({
                       acc[r.roomId].rates.push(r);
                       return acc;
                     }, {});
-                    const roomGroups = Object.values(groups);
+                    const roomGroups = Object.values(groups).sort((a, b) => {
+                      const dir = sortDirection === "asc" ? 1 : -1;
+                      if (sortColumn === "room") {
+                        return dir * a.roomName.localeCompare(b.roomName);
+                      }
+                      if (sortColumn === "cash") {
+                        const aPrice = a.rates
+                          .filter((r) => r.cashPrice != null && r.isRefundable)
+                          .reduce<
+                            number | null
+                          >((min, r) => (min === null || Number(r.cashPrice) < min ? Number(r.cashPrice) : min), null);
+                        const bPrice = b.rates
+                          .filter((r) => r.cashPrice != null && r.isRefundable)
+                          .reduce<
+                            number | null
+                          >((min, r) => (min === null || Number(r.cashPrice) < min ? Number(r.cashPrice) : min), null);
+                        if (aPrice === null && bPrice === null) return 0;
+                        if (aPrice === null) return 1;
+                        if (bPrice === null) return -1;
+                        return dir * (aPrice - bPrice);
+                      }
+                      // award
+                      const aAward = a.rates.find((r) => r.awardPrice != null)?.awardPrice ?? null;
+                      const bAward = b.rates.find((r) => r.awardPrice != null)?.awardPrice ?? null;
+                      if (aAward === null && bAward === null) return 0;
+                      if (aAward === null) return 1;
+                      if (bAward === null) return -1;
+                      return dir * (aAward - bAward);
+                    });
 
                     return (
                       <div>
@@ -325,9 +379,24 @@ export function BookingPriceWatch({
                               <TableHeader>
                                 <TableRow>
                                   <TableHead className="text-xs w-4" />
-                                  <TableHead className="text-xs">Room</TableHead>
-                                  <TableHead className="text-xs text-right">From (cash)</TableHead>
-                                  <TableHead className="text-xs text-right">Award</TableHead>
+                                  <TableHead
+                                    className="text-xs cursor-pointer select-none hover:text-foreground"
+                                    onClick={() => handleSort("room")}
+                                  >
+                                    Room <SortIcon col="room" />
+                                  </TableHead>
+                                  <TableHead
+                                    className="text-xs text-right cursor-pointer select-none hover:text-foreground"
+                                    onClick={() => handleSort("cash")}
+                                  >
+                                    From (cash) <SortIcon col="cash" />
+                                  </TableHead>
+                                  <TableHead
+                                    className="text-xs text-right cursor-pointer select-none hover:text-foreground"
+                                    onClick={() => handleSort("award")}
+                                  >
+                                    Award <SortIcon col="award" />
+                                  </TableHead>
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
