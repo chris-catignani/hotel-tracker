@@ -3,6 +3,60 @@ import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { BookingPriceWatch } from "./booking-price-watch";
 
+// Rooms designed so cash sort and award sort produce different orderings:
+// cash asc: Standard ($150) < Penthouse ($300)
+// award asc: Penthouse (5,000 pts) < Standard (25,000 pts)
+const mockRoomsSortable = [
+  {
+    id: "rA-1",
+    roomId: "room-A",
+    roomName: "Penthouse Suite",
+    ratePlanCode: "STAND",
+    ratePlanName: "Standard Rate",
+    cashPrice: 300,
+    cashCurrency: "USD",
+    awardPrice: null,
+    isRefundable: true,
+    isCorporate: false,
+  },
+  {
+    id: "rA-2",
+    roomId: "room-A",
+    roomName: "Penthouse Suite",
+    ratePlanCode: "AWD",
+    ratePlanName: "Award Rate",
+    cashPrice: null,
+    cashCurrency: "USD",
+    awardPrice: 5000,
+    isRefundable: false,
+    isCorporate: false,
+  },
+  {
+    id: "rB-1",
+    roomId: "room-B",
+    roomName: "Standard Room",
+    ratePlanCode: "STAND",
+    ratePlanName: "Standard Rate",
+    cashPrice: 150,
+    cashCurrency: "USD",
+    awardPrice: null,
+    isRefundable: true,
+    isCorporate: false,
+  },
+  {
+    id: "rB-2",
+    roomId: "room-B",
+    roomName: "Standard Room",
+    ratePlanCode: "AWD",
+    ratePlanName: "Award Rate",
+    cashPrice: null,
+    cashCurrency: "USD",
+    awardPrice: 25000,
+    isRefundable: false,
+    isCorporate: false,
+  },
+];
+
 const mockRooms = [
   {
     id: "r1-1",
@@ -82,6 +136,7 @@ const defaultProps = {
   checkOut: "2026-05-03",
   totalCost: 480,
   currency: "USD",
+  pointsRedeemed: null,
 };
 
 const initialWatchBooking = {
@@ -326,5 +381,172 @@ describe("BookingPriceWatch", () => {
     });
 
     expect(screen.queryByTestId("latest-cash-price")).not.toBeInTheDocument();
+  });
+
+  it("does not crash when snapshot rooms is undefined", async () => {
+    const watchUndefinedRooms = {
+      ...mockWatch,
+      snapshots: [{ ...mockWatch.snapshots[0], rooms: undefined }],
+    };
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => watchUndefinedRooms,
+    } as Response);
+
+    await act(async () => {
+      render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("latest-cash-price")).toBeInTheDocument();
+    });
+
+    expect(screen.queryByTestId("toggle-room-rates")).not.toBeInTheDocument();
+  });
+
+  it("defaults to cash sort for a cash booking (pointsRedeemed=null)", async () => {
+    const watchSortable = {
+      ...mockWatch,
+      snapshots: [{ ...mockWatch.snapshots[0], rooms: mockRoomsSortable }],
+    };
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => watchSortable,
+    } as Response);
+    const user = userEvent.setup();
+
+    await act(async () => {
+      render(
+        <BookingPriceWatch
+          {...defaultProps}
+          pointsRedeemed={null}
+          initialWatchBooking={initialWatchBooking}
+        />
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("toggle-room-rates")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByTestId("toggle-room-rates"));
+
+    // cash asc: Standard ($150) first, Penthouse ($300) second
+    const groupRows = screen.getAllByTestId("room-group-row");
+    expect(groupRows[0]).toHaveTextContent("Standard Room");
+    expect(groupRows[1]).toHaveTextContent("Penthouse Suite");
+  });
+
+  it("defaults to award sort for a points booking (pointsRedeemed>0)", async () => {
+    const watchSortable = {
+      ...mockWatch,
+      snapshots: [{ ...mockWatch.snapshots[0], rooms: mockRoomsSortable }],
+    };
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => watchSortable,
+    } as Response);
+    const user = userEvent.setup();
+
+    await act(async () => {
+      render(
+        <BookingPriceWatch
+          {...defaultProps}
+          pointsRedeemed={12000}
+          initialWatchBooking={initialWatchBooking}
+        />
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("toggle-room-rates")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByTestId("toggle-room-rates"));
+
+    // award asc: Penthouse (5,000 pts) first, Standard (25,000 pts) second
+    const groupRows = screen.getAllByTestId("room-group-row");
+    expect(groupRows[0]).toHaveTextContent("Penthouse Suite");
+    expect(groupRows[1]).toHaveTextContent("Standard Room");
+  });
+
+  it("sorts room groups alphabetically when Room header is clicked", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => mockWatch,
+    } as Response);
+    const user = userEvent.setup();
+
+    await act(async () => {
+      render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("toggle-room-rates")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByTestId("toggle-room-rates"));
+    await user.click(screen.getByText(/^Room/));
+
+    // alphabetical asc: Double Standard < King Standard
+    const groupRows = screen.getAllByTestId("room-group-row");
+    expect(groupRows[0]).toHaveTextContent("Double Standard");
+    expect(groupRows[1]).toHaveTextContent("King Standard");
+  });
+
+  it("reverses sort direction when the active column header is clicked again", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => mockWatch,
+    } as Response);
+    const user = userEvent.setup();
+
+    await act(async () => {
+      render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("toggle-room-rates")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByTestId("toggle-room-rates"));
+    // Click Room header once → asc (Double Standard first)
+    await user.click(screen.getByText(/^Room/));
+    let groupRows = screen.getAllByTestId("room-group-row");
+    expect(groupRows[0]).toHaveTextContent("Double Standard");
+
+    // Click Room header again → desc (King Standard first)
+    await user.click(screen.getByText(/^Room/));
+    groupRows = screen.getAllByTestId("room-group-row");
+    expect(groupRows[0]).toHaveTextContent("King Standard");
+  });
+
+  it("shows expanded cash rates sorted by price ascending (cheapest first)", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => mockWatch,
+    } as Response);
+    const user = userEvent.setup();
+
+    await act(async () => {
+      render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("toggle-room-rates")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByTestId("toggle-room-rates"));
+
+    // Find King Standard row and expand it
+    const groupRows = screen.getAllByTestId("room-group-row");
+    const kingRow = groupRows.find((r) => r.textContent?.includes("King Standard"))!;
+    await user.click(kingRow);
+
+    // King Standard has: r1-2 Non-refundable Rate ($220), r1-1 Standard Rate ($250), then award row
+    const rateRows = screen.getAllByTestId("room-rate-row");
+    expect(rateRows[0]).toHaveTextContent("Non-refundable Rate"); // $220 — cheapest cash
+    expect(rateRows[1]).toHaveTextContent("Standard Rate"); // $250
+    expect(rateRows[2]).toHaveTextContent("12,000 pts"); // award row last
   });
 });

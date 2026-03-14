@@ -20,6 +20,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const snapshots = await prisma.priceSnapshot.findMany({
       where: { priceWatchId: id },
       orderBy: { fetchedAt: "desc" },
+      include: { rooms: true },
     });
 
     return NextResponse.json(snapshots);
