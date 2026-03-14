@@ -391,7 +391,9 @@ export function BookingPriceWatch({
                                   >
                                     From (cash) <SortIcon col="cash" />
                                   </TableHead>
-                                  <TableHead className="text-xs">Refundable</TableHead>
+                                  <TableHead className="text-xs hidden sm:table-cell">
+                                    Refundable
+                                  </TableHead>
                                   <TableHead
                                     className="text-xs text-right cursor-pointer select-none hover:text-foreground"
                                     onClick={() => handleSort("award")}
@@ -441,11 +443,12 @@ export function BookingPriceWatch({
                                           {lowestRefundable != null
                                             ? formatCurrency(
                                                 Number(lowestRefundable.cashPrice),
-                                                lowestRefundable.cashCurrency
+                                                lowestRefundable.cashCurrency,
+                                                { maximumFractionDigits: 0 }
                                               )
                                             : "—"}
                                         </TableCell>
-                                        <TableCell className="py-1.5" />
+                                        <TableCell className="py-1.5 hidden sm:table-cell" />
                                         <TableCell className="text-xs py-1.5 text-right">
                                           {awardRate != null
                                             ? `${awardRate.awardPrice!.toLocaleString()} pts`
@@ -474,9 +477,21 @@ export function BookingPriceWatch({
                                               )}
                                             </TableCell>
                                             <TableCell className="text-xs py-1 text-right">
-                                              {formatCurrency(Number(r.cashPrice), r.cashCurrency)}
+                                              <span className="flex items-center justify-end gap-1">
+                                                <span
+                                                  className={`sm:hidden w-2 h-2 rounded-full flex-shrink-0 ${r.isRefundable ? "bg-green-500" : "bg-orange-500"}`}
+                                                  title={
+                                                    r.isRefundable ? "Refundable" : "Non-refundable"
+                                                  }
+                                                />
+                                                {formatCurrency(
+                                                  Number(r.cashPrice),
+                                                  r.cashCurrency,
+                                                  { maximumFractionDigits: 0 }
+                                                )}
+                                              </span>
                                             </TableCell>
-                                            <TableCell className="py-1">
+                                            <TableCell className="py-1 hidden sm:table-cell">
                                               {r.isRefundable ? (
                                                 <Badge
                                                   variant="outline"
@@ -508,7 +523,7 @@ export function BookingPriceWatch({
                                             {awardRate.ratePlanName}
                                           </TableCell>
                                           <TableCell className="py-1" />
-                                          <TableCell className="py-1" />
+                                          <TableCell className="py-1 hidden sm:table-cell" />
                                           <TableCell className="text-xs py-1 text-right">
                                             {awardRate.awardPrice!.toLocaleString()} pts
                                           </TableCell>
