@@ -70,14 +70,14 @@ export class HyattFetcher implements PriceFetcher {
     const spiritCode = params.property.chainPropertyId;
     if (!spiritCode) return null;
 
-    // Two sequential fetches:
+    // Two parallel fetches:
     // 1. No rateFilter — returns all room types with cash rates (no award prices)
     // 2. rateFilter=woh — returns only award-eligible rooms with points prices
-    console.log(`[HyattFetcher] Fetching cash rates for ${spiritCode}...`);
-    const cashData = await this.fetchRawResponse(spiritCode, params);
-
-    console.log(`[HyattFetcher] Fetching award rates for ${spiritCode}...`);
-    const awardData = await this.fetchRawResponse(spiritCode, params, "woh");
+    console.log(`[HyattFetcher] Fetching cash and award rates in parallel for ${spiritCode}...`);
+    const [cashData, awardData] = await Promise.all([
+      this.fetchRawResponse(spiritCode, params),
+      this.fetchRawResponse(spiritCode, params, "woh"),
+    ]);
 
     if (!cashData && !awardData) return null;
 
