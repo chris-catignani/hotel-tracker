@@ -578,7 +578,7 @@ model PriceSnapshotRoom {
   cashPrice       Decimal?      @map("cash_price") @db.Decimal(10, 2)
   cashCurrency    String        @default("USD") @map("cash_currency")
   awardPrice      Int?          @map("award_price")
-  isRefundable    Boolean       @default(true) @map("is_refundable")
+  isRefundable    Boolean?      @map("is_refundable")
   isCorporate     Boolean       @default(false) @map("is_corporate")
 
   @@index([priceSnapshotId])

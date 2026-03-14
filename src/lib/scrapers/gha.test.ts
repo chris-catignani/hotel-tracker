@@ -57,69 +57,20 @@ describe("parseGhaRates", () => {
     expect(parseGhaRates({ rooms: [] })).toEqual([]);
   });
 
-  it("parses a GHAPREF member rate correctly", () => {
+  it("sets isRefundable to null for all rates — GHA API provides no cancellation data", () => {
     const data = {
       rooms: [
         makeRoom("D1D", "Superior Room", [
           makeRate("GHAPREF", "GHA DISCOVERY Preferential Rate - Room Only", 1079, "AED", true),
-        ]),
-      ],
-    };
-    const rates = parseGhaRates(data);
-
-    expect(rates).toHaveLength(1);
-    expect(rates[0]).toMatchObject({
-      roomId: "D1D",
-      roomName: "Superior Room",
-      ratePlanCode: "GHAPREF",
-      ratePlanName: "GHA DISCOVERY Preferential Rate - Room Only",
-      cashPrice: 1079,
-      cashCurrency: "AED",
-      awardPrice: null,
-      isRefundable: false, // no "flexible" in name; GHA API provides no cancellation data
-      isCorporate: false,
-    });
-  });
-
-  it("parses rates with 'flexible' in the name as refundable", () => {
-    const data = {
-      rooms: [
-        makeRoom("D1D", "Superior Room", [
           makeRate("IDDRRMBB", "DISCOVERY Flexible Rate", 552),
-          makeRate("IDDRNDAR", "Flexible Rate", 650),
-          makeRate("DAILY", "Fully Flexible Rate - Room Only", 1199),
-        ]),
-      ],
-    };
-    const rates = parseGhaRates(data);
-    expect(rates.every((r) => r.isRefundable)).toBe(true);
-  });
-
-  it("parses rates without 'flexible' as non-refundable (API provides no cancellation data)", () => {
-    const data = {
-      rooms: [
-        makeRoom("D1D", "Superior Room", [
           makeRate("IDDRRMBA", "DISCOVERY Advance Purchase", 325),
-          makeRate("IDDRRSG", "Suite Getaways", 585),
-          makeRate("VBRRGP", "Best Available Rate - Room Only", 500),
-          makeRate("IPPKGGBR", "Bed and Breakfast", 720),
-        ]),
-      ],
-    };
-    const rates = parseGhaRates(data);
-    expect(rates.every((r) => !r.isRefundable)).toBe(true);
-  });
-
-  it("parses an early-booker rate as non-refundable", () => {
-    const data = {
-      rooms: [
-        makeRoom("D1D", "Superior Room", [
           makeRate("EARLY10", "Early Booker Rate - Room Only", 1080),
+          makeRate("VBRRGP", "Best Available Rate - Room Only", 500),
         ]),
       ],
     };
     const rates = parseGhaRates(data);
-    expect(rates[0].isRefundable).toBe(false);
+    expect(rates.every((r) => r.isRefundable === null)).toBe(true);
   });
 
   it("award price is always null — GHA has no point redemptions", () => {
@@ -204,15 +155,14 @@ describe("parseGhaRates", () => {
     expect(rates.map((r) => r.roomId)).toEqual(["D1D", "D1D", "D1D", "C1D", "C1D"]);
   });
 
-  it("lowestRefundableCash picks cheapest refundable rate across rooms", () => {
+  it("lowestRefundableCash includes GHA rates (isRefundable=null treated as not excluded)", () => {
     const data = {
       rooms: [
         makeRoom("D1D", "Superior Room", [
-          makeRate("IDDRRMBB", "DISCOVERY Flexible Rate", 1079, "AED", true),
-          makeRate("EARLY10", "Early Booker Rate", 900, "AED"), // cheaper but non-refundable
+          makeRate("GHAPREF", "GHA DISCOVERY Preferential Rate - Room Only", 1079, "AED"),
         ]),
         makeRoom("C1D", "Deluxe Room", [
-          makeRate("DAILY", "Fully Flexible Rate - Room Only", 1299, "AED"),
+          makeRate("DAILY", "Best Available Rate - Room Only", 1299, "AED"),
         ]),
       ],
     };

@@ -330,7 +330,7 @@ export interface PriceSnapshotRoom {
   cashPrice: string | number | null;
   cashCurrency: string;
   awardPrice: number | null;
-  isRefundable: boolean;
+  isRefundable: boolean | null;
   isCorporate: boolean;
 }
 

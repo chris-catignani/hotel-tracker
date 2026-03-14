@@ -37,7 +37,7 @@ interface PriceSnapshotRoom {
   cashPrice: string | number | null;
   cashCurrency: string;
   awardPrice: number | null;
-  isRefundable: boolean;
+  isRefundable: boolean | null;
   isCorporate: boolean;
 }
 
@@ -395,7 +395,7 @@ export function BookingPriceWatch({
                           rates: PriceSnapshotRoom[]
                         ): number | null => {
                           const prices = rates
-                            .filter((r) => r.cashPrice != null && r.isRefundable)
+                            .filter((r) => r.cashPrice != null && r.isRefundable !== false)
                             .map((r) => Number(r.cashPrice));
                           return prices.length > 0 ? Math.min(...prices) : null;
                         };
@@ -464,7 +464,7 @@ export function BookingPriceWatch({
                                     .sort((a, b) => Number(a.cashPrice) - Number(b.cashPrice));
                                   const awardRate = rates.find((r) => r.awardPrice != null);
                                   const lowestRefundable = cashRates
-                                    .filter((r) => r.isRefundable)
+                                    .filter((r) => r.isRefundable !== false)
                                     .reduce<PriceSnapshotRoom | null>(
                                       (best, r) =>
                                         best === null ||
@@ -532,14 +532,15 @@ export function BookingPriceWatch({
                                                   Corp
                                                 </Badge>
                                               )}
-                                              {r.isRefundable ? (
+                                              {r.isRefundable === true && (
                                                 <Badge
                                                   variant="outline"
                                                   className="hidden sm:inline-flex ml-1 text-[10px] px-1 py-0 border-green-300 text-green-700"
                                                 >
                                                   Refundable
                                                 </Badge>
-                                              ) : (
+                                              )}
+                                              {r.isRefundable === false && (
                                                 <Badge
                                                   variant="outline"
                                                   className="hidden sm:inline-flex ml-1 text-[10px] px-1 py-0 border-orange-300 text-orange-700"
@@ -550,12 +551,16 @@ export function BookingPriceWatch({
                                             </TableCell>
                                             <TableCell className="text-xs py-1 text-right">
                                               <span className="flex items-center justify-end gap-1">
-                                                <span
-                                                  className={`sm:hidden w-2 h-2 rounded-full flex-shrink-0 ${r.isRefundable ? "bg-green-500" : "bg-orange-500"}`}
-                                                  title={
-                                                    r.isRefundable ? "Refundable" : "Non-refundable"
-                                                  }
-                                                />
+                                                {r.isRefundable !== null && (
+                                                  <span
+                                                    className={`sm:hidden w-2 h-2 rounded-full flex-shrink-0 ${r.isRefundable ? "bg-green-500" : "bg-orange-500"}`}
+                                                    title={
+                                                      r.isRefundable
+                                                        ? "Refundable"
+                                                        : "Non-refundable"
+                                                    }
+                                                  />
+                                                )}
                                                 {formatCurrency(
                                                   Number(r.cashPrice),
                                                   r.cashCurrency,

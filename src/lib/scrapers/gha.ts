@@ -227,28 +227,13 @@ export function parseGhaRates(data: GhaRatesResponse, numNights = 1): RoomRate[]
         cashPrice,
         cashCurrency: rate.currency,
         awardPrice: null, // GHA uses D$ cashback, not point redemptions
-        isRefundable: isRefundableRate(rate),
+        isRefundable: null, // GHA API does not return cancellation policy data
         isCorporate: false,
       });
     }
   }
 
   return Array.from(seen.values());
-}
-
-/**
- * Determines refundability by rate name heuristic.
- *
- * The GHA OSCP rates API does not return cancellation policy data, so we cannot
- * reliably determine refundability. Refund terms vary by property — e.g. "Best
- * Available Rate" is non-refundable at some hotels but refundable at others.
- *
- * Conservative default: non-refundable. We only mark a rate as refundable when
- * the name explicitly contains "flexible", which is a high-confidence signal.
- * This avoids misleading users into thinking they can cancel for free.
- */
-function isRefundableRate(rate: GhaRate): boolean {
-  return rate.rateName.toLowerCase().includes("flexible");
 }
 
 export function createGhaFetcher(): GhaFetcher {
