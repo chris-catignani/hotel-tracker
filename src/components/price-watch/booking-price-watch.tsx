@@ -69,6 +69,7 @@ type SortDirection = "asc" | "desc";
 interface BookingPriceWatchProps {
   bookingId: string;
   propertyId: string;
+  propertyName: string;
   hotelChainId: string;
   checkIn: string;
   checkOut: string;
@@ -78,7 +79,13 @@ interface BookingPriceWatchProps {
   initialWatchBooking: PriceWatchBookingData | null;
 }
 
-function ChainPropertyIdHint({ hotelChainId }: { hotelChainId: string }) {
+function ChainPropertyIdHint({
+  hotelChainId,
+  propertyName,
+}: {
+  hotelChainId: string;
+  propertyName: string;
+}) {
   let content: React.ReactNode;
 
   if (hotelChainId === HOTEL_ID.HYATT) {
@@ -109,8 +116,8 @@ function ChainPropertyIdHint({ hotelChainId }: { hotelChainId: string }) {
     content = (
       <>
         <strong>GHA Hotel ID needed</strong> — run{" "}
-        <code>npx tsx scripts/debug-gha.ts &quot;hotel name&quot;</code> to find the numeric Hotel
-        ID (objectId) and ask your admin to set it on this property.
+        <code>npx tsx scripts/debug-gha.ts &quot;{propertyName}&quot;</code> to find the numeric
+        Hotel ID (objectId) and ask your admin to set it on this property.
       </>
     );
   } else {
@@ -132,6 +139,7 @@ function ChainPropertyIdHint({ hotelChainId }: { hotelChainId: string }) {
 export function BookingPriceWatch({
   bookingId,
   propertyId,
+  propertyName,
   hotelChainId,
   checkIn,
   checkOut,
@@ -294,7 +302,7 @@ export function BookingPriceWatch({
           <>
             {/* Chain property ID hint */}
             {watch && !watch.property.chainPropertyId && (
-              <ChainPropertyIdHint hotelChainId={hotelChainId} />
+              <ChainPropertyIdHint hotelChainId={hotelChainId} propertyName={propertyName} />
             )}
 
             {/* Alert thresholds */}

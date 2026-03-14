@@ -131,6 +131,7 @@ const mockWatch = {
 const defaultProps = {
   bookingId: "booking-1",
   propertyId: "prop-1",
+  propertyName: "Park Hyatt Chicago",
   hotelChainId: "chain-1",
   checkIn: "2026-05-01",
   checkOut: "2026-05-03",

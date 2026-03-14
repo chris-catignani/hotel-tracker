@@ -81,6 +81,7 @@ export default function EditBookingPage() {
           <BookingPriceWatch
             bookingId={booking.id}
             propertyId={booking.propertyId}
+            propertyName={booking.property.name}
             hotelChainId={booking.hotelChainId}
             checkIn={booking.checkIn}
             checkOut={booking.checkOut}
