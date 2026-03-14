@@ -287,7 +287,7 @@ export function BookingPriceWatch({
                   Checked {formatDate(latestSnapshot.fetchedAt)}
                 </p>
 
-                {latestSnapshot.rooms.length > 0 &&
+                {(latestSnapshot.rooms?.length ?? 0) > 0 &&
                   (() => {
                     // Group rooms by roomId
                     const groups = latestSnapshot.rooms.reduce<
