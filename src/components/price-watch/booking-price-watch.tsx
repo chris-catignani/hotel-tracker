@@ -333,16 +333,16 @@ export function BookingPriceWatch({
                         return dir * a.roomName.localeCompare(b.roomName);
                       }
                       if (sortColumn === "cash") {
-                        const aPrice = a.rates
-                          .filter((r) => r.cashPrice != null && r.isRefundable)
-                          .reduce<
-                            number | null
-                          >((min, r) => (min === null || Number(r.cashPrice) < min ? Number(r.cashPrice) : min), null);
-                        const bPrice = b.rates
-                          .filter((r) => r.cashPrice != null && r.isRefundable)
-                          .reduce<
-                            number | null
-                          >((min, r) => (min === null || Number(r.cashPrice) < min ? Number(r.cashPrice) : min), null);
+                        const getMinRefundableCashPrice = (
+                          rates: PriceSnapshotRoom[]
+                        ): number | null => {
+                          const prices = rates
+                            .filter((r) => r.cashPrice != null && r.isRefundable)
+                            .map((r) => Number(r.cashPrice));
+                          return prices.length > 0 ? Math.min(...prices) : null;
+                        };
+                        const aPrice = getMinRefundableCashPrice(a.rates);
+                        const bPrice = getMinRefundableCashPrice(b.rates);
                         if (aPrice === null && bPrice === null) return 0;
                         if (aPrice === null) return 1;
                         if (bPrice === null) return -1;
