@@ -99,8 +99,10 @@ function ChainPropertyIdHint({ hotelChainId }: { hotelChainId: string }) {
   } else if (hotelChainId === HOTEL_ID.IHG) {
     content = (
       <>
-        <strong>IHG Hotel Code needed</strong> — find it in the property URL on ihg.com (e.g.{" "}
-        <code>ihg.com/.../{"{hotelCode}"}/...</code>) and ask your admin to set it on this property.
+        <strong>IHG Hotel Code needed</strong> — find it in the property URL on ihg.com: it is the
+        5-letter code immediately before <code>/hoteldetail</code> (e.g.{" "}
+        <code>ihg.com/.../chicago/{"{hotelCode}"}/hoteldetail</code>) and ask your admin to set it
+        on this property.
       </>
     );
   } else {
