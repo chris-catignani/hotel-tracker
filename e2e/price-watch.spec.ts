@@ -147,9 +147,9 @@ test.describe("Spirit code inline edit", () => {
     await input.fill("testcode");
     await input.press("Enter");
 
-    // Input should disappear and code should be visible
+    // Input should disappear and code should be visible (auto-uppercased)
     await expect(input).not.toBeVisible();
-    await expect(row.getByText("testcode")).toBeVisible();
+    await expect(row.getByText("TESTCODE")).toBeVisible();
 
     // Cleanup
     await request.put(`/api/properties/${propertyId}`, {

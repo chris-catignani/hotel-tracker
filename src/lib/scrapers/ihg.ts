@@ -28,7 +28,8 @@ const IHG_API_URL =
   "https://apis.ihg.com/availability/v3/hotels/offers?fieldset=rateDetails,rateDetails.policies,rateDetails.bonusRates,alternatePayments";
 
 // Static public API key embedded in IHG's web app. No login required.
-const IHG_API_KEY = "se9ym5iAzaW8pxfBjkmgbuGjJcr3Pj6Y";
+// Can be overridden via IHG_API_KEY env var.
+const IHG_API_KEY = process.env.IHG_API_KEY ?? "se9ym5iAzaW8pxfBjkmgbuGjJcr3Pj6Y";
 
 // Award rate plan codes — these use points pricing (amountBeforeTax × 100 = points)
 const AWARD_RATE_CODES = new Set(["IVAN1", "IVAN3", "IVAN5", "IVAN6", "IVAN7", "IVANI"]);
@@ -103,18 +104,6 @@ export class IhgFetcher implements PriceFetcher {
         startDate: params.checkIn,
         endDate: params.checkOut,
         hotelMnemonics: [mnemonic],
-        rates: {
-          ratePlanCodes: [
-            { internal: "IGCOR" },
-            { internal: "IDAP2" },
-            { internal: "IVAN1" },
-            { internal: "IVAN3" },
-            { internal: "IVAN5" },
-            { internal: "IVAN6" },
-            { internal: "IVAN7" },
-            { internal: "IVANI" },
-          ],
-        },
         products: [
           {
             productCode: "SR",
