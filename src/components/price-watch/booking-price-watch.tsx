@@ -105,6 +105,14 @@ function ChainPropertyIdHint({ hotelChainId }: { hotelChainId: string }) {
         on this property.
       </>
     );
+  } else if (hotelChainId === HOTEL_ID.GHA_DISCOVERY) {
+    content = (
+      <>
+        <strong>GHA Hotel ID needed</strong> — run{" "}
+        <code>npx tsx scripts/debug-gha.ts &quot;hotel name&quot;</code> to find the numeric Hotel
+        ID (objectId) and ask your admin to set it on this property.
+      </>
+    );
   } else {
     content = (
       <>
