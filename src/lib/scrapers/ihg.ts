@@ -80,7 +80,8 @@ export class IhgFetcher implements PriceFetcher {
   }
 
   async fetchPrice(params: FetchParams): Promise<PriceFetchResult | null> {
-    const mnemonic = params.property.chainPropertyId;
+    // IHG API requires uppercase mnemonics — normalise here regardless of how it was stored
+    const mnemonic = params.property.chainPropertyId?.toUpperCase();
     if (!mnemonic) return null;
 
     console.log(`[IhgFetcher] Fetching rates for ${mnemonic}...`);
