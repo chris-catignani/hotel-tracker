@@ -401,7 +401,9 @@ export function BookingPriceWatch({
                               </TableHeader>
                               <TableBody>
                                 {roomGroups.map(({ roomId, roomName, rates }) => {
-                                  const cashRates = rates.filter((r) => r.cashPrice != null);
+                                  const cashRates = rates
+                                    .filter((r) => r.cashPrice != null)
+                                    .sort((a, b) => Number(a.cashPrice) - Number(b.cashPrice));
                                   const awardRate = rates.find((r) => r.awardPrice != null);
                                   const lowestRefundable = cashRates
                                     .filter((r) => r.isRefundable)
