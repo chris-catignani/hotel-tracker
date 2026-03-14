@@ -33,21 +33,6 @@ const IHG_API_KEY = "se9ym5iAzaW8pxfBjkmgbuGjJcr3Pj6Y";
 // Award rate plan codes — these use points pricing (amountBeforeTax × 100 = points)
 const AWARD_RATE_CODES = new Set(["IVAN1", "IVAN3", "IVAN5", "IVAN6", "IVAN7", "IVANI"]);
 
-// Human-readable names for known IHG rate plan codes.
-// Falls back to the raw code for unknown/regional codes.
-const RATE_PLAN_NAMES: Record<string, string> = {
-  IGCOR: "Best Flexible Rate",
-  IDAP2: "Advance Purchase",
-  IDAPF: "Advance Purchase",
-  IGBBB: "Bed & Breakfast",
-  IVAN1: "Reward Night",
-  IVAN3: "Reward Night",
-  IVAN5: "Reward Night",
-  IVAN6: "Reward Night",
-  IVAN7: "Reward Night",
-  IVANI: "Reward Night",
-};
-
 // IHG API response types
 interface IhgProductDefinition {
   inventoryTypeCode: string;
@@ -67,9 +52,18 @@ interface IhgOffer {
   };
 }
 
+interface IhgRatePlanDefinition {
+  code?: string;
+  name?: string;
+  additionalDescriptions?: {
+    shortRateName?: string;
+  };
+}
+
 interface IhgHotel {
   propertyCurrency?: string;
   productDefinitions?: IhgProductDefinition[];
+  ratePlanDefinitions?: IhgRatePlanDefinition[];
   rateDetails?: {
     offers?: IhgOffer[];
   };
@@ -168,6 +162,16 @@ export function parseIhgRates(data: IhgResponse): RoomRate[] {
 
   const currency = hotel.propertyCurrency ?? "USD";
 
+  // Build a lookup map: ratePlanCode → human-readable name from the API
+  const ratePlanNames = new Map<string, string>();
+  for (const def of hotel.ratePlanDefinitions ?? []) {
+    if (def.code) {
+      const name =
+        def.additionalDescriptions?.shortRateName?.trim() || def.name?.trim() || def.code;
+      ratePlanNames.set(def.code, name);
+    }
+  }
+
   // Build a lookup map: inventoryTypeCode → room name
   const roomNames = new Map<string, string>();
   for (const def of hotel.productDefinitions ?? []) {
@@ -193,7 +197,7 @@ export function parseIhgRates(data: IhgResponse): RoomRate[] {
     if (!isFinite(amount) || amount <= 0) continue;
 
     const roomName = roomNames.get(roomId) ?? roomId;
-    const ratePlanName = RATE_PLAN_NAMES[ratePlanCode] ?? ratePlanCode;
+    const ratePlanName = ratePlanNames.get(ratePlanCode) ?? ratePlanCode;
 
     if (AWARD_RATE_CODES.has(ratePlanCode)) {
       result.push({

@@ -31,7 +31,8 @@ describe("IhgFetcher.canFetch", () => {
 const makeResponse = (
   offers: object[],
   productDefinitions?: object[],
-  propertyCurrency = "USD"
+  propertyCurrency = "USD",
+  ratePlanDefinitions?: object[]
 ) => ({
   hotels: [
     {
@@ -39,6 +40,12 @@ const makeResponse = (
       productDefinitions: productDefinitions ?? [
         { inventoryTypeCode: "KNGX", inventoryTypeName: "King Standard Room" },
         { inventoryTypeCode: "DBLX", inventoryTypeName: "Double Standard Room" },
+      ],
+      ratePlanDefinitions: ratePlanDefinitions ?? [
+        { code: "IGCOR", additionalDescriptions: { shortRateName: "Best Flexible" } },
+        { code: "IDAPF", additionalDescriptions: { shortRateName: "Book Early and Save" } },
+        { code: "IVANI", additionalDescriptions: { shortRateName: "Reward Nights" } },
+        { code: "IGBBB", name: "BEST FLEX WITH BKFST" }, // no shortRateName — falls back to name
       ],
       rateDetails: { offers },
     },
@@ -70,7 +77,7 @@ describe("parseIhgRates", () => {
     expect(parseIhgRates(makeResponse([]))).toEqual([]);
   });
 
-  it("parses a refundable cash rate (IGCOR) with known name", () => {
+  it("parses a refundable cash rate and uses shortRateName from ratePlanDefinitions", () => {
     const data = makeResponse([makeOffer("IGCOR", "KNGX", "299.00", true)]);
     const rates = parseIhgRates(data);
 
@@ -79,7 +86,7 @@ describe("parseIhgRates", () => {
       roomId: "KNGX",
       roomName: "King Standard Room",
       ratePlanCode: "IGCOR",
-      ratePlanName: "Best Flexible Rate",
+      ratePlanName: "Best Flexible",
       cashPrice: 299,
       cashCurrency: "USD",
       awardPrice: null,
@@ -95,13 +102,19 @@ describe("parseIhgRates", () => {
     expect(rates).toHaveLength(1);
     expect(rates[0]).toMatchObject({
       ratePlanCode: "IDAPF",
-      ratePlanName: "Advance Purchase",
+      ratePlanName: "Book Early and Save",
       cashPrice: 199,
       isRefundable: false,
     });
   });
 
-  it("parses unknown regional cash rate codes and uses code as ratePlanName fallback", () => {
+  it("falls back to name field when shortRateName is absent", () => {
+    const data = makeResponse([makeOffer("IGBBB", "KNGX", "659.00", true)]);
+    const rates = parseIhgRates(data);
+    expect(rates[0].ratePlanName).toBe("BEST FLEX WITH BKFST");
+  });
+
+  it("falls back to rate plan code when not in ratePlanDefinitions", () => {
     const data = makeResponse([makeOffer("IDMAF", "KNGX", "459.90", false)]);
     const rates = parseIhgRates(data);
 
@@ -131,7 +144,7 @@ describe("parseIhgRates", () => {
     expect(rates).toHaveLength(1);
     expect(rates[0]).toMatchObject({
       ratePlanCode: "IVANI",
-      ratePlanName: "Reward Night",
+      ratePlanName: "Reward Nights",
       cashPrice: null,
       awardPrice: 30000,
       isRefundable: true,
