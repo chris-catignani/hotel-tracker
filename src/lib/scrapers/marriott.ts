@@ -31,8 +31,10 @@ import type {
   RoomRate,
 } from "@/lib/price-fetcher";
 
-// How long to wait for both rate API calls to complete
+// Hard timeout for the entire fetch
 const RATE_FETCH_TIMEOUT_MS = 45000;
+// Resolve this many ms after the last rate response arrives (handles 1 or 2 calls)
+const SETTLE_AFTER_LAST_RESPONSE_MS = 3000;
 
 // Rate categories to include in output (Packages excluded)
 const INCLUDED_CATEGORIES = new Set(["StandardRates", "Prepay"]);
@@ -151,18 +153,23 @@ export class MarriottFetcher implements PriceFetcher {
       const page = await context.newPage();
       const rateResponses: MarriottSearchResponse[] = [];
 
-      // Resolve when we've collected both rate API calls (member + standard)
+      // Resolve once rate responses stop arriving (settle window).
+      // Some sub-brands (e.g. Moxy) only make 1 PhoenixBookDTT call; others make 2.
+      // Using a settle timer handles both cases without hard-coding a count.
       let resolveDone!: () => void;
       const allDone = new Promise<void>((res) => {
         resolveDone = res;
       });
+      let settleTimer: ReturnType<typeof setTimeout> | null = null;
 
       page.on("response", async (response) => {
         if (!response.url().includes("PhoenixBookDTTSearchProductsByProperty")) return;
         try {
           const data = (await response.json()) as MarriottSearchResponse;
           rateResponses.push(data);
-          if (rateResponses.length >= 2) resolveDone();
+          // Reset the settle timer — resolve 3 s after the last response arrives
+          if (settleTimer) clearTimeout(settleTimer);
+          settleTimer = setTimeout(resolveDone, SETTLE_AFTER_LAST_RESPONSE_MS);
         } catch {
           // ignore parse errors
         }
@@ -173,7 +180,7 @@ export class MarriottFetcher implements PriceFetcher {
         // Marriott redirects to rateListMenu.mi — navigation event is expected
       });
 
-      // Wait for both rate calls or timeout
+      // Wait for responses to settle or hard timeout
       await Promise.race([
         allDone,
         new Promise<void>((_, reject) =>
