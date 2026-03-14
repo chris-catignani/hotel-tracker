@@ -64,6 +64,18 @@ const makeOffer = (
   totalRate: { amountBeforeTax },
 });
 
+const makeAwardOffer = (
+  ratePlanCode: string,
+  inventoryTypeCode: string,
+  averageDailyPoints: number
+) => ({
+  ratePlanCode,
+  productUses: [{ inventoryTypeCode }],
+  policies: { isRefundable: true },
+  totalRate: { amountBeforeTax: "139.77" }, // cash-equivalent field; not used for points
+  rewardNights: { pointsOnly: { averageDailyPoints } },
+});
+
 describe("parseIhgRates", () => {
   it("returns empty array for empty response", () => {
     expect(parseIhgRates({})).toEqual([]);
@@ -137,8 +149,8 @@ describe("parseIhgRates", () => {
     expect(rates[0].isRefundable).toBe(true);
   });
 
-  it("parses an award rate (IVANI) — points = amountBeforeTax × 100", () => {
-    const data = makeResponse([makeOffer("IVANI", "KNGX", "300.00")]);
+  it("parses an award rate (IVANI) — points from rewardNights.pointsOnly.averageDailyPoints", () => {
+    const data = makeResponse([makeAwardOffer("IVANI", "KNGX", 25000)]);
     const rates = parseIhgRates(data);
 
     expect(rates).toHaveLength(1);
@@ -146,14 +158,19 @@ describe("parseIhgRates", () => {
       ratePlanCode: "IVANI",
       ratePlanName: "Reward Nights",
       cashPrice: null,
-      awardPrice: 30000,
+      awardPrice: 25000,
       isRefundable: true,
     });
   });
 
+  it("skips IVAN award offers missing rewardNights data", () => {
+    const data = makeResponse([makeOffer("IVANI", "KNGX", "139.77")]);
+    expect(parseIhgRates(data)).toHaveLength(0);
+  });
+
   it("parses all IVAN award variants as award rates", () => {
     const codes = ["IVAN1", "IVAN3", "IVAN5", "IVAN6", "IVAN7", "IVANI"];
-    const offers = codes.map((code) => makeOffer(code, "KNGX", "250.00"));
+    const offers = codes.map((code) => makeAwardOffer(code, "KNGX", 25000));
     const rates = parseIhgRates(makeResponse(offers));
 
     expect(rates).toHaveLength(codes.length);
@@ -235,7 +252,7 @@ describe("parseIhgRates", () => {
       makeOffer("IDAPF", "KNGX", "511.00", false),
       makeOffer("IDMAF", "KNGX", "459.90", false),
       makeOffer("IKPCM", "KNGX", "623.00", true),
-      makeOffer("IVANI", "KNGX", "139.77", true),
+      makeAwardOffer("IVANI", "KNGX", 25000),
     ]);
     const rates = parseIhgRates(data);
     expect(rates).toHaveLength(5);
@@ -259,8 +276,8 @@ describe("parseIhgRates", () => {
 
   it("lowestAward picks the cheapest award rate across rooms", () => {
     const data = makeResponse([
-      makeOffer("IVANI", "KNGX", "300.00"),
-      makeOffer("IVANI", "DBLX", "250.00"),
+      makeAwardOffer("IVANI", "KNGX", 30000),
+      makeAwardOffer("IVANI", "DBLX", 25000),
     ]);
     const rates = parseIhgRates(data);
     expect(lowestAward(rates)).toBe(25000);
@@ -287,11 +304,10 @@ describe("parseIhgRates", () => {
     expect(rates[0].cashPrice).toBe(299);
   });
 
-  it("does not divide award points by numNights", () => {
-    // Award formula (amountBeforeTax × 100 = points) is not divided by nights —
-    // multi-night scaling is unconfirmed so we preserve the original behaviour.
-    const data = makeResponse([makeOffer("IVANI", "KNGX", "300.00")]);
+  it("award price is averageDailyPoints (per-night) regardless of numNights", () => {
+    // averageDailyPoints is already per-night; we use it as-is.
+    const data = makeResponse([makeAwardOffer("IVANI", "KNGX", 25000)]);
     const rates = parseIhgRates(data, 3);
-    expect(rates[0].awardPrice).toBe(30000);
+    expect(rates[0].awardPrice).toBe(25000);
   });
 });
