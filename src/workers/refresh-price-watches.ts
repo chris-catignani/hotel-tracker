@@ -1,4 +1,6 @@
 import dotenv from "dotenv";
+// Mirror Next.js load order: .env.local overrides .env
+dotenv.config({ path: ".env.local" });
 dotenv.config();
 
 import * as Sentry from "@sentry/node";
