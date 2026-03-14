@@ -429,7 +429,7 @@ export function BookingPriceWatch({
                                     className="text-xs text-right cursor-pointer select-none hover:text-foreground"
                                     onClick={() => handleSort("cash")}
                                   >
-                                    From (cash/night) <SortIcon col="cash" />
+                                    Cash/Night <SortIcon col="cash" />
                                   </TableHead>
                                   <TableHead
                                     className="text-xs text-right cursor-pointer select-none hover:text-foreground"
