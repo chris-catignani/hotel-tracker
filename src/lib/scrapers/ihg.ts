@@ -4,6 +4,14 @@
  * Strategy: Plain HTTP POST to the IHG availability API.
  * No browser required — the API uses a static public key visible in IHG's
  * web app JS, plus per-request UUIDs for session/transaction IDs.
+ *
+ * Rate parsing strategy:
+ * - Award rates are identified by IVAN* rate plan codes (points pricing).
+ * - All other offers are treated as cash rates. IHG uses many property-specific
+ *   codes (IDAPF, IDMAF, IKPCM, etc.) that vary by region — attempting to
+ *   maintain an exhaustive allowlist would miss codes. Instead we parse every
+ *   non-award offer and rely on `policies.isRefundable` for refundability.
+ * - Currency comes from `hotel.propertyCurrency` (e.g. "MYR", "USD").
  */
 
 import { randomUUID } from "crypto";
@@ -22,14 +30,16 @@ const IHG_API_URL =
 // Static public API key embedded in IHG's web app. No login required.
 const IHG_API_KEY = "se9ym5iAzaW8pxfBjkmgbuGjJcr3Pj6Y";
 
-// Rate plan codes fetched from the API
-const CASH_RATE_CODES = new Set(["IGCOR", "IDAP2"]);
+// Award rate plan codes — these use points pricing (amountBeforeTax × 100 = points)
 const AWARD_RATE_CODES = new Set(["IVAN1", "IVAN3", "IVAN5", "IVAN6", "IVAN7", "IVANI"]);
 
-// Human-readable names for known IHG rate plan codes
+// Human-readable names for known IHG rate plan codes.
+// Falls back to the raw code for unknown/regional codes.
 const RATE_PLAN_NAMES: Record<string, string> = {
   IGCOR: "Best Flexible Rate",
   IDAP2: "Advance Purchase",
+  IDAPF: "Advance Purchase",
+  IGBBB: "Bed & Breakfast",
   IVAN1: "Reward Night",
   IVAN3: "Reward Night",
   IVAN5: "Reward Night",
@@ -58,6 +68,7 @@ interface IhgOffer {
 }
 
 interface IhgHotel {
+  propertyCurrency?: string;
   productDefinitions?: IhgProductDefinition[];
   rateDetails?: {
     offers?: IhgOffer[];
@@ -137,16 +148,11 @@ export class IhgFetcher implements PriceFetcher {
     const offerCount = hotel?.rateDetails?.offers?.length ?? 0;
     const roomCount = hotel?.productDefinitions?.length ?? 0;
     console.log(
-      `[IhgFetcher] Response for ${mnemonic}: ${roomCount} room types, ${offerCount} offers`
+      `[IhgFetcher] Response for ${mnemonic}: ${roomCount} room types, ${offerCount} offers (currency: ${hotel?.propertyCurrency ?? "unknown"})`
     );
 
     const rates = parseIhgRates(data);
     console.log(`[IhgFetcher] Parsed ${rates.length} rates for ${mnemonic}`);
-
-    if (rates.length === 0 && offerCount > 0) {
-      const codes = [...new Set(hotel?.rateDetails?.offers?.map((o) => o.ratePlanCode) ?? [])];
-      console.log(`[IhgFetcher] Rate plan codes in response: ${codes.join(", ")}`);
-    }
 
     return rates.length > 0 ? { rates, source: "ihg_api" } : null;
   }
@@ -159,6 +165,8 @@ export class IhgFetcher implements PriceFetcher {
 export function parseIhgRates(data: IhgResponse): RoomRate[] {
   const hotel = data.hotels?.[0];
   if (!hotel) return [];
+
+  const currency = hotel.propertyCurrency ?? "USD";
 
   // Build a lookup map: inventoryTypeCode → room name
   const roomNames = new Map<string, string>();
@@ -187,28 +195,31 @@ export function parseIhgRates(data: IhgResponse): RoomRate[] {
     const roomName = roomNames.get(roomId) ?? roomId;
     const ratePlanName = RATE_PLAN_NAMES[ratePlanCode] ?? ratePlanCode;
 
-    if (CASH_RATE_CODES.has(ratePlanCode)) {
-      result.push({
-        roomId,
-        roomName,
-        ratePlanCode,
-        ratePlanName,
-        cashPrice: amount,
-        cashCurrency: "USD",
-        awardPrice: null,
-        isRefundable: offer.policies?.isRefundable ?? ratePlanCode !== "IDAP2",
-        isCorporate: false,
-      });
-    } else if (AWARD_RATE_CODES.has(ratePlanCode)) {
+    if (AWARD_RATE_CODES.has(ratePlanCode)) {
       result.push({
         roomId,
         roomName,
         ratePlanCode,
         ratePlanName,
         cashPrice: null,
-        cashCurrency: "USD",
+        cashCurrency: currency,
         awardPrice: Math.round(amount * 100),
         isRefundable: true,
+        isCorporate: false,
+      });
+    } else {
+      // Treat all non-award offers as cash rates.
+      // IHG uses many regional/property-specific codes; rely on the API's
+      // isRefundable flag rather than an allowlist of known codes.
+      result.push({
+        roomId,
+        roomName,
+        ratePlanCode,
+        ratePlanName,
+        cashPrice: amount,
+        cashCurrency: currency,
+        awardPrice: null,
+        isRefundable: offer.policies?.isRefundable ?? true,
         isCorporate: false,
       });
     }

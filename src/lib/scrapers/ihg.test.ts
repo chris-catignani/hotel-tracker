@@ -28,9 +28,14 @@ describe("IhgFetcher.canFetch", () => {
 });
 
 // Minimal IHG response fixture
-const makeResponse = (offers: object[], productDefinitions?: object[]) => ({
+const makeResponse = (
+  offers: object[],
+  productDefinitions?: object[],
+  propertyCurrency = "USD"
+) => ({
   hotels: [
     {
+      propertyCurrency,
       productDefinitions: productDefinitions ?? [
         { inventoryTypeCode: "KNGX", inventoryTypeName: "King Standard Room" },
         { inventoryTypeCode: "DBLX", inventoryTypeName: "Double Standard Room" },
@@ -62,11 +67,10 @@ describe("parseIhgRates", () => {
   });
 
   it("returns empty array when offers array is empty", () => {
-    const data = makeResponse([]);
-    expect(parseIhgRates(data)).toEqual([]);
+    expect(parseIhgRates(makeResponse([]))).toEqual([]);
   });
 
-  it("parses a refundable cash rate (IGCOR)", () => {
+  it("parses a refundable cash rate (IGCOR) with known name", () => {
     const data = makeResponse([makeOffer("IGCOR", "KNGX", "299.00", true)]);
     const rates = parseIhgRates(data);
 
@@ -84,28 +88,40 @@ describe("parseIhgRates", () => {
     });
   });
 
-  it("parses a non-refundable cash rate (IDAP2)", () => {
-    const data = makeResponse([makeOffer("IDAP2", "KNGX", "199.00", false)]);
+  it("parses a non-refundable cash rate using isRefundable from policies", () => {
+    const data = makeResponse([makeOffer("IDAPF", "KNGX", "199.00", false)]);
     const rates = parseIhgRates(data);
 
     expect(rates).toHaveLength(1);
     expect(rates[0]).toMatchObject({
-      ratePlanCode: "IDAP2",
+      ratePlanCode: "IDAPF",
       ratePlanName: "Advance Purchase",
       cashPrice: 199,
       isRefundable: false,
     });
   });
 
-  it("falls back to isRefundable=false for IDAP2 when policies field is missing", () => {
+  it("parses unknown regional cash rate codes and uses code as ratePlanName fallback", () => {
+    const data = makeResponse([makeOffer("IDMAF", "KNGX", "459.90", false)]);
+    const rates = parseIhgRates(data);
+
+    expect(rates).toHaveLength(1);
+    expect(rates[0]).toMatchObject({
+      ratePlanCode: "IDMAF",
+      ratePlanName: "IDMAF",
+      cashPrice: 459.9,
+      isRefundable: false,
+    });
+  });
+
+  it("defaults isRefundable to true when policies field is missing", () => {
     const offer = {
-      ratePlanCode: "IDAP2",
+      ratePlanCode: "IGCOR",
       productUses: [{ inventoryTypeCode: "KNGX" }],
-      totalRate: { amountBeforeTax: "199.00" },
-      // no policies field
+      totalRate: { amountBeforeTax: "299.00" },
     };
     const rates = parseIhgRates(makeResponse([offer]));
-    expect(rates[0].isRefundable).toBe(false);
+    expect(rates[0].isRefundable).toBe(true);
   });
 
   it("parses an award rate (IVANI) — points = amountBeforeTax × 100", () => {
@@ -134,18 +150,36 @@ describe("parseIhgRates", () => {
     }
   });
 
+  it("uses propertyCurrency for cash rates", () => {
+    const data = makeResponse([makeOffer("IGCOR", "KNGX", "599.00")], undefined, "MYR");
+    const rates = parseIhgRates(data);
+    expect(rates[0].cashCurrency).toBe("MYR");
+  });
+
+  it("falls back to USD when propertyCurrency is absent", () => {
+    const data = {
+      hotels: [
+        {
+          productDefinitions: [{ inventoryTypeCode: "KNGX", inventoryTypeName: "King Room" }],
+          rateDetails: { offers: [makeOffer("IGCOR", "KNGX", "299.00")] },
+          // no propertyCurrency
+        },
+      ],
+    };
+    const rates = parseIhgRates(data);
+    expect(rates[0].cashCurrency).toBe("USD");
+  });
+
   it("uses inventoryTypeCode as roomName fallback when inventoryTypeName is absent", () => {
     const data = makeResponse(
       [makeOffer("IGCOR", "KNGX", "299.00")],
-      [
-        { inventoryTypeCode: "KNGX" }, // no inventoryTypeName
-      ]
+      [{ inventoryTypeCode: "KNGX" }]
     );
     const rates = parseIhgRates(data);
     expect(rates[0].roomName).toBe("KNGX");
   });
 
-  it("uses inventoryTypeCode as roomId and roomName fallback when room not in productDefinitions", () => {
+  it("uses inventoryTypeCode as roomId and roomName when room not in productDefinitions", () => {
     const data = makeResponse([makeOffer("IGCOR", "UNKN", "299.00")]);
     const rates = parseIhgRates(data);
     expect(rates[0].roomId).toBe("UNKN");
@@ -172,11 +206,6 @@ describe("parseIhgRates", () => {
     expect(parseIhgRates(makeResponse(offers))).toHaveLength(0);
   });
 
-  it("skips offers with unknown rate plan codes", () => {
-    const data = makeResponse([makeOffer("UNKNOWN_CODE", "KNGX", "299.00")]);
-    expect(parseIhgRates(data)).toHaveLength(0);
-  });
-
   it("returns rates for multiple rooms", () => {
     const data = makeResponse([
       makeOffer("IGCOR", "KNGX", "299.00", true),
@@ -187,10 +216,26 @@ describe("parseIhgRates", () => {
     expect(rates.map((r) => r.roomId)).toEqual(["KNGX", "DBLX"]);
   });
 
+  it("parses all offers including unknown regional codes", () => {
+    const data = makeResponse([
+      makeOffer("IGCOR", "KNGX", "599.00", true),
+      makeOffer("IDAPF", "KNGX", "511.00", false),
+      makeOffer("IDMAF", "KNGX", "459.90", false),
+      makeOffer("IKPCM", "KNGX", "623.00", true),
+      makeOffer("IVANI", "KNGX", "139.77", true),
+    ]);
+    const rates = parseIhgRates(data);
+    expect(rates).toHaveLength(5);
+    const cashRates = rates.filter((r) => r.cashPrice !== null);
+    const awardRates = rates.filter((r) => r.awardPrice !== null);
+    expect(cashRates).toHaveLength(4);
+    expect(awardRates).toHaveLength(1);
+  });
+
   it("lowestRefundableCash picks the cheapest refundable rate across rooms", () => {
     const data = makeResponse([
       makeOffer("IGCOR", "KNGX", "299.00", true),
-      makeOffer("IDAP2", "KNGX", "199.00", false),
+      makeOffer("IDAPF", "KNGX", "199.00", false),
       makeOffer("IGCOR", "DBLX", "249.00", true),
     ]);
     const rates = parseIhgRates(data);
@@ -208,10 +253,10 @@ describe("parseIhgRates", () => {
     expect(lowestAward(rates)).toBe(25000);
   });
 
-  it("all cash rates have isCorporate=false", () => {
+  it("all rates have isCorporate=false", () => {
     const data = makeResponse([
       makeOffer("IGCOR", "KNGX", "299.00"),
-      makeOffer("IDAP2", "DBLX", "199.00", false),
+      makeOffer("IDAPF", "DBLX", "199.00", false),
     ]);
     const rates = parseIhgRates(data);
     expect(rates.every((r) => r.isCorporate === false)).toBe(true);
