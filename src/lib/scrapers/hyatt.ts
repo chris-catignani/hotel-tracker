@@ -42,8 +42,12 @@ interface HyattRoomRate {
   lowestPublicRate?: number;
   currencyCode?: string;
   lowestAvgPointValue?: number;
+  roomType?: {
+    title?: string;
+  };
   ratePlans?: Array<{
     id?: string;
+    name?: string;
     rate?: number;
     points?: number;
     ratePlanType?: string;
@@ -66,13 +70,57 @@ export class HyattFetcher implements PriceFetcher {
     const spiritCode = params.property.chainPropertyId;
     if (!spiritCode) return null;
 
-    return this.fetchViaBrowser(spiritCode, params);
+    // Two parallel fetches:
+    // 1. No rateFilter — returns all room types with cash rates (no award prices)
+    // 2. rateFilter=woh — returns only award-eligible rooms with points prices
+    console.log(`[HyattFetcher] Fetching cash and award rates in parallel for ${spiritCode}...`);
+    const [cashData, awardData] = await Promise.all([
+      this.fetchRawResponse(spiritCode, params),
+      this.fetchRawResponse(spiritCode, params, "woh"),
+    ]);
+
+    if (!cashData && !awardData) return null;
+
+    const cashRates = cashData ? parseCashRates(cashData) : [];
+    const awardMap = awardData
+      ? buildAwardMap(awardData)
+      : new Map<string, { points: number; currency: string }>();
+
+    // Build a room name lookup from both responses (cash data is more complete)
+    const roomNameLookup = new Map<string, string>();
+    for (const [roomId, room] of Object.entries(cashData?.roomRates ?? {})) {
+      if (room.roomType?.title) roomNameLookup.set(roomId, room.roomType.title);
+    }
+    for (const [roomId, room] of Object.entries(awardData?.roomRates ?? {})) {
+      if (!roomNameLookup.has(roomId) && room.roomType?.title) {
+        roomNameLookup.set(roomId, room.roomType.title);
+      }
+    }
+
+    const awardEntries: RoomRate[] = [];
+    for (const [roomId, { points, currency }] of awardMap.entries()) {
+      awardEntries.push({
+        roomId,
+        roomName: roomNameLookup.get(roomId) ?? roomId,
+        ratePlanCode: "AWARD",
+        ratePlanName: "Award Rate",
+        cashPrice: null,
+        cashCurrency: currency,
+        awardPrice: points,
+        isRefundable: true,
+        isCorporate: false,
+      });
+    }
+
+    const rates = [...cashRates, ...awardEntries];
+    return rates.length > 0 ? { rates, source: "hyatt_browser" } : null;
   }
 
-  private async fetchViaBrowser(
+  private async fetchRawResponse(
     spiritCode: string,
-    params: FetchParams
-  ): Promise<PriceFetchResult | null> {
+    params: FetchParams,
+    rateFilter?: string
+  ): Promise<HyattRatesResponse | null> {
     const query = new URLSearchParams({
       rooms: "1",
       adults: String(params.adults ?? 1),
@@ -80,14 +128,15 @@ export class HyattFetcher implements PriceFetcher {
       checkinDate: params.checkIn,
       checkoutDate: params.checkOut,
       rate: "Standard",
-      rateFilter: "woh",
     });
+    if (rateFilter) query.set("rateFilter", rateFilter);
 
     const targetApiUrl = `${HYATT_RATES_API_URL}/${spiritCode}?${query.toString()}`;
-
-    console.log(`[HyattFetcher] Launching browser for ${spiritCode} (App Mode)...`);
-
     const userDataDir = `/tmp/hyatt-browser-${Math.random().toString(36).substring(7)}`;
+
+    console.log(
+      `[HyattFetcher] Launching browser for ${spiritCode} (App Mode)${rateFilter ? ` [${rateFilter}]` : ""}...`
+    );
 
     const context = await chromium.launchPersistentContext(userDataDir, {
       // Always non-headless: the Kasada bypass relies on mimicking a real browser
@@ -103,7 +152,6 @@ export class HyattFetcher implements PriceFetcher {
     });
 
     try {
-      // Find the page opened by the --app flag
       await new Promise((r) => setTimeout(r, BROWSER_INITIALIZATION_WAIT_MS));
       const pages = context.pages();
       const page = pages.length > 0 ? pages[0] : await context.newPage();
@@ -117,13 +165,15 @@ export class HyattFetcher implements PriceFetcher {
       );
 
       const response = await responsePromise;
-      const data = (await response.json()) as HyattRatesResponse;
-      const rates = parseHyattRates(data);
-
-      console.log(`[HyattFetcher] Success for ${spiritCode}`);
-      return rates.length > 0 ? { rates, source: "hyatt_browser" } : null;
+      console.log(
+        `[HyattFetcher] Success for ${spiritCode}${rateFilter ? ` [${rateFilter}]` : ""}`
+      );
+      return (await response.json()) as HyattRatesResponse;
     } catch (err) {
-      console.error(`[HyattFetcher] App Mode fetch failed for ${spiritCode}:`, err);
+      console.error(
+        `[HyattFetcher] App Mode fetch failed for ${spiritCode}${rateFilter ? ` [${rateFilter}]` : ""}:`,
+        err
+      );
       return null;
     } finally {
       await context.close();
@@ -138,8 +188,11 @@ export class HyattFetcher implements PriceFetcher {
   }
 }
 
-/** Exported for unit testing. Parses the Hyatt room rates API response into RoomRate[]. */
-export function parseHyattRates(data: HyattRatesResponse): RoomRate[] {
+/**
+ * Exported for unit testing.
+ * Parses cash rate plans from a Hyatt rates response (no award entries).
+ */
+export function parseCashRates(data: HyattRatesResponse): RoomRate[] {
   const roomEntries = data.roomRates ? Object.entries(data.roomRates) : [];
   if (roomEntries.length === 0) return [];
 
@@ -147,8 +200,7 @@ export function parseHyattRates(data: HyattRatesResponse): RoomRate[] {
 
   for (const [roomKey, room] of roomEntries) {
     const currency = room.currencyCode ?? "USD";
-    // Use ratePlanCategory from first plan as room name if available
-    const roomName = room.ratePlans?.[0]?.ratePlanCategory ?? roomKey;
+    const roomName = room.roomType?.title ?? roomKey;
 
     if (room.ratePlans && room.ratePlans.length > 0) {
       for (const plan of room.ratePlans) {
@@ -160,7 +212,7 @@ export function parseHyattRates(data: HyattRatesResponse): RoomRate[] {
             roomId: roomKey,
             roomName,
             ratePlanCode: plan.id ?? "STANDARD",
-            ratePlanName: plan.ratePlanType ?? plan.ratePlanCategory ?? plan.id ?? "Standard Rate",
+            ratePlanName: plan.name ?? plan.ratePlanType ?? plan.id ?? "Standard Rate",
             cashPrice: plan.rate,
             cashCurrency: plan.currencyCode ?? currency,
             awardPrice: null,
@@ -186,24 +238,56 @@ export function parseHyattRates(data: HyattRatesResponse): RoomRate[] {
         });
       }
     }
-
-    // Award rate entry (one per room if available)
-    if (room.lowestAvgPointValue != null) {
-      result.push({
-        roomId: roomKey,
-        roomName,
-        ratePlanCode: "AWARD",
-        ratePlanName: "Award Rate",
-        cashPrice: null,
-        cashCurrency: currency,
-        awardPrice: room.lowestAvgPointValue,
-        isRefundable: true,
-        isCorporate: false,
-      });
-    }
   }
 
   return result;
+}
+
+/**
+ * Exported for unit testing.
+ * Extracts the lowest award price per room from a woh-filtered response.
+ */
+export function buildAwardMap(
+  data: HyattRatesResponse
+): Map<string, { points: number; currency: string }> {
+  const map = new Map<string, { points: number; currency: string }>();
+  for (const [roomKey, room] of Object.entries(data.roomRates ?? {})) {
+    if (room.lowestAvgPointValue != null) {
+      map.set(roomKey, {
+        points: room.lowestAvgPointValue,
+        currency: room.currencyCode ?? "USD",
+      });
+    }
+  }
+  return map;
+}
+
+/**
+ * Exported for unit testing.
+ * Legacy wrapper: parses cash rates + award entries from a single response
+ * (used when only one fetch is available, e.g. in older unit tests).
+ */
+export function parseHyattRates(data: HyattRatesResponse): RoomRate[] {
+  const cashRates = parseCashRates(data);
+  const awardMap = buildAwardMap(data);
+
+  const awardEntries: RoomRate[] = [];
+  for (const [roomKey, { points, currency }] of awardMap.entries()) {
+    const roomName = data.roomRates?.[roomKey]?.roomType?.title ?? roomKey;
+    awardEntries.push({
+      roomId: roomKey,
+      roomName,
+      ratePlanCode: "AWARD",
+      ratePlanName: "Award Rate",
+      cashPrice: null,
+      cashCurrency: currency,
+      awardPrice: points,
+      isRefundable: true,
+      isCorporate: false,
+    });
+  }
+
+  return [...cashRates, ...awardEntries];
 }
 
 export function createHyattFetcher(): HyattFetcher {

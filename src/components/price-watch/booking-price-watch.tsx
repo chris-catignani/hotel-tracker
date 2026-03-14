@@ -1,15 +1,23 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Fragment } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Eye, Loader2 } from "lucide-react";
+import { Eye, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { extractApiError } from "@/lib/client-error";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface PriceWatchBookingData {
   id: string; // PriceWatchBooking id
@@ -17,6 +25,19 @@ interface PriceWatchBookingData {
   cashThreshold: string | number | null;
   awardThreshold: number | null;
   dateFlexibilityDays: number;
+}
+
+interface PriceSnapshotRoom {
+  id: string;
+  roomId: string;
+  roomName: string;
+  ratePlanCode: string;
+  ratePlanName: string;
+  cashPrice: string | number | null;
+  cashCurrency: string;
+  awardPrice: number | null;
+  isRefundable: boolean;
+  isCorporate: boolean;
 }
 
 interface PriceWatchData {
@@ -37,6 +58,7 @@ interface PriceWatchData {
     lowestAwardPrice: number | null;
     fetchedAt: string;
     source: string;
+    rooms: PriceSnapshotRoom[];
   }[];
 }
 
@@ -82,6 +104,16 @@ export function BookingPriceWatch({
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showRooms, setShowRooms] = useState(false);
+  const [expandedRooms, setExpandedRooms] = useState<Set<string>>(new Set());
+
+  const toggleRoom = (roomId: string) =>
+    setExpandedRooms((prev) => {
+      const next = new Set(prev);
+      if (next.has(roomId)) next.delete(roomId);
+      else next.add(roomId);
+      return next;
+    });
 
   const isEnabled = watch?.isEnabled ?? false;
   const latestSnapshot = watch?.snapshots?.[0] ?? null;
@@ -223,7 +255,7 @@ export function BookingPriceWatch({
 
             {/* Latest snapshot */}
             {latestSnapshot && (
-              <div className="rounded-md border p-3 space-y-1">
+              <div className="rounded-md border p-3 space-y-2">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-medium">Latest Prices</p>
                   <Badge variant="outline" className="text-xs">
@@ -232,7 +264,7 @@ export function BookingPriceWatch({
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
-                    <p className="text-xs text-muted-foreground">Cash</p>
+                    <p className="text-xs text-muted-foreground">Lowest Cash (refundable)</p>
                     <p className="font-medium" data-testid="latest-cash-price">
                       {latestSnapshot.lowestRefundableCashPrice != null
                         ? formatCurrency(
@@ -243,7 +275,7 @@ export function BookingPriceWatch({
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Award</p>
+                    <p className="text-xs text-muted-foreground">Lowest Award</p>
                     <p className="font-medium" data-testid="latest-award-price">
                       {latestSnapshot.lowestAwardPrice != null
                         ? `${latestSnapshot.lowestAwardPrice.toLocaleString()} pts`
@@ -254,6 +286,175 @@ export function BookingPriceWatch({
                 <p className="text-xs text-muted-foreground">
                   Checked {formatDate(latestSnapshot.fetchedAt)}
                 </p>
+
+                {latestSnapshot.rooms.length > 0 &&
+                  (() => {
+                    // Group rooms by roomId
+                    const groups = latestSnapshot.rooms.reduce<
+                      Record<
+                        string,
+                        { roomId: string; roomName: string; rates: PriceSnapshotRoom[] }
+                      >
+                    >((acc, r) => {
+                      if (!acc[r.roomId])
+                        acc[r.roomId] = { roomId: r.roomId, roomName: r.roomName, rates: [] };
+                      acc[r.roomId].rates.push(r);
+                      return acc;
+                    }, {});
+                    const roomGroups = Object.values(groups);
+
+                    return (
+                      <div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full justify-between h-7 text-xs px-2"
+                          onClick={() => setShowRooms((v) => !v)}
+                          data-testid="toggle-room-rates"
+                        >
+                          All room rates ({roomGroups.length} room types)
+                          {showRooms ? (
+                            <ChevronUp className="h-3 w-3" />
+                          ) : (
+                            <ChevronDown className="h-3 w-3" />
+                          )}
+                        </Button>
+                        {showRooms && (
+                          <div className="mt-2 overflow-x-auto">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead className="text-xs w-4" />
+                                  <TableHead className="text-xs">Room</TableHead>
+                                  <TableHead className="text-xs text-right">From (cash)</TableHead>
+                                  <TableHead className="text-xs text-right">Award</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {roomGroups.map(({ roomId, roomName, rates }) => {
+                                  const cashRates = rates.filter((r) => r.cashPrice != null);
+                                  const awardRate = rates.find((r) => r.awardPrice != null);
+                                  const lowestRefundable = cashRates
+                                    .filter((r) => r.isRefundable)
+                                    .reduce<PriceSnapshotRoom | null>(
+                                      (best, r) =>
+                                        best === null ||
+                                        Number(r.cashPrice) < Number(best.cashPrice)
+                                          ? r
+                                          : best,
+                                      null
+                                    );
+                                  const isExpanded = expandedRooms.has(roomId);
+
+                                  return (
+                                    <Fragment key={roomId}>
+                                      {/* Summary row */}
+                                      <TableRow
+                                        key={roomId}
+                                        className="cursor-pointer hover:bg-muted/50"
+                                        onClick={() => toggleRoom(roomId)}
+                                        data-testid="room-group-row"
+                                      >
+                                        <TableCell className="py-1.5 pr-0">
+                                          {isExpanded ? (
+                                            <ChevronUp className="h-3 w-3 text-muted-foreground" />
+                                          ) : (
+                                            <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                                          )}
+                                        </TableCell>
+                                        <TableCell className="text-xs py-1.5 font-medium">
+                                          {roomName}
+                                        </TableCell>
+                                        <TableCell className="text-xs py-1.5 text-right">
+                                          {lowestRefundable != null
+                                            ? formatCurrency(
+                                                Number(lowestRefundable.cashPrice),
+                                                lowestRefundable.cashCurrency
+                                              )
+                                            : "—"}
+                                        </TableCell>
+                                        <TableCell className="text-xs py-1.5 text-right">
+                                          {awardRate != null
+                                            ? `${awardRate.awardPrice!.toLocaleString()} pts`
+                                            : "—"}
+                                        </TableCell>
+                                      </TableRow>
+
+                                      {/* Expanded rate plan rows */}
+                                      {isExpanded &&
+                                        cashRates.map((r) => (
+                                          <TableRow
+                                            key={r.id}
+                                            className="bg-muted/30"
+                                            data-testid="room-rate-row"
+                                          >
+                                            <TableCell className="py-1" />
+                                            <TableCell className="text-xs py-1 pl-4 text-muted-foreground">
+                                              {r.ratePlanName}
+                                              {r.isCorporate && (
+                                                <Badge
+                                                  variant="outline"
+                                                  className="ml-1 text-[10px] px-1 py-0 border-blue-300 text-blue-700"
+                                                >
+                                                  Corp
+                                                </Badge>
+                                              )}
+                                            </TableCell>
+                                            <TableCell className="text-xs py-1 text-right">
+                                              <span>
+                                                {formatCurrency(
+                                                  Number(r.cashPrice),
+                                                  r.cashCurrency
+                                                )}
+                                              </span>
+                                              <span className="ml-1">
+                                                {r.isRefundable ? (
+                                                  <Badge
+                                                    variant="outline"
+                                                    className="text-[10px] px-1 py-0 border-green-300 text-green-700"
+                                                  >
+                                                    Refundable
+                                                  </Badge>
+                                                ) : (
+                                                  <Badge
+                                                    variant="outline"
+                                                    className="text-[10px] px-1 py-0 border-orange-300 text-orange-700"
+                                                  >
+                                                    Non-refundable
+                                                  </Badge>
+                                                )}
+                                              </span>
+                                            </TableCell>
+                                            <TableCell className="py-1" />
+                                          </TableRow>
+                                        ))}
+                                      {/* Award rate row */}
+                                      {isExpanded && awardRate != null && (
+                                        <TableRow
+                                          key={`${roomId}-award`}
+                                          className="bg-muted/30"
+                                          data-testid="room-rate-row"
+                                        >
+                                          <TableCell className="py-1" />
+                                          <TableCell className="text-xs py-1 pl-4 text-muted-foreground">
+                                            {awardRate.ratePlanName}
+                                          </TableCell>
+                                          <TableCell className="py-1" />
+                                          <TableCell className="text-xs py-1 text-right">
+                                            {awardRate.awardPrice!.toLocaleString()} pts
+                                          </TableCell>
+                                        </TableRow>
+                                      )}
+                                    </Fragment>
+                                  );
+                                })}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
               </div>
             )}
 

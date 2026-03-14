@@ -192,6 +192,42 @@ test.describe("Spirit code inline edit", () => {
   });
 });
 
+test.describe("Price watch on booking detail page", () => {
+  test("price watch toggle is visible on booking detail page", async ({ page, testBooking }) => {
+    await page.goto(`/bookings/${testBooking.id}`);
+    await expect(page.getByTestId("price-watch-toggle")).toBeVisible();
+  });
+
+  test("enabling price watch via API shows threshold inputs on detail page", async ({
+    page,
+    request,
+    testBooking,
+  }) => {
+    const bookingRes = await request.get(`/api/bookings/${testBooking.id}`);
+    const booking = await bookingRes.json();
+
+    const createRes = await request.post("/api/price-watches", {
+      data: {
+        propertyId: booking.propertyId,
+        isEnabled: true,
+        bookingId: testBooking.id,
+        cashThreshold: 300,
+        awardThreshold: 20000,
+      },
+    });
+    const watch = await createRes.json();
+
+    await page.goto(`/bookings/${testBooking.id}`);
+
+    await expect(page.getByTestId("cash-threshold-input")).toBeVisible();
+    await expect(page.getByTestId("award-threshold-input")).toBeVisible();
+    await expect(page.getByText(/No price data yet/i)).toBeVisible();
+
+    // Cleanup
+    await request.delete(`/api/price-watches/${watch.id}`);
+  });
+});
+
 test.describe("Price watch on booking pages", () => {
   test("price watch card is visible on the new booking page", async ({ page }) => {
     await page.goto("/bookings/new");
