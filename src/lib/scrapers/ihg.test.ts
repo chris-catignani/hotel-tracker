@@ -276,7 +276,6 @@ describe("parseIhgRates", () => {
   });
 
   it("divides total-stay cash price by numNights to return per-night rate", () => {
-    // IHG API returns total cost for the stay; we convert to per-night
     const data = makeResponse([makeOffer("IGCOR", "KNGX", "900.00", true)]);
     const rates = parseIhgRates(data, 3);
     expect(rates[0].cashPrice).toBe(300);
@@ -286,5 +285,13 @@ describe("parseIhgRates", () => {
     const data = makeResponse([makeOffer("IGCOR", "KNGX", "299.00", true)]);
     const rates = parseIhgRates(data);
     expect(rates[0].cashPrice).toBe(299);
+  });
+
+  it("does not divide award points by numNights", () => {
+    // Award formula (amountBeforeTax × 100 = points) is not divided by nights —
+    // multi-night scaling is unconfirmed so we preserve the original behaviour.
+    const data = makeResponse([makeOffer("IVANI", "KNGX", "300.00")]);
+    const rates = parseIhgRates(data, 3);
+    expect(rates[0].awardPrice).toBe(30000);
   });
 });
