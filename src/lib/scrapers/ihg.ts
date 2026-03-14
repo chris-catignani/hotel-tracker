@@ -84,6 +84,11 @@ export class IhgFetcher implements PriceFetcher {
     const mnemonic = params.property.chainPropertyId?.toUpperCase();
     if (!mnemonic) return null;
 
+    const numNights = Math.round(
+      (new Date(params.checkOut).getTime() - new Date(params.checkIn).getTime()) /
+        (1000 * 60 * 60 * 24)
+    );
+
     console.log(`[IhgFetcher] Fetching rates for ${mnemonic}...`);
 
     const res = await fetch(IHG_API_URL, {
@@ -135,8 +140,10 @@ export class IhgFetcher implements PriceFetcher {
       `[IhgFetcher] Response for ${mnemonic}: ${roomCount} room types, ${offerCount} offers (currency: ${hotel?.propertyCurrency ?? "unknown"})`
     );
 
-    const rates = parseIhgRates(data);
-    console.log(`[IhgFetcher] Parsed ${rates.length} rates for ${mnemonic}`);
+    const rates = parseIhgRates(data, numNights);
+    console.log(
+      `[IhgFetcher] Parsed ${rates.length} rates for ${mnemonic} (${numNights} night(s))`
+    );
 
     return rates.length > 0 ? { rates, source: "ihg_api" } : null;
   }
@@ -146,7 +153,7 @@ export class IhgFetcher implements PriceFetcher {
  * Exported for unit testing.
  * Parses room rates from an IHG availability API response.
  */
-export function parseIhgRates(data: IhgResponse): RoomRate[] {
+export function parseIhgRates(data: IhgResponse, numNights = 1): RoomRate[] {
   const hotel = data.hotels?.[0];
   if (!hotel) return [];
 
@@ -183,8 +190,10 @@ export function parseIhgRates(data: IhgResponse): RoomRate[] {
     const rawAmount = offer.totalRate?.amountBeforeTax;
     if (!rawAmount) continue;
 
-    const amount = parseFloat(rawAmount);
-    if (!isFinite(amount) || amount <= 0) continue;
+    const totalAmount = parseFloat(rawAmount);
+    if (!isFinite(totalAmount) || totalAmount <= 0) continue;
+    // IHG returns total-stay cost; divide by nights to get per-night rate
+    const amount = totalAmount / Math.max(numNights, 1);
 
     const roomName = roomNames.get(roomId) ?? roomId;
     const ratePlanName = ratePlanNames.get(ratePlanCode) ?? ratePlanCode;
