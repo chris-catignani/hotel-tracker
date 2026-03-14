@@ -365,7 +365,7 @@ describe("BookingPriceWatch", () => {
     expect(screen.queryByTestId("toggle-room-rates")).not.toBeInTheDocument();
   });
 
-  it("shows 'No price data yet' when watch is enabled but has no snapshots", async () => {
+  it("shows no-data message when watch is enabled but has no snapshots", async () => {
     const watchNoSnapshots = { ...mockWatch, snapshots: [] };
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -377,7 +377,9 @@ describe("BookingPriceWatch", () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText(/No price data yet/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Prices are checked automatically every morning/i)
+      ).toBeInTheDocument();
     });
 
     expect(screen.queryByTestId("latest-cash-price")).not.toBeInTheDocument();
@@ -486,6 +488,7 @@ describe("BookingPriceWatch", () => {
     });
 
     await user.click(screen.getByTestId("toggle-room-rates"));
+    await waitFor(() => expect(screen.getAllByTestId("room-group-row")).toHaveLength(2));
     await user.click(screen.getByText(/^Room/));
 
     // alphabetical asc: Double Standard < King Standard

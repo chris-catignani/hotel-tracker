@@ -543,7 +543,7 @@ export function BookingPriceWatch({
 
             {watch && !latestSnapshot && (
               <p className="text-xs text-muted-foreground">
-                No price data yet. Click &ldquo;Check Now&rdquo; to fetch current prices.
+                No price data yet. Prices are checked automatically every morning.
               </p>
             )}
 
