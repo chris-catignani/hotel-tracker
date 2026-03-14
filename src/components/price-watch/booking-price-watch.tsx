@@ -391,7 +391,7 @@ export function BookingPriceWatch({
                                   >
                                     From (cash) <SortIcon col="cash" />
                                   </TableHead>
-                                  <TableHead className="text-xs" />
+                                  <TableHead className="text-xs">Refundable</TableHead>
                                   <TableHead
                                     className="text-xs text-right cursor-pointer select-none hover:text-foreground"
                                     onClick={() => handleSort("award")}
@@ -482,14 +482,14 @@ export function BookingPriceWatch({
                                                   variant="outline"
                                                   className="text-[10px] px-1 py-0 border-green-300 text-green-700"
                                                 >
-                                                  Ref
+                                                  Yes
                                                 </Badge>
                                               ) : (
                                                 <Badge
                                                   variant="outline"
                                                   className="text-[10px] px-1 py-0 border-orange-300 text-orange-700"
                                                 >
-                                                  Non-ref
+                                                  No
                                                 </Badge>
                                               )}
                                             </TableCell>
