@@ -1,0 +1,788 @@
+{
+  "data": {
+    "commerce": {
+      "product": {
+        "searchProductsByProperty": {
+          "edges": [
+            {
+              "__typename": "ProductSearchEdge",
+              "node": {
+                "__typename": "HotelRoom",
+                "id": "QVRMTVF8QVAwSnxHRU5SfDIwMjYtMDUtMDF8MjAyNi0wNS0wMnwyNDljMGI3YS0zYmI3LTQ3NzYtYWM4MC0yMGRhMGE3ZjNiZTU",
+                "availabilityAttributes": {
+                  "__typename": "HotelRoomAvailabilityAttributes",
+                  "isNearSellout": false,
+                  "productRateCategory": {
+                    "__typename": "HotelRoomAvailabilityAttributesRateCategory",
+                    "typeCode": "Prepay",
+                    "value": null
+                  }
+                },
+                "basicInformation": {
+                  "__typename": "HotelRoomBasicInformation",
+                  "actualRoomsAvailable": 1,
+                  "depositRequired": true,
+                  "description": "1 King",
+                  "freeCancellationUntil": null,
+                  "inventoryTypeNames": [
+                    {
+                      "__typename": "CommerceChannelDescription",
+                      "channelDescriptions": [
+                        {
+                          "__typename": "CommerceDescription",
+                          "text": ["Guest room, 1 King"],
+                          "type": "Standard"
+                        }
+                      ]
+                    }
+                  ],
+                  "isHousingProtected": false,
+                  "isMembersOnly": true,
+                  "isRepresentativeRoom": false,
+                  "name": "Guest room",
+                  "ratePlan": [
+                    {
+                      "__typename": "HotelRoomBasicInfoRatePlan",
+                      "marketCode": "35AP0J",
+                      "qualifiedRateRestriction": null,
+                      "ratePlanCode": "AP0J",
+                      "ratePlanType": "12.RPT"
+                    }
+                  ],
+                  "roomsAvailable": 1,
+                  "roomsRequested": 1,
+                  "sourceOfRate": "MARSHA",
+                  "type": "genr"
+                },
+                "rates": {
+                  "__typename": "HotelRoomRate",
+                  "description": "prepay in full,  non-refundable if cancelled more than 1 day after booking, no changes, see Rate details",
+                  "name": "Member Rate Prepay Non-refundable Non-changeable",
+                  "rateModes": {
+                    "__typename": "HotelRoomRateModesCash",
+                    "averageNightlyRatePerUnit": {
+                      "__typename": "RateAmountCash",
+                      "amount": {
+                        "__typename": "MonetaryAmount",
+                        "amount": 13600,
+                        "currency": "USD",
+                        "decimalPoint": 2
+                      }
+                    }
+                  }
+                },
+                "roomAttributes": [],
+                "roomDetails": null,
+                "totalPricing": {
+                  "__typename": "HotelRoomTotalPricing",
+                  "quantity": 1,
+                  "rateModes": {
+                    "__typename": "HotelRoomTotalPricingRateModes",
+                    "grandTotal": {
+                      "__typename": "RateAmountCash",
+                      "amount": {
+                        "__typename": "MonetaryAmount",
+                        "amount": 16398,
+                        "currency": "USD",
+                        "decimalPoint": 2
+                      }
+                    },
+                    "subtotalPerQuantity": {
+                      "__typename": "RateAmountCash",
+                      "amount": {
+                        "__typename": "MonetaryAmount",
+                        "amount": 13600,
+                        "currency": "USD",
+                        "decimalPoint": 2
+                      }
+                    },
+                    "totalMandatoryFeesPerQuantity": {
+                      "__typename": "RateAmountCash",
+                      "amount": {
+                        "__typename": "MonetaryAmount",
+                        "amount": 0,
+                        "currency": "USD",
+                        "decimalPoint": 2
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "__typename": "ProductSearchEdge",
+              "node": {
+                "__typename": "HotelRoom",
+                "id": "QVRMTVF8QVAwS3xEQkRCfDIwMjYtMDUtMDF8MjAyNi0wNS0wMnxkMjcwYjVlZC1jOWI4LTQ5YWItOTU3Ni03YzI4YjcyMjE0ZjA",
+                "availabilityAttributes": {
+                  "__typename": "HotelRoomAvailabilityAttributes",
+                  "isNearSellout": false,
+                  "productRateCategory": {
+                    "__typename": "HotelRoomAvailabilityAttributesRateCategory",
+                    "typeCode": "Prepay",
+                    "value": null
+                  }
+                },
+                "basicInformation": {
+                  "__typename": "HotelRoomBasicInformation",
+                  "actualRoomsAvailable": 1,
+                  "depositRequired": true,
+                  "description": "2 Double",
+                  "freeCancellationUntil": null,
+                  "inventoryTypeNames": [
+                    {
+                      "__typename": "CommerceChannelDescription",
+                      "channelDescriptions": [
+                        {
+                          "__typename": "CommerceDescription",
+                          "text": ["Guest room, 2 Double"],
+                          "type": "Standard"
+                        }
+                      ]
+                    }
+                  ],
+                  "isHousingProtected": false,
+                  "isMembersOnly": true,
+                  "isRepresentativeRoom": false,
+                  "name": "Guest room",
+                  "ratePlan": [
+                    {
+                      "__typename": "HotelRoomBasicInfoRatePlan",
+                      "marketCode": "35AP0K",
+                      "qualifiedRateRestriction": null,
+                      "ratePlanCode": "AP0K",
+                      "ratePlanType": "12.RPT"
+                    }
+                  ],
+                  "roomsAvailable": 1,
+                  "roomsRequested": 1,
+                  "sourceOfRate": "MARSHA",
+                  "type": "dbdb"
+                },
+                "rates": {
+                  "__typename": "HotelRoomRate",
+                  "description": "prepay in full,  non-refundable if cancelled more than 1 day after booking, no changes, see Rate details",
+                  "name": "Member Rate Prepay Non-refundable Non-changeable",
+                  "rateModes": {
+                    "__typename": "HotelRoomRateModesCash",
+                    "averageNightlyRatePerUnit": {
+                      "__typename": "RateAmountCash",
+                      "amount": {
+                        "__typename": "MonetaryAmount",
+                        "amount": 13600,
+                        "currency": "USD",
+                        "decimalPoint": 2
+                      }
+                    }
+                  }
+                },
+                "roomAttributes": [],
+                "roomDetails": null,
+                "totalPricing": {
+                  "__typename": "HotelRoomTotalPricing",
+                  "quantity": 1,
+                  "rateModes": {
+                    "__typename": "HotelRoomTotalPricingRateModes",
+                    "grandTotal": {
+                      "__typename": "RateAmountCash",
+                      "amount": {
+                        "__typename": "MonetaryAmount",
+                        "amount": 16398,
+                        "currency": "USD",
+                        "decimalPoint": 2
+                      }
+                    },
+                    "subtotalPerQuantity": {
+                      "__typename": "RateAmountCash",
+                      "amount": {
+                        "__typename": "MonetaryAmount",
+                        "amount": 13600,
+                        "currency": "USD",
+                        "decimalPoint": 2
+                      }
+                    },
+                    "totalMandatoryFeesPerQuantity": {
+                      "__typename": "RateAmountCash",
+                      "amount": {
+                        "__typename": "MonetaryAmount",
+                        "amount": 0,
+                        "currency": "USD",
+                        "decimalPoint": 2
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "__typename": "ProductSearchEdge",
+              "node": {
+                "__typename": "HotelRoom",
+                "id": "QVRMTVF8RDAwMDAwMDAwMnxHRU5SfDIwMjYtMDUtMDF8MjAyNi0wNS0wMnw3MGI0YmE0Mi0zNmVmLTRmZWUtOWYwNC1hYmYxNDY3Y2ZlZTQ",
+                "availabilityAttributes": {
+                  "__typename": "HotelRoomAvailabilityAttributes",
+                  "isNearSellout": false,
+                  "productRateCategory": {
+                    "__typename": "HotelRoomAvailabilityAttributesRateCategory",
+                    "typeCode": "StandardRates",
+                    "value": null
+                  }
+                },
+                "basicInformation": {
+                  "__typename": "HotelRoomBasicInformation",
+                  "actualRoomsAvailable": 334,
+                  "depositRequired": false,
+                  "description": null,
+                  "freeCancellationUntil": null,
+                  "inventoryTypeNames": [
+                    {
+                      "__typename": "CommerceChannelDescription",
+                      "channelDescriptions": [
+                        {
+                          "__typename": "CommerceDescription",
+                          "text": ["1 King Bed, Guest Room"],
+                          "type": "Standard"
+                        }
+                      ]
+                    }
+                  ],
+                  "isHousingProtected": false,
+                  "isMembersOnly": false,
+                  "isRepresentativeRoom": true,
+                  "name": "1 King Bed, Guest Room",
+                  "ratePlan": [
+                    {
+                      "__typename": "HotelRoomBasicInfoRatePlan",
+                      "marketCode": "12XDRZ",
+                      "qualifiedRateRestriction": null,
+                      "ratePlanCode": "XDRZ",
+                      "ratePlanType": "24.RPT"
+                    }
+                  ],
+                  "roomsAvailable": 1,
+                  "roomsRequested": 1,
+                  "sourceOfRate": "DSP",
+                  "type": "d000000002"
+                },
+                "rates": {
+                  "__typename": "HotelRoomRate",
+                  "description": null,
+                  "name": "Flexible Rate",
+                  "rateModes": {
+                    "__typename": "HotelRoomRateModesCash",
+                    "averageNightlyRatePerUnit": {
+                      "__typename": "RateAmountCash",
+                      "amount": {
+                        "__typename": "MonetaryAmount",
+                        "amount": 15900,
+                        "currency": "USD",
+                        "decimalPoint": 2
+                      }
+                    }
+                  }
+                },
+                "roomAttributes": [
+                  {
+                    "__typename": "HotelRoomAttribute",
+                    "attributes": [
+                      {
+                        "__typename": "HotelRoomSubAttribute",
+                        "accommodationCategory": {
+                          "__typename": "Lookup",
+                          "code": "ROOM",
+                          "description": "Room"
+                        },
+                        "category": {
+                          "__typename": "Lookup",
+                          "code": "1CAT001",
+                          "description": "Accommodation Type",
+                          "label": null
+                        },
+                        "description": "Guest Room",
+                        "groupID": "ROOM0005",
+                        "id": "ROOM0005",
+                        "isInInventoryTypeName": null,
+                        "isRoomAttribute": null,
+                        "positionInCategory": null
+                      },
+                      {
+                        "__typename": "HotelRoomSubAttribute",
+                        "accommodationCategory": null,
+                        "category": {
+                          "__typename": "Lookup",
+                          "code": "4CAT004",
+                          "description": "Bed type",
+                          "label": null
+                        },
+                        "description": "1 King Bed",
+                        "groupID": null,
+                        "id": "BMBN0006",
+                        "isInInventoryTypeName": null,
+                        "isRoomAttribute": null,
+                        "positionInCategory": null
+                      }
+                    ],
+                    "id": "D000000002"
+                  }
+                ],
+                "roomDetails": null,
+                "totalPricing": {
+                  "__typename": "HotelRoomTotalPricing",
+                  "quantity": 1,
+                  "rateModes": {
+                    "__typename": "HotelRoomTotalPricingRateModes",
+                    "grandTotal": {
+                      "__typename": "RateAmountCash",
+                      "amount": {
+                        "__typename": "MonetaryAmount",
+                        "amount": 19087,
+                        "currency": "USD",
+                        "decimalPoint": 2
+                      }
+                    },
+                    "subtotalPerQuantity": {
+                      "__typename": "RateAmountCash",
+                      "amount": {
+                        "__typename": "MonetaryAmount",
+                        "amount": 15900,
+                        "currency": "USD",
+                        "decimalPoint": 2
+                      }
+                    },
+                    "totalMandatoryFeesPerQuantity": {
+                      "__typename": "RateAmountCash",
+                      "amount": {
+                        "__typename": "MonetaryAmount",
+                        "amount": 0,
+                        "currency": "USD",
+                        "decimalPoint": 2
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "__typename": "ProductSearchEdge",
+              "node": {
+                "__typename": "HotelRoom",
+                "id": "QVRMTVF8RDAwMDAwMDAwM3xHRU5SfDIwMjYtMDUtMDF8MjAyNi0wNS0wMnxhOGE3ODc5Ni0zNzVlLTQ4M2EtODY1NS1hNjRjYzZhOWRjOWM",
+                "availabilityAttributes": {
+                  "__typename": "HotelRoomAvailabilityAttributes",
+                  "isNearSellout": false,
+                  "productRateCategory": {
+                    "__typename": "HotelRoomAvailabilityAttributesRateCategory",
+                    "typeCode": "StandardRates",
+                    "value": null
+                  }
+                },
+                "basicInformation": {
+                  "__typename": "HotelRoomBasicInformation",
+                  "actualRoomsAvailable": 230,
+                  "depositRequired": false,
+                  "description": "Walk-In Shower",
+                  "freeCancellationUntil": null,
+                  "inventoryTypeNames": [
+                    {
+                      "__typename": "CommerceChannelDescription",
+                      "channelDescriptions": [
+                        {
+                          "__typename": "CommerceDescription",
+                          "text": ["1 King Bed, Guest Room, Walk-In Shower"],
+                          "type": "Standard"
+                        }
+                      ]
+                    }
+                  ],
+                  "isHousingProtected": false,
+                  "isMembersOnly": false,
+                  "isRepresentativeRoom": false,
+                  "name": "1 King Bed, Guest Room",
+                  "ratePlan": [
+                    {
+                      "__typename": "HotelRoomBasicInfoRatePlan",
+                      "marketCode": "12XDRZ",
+                      "qualifiedRateRestriction": null,
+                      "ratePlanCode": "XDRZ",
+                      "ratePlanType": "24.RPT"
+                    }
+                  ],
+                  "roomsAvailable": 1,
+                  "roomsRequested": 1,
+                  "sourceOfRate": "DSP",
+                  "type": "d000000003"
+                },
+                "rates": {
+                  "__typename": "HotelRoomRate",
+                  "description": null,
+                  "name": "Flexible Rate",
+                  "rateModes": {
+                    "__typename": "HotelRoomRateModesCash",
+                    "averageNightlyRatePerUnit": {
+                      "__typename": "RateAmountCash",
+                      "amount": {
+                        "__typename": "MonetaryAmount",
+                        "amount": 15900,
+                        "currency": "USD",
+                        "decimalPoint": 2
+                      }
+                    }
+                  }
+                },
+                "roomAttributes": [
+                  {
+                    "__typename": "HotelRoomAttribute",
+                    "attributes": [
+                      {
+                        "__typename": "HotelRoomSubAttribute",
+                        "accommodationCategory": {
+                          "__typename": "Lookup",
+                          "code": "ROOM",
+                          "description": "Room"
+                        },
+                        "category": {
+                          "__typename": "Lookup",
+                          "code": "1CAT001",
+                          "description": "Accommodation Type",
+                          "label": null
+                        },
+                        "description": "Guest Room",
+                        "groupID": "ROOM0005",
+                        "id": "ROOM0005",
+                        "isInInventoryTypeName": null,
+                        "isRoomAttribute": null,
+                        "positionInCategory": null
+                      },
+                      {
+                        "__typename": "HotelRoomSubAttribute",
+                        "accommodationCategory": null,
+                        "category": {
+                          "__typename": "Lookup",
+                          "code": "4CAT004",
+                          "description": "Bed type",
+                          "label": null
+                        },
+                        "description": "1 King Bed",
+                        "groupID": null,
+                        "id": "BMBN0006",
+                        "isInInventoryTypeName": null,
+                        "isRoomAttribute": null,
+                        "positionInCategory": null
+                      },
+                      {
+                        "__typename": "HotelRoomSubAttribute",
+                        "accommodationCategory": null,
+                        "category": {
+                          "__typename": "Lookup",
+                          "code": "12CAT12",
+                          "description": "Bathroom",
+                          "label": null
+                        },
+                        "description": "Walk-In Shower",
+                        "groupID": null,
+                        "id": "WSHW0002",
+                        "isInInventoryTypeName": null,
+                        "isRoomAttribute": null,
+                        "positionInCategory": null
+                      }
+                    ],
+                    "id": "D000000003"
+                  }
+                ],
+                "roomDetails": null,
+                "totalPricing": {
+                  "__typename": "HotelRoomTotalPricing",
+                  "quantity": 1,
+                  "rateModes": {
+                    "__typename": "HotelRoomTotalPricingRateModes",
+                    "grandTotal": {
+                      "__typename": "RateAmountCash",
+                      "amount": {
+                        "__typename": "MonetaryAmount",
+                        "amount": 19087,
+                        "currency": "USD",
+                        "decimalPoint": 2
+                      }
+                    },
+                    "subtotalPerQuantity": {
+                      "__typename": "RateAmountCash",
+                      "amount": {
+                        "__typename": "MonetaryAmount",
+                        "amount": 15900,
+                        "currency": "USD",
+                        "decimalPoint": 2
+                      }
+                    },
+                    "totalMandatoryFeesPerQuantity": {
+                      "__typename": "RateAmountCash",
+                      "amount": {
+                        "__typename": "MonetaryAmount",
+                        "amount": 0,
+                        "currency": "USD",
+                        "decimalPoint": 2
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "__typename": "ProductSearchEdge",
+              "node": {
+                "__typename": "HotelRoom",
+                "id": "QVRMTVF8RUNQWnxDSVRZfDIwMjYtMDUtMDF8MjAyNi0wNS0wMnw4NjYzNTk2My1jZTZkLTQ4MjctYmY0ZC0yNDhjOGM5NDRkNTI",
+                "availabilityAttributes": {
+                  "__typename": "HotelRoomAvailabilityAttributes",
+                  "isNearSellout": false,
+                  "productRateCategory": {
+                    "__typename": "HotelRoomAvailabilityAttributesRateCategory",
+                    "typeCode": "Packages",
+                    "value": null
+                  }
+                },
+                "basicInformation": {
+                  "__typename": "HotelRoomBasicInformation",
+                  "actualRoomsAvailable": 1,
+                  "depositRequired": false,
+                  "description": "Guest room, 1 King, City view",
+                  "freeCancellationUntil": "2026-04-28T00:00:00Z",
+                  "inventoryTypeNames": [
+                    {
+                      "__typename": "CommerceChannelDescription",
+                      "channelDescriptions": [
+                        {
+                          "__typename": "CommerceDescription",
+                          "text": ["Skyline View Room, Guest room, 1 King, City view"],
+                          "type": "Standard"
+                        }
+                      ]
+                    }
+                  ],
+                  "isHousingProtected": false,
+                  "isMembersOnly": false,
+                  "isRepresentativeRoom": false,
+                  "name": "Skyline View Room",
+                  "ratePlan": [
+                    {
+                      "__typename": "HotelRoomBasicInfoRatePlan",
+                      "marketCode": "21ECPZ",
+                      "qualifiedRateRestriction": null,
+                      "ratePlanCode": "ECPZ",
+                      "ratePlanType": "11.RPT"
+                    }
+                  ],
+                  "roomsAvailable": 1,
+                  "roomsRequested": 1,
+                  "sourceOfRate": "MARSHA",
+                  "type": "city"
+                },
+                "rates": {
+                  "__typename": "HotelRoomRate",
+                  "description": "includes WiFi,  upgrade to Skyline View room, see Rate details",
+                  "name": "FREE UPGRADE to CITYVIEW-includes free internet",
+                  "rateModes": {
+                    "__typename": "HotelRoomRateModesCash",
+                    "averageNightlyRatePerUnit": {
+                      "__typename": "RateAmountCash",
+                      "amount": {
+                        "__typename": "MonetaryAmount",
+                        "amount": 15900,
+                        "currency": "USD",
+                        "decimalPoint": 2
+                      }
+                    }
+                  }
+                },
+                "roomAttributes": [],
+                "roomDetails": null,
+                "totalPricing": {
+                  "__typename": "HotelRoomTotalPricing",
+                  "quantity": 1,
+                  "rateModes": {
+                    "__typename": "HotelRoomTotalPricingRateModes",
+                    "grandTotal": {
+                      "__typename": "RateAmountCash",
+                      "amount": {
+                        "__typename": "MonetaryAmount",
+                        "amount": 19087,
+                        "currency": "USD",
+                        "decimalPoint": 2
+                      }
+                    },
+                    "subtotalPerQuantity": {
+                      "__typename": "RateAmountCash",
+                      "amount": {
+                        "__typename": "MonetaryAmount",
+                        "amount": 15900,
+                        "currency": "USD",
+                        "decimalPoint": 2
+                      }
+                    },
+                    "totalMandatoryFeesPerQuantity": {
+                      "__typename": "RateAmountCash",
+                      "amount": {
+                        "__typename": "MonetaryAmount",
+                        "amount": 0,
+                        "currency": "USD",
+                        "decimalPoint": 2
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "__typename": "ProductSearchEdge",
+              "node": {
+                "__typename": "HotelRoom",
+                "id": "QVRMTVF8RVNDQXxEQ1RZfDIwMjYtMDUtMDF8MjAyNi0wNS0wMnw4NTc5NTc3OC1kNzE0LTQxYjMtOWZkMy0xYzk3NTE5YjkzYTU",
+                "availabilityAttributes": {
+                  "__typename": "HotelRoomAvailabilityAttributes",
+                  "isNearSellout": false,
+                  "productRateCategory": {
+                    "__typename": "HotelRoomAvailabilityAttributesRateCategory",
+                    "typeCode": "Packages",
+                    "value": null
+                  }
+                },
+                "basicInformation": {
+                  "__typename": "HotelRoomBasicInformation",
+                  "actualRoomsAvailable": 1,
+                  "depositRequired": false,
+                  "description": "Guest room, 2 Double, City view",
+                  "freeCancellationUntil": "2026-04-28T00:00:00Z",
+                  "inventoryTypeNames": [
+                    {
+                      "__typename": "CommerceChannelDescription",
+                      "channelDescriptions": [
+                        {
+                          "__typename": "CommerceDescription",
+                          "text": ["Skyline View Room, Guest room, 2 Double, City view"],
+                          "type": "Standard"
+                        }
+                      ]
+                    }
+                  ],
+                  "isHousingProtected": false,
+                  "isMembersOnly": false,
+                  "isRepresentativeRoom": false,
+                  "name": "Skyline View Room",
+                  "ratePlan": [
+                    {
+                      "__typename": "HotelRoomBasicInfoRatePlan",
+                      "marketCode": "21ESCA",
+                      "qualifiedRateRestriction": null,
+                      "ratePlanCode": "ESCA",
+                      "ratePlanType": "11.RPT"
+                    }
+                  ],
+                  "roomsAvailable": 1,
+                  "roomsRequested": 1,
+                  "sourceOfRate": "MARSHA",
+                  "type": "dcty"
+                },
+                "rates": {
+                  "__typename": "HotelRoomRate",
+                  "description": "includes WiFi,  upgrade to Skyline View room, see Rate details",
+                  "name": "FREE UPGRADE to CITYVIEW-includes free internet",
+                  "rateModes": {
+                    "__typename": "HotelRoomRateModesCash",
+                    "averageNightlyRatePerUnit": {
+                      "__typename": "RateAmountCash",
+                      "amount": {
+                        "__typename": "MonetaryAmount",
+                        "amount": 15900,
+                        "currency": "USD",
+                        "decimalPoint": 2
+                      }
+                    }
+                  }
+                },
+                "roomAttributes": [],
+                "roomDetails": null,
+                "totalPricing": {
+                  "__typename": "HotelRoomTotalPricing",
+                  "quantity": 1,
+                  "rateModes": {
+                    "__typename": "HotelRoomTotalPricingRateModes",
+                    "grandTotal": {
+                      "__typename": "RateAmountCash",
+                      "amount": {
+                        "__typename": "MonetaryAmount",
+                        "amount": 19087,
+                        "currency": "USD",
+                        "decimalPoint": 2
+                      }
+                    },
+                    "subtotalPerQuantity": {
+                      "__typename": "RateAmountCash",
+                      "amount": {
+                        "__typename": "MonetaryAmount",
+                        "amount": 15900,
+                        "currency": "USD",
+                        "decimalPoint": 2
+                      }
+                    },
+                    "totalMandatoryFeesPerQuantity": {
+                      "__typename": "RateAmountCash",
+                      "amount": {
+                        "__typename": "MonetaryAmount",
+                        "amount": 0,
+                        "currency": "USD",
+                        "decimalPoint": 2
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "attributeDefinitions": [
+            {
+              "__typename": "ProductAttributeDefinitions",
+              "categoryClass": "Accommodation Type",
+              "categoryCode": "1CAT001",
+              "categoryName": {
+                "__typename": "ProductAttributeDescription",
+                "text": ["Accommodation Type"],
+                "type": null
+              },
+              "code": "ROOM0005",
+              "isRoomAttribute": null,
+              "names": [
+                {
+                  "__typename": "ProductAttributeDescription",
+                  "text": ["Guest Room"],
+                  "type": null
+                }
+              ],
+              "positionInCategory": "1"
+            },
+            {
+              "__typename": "ProductAttributeDefinitions",
+              "categoryClass": "Bed type",
+              "categoryCode": "4CAT004",
+              "categoryName": {
+                "__typename": "ProductAttributeDescription",
+                "text": ["Bed type"],
+                "type": null
+              },
+              "code": "BMBN0006",
+              "isRoomAttribute": null,
+              "names": [
+                {
+                  "__typename": "ProductAttributeDescription",
+                  "text": ["1 King Bed"],
+                  "type": null
+                }
+              ],
+              "positionInCategory": "4"
+            }
+          ],
+          "resultsCollectionId": null,
+          "__typename": "ProductSearchByPropertyConnection"
+        }
+      }
+    }
+  }
+}

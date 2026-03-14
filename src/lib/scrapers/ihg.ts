@@ -80,8 +80,14 @@ export class IhgFetcher implements PriceFetcher {
   }
 
   async fetchPrice(params: FetchParams): Promise<PriceFetchResult | null> {
-    const mnemonic = params.property.chainPropertyId;
+    // IHG API requires uppercase mnemonics — normalise here regardless of how it was stored
+    const mnemonic = params.property.chainPropertyId?.toUpperCase();
     if (!mnemonic) return null;
+
+    const numNights = Math.round(
+      (new Date(params.checkOut).getTime() - new Date(params.checkIn).getTime()) /
+        (1000 * 60 * 60 * 24)
+    );
 
     console.log(`[IhgFetcher] Fetching rates for ${mnemonic}...`);
 
@@ -134,8 +140,10 @@ export class IhgFetcher implements PriceFetcher {
       `[IhgFetcher] Response for ${mnemonic}: ${roomCount} room types, ${offerCount} offers (currency: ${hotel?.propertyCurrency ?? "unknown"})`
     );
 
-    const rates = parseIhgRates(data);
-    console.log(`[IhgFetcher] Parsed ${rates.length} rates for ${mnemonic}`);
+    const rates = parseIhgRates(data, numNights);
+    console.log(
+      `[IhgFetcher] Parsed ${rates.length} rates for ${mnemonic} (${numNights} night(s))`
+    );
 
     return rates.length > 0 ? { rates, source: "ihg_api" } : null;
   }
@@ -145,7 +153,7 @@ export class IhgFetcher implements PriceFetcher {
  * Exported for unit testing.
  * Parses room rates from an IHG availability API response.
  */
-export function parseIhgRates(data: IhgResponse): RoomRate[] {
+export function parseIhgRates(data: IhgResponse, numNights = 1): RoomRate[] {
   const hotel = data.hotels?.[0];
   if (!hotel) return [];
 
@@ -182,13 +190,16 @@ export function parseIhgRates(data: IhgResponse): RoomRate[] {
     const rawAmount = offer.totalRate?.amountBeforeTax;
     if (!rawAmount) continue;
 
-    const amount = parseFloat(rawAmount);
-    if (!isFinite(amount) || amount <= 0) continue;
+    const totalAmount = parseFloat(rawAmount);
+    if (!isFinite(totalAmount) || totalAmount <= 0) continue;
 
     const roomName = roomNames.get(roomId) ?? roomId;
     const ratePlanName = ratePlanNames.get(ratePlanCode) ?? ratePlanCode;
 
     if (AWARD_RATE_CODES.has(ratePlanCode)) {
+      // Award formula: amountBeforeTax × 100 = points (reverse-engineered from 1-night stays).
+      // We do NOT divide by nights here — the scaling behaviour for multi-night award stays
+      // is unconfirmed. Keep the original formula until verified.
       result.push({
         roomId,
         roomName,
@@ -196,11 +207,12 @@ export function parseIhgRates(data: IhgResponse): RoomRate[] {
         ratePlanName,
         cashPrice: null,
         cashCurrency: currency,
-        awardPrice: Math.round(amount * 100),
+        awardPrice: Math.round(totalAmount * 100),
         isRefundable: true,
         isCorporate: false,
       });
     } else {
+      // IHG returns total-stay cost for cash rates; divide by nights to get per-night rate.
       // Treat all non-award offers as cash rates.
       // IHG uses many regional/property-specific codes; rely on the API's
       // isRefundable flag rather than an allowlist of known codes.
@@ -209,7 +221,7 @@ export function parseIhgRates(data: IhgResponse): RoomRate[] {
         roomName,
         ratePlanCode,
         ratePlanName,
-        cashPrice: amount,
+        cashPrice: totalAmount / Math.max(numNights, 1),
         cashCurrency: currency,
         awardPrice: null,
         isRefundable: offer.policies?.isRefundable ?? true,

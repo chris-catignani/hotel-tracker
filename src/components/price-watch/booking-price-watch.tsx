@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, Fragment } from "react";
+import React, { useState, useEffect, useCallback, Fragment } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Eye, Loader2, ChevronDown, ChevronUp, ArrowUpDown } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { extractApiError } from "@/lib/client-error";
+import { HOTEL_ID } from "@/lib/constants";
 import {
   Table,
   TableBody,
@@ -77,9 +78,53 @@ interface BookingPriceWatchProps {
   initialWatchBooking: PriceWatchBookingData | null;
 }
 
+function ChainPropertyIdHint({ hotelChainId }: { hotelChainId: string }) {
+  let content: React.ReactNode;
+
+  if (hotelChainId === HOTEL_ID.HYATT) {
+    content = (
+      <>
+        <strong>Hyatt Spirit Code needed</strong> — find it in the property URL on hyatt.com (e.g.{" "}
+        <code>hyatt.com/.../{"{spiritCode}"}</code>) and ask your admin to set it on this property.
+      </>
+    );
+  } else if (hotelChainId === HOTEL_ID.MARRIOTT) {
+    content = (
+      <>
+        <strong>Marriott MARSHA Code needed</strong> — find it in the property URL on marriott.com
+        (e.g. <code>marriott.com/hotels/travel/{"{marshaCode}"}-hotel-name/</code>) and ask your
+        admin to set it on this property.
+      </>
+    );
+  } else if (hotelChainId === HOTEL_ID.IHG) {
+    content = (
+      <>
+        <strong>IHG Hotel Code needed</strong> — find it in the property URL on ihg.com: it is the
+        5-letter code immediately before <code>/hoteldetail</code> (e.g.{" "}
+        <code>ihg.com/.../chicago/{"{hotelCode}"}/hoteldetail</code>) and ask your admin to set it
+        on this property.
+      </>
+    );
+  } else {
+    content = (
+      <>
+        <strong>Chain property ID needed</strong> — ask your admin to set the chain property ID on
+        this property to enable price watching.
+      </>
+    );
+  }
+
+  return (
+    <div className="rounded-md bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
+      {content}
+    </div>
+  );
+}
+
 export function BookingPriceWatch({
   bookingId,
   propertyId,
+  hotelChainId,
   checkIn,
   checkOut,
   totalCost,
@@ -239,13 +284,9 @@ export function BookingPriceWatch({
 
         {isEnabled && (
           <>
-            {/* Spirit code hint */}
+            {/* Chain property ID hint */}
             {watch && !watch.property.chainPropertyId && (
-              <div className="rounded-md bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
-                <strong>Hyatt Spirit Code needed</strong> — find it in the property URL on hyatt.com
-                (e.g. <code>hyatt.com/.../{"{spiritCode}"}</code>) and ask your admin to set it on
-                this property.
-              </div>
+              <ChainPropertyIdHint hotelChainId={hotelChainId} />
             )}
 
             {/* Alert thresholds */}
@@ -290,7 +331,7 @@ export function BookingPriceWatch({
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
-                    <p className="text-xs text-muted-foreground">Lowest Cash (refundable)</p>
+                    <p className="text-xs text-muted-foreground">Lowest Cash (refundable/night)</p>
                     <p className="font-medium" data-testid="latest-cash-price">
                       {latestSnapshot.lowestRefundableCashPrice != null
                         ? formatCurrency(
@@ -301,7 +342,7 @@ export function BookingPriceWatch({
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Lowest Award</p>
+                    <p className="text-xs text-muted-foreground">Lowest Award (pts/night)</p>
                     <p className="font-medium" data-testid="latest-award-price">
                       {latestSnapshot.lowestAwardPrice != null
                         ? `${latestSnapshot.lowestAwardPrice.toLocaleString()} pts`
@@ -389,13 +430,13 @@ export function BookingPriceWatch({
                                     className="text-xs text-right cursor-pointer select-none hover:text-foreground"
                                     onClick={() => handleSort("cash")}
                                   >
-                                    From (cash) <SortIcon col="cash" />
+                                    Cash/Night <SortIcon col="cash" />
                                   </TableHead>
                                   <TableHead
                                     className="text-xs text-right cursor-pointer select-none hover:text-foreground"
                                     onClick={() => handleSort("award")}
                                   >
-                                    Award <SortIcon col="award" />
+                                    Award (pts/night) <SortIcon col="award" />
                                   </TableHead>
                                 </TableRow>
                               </TableHeader>

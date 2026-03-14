@@ -337,6 +337,17 @@ export default function BookingDetailPage() {
                 )}
               </div>
             )}
+            {totalCost > 0 && booking.numNights > 0 && (
+              <div>
+                <p className="text-sm text-muted-foreground">Avg/Night (pre-tax)</p>
+                <p className="font-medium">
+                  {formatCurrency(
+                    Number(booking.pretaxCost) / booking.numNights,
+                    booking.currency !== "USD" ? booking.currency : "USD"
+                  )}
+                </p>
+              </div>
+            )}
             {totalCost > 0 && (
               <div>
                 <p className="text-sm text-muted-foreground">Total Cost</p>
