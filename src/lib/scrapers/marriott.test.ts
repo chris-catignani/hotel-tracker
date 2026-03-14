@@ -125,7 +125,7 @@ describe("parseMarriottRates", () => {
 
     expect(rates).toHaveLength(1);
     expect(rates[0]).toMatchObject({
-      roomId: "d000000002",
+      roomId: "1 King Bed, Guest Room",
       roomName: "1 King Bed, Guest Room",
       ratePlanCode: "XDRZ",
       ratePlanName: "Flexible Rate",
@@ -201,7 +201,7 @@ describe("parseMarriottRates", () => {
     });
   });
 
-  it("deduplicates rates with the same roomId+ratePlanCode across multiple responses", () => {
+  it("deduplicates rates with the same roomName+ratePlanName across multiple responses", () => {
     const edge = makeEdge(
       "d000000002",
       "1 King Bed",
@@ -212,6 +212,74 @@ describe("parseMarriottRates", () => {
     );
     const rates = parseMarriottRates([makeResponse([edge]), makeResponse([edge])]);
     expect(rates).toHaveLength(1);
+  });
+
+  it("deduplicates physical room variants with same name but different roomId", () => {
+    // Marriott returns multiple inventory IDs (d000000038–d000000041) for the same room type
+    const rates = parseMarriottRates([
+      makeResponse([
+        makeEdge(
+          "d000000038",
+          "2 Double Beds, City View",
+          "XDRZ",
+          "Flexible Rate",
+          "StandardRates",
+          40400
+        ),
+        makeEdge(
+          "d000000039",
+          "2 Double Beds, City View",
+          "XDRZ",
+          "Flexible Rate",
+          "StandardRates",
+          40400
+        ),
+        makeEdge(
+          "d000000040",
+          "2 Double Beds, City View",
+          "XDRZ",
+          "Flexible Rate",
+          "StandardRates",
+          40400
+        ),
+        makeEdge(
+          "d000000041",
+          "2 Double Beds, City View",
+          "XDRZ",
+          "Flexible Rate",
+          "StandardRates",
+          40400
+        ),
+      ]),
+    ]);
+    expect(rates).toHaveLength(1);
+    expect(rates[0].roomId).toBe("2 Double Beds, City View");
+  });
+
+  it("keeps member and non-member rates separate when they share the same ratePlanCode", () => {
+    // Both use ratePlanCode XDRZ but have different ratePlanNames and prices
+    const rates = parseMarriottRates([
+      makeResponse([
+        makeEdge(
+          "d000000038",
+          "2 Double Beds, City View",
+          "XDRZ",
+          "Member Flexible Rate",
+          "StandardRates",
+          39200
+        ),
+        makeEdge(
+          "d000000038",
+          "2 Double Beds, City View",
+          "XDRZ",
+          "Flexible Rate",
+          "StandardRates",
+          40400
+        ),
+      ]),
+    ]);
+    expect(rates).toHaveLength(2);
+    expect(rates.map((r) => r.ratePlanName)).toEqual(["Member Flexible Rate", "Flexible Rate"]);
   });
 
   it("merges rates from multiple responses (member + standard calls)", () => {

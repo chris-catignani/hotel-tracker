@@ -222,7 +222,14 @@ export class MarriottFetcher implements PriceFetcher {
  * Merges + deduplicates rates from multiple PhoenixBookDTTSearchProductsByProperty responses.
  */
 export function parseMarriottRates(responses: MarriottSearchResponse[]): RoomRate[] {
-  const seen = new Set<string>(); // roomId|ratePlanCode
+  // Dedup key: roomName|ratePlanName
+  // - roomName instead of roomId: Marriott assigns multiple physical inventory IDs
+  //   (e.g. d000000038–d000000041) to the same room type. Using the display name
+  //   collapses these into one logical room.
+  // - ratePlanName instead of ratePlanCode: member and non-member rates often share
+  //   the same ratePlanCode (e.g. "XDRZ") but have distinct names ("Member Flexible
+  //   Rate" vs "Flexible Rate") and different prices.
+  const seen = new Set<string>(); // roomName|ratePlanName
   const result: RoomRate[] = [];
 
   for (const resp of responses) {
@@ -234,14 +241,14 @@ export function parseMarriottRates(responses: MarriottSearchResponse[]): RoomRat
 
       if (!INCLUDED_CATEGORIES.has(categoryCode)) continue;
 
-      const roomId = node.basicInformation.type;
+      // Use roomName as roomId — physical inventory IDs are opaque internal codes
       const roomName = node.basicInformation.name;
       const ratePlanCode = node.basicInformation.ratePlan?.[0]?.ratePlanCode ?? "STANDARD";
       const ratePlanName = node.rates.name;
       const isRefundable = categoryCode !== "Prepay";
       const rateMode = node.rates.rateModes;
 
-      const dedupeKey = `${roomId}|${ratePlanCode}`;
+      const dedupeKey = `${roomName}|${ratePlanName}`;
       if (seen.has(dedupeKey)) continue;
       seen.add(dedupeKey);
 
@@ -251,7 +258,7 @@ export function parseMarriottRates(responses: MarriottSearchResponse[]): RoomRat
         if (!isFinite(cashPrice) || cashPrice <= 0) continue;
 
         result.push({
-          roomId,
+          roomId: roomName,
           roomName,
           ratePlanCode,
           ratePlanName,
@@ -266,7 +273,7 @@ export function parseMarriottRates(responses: MarriottSearchResponse[]): RoomRat
         if (!isFinite(pts) || pts <= 0) continue;
 
         result.push({
-          roomId,
+          roomId: roomName,
           roomName,
           ratePlanCode,
           ratePlanName,
