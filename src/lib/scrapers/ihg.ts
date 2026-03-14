@@ -31,7 +31,8 @@ const IHG_API_URL =
 // Can be overridden via IHG_API_KEY env var.
 const IHG_API_KEY = process.env.IHG_API_KEY ?? "se9ym5iAzaW8pxfBjkmgbuGjJcr3Pj6Y";
 
-// Award rate plan codes — these use points pricing (amountBeforeTax × 100 = points)
+// Award rate plan codes — these use points pricing (rewardNights.pointsOnly.averageDailyPoints).
+// These codes only appear when explicitly requested via rates.ratePlanCodes in the request body.
 const AWARD_RATE_CODES = new Set(["IVAN1", "IVAN3", "IVAN5", "IVAN6", "IVAN7", "IVANI"]);
 
 // IHG API response types
@@ -50,6 +51,11 @@ interface IhgOffer {
   };
   totalRate?: {
     amountBeforeTax?: string;
+  };
+  rewardNights?: {
+    pointsOnly?: {
+      averageDailyPoints?: number;
+    };
   };
 }
 
@@ -110,6 +116,18 @@ export class IhgFetcher implements PriceFetcher {
         startDate: params.checkIn,
         endDate: params.checkOut,
         hotelMnemonics: [mnemonic],
+        rates: {
+          ratePlanCodes: [
+            { internal: "IGCOR" },
+            { internal: "IDAP2" },
+            { internal: "IVAN1" },
+            { internal: "IVAN3" },
+            { internal: "IVAN5" },
+            { internal: "IVAN6" },
+            { internal: "IVAN7" },
+            { internal: "IVANI" },
+          ],
+        },
         products: [
           {
             productCode: "SR",
@@ -197,9 +215,9 @@ export function parseIhgRates(data: IhgResponse, numNights = 1): RoomRate[] {
     const ratePlanName = ratePlanNames.get(ratePlanCode) ?? ratePlanCode;
 
     if (AWARD_RATE_CODES.has(ratePlanCode)) {
-      // Award formula: amountBeforeTax × 100 = points (reverse-engineered from 1-night stays).
-      // We do NOT divide by nights here — the scaling behaviour for multi-night award stays
-      // is unconfirmed. Keep the original formula until verified.
+      // Award points cost comes from rewardNights.pointsOnly.averageDailyPoints (per-night average).
+      const awardPrice = offer.rewardNights?.pointsOnly?.averageDailyPoints ?? null;
+      if (!awardPrice) continue;
       result.push({
         roomId,
         roomName,
@@ -207,7 +225,7 @@ export function parseIhgRates(data: IhgResponse, numNights = 1): RoomRate[] {
         ratePlanName,
         cashPrice: null,
         cashCurrency: currency,
-        awardPrice: Math.round(totalAmount * 100),
+        awardPrice,
         isRefundable: true,
         isCorporate: false,
       });

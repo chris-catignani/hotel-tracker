@@ -34,6 +34,18 @@ async function main() {
         startDate: checkIn,
         endDate: checkOut,
         hotelMnemonics: [hotelCode],
+        rates: {
+          ratePlanCodes: [
+            { internal: "IGCOR" },
+            { internal: "IDAP2" },
+            { internal: "IVAN1" },
+            { internal: "IVAN3" },
+            { internal: "IVAN5" },
+            { internal: "IVAN6" },
+            { internal: "IVAN7" },
+            { internal: "IVANI" },
+          ],
+        },
         products: [
           {
             productCode: "SR",
