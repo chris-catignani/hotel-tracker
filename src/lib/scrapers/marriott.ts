@@ -12,7 +12,8 @@
  * Rate parsing strategy:
  * - StandardRates → refundable cash rates
  * - Prepay → non-refundable cash rates
- * - Packages → excluded (bundled extras make direct price comparison misleading)
+ * - Packages → included as refundable; often the cheapest available rate (e.g. loyalty
+ *   packages, breakfast bundles). Users can evaluate the included extras themselves.
  * - Points rates (HotelRoomRateModesPoints) → award prices; require an
  *   authenticated Bonvoy session so they won't appear for unauthenticated fetches.
  *
@@ -36,8 +37,8 @@ const RATE_FETCH_TIMEOUT_MS = 45000;
 // Resolve this many ms after the last rate response arrives (handles 1 or 2 calls)
 const SETTLE_AFTER_LAST_RESPONSE_MS = 3000;
 
-// Rate categories to include in output (Packages excluded)
-const INCLUDED_CATEGORIES = new Set(["StandardRates", "Prepay"]);
+// Rate categories to include in output
+const INCLUDED_CATEGORIES = new Set(["StandardRates", "Prepay", "Packages"]);
 
 // ------- API response types -------
 
@@ -231,7 +232,6 @@ export function parseMarriottRates(responses: MarriottSearchResponse[]): RoomRat
       const node = edge.node;
       const categoryCode = node.availabilityAttributes.productRateCategory.typeCode;
 
-      // Skip Packages — bundled extras distort direct price comparison
       if (!INCLUDED_CATEGORIES.has(categoryCode)) continue;
 
       const roomId = node.basicInformation.type;

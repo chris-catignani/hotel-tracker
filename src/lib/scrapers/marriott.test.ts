@@ -152,21 +152,29 @@ describe("parseMarriottRates", () => {
     });
   });
 
-  it("excludes Packages category", () => {
+  it("parses a Packages rate as refundable", () => {
     const rates = parseMarriottRates([
       makeResponse([
         makeEdge(
-          "city",
-          "Skyline View Room",
-          "ECPZ",
-          "FREE UPGRADE to CITYVIEW",
+          "quen",
+          "Moxy Deluxe",
+          "ARWA",
+          "Stay Elite ®Every Stay Counts",
           "Packages",
-          15900
+          20881,
+          "MYR"
         ),
       ]),
     ]);
 
-    expect(rates).toHaveLength(0);
+    expect(rates).toHaveLength(1);
+    expect(rates[0]).toMatchObject({
+      ratePlanCode: "ARWA",
+      ratePlanName: "Stay Elite ®Every Stay Counts",
+      cashPrice: 208.81,
+      cashCurrency: "MYR",
+      isRefundable: true,
+    });
   });
 
   it("correctly applies decimalPoint to convert amount", () => {
@@ -294,7 +302,7 @@ describe("parseMarriottRates", () => {
   it("uses the fixture file without throwing", async () => {
     const { default: fixture } = await import("./__fixtures__/marriott-sample-response.json");
     const rates = parseMarriottRates([fixture]);
-    // Fixture has 2 StandardRates + 2 Prepay + 2 Packages; Packages are excluded → 4 rates
+    // Fixture has 2 StandardRates + 2 Prepay + 2 Packages; all included → 6 rates
     expect(rates.length).toBeGreaterThan(0);
     expect(rates.every((r) => r.isCorporate === false)).toBe(true);
   });
