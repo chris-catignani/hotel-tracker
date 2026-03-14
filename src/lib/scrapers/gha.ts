@@ -200,8 +200,9 @@ export class GhaFetcher implements PriceFetcher {
  * Exported for unit testing.
  * Parses room rates from a GHA OSCP rates API response.
  */
-export function parseGhaRates(data: GhaRatesResponse, numNights = 1): RoomRate[] {
-  const rooms = data.rooms ?? [];
+export function parseGhaRates(data: unknown, numNights = 1): RoomRate[] {
+  const response = data as GhaRatesResponse;
+  const rooms = response.rooms ?? [];
 
   // GHA sometimes returns multiple roomCodes with the same roomName (e.g. SSK and SST both
   // named "Studio Suite"). Deduplicate by roomName|rateCode, keeping the cheaper price.

@@ -282,7 +282,7 @@ export function parseHyattRates(data: HyattRatesResponse): RoomRate[] {
       cashPrice: null,
       cashCurrency: currency,
       awardPrice: points,
-      isRefundable: true,
+      isRefundable: "REFUNDABLE",
       isCorporate: false,
     });
   }

@@ -167,8 +167,9 @@ export class IhgFetcher implements PriceFetcher {
  * Exported for unit testing.
  * Parses room rates from an IHG availability API response.
  */
-export function parseIhgRates(data: IhgResponse, numNights = 1): RoomRate[] {
-  const hotel = data.hotels?.[0];
+export function parseIhgRates(data: unknown, numNights = 1): RoomRate[] {
+  const response = data as IhgResponse;
+  const hotel = response.hotels?.[0];
   if (!hotel) return [];
 
   const currency = hotel.propertyCurrency ?? "USD";
