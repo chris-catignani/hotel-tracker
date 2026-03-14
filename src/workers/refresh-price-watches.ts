@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
-// Mirror Next.js load order: .env.local overrides .env
-dotenv.config({ path: ".env.local" });
+// Load .env first, then override with .env.local to mirror Next.js behavior.
 dotenv.config();
+dotenv.config({ path: ".env.local", override: true });
 
 import * as Sentry from "@sentry/node";
 
