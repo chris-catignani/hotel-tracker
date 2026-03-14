@@ -362,16 +362,16 @@ export function BookingPriceWatch({
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="w-full justify-between h-7 text-xs px-2"
+                          className="w-full justify-start h-7 text-xs px-2 gap-1"
                           onClick={() => setShowRooms((v) => !v)}
                           data-testid="toggle-room-rates"
                         >
-                          All room rates ({roomGroups.length} room types)
                           {showRooms ? (
                             <ChevronUp className="h-3 w-3" />
                           ) : (
                             <ChevronDown className="h-3 w-3" />
                           )}
+                          All room rates ({roomGroups.length} room types)
                         </Button>
                         {showRooms && (
                           <div className="mt-2 overflow-x-auto">
