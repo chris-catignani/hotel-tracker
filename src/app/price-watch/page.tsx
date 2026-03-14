@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { extractApiError } from "@/lib/client-error";
+import { HOTEL_ID } from "@/lib/constants";
 
 interface PriceSnapshot {
   lowestRefundableCashPrice: string | number | null;
@@ -52,6 +53,7 @@ interface PriceWatch {
     id: string;
     name: string;
     chainPropertyId: string | null;
+    hotelChainId: string | null;
     countryCode: string | null;
     city: string | null;
   };
@@ -59,8 +61,25 @@ interface PriceWatch {
   snapshots: PriceSnapshot[];
 }
 
-function SpiritCodeEditor({
+function chainPropertyIdLabel(hotelChainId: string | null): string {
+  if (hotelChainId === HOTEL_ID.HYATT) return "Spirit Code";
+  if (hotelChainId === HOTEL_ID.MARRIOTT) return "MARSHA Code";
+  if (hotelChainId === HOTEL_ID.IHG) return "Hotel Code";
+  if (hotelChainId === HOTEL_ID.GHA_DISCOVERY) return "Hotel ID";
+  return "Chain Property ID";
+}
+
+function chainPropertyIdPlaceholder(hotelChainId: string | null): string {
+  if (hotelChainId === HOTEL_ID.HYATT) return "e.g. chiph";
+  if (hotelChainId === HOTEL_ID.MARRIOTT) return "e.g. CHIWS";
+  if (hotelChainId === HOTEL_ID.IHG) return "e.g. KULKL";
+  if (hotelChainId === HOTEL_ID.GHA_DISCOVERY) return "e.g. 23084";
+  return "e.g. ABC123";
+}
+
+function ChainPropertyIdEditor({
   propertyId,
+  hotelChainId,
   chainPropertyId,
   isEditing,
   editingValue,
@@ -72,6 +91,7 @@ function SpiritCodeEditor({
   className,
 }: {
   propertyId: string;
+  hotelChainId: string | null;
   chainPropertyId: string | null;
   isEditing: boolean;
   editingValue: string;
@@ -88,7 +108,7 @@ function SpiritCodeEditor({
         <Input
           value={editingValue}
           onChange={(e) => onValueChange(e.target.value)}
-          placeholder="e.g. chiph"
+          placeholder={chainPropertyIdPlaceholder(hotelChainId)}
           className="h-7 text-xs w-28"
           data-testid={`spirit-code-input-${propertyId}`}
           onKeyDown={(e) => {
@@ -122,7 +142,7 @@ function SpiritCodeEditor({
         <span className="text-xs text-muted-foreground font-mono">{chainPropertyId}</span>
       ) : (
         <Badge variant="outline" className="text-xs text-amber-600 border-amber-300">
-          Spirit code needed
+          {chainPropertyIdLabel(hotelChainId)} needed
         </Badge>
       )}
       <Button
@@ -328,8 +348,9 @@ export default function PriceWatchPage() {
                       <p className="text-xs text-muted-foreground">No price data yet</p>
                     )}
 
-                    <SpiritCodeEditor
+                    <ChainPropertyIdEditor
                       propertyId={watch.property.id}
+                      hotelChainId={watch.property.hotelChainId}
                       chainPropertyId={watch.property.chainPropertyId}
                       isEditing={editingPropertyId === watch.property.id}
                       editingValue={editingValue}
@@ -389,8 +410,9 @@ export default function PriceWatchPage() {
                             .filter(Boolean)
                             .join(", ")}
                         </div>
-                        <SpiritCodeEditor
+                        <ChainPropertyIdEditor
                           propertyId={watch.property.id}
+                          hotelChainId={watch.property.hotelChainId}
                           chainPropertyId={watch.property.chainPropertyId}
                           isEditing={editingPropertyId === watch.property.id}
                           editingValue={editingValue}

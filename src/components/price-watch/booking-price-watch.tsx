@@ -37,7 +37,7 @@ interface PriceSnapshotRoom {
   cashPrice: string | number | null;
   cashCurrency: string;
   awardPrice: number | null;
-  isRefundable: boolean;
+  isRefundable: "REFUNDABLE" | "NON_REFUNDABLE" | "UNKNOWN";
   isCorporate: boolean;
 }
 
@@ -69,6 +69,7 @@ type SortDirection = "asc" | "desc";
 interface BookingPriceWatchProps {
   bookingId: string;
   propertyId: string;
+  propertyName: string;
   hotelChainId: string;
   checkIn: string;
   checkOut: string;
@@ -78,7 +79,13 @@ interface BookingPriceWatchProps {
   initialWatchBooking: PriceWatchBookingData | null;
 }
 
-function ChainPropertyIdHint({ hotelChainId }: { hotelChainId: string }) {
+function ChainPropertyIdHint({
+  hotelChainId,
+  propertyName,
+}: {
+  hotelChainId: string;
+  propertyName: string;
+}) {
   let content: React.ReactNode;
 
   if (hotelChainId === HOTEL_ID.HYATT) {
@@ -105,6 +112,14 @@ function ChainPropertyIdHint({ hotelChainId }: { hotelChainId: string }) {
         on this property.
       </>
     );
+  } else if (hotelChainId === HOTEL_ID.GHA_DISCOVERY) {
+    content = (
+      <>
+        <strong>GHA Hotel ID needed</strong> — run{" "}
+        <code>npx tsx scripts/debug-gha.ts &quot;{propertyName}&quot;</code> to find the numeric
+        Hotel ID (objectId) and ask your admin to set it on this property.
+      </>
+    );
   } else {
     content = (
       <>
@@ -124,6 +139,7 @@ function ChainPropertyIdHint({ hotelChainId }: { hotelChainId: string }) {
 export function BookingPriceWatch({
   bookingId,
   propertyId,
+  propertyName,
   hotelChainId,
   checkIn,
   checkOut,
@@ -286,7 +302,7 @@ export function BookingPriceWatch({
           <>
             {/* Chain property ID hint */}
             {watch && !watch.property.chainPropertyId && (
-              <ChainPropertyIdHint hotelChainId={hotelChainId} />
+              <ChainPropertyIdHint hotelChainId={hotelChainId} propertyName={propertyName} />
             )}
 
             {/* Alert thresholds */}
@@ -356,16 +372,17 @@ export function BookingPriceWatch({
 
                 {(latestSnapshot.rooms?.length ?? 0) > 0 &&
                   (() => {
-                    // Group rooms by roomId
+                    // Group rooms by roomName (a chain may return multiple roomIds for the same room type)
                     const groups = latestSnapshot.rooms.reduce<
                       Record<
                         string,
                         { roomId: string; roomName: string; rates: PriceSnapshotRoom[] }
                       >
                     >((acc, r) => {
-                      if (!acc[r.roomId])
-                        acc[r.roomId] = { roomId: r.roomId, roomName: r.roomName, rates: [] };
-                      acc[r.roomId].rates.push(r);
+                      const key = r.roomName;
+                      if (!acc[key])
+                        acc[key] = { roomId: r.roomId, roomName: r.roomName, rates: [] };
+                      acc[key].rates.push(r);
                       return acc;
                     }, {});
                     const roomGroups = Object.values(groups).sort((a, b) => {
@@ -378,7 +395,9 @@ export function BookingPriceWatch({
                           rates: PriceSnapshotRoom[]
                         ): number | null => {
                           const prices = rates
-                            .filter((r) => r.cashPrice != null && r.isRefundable)
+                            .filter(
+                              (r) => r.cashPrice != null && r.isRefundable !== "NON_REFUNDABLE"
+                            )
                             .map((r) => Number(r.cashPrice));
                           return prices.length > 0 ? Math.min(...prices) : null;
                         };
@@ -447,7 +466,7 @@ export function BookingPriceWatch({
                                     .sort((a, b) => Number(a.cashPrice) - Number(b.cashPrice));
                                   const awardRate = rates.find((r) => r.awardPrice != null);
                                   const lowestRefundable = cashRates
-                                    .filter((r) => r.isRefundable)
+                                    .filter((r) => r.isRefundable !== "NON_REFUNDABLE")
                                     .reduce<PriceSnapshotRoom | null>(
                                       (best, r) =>
                                         best === null ||
@@ -515,14 +534,15 @@ export function BookingPriceWatch({
                                                   Corp
                                                 </Badge>
                                               )}
-                                              {r.isRefundable ? (
+                                              {r.isRefundable === "REFUNDABLE" && (
                                                 <Badge
                                                   variant="outline"
                                                   className="hidden sm:inline-flex ml-1 text-[10px] px-1 py-0 border-green-300 text-green-700"
                                                 >
                                                   Refundable
                                                 </Badge>
-                                              ) : (
+                                              )}
+                                              {r.isRefundable === "NON_REFUNDABLE" && (
                                                 <Badge
                                                   variant="outline"
                                                   className="hidden sm:inline-flex ml-1 text-[10px] px-1 py-0 border-orange-300 text-orange-700"
@@ -533,12 +553,16 @@ export function BookingPriceWatch({
                                             </TableCell>
                                             <TableCell className="text-xs py-1 text-right">
                                               <span className="flex items-center justify-end gap-1">
-                                                <span
-                                                  className={`sm:hidden w-2 h-2 rounded-full flex-shrink-0 ${r.isRefundable ? "bg-green-500" : "bg-orange-500"}`}
-                                                  title={
-                                                    r.isRefundable ? "Refundable" : "Non-refundable"
-                                                  }
-                                                />
+                                                {r.isRefundable !== "UNKNOWN" && (
+                                                  <span
+                                                    className={`sm:hidden w-2 h-2 rounded-full flex-shrink-0 ${r.isRefundable === "REFUNDABLE" ? "bg-green-500" : "bg-orange-500"}`}
+                                                    title={
+                                                      r.isRefundable === "REFUNDABLE"
+                                                        ? "Refundable"
+                                                        : "Non-refundable"
+                                                    }
+                                                  />
+                                                )}
                                                 {formatCurrency(
                                                   Number(r.cashPrice),
                                                   r.cashCurrency,

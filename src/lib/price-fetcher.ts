@@ -14,7 +14,7 @@ export interface RoomRate {
   cashPrice: number | null; // null for pure award rates
   cashCurrency: string; // ISO currency code (e.g. "USD")
   awardPrice: number | null; // integer points; null for cash-only rates
-  isRefundable: boolean;
+  isRefundable: "REFUNDABLE" | "NON_REFUNDABLE" | "UNKNOWN";
   isCorporate: boolean;
 }
 
@@ -55,7 +55,11 @@ export function selectFetcher(
   return fetchers.find((f) => f.canFetch(property)) ?? null;
 }
 
-/** Derives the lowest refundable cash price and currency from a set of room rates. */
+/**
+ * Derives the lowest refundable cash price and currency from a set of room rates.
+ * UNKNOWN rates are included — omitting them would produce a misleading "—" for
+ * chains like GHA where refundability data is simply not available from the API.
+ */
 export function lowestRefundableCash(rates: RoomRate[]): {
   price: number | null;
   currency: string;
@@ -63,7 +67,7 @@ export function lowestRefundableCash(rates: RoomRate[]): {
   let price: number | null = null;
   let currency = "USD";
   for (const r of rates) {
-    if (r.isRefundable && r.cashPrice !== null) {
+    if (r.isRefundable !== "NON_REFUNDABLE" && r.cashPrice !== null) {
       if (price === null || r.cashPrice < price) {
         price = r.cashPrice;
         currency = r.cashCurrency;

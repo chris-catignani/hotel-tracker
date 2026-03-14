@@ -219,7 +219,7 @@ export class MarriottFetcher implements PriceFetcher {
  * Exported for unit testing.
  * Merges + deduplicates rates from multiple PhoenixBookDTTSearchProductsByProperty responses.
  */
-export function parseMarriottRates(responses: MarriottSearchResponse[]): RoomRate[] {
+export function parseMarriottRates(responses: unknown[]): RoomRate[] {
   // Dedup key: roomName|ratePlanName
   // - roomName instead of roomId: Marriott assigns multiple physical inventory IDs
   //   (e.g. d000000038–d000000041) to the same room type. Using the display name
@@ -230,7 +230,8 @@ export function parseMarriottRates(responses: MarriottSearchResponse[]): RoomRat
   const seen = new Set<string>(); // roomName|ratePlanName
   const result: RoomRate[] = [];
 
-  for (const resp of responses) {
+  for (const respRaw of responses) {
+    const resp = respRaw as MarriottSearchResponse;
     const edges = resp.data?.commerce?.product?.searchProductsByProperty?.edges ?? [];
 
     for (const edge of edges) {
@@ -243,7 +244,8 @@ export function parseMarriottRates(responses: MarriottSearchResponse[]): RoomRat
       const roomName = node.basicInformation.name;
       const ratePlanCode = node.basicInformation.ratePlan?.[0]?.ratePlanCode ?? "STANDARD";
       const ratePlanName = node.rates.name;
-      const isRefundable = categoryCode !== "Prepay";
+      const isRefundable: "REFUNDABLE" | "NON_REFUNDABLE" =
+        categoryCode !== "Prepay" ? "REFUNDABLE" : "NON_REFUNDABLE";
       const rateMode = node.rates.rateModes;
 
       const dedupeKey = `${roomName}|${ratePlanName}`;
@@ -278,7 +280,7 @@ export function parseMarriottRates(responses: MarriottSearchResponse[]): RoomRat
           cashPrice: null,
           cashCurrency: "USD",
           awardPrice: pts,
-          isRefundable: true,
+          isRefundable: "REFUNDABLE",
           isCorporate: false,
         });
       }

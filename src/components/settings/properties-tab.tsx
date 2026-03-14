@@ -17,9 +17,18 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Building2, Loader2 } from "lucide-react";
 import { extractApiError } from "@/lib/client-error";
 import type { Property } from "@/lib/types";
+import { HOTEL_ID } from "@/lib/constants";
 
 interface PropertyWithChain extends Property {
   hotelChain?: { name: string } | null;
+}
+
+function chainPropertyIdPlaceholder(hotelChainId: string | null | undefined): string {
+  if (hotelChainId === HOTEL_ID.HYATT) return "e.g. chiph";
+  if (hotelChainId === HOTEL_ID.MARRIOTT) return "e.g. CHIWS";
+  if (hotelChainId === HOTEL_ID.IHG) return "e.g. KULKL";
+  if (hotelChainId === HOTEL_ID.GHA_DISCOVERY) return "e.g. 23084";
+  return "e.g. ABC123";
 }
 
 export function PropertiesTab() {
@@ -66,7 +75,7 @@ export function PropertiesTab() {
       const updated: PropertyWithChain = await res.json();
       setProperties((prev) => prev.map((p) => (p.id === property.id ? { ...p, ...updated } : p)));
     } else {
-      setError(await extractApiError(res, "Failed to save spirit code."));
+      setError(await extractApiError(res, "Failed to save chain property ID."));
     }
     setSaving((s) => ({ ...s, [property.id]: false }));
   };
@@ -85,13 +94,15 @@ export function PropertiesTab() {
       <div>
         <h2 className="text-lg font-semibold">Properties</h2>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Set the chain-specific scraper ID for each property. For Hyatt, this is the{" "}
-          <strong>spirit code</strong> — the 5-character code at the end of the property&apos;s
-          Hyatt URL (e.g.{" "}
-          <code className="text-xs bg-muted px-1 rounded">
-            hyatt.com/.../park-hyatt-chicago/chiph
-          </code>{" "}
-          → <code className="text-xs bg-muted px-1 rounded">chiph</code>).
+          Set the chain-specific scraper ID for each property. Examples: Hyatt{" "}
+          <strong>spirit code</strong> (e.g.{" "}
+          <code className="text-xs bg-muted px-1 rounded">chiph</code>), Marriott{" "}
+          <strong>MARSHA code</strong> (e.g.{" "}
+          <code className="text-xs bg-muted px-1 rounded">CHIWS</code>), IHG{" "}
+          <strong>hotel code</strong> (e.g.{" "}
+          <code className="text-xs bg-muted px-1 rounded">KULKL</code>), GHA{" "}
+          <strong>hotel ID</strong> (e.g.{" "}
+          <code className="text-xs bg-muted px-1 rounded">23084</code>).
         </p>
       </div>
 
@@ -121,12 +132,12 @@ export function PropertiesTab() {
                   </div>
                   <div className="flex gap-2">
                     <Input
-                      placeholder="spirit code (e.g. CHIPH)"
+                      placeholder={chainPropertyIdPlaceholder(property.hotelChainId)}
                       value={edits[property.id] ?? ""}
                       onChange={(e) =>
                         setEdits((prev) => ({
                           ...prev,
-                          [property.id]: e.target.value.toUpperCase(),
+                          [property.id]: e.target.value,
                         }))
                       }
                       className="h-8 text-sm font-mono"
@@ -156,7 +167,7 @@ export function PropertiesTab() {
                   <TableHead>Property</TableHead>
                   <TableHead>Chain</TableHead>
                   <TableHead>Location</TableHead>
-                  <TableHead>Spirit Code / Chain ID</TableHead>
+                  <TableHead>Chain Property ID</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
@@ -177,12 +188,12 @@ export function PropertiesTab() {
                     </TableCell>
                     <TableCell>
                       <Input
-                        placeholder="e.g. CHIPH"
+                        placeholder={chainPropertyIdPlaceholder(property.hotelChainId)}
                         value={edits[property.id] ?? ""}
                         onChange={(e) =>
                           setEdits((prev) => ({
                             ...prev,
-                            [property.id]: e.target.value.toUpperCase(),
+                            [property.id]: e.target.value,
                           }))
                         }
                         className="h-8 text-sm font-mono w-36"

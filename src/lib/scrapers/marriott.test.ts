@@ -132,7 +132,7 @@ describe("parseMarriottRates", () => {
       cashPrice: 159,
       cashCurrency: "USD",
       awardPrice: null,
-      isRefundable: true,
+      isRefundable: "REFUNDABLE",
       isCorporate: false,
     });
   });
@@ -148,7 +148,7 @@ describe("parseMarriottRates", () => {
     expect(rates[0]).toMatchObject({
       ratePlanCode: "AP0J",
       cashPrice: 136,
-      isRefundable: false,
+      isRefundable: "NON_REFUNDABLE",
     });
   });
 
@@ -173,7 +173,7 @@ describe("parseMarriottRates", () => {
       ratePlanName: "Stay Elite ®Every Stay Counts",
       cashPrice: 208.81,
       cashCurrency: "MYR",
-      isRefundable: true,
+      isRefundable: "REFUNDABLE",
     });
   });
 
@@ -197,7 +197,7 @@ describe("parseMarriottRates", () => {
       roomId: "King Room",
       cashPrice: null,
       awardPrice: 30000,
-      isRefundable: true,
+      isRefundable: "REFUNDABLE",
       isCorporate: false,
     });
   });

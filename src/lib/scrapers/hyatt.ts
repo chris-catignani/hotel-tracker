@@ -107,7 +107,7 @@ export class HyattFetcher implements PriceFetcher {
         cashPrice: null,
         cashCurrency: currency,
         awardPrice: points,
-        isRefundable: true,
+        isRefundable: "REFUNDABLE",
         isCorporate: false,
       });
     }
@@ -216,7 +216,7 @@ export function parseCashRates(data: HyattRatesResponse): RoomRate[] {
             cashPrice: plan.rate,
             cashCurrency: plan.currencyCode ?? currency,
             awardPrice: null,
-            isRefundable: !isNonRefundable,
+            isRefundable: isNonRefundable ? "NON_REFUNDABLE" : "REFUNDABLE",
             isCorporate: false,
           });
         }
@@ -233,7 +233,7 @@ export function parseCashRates(data: HyattRatesResponse): RoomRate[] {
           cashPrice: summaryPrice,
           cashCurrency: currency,
           awardPrice: null,
-          isRefundable: true,
+          isRefundable: "REFUNDABLE",
           isCorporate: false,
         });
       }
@@ -282,7 +282,7 @@ export function parseHyattRates(data: HyattRatesResponse): RoomRate[] {
       cashPrice: null,
       cashCurrency: currency,
       awardPrice: points,
-      isRefundable: true,
+      isRefundable: "REFUNDABLE",
       isCorporate: false,
     });
   }

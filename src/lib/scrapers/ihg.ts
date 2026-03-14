@@ -167,8 +167,9 @@ export class IhgFetcher implements PriceFetcher {
  * Exported for unit testing.
  * Parses room rates from an IHG availability API response.
  */
-export function parseIhgRates(data: IhgResponse, numNights = 1): RoomRate[] {
-  const hotel = data.hotels?.[0];
+export function parseIhgRates(data: unknown, numNights = 1): RoomRate[] {
+  const response = data as IhgResponse;
+  const hotel = response.hotels?.[0];
   if (!hotel) return [];
 
   const currency = hotel.propertyCurrency ?? "USD";
@@ -222,7 +223,7 @@ export function parseIhgRates(data: IhgResponse, numNights = 1): RoomRate[] {
         cashPrice: null,
         cashCurrency: currency,
         awardPrice,
-        isRefundable: true,
+        isRefundable: "REFUNDABLE",
         isCorporate: false,
       });
     } else {
@@ -230,6 +231,7 @@ export function parseIhgRates(data: IhgResponse, numNights = 1): RoomRate[] {
       // Treat all non-award offers as cash rates.
       // IHG uses many regional/property-specific codes; rely on the API's
       // isRefundable flag rather than an allowlist of known codes.
+      const ihgRefundable = offer.policies?.isRefundable;
       result.push({
         roomId,
         roomName,
@@ -238,7 +240,12 @@ export function parseIhgRates(data: IhgResponse, numNights = 1): RoomRate[] {
         cashPrice: totalAmount / Math.max(numNights, 1),
         cashCurrency: currency,
         awardPrice: null,
-        isRefundable: offer.policies?.isRefundable ?? true,
+        isRefundable:
+          ihgRefundable === true
+            ? "REFUNDABLE"
+            : ihgRefundable === false
+              ? "NON_REFUNDABLE"
+              : "UNKNOWN",
         isCorporate: false,
       });
     }
