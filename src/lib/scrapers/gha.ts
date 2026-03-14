@@ -202,7 +202,10 @@ export class GhaFetcher implements PriceFetcher {
  */
 export function parseGhaRates(data: GhaRatesResponse, numNights = 1): RoomRate[] {
   const rooms = data.rooms ?? [];
-  const result: RoomRate[] = [];
+
+  // GHA sometimes returns multiple roomCodes with the same roomName (e.g. SSK and SST both
+  // named "Studio Suite"). Deduplicate by roomName|rateCode, keeping the cheaper price.
+  const seen = new Map<string, RoomRate>();
 
   for (const room of rooms) {
     if (!room.roomCode || !room.roomName) continue;
@@ -211,12 +214,17 @@ export function parseGhaRates(data: GhaRatesResponse, numNights = 1): RoomRate[]
       if (!rate.rateCode || !rate.currency) continue;
       if (!isFinite(rate.price) || rate.price <= 0) continue;
 
-      result.push({
+      const key = `${room.roomName}|${rate.rateCode}`;
+      const cashPrice = rate.price / Math.max(numNights, 1);
+      const existing = seen.get(key);
+      if (existing && Number(existing.cashPrice) <= cashPrice) continue;
+
+      seen.set(key, {
         roomId: room.roomCode,
         roomName: room.roomName,
         ratePlanCode: rate.rateCode,
         ratePlanName: rate.rateName,
-        cashPrice: rate.price / Math.max(numNights, 1),
+        cashPrice,
         cashCurrency: rate.currency,
         awardPrice: null, // GHA uses D$ cashback, not point redemptions
         isRefundable: isRefundableRate(rate),
@@ -225,7 +233,7 @@ export function parseGhaRates(data: GhaRatesResponse, numNights = 1): RoomRate[]
     }
   }
 
-  return result;
+  return Array.from(seen.values());
 }
 
 /**

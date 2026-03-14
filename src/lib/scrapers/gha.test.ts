@@ -117,6 +117,23 @@ describe("parseGhaRates", () => {
     expect(rates[0].awardPrice).toBeNull();
   });
 
+  it("deduplicates rates with the same roomName and rateCode, keeping the cheaper price", () => {
+    const data = {
+      rooms: [
+        makeRoom("SSK", "Studio Suite", [
+          makeRate("IDDRRMBB", "DISCOVERY Flexible Rate", 500, "MYR"),
+        ]),
+        makeRoom("SST", "Studio Suite", [
+          makeRate("IDDRRMBB", "DISCOVERY Flexible Rate", 450, "MYR"),
+        ]),
+      ],
+    };
+    const rates = parseGhaRates(data);
+    expect(rates).toHaveLength(1);
+    expect(rates[0].cashPrice).toBe(450);
+    expect(rates[0].roomName).toBe("Studio Suite");
+  });
+
   it("divides total price by numNights to get per-night rate", () => {
     const data = {
       rooms: [
