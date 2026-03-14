@@ -71,7 +71,7 @@ const makeAwardOffer = (
 ) => ({
   ratePlanCode,
   productUses: [{ inventoryTypeCode }],
-  policies: { isRefundable: true },
+  policies: { isRefundable: "REFUNDABLE" },
   totalRate: { amountBeforeTax: "139.77" }, // cash-equivalent field; not used for points
   rewardNights: { pointsOnly: { averageDailyPoints } },
 });
@@ -102,7 +102,7 @@ describe("parseIhgRates", () => {
       cashPrice: 299,
       cashCurrency: "USD",
       awardPrice: null,
-      isRefundable: true,
+      isRefundable: "REFUNDABLE",
       isCorporate: false,
     });
   });
@@ -116,7 +116,7 @@ describe("parseIhgRates", () => {
       ratePlanCode: "IDAPF",
       ratePlanName: "Book Early and Save",
       cashPrice: 199,
-      isRefundable: false,
+      isRefundable: "NON_REFUNDABLE",
     });
   });
 
@@ -135,18 +135,18 @@ describe("parseIhgRates", () => {
       ratePlanCode: "IDMAF",
       ratePlanName: "IDMAF",
       cashPrice: 459.9,
-      isRefundable: false,
+      isRefundable: "NON_REFUNDABLE",
     });
   });
 
-  it("defaults isRefundable to true when policies field is missing", () => {
+  it("defaults isRefundable to UNKNOWN when policies field is missing", () => {
     const offer = {
       ratePlanCode: "IGCOR",
       productUses: [{ inventoryTypeCode: "KNGX" }],
       totalRate: { amountBeforeTax: "299.00" },
     };
     const rates = parseIhgRates(makeResponse([offer]));
-    expect(rates[0].isRefundable).toBe(true);
+    expect(rates[0].isRefundable).toBe("UNKNOWN");
   });
 
   it("parses an award rate (IVANI) — points from rewardNights.pointsOnly.averageDailyPoints", () => {
@@ -159,7 +159,7 @@ describe("parseIhgRates", () => {
       ratePlanName: "Reward Nights",
       cashPrice: null,
       awardPrice: 25000,
-      isRefundable: true,
+      isRefundable: "REFUNDABLE",
     });
   });
 

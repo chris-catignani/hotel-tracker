@@ -227,7 +227,7 @@ export function parseGhaRates(data: GhaRatesResponse, numNights = 1): RoomRate[]
         cashPrice,
         cashCurrency: rate.currency,
         awardPrice: null, // GHA uses D$ cashback, not point redemptions
-        isRefundable: null, // GHA API does not return cancellation policy data
+        isRefundable: "UNKNOWN", // GHA API does not return cancellation policy data
         isCorporate: false,
       });
     }

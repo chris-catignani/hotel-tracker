@@ -243,7 +243,8 @@ export function parseMarriottRates(responses: MarriottSearchResponse[]): RoomRat
       const roomName = node.basicInformation.name;
       const ratePlanCode = node.basicInformation.ratePlan?.[0]?.ratePlanCode ?? "STANDARD";
       const ratePlanName = node.rates.name;
-      const isRefundable = categoryCode !== "Prepay";
+      const isRefundable: "REFUNDABLE" | "NON_REFUNDABLE" =
+        categoryCode !== "Prepay" ? "REFUNDABLE" : "NON_REFUNDABLE";
       const rateMode = node.rates.rateModes;
 
       const dedupeKey = `${roomName}|${ratePlanName}`;
@@ -278,7 +279,7 @@ export function parseMarriottRates(responses: MarriottSearchResponse[]): RoomRat
           cashPrice: null,
           cashCurrency: "USD",
           awardPrice: pts,
-          isRefundable: true,
+          isRefundable: "REFUNDABLE",
           isCorporate: false,
         });
       }

@@ -16,7 +16,7 @@ const mockRoomsSortable = [
     cashPrice: 300,
     cashCurrency: "USD",
     awardPrice: null,
-    isRefundable: true,
+    isRefundable: "REFUNDABLE",
     isCorporate: false,
   },
   {
@@ -28,7 +28,7 @@ const mockRoomsSortable = [
     cashPrice: null,
     cashCurrency: "USD",
     awardPrice: 5000,
-    isRefundable: false,
+    isRefundable: "NON_REFUNDABLE",
     isCorporate: false,
   },
   {
@@ -40,7 +40,7 @@ const mockRoomsSortable = [
     cashPrice: 150,
     cashCurrency: "USD",
     awardPrice: null,
-    isRefundable: true,
+    isRefundable: "REFUNDABLE",
     isCorporate: false,
   },
   {
@@ -52,7 +52,7 @@ const mockRoomsSortable = [
     cashPrice: null,
     cashCurrency: "USD",
     awardPrice: 25000,
-    isRefundable: false,
+    isRefundable: "NON_REFUNDABLE",
     isCorporate: false,
   },
 ];
@@ -67,7 +67,7 @@ const mockRooms = [
     cashPrice: 250,
     cashCurrency: "USD",
     awardPrice: null,
-    isRefundable: true,
+    isRefundable: "REFUNDABLE",
     isCorporate: false,
   },
   {
@@ -79,7 +79,7 @@ const mockRooms = [
     cashPrice: 220,
     cashCurrency: "USD",
     awardPrice: null,
-    isRefundable: false,
+    isRefundable: "NON_REFUNDABLE",
     isCorporate: false,
   },
   {
@@ -91,7 +91,7 @@ const mockRooms = [
     cashPrice: null,
     cashCurrency: "USD",
     awardPrice: 12000,
-    isRefundable: false,
+    isRefundable: "NON_REFUNDABLE",
     isCorporate: false,
   },
   {
@@ -103,7 +103,7 @@ const mockRooms = [
     cashPrice: 280,
     cashCurrency: "USD",
     awardPrice: null,
-    isRefundable: true,
+    isRefundable: "REFUNDABLE",
     isCorporate: false,
   },
 ];

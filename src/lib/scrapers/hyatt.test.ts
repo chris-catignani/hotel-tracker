@@ -85,8 +85,8 @@ describe("parseCashRates", () => {
       },
     };
     const rates = parseCashRates(data);
-    expect(rates.find((r) => r.ratePlanCode === "AP")?.isRefundable).toBe(false);
-    expect(rates.find((r) => r.ratePlanCode === "STD")?.isRefundable).toBe(true);
+    expect(rates.find((r) => r.ratePlanCode === "AP")?.isRefundable).toBe("NON_REFUNDABLE");
+    expect(rates.find((r) => r.ratePlanCode === "STD")?.isRefundable).toBe("REFUNDABLE");
     const { price } = lowestRefundableCash(rates);
     expect(price).toBe(250);
   });

@@ -57,7 +57,7 @@ describe("parseGhaRates", () => {
     expect(parseGhaRates({ rooms: [] })).toEqual([]);
   });
 
-  it("sets isRefundable to null for all rates — GHA API provides no cancellation data", () => {
+  it("sets isRefundable to UNKNOWN for all rates — GHA API provides no cancellation data", () => {
     const data = {
       rooms: [
         makeRoom("D1D", "Superior Room", [
@@ -70,7 +70,7 @@ describe("parseGhaRates", () => {
       ],
     };
     const rates = parseGhaRates(data);
-    expect(rates.every((r) => r.isRefundable === null)).toBe(true);
+    expect(rates.every((r) => r.isRefundable === "UNKNOWN")).toBe(true);
   });
 
   it("award price is always null — GHA has no point redemptions", () => {
@@ -155,7 +155,7 @@ describe("parseGhaRates", () => {
     expect(rates.map((r) => r.roomId)).toEqual(["D1D", "D1D", "D1D", "C1D", "C1D"]);
   });
 
-  it("lowestRefundableCash includes GHA rates (isRefundable=null treated as not excluded)", () => {
+  it("lowestRefundableCash includes GHA rates (UNKNOWN treated as not excluded)", () => {
     const data = {
       rooms: [
         makeRoom("D1D", "Superior Room", [

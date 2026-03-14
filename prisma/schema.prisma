@@ -13,6 +13,12 @@ enum PointCategory {
   transferable
 }
 
+enum Refundability {
+  REFUNDABLE
+  NON_REFUNDABLE
+  UNKNOWN
+}
+
 enum UserRole {
   USER
   ADMIN
@@ -578,7 +584,7 @@ model PriceSnapshotRoom {
   cashPrice       Decimal?      @map("cash_price") @db.Decimal(10, 2)
   cashCurrency    String        @default("USD") @map("cash_currency")
   awardPrice      Int?          @map("award_price")
-  isRefundable    Boolean?      @map("is_refundable")
+  isRefundable    Refundability @default(UNKNOWN) @map("is_refundable")
   isCorporate     Boolean       @default(false) @map("is_corporate")
 
   @@index([priceSnapshotId])
