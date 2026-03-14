@@ -124,6 +124,7 @@ function ChainPropertyIdHint({ hotelChainId }: { hotelChainId: string }) {
 export function BookingPriceWatch({
   bookingId,
   propertyId,
+  hotelChainId,
   checkIn,
   checkOut,
   totalCost,

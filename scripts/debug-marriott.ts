@@ -26,7 +26,7 @@ function buildSearchUrl(marshaCode: string, checkIn: string, checkOut: string): 
     `https://www.marriott.com/reservation/availabilitySearch.mi` +
     `?propertyCode=${marshaCode}` +
     `&fromDate=${cm}/${cd}/${cy}&toDate=${om}/${od}/${oy}` +
-    `&numberOfGuests=1&numberOfRooms=1&useRewardsPoints=false`
+    `&numberOfGuests=1&numberOfRooms=1&useRewardsPoints=true`
   );
 }
 

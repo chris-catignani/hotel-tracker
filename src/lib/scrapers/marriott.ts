@@ -205,9 +205,7 @@ export class MarriottFetcher implements PriceFetcher {
     } finally {
       await context.close();
       try {
-        if (fs.existsSync(userDataDir)) {
-          fs.rmSync(userDataDir, { recursive: true, force: true });
-        }
+        fs.rmSync(userDataDir, { recursive: true, force: true });
       } catch {
         // ignore cleanup errors
       }
