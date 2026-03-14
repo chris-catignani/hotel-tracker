@@ -444,7 +444,10 @@ export function BookingPriceWatch({
                                             ? formatCurrency(
                                                 Number(lowestRefundable.cashPrice),
                                                 lowestRefundable.cashCurrency,
-                                                { maximumFractionDigits: 0 }
+                                                {
+                                                  minimumFractionDigits: 0,
+                                                  maximumFractionDigits: 0,
+                                                }
                                               )
                                             : "—"}
                                         </TableCell>
@@ -487,7 +490,10 @@ export function BookingPriceWatch({
                                                 {formatCurrency(
                                                   Number(r.cashPrice),
                                                   r.cashCurrency,
-                                                  { maximumFractionDigits: 0 }
+                                                  {
+                                                    minimumFractionDigits: 0,
+                                                    maximumFractionDigits: 0,
+                                                  }
                                                 )}
                                               </span>
                                             </TableCell>
