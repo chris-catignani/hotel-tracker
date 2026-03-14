@@ -133,9 +133,21 @@ export class IhgFetcher implements PriceFetcher {
     }
 
     const data = (await res.json()) as IhgResponse;
-    const rates = parseIhgRates(data);
+    const hotel = data.hotels?.[0];
+    const offerCount = hotel?.rateDetails?.offers?.length ?? 0;
+    const roomCount = hotel?.productDefinitions?.length ?? 0;
+    console.log(
+      `[IhgFetcher] Response for ${mnemonic}: ${roomCount} room types, ${offerCount} offers`
+    );
 
-    console.log(`[IhgFetcher] Got ${rates.length} rates for ${mnemonic}`);
+    const rates = parseIhgRates(data);
+    console.log(`[IhgFetcher] Parsed ${rates.length} rates for ${mnemonic}`);
+
+    if (rates.length === 0 && offerCount > 0) {
+      const codes = [...new Set(hotel?.rateDetails?.offers?.map((o) => o.ratePlanCode) ?? [])];
+      console.log(`[IhgFetcher] Rate plan codes in response: ${codes.join(", ")}`);
+    }
+
     return rates.length > 0 ? { rates, source: "ihg_api" } : null;
   }
 }
