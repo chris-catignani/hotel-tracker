@@ -34,7 +34,7 @@ const makeEdge = (
   roomName: string,
   ratePlanCode: string,
   ratePlanName: string,
-  categoryCode: "StandardRates" | "Prepay" | "Packages",
+  categoryCode: "StandardRates" | "Prepay" | "Packages" | "Redemption",
   amount: number,
   currency = "USD",
   decimalPoint = 2
@@ -75,7 +75,7 @@ const makeAwardEdge = (
       ratePlan: [{ ratePlanCode, ratePlanType: "12.RPT" }],
     },
     availabilityAttributes: {
-      productRateCategory: { typeCode: "StandardRates" as const },
+      productRateCategory: { typeCode: "Redemption" as const },
     },
     rates: {
       name: ratePlanName,
@@ -187,13 +187,14 @@ describe("parseMarriottRates", () => {
     expect(rates[0].cashPrice).toBe(250);
   });
 
-  it("parses award (points-only) rates", () => {
+  it("parses award (points-only) rates from Redemption category", () => {
     const rates = parseMarriottRates([
-      makeResponse([makeAwardEdge("king", "King Room", "BONV", "Bonvoy Award Rate", 30000)]),
+      makeResponse([makeAwardEdge("king", "King Room", "BONV", "Redemption with Points", 30000)]),
     ]);
 
     expect(rates).toHaveLength(1);
     expect(rates[0]).toMatchObject({
+      roomId: "King Room",
       cashPrice: null,
       awardPrice: 30000,
       isRefundable: true,

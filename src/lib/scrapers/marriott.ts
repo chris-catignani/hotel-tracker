@@ -14,8 +14,8 @@
  * - Prepay → non-refundable cash rates
  * - Packages → included as refundable; often the cheapest available rate (e.g. loyalty
  *   packages, breakfast bundles). Users can evaluate the included extras themselves.
- * - Points rates (HotelRoomRateModesPoints) → award prices; require an
- *   authenticated Bonvoy session so they won't appear for unauthenticated fetches.
+ * - Redemption (HotelRoomRateModesPoints) → award prices; only returned when
+ *   the search URL includes useRewardsPoints=true.
  *
  * Hotel ID format: MARSHA code — 5-character alphanumeric (e.g. "ATLMQ").
  * Visible in Marriott booking URLs: marriott.com/hotels/travel/atlmq-hotel-name/
@@ -38,7 +38,7 @@ const RATE_FETCH_TIMEOUT_MS = 45000;
 const SETTLE_AFTER_LAST_RESPONSE_MS = 3000;
 
 // Rate categories to include in output
-const INCLUDED_CATEGORIES = new Set(["StandardRates", "Prepay", "Packages"]);
+const INCLUDED_CATEGORIES = new Set(["StandardRates", "Prepay", "Packages", "Redemption"]);
 
 // ------- API response types -------
 
@@ -124,7 +124,7 @@ function buildSearchUrl(marshaCode: string, checkIn: string, checkOut: string): 
     `https://www.marriott.com/reservation/availabilitySearch.mi` +
     `?propertyCode=${marshaCode}` +
     `&fromDate=${fromDate}&toDate=${toDate}` +
-    `&numberOfGuests=1&numberOfRooms=1&useRewardsPoints=false`
+    `&numberOfGuests=1&numberOfRooms=1&useRewardsPoints=true`
   );
 }
 
