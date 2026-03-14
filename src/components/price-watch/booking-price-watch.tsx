@@ -391,9 +391,6 @@ export function BookingPriceWatch({
                                   >
                                     From (cash) <SortIcon col="cash" />
                                   </TableHead>
-                                  <TableHead className="text-xs hidden sm:table-cell">
-                                    Refundable
-                                  </TableHead>
                                   <TableHead
                                     className="text-xs text-right cursor-pointer select-none hover:text-foreground"
                                     onClick={() => handleSort("award")}
@@ -451,7 +448,6 @@ export function BookingPriceWatch({
                                               )
                                             : "—"}
                                         </TableCell>
-                                        <TableCell className="py-1.5 hidden sm:table-cell" />
                                         <TableCell className="text-xs py-1.5 text-right">
                                           {awardRate != null
                                             ? `${awardRate.awardPrice!.toLocaleString()} pts`
@@ -478,41 +474,27 @@ export function BookingPriceWatch({
                                                   Corp
                                                 </Badge>
                                               )}
-                                            </TableCell>
-                                            <TableCell className="text-xs py-1 text-right">
-                                              <span className="flex items-center justify-end gap-1">
-                                                <span
-                                                  className={`sm:hidden w-2 h-2 rounded-full flex-shrink-0 ${r.isRefundable ? "bg-green-500" : "bg-orange-500"}`}
-                                                  title={
-                                                    r.isRefundable ? "Refundable" : "Non-refundable"
-                                                  }
-                                                />
-                                                {formatCurrency(
-                                                  Number(r.cashPrice),
-                                                  r.cashCurrency,
-                                                  {
-                                                    minimumFractionDigits: 0,
-                                                    maximumFractionDigits: 0,
-                                                  }
-                                                )}
-                                              </span>
-                                            </TableCell>
-                                            <TableCell className="py-1 hidden sm:table-cell">
                                               {r.isRefundable ? (
                                                 <Badge
                                                   variant="outline"
-                                                  className="text-[10px] px-1 py-0 border-green-300 text-green-700"
+                                                  className="ml-1 text-[10px] px-1 py-0 border-green-300 text-green-700"
                                                 >
-                                                  Yes
+                                                  Refundable
                                                 </Badge>
                                               ) : (
                                                 <Badge
                                                   variant="outline"
-                                                  className="text-[10px] px-1 py-0 border-orange-300 text-orange-700"
+                                                  className="ml-1 text-[10px] px-1 py-0 border-orange-300 text-orange-700"
                                                 >
-                                                  No
+                                                  Non-refundable
                                                 </Badge>
                                               )}
+                                            </TableCell>
+                                            <TableCell className="text-xs py-1 text-right">
+                                              {formatCurrency(Number(r.cashPrice), r.cashCurrency, {
+                                                minimumFractionDigits: 0,
+                                                maximumFractionDigits: 0,
+                                              })}
                                             </TableCell>
                                             <TableCell className="py-1" />
                                           </TableRow>
@@ -529,7 +511,6 @@ export function BookingPriceWatch({
                                             {awardRate.ratePlanName}
                                           </TableCell>
                                           <TableCell className="py-1" />
-                                          <TableCell className="py-1 hidden sm:table-cell" />
                                           <TableCell className="text-xs py-1 text-right">
                                             {awardRate.awardPrice!.toLocaleString()} pts
                                           </TableCell>
