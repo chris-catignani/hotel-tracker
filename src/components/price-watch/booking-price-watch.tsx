@@ -330,7 +330,7 @@ export function BookingPriceWatch({
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
-                    <p className="text-xs text-muted-foreground">Lowest Cash (refundable)</p>
+                    <p className="text-xs text-muted-foreground">Lowest Cash (refundable/night)</p>
                     <p className="font-medium" data-testid="latest-cash-price">
                       {latestSnapshot.lowestRefundableCashPrice != null
                         ? formatCurrency(
@@ -341,7 +341,7 @@ export function BookingPriceWatch({
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Lowest Award</p>
+                    <p className="text-xs text-muted-foreground">Lowest Award (pts/night)</p>
                     <p className="font-medium" data-testid="latest-award-price">
                       {latestSnapshot.lowestAwardPrice != null
                         ? `${latestSnapshot.lowestAwardPrice.toLocaleString()} pts`
@@ -429,13 +429,13 @@ export function BookingPriceWatch({
                                     className="text-xs text-right cursor-pointer select-none hover:text-foreground"
                                     onClick={() => handleSort("cash")}
                                   >
-                                    From (cash) <SortIcon col="cash" />
+                                    From (cash/night) <SortIcon col="cash" />
                                   </TableHead>
                                   <TableHead
                                     className="text-xs text-right cursor-pointer select-none hover:text-foreground"
                                     onClick={() => handleSort("award")}
                                   >
-                                    Award <SortIcon col="award" />
+                                    Award (pts/night) <SortIcon col="award" />
                                   </TableHead>
                                 </TableRow>
                               </TableHeader>
