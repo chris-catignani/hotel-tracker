@@ -33,7 +33,7 @@ const IHG_API_KEY = process.env.IHG_API_KEY ?? "se9ym5iAzaW8pxfBjkmgbuGjJcr3Pj6Y
 
 // Award rate plan codes — these use points pricing (rewardNights.pointsOnly.averageDailyPoints).
 // These codes only appear when explicitly requested via rates.ratePlanCodes in the request body.
-const AWARD_RATE_CODE_LIST = ["IVAN1", "IVAN3", "IVAN5", "IVAN6", "IVAN7", "IVANI"] as const;
+const AWARD_RATE_CODE_LIST = ["IVAN1", "IVAN3", "IVAN5", "IVAN6", "IVAN7", "IVANI"];
 const AWARD_RATE_CODES = new Set(AWARD_RATE_CODE_LIST);
 
 // IHG API response types
