@@ -18,9 +18,8 @@
  * GHA Discovery Dollars (D$) are a cashback program, not a points redemption currency.
  * There are no award/points bookings — awardPrice is always null.
  *
- * Refundability heuristic: rates with "Flexible" in the name or the GHAPREF
- * member rate code are treated as refundable. All other rates (e.g. early-booker)
- * are treated as non-refundable.
+ * Refundability: The GHA rates API does not provide cancellation policy data.
+ * All rates are therefore marked with isRefundable: "UNKNOWN".
  */
 
 import { HOTEL_ID } from "@/lib/constants";

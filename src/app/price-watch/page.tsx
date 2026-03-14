@@ -77,7 +77,7 @@ function chainPropertyIdPlaceholder(hotelChainId: string | null): string {
   return "e.g. ABC123";
 }
 
-function SpiritCodeEditor({
+function ChainPropertyIdEditor({
   propertyId,
   hotelChainId,
   chainPropertyId,
@@ -348,7 +348,7 @@ export default function PriceWatchPage() {
                       <p className="text-xs text-muted-foreground">No price data yet</p>
                     )}
 
-                    <SpiritCodeEditor
+                    <ChainPropertyIdEditor
                       propertyId={watch.property.id}
                       hotelChainId={watch.property.hotelChainId}
                       chainPropertyId={watch.property.chainPropertyId}
@@ -410,7 +410,7 @@ export default function PriceWatchPage() {
                             .filter(Boolean)
                             .join(", ")}
                         </div>
-                        <SpiritCodeEditor
+                        <ChainPropertyIdEditor
                           propertyId={watch.property.id}
                           hotelChainId={watch.property.hotelChainId}
                           chainPropertyId={watch.property.chainPropertyId}
