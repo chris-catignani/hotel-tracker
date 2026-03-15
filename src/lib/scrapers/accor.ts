@@ -38,6 +38,67 @@ const ACCOR_BFF_URL = "https://api.accor.com/bff/v1/graphql";
 // Can be overridden via ACCOR_API_KEY env var.
 const ACCOR_API_KEY = process.env.ACCOR_API_KEY ?? "l7xx5b9f4a053aaf43d8bc05bcc266dd8532";
 
+// Maps ISO 3166-1 alpha-2 country codes to their primary currency.
+// Covers the major markets where Accor operates. Falls back to USD if unknown.
+const COUNTRY_CURRENCY: Record<string, string> = {
+  // Asia-Pacific
+  AU: "AUD",
+  NZ: "NZD",
+  JP: "JPY",
+  KR: "KRW",
+  CN: "CNY",
+  HK: "HKD",
+  TW: "TWD",
+  SG: "SGD",
+  MY: "MYR",
+  TH: "THB",
+  ID: "IDR",
+  PH: "PHP",
+  VN: "VND",
+  IN: "INR",
+  PK: "PKR",
+  BD: "BDT",
+  LK: "LKR",
+  // Europe
+  GB: "GBP",
+  CH: "CHF",
+  NO: "NOK",
+  SE: "SEK",
+  DK: "DKK",
+  PL: "PLN",
+  CZ: "CZK",
+  HU: "HUF",
+  RO: "RON",
+  TR: "TRY",
+  // Euro zone (representative selection)
+  FR: "EUR",
+  DE: "EUR",
+  IT: "EUR",
+  ES: "EUR",
+  PT: "EUR",
+  NL: "EUR",
+  BE: "EUR",
+  AT: "EUR",
+  GR: "EUR",
+  FI: "EUR",
+  IE: "EUR",
+  // Americas
+  US: "USD",
+  CA: "CAD",
+  MX: "MXN",
+  BR: "BRL",
+  // Middle East & Africa
+  AE: "AED",
+  SA: "SAR",
+  QA: "QAR",
+  KW: "KWD",
+  EG: "EGP",
+  ZA: "ZAR",
+  NG: "NGN",
+  // Israel
+  IL: "ILS",
+};
+
 const HOTEL_PAGE_HOT_QUERY = `
 query HotelPageHot(
   $hotelOffersHotelId: String!
@@ -144,8 +205,8 @@ export class AccorFetcher implements PriceFetcher {
           dateOut: params.checkOut,
           nbAdults: params.adults ?? 1,
           childrenAges: [],
-          countryMarket: "US",
-          currency: "USD",
+          countryMarket: params.property.countryCode ?? "US",
+          currency: COUNTRY_CURRENCY[params.property.countryCode ?? ""] ?? "USD",
         },
         query: HOTEL_PAGE_HOT_QUERY,
       }),

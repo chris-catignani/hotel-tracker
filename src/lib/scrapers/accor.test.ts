@@ -8,6 +8,7 @@ const makeProperty = (overrides = {}) => ({
   name: "Novotel Kuala Lumpur City Centre",
   hotelChainId: HOTEL_ID.ACCOR,
   chainPropertyId: "C3M1",
+  countryCode: "MY",
   ...overrides,
 });
 
