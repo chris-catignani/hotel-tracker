@@ -66,6 +66,7 @@ function chainPropertyIdLabel(hotelChainId: string | null): string {
   if (hotelChainId === HOTEL_ID.MARRIOTT) return "MARSHA Code";
   if (hotelChainId === HOTEL_ID.IHG) return "Hotel Code";
   if (hotelChainId === HOTEL_ID.GHA_DISCOVERY) return "Hotel ID";
+  if (hotelChainId === HOTEL_ID.ACCOR) return "Hotel ID";
   return "Chain Property ID";
 }
 
@@ -74,6 +75,7 @@ function chainPropertyIdPlaceholder(hotelChainId: string | null): string {
   if (hotelChainId === HOTEL_ID.MARRIOTT) return "e.g. CHIWS";
   if (hotelChainId === HOTEL_ID.IHG) return "e.g. KULKL";
   if (hotelChainId === HOTEL_ID.GHA_DISCOVERY) return "e.g. 23084";
+  if (hotelChainId === HOTEL_ID.ACCOR) return "e.g. C3M1";
   return "e.g. ABC123";
 }
 
