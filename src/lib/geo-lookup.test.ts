@@ -30,9 +30,11 @@ const GOOGLE_RESPONSE = {
 };
 
 const EXPECTED_RESULT: GeoResult = {
+  placeId: null,
   displayName: "Marriott Times Square",
   city: "New York",
   countryCode: "US",
+  address: null,
   latitude: 40.758,
   longitude: -73.9855,
 };

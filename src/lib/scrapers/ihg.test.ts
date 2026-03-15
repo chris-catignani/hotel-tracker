@@ -8,6 +8,7 @@ const makeProperty = (overrides = {}) => ({
   name: "InterContinental Chicago",
   hotelChainId: HOTEL_ID.IHG,
   chainPropertyId: "ORDHA",
+  countryCode: null as string | null,
   ...overrides,
 });
 

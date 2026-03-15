@@ -18,14 +18,14 @@ describe("getAuthenticatedUserId", () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "user-123", email: "test@example.com" },
       expires: "2099-01-01",
-    });
+    } as never);
 
     const result = await getAuthenticatedUserId();
     expect(result).toBe("user-123");
   });
 
   it("returns a NextResponse with status 401 when session is null", async () => {
-    vi.mocked(auth).mockResolvedValue(null);
+    vi.mocked(auth).mockResolvedValue(null as never);
 
     const result = await getAuthenticatedUserId();
     expect(result).toBeInstanceOf(NextResponse);
@@ -36,7 +36,7 @@ describe("getAuthenticatedUserId", () => {
     vi.mocked(auth).mockResolvedValue({
       user: { email: "test@example.com" },
       expires: "2099-01-01",
-    });
+    } as never);
 
     const result = await getAuthenticatedUserId();
     expect(result).toBeInstanceOf(NextResponse);
@@ -53,7 +53,7 @@ describe("requireAdmin", () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "user-123", email: "admin@example.com", role: UserRole.ADMIN },
       expires: "2099-01-01",
-    });
+    } as never);
 
     const result = await requireAdmin();
     expect(result).toBeUndefined();
@@ -63,7 +63,7 @@ describe("requireAdmin", () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "user-456", email: "user@example.com", role: UserRole.USER },
       expires: "2099-01-01",
-    });
+    } as never);
 
     const result = await requireAdmin();
     expect(result).toBeInstanceOf(NextResponse);
@@ -71,7 +71,7 @@ describe("requireAdmin", () => {
   });
 
   it("returns 403 when session is null", async () => {
-    vi.mocked(auth).mockResolvedValue(null);
+    vi.mocked(auth).mockResolvedValue(null as never);
 
     const result = await requireAdmin();
     expect(result).toBeInstanceOf(NextResponse);
