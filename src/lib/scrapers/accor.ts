@@ -137,8 +137,13 @@ query HotelPageHot(
     offersSelection {
       offers {
         id
+        type
         accommodation {
           name
+        }
+        mealPlan {
+          code
+          label
         }
         pricing {
           currency
@@ -166,8 +171,13 @@ interface AccorCancellationPolicy {
 
 interface AccorOffer {
   id: string;
+  type?: string; // "ROOM" or "PACKAGE"
   accommodation?: {
     name?: string;
+  };
+  mealPlan?: {
+    code?: string; // e.g. "EUROPEAN_PLAN", "BED_AND_BREAKFAST"
+    label?: string | null; // e.g. "Breakfast included"; null for EUROPEAN_PLAN
   };
   pricing?: {
     currency?: string;
@@ -248,15 +258,15 @@ export class AccorFetcher implements PriceFetcher {
  * Exported for unit testing.
  * Parses room rates from an Accor BFF GraphQL response.
  *
- * The API returns multiple offers for the same (roomName, cancellationCode) pair
- * at slightly different price points. We deduplicate by that key, keeping the
- * cheapest offer — matching the behaviour users see on the website (lowest price shown).
+ * Deduplicates by (roomName, type, mealPlanCode, cancellationCode), keeping the
+ * cheapest offer per unique combination. This preserves the meaningful distinctions
+ * users see on the website: room-only vs breakfast-included, and standard ROOM rates
+ * vs PACKAGE rates (which may have different terms).
  */
 export function parseAccorRates(data: unknown): RoomRate[] {
   const response = data as AccorResponse;
   const offers = response.data?.hotelOffers?.offersSelection?.offers ?? [];
 
-  // Deduplicate by (roomName, cancellationCode), keeping the cheapest price.
   const seen = new Map<string, RoomRate>();
 
   for (const offer of offers) {
@@ -269,17 +279,26 @@ export function parseAccorRates(data: unknown): RoomRate[] {
     const currency = offer.pricing?.currency ?? "USD";
     const cancellation = offer.pricing?.main?.simplifiedPolicies?.cancellation;
     const cancellationCode = cancellation?.code ?? "UNKNOWN";
-    const cancellationLabel = cancellation?.label ?? cancellationCode;
+    const offerType = offer.type ?? "ROOM";
+    const mealPlanCode = offer.mealPlan?.code ?? "EUROPEAN_PLAN";
 
-    const key = `${roomName}|${cancellationCode}`;
+    // Human-readable meal plan name: EUROPEAN_PLAN has a null label from the API.
+    const mealPlanLabel =
+      offer.mealPlan?.label ?? (mealPlanCode === "EUROPEAN_PLAN" ? "Room only" : mealPlanCode);
+
+    // ratePlanName combines offer type and meal plan so users can distinguish rates.
+    // PACKAGE rates have distinct terms (e.g. different cancellation deadlines, perks).
+    const ratePlanName = offerType === "PACKAGE" ? `Package – ${mealPlanLabel}` : mealPlanLabel;
+
+    const key = `${roomName}|${offerType}|${mealPlanCode}|${cancellationCode}`;
     const existing = seen.get(key);
     if (existing && Number(existing.cashPrice) <= amount) continue;
 
     seen.set(key, {
       roomId: roomName,
       roomName,
-      ratePlanCode: cancellationCode,
-      ratePlanName: cancellationLabel,
+      ratePlanCode: `${offerType}|${mealPlanCode}|${cancellationCode}`,
+      ratePlanName,
       cashPrice: amount,
       cashCurrency: currency,
       awardPrice: null, // Accor ALL is cashback, not points redemption
