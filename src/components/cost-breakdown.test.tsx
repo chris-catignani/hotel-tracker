@@ -1,4 +1,4 @@
-import { render, screen, act } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect } from "vitest";
 import { CostBreakdown } from "./cost-breakdown";
@@ -63,10 +63,8 @@ describe("CostBreakdown", () => {
     netCost: 80,
   };
 
-  it("should render all cost components correctly", async () => {
-    await act(async () => {
-      render(<CostBreakdown breakdown={mockBreakdown} />);
-    });
+  it("should render all cost components correctly", () => {
+    render(<CostBreakdown breakdown={mockBreakdown} />);
 
     expect(screen.getByText("Cash Cost")).toBeInTheDocument();
     expect(screen.getByText("$100.00")).toBeInTheDocument();
@@ -89,9 +87,7 @@ describe("CostBreakdown", () => {
 
   it("should toggle promotion details", async () => {
     const user = userEvent.setup();
-    await act(async () => {
-      render(<CostBreakdown breakdown={mockBreakdown} />);
-    });
+    render(<CostBreakdown breakdown={mockBreakdown} />);
 
     // Initially hidden
     expect(screen.queryByText("Promo 1")).not.toBeInTheDocument();
@@ -114,9 +110,7 @@ describe("CostBreakdown", () => {
       ...mockBreakdown,
       promotions: [{ ...mockBreakdown.promotions[0], isOrphaned: true }],
     };
-    await act(async () => {
-      render(<CostBreakdown breakdown={orphanedBreakdown} />);
-    });
+    render(<CostBreakdown breakdown={orphanedBreakdown} />);
     await user.click(screen.getByRole("button", { name: /Promotion Savings/i }));
     expect(screen.getByText("Orphaned")).toBeInTheDocument();
   });
@@ -151,23 +145,19 @@ describe("CostBreakdown", () => {
         },
       ],
     };
-    await act(async () => {
-      render(<CostBreakdown breakdown={breakdown} />);
-    });
+    render(<CostBreakdown breakdown={breakdown} />);
     await user.click(screen.getByRole("button", { name: /Promotion Savings/i }));
     expect(screen.getByText("Orphaned")).toBeInTheDocument();
   });
 
   it("should not show Orphaned badge when promotion is neither orphaned nor has orphaned segments", async () => {
     const user = userEvent.setup();
-    await act(async () => {
-      render(<CostBreakdown breakdown={mockBreakdown} />);
-    });
+    render(<CostBreakdown breakdown={mockBreakdown} />);
     await user.click(screen.getByRole("button", { name: /Promotion Savings/i }));
     expect(screen.queryByText("Orphaned")).not.toBeInTheDocument();
   });
 
-  it("should not render components with 0 value", async () => {
+  it("should not render components with 0 value", () => {
     const zeroBreakdown = {
       ...mockBreakdown,
       portalCashback: 0,
@@ -176,9 +166,7 @@ describe("CostBreakdown", () => {
       promoSavings: 0,
       promotions: [],
     };
-    await act(async () => {
-      render(<CostBreakdown breakdown={zeroBreakdown} />);
-    });
+    render(<CostBreakdown breakdown={zeroBreakdown} />);
 
     expect(screen.queryByText("Portal Cashback")).not.toBeInTheDocument();
     expect(screen.queryByText("Card Reward")).not.toBeInTheDocument();

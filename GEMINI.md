@@ -94,6 +94,15 @@ Always import `test` and `expect` from `./fixtures` (not from `@playwright/test`
 
 **Reference data** (hotel chains, credit cards, portals) is seeded once in `e2e/global-setup.ts` and treated as read-only.
 
+### Unit Test Design (Vitest / RTL)
+
+- **Avoid Manual `act()`:** Use `render()` and `userEvent` (v14+) directly; they wrap operations in `act()` internally. Manual double-wrapping is redundant and can cause race conditions in the event loop.
+- **Prefer `userEvent` over `fireEvent`:** Always use `userEvent.click()`, `userEvent.type()`, etc., to simulate full browser event lifecycles.
+- **Centralize Common Mocks:** Always move common mocks (e.g., `next/link`, `next/navigation`, `Sentry`) to `vitest-setup.ts` to improve maintainability and ensure consistency across the test suite.
+- **Prefer Targeted Component Mocking:** When dealing with complex browser behaviors (like focus management in Radix UI), prefer mocking the problematic component (e.g., `@radix-ui/react-focus-scope`) over globally mocking browser APIs (like `requestAnimationFrame`).
+- **Radix UI Stability:** `vitest-setup.ts` contains global mocks for `FocusScope` and sets `userEvent.setup({ delay: null })` to maintain test isolation and prevent intermittent timeouts.
+- **Timeouts:** Keep `testTimeout` at 30s in `vitest.config.ts` to ensure stability in parallel execution environments.
+
 ## Workflow Mandates
 
 - **Pull Requests:** ALWAYS create a feature branch for any and all code changes. After implementation, notify the user to test the changes locally. ONLY create a Pull Request (PR) after the user has confirmed they have tested and approved the work.
