@@ -345,6 +345,69 @@ describe("BookingPriceWatch", () => {
     expect(groupRows[1]).toHaveTextContent("—"); // Double Standard has no award
   });
 
+  it("shows inline award price on each cash rate row when every rate has both cash and award (Accor/GHA style)", async () => {
+    const user = userEvent.setup();
+    // Simulates Accor/GHA: every rate has both cashPrice and awardPrice; no pure-award rates
+    const accorRooms = [
+      {
+        id: "a1",
+        roomId: "room-A",
+        roomName: "Superior Room",
+        ratePlanCode: "ROOM|EUROPEAN_PLAN|NO_CANCELLATION",
+        ratePlanName: "ADVANCE SAVER RATE",
+        cashPrice: 113050,
+        cashCurrency: "KRW",
+        awardPrice: 1047,
+        isRefundable: "NON_REFUNDABLE",
+        isCorporate: false,
+      },
+      {
+        id: "a2",
+        roomId: "room-A",
+        roomName: "Superior Room",
+        ratePlanCode: "ROOM|EUROPEAN_PLAN|FREE_CANCELLATION",
+        ratePlanName: "FLEXIBLE RATE",
+        cashPrice: 133000,
+        cashCurrency: "KRW",
+        awardPrice: 1232,
+        isRefundable: "REFUNDABLE",
+        isCorporate: false,
+      },
+    ];
+    const accorWatch = {
+      ...mockWatch,
+      snapshots: [
+        {
+          ...mockWatch.snapshots[0],
+          lowestAwardPrice: 1047,
+          rooms: accorRooms,
+        },
+      ],
+    };
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => accorWatch,
+    } as Response);
+
+    await act(async () => {
+      render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("toggle-room-rates")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByTestId("toggle-room-rates"));
+    await user.click(screen.getAllByTestId("room-group-row")[0]);
+
+    const rateRows = screen.getAllByTestId("room-rate-row");
+    // Each cash rate row shows its own award price inline
+    expect(rateRows[0]).toHaveTextContent("1,047 pts");
+    expect(rateRows[1]).toHaveTextContent("1,232 pts");
+    // No separate pure-award row added (only 2 rate rows total)
+    expect(rateRows).toHaveLength(2);
+  });
+
   it("does not show room rates toggle when snapshot has no rooms", async () => {
     const watchNoRooms = {
       ...mockWatch,

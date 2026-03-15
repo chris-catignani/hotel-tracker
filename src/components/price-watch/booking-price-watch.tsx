@@ -472,6 +472,12 @@ export function BookingPriceWatch({
                                   const cashRates = rates
                                     .filter((r) => r.cashPrice != null)
                                     .sort((a, b) => Number(a.cashPrice) - Number(b.cashPrice));
+                                  // Pure award rates have no cash price (e.g. Hyatt award nights).
+                                  // For chains where every rate has a cash price + award price
+                                  // (Accor, GHA), award prices are shown inline on each cash rate row.
+                                  const pureAwardRate = rates.find(
+                                    (r) => r.awardPrice != null && r.cashPrice == null
+                                  );
                                   const awardRate = rates.find((r) => r.awardPrice != null);
                                   const lowestRefundable = cashRates
                                     .filter((r) => r.isRefundable !== "NON_REFUNDABLE")
@@ -581,11 +587,15 @@ export function BookingPriceWatch({
                                                 )}
                                               </span>
                                             </TableCell>
-                                            <TableCell className="py-1" />
+                                            <TableCell className="text-xs py-1 text-right">
+                                              {r.awardPrice != null
+                                                ? `${Number(r.awardPrice).toLocaleString()} pts`
+                                                : ""}
+                                            </TableCell>
                                           </TableRow>
                                         ))}
-                                      {/* Award rate row */}
-                                      {isExpanded && awardRate != null && (
+                                      {/* Pure award rate row (e.g. Hyatt award nights with no cash price) */}
+                                      {isExpanded && pureAwardRate != null && (
                                         <TableRow
                                           key={`${roomId}-award`}
                                           className="bg-muted/30"
@@ -593,11 +603,11 @@ export function BookingPriceWatch({
                                         >
                                           <TableCell className="py-1" />
                                           <TableCell className="text-xs py-1 pl-4 text-muted-foreground">
-                                            {awardRate.ratePlanName}
+                                            {pureAwardRate!.ratePlanName}
                                           </TableCell>
                                           <TableCell className="py-1" />
                                           <TableCell className="text-xs py-1 text-right">
-                                            {awardRate.awardPrice!.toLocaleString()} pts
+                                            {Number(pureAwardRate!.awardPrice).toLocaleString()} pts
                                           </TableCell>
                                         </TableRow>
                                       )}
