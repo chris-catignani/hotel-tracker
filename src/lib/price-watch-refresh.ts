@@ -7,7 +7,7 @@ import prisma from "./prisma";
 import {
   selectFetcher,
   lowestRefundableCash,
-  lowestAward,
+  lowestRefundableAward,
   type PriceFetcher,
 } from "./price-fetcher";
 import { sendPriceDropAlert } from "./email";
@@ -159,7 +159,7 @@ export async function runPriceWatchRefresh(fetchers: PriceFetcher[]): Promise<{
         const { price: lowestCash, currency: lowestCashCurrency } = lowestRefundableCash(
           result.rates
         );
-        const lowestAwardPrice = lowestAward(result.rates);
+        const lowestAwardPrice = lowestRefundableAward(result.rates);
 
         const snapshot = await prisma.priceSnapshot.create({
           data: {

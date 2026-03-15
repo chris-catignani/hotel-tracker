@@ -1,5 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
-import { selectFetcher, type PriceFetcher, type FetchableProperty } from "./price-fetcher";
+import {
+  selectFetcher,
+  lowestRefundableAward,
+  type PriceFetcher,
+  type FetchableProperty,
+  type RoomRate,
+} from "./price-fetcher";
 
 const makeProperty = (overrides: Partial<FetchableProperty> = {}): FetchableProperty => ({
   id: "prop-1",
@@ -17,6 +23,46 @@ const makeFetcher = (canFetchResult: boolean): PriceFetcher => ({
     awardPrice: 15000,
     source: "test",
   }),
+});
+
+const makeRate = (awardPrice: number | null, isRefundable: RoomRate["isRefundable"]): RoomRate => ({
+  roomId: "r1",
+  roomName: "Standard Room",
+  ratePlanCode: "RATE",
+  ratePlanName: "Rate",
+  cashPrice: 100,
+  cashCurrency: "USD",
+  awardPrice,
+  isRefundable,
+  isCorporate: false,
+});
+
+describe("lowestRefundableAward", () => {
+  it("returns null when no rates have award prices", () => {
+    expect(lowestRefundableAward([makeRate(null, "REFUNDABLE")])).toBeNull();
+  });
+
+  it("returns the lowest award price among REFUNDABLE rates", () => {
+    const rates = [makeRate(20000, "REFUNDABLE"), makeRate(15000, "REFUNDABLE")];
+    expect(lowestRefundableAward(rates)).toBe(15000);
+  });
+
+  it("returns the lowest award price among UNKNOWN rates (e.g. GHA)", () => {
+    const rates = [makeRate(20000, "UNKNOWN"), makeRate(15000, "UNKNOWN")];
+    expect(lowestRefundableAward(rates)).toBe(15000);
+  });
+
+  it("prefers refundable/unknown over non-refundable when both exist", () => {
+    // NON_REFUNDABLE is cheaper but should be skipped in favour of REFUNDABLE
+    const rates = [makeRate(10000, "NON_REFUNDABLE"), makeRate(16000, "REFUNDABLE")];
+    expect(lowestRefundableAward(rates)).toBe(16000);
+  });
+
+  it("falls back to lowest non-refundable when no refundable/unknown award rates exist", () => {
+    // e.g. Hyatt award nights are typically NON_REFUNDABLE
+    const rates = [makeRate(25000, "NON_REFUNDABLE"), makeRate(12000, "NON_REFUNDABLE")];
+    expect(lowestRefundableAward(rates)).toBe(12000);
+  });
 });
 
 describe("selectFetcher", () => {

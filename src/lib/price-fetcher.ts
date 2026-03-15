@@ -90,3 +90,13 @@ export function lowestAward(rates: RoomRate[]): number | null {
   }
   return price;
 }
+
+/**
+ * Derives the lowest award price (in points) preferring refundable/unknown rates,
+ * falling back to the overall lowest if no refundable/unknown award rates exist.
+ * Mirrors the same refundability filter used by lowestRefundableCash.
+ */
+export function lowestRefundableAward(rates: RoomRate[]): number | null {
+  const refundable = rates.filter((r) => r.isRefundable !== "NON_REFUNDABLE");
+  return lowestAward(refundable) ?? lowestAward(rates);
+}
