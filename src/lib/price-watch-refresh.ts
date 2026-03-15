@@ -25,7 +25,7 @@ import { HOTEL_ID } from "./constants";
  * Returns null if a required rate is unavailable.
  */
 export function fixedRateAwardPoints(
-  cashPrice: number,
+  cashPrice: number | null,
   cashCurrency: string,
   hotelChainId: string,
   /** 1 cashCurrency = X USD. Can be null if currency is unknown. */
@@ -33,26 +33,22 @@ export function fixedRateAwardPoints(
   /** 1 EUR = X USD. Only required for Accor; ignored for GHA. */
   eurToUSD: number | null
 ): number | null {
+  if (cashPrice === null) return null;
+
+  const cashInUSD =
+    cashCurrency === "USD"
+      ? cashPrice
+      : (cashCurrencyToUSD ?? 0) > 0
+        ? cashPrice * cashCurrencyToUSD!
+        : null;
+  if (cashInUSD === null) return null;
+
   if (hotelChainId === HOTEL_ID.GHA_DISCOVERY) {
-    const cashInUSD =
-      cashCurrency === "USD"
-        ? cashPrice
-        : (cashCurrencyToUSD ?? 0) > 0
-          ? cashPrice * cashCurrencyToUSD!
-          : null;
-    if (cashInUSD === null) return null;
     return Math.round(cashInUSD * 100);
   }
 
   if (hotelChainId === HOTEL_ID.ACCOR) {
     if (!eurToUSD || eurToUSD <= 0) return null;
-    const cashInUSD =
-      cashCurrency === "USD"
-        ? cashPrice
-        : (cashCurrencyToUSD ?? 0) > 0
-          ? cashPrice * cashCurrencyToUSD!
-          : null;
-    if (cashInUSD === null) return null;
     return Math.round((cashInUSD / eurToUSD) * 100);
   }
 
@@ -132,10 +128,12 @@ export async function runPriceWatchRefresh(fetchers: PriceFetcher[]): Promise<{
           }
           const eurToUSD = chainId === HOTEL_ID.ACCOR ? (ratesCache.get("EUR") ?? null) : null;
 
-          for (const rate of result.rates) {
-            if (!ratesCache.has(rate.cashCurrency)) {
-              ratesCache.set(rate.cashCurrency, await getCurrentRate(rate.cashCurrency));
-            }
+          const currenciesToFetch = [
+            ...new Set(result.rates.map((r) => r.cashCurrency).filter((c) => !ratesCache.has(c))),
+          ];
+          if (currenciesToFetch.length > 0) {
+            const fetchedRates = await Promise.all(currenciesToFetch.map((c) => getCurrentRate(c)));
+            currenciesToFetch.forEach((c, i) => ratesCache.set(c, fetchedRates[i]));
           }
 
           result = {

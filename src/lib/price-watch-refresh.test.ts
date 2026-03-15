@@ -22,6 +22,15 @@ import { sendPriceDropAlert } from "@/lib/email";
 import { getCurrentRate } from "@/lib/exchange-rate";
 import { runPriceWatchRefresh, fixedRateAwardPoints } from "./price-watch-refresh";
 import { HOTEL_ID } from "@/lib/constants";
+import type { Prisma } from "@prisma/client";
+
+/** Helper to access the rooms created in a priceSnapshot.create call. */
+function getCreatedRooms(
+  call: Prisma.PriceSnapshotCreateArgs
+): Prisma.PriceSnapshotRoomCreateWithoutPriceSnapshotInput[] {
+  const rooms = call.data.rooms?.create;
+  return Array.isArray(rooms) ? rooms : rooms ? [rooms] : [];
+}
 
 function makeWatch({
   currency = "USD",
@@ -206,6 +215,31 @@ describe("runPriceWatchRefresh", () => {
       expect(result.results[0].alerts).toBe(0);
       expect(sendPriceDropAlert).not.toHaveBeenCalled();
     });
+
+    it("does not fire alert when only a non-refundable rate is below the threshold", async () => {
+      // NON_REFUNDABLE rate at 10000 pts (below threshold 15000) should not trigger alert;
+      // the REFUNDABLE rate at 20000 pts is above threshold → no alert
+      vi.mocked(prisma.priceWatch.findMany).mockResolvedValue([
+        makeWatch({ cashThreshold: null as unknown as string, awardThreshold: 15000 }),
+      ] as never);
+      vi.mocked(mockFetcher.fetchPrice).mockResolvedValue({
+        source: "hyatt_browser",
+        rates: [
+          { ...USD_SCRAPER_RESULT.rates[0], awardPrice: 10000, isRefundable: "NON_REFUNDABLE" },
+          {
+            ...USD_SCRAPER_RESULT.rates[0],
+            ratePlanCode: "FLEX",
+            awardPrice: 20000,
+            isRefundable: "REFUNDABLE",
+          },
+        ],
+      });
+
+      const result = await runPriceWatchRefresh([]);
+
+      expect(result.results[0].alerts).toBe(0);
+      expect(sendPriceDropAlert).not.toHaveBeenCalled();
+    });
   });
 
   describe("fixed-rate award prices (GHA and Accor)", () => {
@@ -233,7 +267,7 @@ describe("runPriceWatchRefresh", () => {
       await runPriceWatchRefresh([]);
 
       const createCall = vi.mocked(prisma.priceSnapshot.create).mock.calls[0][0];
-      expect(createCall.data.rooms.create[0].awardPrice).toBe(20000); // $200 × 100
+      expect(getCreatedRooms(createCall)[0].awardPrice).toBe(20000); // $200 × 100
     });
 
     it("populates awardPrice for GHA watch with non-USD cash price", async () => {
@@ -250,7 +284,7 @@ describe("runPriceWatchRefresh", () => {
       await runPriceWatchRefresh([]);
 
       const createCall = vi.mocked(prisma.priceSnapshot.create).mock.calls[0][0];
-      expect(createCall.data.rooms.create[0].awardPrice).toBe(21000);
+      expect(getCreatedRooms(createCall)[0].awardPrice).toBe(21000);
     });
 
     it("populates awardPrice for Accor watch converting local → USD → EUR", async () => {
@@ -272,7 +306,7 @@ describe("runPriceWatchRefresh", () => {
       await runPriceWatchRefresh([]);
 
       const createCall = vi.mocked(prisma.priceSnapshot.create).mock.calls[0][0];
-      expect(createCall.data.rooms.create[0].awardPrice).toBe(6667);
+      expect(getCreatedRooms(createCall)[0].awardPrice).toBe(6667);
     });
 
     it("does not overwrite an existing awardPrice set by the scraper", async () => {
@@ -287,7 +321,7 @@ describe("runPriceWatchRefresh", () => {
       await runPriceWatchRefresh([]);
 
       const createCall = vi.mocked(prisma.priceSnapshot.create).mock.calls[0][0];
-      expect(createCall.data.rooms.create[0].awardPrice).toBe(99999);
+      expect(getCreatedRooms(createCall)[0].awardPrice).toBe(99999);
     });
 
     it("leaves awardPrice null when exchange rate is unavailable", async () => {
@@ -303,7 +337,40 @@ describe("runPriceWatchRefresh", () => {
       await runPriceWatchRefresh([]);
 
       const createCall = vi.mocked(prisma.priceSnapshot.create).mock.calls[0][0];
-      expect(createCall.data.rooms.create[0].awardPrice).toBeNull();
+      expect(getCreatedRooms(createCall)[0].awardPrice).toBeNull();
+    });
+
+    it("stores lowestAwardPrice on snapshot using refundable-preferred logic", async () => {
+      // NON_REFUNDABLE rate has lower award price (10000) than REFUNDABLE (20000).
+      // lowestAwardPrice on the snapshot should use the REFUNDABLE one (20000).
+      vi.mocked(prisma.priceWatch.findMany).mockResolvedValue([
+        makeWatch({ hotelChainId: HOTEL_ID.GHA_DISCOVERY }),
+      ] as never);
+      vi.mocked(mockFetcher.fetchPrice).mockResolvedValue({
+        source: "gha_api",
+        rates: [
+          {
+            ...GHA_RATE,
+            cashPrice: 100,
+            cashCurrency: "USD",
+            awardPrice: 10000,
+            isRefundable: "NON_REFUNDABLE",
+          },
+          {
+            ...GHA_RATE,
+            ratePlanCode: "FLEX",
+            cashPrice: 200,
+            cashCurrency: "USD",
+            awardPrice: 20000,
+            isRefundable: "REFUNDABLE",
+          },
+        ],
+      });
+
+      await runPriceWatchRefresh([]);
+
+      const createCall = vi.mocked(prisma.priceSnapshot.create).mock.calls[0][0];
+      expect(createCall.data.lowestAwardPrice).toBe(20000);
     });
   });
 
