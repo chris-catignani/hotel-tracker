@@ -221,6 +221,15 @@ Standalone Node.js scripts that run outside the web server. Run directly via `ts
 
 Always import `test` and `expect` from `./fixtures` (not from `@playwright/test`) in spec files so fixtures are available.
 
+### Unit Test Design (Vitest / RTL)
+
+- **Avoid Manual `act()`:** Use `render()` and `userEvent` (v14+) directly; they wrap operations in `act()` internally.
+- **Prefer `userEvent` over `fireEvent`:** Simulate full browser event lifecycles.
+- **Centralize Common Mocks:** Move common mocks (e.g., `next/link`, `next/navigation`) to `vitest-setup.ts`.
+- **Prefer Targeted Component Mocking:** Mock the problematic component (e.g., `@radix-ui/react-focus-scope`) over globally mocking browser APIs.
+- **Radix UI Stability:** `vitest-setup.ts` contains global mocks for `FocusScope` and sets `userEvent.setup({ delay: null })`.
+- **Timeouts:** Keep `testTimeout` at 30s in `vitest.config.ts`.
+
 **Reference data** (hotel chains, credit cards, portals) is seeded once in `e2e/global-setup.ts` and treated as read-only by all tests.
 
 **ESLint note:** Playwright fixtures use a `use` callback parameter that triggers a false positive from `react-hooks/rules-of-hooks`. The `eslint.config.mjs` has an `e2e/**` override that disables this rule — do not add per-line `eslint-disable` comments in E2E files.

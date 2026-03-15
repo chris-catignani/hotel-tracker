@@ -2,6 +2,8 @@ import "@testing-library/jest-dom";
 import { vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 
+import React from "react";
+
 // userEvent v14 default delay:0 uses setTimeout(0) between each of the ~16
 // pointer/mouse events fired per click(). Under parallel test execution those
 // macrotasks pile up and can push individual tests past the 10 s timeout.
@@ -25,6 +27,35 @@ vi.mock("@sentry/node", () => ({
   captureException: vi.fn(),
   captureMessage: vi.fn(),
   flush: vi.fn().mockResolvedValue(true),
+}));
+
+// Mock next/link to avoid "Not implemented: navigation to another Document"
+// Centralized here to avoid duplication across multiple test files.
+vi.mock("next/link", () => ({
+  default: ({
+    children,
+    href,
+    onClick,
+    ...props
+  }: {
+    children: React.ReactNode;
+    href: string;
+    onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
+  } & React.AnchorHTMLAttributes<HTMLAnchorElement>) => {
+    // We use a regular anchor tag to avoid Next.js's complex navigation logic in JSDOM
+    return React.createElement(
+      "a",
+      {
+        href,
+        onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
+          e.preventDefault();
+          onClick?.(e);
+        },
+        ...props,
+      },
+      children
+    );
+  },
 }));
 
 // Mock matchMedia for Radix UI
@@ -54,13 +85,9 @@ global.ResizeObserver = class ResizeObserver {
 // inside async act() drains and trigger focus/focusin events that reschedule
 // React work, creating an infinite loop → 10 000ms timeout.
 //
-// Fix A — rAF no-op: prevents the rAF-based focus loop.
-// Fix B — mock @radix-ui/react-focus-scope: removes timer-based focus scheduling
-// at the source. Our tests never assert on focus management behavior, so
-// replacing FocusScope with a transparent wrapper is safe and correct.
-global.requestAnimationFrame = (_cb: FrameRequestCallback): number => 0;
-global.cancelAnimationFrame = (_id: number): void => {};
-
+// We mock @radix-ui/react-focus-scope directly as it's a more targeted fix
+// than a global rAF mock. Our tests never assert on focus management behavior,
+// so replacing FocusScope with a transparent wrapper is safe and correct.
 vi.mock("@radix-ui/react-focus-scope", async () => {
   const React = await import("react");
   return {

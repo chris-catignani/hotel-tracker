@@ -9,31 +9,6 @@ vi.mock("next/navigation", () => ({
   usePathname: vi.fn(),
 }));
 
-// Mock next/link to avoid "Not implemented: navigation to another Document"
-vi.mock("next/link", () => ({
-  default: ({
-    children,
-    href,
-    onClick,
-    ...props
-  }: {
-    children: React.ReactNode;
-    href: string;
-    onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
-  } & React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
-    <a
-      href={href}
-      onClick={(e) => {
-        e.preventDefault();
-        onClick?.(e);
-      }}
-      {...props}
-    >
-      {children}
-    </a>
-  ),
-}));
-
 describe("MobileHeader", () => {
   beforeEach(() => {
     vi.mocked(usePathname).mockReturnValue("/");
