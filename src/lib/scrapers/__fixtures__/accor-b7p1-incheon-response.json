@@ -1,0 +1,1042 @@
+{
+  "data": {
+    "hotelOffers": {
+      "offersSelection": {
+        "offers": [
+          {
+            "id": "iteuCoLrzYfzNqvsnL",
+            "type": "ROOM",
+            "description": null,
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Superior Room with 1 double bed" },
+            "mealPlan": { "code": "EUROPEAN_PLAN", "label": null },
+            "rate": { "label": "ADVANCE SAVER RATE" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 113050,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": { "code": "NO_CANCELLATION", "label": "Non-refundable" }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYfFUNRr57",
+                "amount": 119000,
+                "categories": ["STANDARD"]
+              }
+            }
+          },
+          {
+            "id": "iteuCoLrzYf92fNyOk",
+            "type": "ROOM",
+            "description": null,
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Superior Room with 1 double bed" },
+            "mealPlan": { "code": "EUROPEAN_PLAN", "label": null },
+            "rate": { "label": "FLEXIBLE RATE" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 133000,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": {
+                    "code": "FREE_CANCELLATION",
+                    "label": "Cancel free of charge until Apr 13th 6:00 PM"
+                  }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYfl8XXj4S",
+                "amount": 140000,
+                "categories": ["STANDARD"]
+              }
+            }
+          },
+          {
+            "id": "iteuCoLrzYf3wGUwQJ",
+            "type": "ROOM",
+            "description": null,
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Superior Room with 1 double bed" },
+            "mealPlan": { "code": "BED_AND_BREAKFAST", "label": "Breakfast included" },
+            "rate": { "label": "ADVANCE SAVER RATE - BREAKFAST INCLUDED" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 135850,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": { "code": "NO_CANCELLATION", "label": "Non-refundable" }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYfl2yztVp",
+                "amount": 143000,
+                "categories": ["STANDARD"]
+              }
+            }
+          },
+          {
+            "id": "iteuCoLrzYfBSj0bWn",
+            "type": "ROOM",
+            "description": null,
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Superior Room with 1 double bed" },
+            "mealPlan": { "code": "BED_AND_BREAKFAST", "label": "Breakfast included" },
+            "rate": { "label": "FLEXIBLE RATE - BREAKFAST INCLUDED" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 155800,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": {
+                    "code": "FREE_CANCELLATION",
+                    "label": "Cancel free of charge until Apr 13th 6:00 PM"
+                  }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYfO9QHOWK",
+                "amount": 164000,
+                "categories": ["STANDARD"]
+              }
+            }
+          },
+          {
+            "id": "iteuCoLrzYf4vuDoJk",
+            "type": "PACKAGE",
+            "description": "INDULGENCE PACKAGE",
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Superior Room with 1 double bed" },
+            "mealPlan": { "code": "BED_AND_BREAKFAST", "label": "Breakfast included" },
+            "rate": { "label": "INDULGENCE PACKAGE" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 161500,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": {
+                    "code": "FREE_CANCELLATION",
+                    "label": "Cancel free of charge until Apr 13th 2:00 PM"
+                  }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYfkTkqsrg",
+                "amount": 170000,
+                "categories": ["STANDARD"]
+              }
+            }
+          },
+          {
+            "id": "iteuCoLrzYfyRhD3BQ",
+            "type": "PACKAGE",
+            "description": "Click on the details link to view inclusions and sales conditions.",
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Superior Room with 1 double bed" },
+            "mealPlan": { "code": "BED_AND_BREAKFAST", "label": "Breakfast included" },
+            "rate": { "label": "WELLNESS PACKAGE" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 161500,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": {
+                    "code": "FREE_CANCELLATION",
+                    "label": "Cancel free of charge until Apr 13th 11:59 PM"
+                  }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYfWS8jWTI",
+                "amount": 170000,
+                "categories": ["STANDARD"]
+              }
+            }
+          },
+          {
+            "id": "iteuCoLrzYfDj3gq0p",
+            "type": "PACKAGE",
+            "description": "Free parking for 1 vehicle for up to 7 days per stay. Includes complimentary fitness access, Wi-Fi, and Americano for 2 persons.  NOTICE: Parking is valid for 7 days. Please register your vehicle and parking schedule at check-in to avoid additional charge",
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Superior Room with 1 double bed" },
+            "mealPlan": { "code": "EUROPEAN_PLAN", "label": null },
+            "rate": { "label": "Park, Sleep, Fly" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 164000,
+                "label": null,
+                "categories": ["STANDARD"],
+                "simplifiedPolicies": {
+                  "cancellation": {
+                    "code": "FREE_CANCELLATION",
+                    "label": "Cancel free of charge until Apr 13th 6:00 PM"
+                  }
+                }
+              },
+              "alternative": null
+            }
+          },
+          {
+            "id": "iteuCoLrzYfJh1dLyW",
+            "type": "ROOM",
+            "description": null,
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Superior Room with 2 single beds" },
+            "mealPlan": { "code": "EUROPEAN_PLAN", "label": null },
+            "rate": { "label": "ADVANCE SAVER RATE" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 113050,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": { "code": "NO_CANCELLATION", "label": "Non-refundable" }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYfccY5Huf",
+                "amount": 119000,
+                "categories": ["STANDARD"]
+              }
+            }
+          },
+          {
+            "id": "iteuCoLrzYfZC8XbLu",
+            "type": "ROOM",
+            "description": null,
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Superior Room with 2 single beds" },
+            "mealPlan": { "code": "EUROPEAN_PLAN", "label": null },
+            "rate": { "label": "FLEXIBLE RATE" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 133000,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": {
+                    "code": "FREE_CANCELLATION",
+                    "label": "Cancel free of charge until Apr 13th 6:00 PM"
+                  }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYfelKwZiM",
+                "amount": 140000,
+                "categories": ["STANDARD"]
+              }
+            }
+          },
+          {
+            "id": "iteuCoLrzYfisOuhEd",
+            "type": "ROOM",
+            "description": null,
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Superior Room with 2 single beds" },
+            "mealPlan": { "code": "BED_AND_BREAKFAST", "label": "Breakfast included" },
+            "rate": { "label": "ADVANCE SAVER RATE - BREAKFAST INCLUDED" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 135850,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": { "code": "NO_CANCELLATION", "label": "Non-refundable" }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYfqwtM2J4",
+                "amount": 143000,
+                "categories": ["STANDARD"]
+              }
+            }
+          },
+          {
+            "id": "iteuCoLrzYfmMNp9tj",
+            "type": "ROOM",
+            "description": null,
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Superior Room with 2 single beds" },
+            "mealPlan": { "code": "BED_AND_BREAKFAST", "label": "Breakfast included" },
+            "rate": { "label": "FLEXIBLE RATE - BREAKFAST INCLUDED" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 155800,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": {
+                    "code": "FREE_CANCELLATION",
+                    "label": "Cancel free of charge until Apr 13th 6:00 PM"
+                  }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYfxS5L8Jv",
+                "amount": 164000,
+                "categories": ["STANDARD"]
+              }
+            }
+          },
+          {
+            "id": "iteuCoLrzYfma4s5nR",
+            "type": "PACKAGE",
+            "description": "INDULGENCE PACKAGE",
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Superior Room with 2 single beds" },
+            "mealPlan": { "code": "BED_AND_BREAKFAST", "label": "Breakfast included" },
+            "rate": { "label": "INDULGENCE PACKAGE" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 161500,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": {
+                    "code": "FREE_CANCELLATION",
+                    "label": "Cancel free of charge until Apr 13th 2:00 PM"
+                  }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYfIkKdkzG",
+                "amount": 170000,
+                "categories": ["STANDARD"]
+              }
+            }
+          },
+          {
+            "id": "iteuCoLrzYfrBdMlhX",
+            "type": "PACKAGE",
+            "description": "Click on the details link to view inclusions and sales conditions.",
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Superior Room with 2 single beds" },
+            "mealPlan": { "code": "BED_AND_BREAKFAST", "label": "Breakfast included" },
+            "rate": { "label": "WELLNESS PACKAGE" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 161500,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": {
+                    "code": "FREE_CANCELLATION",
+                    "label": "Cancel free of charge until Apr 13th 11:59 PM"
+                  }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYfvkEQAwG",
+                "amount": 170000,
+                "categories": ["STANDARD"]
+              }
+            }
+          },
+          {
+            "id": "iteuCoLrzYfWBY5P1Z",
+            "type": "PACKAGE",
+            "description": "Free parking for 1 vehicle for up to 7 days per stay. Includes complimentary fitness access, Wi-Fi, and Americano for 2 persons.  NOTICE: Parking is valid for 7 days. Please register your vehicle and parking schedule at check-in to avoid additional charge",
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Superior Room with 2 single beds" },
+            "mealPlan": { "code": "EUROPEAN_PLAN", "label": null },
+            "rate": { "label": "Park, Sleep, Fly" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 164000,
+                "label": null,
+                "categories": ["STANDARD"],
+                "simplifiedPolicies": {
+                  "cancellation": {
+                    "code": "FREE_CANCELLATION",
+                    "label": "Cancel free of charge until Apr 13th 6:00 PM"
+                  }
+                }
+              },
+              "alternative": null
+            }
+          },
+          {
+            "id": "iteuCoLrzYfx38m1cx",
+            "type": "ROOM",
+            "description": null,
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Superior Room with 1 double bed plus 1 single bed" },
+            "mealPlan": { "code": "EUROPEAN_PLAN", "label": null },
+            "rate": { "label": "ADVANCE SAVER RATE" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 137275,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": { "code": "NO_CANCELLATION", "label": "Non-refundable" }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYf77zOrnM",
+                "amount": 144500,
+                "categories": ["STANDARD"]
+              }
+            }
+          },
+          {
+            "id": "iteuCoLrzYffXiAREW",
+            "type": "ROOM",
+            "description": null,
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Superior Room with 1 double bed plus 1 single bed" },
+            "mealPlan": { "code": "BED_AND_BREAKFAST", "label": "Breakfast included" },
+            "rate": { "label": "ADVANCE SAVER RATE - BREAKFAST INCLUDED" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 160075,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": { "code": "NO_CANCELLATION", "label": "Non-refundable" }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYfkTL7vM5",
+                "amount": 168500,
+                "categories": ["STANDARD"]
+              }
+            }
+          },
+          {
+            "id": "iteuCoLrzYfFPGx7bR",
+            "type": "ROOM",
+            "description": null,
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Superior Room with 1 double bed plus 1 single bed" },
+            "mealPlan": { "code": "EUROPEAN_PLAN", "label": null },
+            "rate": { "label": "FLEXIBLE RATE" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 161500,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": {
+                    "code": "FREE_CANCELLATION",
+                    "label": "Cancel free of charge until Apr 13th 6:00 PM"
+                  }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYf8SBedT8",
+                "amount": 170000,
+                "categories": ["STANDARD"]
+              }
+            }
+          },
+          {
+            "id": "iteuCoLrzYfck7zNOt",
+            "type": "ROOM",
+            "description": null,
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Superior Room with 1 double bed plus 1 single bed" },
+            "mealPlan": { "code": "BED_AND_BREAKFAST", "label": "Breakfast included" },
+            "rate": { "label": "FLEXIBLE RATE - BREAKFAST INCLUDED" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 184300,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": {
+                    "code": "FREE_CANCELLATION",
+                    "label": "Cancel free of charge until Apr 13th 6:00 PM"
+                  }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYffppvCR7",
+                "amount": 194000,
+                "categories": ["STANDARD"]
+              }
+            }
+          },
+          {
+            "id": "iteuCoLrzYfK3pxRhB",
+            "type": "PACKAGE",
+            "description": "Free parking for 1 vehicle for up to 7 days per stay. Includes complimentary fitness access, Wi-Fi, and Americano for 2 persons.  NOTICE: Parking is valid for 7 days. Please register your vehicle and parking schedule at check-in to avoid additional charge",
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Superior Room with 1 double bed plus 1 single bed" },
+            "mealPlan": { "code": "EUROPEAN_PLAN", "label": null },
+            "rate": { "label": "Park, Sleep, Fly" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 194000,
+                "label": null,
+                "categories": ["STANDARD"],
+                "simplifiedPolicies": {
+                  "cancellation": {
+                    "code": "FREE_CANCELLATION",
+                    "label": "Cancel free of charge until Apr 13th 6:00 PM"
+                  }
+                }
+              },
+              "alternative": null
+            }
+          },
+          {
+            "id": "iteuCoLrzYfOBmYINj",
+            "type": "ROOM",
+            "description": null,
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Deluxe Room with 1 double bed" },
+            "mealPlan": { "code": "EUROPEAN_PLAN", "label": null },
+            "rate": { "label": "ADVANCE SAVER RATE" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 145350,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": { "code": "NO_CANCELLATION", "label": "Non-refundable" }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYfTYzTBKb",
+                "amount": 153000,
+                "categories": ["STANDARD"]
+              }
+            }
+          },
+          {
+            "id": "iteuCoLrzYf59lxqYR",
+            "type": "ROOM",
+            "description": null,
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Deluxe Room with 1 double bed" },
+            "mealPlan": { "code": "BED_AND_BREAKFAST", "label": "Breakfast included" },
+            "rate": { "label": "ADVANCE SAVER RATE - BREAKFAST INCLUDED" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 168150,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": { "code": "NO_CANCELLATION", "label": "Non-refundable" }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYfSjxIgGs",
+                "amount": 177000,
+                "categories": ["STANDARD"]
+              }
+            }
+          },
+          {
+            "id": "iteuCoLrzYfLU95Azj",
+            "type": "ROOM",
+            "description": null,
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Deluxe Room with 1 double bed" },
+            "mealPlan": { "code": "EUROPEAN_PLAN", "label": null },
+            "rate": { "label": "FLEXIBLE RATE" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 171000,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": {
+                    "code": "FREE_CANCELLATION",
+                    "label": "Cancel free of charge until Apr 13th 6:00 PM"
+                  }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYf7IKBBAN",
+                "amount": 180000,
+                "categories": ["STANDARD"]
+              }
+            }
+          },
+          {
+            "id": "iteuCoLrzYf1YnkFm8",
+            "type": "ROOM",
+            "description": null,
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Deluxe Room with 1 double bed" },
+            "mealPlan": { "code": "BED_AND_BREAKFAST", "label": "Breakfast included" },
+            "rate": { "label": "FLEXIBLE RATE - BREAKFAST INCLUDED" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 193800,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": {
+                    "code": "FREE_CANCELLATION",
+                    "label": "Cancel free of charge until Apr 13th 6:00 PM"
+                  }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYfu35WKC5",
+                "amount": 204000,
+                "categories": ["STANDARD"]
+              }
+            }
+          },
+          {
+            "id": "iteuCoLrzYfupF5OKX",
+            "type": "ROOM",
+            "description": null,
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Superior Suite Room with 1 double bed" },
+            "mealPlan": { "code": "EUROPEAN_PLAN", "label": null },
+            "rate": { "label": "ADVANCE SAVER RATE" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 161500,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": { "code": "NO_CANCELLATION", "label": "Non-refundable" }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYfgGUD5zR",
+                "amount": 170000,
+                "categories": ["STANDARD"]
+              }
+            }
+          },
+          {
+            "id": "iteuCoLrzYfolNRJx5",
+            "type": "ROOM",
+            "description": null,
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Superior Suite Room with 1 double bed" },
+            "mealPlan": { "code": "BED_AND_BREAKFAST", "label": "Breakfast included" },
+            "rate": { "label": "ADVANCE SAVER RATE - BREAKFAST INCLUDED" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 184300,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": { "code": "NO_CANCELLATION", "label": "Non-refundable" }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYfe0M7UsN",
+                "amount": 194000,
+                "categories": ["STANDARD"]
+              }
+            }
+          },
+          {
+            "id": "iteuCoLrzYf44WCz0i",
+            "type": "ROOM",
+            "description": null,
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Superior Suite Room with 1 double bed" },
+            "mealPlan": { "code": "EUROPEAN_PLAN", "label": null },
+            "rate": { "label": "FLEXIBLE RATE" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 190000,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": {
+                    "code": "FREE_CANCELLATION",
+                    "label": "Cancel free of charge until Apr 13th 6:00 PM"
+                  }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYfd27wqDw",
+                "amount": 200000,
+                "categories": ["STANDARD"]
+              }
+            }
+          },
+          {
+            "id": "iteuCoLrzYfQr7jcQW",
+            "type": "ROOM",
+            "description": null,
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Superior Suite Room with 1 double bed" },
+            "mealPlan": { "code": "BED_AND_BREAKFAST", "label": "Breakfast included" },
+            "rate": { "label": "FLEXIBLE RATE - BREAKFAST INCLUDED" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 212800,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": {
+                    "code": "FREE_CANCELLATION",
+                    "label": "Cancel free of charge until Apr 13th 6:00 PM"
+                  }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYf0CWnUbx",
+                "amount": 224000,
+                "categories": ["STANDARD"]
+              }
+            }
+          },
+          {
+            "id": "iteuCoLrzYfndn50Gp",
+            "type": "ROOM",
+            "description": null,
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Superior Suite Room with 1 double bed plus 1 single bed" },
+            "mealPlan": { "code": "EUROPEAN_PLAN", "label": null },
+            "rate": { "label": "ADVANCE SAVER RATE" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 185725,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": { "code": "NO_CANCELLATION", "label": "Non-refundable" }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYfSvoPSjB",
+                "amount": 195500,
+                "categories": ["STANDARD"]
+              }
+            }
+          },
+          {
+            "id": "iteuCoLrzYf2p6f7Rs",
+            "type": "ROOM",
+            "description": null,
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Superior Suite Room with 1 double bed plus 1 single bed" },
+            "mealPlan": { "code": "BED_AND_BREAKFAST", "label": "Breakfast included" },
+            "rate": { "label": "ADVANCE SAVER RATE - BREAKFAST INCLUDED" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 208525,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": { "code": "NO_CANCELLATION", "label": "Non-refundable" }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYf2bAUfqh",
+                "amount": 219500,
+                "categories": ["STANDARD"]
+              }
+            }
+          },
+          {
+            "id": "iteuCoLrzYf07W4Z1s",
+            "type": "ROOM",
+            "description": null,
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Superior Suite Room with 1 double bed plus 1 single bed" },
+            "mealPlan": { "code": "EUROPEAN_PLAN", "label": null },
+            "rate": { "label": "FLEXIBLE RATE" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 218500,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": {
+                    "code": "FREE_CANCELLATION",
+                    "label": "Cancel free of charge until Apr 13th 6:00 PM"
+                  }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYf0MIPooX",
+                "amount": 230000,
+                "categories": ["STANDARD"]
+              }
+            }
+          },
+          {
+            "id": "iteuCoLrzYf6JcQ7OK",
+            "type": "ROOM",
+            "description": null,
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Superior Suite Room with 1 double bed plus 1 single bed" },
+            "mealPlan": { "code": "BED_AND_BREAKFAST", "label": "Breakfast included" },
+            "rate": { "label": "FLEXIBLE RATE - BREAKFAST INCLUDED" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 241300,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": {
+                    "code": "FREE_CANCELLATION",
+                    "label": "Cancel free of charge until Apr 13th 6:00 PM"
+                  }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYfY3GH3Qh",
+                "amount": 254000,
+                "categories": ["STANDARD"]
+              }
+            }
+          },
+          {
+            "id": "iteuCoLrzYfEyD5CFH",
+            "type": "ROOM",
+            "description": null,
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Superior Suite Room with 3 single beds" },
+            "mealPlan": { "code": "EUROPEAN_PLAN", "label": null },
+            "rate": { "label": "ADVANCE SAVER RATE" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 185725,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": { "code": "NO_CANCELLATION", "label": "Non-refundable" }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYf4FXUJsA",
+                "amount": 195500,
+                "categories": ["STANDARD"]
+              }
+            }
+          },
+          {
+            "id": "iteuCoLrzYfw358ARi",
+            "type": "ROOM",
+            "description": null,
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Superior Suite Room with 3 single beds" },
+            "mealPlan": { "code": "BED_AND_BREAKFAST", "label": "Breakfast included" },
+            "rate": { "label": "ADVANCE SAVER RATE - BREAKFAST INCLUDED" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 208525,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": { "code": "NO_CANCELLATION", "label": "Non-refundable" }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYfC7ufGx2",
+                "amount": 219500,
+                "categories": ["STANDARD"]
+              }
+            }
+          },
+          {
+            "id": "iteuCoLrzYfxNHOphf",
+            "type": "ROOM",
+            "description": null,
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Superior Suite Room with 3 single beds" },
+            "mealPlan": { "code": "EUROPEAN_PLAN", "label": null },
+            "rate": { "label": "FLEXIBLE RATE" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 218500,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": {
+                    "code": "FREE_CANCELLATION",
+                    "label": "Cancel free of charge until Apr 13th 6:00 PM"
+                  }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYfii4X7ZX",
+                "amount": 230000,
+                "categories": ["STANDARD"]
+              }
+            }
+          },
+          {
+            "id": "iteuCoLrzYfEpL9IgM",
+            "type": "ROOM",
+            "description": null,
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Superior Suite Room with 3 single beds" },
+            "mealPlan": { "code": "BED_AND_BREAKFAST", "label": "Breakfast included" },
+            "rate": { "label": "FLEXIBLE RATE - BREAKFAST INCLUDED" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 241300,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": {
+                    "code": "FREE_CANCELLATION",
+                    "label": "Cancel free of charge until Apr 13th 6:00 PM"
+                  }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYf3kLJQhl",
+                "amount": 254000,
+                "categories": ["STANDARD"]
+              }
+            }
+          },
+          {
+            "id": "iteuCoLrzYfHiRcgyr",
+            "type": "ROOM",
+            "description": null,
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Deluxe Suite Room with 1 double bed plus 2 single beds" },
+            "mealPlan": { "code": "EUROPEAN_PLAN", "label": null },
+            "rate": { "label": "ADVANCE SAVER RATE" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 742900,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": { "code": "NO_CANCELLATION", "label": "Non-refundable" }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYfzrw4ffY",
+                "amount": 782000,
+                "categories": ["STANDARD"]
+              }
+            }
+          },
+          {
+            "id": "iteuCoLrzYfxQ8G0Ap",
+            "type": "ROOM",
+            "description": null,
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Deluxe Suite Room with 1 double bed plus 2 single beds" },
+            "mealPlan": { "code": "BED_AND_BREAKFAST", "label": "Breakfast included" },
+            "rate": { "label": "ADVANCE SAVER RATE - BREAKFAST INCLUDED" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 765700,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": { "code": "NO_CANCELLATION", "label": "Non-refundable" }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYfyoPj3QZ",
+                "amount": 806000,
+                "categories": ["STANDARD"]
+              }
+            }
+          },
+          {
+            "id": "iteuCoLrzYfecPcgkJ",
+            "type": "ROOM",
+            "description": null,
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Deluxe Suite Room with 1 double bed plus 2 single beds" },
+            "mealPlan": { "code": "EUROPEAN_PLAN", "label": null },
+            "rate": { "label": "FLEXIBLE RATE" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 874000,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": {
+                    "code": "FREE_CANCELLATION",
+                    "label": "Cancel free of charge until Apr 13th 6:00 PM"
+                  }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYfzIF7X5M",
+                "amount": 920000,
+                "categories": ["STANDARD"]
+              }
+            }
+          },
+          {
+            "id": "iteuCoLrzYfCbxy1wE",
+            "type": "ROOM",
+            "description": null,
+            "dateIn": "2026-04-14",
+            "accommodation": { "name": "Deluxe Suite Room with 1 double bed plus 2 single beds" },
+            "mealPlan": { "code": "BED_AND_BREAKFAST", "label": "Breakfast included" },
+            "rate": { "label": "FLEXIBLE RATE - BREAKFAST INCLUDED" },
+            "pricing": {
+              "currency": "KRW",
+              "main": {
+                "amount": 896800,
+                "label": null,
+                "categories": ["MEMBER_RATE"],
+                "simplifiedPolicies": {
+                  "cancellation": {
+                    "code": "FREE_CANCELLATION",
+                    "label": "Cancel free of charge until Apr 13th 6:00 PM"
+                  }
+                }
+              },
+              "alternative": {
+                "offerId": "iteuCoLrzYfZrBYLOP",
+                "amount": 944000,
+                "categories": ["STANDARD"]
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

@@ -40,6 +40,7 @@ const makeOffer = (
     description?: string | null;
     mealPlanCode?: string;
     mealPlanLabel?: string | null;
+    rateLabel?: string | null;
   } = {}
 ): object => ({
   id: `offer-${roomName}-${cancellationCode}-${amount}`,
@@ -49,6 +50,9 @@ const makeOffer = (
   mealPlan: {
     code: options.mealPlanCode ?? "EUROPEAN_PLAN",
     label: options.mealPlanLabel !== undefined ? options.mealPlanLabel : null,
+  },
+  rate: {
+    label: options.rateLabel !== undefined ? options.rateLabel : null,
   },
   pricing: {
     currency: options.currency ?? "USD",
@@ -78,9 +82,11 @@ describe("parseAccorRates", () => {
     expect(parseAccorRates(makeResponse([]))).toEqual([]);
   });
 
-  it("parses a single refundable room-only offer correctly", () => {
+  it("parses a single refundable offer using rate.label as ratePlanName", () => {
     const data = makeResponse([
-      makeOffer("Superior room, 1 king bed", 101.31, "FREE_CANCELLATION", "Cancel free"),
+      makeOffer("Superior room, 1 king bed", 101.31, "FREE_CANCELLATION", "Cancel free", {
+        rateLabel: "ADVANCE SAVER RATE",
+      }),
     ]);
     const rates = parseAccorRates(data);
     expect(rates).toHaveLength(1);
@@ -88,7 +94,7 @@ describe("parseAccorRates", () => {
       roomId: "Superior room, 1 king bed",
       roomName: "Superior room, 1 king bed",
       ratePlanCode: "ROOM|EUROPEAN_PLAN|FREE_CANCELLATION",
-      ratePlanName: "Room only",
+      ratePlanName: "ADVANCE SAVER RATE",
       cashPrice: 101.31,
       cashCurrency: "USD",
       awardPrice: null,
@@ -99,7 +105,9 @@ describe("parseAccorRates", () => {
 
   it("parses a non-refundable offer correctly", () => {
     const data = makeResponse([
-      makeOffer("Superior room, 1 king bed", 87.29, "NO_CANCELLATION", "Non-refundable"),
+      makeOffer("Superior room, 1 king bed", 87.29, "NO_CANCELLATION", "Non-refundable", {
+        rateLabel: "ADVANCE SAVER RATE",
+      }),
     ]);
     const rates = parseAccorRates(data);
     expect(rates[0].isRefundable).toBe("NON_REFUNDABLE");
@@ -107,7 +115,9 @@ describe("parseAccorRates", () => {
 
   it("marks unknown cancellation codes as UNKNOWN refundability", () => {
     const data = makeResponse([
-      makeOffer("Superior room, 1 king bed", 95.0, "PARTIAL_CANCELLATION", "Partial refund"),
+      makeOffer("Superior room, 1 king bed", 95.0, "PARTIAL_CANCELLATION", "Partial refund", {
+        rateLabel: "FLEXIBLE RATE",
+      }),
     ]);
     const rates = parseAccorRates(data);
     expect(rates[0].isRefundable).toBe("UNKNOWN");
@@ -115,85 +125,79 @@ describe("parseAccorRates", () => {
 
   it("award price is always null — Accor ALL is cashback, not points redemption", () => {
     const data = makeResponse([
-      makeOffer("Superior room, 1 king bed", 101.31, "FREE_CANCELLATION", "Cancel free"),
+      makeOffer("Superior room, 1 king bed", 101.31, "FREE_CANCELLATION", "Cancel free", {
+        rateLabel: "ADVANCE SAVER RATE",
+      }),
     ]);
     const rates = parseAccorRates(data);
     expect(rates[0].awardPrice).toBeNull();
   });
 
-  it("uses 'Room only' as ratePlanName when EUROPEAN_PLAN label is null", () => {
+  it("falls back to 'Room only' when rate.label is null and meal plan is EUROPEAN_PLAN", () => {
     const data = makeResponse([
       makeOffer("Superior room", 100, "FREE_CANCELLATION", "Cancel free", {
         mealPlanCode: "EUROPEAN_PLAN",
         mealPlanLabel: null,
+        rateLabel: null,
       }),
     ]);
     const rates = parseAccorRates(data);
     expect(rates[0].ratePlanName).toBe("Room only");
   });
 
-  it("uses the meal plan label as ratePlanName for BED_AND_BREAKFAST", () => {
+  it("falls back to meal plan label when rate.label is null for BED_AND_BREAKFAST", () => {
     const data = makeResponse([
       makeOffer("Superior room", 120, "FREE_CANCELLATION", "Cancel free", {
         mealPlanCode: "BED_AND_BREAKFAST",
         mealPlanLabel: "Breakfast included",
+        rateLabel: null,
       }),
     ]);
     const rates = parseAccorRates(data);
     expect(rates[0].ratePlanName).toBe("Breakfast included");
   });
 
-  it("uses short description (≤ 40 chars) as ratePlanName for PACKAGE offers", () => {
+  it("uses rate.label as ratePlanName for PACKAGE offers", () => {
     const data = makeResponse([
       makeOffer("Superior room", 130, "FREE_CANCELLATION", "Cancel free", {
         type: "PACKAGE",
         mealPlanCode: "BED_AND_BREAKFAST",
         mealPlanLabel: "Breakfast included",
-        description: "INDULGENCE PACKAGE",
+        rateLabel: "INDULGENCE PACKAGE",
       }),
     ]);
     const rates = parseAccorRates(data);
     expect(rates[0].ratePlanName).toBe("INDULGENCE PACKAGE");
   });
 
-  it("falls back to 'Package – {mealPlanLabel}' when PACKAGE description is long marketing copy", () => {
+  it("falls back to 'Package – {mealPlanLabel}' when rate.label is null for PACKAGE offers", () => {
     const data = makeResponse([
       makeOffer("Superior room", 130, "FREE_CANCELLATION", "Cancel free", {
         type: "PACKAGE",
         mealPlanCode: "BED_AND_BREAKFAST",
         mealPlanLabel: "Breakfast included",
-        description: "Click on the details link to view inclusions and sales conditions.",
+        rateLabel: null,
       }),
     ]);
     const rates = parseAccorRates(data);
     expect(rates[0].ratePlanName).toBe("Package – Breakfast included");
   });
 
-  it("falls back to 'Package – {mealPlanLabel}' when PACKAGE description is null", () => {
-    const data = makeResponse([
-      makeOffer("Superior room", 130, "FREE_CANCELLATION", "Cancel free", {
-        type: "PACKAGE",
-        mealPlanCode: "BED_AND_BREAKFAST",
-        mealPlanLabel: "Breakfast included",
-        description: null,
-      }),
-    ]);
-    const rates = parseAccorRates(data);
-    expect(rates[0].ratePlanName).toBe("Package – Breakfast included");
-  });
-
-  it("keeps ROOM and PACKAGE offers as separate entries even with same meal plan and cancellation", () => {
+  it("keeps ROOM and PACKAGE offers as separate entries even with same rate.label", () => {
+    // Defensive: if somehow ROOM and PACKAGE have the same rate.label, they remain separate
+    // because the ratePlanCode differs. In practice their labels are always different.
     const data = makeResponse([
       makeOffer("Superior room", 101.31, "FREE_CANCELLATION", "Cancel free", {
         type: "ROOM",
         mealPlanCode: "BED_AND_BREAKFAST",
         mealPlanLabel: "Breakfast included",
+        rateLabel: "FLEXIBLE RATE - BREAKFAST INCLUDED",
       }),
       makeOffer("Superior room", 115.0, "FREE_CANCELLATION", "Cancel free", {
         type: "PACKAGE",
         mealPlanCode: "BED_AND_BREAKFAST",
         mealPlanLabel: "Breakfast included",
-        description: "INDULGENCE PACKAGE",
+        rateLabel: "INDULGENCE PACKAGE",
       }),
     ]);
     const rates = parseAccorRates(data);
@@ -204,57 +208,58 @@ describe("parseAccorRates", () => {
     ]);
   });
 
-  it("keeps distinct PACKAGE offers with the same meal plan and cancellation code but different descriptions", () => {
-    // e.g. INDULGENCE PACKAGE (cancel by 2pm) vs WELLNESS PACKAGE (cancel by 11:59pm)
+  it("keeps distinct PACKAGE offers with different rate.labels", () => {
     const data = makeResponse([
-      makeOffer("Superior room", 171000, "FREE_CANCELLATION", "Cancel by 2pm", {
+      makeOffer("Superior room", 171000, "FREE_CANCELLATION", "Cancel free", {
         type: "PACKAGE",
         mealPlanCode: "BED_AND_BREAKFAST",
         mealPlanLabel: "Breakfast included",
-        description: "INDULGENCE PACKAGE",
+        rateLabel: "INDULGENCE PACKAGE",
         currency: "KRW",
       }),
-      makeOffer("Superior room", 171000, "FREE_CANCELLATION", "Cancel by 11:59pm", {
+      makeOffer("Superior room", 171000, "FREE_CANCELLATION", "Cancel free", {
         type: "PACKAGE",
         mealPlanCode: "BED_AND_BREAKFAST",
         mealPlanLabel: "Breakfast included",
-        description: "Click on the details link to view inclusions and sales conditions.",
+        rateLabel: "WELLNESS PACKAGE",
         currency: "KRW",
       }),
     ]);
     const rates = parseAccorRates(data);
     expect(rates).toHaveLength(2);
+    expect(rates.map((r) => r.ratePlanName).sort()).toEqual([
+      "INDULGENCE PACKAGE",
+      "WELLNESS PACKAGE",
+    ]);
   });
 
-  it("keeps separate entries for different meal plans on the same room and cancellation", () => {
+  it("keeps separate entries for different rate.labels on the same room", () => {
     const data = makeResponse([
       makeOffer("Superior room", 87.29, "NO_CANCELLATION", "Non-refundable", {
-        mealPlanCode: "EUROPEAN_PLAN",
-        mealPlanLabel: null,
+        rateLabel: "ADVANCE SAVER RATE",
       }),
-      makeOffer("Superior room", 100.0, "NO_CANCELLATION", "Non-refundable", {
-        mealPlanCode: "BED_AND_BREAKFAST",
-        mealPlanLabel: "Breakfast included",
+      makeOffer("Superior room", 100.0, "FREE_CANCELLATION", "Cancel free", {
+        rateLabel: "FLEXIBLE RATE",
       }),
     ]);
     const rates = parseAccorRates(data);
     expect(rates).toHaveLength(2);
   });
 
-  it("deduplicates identical PACKAGE offers (same description + meal plan + cancellation), keeping cheaper price", () => {
+  it("deduplicates offers with the same rate.label + cancellation code, keeping cheaper price", () => {
     const data = makeResponse([
       makeOffer("Superior room", 275000, "FREE_CANCELLATION", "Cancel free", {
         type: "PACKAGE",
         mealPlanCode: "BED_AND_BREAKFAST",
         mealPlanLabel: "Breakfast included",
-        description: "INDULGENCE PACKAGE",
+        rateLabel: "INDULGENCE PACKAGE",
         currency: "KRW",
       }),
       makeOffer("Superior room", 266000, "FREE_CANCELLATION", "Cancel free", {
         type: "PACKAGE",
         mealPlanCode: "BED_AND_BREAKFAST",
         mealPlanLabel: "Breakfast included",
-        description: "INDULGENCE PACKAGE",
+        rateLabel: "INDULGENCE PACKAGE",
         currency: "KRW",
       }),
     ]);
@@ -265,8 +270,12 @@ describe("parseAccorRates", () => {
 
   it("keeps separate entries for different room types", () => {
     const data = makeResponse([
-      makeOffer("Superior room, 1 king bed", 87.29, "NO_CANCELLATION", "Non-refundable"),
-      makeOffer("Deluxe room, city view, 1 king bed", 103.93, "NO_CANCELLATION", "Non-refundable"),
+      makeOffer("Superior room, 1 king bed", 87.29, "NO_CANCELLATION", "Non-refundable", {
+        rateLabel: "ADVANCE SAVER RATE",
+      }),
+      makeOffer("Deluxe room, city view, 1 king bed", 103.93, "NO_CANCELLATION", "Non-refundable", {
+        rateLabel: "ADVANCE SAVER RATE",
+      }),
     ]);
     const rates = parseAccorRates(data);
     expect(rates).toHaveLength(2);
@@ -291,6 +300,7 @@ describe("parseAccorRates", () => {
                 type: "ROOM",
                 accommodation: {},
                 mealPlan: { code: "EUROPEAN_PLAN", label: null },
+                rate: { label: "ADVANCE SAVER RATE" },
                 pricing: {
                   currency: "USD",
                   main: {
@@ -311,56 +321,52 @@ describe("parseAccorRates", () => {
 
   it("parses a realistic Incheon airport response (4 ROOM + 3 PACKAGE rates per room type)", () => {
     // Fixture based on live API response for hotelId B7P1 (ibis Styles Ambassador Incheon Airport)
-    // on 2026-04-15. Two PACKAGE+BED_AND_BREAKFAST+FREE_CANCELLATION offers with distinct
-    // descriptions (INDULGENCE PACKAGE vs long marketing copy) are kept as separate entries.
+    // on 2026-04-14. rate.label matches what is displayed on the all.accor.com website.
     const data = makeResponse([
-      makeOffer("Superior Room with 1 double bed", 121125, "NO_CANCELLATION", "Non-refundable", {
+      makeOffer("Superior Room with 1 double bed", 113050, "NO_CANCELLATION", "Non-refundable", {
         mealPlanCode: "EUROPEAN_PLAN",
         mealPlanLabel: null,
+        rateLabel: "ADVANCE SAVER RATE",
         currency: "KRW",
       }),
-      makeOffer("Superior Room with 1 double bed", 142500, "FREE_CANCELLATION", "Cancel free 6pm", {
+      makeOffer("Superior Room with 1 double bed", 133000, "FREE_CANCELLATION", "Cancel free 6pm", {
         mealPlanCode: "EUROPEAN_PLAN",
         mealPlanLabel: null,
+        rateLabel: "FLEXIBLE RATE",
         currency: "KRW",
       }),
-      makeOffer("Superior Room with 1 double bed", 143925, "NO_CANCELLATION", "Non-refundable", {
+      makeOffer("Superior Room with 1 double bed", 135850, "NO_CANCELLATION", "Non-refundable", {
         mealPlanCode: "BED_AND_BREAKFAST",
         mealPlanLabel: "Breakfast included",
+        rateLabel: "ADVANCE SAVER RATE - BREAKFAST INCLUDED",
         currency: "KRW",
       }),
-      makeOffer("Superior Room with 1 double bed", 165300, "FREE_CANCELLATION", "Cancel free 6pm", {
+      makeOffer("Superior Room with 1 double bed", 155800, "FREE_CANCELLATION", "Cancel free 6pm", {
         mealPlanCode: "BED_AND_BREAKFAST",
         mealPlanLabel: "Breakfast included",
+        rateLabel: "FLEXIBLE RATE - BREAKFAST INCLUDED",
         currency: "KRW",
       }),
-      // 3 distinct PACKAGE offers — kept separate because descriptions differ
-      makeOffer("Superior Room with 1 double bed", 171000, "FREE_CANCELLATION", "Cancel by 2pm", {
+      // 3 distinct PACKAGE offers — distinct rate.labels
+      makeOffer("Superior Room with 1 double bed", 161500, "FREE_CANCELLATION", "Cancel free", {
         type: "PACKAGE",
         mealPlanCode: "BED_AND_BREAKFAST",
         mealPlanLabel: "Breakfast included",
-        description: "INDULGENCE PACKAGE",
+        rateLabel: "INDULGENCE PACKAGE",
         currency: "KRW",
       }),
-      makeOffer(
-        "Superior Room with 1 double bed",
-        171000,
-        "FREE_CANCELLATION",
-        "Cancel by 11:59pm",
-        {
-          type: "PACKAGE",
-          mealPlanCode: "BED_AND_BREAKFAST",
-          mealPlanLabel: "Breakfast included",
-          description: "Click on the details link to view inclusions and sales conditions.",
-          currency: "KRW",
-        }
-      ),
-      makeOffer("Superior Room with 1 double bed", 174000, "FREE_CANCELLATION", "Cancel by 6pm", {
+      makeOffer("Superior Room with 1 double bed", 161500, "FREE_CANCELLATION", "Cancel free", {
+        type: "PACKAGE",
+        mealPlanCode: "BED_AND_BREAKFAST",
+        mealPlanLabel: "Breakfast included",
+        rateLabel: "WELLNESS PACKAGE",
+        currency: "KRW",
+      }),
+      makeOffer("Superior Room with 1 double bed", 164000, "FREE_CANCELLATION", "Cancel free 6pm", {
         type: "PACKAGE",
         mealPlanCode: "EUROPEAN_PLAN",
         mealPlanLabel: null,
-        description:
-          "Free parking for 1 vehicle for up to 7 days per stay. Includes complimentary fitness access.",
+        rateLabel: "Park, Sleep, Fly",
         currency: "KRW",
       }),
     ]);
@@ -368,24 +374,32 @@ describe("parseAccorRates", () => {
     // 4 ROOM rates + 3 distinct PACKAGE rates
     expect(rates).toHaveLength(7);
 
-    const roomOnly = rates.filter((r) => r.ratePlanName === "Room only");
-    const breakfast = rates.filter((r) => r.ratePlanName === "Breakfast included");
-    const indulgence = rates.filter((r) => r.ratePlanName === "INDULGENCE PACKAGE");
-    const pkgBreakfast = rates.filter((r) => r.ratePlanName === "Package – Breakfast included");
-    const pkgRoomOnly = rates.filter((r) => r.ratePlanName === "Package – Room only");
-    expect(roomOnly).toHaveLength(2); // non-refundable + refundable
-    expect(breakfast).toHaveLength(2); // non-refundable + refundable
-    expect(indulgence).toHaveLength(1);
-    expect(pkgBreakfast).toHaveLength(1); // long-description package falls back
-    expect(pkgRoomOnly).toHaveLength(1); // long-description package falls back
+    const rateNames = rates.map((r) => r.ratePlanName).sort();
+    expect(rateNames).toEqual([
+      "ADVANCE SAVER RATE",
+      "ADVANCE SAVER RATE - BREAKFAST INCLUDED",
+      "FLEXIBLE RATE",
+      "FLEXIBLE RATE - BREAKFAST INCLUDED",
+      "INDULGENCE PACKAGE",
+      "Park, Sleep, Fly",
+      "WELLNESS PACKAGE",
+    ]);
   });
 
   it("lowestRefundableCash returns cheapest FREE_CANCELLATION rate", () => {
     const data = makeResponse([
-      makeOffer("Superior room, 1 king bed", 87.29, "NO_CANCELLATION", "Non-refundable"),
-      makeOffer("Superior room, 1 king bed", 101.31, "FREE_CANCELLATION", "Cancel free"),
-      makeOffer("Deluxe room, city view, 1 king bed", 103.93, "NO_CANCELLATION", "Non-refundable"),
-      makeOffer("Deluxe room, city view, 1 king bed", 120.6, "FREE_CANCELLATION", "Cancel free"),
+      makeOffer("Superior room, 1 king bed", 87.29, "NO_CANCELLATION", "Non-refundable", {
+        rateLabel: "ADVANCE SAVER RATE",
+      }),
+      makeOffer("Superior room, 1 king bed", 101.31, "FREE_CANCELLATION", "Cancel free", {
+        rateLabel: "FLEXIBLE RATE",
+      }),
+      makeOffer("Deluxe room, city view, 1 king bed", 103.93, "NO_CANCELLATION", "Non-refundable", {
+        rateLabel: "ADVANCE SAVER RATE",
+      }),
+      makeOffer("Deluxe room, city view, 1 king bed", 120.6, "FREE_CANCELLATION", "Cancel free", {
+        rateLabel: "FLEXIBLE RATE",
+      }),
     ]);
     const rates = parseAccorRates(data);
     const { price, currency } = lowestRefundableCash(rates);
@@ -395,7 +409,9 @@ describe("parseAccorRates", () => {
 
   it("lowestAward is always null — no points redemption rates", () => {
     const data = makeResponse([
-      makeOffer("Superior room, 1 king bed", 101.31, "FREE_CANCELLATION", "Cancel free"),
+      makeOffer("Superior room, 1 king bed", 101.31, "FREE_CANCELLATION", "Cancel free", {
+        rateLabel: "FLEXIBLE RATE",
+      }),
     ]);
     const rates = parseAccorRates(data);
     expect(lowestAward(rates)).toBeNull();
@@ -403,8 +419,12 @@ describe("parseAccorRates", () => {
 
   it("all rates have isCorporate=false", () => {
     const data = makeResponse([
-      makeOffer("Superior room, 1 king bed", 87.29, "NO_CANCELLATION", "Non-refundable"),
-      makeOffer("Superior room, 1 king bed", 101.31, "FREE_CANCELLATION", "Cancel free"),
+      makeOffer("Superior room, 1 king bed", 87.29, "NO_CANCELLATION", "Non-refundable", {
+        rateLabel: "ADVANCE SAVER RATE",
+      }),
+      makeOffer("Superior room, 1 king bed", 101.31, "FREE_CANCELLATION", "Cancel free", {
+        rateLabel: "FLEXIBLE RATE",
+      }),
     ]);
     const rates = parseAccorRates(data);
     expect(rates.every((r) => r.isCorporate === false)).toBe(true);
@@ -421,6 +441,7 @@ describe("parseAccorRates", () => {
                 type: "ROOM",
                 accommodation: { name: "Superior room" },
                 mealPlan: { code: "EUROPEAN_PLAN", label: null },
+                rate: { label: "ADVANCE SAVER RATE" },
                 pricing: {
                   main: {
                     amount: 100,

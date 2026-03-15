@@ -146,6 +146,9 @@ query HotelPageHot(
           code
           label
         }
+        rate {
+          label
+        }
         pricing {
           currency
           main {
@@ -180,6 +183,9 @@ interface AccorOffer {
   mealPlan?: {
     code?: string; // e.g. "EUROPEAN_PLAN", "BED_AND_BREAKFAST"
     label?: string | null; // e.g. "Breakfast included"; null for EUROPEAN_PLAN
+  };
+  rate?: {
+    label?: string | null; // e.g. "ADVANCE SAVER RATE", "FLEXIBLE RATE", "INDULGENCE PACKAGE"
   };
   pricing?: {
     currency?: string;
@@ -283,29 +289,23 @@ export function parseAccorRates(data: unknown): RoomRate[] {
     const cancellationCode = cancellation?.code ?? "UNKNOWN";
     const offerType = offer.type ?? "ROOM";
     const mealPlanCode = offer.mealPlan?.code ?? "EUROPEAN_PLAN";
-    const description = offer.description ?? null;
 
     // Human-readable meal plan name: EUROPEAN_PLAN has a null label from the API.
     const mealPlanLabel =
       offer.mealPlan?.label ?? (mealPlanCode === "EUROPEAN_PLAN" ? "Room only" : mealPlanCode);
 
-    // ratePlanName for PACKAGE: use description when it looks like a proper name (≤ 40 chars),
-    // e.g. "INDULGENCE PACKAGE". For long marketing-copy descriptions, fall back to
-    // "Package – {mealPlanLabel}". ROOM offers just use the meal plan label.
+    // rate.label is the canonical name shown on the Accor website, e.g.
+    // "ADVANCE SAVER RATE", "FLEXIBLE RATE - BREAKFAST INCLUDED", "INDULGENCE PACKAGE".
+    // Fall back to meal plan label for ROOM offers or offer type label for PACKAGE offers
+    // if somehow absent.
     const ratePlanName =
-      offerType === "PACKAGE"
-        ? description && description.length <= 40
-          ? description
-          : `Package – ${mealPlanLabel}`
-        : mealPlanLabel;
+      offer.rate?.label ?? (offerType === "PACKAGE" ? `Package – ${mealPlanLabel}` : mealPlanLabel);
 
-    // PACKAGE offers include description in the key so distinct packages (e.g. INDULGENCE
-    // vs WELLNESS) are never collapsed even when they share the same meal plan and
-    // cancellation code. ROOM offers dedup by (roomName, mealPlanCode, cancellationCode).
-    const key =
-      offerType === "PACKAGE"
-        ? `${roomName}|PACKAGE|${mealPlanCode}|${cancellationCode}|${description ?? ""}`
-        : `${roomName}|ROOM|${mealPlanCode}|${cancellationCode}`;
+    // Dedup key: rate.label already uniquely identifies the distinct rate plan a guest
+    // would see on the website. Include roomName and cancellationCode to keep separate
+    // entries for the same rate plan with different refundability (shouldn't normally
+    // happen but defensive).
+    const key = `${roomName}|${ratePlanName}|${cancellationCode}`;
 
     const existing = seen.get(key);
     if (existing && Number(existing.cashPrice) <= amount) continue;
