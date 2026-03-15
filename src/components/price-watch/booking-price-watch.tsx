@@ -120,6 +120,14 @@ function ChainPropertyIdHint({
         Hotel ID (objectId) and ask your admin to set it on this property.
       </>
     );
+  } else if (hotelChainId === HOTEL_ID.ACCOR) {
+    content = (
+      <>
+        <strong>Accor Hotel ID needed</strong> — find it in the property URL on all.accor.com (e.g.{" "}
+        <code>all.accor.com/hotel/{"{hotelId}"}/index.en.shtml</code>) and ask your admin to set it
+        on this property.
+      </>
+    );
   } else {
     content = (
       <>
