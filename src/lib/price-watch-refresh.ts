@@ -12,6 +12,52 @@ import {
 } from "./price-fetcher";
 import { sendPriceDropAlert } from "./email";
 import { getCurrentRate } from "./exchange-rate";
+import { HOTEL_ID } from "./constants";
+
+/**
+ * For chains whose loyalty programme has a fixed point value against a base currency,
+ * calculates the award price in points from the cash price.
+ *
+ * - GHA Discovery: 1 point = $0.01 USD → points = cashPrice_in_USD × 100
+ * - Accor ALL:     1 point = €0.01     → points = cashPrice_in_EUR × 100
+ *
+ * Exchange rates are expressed as "1 unit = X USD" (same convention as ExchangeRate table).
+ * Returns null if a required rate is unavailable.
+ */
+export function fixedRateAwardPoints(
+  cashPrice: number,
+  cashCurrency: string,
+  hotelChainId: string,
+  /** 1 cashCurrency = X USD. Can be null if currency is unknown. */
+  cashCurrencyToUSD: number | null,
+  /** 1 EUR = X USD. Only required for Accor; ignored for GHA. */
+  eurToUSD: number | null
+): number | null {
+  if (hotelChainId === HOTEL_ID.GHA_DISCOVERY) {
+    const cashInUSD =
+      cashCurrency === "USD"
+        ? cashPrice
+        : (cashCurrencyToUSD ?? 0) > 0
+          ? cashPrice * cashCurrencyToUSD!
+          : null;
+    if (cashInUSD === null) return null;
+    return Math.round(cashInUSD * 100);
+  }
+
+  if (hotelChainId === HOTEL_ID.ACCOR) {
+    if (!eurToUSD || eurToUSD <= 0) return null;
+    const cashInUSD =
+      cashCurrency === "USD"
+        ? cashPrice
+        : (cashCurrencyToUSD ?? 0) > 0
+          ? cashPrice * cashCurrencyToUSD!
+          : null;
+    if (cashInUSD === null) return null;
+    return Math.round((cashInUSD / eurToUSD) * 100);
+  }
+
+  return null;
+}
 
 export interface WatchResult {
   watchId: string;
@@ -77,6 +123,38 @@ export async function runPriceWatchRefresh(fetchers: PriceFetcher[]): Promise<{
       }
 
       if (result) {
+        // For chains with fixed point values (GHA, Accor), compute award prices from
+        // cash prices via currency conversion: local → USD (→ EUR for Accor).
+        const chainId = watch.property.hotelChainId;
+        if (chainId === HOTEL_ID.GHA_DISCOVERY || chainId === HOTEL_ID.ACCOR) {
+          if (chainId === HOTEL_ID.ACCOR && !ratesCache.has("EUR")) {
+            ratesCache.set("EUR", await getCurrentRate("EUR"));
+          }
+          const eurToUSD = chainId === HOTEL_ID.ACCOR ? (ratesCache.get("EUR") ?? null) : null;
+
+          for (const rate of result.rates) {
+            if (!ratesCache.has(rate.cashCurrency)) {
+              ratesCache.set(rate.cashCurrency, await getCurrentRate(rate.cashCurrency));
+            }
+          }
+
+          result = {
+            ...result,
+            rates: result.rates.map((r) => ({
+              ...r,
+              awardPrice:
+                r.awardPrice ??
+                fixedRateAwardPoints(
+                  r.cashPrice,
+                  r.cashCurrency,
+                  chainId,
+                  ratesCache.get(r.cashCurrency) ?? null,
+                  eurToUSD
+                ),
+            })),
+          };
+        }
+
         // Derive summary fields from the per-room rates
         const { price: lowestCash, currency: lowestCashCurrency } = lowestRefundableCash(
           result.rates
