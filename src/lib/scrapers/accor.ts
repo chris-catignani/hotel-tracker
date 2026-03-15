@@ -15,9 +15,9 @@
  * Award/points pricing: Accor's ALL programme gives cashback discounts,
  * not points-for-room redemptions. awardPrice is always null.
  *
- * Deduplication: The API returns multiple offers per room type × cancellation
- * policy (e.g. different room allocations at slightly different prices).
- * We keep the cheapest offer per (roomName, cancellationCode) pair.
+ * Deduplication: The API may return multiple offers for the same rate plan.
+ * We keep the cheapest offer per (roomName, offerType, ratePlanName, cancellationCode),
+ * where ratePlanName comes from rate.label — the canonical name shown on the website.
  *
  * Refundability: Derived from simplifiedPolicies.cancellation.code.
  * FREE_CANCELLATION → REFUNDABLE, NO_CANCELLATION → NON_REFUNDABLE.
@@ -266,10 +266,9 @@ export class AccorFetcher implements PriceFetcher {
  * Exported for unit testing.
  * Parses room rates from an Accor BFF GraphQL response.
  *
- * Deduplicates by (roomName, type, mealPlanCode, cancellationCode), keeping the
- * cheapest offer per unique combination. This preserves the meaningful distinctions
- * users see on the website: room-only vs breakfast-included, and standard ROOM rates
- * vs PACKAGE rates (which may have different terms).
+ * Deduplicates by (roomName, offerType, ratePlanName, cancellationCode), keeping the
+ * cheapest offer per unique combination. ratePlanName comes from rate.label — the
+ * canonical name shown on the website (e.g. "ADVANCE SAVER RATE", "INDULGENCE PACKAGE").
  */
 export function parseAccorRates(data: unknown): RoomRate[] {
   const response = data as AccorResponse;
@@ -301,11 +300,11 @@ export function parseAccorRates(data: unknown): RoomRate[] {
     const ratePlanName =
       offer.rate?.label ?? (offerType === "PACKAGE" ? `Package – ${mealPlanLabel}` : mealPlanLabel);
 
-    // Dedup key: rate.label already uniquely identifies the distinct rate plan a guest
-    // would see on the website. Include roomName and cancellationCode to keep separate
-    // entries for the same rate plan with different refundability (shouldn't normally
-    // happen but defensive).
-    const key = `${roomName}|${ratePlanName}|${cancellationCode}`;
+    // Dedup key: rate.label (via ratePlanName) uniquely identifies the distinct rate plan a
+    // guest would see on the website. offerType is included to guard against a hypothetical
+    // ROOM/PACKAGE collision with the same display name. cancellationCode separates refundable
+    // vs non-refundable variants of the same rate (rare but defensive).
+    const key = `${roomName}|${offerType}|${ratePlanName}|${cancellationCode}`;
 
     const existing = seen.get(key);
     if (existing && Number(existing.cashPrice) <= amount) continue;
