@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import type { APIRequestContext } from "@playwright/test";
 import { test, expect } from "./fixtures";
 
 /**
@@ -13,10 +14,7 @@ test.describe("Geography promotion restriction", () => {
   const createdPromoIds: string[] = [];
   const createdBookingIds: string[] = [];
 
-  const createGeoPromo = async (
-    request: Parameters<Parameters<typeof test>[1]>[0]["request"],
-    data: Record<string, unknown>
-  ) => {
+  const createGeoPromo = async (request: APIRequestContext, data: Record<string, unknown>) => {
     const promoRes = await request.post("/api/promotions", { data });
     expect(promoRes.ok()).toBeTruthy();
     const promo = await promoRes.json();
@@ -24,10 +22,7 @@ test.describe("Geography promotion restriction", () => {
     return promo;
   };
 
-  const createBooking = async (
-    request: Parameters<Parameters<typeof test>[1]>[0]["request"],
-    data: Record<string, unknown>
-  ) => {
+  const createBooking = async (request: APIRequestContext, data: Record<string, unknown>) => {
     const bookingRes = await request.post("/api/bookings", { data });
     expect(bookingRes.ok()).toBeTruthy();
     const booking = await bookingRes.json();

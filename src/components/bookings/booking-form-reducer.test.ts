@@ -169,7 +169,6 @@ describe("buildInitialState", () => {
       benefits: [
         {
           id: "ben-1",
-          bookingId: "b1",
           benefitType: "free_breakfast",
           label: null,
           dollarValue: "25",
@@ -420,6 +419,7 @@ describe("bookingFormReducer", () => {
           id: "prop-1",
           name: "Loaded Hotel",
           placeId: null,
+          chainPropertyId: null,
           hotelChainId: "chain-1",
           countryCode: null,
           city: null,
@@ -517,6 +517,7 @@ describe("bookingFormReducer", () => {
           id: "prop-1",
           name: "Test Hotel",
           placeId: null,
+          chainPropertyId: null,
           hotelChainId: "chain-1",
           countryCode: "SG",
           city: "Singapore",

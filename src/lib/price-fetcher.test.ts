@@ -12,6 +12,7 @@ const makeProperty = (overrides: Partial<FetchableProperty> = {}): FetchableProp
   name: "Test Hotel",
   hotelChainId: "hyatt-id",
   chainPropertyId: "chiph",
+  countryCode: null,
   ...overrides,
 });
 

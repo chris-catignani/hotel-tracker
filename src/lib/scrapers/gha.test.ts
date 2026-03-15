@@ -8,6 +8,7 @@ const makeProperty = (overrides = {}) => ({
   name: "Kempinski Hotel Mall of the Emirates Dubai",
   hotelChainId: HOTEL_ID.GHA_DISCOVERY,
   chainPropertyId: "23084",
+  countryCode: null as string | null,
   ...overrides,
 });
 
