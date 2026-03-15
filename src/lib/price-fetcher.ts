@@ -28,6 +28,7 @@ export interface FetchableProperty {
   name: string;
   hotelChainId: string | null;
   chainPropertyId: string | null; // spiritCode for Hyatt, mnemonic for IHG
+  countryCode: string | null; // ISO 3166-1 alpha-2 (e.g. "US", "KR", "FR")
 }
 
 export interface FetchParams {
