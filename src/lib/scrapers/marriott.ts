@@ -196,11 +196,9 @@ export class MarriottFetcher implements PriceFetcher {
       console.log(`[MarriottFetcher] Received ${callCount} rate response(s) for ${marshaCode}`);
       if (callCount === 0) return null;
 
-      const checkInDate = new Date(params.checkIn);
-      const checkOutDate = new Date(params.checkOut);
-      const numNights = Math.round(
-        (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)
-      );
+      const checkInDate = new Date(`${params.checkIn}T00:00:00Z`);
+      const checkOutDate = new Date(`${params.checkOut}T00:00:00Z`);
+      const numNights = (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24);
       const rates = parseMarriottRates(rateResponses, numNights);
       console.log(`[MarriottFetcher] Parsed ${rates.length} rates for ${marshaCode}`);
       return rates.length > 0 ? { rates, source: "marriott_browser" } : null;
