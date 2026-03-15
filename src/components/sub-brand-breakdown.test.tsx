@@ -1,4 +1,4 @@
-import { render, screen, act } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi } from "vitest";
 import { SubBrandBreakdown } from "./sub-brand-breakdown";
@@ -44,10 +44,8 @@ describe("SubBrandBreakdown", () => {
     },
   ];
 
-  it("calculates stays breakdown correctly", async () => {
-    await act(async () => {
-      render(<SubBrandBreakdown bookings={mockBookings} />);
-    });
+  it("calculates stays breakdown correctly", () => {
+    render(<SubBrandBreakdown bookings={mockBookings} />);
 
     // Default mode is "stays"
     expect(screen.getByTestId("pie-slice-courtyard")).toHaveTextContent("Courtyard: 2");
@@ -57,9 +55,7 @@ describe("SubBrandBreakdown", () => {
 
   it("calculates nights breakdown correctly", async () => {
     const user = userEvent.setup();
-    await act(async () => {
-      render(<SubBrandBreakdown bookings={mockBookings} />);
-    });
+    render(<SubBrandBreakdown bookings={mockBookings} />);
 
     // Switch to "nights" mode
     await user.click(screen.getByText("Nights"));
@@ -69,41 +65,35 @@ describe("SubBrandBreakdown", () => {
     expect(screen.getByTestId("pie-slice-other")).toHaveTextContent("Other: 1");
   });
 
-  it("limits to 10 items and groups remaining into 'Remaining'", async () => {
+  it("limits to 10 items and groups remaining into 'Remaining'", () => {
     const manyBookings = Array.from({ length: 15 }, (_, i) => ({
       id: String(i),
       numNights: 1,
       hotelChainSubBrand: { id: String(i), name: `Brand ${i + 1}` },
     }));
 
-    await act(async () => {
-      render(<SubBrandBreakdown bookings={manyBookings} />);
-    });
+    render(<SubBrandBreakdown bookings={manyBookings} />);
 
     const slices = screen.getAllByTestId(/pie-slice-/);
     expect(slices).toHaveLength(10);
     expect(screen.getByTestId("pie-slice-remaining")).toHaveTextContent("Remaining: 6");
   });
 
-  it("shows empty state when no bookings", async () => {
-    await act(async () => {
-      render(<SubBrandBreakdown bookings={[]} />);
-    });
+  it("shows empty state when no bookings", () => {
+    render(<SubBrandBreakdown bookings={[]} />);
 
     expect(screen.getByTestId("sub-brand-breakdown-empty")).toBeInTheDocument();
     expect(screen.getByText(/No data/i)).toBeInTheDocument();
   });
 
-  it("sorts data by value descending", async () => {
+  it("sorts data by value descending", () => {
     const skewedBookings = [
       { id: "1", numNights: 1, hotelChainSubBrand: { id: "1", name: "Small" } },
       { id: "2", numNights: 1, hotelChainSubBrand: { id: "2", name: "Large" } },
       { id: "3", numNights: 1, hotelChainSubBrand: { id: "2", name: "Large" } },
     ];
 
-    await act(async () => {
-      render(<SubBrandBreakdown bookings={skewedBookings} />);
-    });
+    render(<SubBrandBreakdown bookings={skewedBookings} />);
 
     const slices = screen.getAllByTestId(/pie-slice-/);
     expect(slices[0]).toHaveTextContent("Large: 2");

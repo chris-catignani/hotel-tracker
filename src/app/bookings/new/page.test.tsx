@@ -9,6 +9,31 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
 }));
 
+// Mock next/link to avoid "Not implemented: navigation to another Document"
+vi.mock("next/link", () => ({
+  default: ({
+    children,
+    href,
+    onClick,
+    ...props
+  }: {
+    children: React.ReactNode;
+    href: string;
+    onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
+  } & React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
+    <a
+      href={href}
+      onClick={(e) => {
+        e.preventDefault();
+        onClick?.(e);
+      }}
+      {...props}
+    >
+      {children}
+    </a>
+  ),
+}));
+
 // Mock BookingForm with a simplified version that calls onSubmit with a fixed payload
 vi.mock("@/components/bookings/booking-form", () => ({
   BookingForm: ({

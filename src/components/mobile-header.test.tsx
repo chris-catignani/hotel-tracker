@@ -1,4 +1,4 @@
-import { render, screen, act } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { MobileHeader } from "./mobile-header";
@@ -7,6 +7,31 @@ import { usePathname } from "next/navigation";
 // Mock next/navigation
 vi.mock("next/navigation", () => ({
   usePathname: vi.fn(),
+}));
+
+// Mock next/link to avoid "Not implemented: navigation to another Document"
+vi.mock("next/link", () => ({
+  default: ({
+    children,
+    href,
+    onClick,
+    ...props
+  }: {
+    children: React.ReactNode;
+    href: string;
+    onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
+  } & React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
+    <a
+      href={href}
+      onClick={(e) => {
+        e.preventDefault();
+        onClick?.(e);
+      }}
+      {...props}
+    >
+      {children}
+    </a>
+  ),
 }));
 
 describe("MobileHeader", () => {
@@ -18,19 +43,15 @@ describe("MobileHeader", () => {
     vi.clearAllMocks();
   });
 
-  it("renders the header and title", async () => {
-    await act(async () => {
-      render(<MobileHeader />);
-    });
+  it("renders the header and title", () => {
+    render(<MobileHeader />);
     expect(screen.getByTestId("mobile-header-title")).toHaveTextContent("Hotel Tracker");
     expect(screen.getByTestId("mobile-nav-toggle")).toBeInTheDocument();
   });
 
   it("opens the navigation menu when the toggle is clicked", async () => {
     const user = userEvent.setup();
-    await act(async () => {
-      render(<MobileHeader />);
-    });
+    render(<MobileHeader />);
 
     const toggle = screen.getByTestId("mobile-nav-toggle");
     await user.click(toggle);
@@ -42,9 +63,7 @@ describe("MobileHeader", () => {
 
   it("closes the navigation menu when a link is clicked", async () => {
     const user = userEvent.setup();
-    await act(async () => {
-      render(<MobileHeader />);
-    });
+    render(<MobileHeader />);
 
     // Open menu
     await user.click(screen.getByTestId("mobile-nav-toggle"));
