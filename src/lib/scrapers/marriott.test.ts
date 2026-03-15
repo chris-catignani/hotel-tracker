@@ -8,6 +8,7 @@ const makeProperty = (overrides = {}) => ({
   name: "Atlanta Marriott Marquis",
   hotelChainId: HOTEL_ID.MARRIOTT,
   chainPropertyId: "ATLMQ",
+  countryCode: null,
   ...overrides,
 });
 
@@ -200,6 +201,26 @@ describe("parseMarriottRates", () => {
       isRefundable: "REFUNDABLE",
       isCorporate: false,
     });
+  });
+
+  it("divides total award points by numNights to get per-night price", () => {
+    // API returns total stay cost: 3 nights × 25000 pts/night = 75000 total
+    const rates = parseMarriottRates(
+      [makeResponse([makeAwardEdge("king", "King Room", "BONV", "Redemption with Points", 75000)])],
+      3
+    );
+
+    expect(rates[0].awardPrice).toBe(25000);
+  });
+
+  it("rounds award points per night when total is not evenly divisible", () => {
+    // 2 nights, 35001 total → rounds to 17501
+    const rates = parseMarriottRates(
+      [makeResponse([makeAwardEdge("king", "King Room", "BONV", "Award Rate", 35001)])],
+      2
+    );
+
+    expect(rates[0].awardPrice).toBe(17501);
   });
 
   it("deduplicates rates with the same roomName+ratePlanName across multiple responses", () => {
