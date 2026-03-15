@@ -196,7 +196,12 @@ export class MarriottFetcher implements PriceFetcher {
       console.log(`[MarriottFetcher] Received ${callCount} rate response(s) for ${marshaCode}`);
       if (callCount === 0) return null;
 
-      const rates = parseMarriottRates(rateResponses);
+      const checkInDate = new Date(params.checkIn);
+      const checkOutDate = new Date(params.checkOut);
+      const numNights = Math.round(
+        (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      const rates = parseMarriottRates(rateResponses, numNights);
       console.log(`[MarriottFetcher] Parsed ${rates.length} rates for ${marshaCode}`);
       return rates.length > 0 ? { rates, source: "marriott_browser" } : null;
     } catch (err) {
@@ -219,7 +224,7 @@ export class MarriottFetcher implements PriceFetcher {
  * Exported for unit testing.
  * Merges + deduplicates rates from multiple PhoenixBookDTTSearchProductsByProperty responses.
  */
-export function parseMarriottRates(responses: unknown[]): RoomRate[] {
+export function parseMarriottRates(responses: unknown[], numNights = 1): RoomRate[] {
   // Dedup key: roomName|ratePlanName
   // - roomName instead of roomId: Marriott assigns multiple physical inventory IDs
   //   (e.g. d000000038–d000000041) to the same room type. Using the display name
@@ -269,8 +274,9 @@ export function parseMarriottRates(responses: unknown[]): RoomRate[] {
           isCorporate: false,
         });
       } else if (rateMode.__typename === "HotelRoomRateModesPoints") {
-        const pts = (rateMode as MarriottRateModesPoints).pointsPerUnit.points;
-        if (!isFinite(pts) || pts <= 0) continue;
+        const totalPts = (rateMode as MarriottRateModesPoints).pointsPerUnit.points;
+        if (!isFinite(totalPts) || totalPts <= 0) continue;
+        const ptsPerNight = Math.round(totalPts / Math.max(numNights, 1));
 
         result.push({
           roomId: roomName,
@@ -279,7 +285,7 @@ export function parseMarriottRates(responses: unknown[]): RoomRate[] {
           ratePlanName,
           cashPrice: null,
           cashCurrency: "USD",
-          awardPrice: pts,
+          awardPrice: ptsPerNight,
           isRefundable: "REFUNDABLE",
           isCorporate: false,
         });
