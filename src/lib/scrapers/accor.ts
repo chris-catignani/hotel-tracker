@@ -1,0 +1,224 @@
+/**
+ * Accor price fetcher.
+ *
+ * Strategy: Plain HTTP POST to the Accor BFF GraphQL endpoint.
+ * No browser required — the API uses a static public key visible in
+ * Accor's all.accor.com web app, the same approach as IHG.
+ *
+ * Endpoint: POST https://api.accor.com/bff/v1/graphql
+ * Operation: HotelPageHot — returns all available room offers for a hotel
+ * and date range, with pricing and cancellation policy.
+ *
+ * chainPropertyId format: alphanumeric hotel ID (e.g. "C3M1", "3434").
+ * Found in hotel page URLs: https://all.accor.com/hotel/C3M1/index.en.shtml
+ *
+ * Award/points pricing: Accor's ALL programme gives cashback discounts,
+ * not points-for-room redemptions. awardPrice is always null.
+ *
+ * Deduplication: The API returns multiple offers per room type × cancellation
+ * policy (e.g. different room allocations at slightly different prices).
+ * We keep the cheapest offer per (roomName, cancellationCode) pair.
+ *
+ * Refundability: Derived from simplifiedPolicies.cancellation.code.
+ * FREE_CANCELLATION → REFUNDABLE, NO_CANCELLATION → NON_REFUNDABLE.
+ */
+
+import { HOTEL_ID } from "@/lib/constants";
+import type {
+  FetchableProperty,
+  FetchParams,
+  PriceFetcher,
+  PriceFetchResult,
+  RoomRate,
+} from "@/lib/price-fetcher";
+
+const ACCOR_BFF_URL = "https://api.accor.com/bff/v1/graphql";
+
+// Static public API key embedded in Accor's all.accor.com web app.
+// Can be overridden via ACCOR_API_KEY env var.
+const ACCOR_API_KEY = process.env.ACCOR_API_KEY ?? "l7xx5b9f4a053aaf43d8bc05bcc266dd8532";
+
+const HOTEL_PAGE_HOT_QUERY = `
+query HotelPageHot(
+  $hotelOffersHotelId: String!
+  $dateIn: Date!
+  $dateOut: Date!
+  $nbAdults: PositiveInt!
+  $childrenAges: [NonNegativeInt!]
+  $countryMarket: String!
+  $currency: String!
+) {
+  hotelOffers(
+    hotelId: $hotelOffersHotelId
+    dateIn: $dateIn
+    dateOut: $dateOut
+    nbAdults: $nbAdults
+    childrenAges: $childrenAges
+    countryMarket: $countryMarket
+    currency: $currency
+  ) {
+    offersSelection {
+      offers {
+        id
+        accommodation {
+          name
+        }
+        pricing {
+          currency
+          main {
+            amount
+            simplifiedPolicies {
+              cancellation {
+                code
+                label
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+`.trim();
+
+// Accor BFF response types
+interface AccorCancellationPolicy {
+  code: string; // e.g. "FREE_CANCELLATION", "NO_CANCELLATION"
+  label: string; // e.g. "Non-refundable", "Cancel free of charge until Apr 9th 6:00 PM"
+}
+
+interface AccorOffer {
+  id: string;
+  accommodation?: {
+    name?: string;
+  };
+  pricing?: {
+    currency?: string;
+    main?: {
+      amount?: number;
+      simplifiedPolicies?: {
+        cancellation?: AccorCancellationPolicy;
+      };
+    };
+  };
+}
+
+export interface AccorResponse {
+  data?: {
+    hotelOffers?: {
+      offersSelection?: {
+        offers?: AccorOffer[];
+      };
+    };
+  };
+}
+
+export class AccorFetcher implements PriceFetcher {
+  canFetch(property: FetchableProperty): boolean {
+    return property.hotelChainId === HOTEL_ID.ACCOR && !!property.chainPropertyId;
+  }
+
+  async fetchPrice(params: FetchParams): Promise<PriceFetchResult | null> {
+    const hotelId = params.property.chainPropertyId;
+    if (!hotelId) return null;
+
+    console.log(`[AccorFetcher] Fetching rates for hotelId=${hotelId}...`);
+
+    const res = await fetch(ACCOR_BFF_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        apikey: ACCOR_API_KEY,
+        "app-id": "all.accor",
+        clientid: "all.accor",
+        lang: "en",
+        Origin: "https://all.accor.com",
+        Referer: "https://all.accor.com/",
+      },
+      body: JSON.stringify({
+        operationName: "HotelPageHot",
+        variables: {
+          hotelOffersHotelId: hotelId,
+          dateIn: params.checkIn,
+          dateOut: params.checkOut,
+          nbAdults: params.adults ?? 1,
+          childrenAges: [],
+          countryMarket: "US",
+          currency: "USD",
+        },
+        query: HOTEL_PAGE_HOT_QUERY,
+      }),
+    });
+
+    if (!res.ok) {
+      console.error(`[AccorFetcher] API error for ${hotelId}: HTTP ${res.status}`);
+      return null;
+    }
+
+    const data = (await res.json()) as AccorResponse;
+    const offerCount = data.data?.hotelOffers?.offersSelection?.offers?.length ?? 0;
+    console.log(`[AccorFetcher] Response for ${hotelId}: ${offerCount} raw offers`);
+
+    const rates = parseAccorRates(data);
+    console.log(`[AccorFetcher] Parsed ${rates.length} rates for ${hotelId}`);
+
+    return rates.length > 0 ? { rates, source: "accor_api" } : null;
+  }
+}
+
+/**
+ * Exported for unit testing.
+ * Parses room rates from an Accor BFF GraphQL response.
+ *
+ * The API returns multiple offers for the same (roomName, cancellationCode) pair
+ * at slightly different price points. We deduplicate by that key, keeping the
+ * cheapest offer — matching the behaviour users see on the website (lowest price shown).
+ */
+export function parseAccorRates(data: unknown): RoomRate[] {
+  const response = data as AccorResponse;
+  const offers = response.data?.hotelOffers?.offersSelection?.offers ?? [];
+
+  // Deduplicate by (roomName, cancellationCode), keeping the cheapest price.
+  const seen = new Map<string, RoomRate>();
+
+  for (const offer of offers) {
+    const roomName = offer.accommodation?.name;
+    if (!roomName) continue;
+
+    const amount = offer.pricing?.main?.amount;
+    if (amount === undefined || amount === null || !isFinite(amount) || amount <= 0) continue;
+
+    const currency = offer.pricing?.currency ?? "USD";
+    const cancellation = offer.pricing?.main?.simplifiedPolicies?.cancellation;
+    const cancellationCode = cancellation?.code ?? "UNKNOWN";
+    const cancellationLabel = cancellation?.label ?? cancellationCode;
+
+    const key = `${roomName}|${cancellationCode}`;
+    const existing = seen.get(key);
+    if (existing && Number(existing.cashPrice) <= amount) continue;
+
+    seen.set(key, {
+      roomId: roomName,
+      roomName,
+      ratePlanCode: cancellationCode,
+      ratePlanName: cancellationLabel,
+      cashPrice: amount,
+      cashCurrency: currency,
+      awardPrice: null, // Accor ALL is cashback, not points redemption
+      isRefundable:
+        cancellationCode === "FREE_CANCELLATION"
+          ? "REFUNDABLE"
+          : cancellationCode === "NO_CANCELLATION"
+            ? "NON_REFUNDABLE"
+            : "UNKNOWN",
+      isCorporate: false,
+    });
+  }
+
+  return Array.from(seen.values());
+}
+
+export function createAccorFetcher(): AccorFetcher {
+  return new AccorFetcher();
+}
