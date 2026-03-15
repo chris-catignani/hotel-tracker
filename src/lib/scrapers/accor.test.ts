@@ -37,12 +37,14 @@ const makeOffer = (
   options: {
     currency?: string;
     type?: string;
+    description?: string | null;
     mealPlanCode?: string;
     mealPlanLabel?: string | null;
   } = {}
 ): object => ({
   id: `offer-${roomName}-${cancellationCode}-${amount}`,
   type: options.type ?? "ROOM",
+  description: options.description !== undefined ? options.description : null,
   accommodation: { name: roomName },
   mealPlan: {
     code: options.mealPlanCode ?? "EUROPEAN_PLAN",
@@ -141,12 +143,39 @@ describe("parseAccorRates", () => {
     expect(rates[0].ratePlanName).toBe("Breakfast included");
   });
 
-  it("prefixes ratePlanName with 'Package –' for PACKAGE type offers", () => {
+  it("uses short description (≤ 40 chars) as ratePlanName for PACKAGE offers", () => {
     const data = makeResponse([
       makeOffer("Superior room", 130, "FREE_CANCELLATION", "Cancel free", {
         type: "PACKAGE",
         mealPlanCode: "BED_AND_BREAKFAST",
         mealPlanLabel: "Breakfast included",
+        description: "INDULGENCE PACKAGE",
+      }),
+    ]);
+    const rates = parseAccorRates(data);
+    expect(rates[0].ratePlanName).toBe("INDULGENCE PACKAGE");
+  });
+
+  it("falls back to 'Package – {mealPlanLabel}' when PACKAGE description is long marketing copy", () => {
+    const data = makeResponse([
+      makeOffer("Superior room", 130, "FREE_CANCELLATION", "Cancel free", {
+        type: "PACKAGE",
+        mealPlanCode: "BED_AND_BREAKFAST",
+        mealPlanLabel: "Breakfast included",
+        description: "Click on the details link to view inclusions and sales conditions.",
+      }),
+    ]);
+    const rates = parseAccorRates(data);
+    expect(rates[0].ratePlanName).toBe("Package – Breakfast included");
+  });
+
+  it("falls back to 'Package – {mealPlanLabel}' when PACKAGE description is null", () => {
+    const data = makeResponse([
+      makeOffer("Superior room", 130, "FREE_CANCELLATION", "Cancel free", {
+        type: "PACKAGE",
+        mealPlanCode: "BED_AND_BREAKFAST",
+        mealPlanLabel: "Breakfast included",
+        description: null,
       }),
     ]);
     const rates = parseAccorRates(data);
@@ -164,6 +193,7 @@ describe("parseAccorRates", () => {
         type: "PACKAGE",
         mealPlanCode: "BED_AND_BREAKFAST",
         mealPlanLabel: "Breakfast included",
+        description: "INDULGENCE PACKAGE",
       }),
     ]);
     const rates = parseAccorRates(data);
@@ -172,6 +202,28 @@ describe("parseAccorRates", () => {
       "PACKAGE|BED_AND_BREAKFAST|FREE_CANCELLATION",
       "ROOM|BED_AND_BREAKFAST|FREE_CANCELLATION",
     ]);
+  });
+
+  it("keeps distinct PACKAGE offers with the same meal plan and cancellation code but different descriptions", () => {
+    // e.g. INDULGENCE PACKAGE (cancel by 2pm) vs WELLNESS PACKAGE (cancel by 11:59pm)
+    const data = makeResponse([
+      makeOffer("Superior room", 171000, "FREE_CANCELLATION", "Cancel by 2pm", {
+        type: "PACKAGE",
+        mealPlanCode: "BED_AND_BREAKFAST",
+        mealPlanLabel: "Breakfast included",
+        description: "INDULGENCE PACKAGE",
+        currency: "KRW",
+      }),
+      makeOffer("Superior room", 171000, "FREE_CANCELLATION", "Cancel by 11:59pm", {
+        type: "PACKAGE",
+        mealPlanCode: "BED_AND_BREAKFAST",
+        mealPlanLabel: "Breakfast included",
+        description: "Click on the details link to view inclusions and sales conditions.",
+        currency: "KRW",
+      }),
+    ]);
+    const rates = parseAccorRates(data);
+    expect(rates).toHaveLength(2);
   });
 
   it("keeps separate entries for different meal plans on the same room and cancellation", () => {
@@ -189,19 +241,20 @@ describe("parseAccorRates", () => {
     expect(rates).toHaveLength(2);
   });
 
-  it("deduplicates same roomName + type + mealPlanCode + cancellationCode, keeping the cheaper price", () => {
-    // Two PACKAGE BED_AND_BREAKFAST FREE_CANCELLATION offers at different prices
+  it("deduplicates identical PACKAGE offers (same description + meal plan + cancellation), keeping cheaper price", () => {
     const data = makeResponse([
-      makeOffer("Superior room", 266000, "FREE_CANCELLATION", "Cancel by 2pm", {
+      makeOffer("Superior room", 275000, "FREE_CANCELLATION", "Cancel free", {
         type: "PACKAGE",
         mealPlanCode: "BED_AND_BREAKFAST",
         mealPlanLabel: "Breakfast included",
+        description: "INDULGENCE PACKAGE",
         currency: "KRW",
       }),
-      makeOffer("Superior room", 266000, "FREE_CANCELLATION", "Cancel by 11:59pm", {
+      makeOffer("Superior room", 266000, "FREE_CANCELLATION", "Cancel free", {
         type: "PACKAGE",
         mealPlanCode: "BED_AND_BREAKFAST",
         mealPlanLabel: "Breakfast included",
+        description: "INDULGENCE PACKAGE",
         currency: "KRW",
       }),
     ]);
@@ -256,67 +309,75 @@ describe("parseAccorRates", () => {
     expect(parseAccorRates(data)).toHaveLength(0);
   });
 
-  it("parses a realistic Incheon airport response (4 ROOM + 2 PACKAGE rates per room type)", () => {
+  it("parses a realistic Incheon airport response (4 ROOM + 3 PACKAGE rates per room type)", () => {
     // Fixture based on live API response for hotelId B7P1 (ibis Styles Ambassador Incheon Airport)
+    // on 2026-04-15. Two PACKAGE+BED_AND_BREAKFAST+FREE_CANCELLATION offers with distinct
+    // descriptions (INDULGENCE PACKAGE vs long marketing copy) are kept as separate entries.
     const data = makeResponse([
-      makeOffer("Superior Room with 1 double bed", 201875, "NO_CANCELLATION", "Non-refundable", {
+      makeOffer("Superior Room with 1 double bed", 121125, "NO_CANCELLATION", "Non-refundable", {
         mealPlanCode: "EUROPEAN_PLAN",
         mealPlanLabel: null,
         currency: "KRW",
       }),
-      makeOffer("Superior Room with 1 double bed", 224675, "NO_CANCELLATION", "Non-refundable", {
-        mealPlanCode: "BED_AND_BREAKFAST",
-        mealPlanLabel: "Breakfast included",
-        currency: "KRW",
-      }),
-      makeOffer("Superior Room with 1 double bed", 237500, "FREE_CANCELLATION", "Cancel free", {
+      makeOffer("Superior Room with 1 double bed", 142500, "FREE_CANCELLATION", "Cancel free 6pm", {
         mealPlanCode: "EUROPEAN_PLAN",
         mealPlanLabel: null,
         currency: "KRW",
       }),
-      makeOffer("Superior Room with 1 double bed", 260300, "FREE_CANCELLATION", "Cancel free", {
+      makeOffer("Superior Room with 1 double bed", 143925, "NO_CANCELLATION", "Non-refundable", {
         mealPlanCode: "BED_AND_BREAKFAST",
         mealPlanLabel: "Breakfast included",
         currency: "KRW",
       }),
-      // Two PACKAGE+BED_AND_BREAKFAST+FREE_CANCELLATION at the same price → deduped to 1
-      makeOffer("Superior Room with 1 double bed", 266000, "FREE_CANCELLATION", "Cancel by 2pm", {
+      makeOffer("Superior Room with 1 double bed", 165300, "FREE_CANCELLATION", "Cancel free 6pm", {
+        mealPlanCode: "BED_AND_BREAKFAST",
+        mealPlanLabel: "Breakfast included",
+        currency: "KRW",
+      }),
+      // 3 distinct PACKAGE offers — kept separate because descriptions differ
+      makeOffer("Superior Room with 1 double bed", 171000, "FREE_CANCELLATION", "Cancel by 2pm", {
         type: "PACKAGE",
         mealPlanCode: "BED_AND_BREAKFAST",
         mealPlanLabel: "Breakfast included",
+        description: "INDULGENCE PACKAGE",
         currency: "KRW",
       }),
       makeOffer(
         "Superior Room with 1 double bed",
-        266000,
+        171000,
         "FREE_CANCELLATION",
         "Cancel by 11:59pm",
         {
           type: "PACKAGE",
           mealPlanCode: "BED_AND_BREAKFAST",
           mealPlanLabel: "Breakfast included",
+          description: "Click on the details link to view inclusions and sales conditions.",
           currency: "KRW",
         }
       ),
-      makeOffer("Superior Room with 1 double bed", 274000, "FREE_CANCELLATION", "Cancel free", {
+      makeOffer("Superior Room with 1 double bed", 174000, "FREE_CANCELLATION", "Cancel by 6pm", {
         type: "PACKAGE",
         mealPlanCode: "EUROPEAN_PLAN",
         mealPlanLabel: null,
+        description:
+          "Free parking for 1 vehicle for up to 7 days per stay. Includes complimentary fitness access.",
         currency: "KRW",
       }),
     ]);
     const rates = parseAccorRates(data);
-    // 4 ROOM rates + 2 unique PACKAGE rates (2 dupes → 1)
-    expect(rates).toHaveLength(6);
+    // 4 ROOM rates + 3 distinct PACKAGE rates
+    expect(rates).toHaveLength(7);
 
     const roomOnly = rates.filter((r) => r.ratePlanName === "Room only");
     const breakfast = rates.filter((r) => r.ratePlanName === "Breakfast included");
+    const indulgence = rates.filter((r) => r.ratePlanName === "INDULGENCE PACKAGE");
     const pkgBreakfast = rates.filter((r) => r.ratePlanName === "Package – Breakfast included");
     const pkgRoomOnly = rates.filter((r) => r.ratePlanName === "Package – Room only");
     expect(roomOnly).toHaveLength(2); // non-refundable + refundable
     expect(breakfast).toHaveLength(2); // non-refundable + refundable
-    expect(pkgBreakfast).toHaveLength(1);
-    expect(pkgRoomOnly).toHaveLength(1);
+    expect(indulgence).toHaveLength(1);
+    expect(pkgBreakfast).toHaveLength(1); // long-description package falls back
+    expect(pkgRoomOnly).toHaveLength(1); // long-description package falls back
   });
 
   it("lowestRefundableCash returns cheapest FREE_CANCELLATION rate", () => {

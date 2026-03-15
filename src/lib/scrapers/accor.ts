@@ -138,6 +138,7 @@ query HotelPageHot(
       offers {
         id
         type
+        description
         accommodation {
           name
         }
@@ -172,6 +173,7 @@ interface AccorCancellationPolicy {
 interface AccorOffer {
   id: string;
   type?: string; // "ROOM" or "PACKAGE"
+  description?: string | null; // package name (short) or long description; null for standard ROOM offers
   accommodation?: {
     name?: string;
   };
@@ -281,16 +283,30 @@ export function parseAccorRates(data: unknown): RoomRate[] {
     const cancellationCode = cancellation?.code ?? "UNKNOWN";
     const offerType = offer.type ?? "ROOM";
     const mealPlanCode = offer.mealPlan?.code ?? "EUROPEAN_PLAN";
+    const description = offer.description ?? null;
 
     // Human-readable meal plan name: EUROPEAN_PLAN has a null label from the API.
     const mealPlanLabel =
       offer.mealPlan?.label ?? (mealPlanCode === "EUROPEAN_PLAN" ? "Room only" : mealPlanCode);
 
-    // ratePlanName combines offer type and meal plan so users can distinguish rates.
-    // PACKAGE rates have distinct terms (e.g. different cancellation deadlines, perks).
-    const ratePlanName = offerType === "PACKAGE" ? `Package – ${mealPlanLabel}` : mealPlanLabel;
+    // ratePlanName for PACKAGE: use description when it looks like a proper name (≤ 40 chars),
+    // e.g. "INDULGENCE PACKAGE". For long marketing-copy descriptions, fall back to
+    // "Package – {mealPlanLabel}". ROOM offers just use the meal plan label.
+    const ratePlanName =
+      offerType === "PACKAGE"
+        ? description && description.length <= 40
+          ? description
+          : `Package – ${mealPlanLabel}`
+        : mealPlanLabel;
 
-    const key = `${roomName}|${offerType}|${mealPlanCode}|${cancellationCode}`;
+    // PACKAGE offers include description in the key so distinct packages (e.g. INDULGENCE
+    // vs WELLNESS) are never collapsed even when they share the same meal plan and
+    // cancellation code. ROOM offers dedup by (roomName, mealPlanCode, cancellationCode).
+    const key =
+      offerType === "PACKAGE"
+        ? `${roomName}|PACKAGE|${mealPlanCode}|${cancellationCode}|${description ?? ""}`
+        : `${roomName}|ROOM|${mealPlanCode}|${cancellationCode}`;
+
     const existing = seen.get(key);
     if (existing && Number(existing.cashPrice) <= amount) continue;
 
