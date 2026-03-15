@@ -416,9 +416,19 @@ export function BookingPriceWatch({
                         if (bPrice === null) return -1;
                         return dir * (aPrice - bPrice);
                       }
-                      // award
-                      const aAward = a.rates.find((r) => r.awardPrice != null)?.awardPrice ?? null;
-                      const bAward = b.rates.find((r) => r.awardPrice != null)?.awardPrice ?? null;
+                      // award — same refundability filter as cash
+                      const getMinRefundableAwardPrice = (
+                        rates: PriceSnapshotRoom[]
+                      ): number | null => {
+                        const prices = rates
+                          .filter(
+                            (r) => r.awardPrice != null && r.isRefundable !== "NON_REFUNDABLE"
+                          )
+                          .map((r) => Number(r.awardPrice));
+                        return prices.length > 0 ? Math.min(...prices) : null;
+                      };
+                      const aAward = getMinRefundableAwardPrice(a.rates);
+                      const bAward = getMinRefundableAwardPrice(b.rates);
                       if (aAward === null && bAward === null) return 0;
                       if (aAward === null) return 1;
                       if (bAward === null) return -1;
@@ -478,7 +488,20 @@ export function BookingPriceWatch({
                                   const pureAwardRate = rates.find(
                                     (r) => r.awardPrice != null && r.cashPrice == null
                                   );
-                                  const awardRate = rates.find((r) => r.awardPrice != null);
+                                  // Summary award: lowest award price, preferring refundable/unknown
+                                  // rates (same refundability filter as the cash summary). Falls back
+                                  // to the lowest non-refundable award when no refundable/unknown
+                                  // award rates exist (e.g. Hyatt award nights are non-refundable).
+                                  const minAward = (rs: PriceSnapshotRoom[]): number | null =>
+                                    rs
+                                      .filter((r) => r.awardPrice != null)
+                                      .reduce<
+                                        number | null
+                                      >((best, r) => (best === null || Number(r.awardPrice) < best ? Number(r.awardPrice) : best), null);
+                                  const lowestRefundableAward =
+                                    minAward(
+                                      rates.filter((r) => r.isRefundable !== "NON_REFUNDABLE")
+                                    ) ?? minAward(rates);
                                   const lowestRefundable = cashRates
                                     .filter((r) => r.isRefundable !== "NON_REFUNDABLE")
                                     .reduce<PriceSnapshotRoom | null>(
@@ -523,8 +546,8 @@ export function BookingPriceWatch({
                                             : "—"}
                                         </TableCell>
                                         <TableCell className="text-xs py-1.5 text-right">
-                                          {awardRate != null
-                                            ? `${awardRate.awardPrice!.toLocaleString()} pts`
+                                          {lowestRefundableAward != null
+                                            ? `${lowestRefundableAward.toLocaleString()} pts`
                                             : "—"}
                                         </TableCell>
                                       </TableRow>

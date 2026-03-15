@@ -398,12 +398,18 @@ describe("BookingPriceWatch", () => {
     });
 
     await user.click(screen.getByTestId("toggle-room-rates"));
-    await user.click(screen.getAllByTestId("room-group-row")[0]);
+
+    // Summary row: shows lowest REFUNDABLE/UNKNOWN award (1,232 pts for FLEXIBLE RATE),
+    // not the overall cheapest (1,047 pts for the non-refundable ADVANCE SAVER RATE)
+    const groupRows = screen.getAllByTestId("room-group-row");
+    expect(groupRows[0]).toHaveTextContent("1,232 pts");
+
+    await user.click(groupRows[0]);
 
     const rateRows = screen.getAllByTestId("room-rate-row");
     // Each cash rate row shows its own award price inline
-    expect(rateRows[0]).toHaveTextContent("1,047 pts");
-    expect(rateRows[1]).toHaveTextContent("1,232 pts");
+    expect(rateRows[0]).toHaveTextContent("1,047 pts"); // ADVANCE SAVER (cheapest, non-refundable)
+    expect(rateRows[1]).toHaveTextContent("1,232 pts"); // FLEXIBLE RATE (refundable)
     // No separate pure-award row added (only 2 rate rows total)
     expect(rateRows).toHaveLength(2);
   });
