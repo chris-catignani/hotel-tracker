@@ -94,6 +94,14 @@ Always import `test` and `expect` from `./fixtures` (not from `@playwright/test`
 
 **Reference data** (hotel chains, credit cards, portals) is seeded once in `e2e/global-setup.ts` and treated as read-only.
 
+### Unit Test Design (Vitest / RTL)
+
+- **Avoid Manual `act()`:** Use `render()` and `userEvent` (v14+) directly; they wrap operations in `act()` internally. Manual double-wrapping is redundant and can cause race conditions in the event loop.
+- **Prefer `userEvent` over `fireEvent`:** Always use `userEvent.click()`, `userEvent.type()`, etc., to simulate full browser event lifecycles.
+- **Mock `next/link`:** Always mock `next/link` in JSDOM tests to prevent "Not implemented: navigation" errors. Use a simple `<a>` tag that prevents default behavior.
+- **Radix UI Stability:** Be aware that Radix UI components use macrotasks for focus management. `vitest-setup.ts` contains global mocks for `FocusScope` and `requestAnimationFrame` and sets `userEvent.setup({ delay: null })` to maintain test isolation and prevent intermittent timeouts.
+- **Timeouts:** Keep `testTimeout` at 30s in `vitest.config.ts` to ensure stability in parallel execution environments.
+
 ## Workflow Mandates
 
 - **Pull Requests:** ALWAYS create a feature branch for any and all code changes. After implementation, notify the user to test the changes locally. ONLY create a Pull Request (PR) after the user has confirmed they have tested and approved the work.
