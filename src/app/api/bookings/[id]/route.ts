@@ -72,7 +72,7 @@ async function getFullBookingWithUsage(id: string, userId: string) {
       otaAgency: true,
       benefits: true,
       property: true,
-      priceWatchBooking: true,
+      priceWatchBooking: { include: { priceWatch: { select: { isEnabled: true } } } },
     },
   });
 

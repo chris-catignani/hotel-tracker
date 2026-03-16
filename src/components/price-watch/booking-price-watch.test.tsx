@@ -135,6 +135,7 @@ const defaultProps = {
   hotelChainId: "chain-1",
   checkIn: "2026-05-01",
   checkOut: "2026-05-03",
+  numNights: 2,
   totalCost: 480,
   currency: "USD",
   pointsRedeemed: null,
@@ -621,5 +622,59 @@ describe("BookingPriceWatch", () => {
     expect(rateRows[0]).toHaveTextContent("Non-refundable Rate"); // $220 — cheapest cash
     expect(rateRows[1]).toHaveTextContent("Standard Rate"); // $250
     expect(rateRows[2]).toHaveTextContent("12,000 pts"); // award row last
+  });
+
+  describe("threshold input placeholders", () => {
+    const renderEnabled = async (overrides: Partial<typeof defaultProps>) => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => mockWatch,
+      } as Response);
+      await act(async () => {
+        render(
+          <BookingPriceWatch
+            {...defaultProps}
+            {...overrides}
+            initialWatchBooking={initialWatchBooking}
+          />
+        );
+      });
+      await waitFor(() => {
+        expect(screen.getByTestId("cash-threshold-input")).toBeInTheDocument();
+      });
+    };
+
+    it("shows per-night cash cost as placeholder for a cash-only booking", async () => {
+      // totalCost=480, numNights=2 → 240/night; pointsRedeemed=null
+      await renderEnabled({ totalCost: 480, numNights: 2, pointsRedeemed: null });
+      expect(screen.getByTestId("cash-threshold-input")).toHaveAttribute(
+        "placeholder",
+        "240 (your cost/night)"
+      );
+      expect(screen.getByTestId("award-threshold-input")).toHaveAttribute(
+        "placeholder",
+        "e.g. 25000"
+      );
+    });
+
+    it("shows per-night award cost as placeholder for an award-only booking", async () => {
+      // totalCost=0, pointsRedeemed=30000, numNights=2 → 15,000 pts/night
+      await renderEnabled({ totalCost: 0, numNights: 2, pointsRedeemed: 30000 });
+      const awardPlaceholder =
+        screen.getByTestId("award-threshold-input").getAttribute("placeholder") ?? "";
+      expect(awardPlaceholder).toContain("15");
+      expect(awardPlaceholder).toContain("(your cost/night)");
+      expect(screen.getByTestId("cash-threshold-input")).toHaveAttribute("placeholder", "e.g. 200");
+    });
+
+    it("shows default placeholders for a mixed cash+points booking", async () => {
+      // both totalCost and pointsRedeemed > 0
+      await renderEnabled({ totalCost: 200, numNights: 2, pointsRedeemed: 20000 });
+      expect(screen.getByTestId("cash-threshold-input")).toHaveAttribute("placeholder", "e.g. 200");
+      expect(screen.getByTestId("award-threshold-input")).toHaveAttribute(
+        "placeholder",
+        "e.g. 25000"
+      );
+    });
   });
 });

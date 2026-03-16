@@ -77,4 +77,40 @@ describe("BookingCard", () => {
 
     expect(screen.getByTestId("booking-card-net-night")).toHaveTextContent("$230");
   });
+
+  describe("price watch badge", () => {
+    it("shows 'Watching Price' badge when price watch is enabled", () => {
+      render(
+        <BookingCard
+          booking={{ ...mockBooking, priceWatchBooking: { priceWatch: { isEnabled: true } } }}
+        />
+      );
+      expect(screen.getByText("Watching Price")).toBeInTheDocument();
+      expect(screen.queryByText("Price Watch Off")).not.toBeInTheDocument();
+      expect(screen.queryByText("No Price Watch")).not.toBeInTheDocument();
+    });
+
+    it("shows 'Price Watch Off' badge when price watch is disabled", () => {
+      render(
+        <BookingCard
+          booking={{ ...mockBooking, priceWatchBooking: { priceWatch: { isEnabled: false } } }}
+        />
+      );
+      expect(screen.getByText("Price Watch Off")).toBeInTheDocument();
+      expect(screen.queryByText("Watching Price")).not.toBeInTheDocument();
+      expect(screen.queryByText("No Price Watch")).not.toBeInTheDocument();
+    });
+
+    it("shows 'No Price Watch' badge when no price watch exists", () => {
+      render(<BookingCard booking={{ ...mockBooking, priceWatchBooking: null }} />);
+      expect(screen.getByText("No Price Watch")).toBeInTheDocument();
+      expect(screen.queryByText("Watching Price")).not.toBeInTheDocument();
+      expect(screen.queryByText("Price Watch Off")).not.toBeInTheDocument();
+    });
+
+    it("shows 'No Price Watch' badge when priceWatchBooking is undefined", () => {
+      render(<BookingCard booking={{ ...mockBooking, priceWatchBooking: undefined }} />);
+      expect(screen.getByText("No Price Watch")).toBeInTheDocument();
+    });
+  });
 });

@@ -15,8 +15,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Loader2, Trash2, Pencil, Check, X } from "lucide-react";
+import { ChainPropertyIdHint } from "@/components/price-watch/booking-price-watch";
 import { Input } from "@/components/ui/input";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { formatCurrency, formatDate, pruneHotelName } from "@/lib/utils";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { extractApiError } from "@/lib/client-error";
 import { HOTEL_ID } from "@/lib/constants";
@@ -83,6 +85,7 @@ function ChainPropertyIdEditor({
   propertyId,
   hotelChainId,
   chainPropertyId,
+  propertyName,
   isEditing,
   editingValue,
   isSaving,
@@ -95,6 +98,7 @@ function ChainPropertyIdEditor({
   propertyId: string;
   hotelChainId: string | null;
   chainPropertyId: string | null;
+  propertyName: string;
   isEditing: boolean;
   editingValue: string;
   isSaving: boolean;
@@ -143,9 +147,19 @@ function ChainPropertyIdEditor({
       {chainPropertyId ? (
         <span className="text-xs text-muted-foreground font-mono">{chainPropertyId}</span>
       ) : (
-        <Badge variant="outline" className="text-xs text-amber-600 border-amber-300">
-          {chainPropertyIdLabel(hotelChainId)} needed
-        </Badge>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Badge
+              variant="outline"
+              className="text-xs text-amber-600 border-amber-300 cursor-pointer hover:bg-amber-50"
+            >
+              {chainPropertyIdLabel(hotelChainId)} needed
+            </Badge>
+          </PopoverTrigger>
+          <PopoverContent className="w-80 text-sm" align="start">
+            <ChainPropertyIdHint hotelChainId={hotelChainId} propertyName={propertyName} />
+          </PopoverContent>
+        </Popover>
       )}
       <Button
         size="sm"
@@ -203,7 +217,7 @@ export default function PriceWatchPage() {
   };
 
   const handleDelete = async (watch: PriceWatch) => {
-    if (!confirm(`Stop watching prices for ${watch.property.name}?`)) return;
+    if (!confirm(`Stop watching prices for ${pruneHotelName(watch.property.name)}?`)) return;
     setDeletingId(watch.id);
     setError(null);
     const res = await fetch(`/api/price-watches/${watch.id}`, { method: "DELETE" });
@@ -296,7 +310,9 @@ export default function PriceWatchPage() {
                   <CardContent className="p-4 space-y-3">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <p className="font-semibold text-sm">{watch.property.name}</p>
+                        <p className="font-semibold text-sm">
+                          {pruneHotelName(watch.property.name)}
+                        </p>
                         <p className="text-xs text-muted-foreground">
                           {[watch.property.city, watch.property.countryCode]
                             .filter(Boolean)
@@ -354,6 +370,7 @@ export default function PriceWatchPage() {
                       propertyId={watch.property.id}
                       hotelChainId={watch.property.hotelChainId}
                       chainPropertyId={watch.property.chainPropertyId}
+                      propertyName={watch.property.name}
                       isEditing={editingPropertyId === watch.property.id}
                       editingValue={editingValue}
                       isSaving={savingPropertyId === watch.property.id}
@@ -406,7 +423,7 @@ export default function PriceWatchPage() {
                   return (
                     <TableRow key={watch.id} data-testid={`price-watch-row-${watch.id}`}>
                       <TableCell>
-                        <div className="font-medium">{watch.property.name}</div>
+                        <div className="font-medium">{pruneHotelName(watch.property.name)}</div>
                         <div className="text-xs text-muted-foreground">
                           {[watch.property.city, watch.property.countryCode]
                             .filter(Boolean)
@@ -416,6 +433,7 @@ export default function PriceWatchPage() {
                           propertyId={watch.property.id}
                           hotelChainId={watch.property.hotelChainId}
                           chainPropertyId={watch.property.chainPropertyId}
+                          propertyName={watch.property.name}
                           isEditing={editingPropertyId === watch.property.id}
                           editingValue={editingValue}
                           isSaving={savingPropertyId === watch.property.id}

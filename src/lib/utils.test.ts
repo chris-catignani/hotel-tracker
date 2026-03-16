@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { cn, formatCurrency, formatDate } from "./utils";
+import { cn, formatCurrency, formatDate, pruneHotelName } from "./utils";
 
 describe("utils", () => {
   describe("cn", () => {
@@ -36,6 +36,90 @@ describe("utils", () => {
       expect(formatDate("2026-03-09")).toBe("03/09/26");
       expect(formatDate("1999-12-31")).toBe("12/31/99");
       expect(formatDate("2000-01-01")).toBe("01/01/00");
+    });
+  });
+
+  describe("pruneHotelName", () => {
+    it("removes chain attribution suffixes when at the end of the name", () => {
+      // IHG real-world pattern (Google Places appends "by IHG" to many properties)
+      expect(pruneHotelName("Holiday Inn Express Kuala Lumpur City Centre by IHG")).toBe(
+        "Holiday Inn Express Kuala Lumpur City Centre"
+      );
+      expect(pruneHotelName("Crowne Plaza Kuala Lumpur City Centre by IHG")).toBe(
+        "Crowne Plaza Kuala Lumpur City Centre"
+      );
+      expect(pruneHotelName("Hotel Indigo Kuala Lumpur on the Park by IHG")).toBe(
+        "Hotel Indigo Kuala Lumpur on the Park"
+      );
+      // Generic pattern for other chains
+      expect(pruneHotelName("Waldorf Astoria Berlin by Hilton")).toBe("Waldorf Astoria Berlin");
+      expect(pruneHotelName("Le Méridien Vienna by Marriott")).toBe("Le Méridien Vienna");
+      expect(pruneHotelName("Andaz Tokyo by Hyatt")).toBe("Andaz Tokyo");
+      expect(pruneHotelName("Sofitel Paris by Accor")).toBe("Sofitel Paris");
+    });
+
+    it("does NOT strip 'by [Chain]' when it appears mid-name as part of a brand", () => {
+      // "by Hilton" is part of "DoubleTree by Hilton" brand name — should not be stripped
+      expect(pruneHotelName("DoubleTree by Hilton Amsterdam")).toBe(
+        "DoubleTree by Hilton Amsterdam"
+      );
+      expect(pruneHotelName("Courtyard by Marriott Chicago")).toBe("Courtyard by Marriott Chicago");
+    });
+
+    it("removes 'a/an [Brand] Hotel' soft-brand suffixes", () => {
+      expect(
+        pruneHotelName("The Serangoon House Little India, Singapore, a Tribute Portfolio Hotel")
+      ).toBe("The Serangoon House Little India, Singapore");
+      expect(pruneHotelName("The Grand Hotel, an Autograph Collection Hotel")).toBe(
+        "The Grand Hotel"
+      );
+      expect(pruneHotelName("Boutique Hotel Berlin, a Curio Collection Hotel")).toBe(
+        "Boutique Hotel Berlin"
+      );
+    });
+
+    it("removes '[Brand] Collection' soft-brand suffixes", () => {
+      expect(pruneHotelName("Duxton Reserve Singapore, Autograph Collection")).toBe(
+        "Duxton Reserve Singapore"
+      );
+      expect(pruneHotelName("Hotel Arts Barcelona, The Luxury Collection")).toBe(
+        "Hotel Arts Barcelona"
+      );
+      expect(pruneHotelName("The Beach Hotel, Curio Collection by Hilton")).toBe("The Beach Hotel");
+      expect(pruneHotelName("Hotel Rome, Tapestry Collection by Hilton")).toBe("Hotel Rome");
+      expect(pruneHotelName("Kimpton Hotel, Vignette Collection")).toBe("Kimpton Hotel");
+    });
+
+    it("removes '[Brand] Portfolio' soft-brand suffixes", () => {
+      expect(pruneHotelName("The Nines Portland, Luxury Collection")).toBe("The Nines Portland");
+      expect(pruneHotelName("The Blakely New York, Tribute Portfolio")).toBe(
+        "The Blakely New York"
+      );
+    });
+
+    it("removes 'Design Hotels' suffix", () => {
+      expect(pruneHotelName("25hours Hotel, Design Hotels")).toBe("25hours Hotel");
+    });
+
+    it("does not alter names with no matching suffixes", () => {
+      expect(pruneHotelName("Grand Hyatt Kuala Lumpur")).toBe("Grand Hyatt Kuala Lumpur");
+      expect(pruneHotelName("Park Hyatt Chicago")).toBe("Park Hyatt Chicago");
+      expect(pruneHotelName("Atlanta Marriott Marquis")).toBe("Atlanta Marriott Marquis");
+      expect(pruneHotelName("The St. Regis Singapore")).toBe("The St. Regis Singapore");
+      expect(pruneHotelName("citizenM Kuala Lumpur")).toBe("citizenM Kuala Lumpur");
+      expect(pruneHotelName("PARKROYAL COLLECTION Kuala Lumpur")).toBe(
+        "PARKROYAL COLLECTION Kuala Lumpur"
+      );
+    });
+
+    it("is case-insensitive for suffix matching", () => {
+      expect(pruneHotelName("Hotel X BY IHG")).toBe("Hotel X");
+      expect(pruneHotelName("Hotel Y, autograph collection")).toBe("Hotel Y");
+    });
+
+    it("applies rules in order, allowing multiple matches", () => {
+      // "by Hilton" stripped first, then resulting ", Curio Collection" stripped
+      expect(pruneHotelName("Hotel Z, Curio Collection by Hilton")).toBe("Hotel Z");
     });
   });
 });

@@ -37,6 +37,27 @@ export function formatDate(dateStr: string): string {
 }
 
 /**
+ * Prunes verbose suffixes from Google Places hotel names for compact list display.
+ * Only for display — does not modify stored data.
+ *
+ * Rules applied in order:
+ *   1. Chain attribution: "... by IHG / by Hilton / etc."
+ *   2. "a/an [Brand] Hotel" soft-brand label: ", a Tribute Portfolio Hotel"
+ *   3. "[Brand] Collection [by Chain]" soft-brand label: ", Autograph Collection", ", Curio Collection by Hilton"
+ *   4. "[Brand] Portfolio" soft-brand label: ", Tribute Portfolio"
+ *   5. "Design Hotels" specific case
+ */
+export function pruneHotelName(name: string): string {
+  return name
+    .replace(/\s+by\s+(IHG|Hilton|Marriott|Hyatt|Accor|GHA)$/i, "")
+    .replace(/,\s+an?\s+[^,]+\s+Hotel$/i, "")
+    .replace(/,\s+[^,]*Collection(?:\s+by\s+\w+)?$/i, "")
+    .replace(/,\s+[^,]*Portfolio$/i, "")
+    .replace(/,\s+Design\s+Hotels$/i, "")
+    .trim();
+}
+
+/**
  * Formats a list of certificates into a human-readable string.
  */
 export function formatCerts(certificates: { certType: string }[], short: boolean = false): string {

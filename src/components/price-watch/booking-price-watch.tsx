@@ -73,17 +73,18 @@ interface BookingPriceWatchProps {
   hotelChainId: string;
   checkIn: string;
   checkOut: string;
+  numNights: number;
   totalCost: string | number;
   currency: string;
   pointsRedeemed: number | null;
   initialWatchBooking: PriceWatchBookingData | null;
 }
 
-function ChainPropertyIdHint({
+export function ChainPropertyIdHint({
   hotelChainId,
   propertyName,
 }: {
-  hotelChainId: string;
+  hotelChainId: string | null;
   propertyName: string;
 }) {
   let content: React.ReactNode;
@@ -151,11 +152,17 @@ export function BookingPriceWatch({
   hotelChainId,
   checkIn,
   checkOut,
+  numNights,
   totalCost,
   currency,
   pointsRedeemed,
   initialWatchBooking,
 }: BookingPriceWatchProps) {
+  const hasCash = Number(totalCost) > 0;
+  const hasPoints = (pointsRedeemed ?? 0) > 0;
+  const cashPerNight = hasCash && !hasPoints ? Math.round(Number(totalCost) / numNights) : null;
+  const awardPerNight =
+    hasPoints && !hasCash ? Math.round((pointsRedeemed ?? 0) / numNights) : null;
   const [watch, setWatch] = useState<PriceWatchData | null>(null);
   const [, setWatchBooking] = useState<PriceWatchBookingData | null>(initialWatchBooking);
 
@@ -319,7 +326,9 @@ export function BookingPriceWatch({
                 <Label className="text-xs">Cash alert below ({currency})</Label>
                 <Input
                   type="number"
-                  placeholder={`e.g. ${Number(totalCost).toFixed(0)}`}
+                  placeholder={
+                    cashPerNight != null ? `${cashPerNight} (your cost/night)` : "e.g. 200"
+                  }
                   value={cashThreshold}
                   onChange={(e) => setCashThreshold(e.target.value)}
                   className="h-8 text-sm"
@@ -330,7 +339,11 @@ export function BookingPriceWatch({
                 <Label className="text-xs">Award alert below (pts)</Label>
                 <Input
                   type="number"
-                  placeholder="e.g. 25000"
+                  placeholder={
+                    awardPerNight != null
+                      ? `${awardPerNight.toLocaleString()} (your cost/night)`
+                      : "e.g. 25000"
+                  }
                   value={awardThreshold}
                   onChange={(e) => setAwardThreshold(e.target.value)}
                   className="h-8 text-sm"

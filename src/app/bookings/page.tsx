@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, Eye, EyeOff } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { calculateNetCost } from "@/lib/net-cost";
 import {
@@ -17,7 +18,7 @@ import {
 } from "@/components/ui/table";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { BookingCard } from "@/components/bookings/booking-card";
-import { formatCurrency, formatDate, formatCerts } from "@/lib/utils";
+import { formatCurrency, formatDate, formatCerts, pruneHotelName } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -105,6 +106,7 @@ interface Booking {
   } | null;
   bookingPromotions: BookingPromotion[];
   certificates: BookingCertificate[];
+  priceWatchBooking: { priceWatch: { isEnabled: boolean } } | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -117,6 +119,56 @@ export default function BookingsPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [bookingToDelete, setBookingToDelete] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const tableWrapperRef = useRef<HTMLDivElement>(null);
+  const stickyScrollbarRef = useRef<HTMLDivElement>(null);
+  const phantomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const wrapper = tableWrapperRef.current;
+    const scrollbar = stickyScrollbarRef.current;
+    const phantom = phantomRef.current;
+    if (!wrapper || !scrollbar || !phantom) return;
+    const container = wrapper.querySelector<HTMLElement>('[data-slot="table-container"]');
+    if (!container) return;
+
+    // Hide the native horizontal scrollbar on the table container (we replace it with the sticky one)
+    container.style.scrollbarWidth = "none";
+    (container.style as CSSStyleDeclaration & { msOverflowStyle: string }).msOverflowStyle = "none";
+    const styleId = "hide-table-native-scrollbar";
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement("style");
+      style.id = styleId;
+      style.textContent = '[data-slot="table-container"]::-webkit-scrollbar { display: none; }';
+      document.head.appendChild(style);
+    }
+
+    // Shift the sticky scrollbar to start after the sticky Property column
+    const stickyCol = wrapper.querySelector<HTMLElement>("th:first-child");
+    const stickyWidth = stickyCol?.getBoundingClientRect().width ?? 0;
+    scrollbar.style.marginLeft = `${stickyWidth}px`;
+    phantom.style.width = `${container.scrollWidth - stickyWidth}px`;
+
+    let syncing = false;
+    const fromTable = () => {
+      if (syncing) return;
+      syncing = true;
+      scrollbar.scrollLeft = container.scrollLeft;
+      syncing = false;
+    };
+    const fromScrollbar = () => {
+      if (syncing) return;
+      syncing = true;
+      container.scrollLeft = scrollbar.scrollLeft;
+      syncing = false;
+    };
+
+    container.addEventListener("scroll", fromTable);
+    scrollbar.addEventListener("scroll", fromScrollbar);
+    return () => {
+      container.removeEventListener("scroll", fromTable);
+      scrollbar.removeEventListener("scroll", fromScrollbar);
+    };
+  }, [bookings]);
 
   const fetchBookings = useCallback(async () => {
     setLoading(true);
@@ -193,7 +245,10 @@ export default function BookingsPage() {
             {bookings.map((booking) => (
               <BookingCard
                 key={booking.id}
-                booking={booking}
+                booking={{
+                  ...booking,
+                  property: { ...booking.property, name: pruneHotelName(booking.property.name) },
+                }}
                 onDelete={handleDeleteClick}
                 showActions={true}
               />
@@ -201,11 +256,15 @@ export default function BookingsPage() {
           </div>
 
           {/* Desktop View: Table */}
-          <div className="hidden md:block" data-testid="bookings-list-desktop">
+          <div
+            className="hidden md:block"
+            data-testid="bookings-list-desktop"
+            ref={tableWrapperRef}
+          >
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Property</TableHead>
+                  <TableHead className="sticky left-0 bg-background z-10">Property</TableHead>
                   <TableHead>Hotel Chain</TableHead>
                   <TableHead>Check-in</TableHead>
                   <TableHead>Check-out</TableHead>
@@ -225,13 +284,37 @@ export default function BookingsPage() {
 
                   return (
                     <TableRow key={booking.id} data-testid={`booking-row-${booking.id}`}>
-                      <TableCell>
-                        <div>{booking.property.name}</div>
-                        {booking.hotelChainSubBrand && (
-                          <div className="text-xs text-muted-foreground">
-                            {booking.hotelChainSubBrand.name}
+                      <TableCell className="sticky left-0 bg-background z-10">
+                        <TooltipProvider>
+                          <div className="flex items-start gap-1.5">
+                            <div>
+                              <div>{pruneHotelName(booking.property.name)}</div>
+                              {booking.hotelChainSubBrand && (
+                                <div className="text-xs text-muted-foreground">
+                                  {booking.hotelChainSubBrand.name}
+                                </div>
+                              )}
+                            </div>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="mt-0.5 shrink-0 cursor-default">
+                                  {booking.priceWatchBooking?.priceWatch.isEnabled ? (
+                                    <Eye className="h-3.5 w-3.5 text-green-600" />
+                                  ) : (
+                                    <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />
+                                  )}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {booking.priceWatchBooking
+                                  ? booking.priceWatchBooking.priceWatch.isEnabled
+                                    ? "Price watch enabled — you'll be alerted when rates drop"
+                                    : "Price watch disabled"
+                                  : "No price watch set up for this booking"}
+                              </TooltipContent>
+                            </Tooltip>
                           </div>
-                        )}
+                        </TooltipProvider>
                       </TableCell>
                       <TableCell>{booking.hotelChain.name}</TableCell>
                       <TableCell>{formatDate(booking.checkIn)}</TableCell>
@@ -319,6 +402,14 @@ export default function BookingsPage() {
                 })}
               </TableBody>
             </Table>
+          </div>
+          {/* Sticky horizontal scrollbar — mirrors the table's scroll position */}
+          <div
+            ref={stickyScrollbarRef}
+            className="hidden md:block sticky bottom-0 overflow-x-auto bg-background border-t"
+            style={{ height: "14px" }}
+          >
+            <div ref={phantomRef} style={{ height: "1px" }} />
           </div>
         </>
       )}
