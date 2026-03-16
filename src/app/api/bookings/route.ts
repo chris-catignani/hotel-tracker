@@ -54,7 +54,7 @@ const BOOKING_INCLUDE = (userId: string) =>
     otaAgency: true,
     benefits: true,
     property: true,
-    priceWatchBooking: true,
+    priceWatchBooking: { include: { priceWatch: { select: { isEnabled: true } } } },
   }) as const;
 
 export async function GET(request: NextRequest) {

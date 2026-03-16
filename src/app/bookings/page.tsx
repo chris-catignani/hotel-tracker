@@ -4,7 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, Eye, EyeOff } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { calculateNetCost } from "@/lib/net-cost";
 import {
@@ -17,7 +18,7 @@ import {
 } from "@/components/ui/table";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { BookingCard } from "@/components/bookings/booking-card";
-import { formatCurrency, formatDate, formatCerts } from "@/lib/utils";
+import { formatCurrency, formatDate, formatCerts, pruneHotelName } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -105,6 +106,7 @@ interface Booking {
   } | null;
   bookingPromotions: BookingPromotion[];
   certificates: BookingCertificate[];
+  priceWatchBooking: { priceWatch: { isEnabled: boolean } } | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -193,7 +195,10 @@ export default function BookingsPage() {
             {bookings.map((booking) => (
               <BookingCard
                 key={booking.id}
-                booking={booking}
+                booking={{
+                  ...booking,
+                  property: { ...booking.property, name: pruneHotelName(booking.property.name) },
+                }}
                 onDelete={handleDeleteClick}
                 showActions={true}
               />
@@ -201,11 +206,14 @@ export default function BookingsPage() {
           </div>
 
           {/* Desktop View: Table */}
-          <div className="hidden md:block" data-testid="bookings-list-desktop">
-            <Table>
-              <TableHeader>
+          <div
+            className="hidden md:block overflow-auto max-h-[calc(100vh-12rem)]"
+            data-testid="bookings-list-desktop"
+          >
+            <Table containerClassName="overflow-visible">
+              <TableHeader className="sticky top-0 bg-background z-20">
                 <TableRow>
-                  <TableHead>Property</TableHead>
+                  <TableHead className="sticky left-0 bg-background z-10">Property</TableHead>
                   <TableHead>Hotel Chain</TableHead>
                   <TableHead>Check-in</TableHead>
                   <TableHead>Check-out</TableHead>
@@ -225,13 +233,37 @@ export default function BookingsPage() {
 
                   return (
                     <TableRow key={booking.id} data-testid={`booking-row-${booking.id}`}>
-                      <TableCell>
-                        <div>{booking.property.name}</div>
-                        {booking.hotelChainSubBrand && (
-                          <div className="text-xs text-muted-foreground">
-                            {booking.hotelChainSubBrand.name}
+                      <TableCell className="sticky left-0 bg-background z-10">
+                        <TooltipProvider>
+                          <div className="flex items-start gap-1.5">
+                            <div>
+                              <div>{pruneHotelName(booking.property.name)}</div>
+                              {booking.hotelChainSubBrand && (
+                                <div className="text-xs text-muted-foreground">
+                                  {booking.hotelChainSubBrand.name}
+                                </div>
+                              )}
+                            </div>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="mt-0.5 shrink-0 cursor-default">
+                                  {booking.priceWatchBooking?.priceWatch.isEnabled ? (
+                                    <Eye className="h-3.5 w-3.5 text-green-600" />
+                                  ) : (
+                                    <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />
+                                  )}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {booking.priceWatchBooking
+                                  ? booking.priceWatchBooking.priceWatch.isEnabled
+                                    ? "Price watch enabled — you'll be alerted when rates drop"
+                                    : "Price watch disabled"
+                                  : "No price watch set up for this booking"}
+                              </TooltipContent>
+                            </Tooltip>
                           </div>
-                        )}
+                        </TooltipProvider>
                       </TableCell>
                       <TableCell>{booking.hotelChain.name}</TableCell>
                       <TableCell>{formatDate(booking.checkIn)}</TableCell>
