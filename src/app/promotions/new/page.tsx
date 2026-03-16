@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import * as Sentry from "@sentry/nextjs";
 import { PromotionForm } from "@/components/promotions/promotion-form";
 import { PromotionFormData } from "@/lib/types";
 
@@ -21,11 +22,14 @@ export default function NewPromotionPage() {
       if (res.ok) {
         router.push("/promotions");
       } else {
-        console.error("Failed to create promotion");
+        const message = "Failed to create promotion";
+        console.error(message);
+        Sentry.captureException(new Error(message), { extra: { status: res.status } });
         setSubmitting(false);
       }
     } catch (error) {
       console.error("Failed to create promotion:", error);
+      Sentry.captureException(error);
       setSubmitting(false);
     }
   };

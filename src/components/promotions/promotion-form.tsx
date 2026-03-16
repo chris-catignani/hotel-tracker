@@ -2,6 +2,7 @@
 
 import { useEffect, useReducer, useState, useMemo } from "react";
 import Link from "next/link";
+import * as Sentry from "@sentry/nextjs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -124,15 +125,24 @@ export function PromotionForm({
     fetch("/api/hotel-chains")
       .then((res) => res.json())
       .then(setHotelChains)
-      .catch(console.error);
+      .catch((err) => {
+        console.error(err);
+        Sentry.captureException(err);
+      });
     fetch("/api/credit-cards")
       .then((res) => res.json())
       .then(setCreditCards)
-      .catch(console.error);
+      .catch((err) => {
+        console.error(err);
+        Sentry.captureException(err);
+      });
     fetch("/api/portals")
       .then((res) => res.json())
       .then(setPortals)
-      .catch(console.error);
+      .catch((err) => {
+        console.error(err);
+        Sentry.captureException(err);
+      });
   }, []);
 
   // Sync form state when initialData arrives (Edit mode — data fetched async)

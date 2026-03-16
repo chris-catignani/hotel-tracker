@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import * as Sentry from "@sentry/nextjs";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -37,9 +38,14 @@ export default function PromotionsPage() {
       if (res.ok) {
         const data = await res.json();
         setPromotions(data);
+      } else {
+        const message = "Failed to fetch promotions";
+        console.error(message);
+        Sentry.captureException(new Error(message), { extra: { status: res.status } });
       }
     } catch (error) {
       console.error("Failed to fetch promotions:", error);
+      Sentry.captureException(error);
     } finally {
       setLoading(false);
     }
@@ -55,9 +61,14 @@ export default function PromotionsPage() {
       const res = await fetch(`/api/promotions/${id}`, { method: "DELETE" });
       if (res.ok) {
         fetchPromotions();
+      } else {
+        const message = "Failed to delete promotion";
+        console.error(message);
+        Sentry.captureException(new Error(message), { extra: { status: res.status, id } });
       }
     } catch (error) {
       console.error("Failed to delete promotion:", error);
+      Sentry.captureException(error);
     }
   };
 

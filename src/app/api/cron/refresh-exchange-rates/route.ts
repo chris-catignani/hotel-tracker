@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import prisma from "@/lib/prisma";
 import { fetchExchangeRate } from "@/lib/exchange-rate";
 import { apiError } from "@/lib/api-error";
@@ -51,6 +52,7 @@ export async function GET(request: NextRequest) {
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.error("Cron job failed during batch rate fetch:", err);
+      Sentry.captureException(err, { extra: { context: "BATCH_FETCH" } });
       upsertResults.push(`BATCH_FETCH=>ERROR: ${message}`);
     }
 
@@ -106,6 +108,9 @@ export async function GET(request: NextRequest) {
         lockedBookingIds.push(booking.id);
       } catch (err) {
         console.error(`Failed to lock rate for booking ${booking.id}:`, err);
+        Sentry.captureException(err, {
+          extra: { context: "LOCK_BOOKING_RATE", bookingId: booking.id },
+        });
         // Skip this booking on error; will retry next cron run
       }
     }

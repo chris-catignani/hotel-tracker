@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import * as Sentry from "@sentry/nextjs";
 import { PromotionForm } from "@/components/promotions/promotion-form";
 import {
   Promotion,
@@ -130,6 +131,7 @@ export default function EditPromotionPage() {
       })
       .catch((error) => {
         console.error("Failed to fetch promotion:", error);
+        Sentry.captureException(error);
         setLoading(false);
       });
   }, [id]);
@@ -146,11 +148,14 @@ export default function EditPromotionPage() {
       if (res.ok) {
         router.push("/promotions");
       } else {
-        console.error("Failed to update promotion");
+        const message = "Failed to update promotion";
+        console.error(message);
+        Sentry.captureException(new Error(message), { extra: { status: res.status, id } });
         setSubmitting(false);
       }
     } catch (error) {
       console.error("Failed to update promotion:", error);
+      Sentry.captureException(error);
       setSubmitting(false);
     }
   };
