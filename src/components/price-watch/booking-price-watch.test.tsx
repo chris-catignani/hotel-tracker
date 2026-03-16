@@ -625,7 +625,11 @@ describe("BookingPriceWatch", () => {
   });
 
   describe("threshold input placeholders", () => {
-    const renderEnabled = async (overrides: Partial<typeof defaultProps>) => {
+    const renderEnabled = async (overrides: {
+      totalCost?: number;
+      numNights?: number;
+      pointsRedeemed?: number | null;
+    }) => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         json: async () => mockWatch,

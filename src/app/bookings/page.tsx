@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useLayoutEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -123,7 +123,7 @@ export default function BookingsPage() {
   const stickyScrollbarRef = useRef<HTMLDivElement>(null);
   const phantomRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const wrapper = tableWrapperRef.current;
     const scrollbar = stickyScrollbarRef.current;
     const phantom = phantomRef.current;
@@ -131,7 +131,7 @@ export default function BookingsPage() {
     const container = wrapper.querySelector<HTMLElement>('[data-slot="table-container"]');
     if (!container) return;
 
-    // Hide the native horizontal scrollbar on the table container (we replace it with the sticky one)
+    // Hide the native scrollbar (replaced by our sticky one)
     container.style.scrollbarWidth = "none";
     (container.style as CSSStyleDeclaration & { msOverflowStyle: string }).msOverflowStyle = "none";
     const styleId = "hide-table-native-scrollbar";
@@ -142,11 +142,14 @@ export default function BookingsPage() {
       document.head.appendChild(style);
     }
 
-    // Shift the sticky scrollbar to start after the sticky Property column
-    const stickyCol = wrapper.querySelector<HTMLElement>("th:first-child");
-    const stickyWidth = stickyCol?.getBoundingClientRect().width ?? 0;
-    scrollbar.style.marginLeft = `${stickyWidth}px`;
-    phantom.style.width = `${container.scrollWidth - stickyWidth}px`;
+    // Sync sticky scrollbar dimensions with the table — called on mount and on resize
+    const syncDimensions = () => {
+      const stickyCol = wrapper.querySelector<HTMLElement>("th:first-child");
+      const stickyWidth = stickyCol?.getBoundingClientRect().width ?? 0;
+      scrollbar.style.marginLeft = `${stickyWidth}px`;
+      phantom.style.width = `${container.scrollWidth - stickyWidth}px`;
+    };
+    syncDimensions();
 
     let syncing = false;
     const fromTable = () => {
@@ -164,9 +167,16 @@ export default function BookingsPage() {
 
     container.addEventListener("scroll", fromTable);
     scrollbar.addEventListener("scroll", fromScrollbar);
+
+    // Re-sync when the table or viewport is resized
+    const resizeObserver = new ResizeObserver(syncDimensions);
+    resizeObserver.observe(container);
+
     return () => {
       container.removeEventListener("scroll", fromTable);
       scrollbar.removeEventListener("scroll", fromScrollbar);
+      resizeObserver.disconnect();
+      document.getElementById(styleId)?.remove();
     };
   }, [bookings]);
 
