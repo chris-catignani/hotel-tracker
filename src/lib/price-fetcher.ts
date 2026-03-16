@@ -41,7 +41,10 @@ export interface FetchParams {
 export interface PriceFetcher {
   /** Returns true if this fetcher can handle the given property. */
   canFetch(property: FetchableProperty): boolean;
-  /** Fetches current prices. Returns null if fetch is not possible. */
+  /**
+   * Fetches current prices. Returns null if fetch is not possible (e.g. missing IDs).
+   * May throw an error if the API request fails or returns an error response.
+   */
   fetchPrice(params: FetchParams): Promise<PriceFetchResult | null>;
 }
 

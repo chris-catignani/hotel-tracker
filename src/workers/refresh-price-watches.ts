@@ -31,6 +31,7 @@ async function main() {
       `[RefreshScript] Done. ${result.watched} watches checked, results:`,
       result.results
     );
+    await Sentry.flush(2000);
   } catch (error) {
     console.error("[RefreshScript] ERROR during refresh:", error);
     Sentry.captureException(error);

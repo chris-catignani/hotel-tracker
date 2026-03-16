@@ -142,8 +142,7 @@ export class IhgFetcher implements PriceFetcher {
     });
 
     if (!res.ok) {
-      console.error(`[IhgFetcher] API error for ${mnemonic}: HTTP ${res.status}`);
-      return null;
+      throw new Error(`IHG API error for ${mnemonic}: HTTP ${res.status}`);
     }
 
     const data = (await res.json()) as IhgResponse;

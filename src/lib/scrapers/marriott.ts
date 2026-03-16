@@ -203,8 +203,9 @@ export class MarriottFetcher implements PriceFetcher {
       console.log(`[MarriottFetcher] Parsed ${rates.length} rates for ${marshaCode}`);
       return rates.length > 0 ? { rates, source: "marriott_browser" } : null;
     } catch (err) {
-      console.error(`[MarriottFetcher] Error for ${marshaCode}:`, err);
-      return null;
+      throw new Error(
+        `Marriott fetch failed for ${marshaCode}: ${err instanceof Error ? err.message : String(err)}`
+      );
     } finally {
       await context.close();
       try {
