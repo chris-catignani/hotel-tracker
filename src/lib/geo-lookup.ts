@@ -1,4 +1,4 @@
-import * as Sentry from "@sentry/nextjs";
+import { logger } from "@/lib/logger";
 import prisma from "@/lib/prisma";
 import { GeoResult } from "@/lib/types";
 
@@ -91,10 +91,7 @@ export async function searchProperties(query: string): Promise<GeoResult[]> {
 
   if (!res.ok) {
     const message = `Google Places API error: ${res.status} ${res.statusText}`;
-    console.error(message);
-    Sentry.captureException(new Error(message), {
-      extra: { query, status: res.status, statusText: res.statusText },
-    });
+    logger.error(message, null, { query, status: res.status, statusText: res.statusText });
     return [];
   }
 

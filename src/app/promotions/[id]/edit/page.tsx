@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import * as Sentry from "@sentry/nextjs";
+import { logger } from "@/lib/logger";
 import { PromotionForm } from "@/components/promotions/promotion-form";
 import {
   Promotion,
@@ -130,8 +130,7 @@ export default function EditPromotionPage() {
         setLoading(false);
       })
       .catch((error) => {
-        console.error("Failed to fetch promotion:", error);
-        Sentry.captureException(error);
+        logger.error("Failed to fetch promotion", error, { id });
         setLoading(false);
       });
   }, [id]);
@@ -148,14 +147,11 @@ export default function EditPromotionPage() {
       if (res.ok) {
         router.push("/promotions");
       } else {
-        const message = "Failed to update promotion";
-        console.error(message);
-        Sentry.captureException(new Error(message), { extra: { status: res.status, id } });
+        logger.error("Failed to update promotion", null, { status: res.status, id });
         setSubmitting(false);
       }
     } catch (error) {
-      console.error("Failed to update promotion:", error);
-      Sentry.captureException(error);
+      logger.error("Failed to update promotion", error, { id });
       setSubmitting(false);
     }
   };
