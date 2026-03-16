@@ -664,10 +664,10 @@ describe("BookingPriceWatch", () => {
     it("shows per-night award cost as placeholder for an award-only booking", async () => {
       // totalCost=0, pointsRedeemed=30000, numNights=2 → 15,000 pts/night
       await renderEnabled({ totalCost: 0, numNights: 2, pointsRedeemed: 30000 });
-      const awardPlaceholder =
-        screen.getByTestId("award-threshold-input").getAttribute("placeholder") ?? "";
-      expect(awardPlaceholder).toContain("15");
-      expect(awardPlaceholder).toContain("(your cost/night)");
+      expect(screen.getByTestId("award-threshold-input")).toHaveAttribute(
+        "placeholder",
+        "15,000 (your cost/night)"
+      );
       expect(screen.getByTestId("cash-threshold-input")).toHaveAttribute("placeholder", "e.g. 200");
     });
 

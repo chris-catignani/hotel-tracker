@@ -57,19 +57,12 @@ export function BookingCard({ booking, onDelete, showActions = false }: BookingC
                   <Badge className="font-normal px-1.5 py-0 bg-green-100 text-green-700 border-green-200 hover:bg-green-100">
                     Watching Price
                   </Badge>
-                ) : booking.priceWatchBooking ? (
-                  <Badge
-                    variant="outline"
-                    className="font-normal px-1.5 py-0 text-muted-foreground"
-                  >
-                    Price Watch Off
-                  </Badge>
                 ) : (
                   <Badge
                     variant="outline"
                     className="font-normal px-1.5 py-0 text-muted-foreground"
                   >
-                    No Price Watch
+                    {booking.priceWatchBooking ? "Price Watch Off" : "No Price Watch"}
                   </Badge>
                 )}
               </div>

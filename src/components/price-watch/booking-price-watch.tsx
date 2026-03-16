@@ -341,7 +341,7 @@ export function BookingPriceWatch({
                   type="number"
                   placeholder={
                     awardPerNight != null
-                      ? `${awardPerNight.toLocaleString()} (your cost/night)`
+                      ? `${awardPerNight.toLocaleString("en-US")} (your cost/night)`
                       : "e.g. 25000"
                   }
                   value={awardThreshold}
