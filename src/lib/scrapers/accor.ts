@@ -167,8 +167,7 @@ export class AccorFetcher implements PriceFetcher {
     });
 
     if (!res.ok) {
-      console.error(`[AccorFetcher] API error for ${hotelId}: HTTP ${res.status}`);
-      return null;
+      throw new Error(`Accor API error for ${hotelId}: HTTP ${res.status}`);
     }
 
     const data = (await res.json()) as AccorResponse;

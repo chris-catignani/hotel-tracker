@@ -170,11 +170,9 @@ export class HyattFetcher implements PriceFetcher {
       );
       return (await response.json()) as HyattRatesResponse;
     } catch (err) {
-      console.error(
-        `[HyattFetcher] App Mode fetch failed for ${spiritCode}${rateFilter ? ` [${rateFilter}]` : ""}:`,
-        err
+      throw new Error(
+        `Hyatt fetch failed for ${spiritCode}${rateFilter ? ` [${rateFilter}]` : ""}: ${err instanceof Error ? err.message : String(err)}`
       );
-      return null;
     } finally {
       await context.close();
       try {

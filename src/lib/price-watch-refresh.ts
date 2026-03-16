@@ -3,6 +3,7 @@
  * and the standalone src/workers/refresh-price-watches.ts script.
  */
 
+import * as Sentry from "@sentry/node";
 import prisma from "./prisma";
 import {
   selectFetcher,
@@ -111,11 +112,24 @@ export async function runPriceWatchRefresh(fetchers: PriceFetcher[]): Promise<{
 
       let result = null;
       if (fetcher) {
-        result = await fetcher.fetchPrice({
-          property: watch.property,
-          checkIn: checkInStr,
-          checkOut: checkOutStr,
-        });
+        try {
+          result = await fetcher.fetchPrice({
+            property: watch.property,
+            checkIn: checkInStr,
+            checkOut: checkOutStr,
+          });
+        } catch (error) {
+          console.error(`[Refresh] Fetch failed for ${watch.property.name}:`, error);
+          Sentry.captureException(error, {
+            extra: {
+              watchId: watch.id,
+              property: watch.property.name,
+              checkIn: checkInStr,
+              checkOut: checkOutStr,
+            },
+          });
+          // result remains null
+        }
       }
 
       if (result) {

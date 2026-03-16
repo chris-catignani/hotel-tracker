@@ -100,10 +100,7 @@ export class GhaFetcher implements PriceFetcher {
     console.log(`[GhaFetcher] Fetching rates for objectId=${objectId}...`);
 
     const meta = await this.resolveHotelMeta(objectId);
-    if (!meta) {
-      console.error(`[GhaFetcher] Could not resolve hotel metadata for objectId=${objectId}`);
-      return null;
-    }
+    // resolveHotelMeta now throws if it fails, so we don't need to check null here
 
     const res = await fetch(RATES_URL, {
       method: "POST",
@@ -132,8 +129,7 @@ export class GhaFetcher implements PriceFetcher {
     });
 
     if (!res.ok) {
-      console.error(`[GhaFetcher] Rates API error for ${meta.hotelCode}: HTTP ${res.status}`);
-      return null;
+      throw new Error(`GHA Rates API error for ${meta.hotelCode}: HTTP ${res.status}`);
     }
 
     const numNights = Math.round(
@@ -150,7 +146,7 @@ export class GhaFetcher implements PriceFetcher {
     return rates.length > 0 ? { rates, source: "gha_api" } : null;
   }
 
-  private async resolveHotelMeta(objectId: string): Promise<GhaHotelMeta | null> {
+  private async resolveHotelMeta(objectId: string): Promise<GhaHotelMeta> {
     if (this.metaCache.has(objectId)) {
       return this.metaCache.get(objectId)!;
     }
@@ -171,15 +167,13 @@ export class GhaFetcher implements PriceFetcher {
     });
 
     if (!res.ok) {
-      console.error(`[GhaFetcher] CMS lookup failed for objectId=${objectId}: HTTP ${res.status}`);
-      return null;
+      throw new Error(`GHA CMS lookup failed for objectId=${objectId}: HTTP ${res.status}`);
     }
 
     const body = (await res.json()) as GhaCmsResponse;
     const hotel = body.data?.content?.hotel;
     if (!hotel?.synxisChainId || !hotel?.synxisHotelId || !hotel?.reservationsEngineCode) {
-      console.error(`[GhaFetcher] Incomplete CMS data for objectId=${objectId}:`, hotel);
-      return null;
+      throw new Error(`Incomplete GHA CMS data for objectId=${objectId}`);
     }
 
     const brandCode = hotel._location?.parentLocation?.content?.code ?? "";
