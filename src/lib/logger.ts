@@ -1,0 +1,49 @@
+import * as SentryNext from "@sentry/nextjs";
+import * as SentryNode from "@sentry/node";
+
+/**
+ * Unified Logger to handle console logging and Sentry reporting across all environments.
+ * It intelligently selects the appropriate Sentry SDK (Next.js vs. Node.js).
+ */
+
+const IS_SERVER = typeof window === "undefined";
+const IS_NEXT = process.env.NEXT_RUNTIME === "nodejs" || process.env.NEXT_RUNTIME === "edge";
+
+// Standalone Node workers (e.g., price watch refresh) use @sentry/node.
+// Next.js (server & client) uses @sentry/nextjs.
+const Sentry = IS_NEXT || !IS_SERVER ? SentryNext : SentryNode;
+
+function formatMessage(message: string, extra?: Record<string, unknown>): string {
+  if (extra && Object.keys(extra).length > 0) {
+    return `${message} ${JSON.stringify(extra)}`;
+  }
+  return message;
+}
+
+export const logger = {
+  info(message: string, extra?: Record<string, unknown>) {
+    console.log(`[INFO] ${formatMessage(message, extra)}`);
+  },
+
+  warn(message: string, extra?: Record<string, unknown>) {
+    const formatted = formatMessage(message, extra);
+    console.warn(`[WARN] ${formatted}`);
+    Sentry.captureMessage(message, {
+      level: "warning",
+      extra,
+    });
+  },
+
+  error(message: string, error?: unknown, extra?: Record<string, unknown>) {
+    const formatted = formatMessage(message, extra);
+    console.error(`[ERROR] ${formatted}`, error);
+
+    const errObj = error instanceof Error ? error : new Error(String(error || message));
+    Sentry.captureException(errObj, {
+      extra: {
+        ...extra,
+        originalMessage: message,
+      },
+    });
+  },
+};

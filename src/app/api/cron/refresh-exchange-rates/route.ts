@@ -4,6 +4,7 @@ import { fetchExchangeRate } from "@/lib/exchange-rate";
 import { apiError } from "@/lib/api-error";
 import { CURRENCIES } from "@/lib/constants";
 import { calculatePoints, resolveBasePointRate } from "@/lib/loyalty-utils";
+import { logger } from "@/lib/logger";
 
 const RATES_CDN =
   "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json";
@@ -50,7 +51,7 @@ export async function GET(request: NextRequest) {
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      console.error("Cron job failed during batch rate fetch:", err);
+      logger.error("Cron job failed during batch rate fetch", err, { context: "BATCH_FETCH" });
       upsertResults.push(`BATCH_FETCH=>ERROR: ${message}`);
     }
 
@@ -105,7 +106,10 @@ export async function GET(request: NextRequest) {
         });
         lockedBookingIds.push(booking.id);
       } catch (err) {
-        console.error(`Failed to lock rate for booking ${booking.id}:`, err);
+        logger.error(`Failed to lock rate for booking ${booking.id}`, err, {
+          context: "LOCK_BOOKING_RATE",
+          bookingId: booking.id,
+        });
         // Skip this booking on error; will retry next cron run
       }
     }

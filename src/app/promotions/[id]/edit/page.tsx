@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { logger } from "@/lib/logger";
 import { PromotionForm } from "@/components/promotions/promotion-form";
 import {
   Promotion,
@@ -129,7 +130,7 @@ export default function EditPromotionPage() {
         setLoading(false);
       })
       .catch((error) => {
-        console.error("Failed to fetch promotion:", error);
+        logger.error("Failed to fetch promotion", error, { id });
         setLoading(false);
       });
   }, [id]);
@@ -146,11 +147,11 @@ export default function EditPromotionPage() {
       if (res.ok) {
         router.push("/promotions");
       } else {
-        console.error("Failed to update promotion");
+        logger.error("Failed to update promotion", null, { status: res.status, id });
         setSubmitting(false);
       }
     } catch (error) {
-      console.error("Failed to update promotion:", error);
+      logger.error("Failed to update promotion", error, { id });
       setSubmitting(false);
     }
   };

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { logger } from "@/lib/logger";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -37,9 +38,11 @@ export default function PromotionsPage() {
       if (res.ok) {
         const data = await res.json();
         setPromotions(data);
+      } else {
+        logger.error("Failed to fetch promotions", null, { status: res.status });
       }
     } catch (error) {
-      console.error("Failed to fetch promotions:", error);
+      logger.error("Failed to fetch promotions", error);
     } finally {
       setLoading(false);
     }
@@ -55,9 +58,11 @@ export default function PromotionsPage() {
       const res = await fetch(`/api/promotions/${id}`, { method: "DELETE" });
       if (res.ok) {
         fetchPromotions();
+      } else {
+        logger.error("Failed to delete promotion", null, { status: res.status, id });
       }
     } catch (error) {
-      console.error("Failed to delete promotion:", error);
+      logger.error("Failed to delete promotion", error, { id });
     }
   };
 

@@ -6,6 +6,7 @@ import { BookingForm } from "@/components/bookings/booking-form";
 import { BookingFormData } from "@/lib/types";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { extractApiError } from "@/lib/client-error";
+import { logger } from "@/lib/logger";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
@@ -53,13 +54,17 @@ export default function NewBookingPage() {
           }),
         });
         if (!watchRes.ok) {
-          console.error(
-            "Failed to create price watch:",
-            await extractApiError(watchRes, "API error")
-          );
+          const message = await extractApiError(watchRes, "API error");
+          logger.error(`Price watch creation failed: ${message}`, null, {
+            bookingId: booking.id,
+            propertyId: booking.propertyId,
+          });
         }
       } catch (e) {
-        console.error("Error creating price watch:", e);
+        logger.error("Error creating price watch", e, {
+          bookingId: booking.id,
+          propertyId: booking.propertyId,
+        });
       }
     }
 

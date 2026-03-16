@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { logger } from "@/lib/logger";
 import { PromotionForm } from "@/components/promotions/promotion-form";
 import { PromotionFormData } from "@/lib/types";
 
@@ -21,11 +22,11 @@ export default function NewPromotionPage() {
       if (res.ok) {
         router.push("/promotions");
       } else {
-        console.error("Failed to create promotion");
+        logger.error("Failed to create promotion", null, { status: res.status });
         setSubmitting(false);
       }
     } catch (error) {
-      console.error("Failed to create promotion:", error);
+      logger.error("Failed to create promotion", error);
       setSubmitting(false);
     }
   };
