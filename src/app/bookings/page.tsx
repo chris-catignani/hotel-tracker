@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -119,66 +119,6 @@ export default function BookingsPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [bookingToDelete, setBookingToDelete] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-  const tableWrapperRef = useRef<HTMLDivElement>(null);
-  const stickyScrollbarRef = useRef<HTMLDivElement>(null);
-  const phantomRef = useRef<HTMLDivElement>(null);
-
-  useLayoutEffect(() => {
-    const wrapper = tableWrapperRef.current;
-    const scrollbar = stickyScrollbarRef.current;
-    const phantom = phantomRef.current;
-    if (!wrapper || !scrollbar || !phantom) return;
-    const container = wrapper.querySelector<HTMLElement>('[data-slot="table-container"]');
-    if (!container) return;
-
-    // Hide the native scrollbar (replaced by our sticky one)
-    container.style.scrollbarWidth = "none";
-    (container.style as CSSStyleDeclaration & { msOverflowStyle: string }).msOverflowStyle = "none";
-    const styleId = "hide-table-native-scrollbar";
-    if (!document.getElementById(styleId)) {
-      const style = document.createElement("style");
-      style.id = styleId;
-      style.textContent = '[data-slot="table-container"]::-webkit-scrollbar { display: none; }';
-      document.head.appendChild(style);
-    }
-
-    // Sync sticky scrollbar dimensions with the table — called on mount and on resize
-    const syncDimensions = () => {
-      const stickyCol = wrapper.querySelector<HTMLElement>("th:first-child");
-      const stickyWidth = stickyCol?.getBoundingClientRect().width ?? 0;
-      scrollbar.style.marginLeft = `${stickyWidth}px`;
-      phantom.style.width = `${container.scrollWidth - stickyWidth}px`;
-    };
-    syncDimensions();
-
-    let syncing = false;
-    const fromTable = () => {
-      if (syncing) return;
-      syncing = true;
-      scrollbar.scrollLeft = container.scrollLeft;
-      syncing = false;
-    };
-    const fromScrollbar = () => {
-      if (syncing) return;
-      syncing = true;
-      container.scrollLeft = scrollbar.scrollLeft;
-      syncing = false;
-    };
-
-    container.addEventListener("scroll", fromTable);
-    scrollbar.addEventListener("scroll", fromScrollbar);
-
-    // Re-sync when the table or viewport is resized
-    const resizeObserver = new ResizeObserver(syncDimensions);
-    resizeObserver.observe(container);
-
-    return () => {
-      container.removeEventListener("scroll", fromTable);
-      scrollbar.removeEventListener("scroll", fromScrollbar);
-      resizeObserver.disconnect();
-      document.getElementById(styleId)?.remove();
-    };
-  }, [bookings]);
 
   const fetchBookings = useCallback(async () => {
     setLoading(true);
@@ -267,12 +207,11 @@ export default function BookingsPage() {
 
           {/* Desktop View: Table */}
           <div
-            className="hidden md:block"
+            className="hidden md:block overflow-auto max-h-[calc(100vh-12rem)]"
             data-testid="bookings-list-desktop"
-            ref={tableWrapperRef}
           >
-            <Table>
-              <TableHeader>
+            <Table containerClassName="overflow-visible">
+              <TableHeader className="sticky top-0 bg-background z-20">
                 <TableRow>
                   <TableHead className="sticky left-0 bg-background z-10">Property</TableHead>
                   <TableHead>Hotel Chain</TableHead>
@@ -412,14 +351,6 @@ export default function BookingsPage() {
                 })}
               </TableBody>
             </Table>
-          </div>
-          {/* Sticky horizontal scrollbar — mirrors the table's scroll position */}
-          <div
-            ref={stickyScrollbarRef}
-            className="hidden md:block sticky bottom-0 overflow-x-auto bg-background border-t"
-            style={{ height: "14px" }}
-          >
-            <div ref={phantomRef} style={{ height: "1px" }} />
           </div>
         </>
       )}
