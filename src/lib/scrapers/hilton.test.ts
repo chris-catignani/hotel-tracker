@@ -71,7 +71,7 @@ const makeRedemptionRate = (
   } = {}
 ) => ({
   ratePlanCode: overrides.ratePlanCode ?? "STND",
-  pointDetails: { pointsRate },
+  pointDetails: [{ pointsRate }],
   ratePlan: {
     ratePlanName: overrides.ratePlanName ?? "Standard Award",
     redemptionType: overrides.redemptionType ?? "STANDARD_REWARD",
@@ -216,7 +216,7 @@ describe("parseHiltonRoomRates", () => {
       "Twin Room",
       [],
       [
-        { ratePlanCode: "STND", pointDetails: { pointsRate: 0 }, ratePlan: {} },
+        { ratePlanCode: "STND", pointDetails: [{ pointsRate: 0 }], ratePlan: {} },
         { ratePlanCode: "STND", ratePlan: {} }, // no pointDetails
       ]
     );
@@ -310,7 +310,7 @@ describe("parseHiltonRoomRates", () => {
       "T2",
       "Twin Room",
       [],
-      [{ pointDetails: { pointsRate: 30000 }, ratePlan: { ratePlanName: "Award" } }]
+      [{ pointDetails: [{ pointsRate: 30000 }], ratePlan: { ratePlanName: "Award" } }]
     );
     const rates = parseHiltonRoomRates(data, "T2", "Twin Room", "USD");
     expect(rates[0].ratePlanCode).toBe("AWARD");

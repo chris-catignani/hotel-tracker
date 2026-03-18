@@ -78,7 +78,9 @@ interface HiltonPointDetails {
 
 interface HiltonRedemptionRoomRate {
   ratePlanCode?: string;
-  pointDetails?: HiltonPointDetails;
+  // pointDetails is an array — one entry per night (perNight: true in the query).
+  // We use the first entry's pointsRate as the per-night award price.
+  pointDetails?: HiltonPointDetails[];
   ratePlan?: HiltonRatePlanAward;
   guarantee?: HiltonGuarantee;
 }
@@ -365,16 +367,18 @@ export function parseHiltonRoomRates(
 
   // --- Award rate ---
   const redemption = room.redemptionRoomRates?.[0];
-  if (redemption?.pointDetails?.pointsRate != null && redemption.pointDetails.pointsRate > 0) {
+  // pointDetails is an array (one per night); use the first entry as the per-night rate.
+  const pointsRate = redemption?.pointDetails?.[0]?.pointsRate;
+  if (pointsRate != null && pointsRate > 0) {
     result.push({
       roomId: roomTypeCode,
       roomName: roomTypeName,
-      ratePlanCode: redemption.ratePlanCode ?? "AWARD",
-      ratePlanName: redemption.ratePlan?.ratePlanName ?? "Award Rate",
+      ratePlanCode: redemption!.ratePlanCode ?? "AWARD",
+      ratePlanName: redemption!.ratePlan?.ratePlanName ?? "Award Rate",
       cashPrice: null,
       cashCurrency: responseCurrency,
-      awardPrice: redemption.pointDetails.pointsRate,
-      isRefundable: redemption.guarantee?.nonRefundable === true ? "NON_REFUNDABLE" : "REFUNDABLE",
+      awardPrice: pointsRate,
+      isRefundable: redemption!.guarantee?.nonRefundable === true ? "NON_REFUNDABLE" : "REFUNDABLE",
       isCorporate: false,
     });
   }
