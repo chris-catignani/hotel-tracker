@@ -9,22 +9,58 @@ vi.mock("next/navigation", () => ({
   usePathname: vi.fn(),
 }));
 
+// Mock next-auth/react
+vi.mock("next-auth/react", () => ({
+  useSession: vi.fn(),
+}));
+
+import { useSession } from "next-auth/react";
+
 describe("NavItemsList", () => {
   beforeEach(() => {
     vi.mocked(usePathname).mockReturnValue("/");
+    vi.mocked(useSession).mockReturnValue({
+      data: { user: { role: "ADMIN" }, expires: "" },
+      status: "authenticated",
+      update: vi.fn(),
+    });
   });
 
   afterEach(() => {
     vi.clearAllMocks();
   });
 
-  it("renders all navigation items", () => {
+  it("renders all navigation items for admin users", () => {
     render(<NavItemsList />);
 
     expect(screen.getByTestId("nav-item-dashboard")).toBeInTheDocument();
     expect(screen.getByTestId("nav-item-bookings")).toBeInTheDocument();
     expect(screen.getByTestId("nav-item-promotions")).toBeInTheDocument();
     expect(screen.getByTestId("nav-item-settings")).toBeInTheDocument();
+    expect(screen.getByTestId("nav-item-health")).toBeInTheDocument();
+  });
+
+  it("hides admin-only items for non-admin users", () => {
+    vi.mocked(useSession).mockReturnValue({
+      data: { user: { role: "USER" }, expires: "" },
+      status: "authenticated",
+      update: vi.fn(),
+    });
+    render(<NavItemsList />);
+
+    expect(screen.getByTestId("nav-item-dashboard")).toBeInTheDocument();
+    expect(screen.queryByTestId("nav-item-health")).not.toBeInTheDocument();
+  });
+
+  it("hides admin-only items when session is loading", () => {
+    vi.mocked(useSession).mockReturnValue({
+      data: null,
+      status: "loading",
+      update: vi.fn(),
+    });
+    render(<NavItemsList />);
+
+    expect(screen.queryByTestId("nav-item-health")).not.toBeInTheDocument();
   });
 
   it("highlights the active item based on pathname", () => {

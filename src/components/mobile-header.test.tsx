@@ -9,6 +9,12 @@ vi.mock("next/navigation", () => ({
   usePathname: vi.fn(),
 }));
 
+// Mock next-auth/react
+vi.mock("next-auth/react", () => ({
+  useSession: () => ({ data: { user: { role: "ADMIN" } }, status: "authenticated" }),
+  signOut: vi.fn(),
+}));
+
 describe("MobileHeader", () => {
   beforeEach(() => {
     vi.mocked(usePathname).mockReturnValue("/");
