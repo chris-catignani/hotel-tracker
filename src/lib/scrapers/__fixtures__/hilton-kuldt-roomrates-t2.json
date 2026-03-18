@@ -1,0 +1,66 @@
+{
+  "data": {
+    "hotel": {
+      "shopAvail": {
+        "currencyCode": "MYR",
+        "roomTypes": [
+          {
+            "roomTypeCode": "T2",
+            "roomTypeName": "Twin Guest Room",
+            "roomOnlyRates": [
+              {
+                "ratePlanCode": "LV0",
+                "rateAmount": 429,
+                "guarantee": {
+                  "nonRefundable": false
+                },
+                "ratePlan": {
+                  "ratePlanName": "Flexible Rate",
+                  "advancePurchase": false
+                }
+              },
+              {
+                "ratePlanCode": "PR09AP",
+                "rateAmount": 408,
+                "guarantee": {
+                  "nonRefundable": true
+                },
+                "ratePlan": {
+                  "ratePlanName": "Advance Purchase",
+                  "advancePurchase": false
+                }
+              },
+              {
+                "ratePlanCode": "PR09BB",
+                "rateAmount": 479,
+                "guarantee": {
+                  "nonRefundable": false
+                },
+                "ratePlan": {
+                  "ratePlanName": "Breakfast Included",
+                  "advancePurchase": false
+                }
+              },
+              {
+                "ratePlanCode": "CX09AP",
+                "rateAmount": 458,
+                "guarantee": {
+                  "nonRefundable": true
+                },
+                "ratePlan": {
+                  "ratePlanName": "Advance Purchase Breakfast Included",
+                  "advancePurchase": false
+                }
+              }
+            ],
+            "redemptionRoomRates": []
+          }
+        ]
+      }
+    }
+  },
+  "extensions": {
+    "logSearch": "mdc.client_message_id=56d2d536-60f5-4fc1-ac3a-033c7a366d40-5blu4eowc5gkmhbz7wudcm1u0zgju96og",
+    "operationName": "hotel_shopPropAvail"
+  }
+}
