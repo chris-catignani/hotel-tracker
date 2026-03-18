@@ -373,12 +373,12 @@ export function parseHiltonRoomRates(
     result.push({
       roomId: roomTypeCode,
       roomName: roomTypeName,
-      ratePlanCode: redemption!.ratePlanCode ?? "AWARD",
-      ratePlanName: redemption!.ratePlan?.ratePlanName ?? "Award Rate",
+      ratePlanCode: redemption?.ratePlanCode ?? "AWARD",
+      ratePlanName: redemption?.ratePlan?.ratePlanName ?? "Award Rate",
       cashPrice: null,
       cashCurrency: responseCurrency,
       awardPrice: pointsRate,
-      isRefundable: redemption!.guarantee?.nonRefundable === true ? "NON_REFUNDABLE" : "REFUNDABLE",
+      isRefundable: redemption?.guarantee?.nonRefundable === true ? "NON_REFUNDABLE" : "REFUNDABLE",
       isCorporate: false,
     });
   }
