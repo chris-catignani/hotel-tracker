@@ -89,7 +89,7 @@ export default function PromotionsPage() {
           <TabsTrigger value="loyalty">Loyalty</TabsTrigger>
         </TabsList>
 
-        <TabsContent value={activeTab} className="flex-1 min-h-0 flex flex-col">
+        <TabsContent value={activeTab} className="min-h-0 flex flex-col">
           {loading ? (
             <p className="text-muted-foreground py-8 text-center text-sm">Loading promotions...</p>
           ) : filteredPromotions.length === 0 ? (

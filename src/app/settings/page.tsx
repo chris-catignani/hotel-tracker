@@ -30,42 +30,34 @@ export default function SettingsPage() {
           </TabsList>
         </div>
         <TabsContent
-          className="flex-1 min-h-0 flex flex-col"
+          className="min-h-0 flex flex-col"
           value="my-status"
           data-testid="tab-my-status"
         >
           <UserStatusTab />
         </TabsContent>
         <TabsContent
-          className="flex-1 min-h-0 flex flex-col"
+          className="min-h-0 flex flex-col"
           value="point-types"
           data-testid="tab-point-types"
         >
           <PointTypesTab />
         </TabsContent>
-        <TabsContent
-          className="flex-1 min-h-0 flex flex-col"
-          value="hotels"
-          data-testid="tab-hotels"
-        >
+        <TabsContent className="min-h-0 flex flex-col" value="hotels" data-testid="tab-hotels">
           <HotelChainsTab />
         </TabsContent>
         <TabsContent
-          className="flex-1 min-h-0 flex flex-col"
+          className="min-h-0 flex flex-col"
           value="credit-cards"
           data-testid="tab-credit-cards"
         >
           <CreditCardsTab />
         </TabsContent>
-        <TabsContent
-          className="flex-1 min-h-0 flex flex-col"
-          value="portals"
-          data-testid="tab-portals"
-        >
+        <TabsContent className="min-h-0 flex flex-col" value="portals" data-testid="tab-portals">
           <ShoppingPortalsTab />
         </TabsContent>
         <TabsContent
-          className="flex-1 min-h-0 flex flex-col"
+          className="min-h-0 flex flex-col"
           value="ota-agencies"
           data-testid="tab-ota-agencies"
         >
@@ -73,7 +65,7 @@ export default function SettingsPage() {
         </TabsContent>
         {isAdmin && (
           <TabsContent
-            className="flex-1 min-h-0 flex flex-col"
+            className="min-h-0 flex flex-col"
             value="properties"
             data-testid="tab-properties"
           >
