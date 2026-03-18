@@ -9,9 +9,13 @@
  *   1. getShopAvail  — fires automatically on page load; returns all room types
  *      with one "quickBookRate" per room. We intercept this to get the room type
  *      list and the server-side cacheId.
- *   2. getRoomRates  — returns all rate plans for a specific room type (roomOnlyRates
- *      + redemptionRoomRates). Called once per room type via page.evaluate(fetch(...))
- *      which reuses the live Akamai session cookies.
+ *   2. getRoomRates  — returns all rate plans for a specific room type. Called once per
+ *      room type via page.evaluate(fetch(...)) which reuses the live Akamai session cookies.
+ *      Three cash rate sources per room:
+ *        - roomOnlyRates[]          standard publicly-available rates
+ *        - roomOnlyRates[].hhonorsDiscountRate  member-discounted version of each standard rate
+ *        - packageRates[]           bundled packages (breakfast, dining credits, points bonuses)
+ *      Plus redemptionRoomRates[0] for Hilton Honors award (points) rates.
  *
  * Hotel ID format: ctyhocn code (e.g. "NYCMHHH", "KULDT").
  * Visible in Hilton booking URLs: hilton.com/en/book/reservation/rooms/?ctyhocn=...
@@ -36,7 +40,7 @@ const OPERATION_NAME = "hotel_shopAvailOptions_shopPropAvail";
 // Simplified query for getRoomRates — requests only the fields we parse.
 // Variables match the shape captured from DevTools (identical signature to the
 // full UI query, but we only select the fields we need in the response).
-const ROOM_RATES_QUERY = `query hotel_shopAvailOptions_shopPropAvail($arrivalDate: String!, $ctyhocn: String!, $departureDate: String!, $language: String!, $guestLocationCountry: String, $numAdults: Int!, $numChildren: Int!, $numRooms: Int!, $displayCurrency: String, $guestId: BigInt, $specialRates: ShopSpecialRateInput, $rateCategoryTokens: [String], $selectedRoomRateCodes: [ShopRoomRateCodeInput!], $ratePlanCodes: [String], $cacheId: String!, $knownGuest: Boolean, $selectedRoomTypeCode: String, $childAges: [Int], $adjoiningRoomStay: Boolean, $modifyingReservation: Boolean, $programAccountId: BigInt, $ratePlanDescEnhance: Boolean, $includeCUCEligibility: Boolean) { hotel(ctyhocn: $ctyhocn, language: $language) { shopAvail(cacheId: $cacheId input: {guestLocationCountry: $guestLocationCountry, arrivalDate: $arrivalDate, departureDate: $departureDate, displayCurrency: $displayCurrency, numAdults: $numAdults, numChildren: $numChildren, numRooms: $numRooms, guestId: $guestId, specialRates: $specialRates, rateCategoryTokens: $rateCategoryTokens, selectedRoomRateCodes: $selectedRoomRateCodes, ratePlanCodes: $ratePlanCodes, knownGuest: $knownGuest, childAges: $childAges, adjoiningRoomStay: $adjoiningRoomStay, modifyingReservation: $modifyingReservation, programAccountId: $programAccountId, ratePlanDescEnhance: $ratePlanDescEnhance, includeCUCEligibility: $includeCUCEligibility}) { currencyCode roomTypes(filter: {roomTypeCode: $selectedRoomTypeCode}) { roomTypeCode roomTypeName roomOnlyRates { ratePlanCode rateAmount guarantee { nonRefundable } ratePlan { ratePlanName advancePurchase } } redemptionRoomRates(first: 1) { ratePlanCode pointDetails(perNight: true) { pointsRate } ratePlan { ratePlanName redemptionType } guarantee { nonRefundable } } } } } }`;
+const ROOM_RATES_QUERY = `query hotel_shopAvailOptions_shopPropAvail($arrivalDate: String!, $ctyhocn: String!, $departureDate: String!, $language: String!, $guestLocationCountry: String, $numAdults: Int!, $numChildren: Int!, $numRooms: Int!, $displayCurrency: String, $guestId: BigInt, $specialRates: ShopSpecialRateInput, $rateCategoryTokens: [String], $selectedRoomRateCodes: [ShopRoomRateCodeInput!], $ratePlanCodes: [String], $cacheId: String!, $knownGuest: Boolean, $selectedRoomTypeCode: String, $childAges: [Int], $adjoiningRoomStay: Boolean, $modifyingReservation: Boolean, $programAccountId: BigInt, $ratePlanDescEnhance: Boolean, $includeCUCEligibility: Boolean) { hotel(ctyhocn: $ctyhocn, language: $language) { shopAvail(cacheId: $cacheId input: {guestLocationCountry: $guestLocationCountry, arrivalDate: $arrivalDate, departureDate: $departureDate, displayCurrency: $displayCurrency, numAdults: $numAdults, numChildren: $numChildren, numRooms: $numRooms, guestId: $guestId, specialRates: $specialRates, rateCategoryTokens: $rateCategoryTokens, selectedRoomRateCodes: $selectedRoomRateCodes, ratePlanCodes: $ratePlanCodes, knownGuest: $knownGuest, childAges: $childAges, adjoiningRoomStay: $adjoiningRoomStay, modifyingReservation: $modifyingReservation, programAccountId: $programAccountId, ratePlanDescEnhance: $ratePlanDescEnhance, includeCUCEligibility: $includeCUCEligibility}) { currencyCode roomTypes(filter: {roomTypeCode: $selectedRoomTypeCode}) { roomTypeCode roomTypeName roomOnlyRates { ratePlanCode rateAmount guarantee { nonRefundable } ratePlan { ratePlanName advancePurchase } hhonorsDiscountRate { ratePlanCode rateAmount guarantee { nonRefundable } ratePlan { ratePlanName advancePurchase } } } packageRates { ratePlanCode rateAmount guarantee { nonRefundable } ratePlan { ratePlanName advancePurchase } } redemptionRoomRates(first: 1) { ratePlanCode pointDetails(perNight: true) { pointsRate } ratePlan { ratePlanName redemptionType } guarantee { nonRefundable } } } } } }`;
 
 // --- TypeScript interfaces for parsed API responses ---
 
@@ -54,11 +58,16 @@ interface HiltonRatePlanAward {
   redemptionType?: string;
 }
 
-interface HiltonRoomOnlyRate {
+interface HiltonCashRate {
   ratePlanCode?: string;
   rateAmount?: number;
   guarantee?: HiltonGuarantee;
   ratePlan?: HiltonRatePlanCash;
+}
+
+interface HiltonRoomOnlyRate extends HiltonCashRate {
+  // Member-discounted version of this standard rate; null when not available.
+  hhonorsDiscountRate?: HiltonCashRate | null;
 }
 
 interface HiltonPointDetails {
@@ -76,6 +85,7 @@ interface HiltonRoomType {
   roomTypeCode?: string;
   roomTypeName?: string;
   roomOnlyRates?: HiltonRoomOnlyRate[];
+  packageRates?: HiltonCashRate[];
   redemptionRoomRates?: HiltonRedemptionRoomRate[];
 }
 
@@ -305,13 +315,14 @@ export class HiltonFetcher implements PriceFetcher {
  * Exported for unit testing.
  * Parses room rates from a Hilton getRoomRates GraphQL response for a single room type.
  *
- * Cash rates come from `roomOnlyRates[]`.
- * Award rates come from `redemptionRoomRates[0]`.
+ * Three cash rate sources per room:
+ *   - roomOnlyRates[]                  standard publicly-available rates
+ *   - roomOnlyRates[].hhonorsDiscountRate  member-only discount on each standard rate
+ *   - packageRates[]                   bundled packages (breakfast, dining, points bonuses)
+ * Award rates come from redemptionRoomRates[0].
  *
- * Refundability: explicit `guarantee.nonRefundable` boolean, with `ratePlan.advancePurchase`
- * as a fallback indicator (advance-purchase rates are always non-refundable).
- *
- * `rateAmount` is a per-night rate (Hilton's UI displays per-night pricing).
+ * Refundability: `guarantee.nonRefundable` boolean, with `ratePlan.advancePurchase` as fallback.
+ * `rateAmount` is per-night (Hilton's UI always shows per-night pricing).
  */
 export function parseHiltonRoomRates(
   data: unknown,
@@ -330,17 +341,14 @@ export function parseHiltonRoomRates(
 
   const result: RoomRate[] = [];
 
-  // --- Cash rates ---
-  for (const rate of room.roomOnlyRates ?? []) {
+  /** Push a cash rate entry, skipping invalid/missing prices. */
+  function pushCashRate(rate: HiltonCashRate) {
     const ratePlanCode = rate.ratePlanCode;
-    if (!ratePlanCode) continue;
-
+    if (!ratePlanCode) return;
     const cashPrice = rate.rateAmount;
-    if (cashPrice == null || cashPrice <= 0) continue;
-
+    if (cashPrice == null || cashPrice <= 0) return;
     const isNonRefundable =
       rate.guarantee?.nonRefundable === true || rate.ratePlan?.advancePurchase === true;
-
     result.push({
       roomId: roomTypeCode,
       roomName: roomTypeName,
@@ -352,6 +360,19 @@ export function parseHiltonRoomRates(
       isRefundable: isNonRefundable ? "NON_REFUNDABLE" : "REFUNDABLE",
       isCorporate: false,
     });
+  }
+
+  // --- Standard rates + their HHonors member discounts ---
+  for (const rate of room.roomOnlyRates ?? []) {
+    pushCashRate(rate);
+    if (rate.hhonorsDiscountRate) {
+      pushCashRate(rate.hhonorsDiscountRate);
+    }
+  }
+
+  // --- Package rates (breakfast, dining credits, points bonuses, etc.) ---
+  for (const rate of room.packageRates ?? []) {
+    pushCashRate(rate);
   }
 
   // --- Award rate ---

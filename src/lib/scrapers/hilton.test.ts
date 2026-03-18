@@ -37,6 +37,7 @@ const makeRoomOnlyRate = (
     ratePlanName?: string;
     nonRefundable?: boolean;
     advancePurchase?: boolean;
+    hhonorsDiscountRate?: object | null;
   } = {}
 ) => ({
   ratePlanCode,
@@ -46,6 +47,18 @@ const makeRoomOnlyRate = (
     ratePlanName: overrides.ratePlanName ?? "Standard Rate",
     advancePurchase: overrides.advancePurchase ?? false,
   },
+  hhonorsDiscountRate: overrides.hhonorsDiscountRate ?? null,
+});
+
+const makePackageRate = (
+  ratePlanCode: string,
+  rateAmount: number,
+  ratePlanName = "Package Rate"
+) => ({
+  ratePlanCode,
+  rateAmount,
+  guarantee: { nonRefundable: false },
+  ratePlan: { ratePlanName, advancePurchase: false },
 });
 
 const makeRedemptionRate = (
@@ -71,7 +84,8 @@ const makeRoomRatesResponse = (
   roomTypeName: string,
   roomOnlyRates: object[],
   redemptionRoomRates: object[] = [],
-  currencyCode = "USD"
+  currencyCode = "USD",
+  packageRates: object[] = []
 ) => ({
   data: {
     hotel: {
@@ -82,6 +96,7 @@ const makeRoomRatesResponse = (
             roomTypeCode,
             roomTypeName,
             roomOnlyRates,
+            packageRates,
             redemptionRoomRates,
           },
         ],
@@ -332,5 +347,199 @@ describe("parseHiltonRoomRates", () => {
     );
     const rates = parseHiltonRoomRates(data, "T2", "Twin Room", "USD");
     expect(lowestAward(rates)).toBe(25000);
+  });
+
+  // --- HHonors Discount Rates ---
+
+  it("parses hhonorsDiscountRate nested in a roomOnlyRate", () => {
+    const data = makeRoomRatesResponse("T2", "Twin Room", [
+      makeRoomOnlyRate("HTLGO", 429, {
+        ratePlanName: "Flexible Rate",
+        hhonorsDiscountRate: {
+          ratePlanCode: "HHDGO",
+          rateAmount: 331,
+          guarantee: { nonRefundable: false },
+          ratePlan: { ratePlanName: "Flexible Rate (Member Discount)", advancePurchase: false },
+        },
+      }),
+    ]);
+    const rates = parseHiltonRoomRates(data, "T2", "Twin Room", "MYR");
+
+    // Should have both the standard rate and the member discount rate
+    expect(rates).toHaveLength(2);
+    expect(rates[0]).toMatchObject({
+      ratePlanCode: "HTLGO",
+      ratePlanName: "Flexible Rate",
+      cashPrice: 429,
+      isRefundable: "REFUNDABLE",
+    });
+    expect(rates[1]).toMatchObject({
+      ratePlanCode: "HHDGO",
+      ratePlanName: "Flexible Rate (Member Discount)",
+      cashPrice: 331,
+      isRefundable: "REFUNDABLE",
+    });
+  });
+
+  it("skips hhonorsDiscountRate when null", () => {
+    const data = makeRoomRatesResponse("T2", "Twin Room", [
+      makeRoomOnlyRate("HTLGO", 429, { hhonorsDiscountRate: null }),
+    ]);
+    const rates = parseHiltonRoomRates(data, "T2", "Twin Room", "USD");
+    expect(rates).toHaveLength(1);
+    expect(rates[0].ratePlanCode).toBe("HTLGO");
+  });
+
+  it("skips hhonorsDiscountRate when rateAmount is zero", () => {
+    const data = makeRoomRatesResponse("T2", "Twin Room", [
+      makeRoomOnlyRate("HTLGO", 429, {
+        hhonorsDiscountRate: {
+          ratePlanCode: "HHDGO",
+          rateAmount: 0,
+          guarantee: { nonRefundable: false },
+          ratePlan: { ratePlanName: "Member Discount", advancePurchase: false },
+        },
+      }),
+    ]);
+    const rates = parseHiltonRoomRates(data, "T2", "Twin Room", "USD");
+    expect(rates).toHaveLength(1);
+    expect(rates[0].ratePlanCode).toBe("HTLGO");
+  });
+
+  it("marks hhonorsDiscountRate as NON_REFUNDABLE when advancePurchase is true", () => {
+    const data = makeRoomRatesResponse("T2", "Twin Room", [
+      makeRoomOnlyRate("HTLAP", 408, {
+        ratePlanName: "Advance Purchase",
+        advancePurchase: true,
+        hhonorsDiscountRate: {
+          ratePlanCode: "HHDAP",
+          rateAmount: 320,
+          guarantee: { nonRefundable: false },
+          ratePlan: { ratePlanName: "Advance Purchase (Member)", advancePurchase: true },
+        },
+      }),
+    ]);
+    const rates = parseHiltonRoomRates(data, "T2", "Twin Room", "USD");
+    expect(rates).toHaveLength(2);
+    expect(rates[1]).toMatchObject({ ratePlanCode: "HHDAP", isRefundable: "NON_REFUNDABLE" });
+  });
+
+  it("parses multiple roomOnlyRates each with hhonorsDiscountRate", () => {
+    const data = makeRoomRatesResponse("T2", "Twin Room", [
+      makeRoomOnlyRate("HTLGO", 429, {
+        hhonorsDiscountRate: {
+          ratePlanCode: "HHDGO",
+          rateAmount: 331,
+          guarantee: { nonRefundable: false },
+          ratePlan: { ratePlanName: "Flexible (Member)", advancePurchase: false },
+        },
+      }),
+      makeRoomOnlyRate("HTLBB", 479, {
+        ratePlanName: "Breakfast Included",
+        hhonorsDiscountRate: {
+          ratePlanCode: "HHDBB",
+          rateAmount: 375,
+          guarantee: { nonRefundable: false },
+          ratePlan: { ratePlanName: "Breakfast Included (Member)", advancePurchase: false },
+        },
+      }),
+    ]);
+    const rates = parseHiltonRoomRates(data, "T2", "Twin Room", "MYR");
+
+    // standard HTLGO, discount HHDGO, standard HTLBB, discount HHDBB
+    expect(rates).toHaveLength(4);
+    expect(rates.map((r) => r.ratePlanCode)).toEqual(["HTLGO", "HHDGO", "HTLBB", "HHDBB"]);
+  });
+
+  // --- Package Rates ---
+
+  it("parses packageRates", () => {
+    const data = makeRoomRatesResponse(
+      "T2",
+      "Twin Room",
+      [makeRoomOnlyRate("HTLGO", 429)],
+      [],
+      "MYR",
+      [
+        makePackageRate("PKGDINE", 500, "Stay and Dine"),
+        makePackageRate("PKGSWT", 520, "Sweeten Your Stay"),
+      ]
+    );
+    const rates = parseHiltonRoomRates(data, "T2", "Twin Room", "MYR");
+
+    expect(rates).toHaveLength(3);
+    expect(rates[1]).toMatchObject({
+      ratePlanCode: "PKGDINE",
+      ratePlanName: "Stay and Dine",
+      cashPrice: 500,
+      isRefundable: "REFUNDABLE",
+      isCorporate: false,
+    });
+    expect(rates[2]).toMatchObject({
+      ratePlanCode: "PKGSWT",
+      ratePlanName: "Sweeten Your Stay",
+      cashPrice: 520,
+    });
+  });
+
+  it("skips packageRates with zero rateAmount", () => {
+    const data = makeRoomRatesResponse("T2", "Twin Room", [], [], "USD", [
+      makePackageRate("PKGZERO", 0, "Zero Package"),
+    ]);
+    expect(parseHiltonRoomRates(data, "T2", "Twin Room", "USD")).toHaveLength(0);
+  });
+
+  it("handles room with no packageRates field", () => {
+    const data = {
+      data: {
+        hotel: {
+          shopAvail: {
+            currencyCode: "USD",
+            roomTypes: [
+              {
+                roomTypeCode: "T2",
+                roomTypeName: "Twin Room",
+                roomOnlyRates: [makeRoomOnlyRate("HTLGO", 150)],
+                redemptionRoomRates: [],
+                // no packageRates key
+              },
+            ],
+          },
+        },
+      },
+    };
+    const rates = parseHiltonRoomRates(data, "T2", "Twin Room", "USD");
+    expect(rates).toHaveLength(1);
+    expect(rates[0].ratePlanCode).toBe("HTLGO");
+  });
+
+  it("parses all three cash rate sources together", () => {
+    const data = makeRoomRatesResponse(
+      "T2",
+      "Twin Room",
+      [
+        makeRoomOnlyRate("HTLGO", 429, {
+          ratePlanName: "Flexible Rate",
+          hhonorsDiscountRate: {
+            ratePlanCode: "HHDGO",
+            rateAmount: 331,
+            guarantee: { nonRefundable: false },
+            ratePlan: { ratePlanName: "Flexible (Member)", advancePurchase: false },
+          },
+        }),
+      ],
+      [makeRedemptionRate(50000)],
+      "MYR",
+      [makePackageRate("PKGDINE", 500, "Stay and Dine")]
+    );
+    const rates = parseHiltonRoomRates(data, "T2", "Twin Room", "MYR");
+
+    // HTLGO (standard), HHDGO (member discount), PKGDINE (package), award
+    expect(rates).toHaveLength(4);
+    const cashRates = rates.filter((r) => r.cashPrice !== null);
+    const awardRates = rates.filter((r) => r.awardPrice !== null);
+    expect(cashRates).toHaveLength(3);
+    expect(awardRates).toHaveLength(1);
+    expect(cashRates.map((r) => r.ratePlanCode)).toEqual(["HTLGO", "HHDGO", "PKGDINE"]);
   });
 });
