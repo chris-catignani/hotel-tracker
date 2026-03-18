@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import * as SentryNext from "@sentry/nextjs";
 import * as SentryNode from "@sentry/node";
 import { logger } from "./logger";
@@ -39,7 +39,7 @@ describe("logger", () => {
 
     // In vitest environment, it might pick either Next or Node depending on implementation
     const sentry =
-      (SentryNext.captureMessage as vi.Mock).mock.calls.length > 0 ? SentryNext : SentryNode;
+      (SentryNext.captureMessage as Mock).mock.calls.length > 0 ? SentryNext : SentryNode;
     expect(sentry.captureMessage).toHaveBeenCalledWith("test warn", {
       level: "warning",
       extra: { foo: "bar" },
@@ -55,7 +55,7 @@ describe("logger", () => {
     );
 
     const sentry =
-      (SentryNext.captureException as vi.Mock).mock.calls.length > 0 ? SentryNext : SentryNode;
+      (SentryNext.captureException as Mock).mock.calls.length > 0 ? SentryNext : SentryNode;
     expect(sentry.captureException).toHaveBeenCalledWith(err, {
       extra: {
         foo: "bar",
@@ -68,9 +68,9 @@ describe("logger", () => {
     logger.error("test error string", "not an error object");
 
     const sentry =
-      (SentryNext.captureException as vi.Mock).mock.calls.length > 0 ? SentryNext : SentryNode;
+      (SentryNext.captureException as Mock).mock.calls.length > 0 ? SentryNext : SentryNode;
     expect(sentry.captureException).toHaveBeenCalledWith(expect.any(Error), expect.anything());
-    const captured = (sentry.captureException as vi.Mock).mock.calls[0][0];
+    const captured = (sentry.captureException as Mock).mock.calls[0][0];
     expect(captured.message).toBe("not an error object");
   });
 });
