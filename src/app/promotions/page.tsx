@@ -70,8 +70,8 @@ export default function PromotionsPage() {
     activeTab === "all" ? promotions : promotions.filter((p) => p.type === activeTab);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col flex-1 min-h-0 space-y-6">
+      <div className="flex items-center justify-between shrink-0">
         <h1 className="text-2xl font-semibold tracking-tight">Promotions</h1>
         <Button asChild>
           <Link href="/promotions/new">
@@ -81,15 +81,15 @@ export default function PromotionsPage() {
         </Button>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 min-h-0">
+        <TabsList className="shrink-0">
           <TabsTrigger value="all">All</TabsTrigger>
           <TabsTrigger value="credit_card">Credit Card</TabsTrigger>
           <TabsTrigger value="portal">Portal</TabsTrigger>
           <TabsTrigger value="loyalty">Loyalty</TabsTrigger>
         </TabsList>
 
-        <TabsContent value={activeTab}>
+        <TabsContent value={activeTab} className="flex-1 min-h-0 flex flex-col">
           {loading ? (
             <p className="text-muted-foreground py-8 text-center text-sm">Loading promotions...</p>
           ) : filteredPromotions.length === 0 ? (
@@ -121,9 +121,12 @@ export default function PromotionsPage() {
               </div>
 
               {/* Desktop View: Table */}
-              <div className="hidden md:block" data-testid="promotions-list-desktop">
-                <Table>
-                  <TableHeader>
+              <div
+                className="hidden md:flex md:flex-col md:flex-1 md:min-h-0 md:overflow-auto"
+                data-testid="promotions-list-desktop"
+              >
+                <Table containerClassName="overflow-visible">
+                  <TableHeader className="sticky top-0 bg-background z-20">
                     <TableRow>
                       <TableHead>Name</TableHead>
                       <TableHead>Type</TableHead>

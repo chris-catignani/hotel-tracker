@@ -15,9 +15,9 @@ export default function SettingsPage() {
   const isAdmin = session?.user?.role === "ADMIN";
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Settings</h1>
-      <Tabs defaultValue="my-status" className="w-full">
+    <div className="flex flex-col flex-1 min-h-0 space-y-6">
+      <h1 className="text-2xl font-bold shrink-0">Settings</h1>
+      <Tabs defaultValue="my-status" className="w-full flex-1 min-h-0">
         <div className="overflow-x-auto pb-1">
           <TabsList className="w-full justify-start md:w-auto md:inline-flex min-w-max">
             <TabsTrigger value="my-status">My Status</TabsTrigger>
@@ -29,26 +29,54 @@ export default function SettingsPage() {
             {isAdmin && <TabsTrigger value="properties">Properties</TabsTrigger>}
           </TabsList>
         </div>
-        <TabsContent value="my-status" data-testid="tab-my-status">
+        <TabsContent
+          className="flex-1 min-h-0 flex flex-col"
+          value="my-status"
+          data-testid="tab-my-status"
+        >
           <UserStatusTab />
         </TabsContent>
-        <TabsContent value="point-types" data-testid="tab-point-types">
+        <TabsContent
+          className="flex-1 min-h-0 flex flex-col"
+          value="point-types"
+          data-testid="tab-point-types"
+        >
           <PointTypesTab />
         </TabsContent>
-        <TabsContent value="hotels" data-testid="tab-hotels">
+        <TabsContent
+          className="flex-1 min-h-0 flex flex-col"
+          value="hotels"
+          data-testid="tab-hotels"
+        >
           <HotelChainsTab />
         </TabsContent>
-        <TabsContent value="credit-cards" data-testid="tab-credit-cards">
+        <TabsContent
+          className="flex-1 min-h-0 flex flex-col"
+          value="credit-cards"
+          data-testid="tab-credit-cards"
+        >
           <CreditCardsTab />
         </TabsContent>
-        <TabsContent value="portals" data-testid="tab-portals">
+        <TabsContent
+          className="flex-1 min-h-0 flex flex-col"
+          value="portals"
+          data-testid="tab-portals"
+        >
           <ShoppingPortalsTab />
         </TabsContent>
-        <TabsContent value="ota-agencies" data-testid="tab-ota-agencies">
+        <TabsContent
+          className="flex-1 min-h-0 flex flex-col"
+          value="ota-agencies"
+          data-testid="tab-ota-agencies"
+        >
           <OtaAgenciesTab />
         </TabsContent>
         {isAdmin && (
-          <TabsContent value="properties" data-testid="tab-properties">
+          <TabsContent
+            className="flex-1 min-h-0 flex flex-col"
+            value="properties"
+            data-testid="tab-properties"
+          >
             <PropertiesTab />
           </TabsContent>
         )}

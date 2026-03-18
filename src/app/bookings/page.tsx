@@ -153,7 +153,7 @@ export default function BookingsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col flex-1 min-h-0 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Bookings</h1>
         <Link href="/bookings/new">
@@ -207,7 +207,7 @@ export default function BookingsPage() {
 
           {/* Desktop View: Table */}
           <div
-            className="hidden md:block overflow-auto max-h-[calc(100vh-12rem)]"
+            className="hidden md:flex md:flex-col md:flex-1 md:min-h-0 md:overflow-auto"
             data-testid="bookings-list-desktop"
           >
             <Table containerClassName="overflow-visible">

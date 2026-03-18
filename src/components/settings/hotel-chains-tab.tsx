@@ -171,9 +171,9 @@ export function HotelChainsTab() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col flex-1 min-h-0 space-y-4">
       <ErrorBanner error={error} onDismiss={() => setError(null)} />
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between shrink-0">
         <h2 className="text-lg font-semibold">Hotel Chains</h2>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
@@ -461,9 +461,12 @@ export function HotelChainsTab() {
           </div>
 
           {/* Desktop View: Table */}
-          <div className="hidden md:block" data-testid="hotel-chains-desktop">
-            <Table>
-              <TableHeader>
+          <div
+            className="hidden md:flex md:flex-col md:flex-1 md:min-h-0 md:overflow-auto"
+            data-testid="hotel-chains-desktop"
+          >
+            <Table containerClassName="overflow-visible">
+              <TableHeader className="sticky top-0 bg-background z-20">
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Loyalty Program</TableHead>

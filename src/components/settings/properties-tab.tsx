@@ -91,9 +91,9 @@ export function PropertiesTab() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col flex-1 min-h-0 space-y-4">
       <ErrorBanner error={error} onDismiss={() => setError(null)} />
-      <div>
+      <div className="shrink-0">
         <h2 className="text-lg font-semibold">Properties</h2>
         <p className="text-sm text-muted-foreground mt-0.5">
           Set the chain-specific scraper ID for each property. Examples: Hyatt{" "}
@@ -166,9 +166,12 @@ export function PropertiesTab() {
           </div>
 
           {/* Desktop: table layout */}
-          <div className="hidden md:block" data-testid="properties-desktop">
-            <Table>
-              <TableHeader>
+          <div
+            className="hidden md:flex md:flex-col md:flex-1 md:min-h-0 md:overflow-auto"
+            data-testid="properties-desktop"
+          >
+            <Table containerClassName="overflow-visible">
+              <TableHeader className="sticky top-0 bg-background z-20">
                 <TableRow>
                   <TableHead>Property</TableHead>
                   <TableHead>Chain</TableHead>
