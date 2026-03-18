@@ -64,8 +64,7 @@ export async function GET(request: NextRequest) {
       priceWatchRun,
       exchangeRateStats,
       priceWatchStats,
-      enabledCount,
-      disabledCount,
+      priceWatchCounts,
       snapshotsLast24h,
     ] = await Promise.all([
       fetchLatestWorkflowRun("ci.yml"),
@@ -77,8 +76,10 @@ export async function GET(request: NextRequest) {
       prisma.priceWatch.aggregate({
         _max: { lastCheckedAt: true },
       }),
-      prisma.priceWatch.count({ where: { isEnabled: true } }),
-      prisma.priceWatch.count({ where: { isEnabled: false } }),
+      prisma.priceWatch.groupBy({
+        by: ["isEnabled"],
+        _count: { _all: true },
+      }),
       prisma.priceSnapshot.count({
         where: { fetchedAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
       }),
@@ -86,6 +87,8 @@ export async function GET(request: NextRequest) {
 
     const lastExchangeRateUpdate = exchangeRateStats._max.updatedAt;
     const lastPriceWatchCheck = priceWatchStats._max.lastCheckedAt;
+    const enabledCount = priceWatchCounts.find((c) => c.isEnabled)?._count._all ?? 0;
+    const disabledCount = priceWatchCounts.find((c) => !c.isEnabled)?._count._all ?? 0;
 
     const sentryOrg = process.env.SENTRY_ORG;
     const sentryProject = process.env.SENTRY_PROJECT;

@@ -20,7 +20,7 @@ describe("NavItemsList", () => {
   beforeEach(() => {
     vi.mocked(usePathname).mockReturnValue("/");
     vi.mocked(useSession).mockReturnValue({
-      data: { user: { role: "ADMIN" }, expires: "" },
+      data: { user: { id: "1", role: "ADMIN" }, expires: "" },
       status: "authenticated",
       update: vi.fn(),
     });
@@ -42,7 +42,7 @@ describe("NavItemsList", () => {
 
   it("hides admin-only items for non-admin users", () => {
     vi.mocked(useSession).mockReturnValue({
-      data: { user: { role: "USER" }, expires: "" },
+      data: { user: { id: "1", role: "USER" }, expires: "" },
       status: "authenticated",
       update: vi.fn(),
     });
