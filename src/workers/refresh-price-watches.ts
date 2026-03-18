@@ -10,6 +10,7 @@ Sentry.init({ dsn: process.env.SENTRY_DSN, tracesSampleRate: 0 });
 import { PrismaClient } from "@prisma/client";
 import { createAccorFetcher } from "@/lib/scrapers/accor";
 import { createGhaFetcher } from "@/lib/scrapers/gha";
+import { createHiltonFetcher } from "@/lib/scrapers/hilton";
 import { createHyattFetcher } from "@/lib/scrapers/hyatt";
 import { createIhgFetcher } from "@/lib/scrapers/ihg";
 import { createMarriottFetcher } from "@/lib/scrapers/marriott";
@@ -23,6 +24,7 @@ async function main() {
     const result = await runPriceWatchRefresh([
       createAccorFetcher(),
       createGhaFetcher(),
+      createHiltonFetcher(),
       createHyattFetcher(),
       createIhgFetcher(),
       createMarriottFetcher(),
