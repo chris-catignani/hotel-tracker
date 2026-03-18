@@ -1,0 +1,1556 @@
+{
+  "data": {
+    "hotel": {
+      "ctyhocn": "KULDTDI",
+      "roomTypes": [
+        {
+          "roomTypeCode": "K1",
+          "adaAccessibleRoom": false,
+          "numBeds": 1,
+          "roomTypeName": "King Guest Room",
+          "roomTypeDesc": "<p>32 sq. m., rain shower, pillow menu, king-sized bed, luxury bath amenities, work desk, mini bar, WiFi, 32-inch LCD</p>\n<p>Relax in this King Bed Guest Room which features one king-sized bed. Select the pillow of your choice from our convenient pillow menu. Settle in and enjoy your favorite shows on the 32-inch LCD TV. With in-room WiFi, you will be able to browse the internet and stay up-to-date on business.</p>\n<p>Freshen up in the open-concept marble bathroom which features a separate walk-in rain shower and bathroom essentials. Start each morning with a cup of coffee in the comfort of your room. Special touches include bathrobes, slippers and a settee against the window.</p>",
+          "roomOccupancy": 3,
+          "executive": false,
+          "suite": false,
+          "code": "K1",
+          "name": "King Guest Room",
+          "thumbnail": [
+            {
+              "_id": "2981fedf407bae0cc84e1a087ec437ad732f08f2fc6e0d506f4ce51827b00996",
+              "altText": "Single king bed",
+              "variants": [
+                {
+                  "size": "md",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/21697205/k1rrc-k1-k1d-k1e-copy.jpg?impolicy=crop&cw=4640&ch=2776&gravity=NorthWest&xposition=0&yposition=111&rw=528&rh=316"
+                },
+                {
+                  "size": "xs",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/21697205/k1rrc-k1-k1d-k1e-copy.jpg?impolicy=crop&cw=4640&ch=2765&gravity=NorthWest&xposition=0&yposition=117&rw=302&rh=180"
+                },
+                {
+                  "size": "sm",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/21697205/k1rrc-k1-k1d-k1e-copy.jpg?impolicy=crop&cw=4640&ch=2778&gravity=NorthWest&xposition=0&yposition=110&rw=344&rh=206"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "roomTypeCode": "K1D",
+          "adaAccessibleRoom": false,
+          "numBeds": 1,
+          "roomTypeName": "King Deluxe Room",
+          "roomTypeDesc": "<p>32 sq. m., rain shower, pillow menu, king-sized bed, luxury bath amenities, work desk, mini fridge, Wi-Fi, 32-inch LCD TV</p>\n\n\n<p>Unwind in our King Deluxe Room, designed for comfort and convenience. Sink into 250-thread count sheets on a plush king-sized bed complete with a pillow menu to suit your preference. Stay connected with Wi-Fi, a 32-inch LCD TV and a work desk with an ergonomic chair.</p>\n\n\n<p>Refresh in the open-concept marble bathroom featuring a walk-in rain shower, luxury bath amenities, bathrobes and slippers. Enjoy thoughtful touches like a mini fridge, coffee maker and complimentary beverages. With 24-hour housekeeping and secure double-locking doors, your stay is both relaxing and seamless. Sleeps up to 3 guests.</p>",
+          "roomOccupancy": 3,
+          "executive": false,
+          "suite": false,
+          "code": "K1D",
+          "name": "King Deluxe Room",
+          "thumbnail": [
+            {
+              "_id": "8b774876541ed8bfd86c165801a79f9e4932417ff013e146a7794a51dca7cc7a",
+              "altText": "Writing Desk",
+              "variants": [
+                {
+                  "size": "md",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/1890001/doubletreebyhiltonkl-guest-room-writing-desk-3000px.jpg?impolicy=crop&cw=3542&ch=2119&gravity=NorthWest&xposition=0&yposition=440&rw=528&rh=316"
+                },
+                {
+                  "size": "xs",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/1890001/doubletreebyhiltonkl-guest-room-writing-desk-3000px.jpg?impolicy=crop&cw=3542&ch=2111&gravity=NorthWest&xposition=0&yposition=444&rw=302&rh=180"
+                },
+                {
+                  "size": "sm",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/1890001/doubletreebyhiltonkl-guest-room-writing-desk-3000px.jpg?impolicy=crop&cw=3542&ch=2121&gravity=NorthWest&xposition=0&yposition=439&rw=344&rh=206"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "roomTypeCode": "K1DC",
+          "adaAccessibleRoom": false,
+          "numBeds": 1,
+          "roomTypeName": "King Deluxe Room Mountain View",
+          "roomTypeDesc": "<p>32 sq. m., mountain view, rain shower, pillow menu, king-sized bed, luxury bath amenities, work desk, mini fridge, Wi-Fi, 32-inch LCD TV</p>\n\n\n<p>Unwind in our King Deluxe Mountain View Room, offering a picturesque view of the mountain range. Sink into 250-thread count sheets on a plush king-sized bed complete with a pillow menu to suit your preference. Stay connected with Wi-Fi, a 32-inch LCD TV and a work desk with an ergonomic chair.</p>\n\n\nRefresh in the open-concept marble bathroom featuring a walk-in rain shower, Crabtree & Evelyn bath amenities, bathrobes and slippers. Enjoy thoughtful touches like a mini fridge, coffee maker and complimentary beverages. With 24-hour housekeeping and secure double-locking doors, your stay is both relaxing and seamless. Sleeps up to 3 guests.",
+          "roomOccupancy": 3,
+          "executive": false,
+          "suite": false,
+          "code": "K1DC",
+          "name": "King Deluxe Room Mountain View",
+          "thumbnail": [
+            {
+              "_id": "69cb28a437645732e4ecf6751fae9bb89ac9730b2ec197c6a79101d945f7d33e",
+              "altText": "Large Bed in a Guest Room with TV, Desk Sofa and City View",
+              "variants": [
+                {
+                  "size": "sm",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/22617492/k1dc-1-.jpg?impolicy=crop&cw=4928&ch=2951&gravity=NorthWest&xposition=0&yposition=164&rw=344&rh=206"
+                },
+                {
+                  "size": "xs",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/22617492/k1dc-1-.jpg?impolicy=crop&cw=4928&ch=2937&gravity=NorthWest&xposition=0&yposition=171&rw=302&rh=180"
+                },
+                {
+                  "size": "md",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/22617492/k1dc-1-.jpg?impolicy=crop&cw=4928&ch=2949&gravity=NorthWest&xposition=0&yposition=165&rw=528&rh=316"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "roomTypeCode": "K1DOP1",
+          "adaAccessibleRoom": false,
+          "numBeds": 1,
+          "roomTypeName": "King Deluxe Suite W/ Lounge Access",
+          "roomTypeDesc": "<p>50 sq. m., Executive Lounge access, bathtub, king-sized bed, luxury bath amenities, work desk, mini fridge, WiFi, 32-inch LCD TV</p>\n\n\n<p>Experience extra space and a gorgeous view of the city skyline in our King Deluxe Suite, complete with Executive Lounge access for exclusive breakfast, evening cocktails and a private space to unwind.</p>\n\n\n<p>Sink into 250-thread count sheets on a plush king-sized bed complete with a pillow menu to suit your preference. Refresh in the spacious bathroom featuring a separate bathtub and shower, luxury bath amenities, bathrobes and slippers. Stay productive with Wi-Fi, a work desk with an ergonomic chair and desk-level electrical plugs, or unwind with your favorite shows on a 32-inch LCD TV. Enjoy added conveniences like a minibar, coffee maker and complimentary beverages, all within a thoughtfully designed space. With 24-hour housekeeping and secure double-locking doors, your stay is both relaxing and seamless. Sleeps up to 3 guests.</p>",
+          "roomOccupancy": 3,
+          "executive": false,
+          "suite": true,
+          "code": "K1DOP1",
+          "name": "King Deluxe Suite W/ Lounge Access",
+          "thumbnail": [
+            {
+              "_id": "92e3f182300ef6d5947ae30639e54440aed3926402d18341c035bd5862e67892",
+              "altText": "full bedroom",
+              "variants": [
+                {
+                  "size": "xs",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/21697231/k1dop1-copy.jpg?impolicy=crop&cw=4508&ch=2686&gravity=NorthWest&xposition=0&yposition=156&rw=302&rh=180"
+                },
+                {
+                  "size": "sm",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/21697231/k1dop1-copy.jpg?impolicy=crop&cw=4508&ch=2699&gravity=NorthWest&xposition=0&yposition=150&rw=344&rh=206"
+                },
+                {
+                  "size": "md",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/21697231/k1dop1-copy.jpg?impolicy=crop&cw=4508&ch=2697&gravity=NorthWest&xposition=0&yposition=151&rw=528&rh=316"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "roomTypeCode": "K1E",
+          "adaAccessibleRoom": false,
+          "numBeds": 1,
+          "roomTypeName": "King Executive Room W/ Lounge Access",
+          "roomTypeDesc": "<p>32 sq. m., Executive Lounge access, mountain view, rain shower, pillow menu, king-sized bed, luxury bath amenities, work desk, mini fridge, Wi-Fi, 32-inch LCD TV</p>\n\n\n<p>Unwind in our King Executive Mountain View Room, offering a picturesque view of the mountain range and exclusive Executive Lounge access for breakfast, evening cocktails and a private space to unwind.</p>\n\n\n<p>Sink into 250-thread count sheets on a plush king-sized bed complete with a pillow menu to suit your preference. Stay connected with Wi-Fi, a 32-inch LCD TV and a work desk with an ergonomic chair. Refresh in the open-concept marble bathroom featuring a walk-in rain shower, luxury bath amenities, bathrobes and slippers. Enjoy thoughtful touches like a mini fridge, coffee maker and complimentary beverages. With 24-hour housekeeping and secure double-locking doors, your stay is both relaxing and seamless. Sleeps up to 3 guests.</p>",
+          "roomOccupancy": 3,
+          "executive": true,
+          "suite": false,
+          "code": "K1E",
+          "name": "King Executive Room W/ Lounge Access",
+          "thumbnail": [
+            {
+              "_id": "487b9f4109529ce2f4e895517ca2c3709dcf65e3b5eb83a063902991ccd5c583",
+              "altText": "Executive Lounge",
+              "variants": [
+                {
+                  "size": "sm",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/1890448/executive-lounge-01.jpg?impolicy=crop&cw=4505&ch=2697&gravity=NorthWest&xposition=0&yposition=151&rw=344&rh=206"
+                },
+                {
+                  "size": "xs",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/1890448/executive-lounge-01.jpg?impolicy=crop&cw=4505&ch=2685&gravity=NorthWest&xposition=0&yposition=157&rw=302&rh=180"
+                },
+                {
+                  "size": "md",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/1890448/executive-lounge-01.jpg?impolicy=crop&cw=4505&ch=2696&gravity=NorthWest&xposition=0&yposition=151&rw=528&rh=316"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "roomTypeCode": "K1EGP1",
+          "adaAccessibleRoom": false,
+          "numBeds": 1,
+          "roomTypeName": "King Terrace Suite W/ Klcc View",
+          "roomTypeDesc": "<p>111 sq. m., private terrace, high floor, Executive Lounge access, king-sized bed, KLCC view, luxury bath amenities, work desk, mini bar, Wi-Fi, 32-inch LCD TV, 55-inch flat panel TV, marble-furnished bathroom</p>\n\n\n<p>Unwind in the King Bed Terrace Suite, where stunning KLCC views and a private terrace from the highest floors of our hotel invite you to savor a freshly brewed coffee from the coffee maker.</p>\n\n\n<p>Relax in a king-sized bed with 250-thread count sheets and refresh in the marble-furnished bathroom featuring a separate bathtub and shower, luxury bath amenities, bathrobes and slippers. The suite includes a spacious living area, Wi-Fi and entertainment on both a 32-inch LCD TV and a 55-inch flat panel TV.</p>\n\n\n<p>Enjoy Executive Lounge access with exclusive breakfast and evening refreshments, or start your day at Makan Kitchen with a spread of Asian and international flavors. Thoughtfully designed for relaxation and elevated comfort, this suite is ideal for newlyweds, honeymooners and those seeking an unforgettable stay. With 24-hour housekeeping and secure double-locking doors, it will be both relaxing and seamless. Sleeps up to 3 guests.</p>",
+          "roomOccupancy": 3,
+          "executive": false,
+          "suite": true,
+          "code": "K1EGP1",
+          "name": "King Terrace Suite W/ Klcc View",
+          "thumbnail": [
+            {
+              "_id": "df5512270c21a19f00a74275919962459fa57ebdbe45a483433461292df2c2fd",
+              "altText": "Terrace Suite",
+              "variants": [
+                {
+                  "size": "md",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/1887955/terrace-suite-02-day.jpg?impolicy=crop&cw=4507&ch=2697&gravity=NorthWest&xposition=0&yposition=151&rw=528&rh=316"
+                },
+                {
+                  "size": "sm",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/1887955/terrace-suite-02-day.jpg?impolicy=crop&cw=4507&ch=2698&gravity=NorthWest&xposition=0&yposition=150&rw=344&rh=206"
+                },
+                {
+                  "size": "xs",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/1887955/terrace-suite-02-day.jpg?impolicy=crop&cw=4507&ch=2686&gravity=NorthWest&xposition=0&yposition=156&rw=302&rh=180"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "roomTypeCode": "K1EOP1",
+          "adaAccessibleRoom": false,
+          "numBeds": 1,
+          "roomTypeName": "King Executive Suite W/ Lounge Access",
+          "roomTypeDesc": "<p>62 sq. m./667 sq. ft., Executive Lounge access, pantry, living area, king-sized bed, luxury bath amenities, work desk, mini fridge, Wi-Fi, 32-inch LCD TV, 55-inch flat panel TV, connecting rooms</p>\n\n\n<p>Designed for both business and leisure travelers, our spacious King Executive Suite offers a comfortable living area, pantry and exclusive access to the Executive Lounge where you can enjoy breakfast and evening cocktails.</p>\n\n\n<p>Perfect for families, this suite accommodates up to 3 guests and connects to a 2 Twin Beds Guest Room, creating a shared space for up to 4 adults and 3 children when booked together. Relax with your favorite shows on the 32-inch LCD TV and 55-inch flat-panel TV, refresh in the bathroom with a separate bathtub and shower, and unwind with thoughtful touches like a pillow menu, bathrobes and slippers. With 24-hour housekeeping and secure double-locking doors, your stay is both relaxing and seamless.</p>",
+          "roomOccupancy": 3,
+          "executive": false,
+          "suite": true,
+          "code": "K1EOP1",
+          "name": "King Executive Suite W/ Lounge Access",
+          "thumbnail": [
+            {
+              "_id": "f84c8f53beacd9e9f5f7a75fb8ed98478da2d2f3704dbcdf46ac8d12a0efca08",
+              "altText": "Living room outside bedroom",
+              "variants": [
+                {
+                  "size": "sm",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/21697215/k1eop1.jpg?impolicy=crop&cw=4579&ch=2742&gravity=NorthWest&xposition=0&yposition=128&rw=344&rh=206"
+                },
+                {
+                  "size": "xs",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/21697215/k1eop1.jpg?impolicy=crop&cw=4579&ch=2729&gravity=NorthWest&xposition=0&yposition=135&rw=302&rh=180"
+                },
+                {
+                  "size": "md",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/21697215/k1eop1.jpg?impolicy=crop&cw=4579&ch=2740&gravity=NorthWest&xposition=0&yposition=129&rw=528&rh=316"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "roomTypeCode": "K1RRC",
+          "adaAccessibleRoom": true,
+          "numBeds": 1,
+          "roomTypeName": "King Accessible Room",
+          "roomTypeDesc": "<p>This accessible room features one king bed and a roll-in shower.</p><p>Feel at home in a stylish and comfortable Accessible Guest Room which features wheelchair-friendly bathroom access and a visual alarm system. Enjoy a great night's sleep in our luxurious Sweet Dreams™ Beds and stay connected with high-speed internet access (fee applies). This Accessible Room also features a raised vanity area, ample safety bars and extra space for wheelchairs. Don't hesitate to contact our friendly team members to help ensure that your stay is as perfect as possible.</p><p>Any corresponding photo may not reflect the specific accessible room type or room feature.</p>",
+          "roomOccupancy": 2,
+          "executive": false,
+          "suite": false,
+          "code": "K1RRC",
+          "name": "King Accessible Room",
+          "thumbnail": [
+            {
+              "_id": "940885a43737b401ffa2da6d7c8dc9af609cd37b31b8aa8bb37b54c20d0775c3",
+              "altText": "Single king bed",
+              "variants": [
+                {
+                  "size": "md",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/21697205/k1rrc-k1-k1d-k1e-copy.jpg?impolicy=crop&cw=4640&ch=2776&gravity=NorthWest&xposition=0&yposition=111&rw=528&rh=316"
+                },
+                {
+                  "size": "xs",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/21697205/k1rrc-k1-k1d-k1e-copy.jpg?impolicy=crop&cw=4640&ch=2765&gravity=NorthWest&xposition=0&yposition=117&rw=302&rh=180"
+                },
+                {
+                  "size": "sm",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/21697205/k1rrc-k1-k1d-k1e-copy.jpg?impolicy=crop&cw=4640&ch=2778&gravity=NorthWest&xposition=0&yposition=110&rw=344&rh=206"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "roomTypeCode": "T2",
+          "adaAccessibleRoom": false,
+          "numBeds": 2,
+          "roomTypeName": "Twin Guest Room",
+          "roomTypeDesc": "<p>32 sq. m., rain shower, pillow menu, twin bed, luxury bath amenities, work desk, Mini bar, WiFi, 42-inch LCD </p>\n<p>Stay connected in this Two Twin Beds Guest Room. This room offers ample space to work with a desk, adjustable chair, WiFi and an internet cable. International adapters are available for the convenience of global travelers. Choose a pillow from our pillow menu and settle in for a restful night?s sleep in the two twin-sized beds.</p>\n<p>Start each morning with a cup of coffee in the comfort of your room. The open-concept bathroom features a marble vanity top, separate walk-in rain shower, bathrobes, slippers and bathroom essentials. </p>",
+          "roomOccupancy": 3,
+          "executive": false,
+          "suite": false,
+          "code": "T2",
+          "name": "Twin Guest Room",
+          "thumbnail": [
+            {
+              "_id": "5faf582c6777fbfd693612200b6842944950c1fa1eac94864d8d0b6167ac4273",
+              "altText": "Double beds in room",
+              "variants": [
+                {
+                  "size": "md",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/21697147/t2-t2d-copy.jpg?impolicy=crop&cw=4508&ch=2697&gravity=NorthWest&xposition=0&yposition=151&rw=528&rh=316"
+                },
+                {
+                  "size": "sm",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/21697147/t2-t2d-copy.jpg?impolicy=crop&cw=4508&ch=2699&gravity=NorthWest&xposition=0&yposition=150&rw=344&rh=206"
+                },
+                {
+                  "size": "xs",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/21697147/t2-t2d-copy.jpg?impolicy=crop&cw=4508&ch=2686&gravity=NorthWest&xposition=0&yposition=156&rw=302&rh=180"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "roomTypeCode": "T2D",
+          "adaAccessibleRoom": false,
+          "numBeds": 2,
+          "roomTypeName": "Twin Deluxe Room",
+          "roomTypeDesc": "<p>32 sq. m., rain shower, pillow menu, Twin bed, luxury bath amenities, work desk, mini fridge, Wi-Fi, 32-inch LCD TV, connecting rooms</p>\n\n\n<p>Unwind in our Twin Deluxe Room designed for both business and leisure travelers. Overlooking the vibrant Kuala Lumpur cityscape, this stylish space features two plush twin beds and a cozy settee by the window. For added space and convenience, connecting rooms are available upon request.</p>\n\n\n<p>Relax with a pillow of your choice from our pillow menu, refresh in the open-concept marble bathroom with a rain shower and enjoy thoughtful touches like bathrobes, slippers and luxury bath amenities. Stay productive at the work desk with Wi-Fi and an ergonomic chair, or wind down with entertainment on the 32-inch LCD TV. With 24-hour housekeeping and secure double-locking doors, your stay is both relaxing and seamless.</p>",
+          "roomOccupancy": 3,
+          "executive": false,
+          "suite": false,
+          "code": "T2D",
+          "name": "Twin Deluxe Room",
+          "thumbnail": [
+            {
+              "_id": "7ed265905dbaa7e3d44ee7d9cccf4f56676f48b0172594371274e6ff4ae8b09d",
+              "altText": "Double beds in room",
+              "variants": [
+                {
+                  "size": "xs",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/21697140/t2d-t2dc-t2e-1-copy.jpg?impolicy=crop&cw=4508&ch=2686&gravity=NorthWest&xposition=0&yposition=156&rw=302&rh=180"
+                },
+                {
+                  "size": "md",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/21697140/t2d-t2dc-t2e-1-copy.jpg?impolicy=crop&cw=4508&ch=2697&gravity=NorthWest&xposition=0&yposition=151&rw=528&rh=316"
+                },
+                {
+                  "size": "sm",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/21697140/t2d-t2dc-t2e-1-copy.jpg?impolicy=crop&cw=4508&ch=2699&gravity=NorthWest&xposition=0&yposition=150&rw=344&rh=206"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "roomTypeCode": "T2DC",
+          "adaAccessibleRoom": false,
+          "numBeds": 2,
+          "roomTypeName": "Twin Deluxe Room Mountain View",
+          "roomTypeDesc": "<p>32 sq. m., rain shower, pillow menu, Twin bed, luxury bath amenities, work desk, mini fridge, Wi-Fi, 32-inch LCD TV</p>\n\n\n<p>Unwind in our Twin Deluxe Room designed for both business and leisure travelers. Offering a picturesque view of the mountain range, this stylish space features two plush twin beds and a cozy settee by the window.</p>\n\n\n<p>Relax with a pillow of your choice from our pillow menu, refresh in the open-concept marble bathroom with a rain shower and enjoy thoughtful touches like bathrobes, slippers and luxury bath amenities. Stay productive at the work desk with Wi-Fi and an ergonomic chair, or wind down with entertainment on the 32-inch LCD TV. With 24-hour housekeeping and secure double-locking doors, your stay is both relaxing and seamless. Sleeps 3 guests.</p>",
+          "roomOccupancy": 3,
+          "executive": false,
+          "suite": false,
+          "code": "T2DC",
+          "name": "Twin Deluxe Room Mountain View",
+          "thumbnail": [
+            {
+              "_id": "4af9d438c0eddb08aa06dad1fbe774d430cbce4f79720f60a5eed97b25b2cf94",
+              "altText": "Double beds in room",
+              "variants": [
+                {
+                  "size": "sm",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/21697133/t2d-t2dc-t2e-2-copy.jpg?impolicy=crop&cw=4508&ch=2699&gravity=NorthWest&xposition=0&yposition=150&rw=344&rh=206"
+                },
+                {
+                  "size": "xs",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/21697133/t2d-t2dc-t2e-2-copy.jpg?impolicy=crop&cw=4508&ch=2686&gravity=NorthWest&xposition=0&yposition=156&rw=302&rh=180"
+                },
+                {
+                  "size": "md",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/21697133/t2d-t2dc-t2e-2-copy.jpg?impolicy=crop&cw=4508&ch=2697&gravity=NorthWest&xposition=0&yposition=151&rw=528&rh=316"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "roomTypeCode": "T2E",
+          "adaAccessibleRoom": false,
+          "numBeds": 2,
+          "roomTypeName": "Twin Executive Room W/ Lounge Access",
+          "roomTypeDesc": "<p>32 sq. m., high floor, Executive Lounge Access, rain shower, pillow menu, Twin bed, luxury bath amenities, work desk, mini fridge, Wi-Fi, 32-inch LCD TV</p>\n\n\n<p>Unwind in our Twin Deluxe Room designed for both business and leisure travelers. This stylish space offers a picturesque view of the mountain range, complete with Executive Lounge access for exclusive breakfast, evening cocktails and a private space to unwind.</p>\n\n\n<p>Relax with a pillow of your choice from our pillow menu, refresh in the open-concept marble bathroom with a rain shower and enjoy thoughtful touches like bathrobes, slippers and luxury bath amenities. Stay productive at the work desk with Wi-Fi and an ergonomic chair, or wind down with entertainment on the 32-inch LCD TV. With 24-hour housekeeping and secure double-locking doors, your stay is both relaxing and seamless. Sleeps 3 guests.</p>",
+          "roomOccupancy": 3,
+          "executive": true,
+          "suite": false,
+          "code": "T2E",
+          "name": "Twin Executive Room W/ Lounge Access",
+          "thumbnail": [
+            {
+              "_id": "106d873133303bd1a63b303ac73f8b996534d9f0155e1c398ae5f6ac0d09e7d1",
+              "altText": "Double beds in room",
+              "variants": [
+                {
+                  "size": "sm",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/21697133/t2d-t2dc-t2e-2-copy.jpg?impolicy=crop&cw=4508&ch=2699&gravity=NorthWest&xposition=0&yposition=150&rw=344&rh=206"
+                },
+                {
+                  "size": "xs",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/21697133/t2d-t2dc-t2e-2-copy.jpg?impolicy=crop&cw=4508&ch=2686&gravity=NorthWest&xposition=0&yposition=156&rw=302&rh=180"
+                },
+                {
+                  "size": "md",
+                  "url": "https://www.hilton.com/im/en/KULDTDI/21697133/t2d-t2dc-t2e-2-copy.jpg?impolicy=crop&cw=4508&ch=2697&gravity=NorthWest&xposition=0&yposition=151&rw=528&rh=316"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "shopAvailOptions": {
+        "maxNumChildren": 4,
+        "altCorporateAccount": null,
+        "contentOffer": null
+      },
+      "shopAvail": {
+        "currentlySelectedRoom": [],
+        "statusCode": 0,
+        "summary": {
+          "specialRates": [],
+          "requestedRates": []
+        },
+        "notifications": [],
+        "addOnsAvailable": true,
+        "currencyCode": "MYR",
+        "roomTypes": [
+          {
+            "attributeGroups": [
+              {
+                "attributes": [
+                  {
+                    "description": "Sleeps 3",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_GUESTS",
+                "groupDescription": "Guests"
+              },
+              {
+                "attributes": [
+                  {
+                    "description": "Workspace",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_ROOMLAYOUT",
+                "groupDescription": "Room layout"
+              },
+              {
+                "attributes": [
+                  {
+                    "description": "Rain shower",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_BATHROOM",
+                "groupDescription": "Bathroom"
+              }
+            ],
+            "roomTypeCode": "T2",
+            "adaAccessibleRoom": false,
+            "numBeds": 2,
+            "roomTypeName": "Twin Guest Room",
+            "roomTypeDesc": "<p>32 sq. m., rain shower, pillow menu, twin bed, luxury bath amenities, work desk, Mini bar, WiFi, 42-inch LCD </p>\n<p>Stay connected in this Two Twin Beds Guest Room. This room offers ample space to work with a desk, adjustable chair, WiFi and an internet cable. International adapters are available for the convenience of global travelers. Choose a pillow from our pillow menu and settle in for a restful night?s sleep in the two twin-sized beds.</p>\n<p>Start each morning with a cup of coffee in the comfort of your room. The open-concept bathroom features a marble vanity top, separate walk-in rain shower, bathrobes, slippers and bathroom essentials. </p>",
+            "roomTypeOffers": [],
+            "roomOccupancy": 3,
+            "executive": false,
+            "suite": false,
+            "code": "T2",
+            "name": "Twin Guest Room",
+            "adjoiningRoom": false,
+            "thumbnail": [
+              {
+                "_id": "a87a01a63bb8abffb8e548d7d2ee3267c97a4076887634b8098d7752a00a182a",
+                "altText": "Double beds in room",
+                "variants": [
+                  {
+                    "size": "md",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/21697147/t2-t2d-copy.jpg?impolicy=crop&cw=4508&ch=2562&gravity=NorthWest&xposition=0&yposition=218&rw=760&rh=432"
+                  },
+                  {
+                    "size": "xs",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/21697147/t2-t2d-copy.jpg?impolicy=crop&cw=4508&ch=2562&gravity=NorthWest&xposition=0&yposition=218&rw=760&rh=432"
+                  },
+                  {
+                    "size": "sm",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/21697147/t2-t2d-copy.jpg?impolicy=crop&cw=4508&ch=2562&gravity=NorthWest&xposition=0&yposition=218&rw=760&rh=432"
+                  }
+                ]
+              }
+            ],
+            "virtualMedia": [],
+            "quickBookRate": null,
+            "moreRatesFromRate": {
+              "rateChangeIndicator": false,
+              "feeTransparencyIndicator": true,
+              "cmaTotalPriceIndicator": false,
+              "roomTypeCode": "T2",
+              "rateAmount": 387,
+              "rateAmountFmt": "RM 387",
+              "rateAmountUSD": 98.75,
+              "amountAfterTaxFmt": "RM 415",
+              "fullAmountAfterTax": "RM 415.00",
+              "serviceChargeDetails": "<b>Price includes 10.00</b>% service charge per stay, but excludes tax",
+              "ratePlanCode": "HPPAP4",
+              "ratePlan": {
+                "confidentialRates": false,
+                "serviceChargesAndTaxesIncluded": false
+              }
+            },
+            "bookNowRate": null,
+            "redemptionRoomRates": []
+          },
+          {
+            "attributeGroups": [
+              {
+                "attributes": [
+                  {
+                    "description": "Sleeps 3",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_GUESTS",
+                "groupDescription": "Guests"
+              },
+              {
+                "attributes": [
+                  {
+                    "description": "Workspace",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_ROOMLAYOUT",
+                "groupDescription": "Room layout"
+              },
+              {
+                "attributes": [
+                  {
+                    "description": "Rain shower",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_BATHROOM",
+                "groupDescription": "Bathroom"
+              }
+            ],
+            "roomTypeCode": "T2D",
+            "adaAccessibleRoom": false,
+            "numBeds": 2,
+            "roomTypeName": "Twin Deluxe Room",
+            "roomTypeDesc": "<p>32 sq. m., rain shower, pillow menu, Twin bed, luxury bath amenities, work desk, mini fridge, Wi-Fi, 32-inch LCD TV, connecting rooms</p>\n\n\n<p>Unwind in our Twin Deluxe Room designed for both business and leisure travelers. Overlooking the vibrant Kuala Lumpur cityscape, this stylish space features two plush twin beds and a cozy settee by the window. For added space and convenience, connecting rooms are available upon request.</p>\n\n\n<p>Relax with a pillow of your choice from our pillow menu, refresh in the open-concept marble bathroom with a rain shower and enjoy thoughtful touches like bathrobes, slippers and luxury bath amenities. Stay productive at the work desk with Wi-Fi and an ergonomic chair, or wind down with entertainment on the 32-inch LCD TV. With 24-hour housekeeping and secure double-locking doors, your stay is both relaxing and seamless.</p>",
+            "roomTypeOffers": [],
+            "roomOccupancy": 3,
+            "executive": false,
+            "suite": false,
+            "code": "T2D",
+            "name": "Twin Deluxe Room",
+            "adjoiningRoom": false,
+            "thumbnail": [
+              {
+                "_id": "8fe100ff540081daa82741ce62d0fe344dd9814d6e05d7011119058c16491dba",
+                "altText": "Double beds in room",
+                "variants": [
+                  {
+                    "size": "sm",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/21697140/t2d-t2dc-t2e-1-copy.jpg?impolicy=crop&cw=4508&ch=2562&gravity=NorthWest&xposition=0&yposition=218&rw=760&rh=432"
+                  },
+                  {
+                    "size": "xs",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/21697140/t2d-t2dc-t2e-1-copy.jpg?impolicy=crop&cw=4508&ch=2562&gravity=NorthWest&xposition=0&yposition=218&rw=760&rh=432"
+                  },
+                  {
+                    "size": "md",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/21697140/t2d-t2dc-t2e-1-copy.jpg?impolicy=crop&cw=4508&ch=2562&gravity=NorthWest&xposition=0&yposition=218&rw=760&rh=432"
+                  }
+                ]
+              }
+            ],
+            "virtualMedia": [],
+            "quickBookRate": null,
+            "moreRatesFromRate": {
+              "rateChangeIndicator": false,
+              "feeTransparencyIndicator": true,
+              "cmaTotalPriceIndicator": false,
+              "roomTypeCode": "T2D",
+              "rateAmount": 397,
+              "rateAmountFmt": "RM 397",
+              "rateAmountUSD": 101.3,
+              "amountAfterTaxFmt": "RM 426",
+              "fullAmountAfterTax": "RM 426.00",
+              "serviceChargeDetails": "<b>Price includes 10.00</b>% service charge per stay, but excludes tax",
+              "ratePlanCode": "HPPAP4",
+              "ratePlan": {
+                "confidentialRates": false,
+                "serviceChargesAndTaxesIncluded": false
+              }
+            },
+            "bookNowRate": null,
+            "redemptionRoomRates": []
+          },
+          {
+            "attributeGroups": [
+              {
+                "attributes": [
+                  {
+                    "description": "Sleeps 3",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_GUESTS",
+                "groupDescription": "Guests"
+              },
+              {
+                "attributes": [
+                  {
+                    "description": "Workspace",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_ROOMLAYOUT",
+                "groupDescription": "Room layout"
+              },
+              {
+                "attributes": [
+                  {
+                    "description": "Rain shower",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_BATHROOM",
+                "groupDescription": "Bathroom"
+              }
+            ],
+            "roomTypeCode": "K1",
+            "adaAccessibleRoom": false,
+            "numBeds": 1,
+            "roomTypeName": "King Guest Room",
+            "roomTypeDesc": "<p>32 sq. m., rain shower, pillow menu, king-sized bed, luxury bath amenities, work desk, mini bar, WiFi, 32-inch LCD</p>\n<p>Relax in this King Bed Guest Room which features one king-sized bed. Select the pillow of your choice from our convenient pillow menu. Settle in and enjoy your favorite shows on the 32-inch LCD TV. With in-room WiFi, you will be able to browse the internet and stay up-to-date on business.</p>\n<p>Freshen up in the open-concept marble bathroom which features a separate walk-in rain shower and bathroom essentials. Start each morning with a cup of coffee in the comfort of your room. Special touches include bathrobes, slippers and a settee against the window.</p>",
+            "roomTypeOffers": [],
+            "roomOccupancy": 3,
+            "executive": false,
+            "suite": false,
+            "code": "K1",
+            "name": "King Guest Room",
+            "adjoiningRoom": false,
+            "thumbnail": [
+              {
+                "_id": "5329e8ac7bbc8fb2725c3c9b4b8e0794c71b0afceb18478638e27ab6015a00e7",
+                "altText": "Single king bed",
+                "variants": [
+                  {
+                    "size": "sm",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/21697205/k1rrc-k1-k1d-k1e-copy.jpg?impolicy=crop&cw=4640&ch=2637&gravity=NorthWest&xposition=0&yposition=181&rw=760&rh=432"
+                  },
+                  {
+                    "size": "md",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/21697205/k1rrc-k1-k1d-k1e-copy.jpg?impolicy=crop&cw=4640&ch=2637&gravity=NorthWest&xposition=0&yposition=181&rw=760&rh=432"
+                  },
+                  {
+                    "size": "xs",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/21697205/k1rrc-k1-k1d-k1e-copy.jpg?impolicy=crop&cw=4640&ch=2637&gravity=NorthWest&xposition=0&yposition=181&rw=760&rh=432"
+                  }
+                ]
+              }
+            ],
+            "virtualMedia": [],
+            "quickBookRate": null,
+            "moreRatesFromRate": {
+              "rateChangeIndicator": false,
+              "feeTransparencyIndicator": true,
+              "cmaTotalPriceIndicator": false,
+              "roomTypeCode": "K1",
+              "rateAmount": 407,
+              "rateAmountFmt": "RM 407",
+              "rateAmountUSD": 103.86,
+              "amountAfterTaxFmt": "RM 437",
+              "fullAmountAfterTax": "RM 437.00",
+              "serviceChargeDetails": "<b>Price includes 10.00</b>% service charge per stay, but excludes tax",
+              "ratePlanCode": "HPPAP4",
+              "ratePlan": {
+                "confidentialRates": false,
+                "serviceChargesAndTaxesIncluded": false
+              }
+            },
+            "bookNowRate": null,
+            "redemptionRoomRates": []
+          },
+          {
+            "attributeGroups": [
+              {
+                "attributes": [
+                  {
+                    "description": "Sleeps 2",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_GUESTS",
+                "groupDescription": "Guests"
+              },
+              {
+                "attributes": [
+                  {
+                    "description": "Rain shower",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_BATHROOM",
+                "groupDescription": "Bathroom"
+              },
+              {
+                "attributes": [
+                  {
+                    "description": "Roll-in shower",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_ACCESSIBILITY",
+                "groupDescription": "Accessibility"
+              }
+            ],
+            "roomTypeCode": "K1RRC",
+            "adaAccessibleRoom": true,
+            "numBeds": 1,
+            "roomTypeName": "King Accessible Room",
+            "roomTypeDesc": "<p>This accessible room features one king bed and a roll-in shower.</p><p>Feel at home in a stylish and comfortable Accessible Guest Room which features wheelchair-friendly bathroom access and a visual alarm system. Enjoy a great night's sleep in our luxurious Sweet Dreams™ Beds and stay connected with high-speed internet access (fee applies). This Accessible Room also features a raised vanity area, ample safety bars and extra space for wheelchairs. Don't hesitate to contact our friendly team members to help ensure that your stay is as perfect as possible.</p><p>Any corresponding photo may not reflect the specific accessible room type or room feature.</p>",
+            "roomTypeOffers": [],
+            "roomOccupancy": 2,
+            "executive": false,
+            "suite": false,
+            "code": "K1RRC",
+            "name": "King Accessible Room",
+            "adjoiningRoom": false,
+            "thumbnail": [
+              {
+                "_id": "a2a5d0cade2f7aa40e324b63269a48dfdd1ed9b0967f8df076800165e6e171c7",
+                "altText": "Single king bed",
+                "variants": [
+                  {
+                    "size": "sm",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/21697205/k1rrc-k1-k1d-k1e-copy.jpg?impolicy=crop&cw=4640&ch=2637&gravity=NorthWest&xposition=0&yposition=181&rw=760&rh=432"
+                  },
+                  {
+                    "size": "md",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/21697205/k1rrc-k1-k1d-k1e-copy.jpg?impolicy=crop&cw=4640&ch=2637&gravity=NorthWest&xposition=0&yposition=181&rw=760&rh=432"
+                  },
+                  {
+                    "size": "xs",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/21697205/k1rrc-k1-k1d-k1e-copy.jpg?impolicy=crop&cw=4640&ch=2637&gravity=NorthWest&xposition=0&yposition=181&rw=760&rh=432"
+                  }
+                ]
+              }
+            ],
+            "virtualMedia": [],
+            "quickBookRate": null,
+            "moreRatesFromRate": {
+              "rateChangeIndicator": false,
+              "feeTransparencyIndicator": true,
+              "cmaTotalPriceIndicator": false,
+              "roomTypeCode": "K1RRC",
+              "rateAmount": 407,
+              "rateAmountFmt": "RM 407",
+              "rateAmountUSD": 103.86,
+              "amountAfterTaxFmt": "RM 437",
+              "fullAmountAfterTax": "RM 437.00",
+              "serviceChargeDetails": "<b>Price includes 10.00</b>% service charge per stay, but excludes tax",
+              "ratePlanCode": "HPPAP4",
+              "ratePlan": {
+                "confidentialRates": false,
+                "serviceChargesAndTaxesIncluded": false
+              }
+            },
+            "bookNowRate": null,
+            "redemptionRoomRates": []
+          },
+          {
+            "attributeGroups": [
+              {
+                "attributes": [
+                  {
+                    "description": "Sleeps 3",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_GUESTS",
+                "groupDescription": "Guests"
+              },
+              {
+                "attributes": [
+                  {
+                    "description": "Mountain view",
+                    "valueAdd": true
+                  }
+                ],
+                "groupCode": "G_VIEWS",
+                "groupDescription": "Views"
+              },
+              {
+                "attributes": [
+                  {
+                    "description": "Workspace",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_ROOMLAYOUT",
+                "groupDescription": "Room layout"
+              },
+              {
+                "attributes": [
+                  {
+                    "description": "Rain shower",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_BATHROOM",
+                "groupDescription": "Bathroom"
+              }
+            ],
+            "roomTypeCode": "T2DC",
+            "adaAccessibleRoom": false,
+            "numBeds": 2,
+            "roomTypeName": "Twin Deluxe Room Mountain View",
+            "roomTypeDesc": "<p>32 sq. m., rain shower, pillow menu, Twin bed, luxury bath amenities, work desk, mini fridge, Wi-Fi, 32-inch LCD TV</p>\n\n\n<p>Unwind in our Twin Deluxe Room designed for both business and leisure travelers. Offering a picturesque view of the mountain range, this stylish space features two plush twin beds and a cozy settee by the window.</p>\n\n\n<p>Relax with a pillow of your choice from our pillow menu, refresh in the open-concept marble bathroom with a rain shower and enjoy thoughtful touches like bathrobes, slippers and luxury bath amenities. Stay productive at the work desk with Wi-Fi and an ergonomic chair, or wind down with entertainment on the 32-inch LCD TV. With 24-hour housekeeping and secure double-locking doors, your stay is both relaxing and seamless. Sleeps 3 guests.</p>",
+            "roomTypeOffers": [],
+            "roomOccupancy": 3,
+            "executive": false,
+            "suite": false,
+            "code": "T2DC",
+            "name": "Twin Deluxe Room Mountain View",
+            "adjoiningRoom": false,
+            "thumbnail": [
+              {
+                "_id": "9ca2fe680fcc16b04c46083ef1f7e1ad436540bfa6e46eaaed4a8472e6852ed1",
+                "altText": "Double beds in room",
+                "variants": [
+                  {
+                    "size": "sm",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/21697133/t2d-t2dc-t2e-2-copy.jpg?impolicy=crop&cw=4508&ch=2562&gravity=NorthWest&xposition=0&yposition=218&rw=760&rh=432"
+                  },
+                  {
+                    "size": "md",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/21697133/t2d-t2dc-t2e-2-copy.jpg?impolicy=crop&cw=4508&ch=2562&gravity=NorthWest&xposition=0&yposition=218&rw=760&rh=432"
+                  },
+                  {
+                    "size": "xs",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/21697133/t2d-t2dc-t2e-2-copy.jpg?impolicy=crop&cw=4508&ch=2562&gravity=NorthWest&xposition=0&yposition=218&rw=760&rh=432"
+                  }
+                ]
+              }
+            ],
+            "virtualMedia": [],
+            "quickBookRate": null,
+            "moreRatesFromRate": {
+              "rateChangeIndicator": false,
+              "feeTransparencyIndicator": true,
+              "cmaTotalPriceIndicator": false,
+              "roomTypeCode": "T2DC",
+              "rateAmount": 412,
+              "rateAmountFmt": "RM 412",
+              "rateAmountUSD": 105.13,
+              "amountAfterTaxFmt": "RM 442",
+              "fullAmountAfterTax": "RM 442.00",
+              "serviceChargeDetails": "<b>Price includes 10.00</b>% service charge per stay, but excludes tax",
+              "ratePlanCode": "HPPAP4",
+              "ratePlan": {
+                "confidentialRates": false,
+                "serviceChargesAndTaxesIncluded": false
+              }
+            },
+            "bookNowRate": null,
+            "redemptionRoomRates": []
+          },
+          {
+            "attributeGroups": [
+              {
+                "attributes": [
+                  {
+                    "description": "Sleeps 3",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_GUESTS",
+                "groupDescription": "Guests"
+              },
+              {
+                "attributes": [
+                  {
+                    "description": "Workspace",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_ROOMLAYOUT",
+                "groupDescription": "Room layout"
+              },
+              {
+                "attributes": [
+                  {
+                    "description": "Rain shower",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_BATHROOM",
+                "groupDescription": "Bathroom"
+              }
+            ],
+            "roomTypeCode": "K1D",
+            "adaAccessibleRoom": false,
+            "numBeds": 1,
+            "roomTypeName": "King Deluxe Room",
+            "roomTypeDesc": "<p>32 sq. m., rain shower, pillow menu, king-sized bed, luxury bath amenities, work desk, mini fridge, Wi-Fi, 32-inch LCD TV</p>\n\n\n<p>Unwind in our King Deluxe Room, designed for comfort and convenience. Sink into 250-thread count sheets on a plush king-sized bed complete with a pillow menu to suit your preference. Stay connected with Wi-Fi, a 32-inch LCD TV and a work desk with an ergonomic chair.</p>\n\n\n<p>Refresh in the open-concept marble bathroom featuring a walk-in rain shower, luxury bath amenities, bathrobes and slippers. Enjoy thoughtful touches like a mini fridge, coffee maker and complimentary beverages. With 24-hour housekeeping and secure double-locking doors, your stay is both relaxing and seamless. Sleeps up to 3 guests.</p>",
+            "roomTypeOffers": [],
+            "roomOccupancy": 3,
+            "executive": false,
+            "suite": false,
+            "code": "K1D",
+            "name": "King Deluxe Room",
+            "adjoiningRoom": false,
+            "thumbnail": [
+              {
+                "_id": "b0af7fcb230b17a1617a298dc57ff115129cc62bf4925922e3cd2cb04ef00a61",
+                "altText": "Writing Desk",
+                "variants": [
+                  {
+                    "size": "xs",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/1890001/doubletreebyhiltonkl-guest-room-writing-desk-3000px.jpg?impolicy=crop&cw=3542&ch=2013&gravity=NorthWest&xposition=0&yposition=493&rw=760&rh=432"
+                  },
+                  {
+                    "size": "md",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/1890001/doubletreebyhiltonkl-guest-room-writing-desk-3000px.jpg?impolicy=crop&cw=3542&ch=2013&gravity=NorthWest&xposition=0&yposition=493&rw=760&rh=432"
+                  },
+                  {
+                    "size": "sm",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/1890001/doubletreebyhiltonkl-guest-room-writing-desk-3000px.jpg?impolicy=crop&cw=3542&ch=2013&gravity=NorthWest&xposition=0&yposition=493&rw=760&rh=432"
+                  }
+                ]
+              }
+            ],
+            "virtualMedia": [],
+            "quickBookRate": null,
+            "moreRatesFromRate": {
+              "rateChangeIndicator": false,
+              "feeTransparencyIndicator": true,
+              "cmaTotalPriceIndicator": false,
+              "roomTypeCode": "K1D",
+              "rateAmount": 422,
+              "rateAmountFmt": "RM 422",
+              "rateAmountUSD": 107.68,
+              "amountAfterTaxFmt": "RM 453",
+              "fullAmountAfterTax": "RM 453.00",
+              "serviceChargeDetails": "<b>Price includes 10.00</b>% service charge per stay, but excludes tax",
+              "ratePlanCode": "HPPAP4",
+              "ratePlan": {
+                "confidentialRates": false,
+                "serviceChargesAndTaxesIncluded": false
+              }
+            },
+            "bookNowRate": null,
+            "redemptionRoomRates": []
+          },
+          {
+            "attributeGroups": [
+              {
+                "attributes": [
+                  {
+                    "description": "Sleeps 3",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_GUESTS",
+                "groupDescription": "Guests"
+              },
+              {
+                "attributes": [
+                  {
+                    "description": "Mountain view",
+                    "valueAdd": true
+                  }
+                ],
+                "groupCode": "G_VIEWS",
+                "groupDescription": "Views"
+              },
+              {
+                "attributes": [
+                  {
+                    "description": "Workspace",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_ROOMLAYOUT",
+                "groupDescription": "Room layout"
+              },
+              {
+                "attributes": [
+                  {
+                    "description": "Rain shower",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_BATHROOM",
+                "groupDescription": "Bathroom"
+              }
+            ],
+            "roomTypeCode": "K1DC",
+            "adaAccessibleRoom": false,
+            "numBeds": 1,
+            "roomTypeName": "King Deluxe Room Mountain View",
+            "roomTypeDesc": "<p>32 sq. m., mountain view, rain shower, pillow menu, king-sized bed, luxury bath amenities, work desk, mini fridge, Wi-Fi, 32-inch LCD TV</p>\n\n\n<p>Unwind in our King Deluxe Mountain View Room, offering a picturesque view of the mountain range. Sink into 250-thread count sheets on a plush king-sized bed complete with a pillow menu to suit your preference. Stay connected with Wi-Fi, a 32-inch LCD TV and a work desk with an ergonomic chair.</p>\n\n\nRefresh in the open-concept marble bathroom featuring a walk-in rain shower, Crabtree & Evelyn bath amenities, bathrobes and slippers. Enjoy thoughtful touches like a mini fridge, coffee maker and complimentary beverages. With 24-hour housekeeping and secure double-locking doors, your stay is both relaxing and seamless. Sleeps up to 3 guests.",
+            "roomTypeOffers": [],
+            "roomOccupancy": 3,
+            "executive": false,
+            "suite": false,
+            "code": "K1DC",
+            "name": "King Deluxe Room Mountain View",
+            "adjoiningRoom": false,
+            "thumbnail": [
+              {
+                "_id": "97adbd639d308ee3d27b4dcfcdd94dee5af56ff1fbfabbb693653f9440fd4904",
+                "altText": "Large Bed in a Guest Room with TV, Desk Sofa and City View",
+                "variants": [
+                  {
+                    "size": "md",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/22617492/k1dc-1-.jpg?impolicy=crop&cw=4928&ch=2801&gravity=NorthWest&xposition=0&yposition=239&rw=760&rh=432"
+                  },
+                  {
+                    "size": "xs",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/22617492/k1dc-1-.jpg?impolicy=crop&cw=4928&ch=2801&gravity=NorthWest&xposition=0&yposition=239&rw=760&rh=432"
+                  },
+                  {
+                    "size": "sm",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/22617492/k1dc-1-.jpg?impolicy=crop&cw=4928&ch=2801&gravity=NorthWest&xposition=0&yposition=239&rw=760&rh=432"
+                  }
+                ]
+              }
+            ],
+            "virtualMedia": [],
+            "quickBookRate": null,
+            "moreRatesFromRate": {
+              "rateChangeIndicator": false,
+              "feeTransparencyIndicator": true,
+              "cmaTotalPriceIndicator": false,
+              "roomTypeCode": "K1DC",
+              "rateAmount": 442,
+              "rateAmountFmt": "RM 442",
+              "rateAmountUSD": 112.79,
+              "amountAfterTaxFmt": "RM 474",
+              "fullAmountAfterTax": "RM 474.00",
+              "serviceChargeDetails": "<b>Price includes 10.00</b>% service charge per stay, but excludes tax",
+              "ratePlanCode": "HPPAP4",
+              "ratePlan": {
+                "confidentialRates": false,
+                "serviceChargesAndTaxesIncluded": false
+              }
+            },
+            "bookNowRate": null,
+            "redemptionRoomRates": []
+          },
+          {
+            "attributeGroups": [
+              {
+                "attributes": [
+                  {
+                    "description": "Sleeps 3",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_GUESTS",
+                "groupDescription": "Guests"
+              },
+              {
+                "attributes": [
+                  {
+                    "description": "Mountain view",
+                    "valueAdd": true
+                  }
+                ],
+                "groupCode": "G_VIEWS",
+                "groupDescription": "Views"
+              },
+              {
+                "attributes": [
+                  {
+                    "description": "Workspace",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_ROOMLAYOUT",
+                "groupDescription": "Room layout"
+              },
+              {
+                "attributes": [
+                  {
+                    "description": "Rain shower",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_BATHROOM",
+                "groupDescription": "Bathroom"
+              }
+            ],
+            "roomTypeCode": "T2E",
+            "adaAccessibleRoom": false,
+            "numBeds": 2,
+            "roomTypeName": "Twin Executive Room W/ Lounge Access",
+            "roomTypeDesc": "<p>32 sq. m., high floor, Executive Lounge Access, rain shower, pillow menu, Twin bed, luxury bath amenities, work desk, mini fridge, Wi-Fi, 32-inch LCD TV</p>\n\n\n<p>Unwind in our Twin Deluxe Room designed for both business and leisure travelers. This stylish space offers a picturesque view of the mountain range, complete with Executive Lounge access for exclusive breakfast, evening cocktails and a private space to unwind.</p>\n\n\n<p>Relax with a pillow of your choice from our pillow menu, refresh in the open-concept marble bathroom with a rain shower and enjoy thoughtful touches like bathrobes, slippers and luxury bath amenities. Stay productive at the work desk with Wi-Fi and an ergonomic chair, or wind down with entertainment on the 32-inch LCD TV. With 24-hour housekeeping and secure double-locking doors, your stay is both relaxing and seamless. Sleeps 3 guests.</p>",
+            "roomTypeOffers": [],
+            "roomOccupancy": 3,
+            "executive": true,
+            "suite": false,
+            "code": "T2E",
+            "name": "Twin Executive Room W/ Lounge Access",
+            "adjoiningRoom": false,
+            "thumbnail": [
+              {
+                "_id": "8b0a4917315ededd5d5a7d68d53ccf71fba7b789590e2fb5d1fed263d5ab6bab",
+                "altText": "Double beds in room",
+                "variants": [
+                  {
+                    "size": "sm",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/21697133/t2d-t2dc-t2e-2-copy.jpg?impolicy=crop&cw=4508&ch=2562&gravity=NorthWest&xposition=0&yposition=218&rw=760&rh=432"
+                  },
+                  {
+                    "size": "md",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/21697133/t2d-t2dc-t2e-2-copy.jpg?impolicy=crop&cw=4508&ch=2562&gravity=NorthWest&xposition=0&yposition=218&rw=760&rh=432"
+                  },
+                  {
+                    "size": "xs",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/21697133/t2d-t2dc-t2e-2-copy.jpg?impolicy=crop&cw=4508&ch=2562&gravity=NorthWest&xposition=0&yposition=218&rw=760&rh=432"
+                  }
+                ]
+              }
+            ],
+            "virtualMedia": [],
+            "quickBookRate": null,
+            "moreRatesFromRate": {
+              "rateChangeIndicator": false,
+              "feeTransparencyIndicator": true,
+              "cmaTotalPriceIndicator": false,
+              "roomTypeCode": "T2E",
+              "rateAmount": 585,
+              "rateAmountFmt": "RM 585",
+              "rateAmountUSD": 149.28,
+              "amountAfterTaxFmt": "RM 628",
+              "fullAmountAfterTax": "RM 628.00",
+              "serviceChargeDetails": "<b>Price includes 10.00</b>% service charge per stay, but excludes tax",
+              "ratePlanCode": "HPPAP4",
+              "ratePlan": {
+                "confidentialRates": false,
+                "serviceChargesAndTaxesIncluded": false
+              }
+            },
+            "bookNowRate": null,
+            "redemptionRoomRates": []
+          },
+          {
+            "attributeGroups": [
+              {
+                "attributes": [
+                  {
+                    "description": "Sleeps 3",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_GUESTS",
+                "groupDescription": "Guests"
+              },
+              {
+                "attributes": [
+                  {
+                    "description": "Mountain view",
+                    "valueAdd": true
+                  }
+                ],
+                "groupCode": "G_VIEWS",
+                "groupDescription": "Views"
+              },
+              {
+                "attributes": [
+                  {
+                    "description": "Workspace",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_ROOMLAYOUT",
+                "groupDescription": "Room layout"
+              },
+              {
+                "attributes": [
+                  {
+                    "description": "Rain shower",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_BATHROOM",
+                "groupDescription": "Bathroom"
+              }
+            ],
+            "roomTypeCode": "K1E",
+            "adaAccessibleRoom": false,
+            "numBeds": 1,
+            "roomTypeName": "King Executive Room W/ Lounge Access",
+            "roomTypeDesc": "<p>32 sq. m., Executive Lounge access, mountain view, rain shower, pillow menu, king-sized bed, luxury bath amenities, work desk, mini fridge, Wi-Fi, 32-inch LCD TV</p>\n\n\n<p>Unwind in our King Executive Mountain View Room, offering a picturesque view of the mountain range and exclusive Executive Lounge access for breakfast, evening cocktails and a private space to unwind.</p>\n\n\n<p>Sink into 250-thread count sheets on a plush king-sized bed complete with a pillow menu to suit your preference. Stay connected with Wi-Fi, a 32-inch LCD TV and a work desk with an ergonomic chair. Refresh in the open-concept marble bathroom featuring a walk-in rain shower, luxury bath amenities, bathrobes and slippers. Enjoy thoughtful touches like a mini fridge, coffee maker and complimentary beverages. With 24-hour housekeeping and secure double-locking doors, your stay is both relaxing and seamless. Sleeps up to 3 guests.</p>",
+            "roomTypeOffers": [],
+            "roomOccupancy": 3,
+            "executive": true,
+            "suite": false,
+            "code": "K1E",
+            "name": "King Executive Room W/ Lounge Access",
+            "adjoiningRoom": false,
+            "thumbnail": [
+              {
+                "_id": "f35a102c722fd2189d50632e53c5ccad6e09f73a1082c96b6c99e9f1b09a7a88",
+                "altText": "Executive Lounge",
+                "variants": [
+                  {
+                    "size": "md",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/1890448/executive-lounge-01.jpg?impolicy=crop&cw=4505&ch=2560&gravity=NorthWest&xposition=0&yposition=219&rw=760&rh=432"
+                  },
+                  {
+                    "size": "sm",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/1890448/executive-lounge-01.jpg?impolicy=crop&cw=4505&ch=2560&gravity=NorthWest&xposition=0&yposition=219&rw=760&rh=432"
+                  },
+                  {
+                    "size": "xs",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/1890448/executive-lounge-01.jpg?impolicy=crop&cw=4505&ch=2560&gravity=NorthWest&xposition=0&yposition=219&rw=760&rh=432"
+                  }
+                ]
+              }
+            ],
+            "virtualMedia": [],
+            "quickBookRate": null,
+            "moreRatesFromRate": {
+              "rateChangeIndicator": false,
+              "feeTransparencyIndicator": true,
+              "cmaTotalPriceIndicator": false,
+              "roomTypeCode": "K1E",
+              "rateAmount": 606,
+              "rateAmountFmt": "RM 606",
+              "rateAmountUSD": 154.64,
+              "amountAfterTaxFmt": "RM 650",
+              "fullAmountAfterTax": "RM 650.00",
+              "serviceChargeDetails": "<b>Price includes 10.00</b>% service charge per stay, but excludes tax",
+              "ratePlanCode": "HPPAP4",
+              "ratePlan": {
+                "confidentialRates": false,
+                "serviceChargesAndTaxesIncluded": false
+              }
+            },
+            "bookNowRate": null,
+            "redemptionRoomRates": []
+          },
+          {
+            "attributeGroups": [
+              {
+                "attributes": [
+                  {
+                    "description": "Sleeps 3",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_GUESTS",
+                "groupDescription": "Guests"
+              },
+              {
+                "attributes": [
+                  {
+                    "description": "City view",
+                    "valueAdd": true
+                  }
+                ],
+                "groupCode": "G_VIEWS",
+                "groupDescription": "Views"
+              },
+              {
+                "attributes": [
+                  {
+                    "description": "Living area",
+                    "valueAdd": true
+                  },
+                  {
+                    "description": "Workspace",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_ROOMLAYOUT",
+                "groupDescription": "Room layout"
+              },
+              {
+                "attributes": [
+                  {
+                    "description": "Rain shower",
+                    "valueAdd": false
+                  },
+                  {
+                    "description": "Separate bathtub",
+                    "valueAdd": false
+                  },
+                  {
+                    "description": "Separate shower",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_BATHROOM",
+                "groupDescription": "Bathroom"
+              }
+            ],
+            "roomTypeCode": "K1DOP1",
+            "adaAccessibleRoom": false,
+            "numBeds": 1,
+            "roomTypeName": "King Deluxe Suite W/ Lounge Access",
+            "roomTypeDesc": "<p>50 sq. m., Executive Lounge access, bathtub, king-sized bed, luxury bath amenities, work desk, mini fridge, WiFi, 32-inch LCD TV</p>\n\n\n<p>Experience extra space and a gorgeous view of the city skyline in our King Deluxe Suite, complete with Executive Lounge access for exclusive breakfast, evening cocktails and a private space to unwind.</p>\n\n\n<p>Sink into 250-thread count sheets on a plush king-sized bed complete with a pillow menu to suit your preference. Refresh in the spacious bathroom featuring a separate bathtub and shower, luxury bath amenities, bathrobes and slippers. Stay productive with Wi-Fi, a work desk with an ergonomic chair and desk-level electrical plugs, or unwind with your favorite shows on a 32-inch LCD TV. Enjoy added conveniences like a minibar, coffee maker and complimentary beverages, all within a thoughtfully designed space. With 24-hour housekeeping and secure double-locking doors, your stay is both relaxing and seamless. Sleeps up to 3 guests.</p>",
+            "roomTypeOffers": [],
+            "roomOccupancy": 3,
+            "executive": false,
+            "suite": true,
+            "code": "K1DOP1",
+            "name": "King Deluxe Suite W/ Lounge Access",
+            "adjoiningRoom": false,
+            "thumbnail": [
+              {
+                "_id": "f7c0978b96102231d7710e5dbbb750579270b344c73e50ab9214c60ca4cab1a2",
+                "altText": "full bedroom",
+                "variants": [
+                  {
+                    "size": "sm",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/21697231/k1dop1-copy.jpg?impolicy=crop&cw=4508&ch=2562&gravity=NorthWest&xposition=0&yposition=218&rw=760&rh=432"
+                  },
+                  {
+                    "size": "xs",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/21697231/k1dop1-copy.jpg?impolicy=crop&cw=4508&ch=2562&gravity=NorthWest&xposition=0&yposition=218&rw=760&rh=432"
+                  },
+                  {
+                    "size": "md",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/21697231/k1dop1-copy.jpg?impolicy=crop&cw=4508&ch=2562&gravity=NorthWest&xposition=0&yposition=218&rw=760&rh=432"
+                  }
+                ]
+              }
+            ],
+            "virtualMedia": [],
+            "quickBookRate": null,
+            "moreRatesFromRate": {
+              "rateChangeIndicator": false,
+              "feeTransparencyIndicator": true,
+              "cmaTotalPriceIndicator": false,
+              "roomTypeCode": "K1DOP1",
+              "rateAmount": 715,
+              "rateAmountFmt": "RM 715",
+              "rateAmountUSD": 182.45,
+              "amountAfterTaxFmt": "RM 767",
+              "fullAmountAfterTax": "RM 767.00",
+              "serviceChargeDetails": "<b>Price includes 10.00</b>% service charge per stay, but excludes tax",
+              "ratePlanCode": "HPPAP4",
+              "ratePlan": {
+                "confidentialRates": false,
+                "serviceChargesAndTaxesIncluded": false
+              }
+            },
+            "bookNowRate": null,
+            "redemptionRoomRates": []
+          },
+          {
+            "attributeGroups": [
+              {
+                "attributes": [
+                  {
+                    "description": "Sleeps 3",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_GUESTS",
+                "groupDescription": "Guests"
+              },
+              {
+                "attributes": [
+                  {
+                    "description": "Living area",
+                    "valueAdd": true
+                  },
+                  {
+                    "description": "Workspace",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_ROOMLAYOUT",
+                "groupDescription": "Room layout"
+              },
+              {
+                "attributes": [
+                  {
+                    "description": "Rain shower",
+                    "valueAdd": false
+                  },
+                  {
+                    "description": "Separate bathtub",
+                    "valueAdd": false
+                  },
+                  {
+                    "description": "Separate shower",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_BATHROOM",
+                "groupDescription": "Bathroom"
+              }
+            ],
+            "roomTypeCode": "K1EOP1",
+            "adaAccessibleRoom": false,
+            "numBeds": 1,
+            "roomTypeName": "King Executive Suite W/ Lounge Access",
+            "roomTypeDesc": "<p>62 sq. m./667 sq. ft., Executive Lounge access, pantry, living area, king-sized bed, luxury bath amenities, work desk, mini fridge, Wi-Fi, 32-inch LCD TV, 55-inch flat panel TV, connecting rooms</p>\n\n\n<p>Designed for both business and leisure travelers, our spacious King Executive Suite offers a comfortable living area, pantry and exclusive access to the Executive Lounge where you can enjoy breakfast and evening cocktails.</p>\n\n\n<p>Perfect for families, this suite accommodates up to 3 guests and connects to a 2 Twin Beds Guest Room, creating a shared space for up to 4 adults and 3 children when booked together. Relax with your favorite shows on the 32-inch LCD TV and 55-inch flat-panel TV, refresh in the bathroom with a separate bathtub and shower, and unwind with thoughtful touches like a pillow menu, bathrobes and slippers. With 24-hour housekeeping and secure double-locking doors, your stay is both relaxing and seamless.</p>",
+            "roomTypeOffers": [],
+            "roomOccupancy": 3,
+            "executive": false,
+            "suite": true,
+            "code": "K1EOP1",
+            "name": "King Executive Suite W/ Lounge Access",
+            "adjoiningRoom": false,
+            "thumbnail": [
+              {
+                "_id": "d33c71ef346702332182cc78d220e2ab2b12b2041cdf156e723ee4098fd4b5f2",
+                "altText": "Living room outside bedroom",
+                "variants": [
+                  {
+                    "size": "xs",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/21697215/k1eop1.jpg?impolicy=crop&cw=4579&ch=2602&gravity=NorthWest&xposition=0&yposition=198&rw=760&rh=432"
+                  },
+                  {
+                    "size": "sm",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/21697215/k1eop1.jpg?impolicy=crop&cw=4579&ch=2602&gravity=NorthWest&xposition=0&yposition=198&rw=760&rh=432"
+                  },
+                  {
+                    "size": "md",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/21697215/k1eop1.jpg?impolicy=crop&cw=4579&ch=2602&gravity=NorthWest&xposition=0&yposition=198&rw=760&rh=432"
+                  }
+                ]
+              }
+            ],
+            "virtualMedia": [],
+            "quickBookRate": null,
+            "moreRatesFromRate": {
+              "rateChangeIndicator": false,
+              "feeTransparencyIndicator": true,
+              "cmaTotalPriceIndicator": false,
+              "roomTypeCode": "K1EOP1",
+              "rateAmount": 784,
+              "rateAmountFmt": "RM 784",
+              "rateAmountUSD": 200.06,
+              "amountAfterTaxFmt": "RM 841",
+              "fullAmountAfterTax": "RM 841.00",
+              "serviceChargeDetails": "<b>Price includes 10.00</b>% service charge per stay, but excludes tax",
+              "ratePlanCode": "HPPAP4",
+              "ratePlan": {
+                "confidentialRates": false,
+                "serviceChargesAndTaxesIncluded": false
+              }
+            },
+            "bookNowRate": null,
+            "redemptionRoomRates": []
+          },
+          {
+            "attributeGroups": [
+              {
+                "attributes": [
+                  {
+                    "description": "Sleeps 3",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_GUESTS",
+                "groupDescription": "Guests"
+              },
+              {
+                "attributes": [
+                  {
+                    "description": "Living area",
+                    "valueAdd": true
+                  },
+                  {
+                    "description": "Terrace",
+                    "valueAdd": true
+                  },
+                  {
+                    "description": "Workspace",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_ROOMLAYOUT",
+                "groupDescription": "Room layout"
+              },
+              {
+                "attributes": [
+                  {
+                    "description": "Separate bathtub",
+                    "valueAdd": false
+                  },
+                  {
+                    "description": "Separate shower",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_BATHROOM",
+                "groupDescription": "Bathroom"
+              },
+              {
+                "attributes": [
+                  {
+                    "description": "Minibar",
+                    "valueAdd": false
+                  }
+                ],
+                "groupCode": "G_KITCHEN",
+                "groupDescription": "Kitchen and dining"
+              }
+            ],
+            "roomTypeCode": "K1EGP1",
+            "adaAccessibleRoom": false,
+            "numBeds": 1,
+            "roomTypeName": "King Terrace Suite W/ Klcc View",
+            "roomTypeDesc": "<p>111 sq. m., private terrace, high floor, Executive Lounge access, king-sized bed, KLCC view, luxury bath amenities, work desk, mini bar, Wi-Fi, 32-inch LCD TV, 55-inch flat panel TV, marble-furnished bathroom</p>\n\n\n<p>Unwind in the King Bed Terrace Suite, where stunning KLCC views and a private terrace from the highest floors of our hotel invite you to savor a freshly brewed coffee from the coffee maker.</p>\n\n\n<p>Relax in a king-sized bed with 250-thread count sheets and refresh in the marble-furnished bathroom featuring a separate bathtub and shower, luxury bath amenities, bathrobes and slippers. The suite includes a spacious living area, Wi-Fi and entertainment on both a 32-inch LCD TV and a 55-inch flat panel TV.</p>\n\n\n<p>Enjoy Executive Lounge access with exclusive breakfast and evening refreshments, or start your day at Makan Kitchen with a spread of Asian and international flavors. Thoughtfully designed for relaxation and elevated comfort, this suite is ideal for newlyweds, honeymooners and those seeking an unforgettable stay. With 24-hour housekeeping and secure double-locking doors, it will be both relaxing and seamless. Sleeps up to 3 guests.</p>",
+            "roomTypeOffers": [],
+            "roomOccupancy": 3,
+            "executive": false,
+            "suite": true,
+            "code": "K1EGP1",
+            "name": "King Terrace Suite W/ Klcc View",
+            "adjoiningRoom": false,
+            "thumbnail": [
+              {
+                "_id": "995c8efb36e5d576576fac3d6148ca06318c1080a4495091bd8d6435f05c2dbf",
+                "altText": "Terrace Suite",
+                "variants": [
+                  {
+                    "size": "xs",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/1887955/terrace-suite-02-day.jpg?impolicy=crop&cw=4507&ch=2561&gravity=NorthWest&xposition=0&yposition=219&rw=760&rh=432"
+                  },
+                  {
+                    "size": "md",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/1887955/terrace-suite-02-day.jpg?impolicy=crop&cw=4507&ch=2561&gravity=NorthWest&xposition=0&yposition=219&rw=760&rh=432"
+                  },
+                  {
+                    "size": "sm",
+                    "url": "https://www.hilton.com/im/en/KULDTDI/1887955/terrace-suite-02-day.jpg?impolicy=crop&cw=4507&ch=2561&gravity=NorthWest&xposition=0&yposition=219&rw=760&rh=432"
+                  }
+                ]
+              }
+            ],
+            "virtualMedia": [],
+            "quickBookRate": null,
+            "moreRatesFromRate": {
+              "rateChangeIndicator": false,
+              "feeTransparencyIndicator": true,
+              "cmaTotalPriceIndicator": false,
+              "roomTypeCode": "K1EGP1",
+              "rateAmount": 1310,
+              "rateAmountFmt": "RM 1,310",
+              "rateAmountUSD": 334.28,
+              "amountAfterTaxFmt": "RM 1,405",
+              "fullAmountAfterTax": "RM 1,405.00",
+              "serviceChargeDetails": "<b>Price includes 10.00</b>% service charge per stay, but excludes tax",
+              "ratePlanCode": "HPPAP4",
+              "ratePlan": {
+                "confidentialRates": false,
+                "serviceChargesAndTaxesIncluded": false
+              }
+            },
+            "bookNowRate": null,
+            "redemptionRoomRates": []
+          }
+        ],
+        "lowestPointsInc": null
+      }
+    }
+  },
+  "extensions": {
+    "logSearch": "mdc.client_message_id=2a0bf1d2-c829-4b47-ae54-45a328eb4393-baebcb2a1b9e4c869e4b1adc4b61c3d7",
+    "operationName": "hotel_shopAvailOptions_shopPropAvail"
+  }
+}
