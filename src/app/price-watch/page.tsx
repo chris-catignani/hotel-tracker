@@ -275,7 +275,7 @@ export default function PriceWatchPage() {
   }
 
   return (
-    <div className="space-y-6 p-4 lg:p-6">
+    <div className="flex flex-col flex-1 min-h-0 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Price Watch</h1>
         <p className="text-muted-foreground text-sm mt-1">
@@ -403,9 +403,9 @@ export default function PriceWatchPage() {
           </div>
 
           {/* Desktop: table layout */}
-          <div className="hidden md:block">
-            <Table>
-              <TableHeader>
+          <div className="hidden md:flex md:flex-col md:flex-1 md:min-h-0 md:overflow-auto">
+            <Table containerClassName="overflow-visible">
+              <TableHeader className="sticky top-0 bg-background z-20">
                 <TableRow>
                   <TableHead>Property</TableHead>
                   <TableHead>Upcoming Stays</TableHead>
