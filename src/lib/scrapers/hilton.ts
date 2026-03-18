@@ -7,10 +7,11 @@
  *
  * Two-call flow:
  *   1. getShopAvail  — fires automatically on page load; returns all room types
- *      with one "quickBookRate" per room. We intercept this to get the room type
- *      list and the server-side cacheId.
+ *      with one "quickBookRate" per room. We intercept this to get the room type list.
  *   2. getRoomRates  — returns all rate plans for a specific room type. Called once per
  *      room type via page.evaluate(fetch(...)) which reuses the live Akamai session cookies.
+ *      Uses a fresh client-generated cacheId (not the page's) with specialRates.hhonors=true
+ *      so the server computes a fresh session that includes both cash and award rates.
  *      Three cash rate sources per room:
  *        - roomOnlyRates[]          standard publicly-available rates
  *        - roomOnlyRates[].hhonorsDiscountRate  member-discounted version of each standard rate
@@ -22,6 +23,7 @@
  */
 
 import fs from "fs";
+import { randomUUID } from "crypto";
 import { chromium } from "playwright";
 import { HOTEL_ID } from "@/lib/constants";
 import type {
@@ -191,22 +193,6 @@ export class HiltonFetcher implements PriceFetcher {
     try {
       const page = await context.newPage();
 
-      // Capture the cacheId from the getShopAvail request body before the page
-      // makes the call. We need it to keep both calls in the same server cache session.
-      let cacheId: string | null = null;
-      page.on("request", (req) => {
-        if (req.url().includes("originalOpName=getShopAvail") && req.method() === "POST") {
-          try {
-            const body = JSON.parse(req.postData() ?? "{}") as {
-              variables?: { cacheId?: string };
-            };
-            cacheId = body.variables?.cacheId ?? null;
-          } catch {
-            // ignore parse errors
-          }
-        }
-      });
-
       // Set up response interceptor before navigation so we don't miss it.
       const shopAvailPromise = page.waitForResponse(
         (r) => r.url().includes("originalOpName=getShopAvail") && r.status() === 200,
@@ -218,10 +204,6 @@ export class HiltonFetcher implements PriceFetcher {
       console.log(`[HiltonFetcher] Waiting for shopAvail response for ${ctyhocn}...`);
       const shopAvailResp = await shopAvailPromise;
       const shopAvailData = (await shopAvailResp.json()) as HiltonGraphQLResponse;
-
-      if (!cacheId) {
-        throw new Error(`[HiltonFetcher] Could not capture cacheId for ${ctyhocn}`);
-      }
 
       const shopAvail = shopAvailData?.data?.hotel?.shopAvail;
       if (!shopAvail) {
@@ -235,13 +217,19 @@ export class HiltonFetcher implements PriceFetcher {
         `[HiltonFetcher] Got ${roomTypes.length} room types for ${ctyhocn} (${currency}), fetching rates...`
       );
 
+      // Generate a fresh cacheId for our per-room calls (hhonors: true).
+      // The page-captured cacheId was established with hhonors: false; reusing it causes
+      // the server to return the cached non-award result with empty redemptionRoomRates.
+      // A fresh UUID forces the server to compute a new session that includes award rates.
+      const ratesCacheId = randomUUID();
+
       const rates: RoomRate[] = [];
 
       for (const room of roomTypes) {
         const roomTypeCode = room.roomTypeCode!;
         const roomTypeName = room.roomTypeName ?? roomTypeCode;
 
-        const variables = buildRoomRatesVariables(ctyhocn, cacheId, roomTypeCode, params);
+        const variables = buildRoomRatesVariables(ctyhocn, ratesCacheId, roomTypeCode, params);
         const graphqlUrl = buildGraphqlUrl(ctyhocn, "getRoomRates");
         const requestBody = JSON.stringify({
           query: ROOM_RATES_QUERY,
