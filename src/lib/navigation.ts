@@ -1,4 +1,4 @@
-import { LayoutDashboard, CalendarDays, Tag, Settings, Eye } from "lucide-react";
+import { LayoutDashboard, CalendarDays, Tag, Settings, Eye, HeartPulse } from "lucide-react";
 
 export const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -6,4 +6,5 @@ export const NAV_ITEMS = [
   { href: "/promotions", label: "Promotions", icon: Tag },
   { href: "/price-watch", label: "Price Watch", icon: Eye },
   { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/health", label: "Health", icon: HeartPulse, adminOnly: true },
 ];
