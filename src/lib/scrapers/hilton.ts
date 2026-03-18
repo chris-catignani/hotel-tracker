@@ -137,7 +137,7 @@ function buildRoomRatesVariables(
     specialRates: {
       aaa: false,
       governmentMilitary: false,
-      hhonors: false,
+      hhonors: true,
       lta: false,
       pnd: "",
       senior: false,
