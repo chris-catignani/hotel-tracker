@@ -129,6 +129,14 @@ export function ChainPropertyIdHint({
         on this property.
       </>
     );
+  } else if (hotelChainId === HOTEL_ID.HILTON) {
+    content = (
+      <>
+        <strong>Hilton ctyhocn code needed</strong> — find it in the property URL on hilton.com when
+        booking (e.g. <code>hilton.com/en/book/reservation/rooms/?ctyhocn={"{ctyhocn}"}</code>) and
+        ask your admin to set it on this property.
+      </>
+    );
   } else {
     content = (
       <>

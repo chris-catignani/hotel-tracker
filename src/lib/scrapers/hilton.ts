@@ -264,6 +264,7 @@ export class HiltonFetcher implements PriceFetcher {
                   visitorid: visitorId,
                 },
                 body: args.body,
+                signal: AbortSignal.timeout(15000),
               });
 
               if (!response.ok) {

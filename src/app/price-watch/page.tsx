@@ -69,6 +69,7 @@ function chainPropertyIdLabel(hotelChainId: string | null): string {
   if (hotelChainId === HOTEL_ID.IHG) return "Hotel Code";
   if (hotelChainId === HOTEL_ID.GHA_DISCOVERY) return "Hotel ID";
   if (hotelChainId === HOTEL_ID.ACCOR) return "Hotel ID";
+  if (hotelChainId === HOTEL_ID.HILTON) return "ctyhocn Code";
   return "Chain Property ID";
 }
 
@@ -78,6 +79,7 @@ function chainPropertyIdPlaceholder(hotelChainId: string | null): string {
   if (hotelChainId === HOTEL_ID.IHG) return "e.g. KULKL";
   if (hotelChainId === HOTEL_ID.GHA_DISCOVERY) return "e.g. 23084";
   if (hotelChainId === HOTEL_ID.ACCOR) return "e.g. C3M1";
+  if (hotelChainId === HOTEL_ID.HILTON) return "e.g. NYCMHHH";
   return "e.g. ABC123";
 }
 

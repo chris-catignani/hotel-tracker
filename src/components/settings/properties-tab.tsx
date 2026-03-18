@@ -28,6 +28,8 @@ function chainPropertyIdPlaceholder(hotelChainId: string | null | undefined): st
   if (hotelChainId === HOTEL_ID.MARRIOTT) return "e.g. CHIWS";
   if (hotelChainId === HOTEL_ID.IHG) return "e.g. KULKL";
   if (hotelChainId === HOTEL_ID.GHA_DISCOVERY) return "e.g. 23084";
+  if (hotelChainId === HOTEL_ID.ACCOR) return "e.g. C3M1";
+  if (hotelChainId === HOTEL_ID.HILTON) return "e.g. NYCMHHH";
   return "e.g. ABC123";
 }
 
@@ -96,13 +98,17 @@ export function PropertiesTab() {
         <p className="text-sm text-muted-foreground mt-0.5">
           Set the chain-specific scraper ID for each property. Examples: Hyatt{" "}
           <strong>spirit code</strong> (e.g.{" "}
-          <code className="text-xs bg-muted px-1 rounded">chiph</code>), Marriott{" "}
+          <code className="text-xs bg-muted px-1 rounded">chiph</code>), Hilton{" "}
+          <strong>ctyhocn code</strong> (e.g.{" "}
+          <code className="text-xs bg-muted px-1 rounded">NYCMHHH</code>), Marriott{" "}
           <strong>MARSHA code</strong> (e.g.{" "}
           <code className="text-xs bg-muted px-1 rounded">CHIWS</code>), IHG{" "}
           <strong>hotel code</strong> (e.g.{" "}
           <code className="text-xs bg-muted px-1 rounded">KULKL</code>), GHA{" "}
           <strong>hotel ID</strong> (e.g.{" "}
-          <code className="text-xs bg-muted px-1 rounded">23084</code>).
+          <code className="text-xs bg-muted px-1 rounded">23084</code>), Accor{" "}
+          <strong>hotel ID</strong> (e.g.{" "}
+          <code className="text-xs bg-muted px-1 rounded">C3M1</code>).
         </p>
       </div>
 
