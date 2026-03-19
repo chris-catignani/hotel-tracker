@@ -671,6 +671,32 @@ async function main() {
   await upsertUserStatus(HOTEL_ID.IHG, "Diamond", ADMIN_USER_ID);
   await upsertUserStatus(HOTEL_ID.GHA_DISCOVERY, "Titanium", ADMIN_USER_ID);
 
+  // OTA Agencies — must be seeded before Credit Cards (reward rules reference OTA agency IDs).
+  const otaAgencySeed = [
+    { id: OTA_AGENCY_ID.AIRBNB, name: "Airbnb" },
+    { id: OTA_AGENCY_ID.AMEX_FHR, name: "AMEX FHR" },
+    { id: OTA_AGENCY_ID.AMEX_THC, name: "AMEX THC" },
+    { id: OTA_AGENCY_ID.CHASE_EDIT, name: "Chase The Edit" },
+  ];
+  for (const ota of otaAgencySeed) {
+    // If a record with this name exists under a different ID, migrate bookings and delete it.
+    const wrongIdRecord = await prisma.otaAgency.findFirst({
+      where: { name: ota.name, NOT: { id: ota.id } },
+    });
+    if (wrongIdRecord) {
+      await prisma.booking.updateMany({
+        where: { otaAgencyId: wrongIdRecord.id },
+        data: { otaAgencyId: null },
+      });
+      await prisma.otaAgency.delete({ where: { id: wrongIdRecord.id } });
+    }
+    await prisma.otaAgency.upsert({
+      where: { id: ota.id },
+      update: { name: ota.name },
+      create: { id: ota.id, name: ota.name },
+    });
+  }
+
   // Credit Cards
   await prisma.creditCard.upsert({
     where: { id: CREDIT_CARD_ID.AMEX_PLATINUM },
@@ -800,32 +826,6 @@ async function main() {
       rewardValue: 4,
     },
   });
-
-  // OTA Agencies — upsert by stable ID, migrating old records with wrong IDs.
-  const otaAgencySeed = [
-    { id: OTA_AGENCY_ID.AIRBNB, name: "Airbnb" },
-    { id: OTA_AGENCY_ID.AMEX_FHR, name: "AMEX FHR" },
-    { id: OTA_AGENCY_ID.AMEX_THC, name: "AMEX THC" },
-    { id: OTA_AGENCY_ID.CHASE_EDIT, name: "Chase The Edit" },
-  ];
-  for (const ota of otaAgencySeed) {
-    // If a record with this name exists under a different ID, migrate bookings and delete it.
-    const wrongIdRecord = await prisma.otaAgency.findFirst({
-      where: { name: ota.name, NOT: { id: ota.id } },
-    });
-    if (wrongIdRecord) {
-      await prisma.booking.updateMany({
-        where: { otaAgencyId: wrongIdRecord.id },
-        data: { otaAgencyId: null },
-      });
-      await prisma.otaAgency.delete({ where: { id: wrongIdRecord.id } });
-    }
-    await prisma.otaAgency.upsert({
-      where: { id: ota.id },
-      update: { name: ota.name },
-      create: { id: ota.id, name: ota.name },
-    });
-  }
 
   // Shopping Portals
   await prisma.shoppingPortal.upsert({
