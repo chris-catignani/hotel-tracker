@@ -792,10 +792,10 @@ export function AccommodationTypeCard({
             <input
               type="checkbox"
               className="size-4 rounded border-gray-300 mt-0.5"
-              checked={allowedAccommodationTypes.includes(opt.value as AccommodationType)}
+              checked={allowedAccommodationTypes.includes(opt.value)}
               onChange={(e) => {
                 const newTypes = e.target.checked
-                  ? ([...allowedAccommodationTypes, opt.value] as AccommodationType[])
+                  ? [...allowedAccommodationTypes, opt.value]
                   : allowedAccommodationTypes.filter((t) => t !== opt.value);
                 onAllowedAccommodationTypesChange(newTypes);
               }}

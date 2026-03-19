@@ -214,9 +214,10 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
   // The final appliedValue shown below is the result after all constraints are applied.
 
   // 1. Promotions
-  const hotelCentsPerPoint = booking.hotelChain?.pointType?.centsPerPoint
-    ? Number(booking.hotelChain.pointType.centsPerPoint)
-    : DEFAULT_CENTS_PER_POINT;
+  const hotelCentsPerPoint =
+    booking.hotelChain?.pointType?.centsPerPoint != null
+      ? Number(booking.hotelChain.pointType.centsPerPoint)
+      : DEFAULT_CENTS_PER_POINT;
 
   const promotions: PromotionBreakdown[] = booking.bookingPromotions.map((bp, index) => {
     const benefits = bp.benefitApplications ?? [];
