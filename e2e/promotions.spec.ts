@@ -1,4 +1,5 @@
 import { test, expect } from "./fixtures";
+import { USER_CREDIT_CARD_ID, CREDIT_CARD_ID } from "../prisma/seed-ids";
 
 test.describe("Promotions CRUD", () => {
   test("should display promotions page with Add Promotion button", async ({ page }) => {
@@ -347,9 +348,11 @@ test.describe("Promotions tiered", () => {
 });
 
 test.describe("Promotions tie-in credit card (benefit-level restrictions)", () => {
-  // Seeded credit card IDs (CUIDs)
-  const TIE_IN_CARD_ID = "cme8yfwy2hfqahb6ync8czd24"; // Amex Platinum
-  const OTHER_CARD_ID = "cw4yg6ftdskwq651p3p8nrvnr"; // Chase Sapphire Reserve
+  // Seeded credit card product ID (used on promotion restrictions)
+  const TIE_IN_CARD_ID = CREDIT_CARD_ID.AMEX_PLATINUM;
+  // Seeded UserCreditCard IDs (used on bookings)
+  const TIE_IN_UCC_ID = USER_CREDIT_CARD_ID.AMEX_PLATINUM;
+  const OTHER_UCC_ID = USER_CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE;
 
   test("booking WITH tie-in card gets all benefits (base + tie-in)", async ({
     request,
@@ -399,7 +402,7 @@ test.describe("Promotions tie-in credit card (benefit-level restrictions)", () =
         taxAmount: 30,
         totalCost: 230,
         currency: "USD",
-        creditCardId: TIE_IN_CARD_ID,
+        userCreditCardId: TIE_IN_UCC_ID,
       },
     });
     expect(bookingRes.ok()).toBeTruthy();
@@ -462,7 +465,7 @@ test.describe("Promotions tie-in credit card (benefit-level restrictions)", () =
         taxAmount: 30,
         totalCost: 230,
         currency: "USD",
-        creditCardId: OTHER_CARD_ID,
+        userCreditCardId: OTHER_UCC_ID,
       },
     });
     expect(bookingRes.ok()).toBeTruthy();
