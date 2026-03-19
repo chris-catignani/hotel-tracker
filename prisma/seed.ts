@@ -73,20 +73,28 @@ function shortenName(name: string): string {
 // Map sub-brand names to their stable IDs from constants.
 // Sub-brands not listed here receive an auto-generated CUID on first insert.
 const SUB_BRAND_MAP: Record<string, string> = {
+  Hilton: SUB_BRAND_ID.HILTON.HILTON,
   "Autograph Collection": SUB_BRAND_ID.MARRIOTT.AUTOGRAPH_COLLECTION,
   citizenM: SUB_BRAND_ID.MARRIOTT.CITIZENM,
   Moxy: SUB_BRAND_ID.MARRIOTT.MOXY,
   "Tribute Portfolio": SUB_BRAND_ID.MARRIOTT.TRIBUTE_PORTFOLIO,
-  "Park Hyatt": SUB_BRAND_ID.HYATT.PARK_HYATT,
+  Alila: SUB_BRAND_ID.HYATT.ALILA,
   "Hyatt Centric": SUB_BRAND_ID.HYATT.HYATT_CENTRIC,
-  "Hyatt Place": SUB_BRAND_ID.HYATT.HYATT_PLACE,
   "Hyatt House": SUB_BRAND_ID.HYATT.HYATT_HOUSE,
+  "Hyatt Place": SUB_BRAND_ID.HYATT.HYATT_PLACE,
+  "Hyatt Regency": SUB_BRAND_ID.HYATT.HYATT_REGENCY,
+  "Park Hyatt": SUB_BRAND_ID.HYATT.PARK_HYATT,
+  "The Standard": SUB_BRAND_ID.HYATT.THE_STANDARD,
+  "The StandardX": SUB_BRAND_ID.HYATT.THE_STANDARDX,
+  "Holiday Inn": SUB_BRAND_ID.IHG.HOLIDAY_INN,
   "Holiday Inn Express": SUB_BRAND_ID.IHG.HOLIDAY_INN_EXPRESS,
   "Hotel Indigo": SUB_BRAND_ID.IHG.HOTEL_INDIGO,
   Sunway: SUB_BRAND_ID.GHA_DISCOVERY.SUNWAY,
   PARKROYAL: SUB_BRAND_ID.GHA_DISCOVERY.PARKROYAL,
   "PARKROYAL COLLECTION": SUB_BRAND_ID.GHA_DISCOVERY.PARKROYAL_COLLECTION,
   "ibis Styles": SUB_BRAND_ID.ACCOR.IBIS_STYLES,
+  Mondrian: SUB_BRAND_ID.ACCOR.MONDRIAN,
+  Sofitel: SUB_BRAND_ID.ACCOR.SOFITEL,
 };
 
 async function upsertEliteStatuses(hotelChainId: string, statuses: EliteStatusData[]) {
@@ -110,13 +118,24 @@ async function upsertEliteStatuses(hotelChainId: string, statuses: EliteStatusDa
 async function upsertSubBrands(hotelChainId: string, subBrands: SubBrandData[]) {
   for (const sb of subBrands) {
     const stableId = SUB_BRAND_MAP[sb.name];
+
+    if (stableId) {
+      // If a record with (hotelChainId, name) exists but has a different ID, migrate it:
+      // null out FK refs on bookings, delete the old record, then create with stable ID.
+      const wrongIdRecord = await prisma.hotelChainSubBrand.findFirst({
+        where: { hotelChainId, name: sb.name, NOT: { id: stableId } },
+      });
+      if (wrongIdRecord) {
+        await prisma.booking.updateMany({
+          where: { hotelChainSubBrandId: wrongIdRecord.id },
+          data: { hotelChainSubBrandId: null },
+        });
+        await prisma.hotelChainSubBrand.delete({ where: { id: wrongIdRecord.id } });
+      }
+    }
+
     await prisma.hotelChainSubBrand.upsert({
-      where: {
-        hotelChainId_name: {
-          hotelChainId,
-          name: sb.name,
-        },
-      },
+      where: stableId ? { id: stableId } : { hotelChainId_name: { hotelChainId, name: sb.name } },
       update: {
         name: sb.name,
         hotelChainId,
@@ -422,6 +441,7 @@ async function main() {
     { name: "Secrets" },
     { name: "Sunscape" },
     { name: "The Standard" },
+    { name: "The StandardX" },
     { name: "The Unbound Collection" },
     { name: "Thompson" },
     { name: "Zoetry" },
@@ -716,23 +736,96 @@ async function main() {
       pointTypeId: POINT_TYPE_ID.WELLS_FARGO,
     },
   });
+  await prisma.creditCard.upsert({
+    where: { id: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM },
+    update: {
+      name: "Amex Business Platinum",
+      rewardType: "points",
+      rewardRate: 1,
+      pointTypeId: POINT_TYPE_ID.MEMBERSHIP_REWARDS,
+    },
+    create: {
+      id: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM,
+      name: "Amex Business Platinum",
+      rewardType: "points",
+      rewardRate: 1,
+      pointTypeId: POINT_TYPE_ID.MEMBERSHIP_REWARDS,
+    },
+  });
+  // 5x on Amex FHR and Amex THC
+  await prisma.creditCardRewardRule.deleteMany({
+    where: { creditCardId: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM },
+  });
+  await prisma.creditCardRewardRule.createMany({
+    data: [
+      {
+        creditCardId: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM,
+        otaAgencyId: OTA_AGENCY_ID.AMEX_FHR,
+        rewardType: "multiplier",
+        rewardValue: 5,
+      },
+      {
+        creditCardId: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM,
+        otaAgencyId: OTA_AGENCY_ID.AMEX_THC,
+        rewardType: "multiplier",
+        rewardValue: 5,
+      },
+    ],
+  });
+  await prisma.creditCard.upsert({
+    where: { id: CREDIT_CARD_ID.CHASE_WORLD_OF_HYATT },
+    update: {
+      name: "Chase World of Hyatt",
+      rewardType: "points",
+      rewardRate: 1,
+      pointTypeId: POINT_TYPE_ID.WORLD_OF_HYATT,
+    },
+    create: {
+      id: CREDIT_CARD_ID.CHASE_WORLD_OF_HYATT,
+      name: "Chase World of Hyatt",
+      rewardType: "points",
+      rewardRate: 1,
+      pointTypeId: POINT_TYPE_ID.WORLD_OF_HYATT,
+    },
+  });
+  // 4x at any Hyatt hotel
+  await prisma.creditCardRewardRule.deleteMany({
+    where: { creditCardId: CREDIT_CARD_ID.CHASE_WORLD_OF_HYATT },
+  });
+  await prisma.creditCardRewardRule.create({
+    data: {
+      creditCardId: CREDIT_CARD_ID.CHASE_WORLD_OF_HYATT,
+      hotelChainId: HOTEL_ID.HYATT,
+      rewardType: "multiplier",
+      rewardValue: 4,
+    },
+  });
 
-  // OTA Agencies
-  await prisma.otaAgency.upsert({
-    where: { id: OTA_AGENCY_ID.AMEX_FHR },
-    update: { name: "AMEX FHR" },
-    create: { id: OTA_AGENCY_ID.AMEX_FHR, name: "AMEX FHR" },
-  });
-  await prisma.otaAgency.upsert({
-    where: { id: OTA_AGENCY_ID.AMEX_THC },
-    update: { name: "AMEX THC" },
-    create: { id: OTA_AGENCY_ID.AMEX_THC, name: "AMEX THC" },
-  });
-  await prisma.otaAgency.upsert({
-    where: { id: OTA_AGENCY_ID.CHASE_EDIT },
-    update: { name: "Chase The Edit" },
-    create: { id: OTA_AGENCY_ID.CHASE_EDIT, name: "Chase The Edit" },
-  });
+  // OTA Agencies — upsert by stable ID, migrating old records with wrong IDs.
+  const otaAgencySeed = [
+    { id: OTA_AGENCY_ID.AIRBNB, name: "Airbnb" },
+    { id: OTA_AGENCY_ID.AMEX_FHR, name: "AMEX FHR" },
+    { id: OTA_AGENCY_ID.AMEX_THC, name: "AMEX THC" },
+    { id: OTA_AGENCY_ID.CHASE_EDIT, name: "Chase The Edit" },
+  ];
+  for (const ota of otaAgencySeed) {
+    // If a record with this name exists under a different ID, migrate bookings and delete it.
+    const wrongIdRecord = await prisma.otaAgency.findFirst({
+      where: { name: ota.name, NOT: { id: ota.id } },
+    });
+    if (wrongIdRecord) {
+      await prisma.booking.updateMany({
+        where: { otaAgencyId: wrongIdRecord.id },
+        data: { otaAgencyId: null },
+      });
+      await prisma.otaAgency.delete({ where: { id: wrongIdRecord.id } });
+    }
+    await prisma.otaAgency.upsert({
+      where: { id: ota.id },
+      update: { name: ota.name },
+      create: { id: ota.id, name: ota.name },
+    });
+  }
 
   // Shopping Portals
   await prisma.shoppingPortal.upsert({
@@ -763,26 +856,32 @@ async function main() {
 
   // UserCreditCard instances — one per card product used in bookings.
   // Seeded with stable IDs so seed-bookings.ts can reference them directly.
-  await prisma.userCreditCard.upsert({
-    where: { id: USER_CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE },
-    update: { creditCardId: CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE, isActive: true },
-    create: {
+  const uccCards = [
+    { id: USER_CREDIT_CARD_ID.AMEX_PLATINUM, creditCardId: CREDIT_CARD_ID.AMEX_PLATINUM },
+    {
+      id: USER_CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM,
+      creditCardId: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM,
+    },
+    {
       id: USER_CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE,
-      userId: ADMIN_USER_ID,
       creditCardId: CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE,
-      isActive: true,
     },
-  });
-  await prisma.userCreditCard.upsert({
-    where: { id: USER_CREDIT_CARD_ID.WELLS_FARGO_AUTOGRAPH },
-    update: { creditCardId: CREDIT_CARD_ID.WELLS_FARGO_AUTOGRAPH, isActive: true },
-    create: {
+    {
+      id: USER_CREDIT_CARD_ID.CHASE_WORLD_OF_HYATT,
+      creditCardId: CREDIT_CARD_ID.CHASE_WORLD_OF_HYATT,
+    },
+    {
       id: USER_CREDIT_CARD_ID.WELLS_FARGO_AUTOGRAPH,
-      userId: ADMIN_USER_ID,
       creditCardId: CREDIT_CARD_ID.WELLS_FARGO_AUTOGRAPH,
-      isActive: true,
     },
-  });
+  ];
+  for (const ucc of uccCards) {
+    await prisma.userCreditCard.upsert({
+      where: { id: ucc.id },
+      update: { creditCardId: ucc.creditCardId, isActive: true },
+      create: { id: ucc.id, userId: ADMIN_USER_ID, creditCardId: ucc.creditCardId, isActive: true },
+    });
+  }
 
   await seedBookings(ADMIN_USER_ID);
   await seedPromotions(ADMIN_USER_ID);
