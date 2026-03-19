@@ -69,7 +69,7 @@ export function SubBrandBreakdown({ bookings }: SubBrandBreakdownProps) {
   return (
     <Card className="flex flex-col h-full">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-base font-semibold">Sub Brands</CardTitle>
+        <CardTitle className="text-base font-semibold">Hotel Sub Brands</CardTitle>
         <div className="flex gap-1 bg-secondary p-1 rounded-md">
           <Button
             variant={mode === "stays" ? "default" : "ghost"}
