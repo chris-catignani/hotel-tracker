@@ -43,7 +43,8 @@ interface BookingWithRelations {
   loyaltyPointsEarned: number | null;
   pointsRedeemed: number | null;
   notes: string | null;
-  hotelChainId: string;
+  hotelChainId: string | null;
+  accommodationType: string;
   otaAgencyId: string | null;
   bookingSource: string | null;
   hotelChain: {
@@ -209,7 +210,10 @@ export default function DashboardPage() {
   const hotelChainSummaries = useMemo(() => {
     const summaries = bookings.reduce(
       (acc, b) => {
-        const chain = b.hotelChain?.name ?? "Apartment / Rental";
+        const chain =
+          b.accommodationType === "apartment"
+            ? "Apartments / Short-term Rentals"
+            : (b.hotelChain?.name ?? "Unknown");
         if (!acc[chain]) {
           acc[chain] = {
             chain,
@@ -240,8 +244,13 @@ export default function DashboardPage() {
     return Object.values(summaries);
   }, [bookings]);
 
+  const APARTMENT_LABEL = "Apartments / Short-term Rentals";
+
   const sortedHotelChainSummaries = useMemo(() => {
     return [...hotelChainSummaries].sort((a, b) => {
+      // Always pin the apartment row to the bottom
+      if (a.chain === APARTMENT_LABEL) return 1;
+      if (b.chain === APARTMENT_LABEL) return -1;
       let aValue: string | number = a[sortConfig.key];
       let bValue: string | number = b[sortConfig.key];
 
@@ -338,7 +347,7 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">Overview of your hotel bookings and savings</p>
+        <p className="text-muted-foreground">Overview of your bookings and savings</p>
       </div>
 
       <DashboardStats
@@ -582,7 +591,7 @@ export default function DashboardPage() {
       {bookings.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Hotel Chain Summary</CardTitle>
+            <CardTitle>Accommodation Summary</CardTitle>
           </CardHeader>
           <CardContent>
             {/* Mobile View: Cards */}
@@ -664,7 +673,7 @@ export default function DashboardPage() {
                   <TableRow>
                     <SortHeader
                       column="chain"
-                      label="Hotel Chain"
+                      label="Chain / Type"
                       sortConfig={sortConfig}
                       onSort={toggleSort}
                     />
