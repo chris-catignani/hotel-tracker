@@ -123,8 +123,8 @@ describe("buildInitialState", () => {
     const state = buildInitialState(makeBooking(), []);
     expect(state.hotelChainId).toBe("chain-1");
     expect(state.propertyName).toBe("Test Hotel");
-    expect(state.pretaxCost).toBe("200");
-    expect(state.totalCost).toBe("220");
+    expect(state.pretaxCost).toBe("200.00");
+    expect(state.totalCost).toBe("220.00");
     expect(state.currency).toBe("USD");
     expect(state.paymentType).toBe("cash");
     expect(state.showErrors).toBe(false);

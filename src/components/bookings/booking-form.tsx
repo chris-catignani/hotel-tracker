@@ -54,6 +54,7 @@ interface BookingFormProps {
   onSubmit: (data: BookingFormData) => Promise<void>;
   onCancel: () => void;
   onCurrencyChange?: (currency: string) => void;
+  onAccommodationTypeChange?: (type: string) => void;
   submitting: boolean;
   submitLabel: string;
   title: string;
@@ -64,6 +65,7 @@ export function BookingForm({
   onSubmit,
   onCancel,
   onCurrencyChange,
+  onAccommodationTypeChange,
   submitting,
   submitLabel,
   title,
@@ -220,6 +222,10 @@ export function BookingForm({
   useEffect(() => {
     onCurrencyChange?.(currency);
   }, [currency, onCurrencyChange]);
+
+  useEffect(() => {
+    onAccommodationTypeChange?.(accommodationType);
+  }, [accommodationType, onAccommodationTypeChange]);
 
   const { errors, isValid } = useMemo(() => {
     const errs = {
