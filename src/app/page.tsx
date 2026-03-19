@@ -237,9 +237,7 @@ export default function DashboardPage() {
     const summaries = filteredBookings.reduce(
       (acc, b) => {
         const chain =
-          b.accommodationType === "apartment"
-            ? "Apartments / Short-term Rentals"
-            : (b.hotelChain?.name ?? "Unknown");
+          b.accommodationType === "apartment" ? APARTMENT_LABEL : (b.hotelChain?.name ?? "Unknown");
         if (!acc[chain]) {
           acc[chain] = {
             chain,
@@ -302,6 +300,28 @@ export default function DashboardPage() {
     });
   }, [hotelChainSummaries, sortConfig]);
 
+  // Breakdown counts always use unfiltered bookings (shown in "All" view sub-labels)
+  const { bookingBreakdown, nightsBreakdown } = useMemo(() => {
+    if (!showFilter) return { bookingBreakdown: undefined, nightsBreakdown: undefined };
+    const counts = bookings.reduce(
+      (acc, b) => {
+        if (b.accommodationType === "hotel") {
+          acc.hotelCount++;
+          acc.hotelNights += b.numNights;
+        } else if (b.accommodationType === "apartment") {
+          acc.apartmentCount++;
+          acc.apartmentNights += b.numNights;
+        }
+        return acc;
+      },
+      { hotelCount: 0, apartmentCount: 0, hotelNights: 0, apartmentNights: 0 }
+    );
+    return {
+      bookingBreakdown: { hotels: counts.hotelCount, apartments: counts.apartmentCount },
+      nightsBreakdown: { hotels: counts.hotelNights, apartments: counts.apartmentNights },
+    };
+  }, [bookings, showFilter]);
+
   const toggleSort = (key: keyof HotelChainSummary) => {
     setSortConfig((prev) => ({
       key,
@@ -316,24 +336,6 @@ export default function DashboardPage() {
       </div>
     );
   }
-
-  // Breakdown counts always use unfiltered bookings (shown in "All" view sub-labels)
-  const bookingBreakdown = showFilter
-    ? {
-        hotels: bookings.filter((b) => b.accommodationType === "hotel").length,
-        apartments: bookings.filter((b) => b.accommodationType === "apartment").length,
-      }
-    : undefined;
-  const nightsBreakdown = showFilter
-    ? {
-        hotels: bookings
-          .filter((b) => b.accommodationType === "hotel")
-          .reduce((s, b) => s + b.numNights, 0),
-        apartments: bookings
-          .filter((b) => b.accommodationType === "apartment")
-          .reduce((s, b) => s + b.numNights, 0),
-      }
-    : undefined;
 
   const totalBookings = filteredBookings.length;
   // Only cash bookings (totalCost > 0) contribute to total spend

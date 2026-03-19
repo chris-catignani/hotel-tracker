@@ -97,7 +97,7 @@ export function DashboardStats({
           </p>
           {nightsBreakdown && (
             <p className="text-xs text-muted-foreground mt-1">
-              {nightsBreakdown.hotels} hotel · {nightsBreakdown.apartments} apt
+              {nightsBreakdown.hotels} hotels · {nightsBreakdown.apartments} apts
             </p>
           )}
         </CardContent>
