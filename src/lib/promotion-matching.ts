@@ -41,7 +41,7 @@ export type PromotionUsageMap = Map<string, PromotionUsage>;
 const BOOKING_INCLUDE = {
   hotelChain: { include: { pointType: true } },
   hotelChainSubBrand: true,
-  creditCard: { include: { pointType: true } },
+  userCreditCard: { include: { creditCard: { include: { pointType: true } } } },
   shoppingPortal: true,
   property: { select: { countryCode: true } },
   _count: { select: { certificates: true } },
@@ -113,7 +113,15 @@ const PROMOTIONS_INCLUDE = {
 
 export interface MatchingBooking {
   id?: string;
-  creditCardId: string | null;
+  userCreditCardId?: string | null;
+  userCreditCard?: {
+    creditCardId: string;
+    creditCard?: {
+      pointType?: {
+        centsPerPoint: string | number | Prisma.Decimal | null;
+      } | null;
+    } | null;
+  } | null;
   shoppingPortalId: string | null;
   hotelChainId: string | null;
   hotelChainSubBrandId: string | null;
@@ -138,11 +146,6 @@ export interface MatchingBooking {
   } | null;
   hotelChainSubBrand?: {
     basePointRate?: string | number | Prisma.Decimal | null;
-  } | null;
-  creditCard?: {
-    pointType?: {
-      centsPerPoint: string | number | Prisma.Decimal | null;
-    } | null;
   } | null;
 }
 
@@ -257,7 +260,7 @@ const CorePromotionRules: Record<string, PromotionRule> = {
   typeMatch: (booking, promo) => {
     switch (promo.type) {
       case PromotionType.credit_card:
-        return { valid: promo.creditCardId === booking.creditCardId };
+        return { valid: promo.creditCardId === (booking.userCreditCard?.creditCardId ?? null) };
       case PromotionType.portal:
         return { valid: promo.shoppingPortalId === booking.shoppingPortalId };
       case PromotionType.loyalty:
@@ -362,9 +365,10 @@ const CorePromotionRules: Record<string, PromotionRule> = {
 
   tieInCard: (booking, promo) => {
     if (promo.restrictions?.tieInCards && promo.restrictions.tieInCards.length > 0) {
+      const bookingCreditCardId = booking.userCreditCard?.creditCardId ?? null;
       const cardMatches =
-        booking.creditCardId != null &&
-        promo.restrictions.tieInCards.some((c) => c.creditCardId === booking.creditCardId);
+        bookingCreditCardId != null &&
+        promo.restrictions.tieInCards.some((c) => c.creditCardId === bookingCreditCardId);
       return { valid: cardMatches };
     }
     return { valid: true };
@@ -1130,8 +1134,10 @@ function buildPotentialMatchFilter(
   const where: Prisma.BookingWhereInput = {
     hotelChainId:
       promo.type === PromotionType.loyalty ? (promo.hotelChainId ?? undefined) : undefined,
-    creditCardId:
-      promo.type === PromotionType.credit_card ? (promo.creditCardId ?? undefined) : undefined,
+    userCreditCard:
+      promo.type === PromotionType.credit_card && promo.creditCardId
+        ? { creditCardId: promo.creditCardId }
+        : undefined,
     shoppingPortalId:
       promo.type === PromotionType.portal ? (promo.shoppingPortalId ?? undefined) : undefined,
   };
@@ -1183,7 +1189,7 @@ function buildPotentialMatchFilter(
 
   // Tie-in card
   if (r?.tieInCards?.length) {
-    where.creditCardId = { in: r.tieInCards.map((c) => c.creditCardId) };
+    where.userCreditCard = { creditCardId: { in: r.tieInCards.map((c) => c.creditCardId) } };
   }
 
   return where;
@@ -1416,8 +1422,10 @@ export async function fetchPromotionUsage(
         ...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
         hotelChainId:
           promo.type === PromotionType.loyalty ? (promo.hotelChainId ?? undefined) : undefined,
-        creditCardId:
-          promo.type === PromotionType.credit_card ? (promo.creditCardId ?? undefined) : undefined,
+        userCreditCard:
+          promo.type === PromotionType.credit_card && promo.creditCardId
+            ? { creditCardId: promo.creditCardId }
+            : undefined,
         shoppingPortalId:
           promo.type === PromotionType.portal ? (promo.shoppingPortalId ?? undefined) : undefined,
         ...subBrandFilter,
@@ -1665,7 +1673,9 @@ export async function getAffectedBookingIds(promotionIds: string[]): Promise<str
   const orConditions = promotions.map((promotion) => {
     const coreConditions = [
       { hotelChainId: promotion.hotelChainId ?? undefined },
-      { creditCardId: promotion.creditCardId ?? undefined },
+      promotion.creditCardId
+        ? { userCreditCard: { creditCardId: promotion.creditCardId } }
+        : { userCreditCardId: undefined },
       { shoppingPortalId: promotion.shoppingPortalId ?? undefined },
       {
         bookingPromotions: {

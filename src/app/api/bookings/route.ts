@@ -24,7 +24,9 @@ const BOOKING_INCLUDE = (userId: string) =>
       },
     },
     hotelChainSubBrand: true,
-    creditCard: { include: { pointType: true, rewardRules: true } },
+    userCreditCard: {
+      include: { creditCard: { include: { pointType: true, rewardRules: true } } },
+    },
     shoppingPortal: { include: { pointType: true } },
     bookingPromotions: {
       include: {
@@ -104,7 +106,9 @@ export async function POST(request: NextRequest) {
       pretaxCost,
       taxAmount,
       totalCost,
-      creditCardId,
+      userCreditCardId,
+      bookingDate,
+      paymentTiming,
       shoppingPortalId,
       portalCashbackRate,
       portalCashbackOnTotal,
@@ -207,7 +211,9 @@ export async function POST(request: NextRequest) {
         pretaxCost: Number(pretaxCost),
         taxAmount: Number(taxAmount),
         totalCost: Number(totalCost),
-        creditCardId: creditCardId || null,
+        userCreditCardId: userCreditCardId || null,
+        bookingDate: bookingDate ? new Date(bookingDate) : null,
+        paymentTiming: paymentTiming || "postpaid",
         shoppingPortalId: shoppingPortalId || null,
         portalCashbackRate: portalCashbackRate ? Number(portalCashbackRate) : null,
         portalCashbackOnTotal: portalCashbackOnTotal ?? false,

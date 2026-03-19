@@ -16,6 +16,7 @@ const eslintConfig = defineConfig([
       "node_modules/**",
       "**/dist/**",
       "**/.cache/**",
+      "prisma/data/**",
     ],
   },
   ...nextVitals,

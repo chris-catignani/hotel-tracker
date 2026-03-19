@@ -8,6 +8,9 @@ export const HOTEL_ID = {
 } as const;
 
 export const SUB_BRAND_ID = {
+  HILTON: {
+    HILTON: "cmmnj4ily000ylpw8x09l0v31",
+  },
   MARRIOTT: {
     AUTOGRAPH_COLLECTION: "chp49do4y7cqmn8hslv1mybao",
     CITIZENM: "c6bbtoocrvncdrrbk132ja590",
@@ -15,12 +18,17 @@ export const SUB_BRAND_ID = {
     TRIBUTE_PORTFOLIO: "ceaflewyzoa8xcdfui5f510n0",
   },
   HYATT: {
-    PARK_HYATT: "cd7oxx4b5kfe0rq65x74ha3gu",
+    ALILA: "cmmnj54i30046lpw8v1nqdjso",
     HYATT_CENTRIC: "c6b6y4o6u20bqlv0fjuvb9k6i",
-    HYATT_PLACE: "cwf3srsbp7rv61q9c9f9zbapb",
     HYATT_HOUSE: "cmmepq6ks004jlpl1ghsje2x0",
+    HYATT_PLACE: "cwf3srsbp7rv61q9c9f9zbapb",
+    HYATT_REGENCY: "cmmnj5hlz004qlpw8bc3yyys8",
+    PARK_HYATT: "cd7oxx4b5kfe0rq65x74ha3gu",
+    THE_STANDARD: "cmmnj5nos005ilpw8qmcjxwv2",
+    THE_STANDARDX: "cmmw44bvp000dl804919wjtpk",
   },
   IHG: {
+    HOLIDAY_INN: "cmmnj5l9r006clpw8z261y2vc",
     HOLIDAY_INN_EXPRESS: "cdfi8ldn9nllyjjrfqgeho0be",
     HOTEL_INDIGO: "caugp7vwgq7oy52v7h22eoj7f",
   },
@@ -31,6 +39,8 @@ export const SUB_BRAND_ID = {
   },
   ACCOR: {
     IBIS_STYLES: "cv2toj341anbybixocwk8voaq",
+    MONDRIAN: "cmmnj6lhf00c6lpw8ro1u3xb0",
+    SOFITEL: "cmmnj6o3200cslpw8r2u56g5c",
   },
 } as const;
 

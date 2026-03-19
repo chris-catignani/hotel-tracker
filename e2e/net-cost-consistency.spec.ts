@@ -32,6 +32,12 @@ test.describe("Net Cost Consistency", () => {
     });
     const creditCard = await cardRes.json();
 
+    // Create a UserCreditCard instance for the test credit card
+    const uccRes = await request.post("/api/user-credit-cards", {
+      data: { creditCardId: creditCard.id, isActive: true },
+    });
+    const userCreditCard = await uccRes.json();
+
     const propertyName = `CC Consistency ${crypto.randomUUID()}`;
     const totalCost = 250;
     const numNights = 2;
@@ -51,7 +57,7 @@ test.describe("Net Cost Consistency", () => {
         pretaxCost: 200,
         taxAmount: 50,
         totalCost,
-        creditCardId: creditCard.id,
+        userCreditCardId: userCreditCard.id,
         currency: "USD",
         bookingSource: "direct_web",
       },
@@ -75,6 +81,7 @@ test.describe("Net Cost Consistency", () => {
       await expect(page.getByTestId("breakdown-net-cost")).toHaveText(expectedNetCost);
     } finally {
       await request.delete(`/api/bookings/${booking.id}`);
+      await request.delete(`/api/user-credit-cards/${userCreditCard.id}`);
       await request.delete(`/api/credit-cards/${creditCard.id}`);
     }
   });
