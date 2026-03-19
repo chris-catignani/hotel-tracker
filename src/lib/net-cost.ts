@@ -92,7 +92,7 @@ export interface NetCostBooking {
         isFixed: boolean;
       } | null;
     } | null;
-  };
+  } | null;
   hotelChainSubBrand?: { basePointRate: string | number | null } | null;
   creditCard: {
     name: string;
@@ -214,7 +214,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
   // The final appliedValue shown below is the result after all constraints are applied.
 
   // 1. Promotions
-  const hotelCentsPerPoint = booking.hotelChain.pointType?.centsPerPoint
+  const hotelCentsPerPoint = booking.hotelChain?.pointType?.centsPerPoint
     ? Number(booking.hotelChain.pointType.centsPerPoint)
     : DEFAULT_CENTS_PER_POINT;
 
@@ -709,7 +709,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
           if (b.valueType === "multiplier") {
             const isBaseOnly = !b.pointsMultiplierBasis || b.pointsMultiplierBasis === "base_only";
             const effectiveBaseRate =
-              resolveBasePointRate(booking.hotelChain, booking.hotelChainSubBrand) ?? 0;
+              resolveBasePointRate(booking.hotelChain ?? null, booking.hotelChainSubBrand) ?? 0;
             const basisPoints =
               isBaseOnly && effectiveBaseRate > 0
                 ? Math.round(pretaxCost * effectiveBaseRate)
@@ -847,7 +847,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
   if (booking.creditCard) {
     const baseRate = Number(booking.creditCard.rewardRate);
     const rules = booking.creditCard.rewardRules || [];
-    const hotelId = booking.hotelChain.id || booking.hotelChainId;
+    const hotelId = booking.hotelChain?.id || booking.hotelChainId;
     const otaId = booking.otaAgencyId;
 
     // Strict rule selection: OTA bookings only allow OTA rules.
@@ -893,7 +893,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
         label: `Hotel/Booking Boost`,
         value: boostValue,
         formula: `${formatCurrency(totalCost)} (total cost) × ${multiplierToUse - baseRate}x boost × ${centsStr}¢ = ${formatCurrency(boostValue)}`,
-        description: `Additional earning for booking with ${booking.hotelChain.name}.`,
+        description: `Additional earning for booking with ${booking.hotelChain?.name ?? "this hotel"}.`,
       });
     } else {
       const baseValue = totalCost * baseRate * centsPerPoint;
@@ -934,17 +934,17 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
   // 4. Loyalty Points Earned
   let loyaltyPointsValue = 0;
   let loyaltyPointsCalc: CalculationDetail | undefined;
-  if (booking.loyaltyPointsEarned && booking.hotelChain.pointType) {
+  if (booking.loyaltyPointsEarned && booking.hotelChain?.pointType) {
     const centsPerPoint = Number(booking.hotelChain.pointType.centsPerPoint);
     const pointName = booking.hotelChain.pointType.name || "points";
     const centsStr = formatCents(centsPerPoint);
     loyaltyPointsValue = booking.loyaltyPointsEarned * centsPerPoint;
 
     const loyaltySegments: CalculationSegment[] = [];
-    const elite = booking.hotelChain.userStatus?.eliteStatus;
+    const elite = booking.hotelChain?.userStatus?.eliteStatus;
 
     const effectiveBasePointRate = resolveBasePointRate(
-      booking.hotelChain,
+      booking.hotelChain ?? null,
       booking.hotelChainSubBrand
     );
 
@@ -956,8 +956,8 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
     ) {
       const baseRate = effectiveBasePointRate;
       const bonusPct = Number(elite.bonusPercentage);
-      const calcCurrency = booking.hotelChain.calculationCurrency ?? "USD";
-      const calcCurrencyToUsdRate = booking.hotelChain.calcCurrencyToUsdRate ?? null;
+      const calcCurrency = booking.hotelChain?.calculationCurrency ?? "USD";
+      const calcCurrencyToUsdRate = booking.hotelChain?.calcCurrencyToUsdRate ?? null;
       // Convert USD pretax cost to the chain's calculation currency (e.g., EUR for Accor)
       const effectivePretaxCost =
         calcCurrency !== "USD" && calcCurrencyToUsdRate
@@ -996,7 +996,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
       description: `You earned ${booking.loyaltyPointsEarned.toLocaleString()} ${pointName} for this stay.`,
       groups: [
         {
-          name: booking.hotelChain.loyaltyProgram || "Loyalty Points",
+          name: booking.hotelChain?.loyaltyProgram || "Loyalty Points",
           segments: loyaltySegments,
         },
       ],
@@ -1006,7 +1006,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
   // 5. Points RedeemedValue
   let pointsRedeemedValue = 0;
   let pointsRedeemedCalc: CalculationDetail | undefined;
-  if (booking.pointsRedeemed && booking.hotelChain.pointType) {
+  if (booking.pointsRedeemed && booking.hotelChain?.pointType) {
     const centsPerPoint = Number(booking.hotelChain.pointType.centsPerPoint);
     const centsStr = formatCents(centsPerPoint);
     pointsRedeemedValue = booking.pointsRedeemed * centsPerPoint;
@@ -1034,7 +1034,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
   // 6. Certificates Value
   let certsValue = 0;
   let certsCalc: CalculationDetail | undefined;
-  if (booking.certificates.length > 0 && booking.hotelChain.pointType) {
+  if (booking.certificates.length > 0 && booking.hotelChain?.pointType) {
     const centsPerPoint = Number(booking.hotelChain.pointType.centsPerPoint);
     const centsStr = formatCents(centsPerPoint);
 

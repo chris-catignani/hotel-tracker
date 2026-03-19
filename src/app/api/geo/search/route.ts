@@ -13,7 +13,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json([]);
     }
 
-    const results = await searchProperties(q);
+    const accommodationType = request.nextUrl.searchParams.get("accommodationType");
+    const isHotel = accommodationType !== "apartment";
+    const results = await searchProperties(q, isHotel);
     return NextResponse.json(results);
   } catch (error) {
     return apiError("Failed to search properties", error, 500, request);

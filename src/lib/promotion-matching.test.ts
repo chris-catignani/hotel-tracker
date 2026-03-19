@@ -58,6 +58,7 @@ function makeRestrictions(overrides: Partial<TestRestrictions> = {}): TestRestri
     subBrandRestrictions: [],
     tieInCards: [],
     hotelChainId: null,
+    allowedAccommodationTypes: [],
     ...overrides,
   };
 }
@@ -2061,5 +2062,60 @@ describe("geography restriction (structural match)", () => {
     const unrestrictedPromo = makePromo({ restrictions: null });
     const booking = { ...mockBooking, property: { countryCode: null } };
     expect(calculateMatchedPromotions(booking, [unrestrictedPromo], new Map())).toHaveLength(1);
+  });
+});
+
+describe("accommodation type restriction", () => {
+  const hotelBooking: MatchingBooking = {
+    ...mockBooking,
+    accommodationType: "hotel",
+  };
+  const apartmentBooking: MatchingBooking = {
+    ...mockBooking,
+    hotelChainId: null,
+    accommodationType: "apartment",
+  };
+
+  it("is invisible for apartment bookings when promo restricts to hotel only", () => {
+    const hotelOnlyPromo = makePromo({
+      restrictions: makeRestrictions({ allowedAccommodationTypes: ["hotel"] }),
+    });
+    const results = calculateMatchedPromotions(apartmentBooking, [hotelOnlyPromo], new Map());
+    expect(results).toHaveLength(0);
+  });
+
+  it("matches apartment bookings when promo restricts to apartment only", () => {
+    const apartmentPromo = makePromo({
+      restrictions: makeRestrictions({ allowedAccommodationTypes: ["apartment"] }),
+    });
+    const results = calculateMatchedPromotions(apartmentBooking, [apartmentPromo], new Map());
+    expect(results).toHaveLength(1);
+  });
+
+  it("matches both accommodation types when allowedAccommodationTypes is empty (no restriction)", () => {
+    const openPromo = makePromo({
+      restrictions: makeRestrictions({ allowedAccommodationTypes: [] }),
+    });
+    expect(calculateMatchedPromotions(hotelBooking, [openPromo], new Map())).toHaveLength(1);
+    expect(calculateMatchedPromotions(apartmentBooking, [openPromo], new Map())).toHaveLength(1);
+  });
+
+  it("treats missing accommodationType as hotel (default)", () => {
+    const bookingWithoutType: MatchingBooking = {
+      ...mockBooking,
+      accommodationType: undefined,
+    };
+    const hotelOnlyPromo = makePromo({
+      restrictions: makeRestrictions({ allowedAccommodationTypes: ["hotel"] }),
+    });
+    const results = calculateMatchedPromotions(bookingWithoutType, [hotelOnlyPromo], new Map());
+    expect(results).toHaveLength(1);
+  });
+
+  it("matches when promo has no restrictions object", () => {
+    const unrestrictedPromo = makePromo({ restrictions: null });
+    expect(
+      calculateMatchedPromotions(apartmentBooking, [unrestrictedPromo], new Map())
+    ).toHaveLength(1);
   });
 });

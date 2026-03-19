@@ -1,4 +1,5 @@
 import type { PromotionBenefitFormData, PromotionRestrictionsFormData } from "@/lib/types";
+import type { AccommodationType } from "@prisma/client";
 
 export function buildRestrictionsCreateData(r: PromotionRestrictionsFormData) {
   return {
@@ -22,6 +23,7 @@ export function buildRestrictionsCreateData(r: PromotionRestrictionsFormData) {
     allowedPaymentTypes: r.allowedPaymentTypes ?? [],
     allowedBookingSources: r.allowedBookingSources ?? [],
     allowedCountryCodes: r.allowedCountryCodes ?? [],
+    allowedAccommodationTypes: (r.allowedAccommodationTypes ?? []) as AccommodationType[],
     hotelChainId: r.hotelChainId || null,
     subBrandRestrictions: {
       create: [

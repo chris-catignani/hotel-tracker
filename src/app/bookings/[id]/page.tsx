@@ -104,7 +104,8 @@ interface PriceWatchBookingData {
 
 interface Booking extends Omit<NetCostBooking, "bookingPromotions"> {
   id: string;
-  hotelChainId: string;
+  hotelChainId: string | null;
+  accommodationType: string;
   hotelChainSubBrand: { id: string; name: string; basePointRate: string | number | null } | null;
   property: {
     id: string;
@@ -280,17 +281,24 @@ export default function BookingDetailPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <p className="text-sm text-muted-foreground">Hotel Chain</p>
-              <p className="font-medium">{booking.hotelChain.name}</p>
-            </div>
+            {booking.hotelChain ? (
+              <div>
+                <p className="text-sm text-muted-foreground">Hotel Chain</p>
+                <p className="font-medium">{booking.hotelChain.name}</p>
+              </div>
+            ) : (
+              <div>
+                <p className="text-sm text-muted-foreground">Accommodation Type</p>
+                <p className="font-medium">Apartment / Short-term Rental</p>
+              </div>
+            )}
             {booking.hotelChainSubBrand && (
               <div>
                 <p className="text-sm text-muted-foreground">Sub-brand</p>
                 <p className="font-medium">{booking.hotelChainSubBrand.name}</p>
               </div>
             )}
-            {booking.hotelChain.loyaltyProgram && (
+            {booking.hotelChain?.loyaltyProgram && (
               <div>
                 <p className="text-sm text-muted-foreground">Loyalty Program</p>
                 <p className="font-medium">{booking.hotelChain.loyaltyProgram}</p>
@@ -579,20 +587,22 @@ export default function BookingDetailPage() {
         </Card>
       )}
 
-      {/* Price Watch */}
-      <BookingPriceWatch
-        bookingId={booking.id}
-        propertyId={booking.propertyId}
-        propertyName={booking.property.name}
-        hotelChainId={booking.hotelChainId}
-        checkIn={booking.checkIn}
-        checkOut={booking.checkOut}
-        numNights={booking.numNights}
-        totalCost={booking.totalCost}
-        currency={booking.currency}
-        pointsRedeemed={booking.pointsRedeemed}
-        initialWatchBooking={booking.priceWatchBooking}
-      />
+      {/* Price Watch — hotel stays only */}
+      {booking.accommodationType === "hotel" && (
+        <BookingPriceWatch
+          bookingId={booking.id}
+          propertyId={booking.propertyId}
+          propertyName={booking.property.name}
+          hotelChainId={booking.hotelChainId ?? undefined}
+          checkIn={booking.checkIn}
+          checkOut={booking.checkOut}
+          numNights={booking.numNights}
+          totalCost={booking.totalCost}
+          currency={booking.currency}
+          pointsRedeemed={booking.pointsRedeemed}
+          initialWatchBooking={booking.priceWatchBooking}
+        />
+      )}
     </div>
   );
 }

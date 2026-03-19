@@ -82,7 +82,7 @@ export default function EditBookingPage() {
             bookingId={booking.id}
             propertyId={booking.propertyId}
             propertyName={booking.property.name}
-            hotelChainId={booking.hotelChainId}
+            hotelChainId={booking.hotelChainId ?? undefined}
             checkIn={booking.checkIn}
             checkOut={booking.checkOut}
             numNights={booking.numNights}

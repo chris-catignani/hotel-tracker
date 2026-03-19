@@ -4,6 +4,8 @@
 
 export type UserRole = "USER" | "ADMIN";
 
+export type AccommodationType = "hotel" | "apartment";
+
 // ---------------------------------------------------------------------------
 // Core Data Models
 // ---------------------------------------------------------------------------
@@ -131,6 +133,7 @@ export interface PromotionRestrictionsData {
   allowedPaymentTypes: string[];
   allowedBookingSources: string[];
   allowedCountryCodes: string[];
+  allowedAccommodationTypes: AccommodationType[];
   hotelChainId: string | null;
   prerequisiteStayCount: number | null;
   prerequisiteNightCount: number | null;
@@ -156,6 +159,7 @@ export interface PromotionRestrictionsFormData {
   allowedPaymentTypes: string[];
   allowedBookingSources: string[];
   allowedCountryCodes: string[];
+  allowedAccommodationTypes: AccommodationType[];
   hotelChainId: string;
   prerequisiteStayCount: string;
   prerequisiteNightCount: string;
@@ -182,6 +186,7 @@ export const EMPTY_RESTRICTIONS: PromotionRestrictionsFormData = {
   allowedPaymentTypes: [],
   allowedBookingSources: [],
   allowedCountryCodes: [],
+  allowedAccommodationTypes: [],
   hotelChainId: "",
   prerequisiteStayCount: "",
   prerequisiteNightCount: "",
@@ -374,7 +379,8 @@ export interface BookingBenefit {
 
 export interface Booking {
   id: string;
-  hotelChainId: string;
+  hotelChainId: string | null;
+  accommodationType: AccommodationType;
   hotelChainSubBrandId: string | null;
   propertyId: string;
   property: Property;
@@ -403,7 +409,8 @@ export interface Booking {
 }
 
 export interface BookingFormData {
-  hotelChainId: string;
+  hotelChainId: string | null;
+  accommodationType: AccommodationType;
   hotelChainSubBrandId: string | null;
   propertyId?: string;
   propertyName?: string;

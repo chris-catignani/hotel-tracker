@@ -150,6 +150,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     const body = await request.json();
     const {
+      accommodationType,
       hotelChainId,
       propertyId,
       propertyName,
@@ -200,7 +201,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const data: Record<string, unknown> = {};
-    if (hotelChainId !== undefined) data.hotelChainId = hotelChainId;
+    if (accommodationType !== undefined) data.accommodationType = accommodationType;
+    if (hotelChainId !== undefined) data.hotelChainId = hotelChainId || null;
     if (hotelChainSubBrandId !== undefined)
       data.hotelChainSubBrandId = hotelChainSubBrandId || null;
     if (resolvedPropertyId !== undefined) data.propertyId = resolvedPropertyId;

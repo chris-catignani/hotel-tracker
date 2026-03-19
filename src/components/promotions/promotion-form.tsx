@@ -39,6 +39,7 @@ import {
   BookingSourceCard,
   HotelChainRestrictionCard,
   GeographyRestrictionCard,
+  AccommodationTypeCard,
 } from "./restriction-cards";
 import {
   promotionFormReducer,
@@ -226,6 +227,9 @@ export function PromotionForm({
           : [],
         allowedCountryCodes: activeRestrictions.has("geography")
           ? restrictions.allowedCountryCodes
+          : [],
+        allowedAccommodationTypes: activeRestrictions.has("accommodation_type")
+          ? restrictions.allowedAccommodationTypes
           : [],
         hotelChainId: activeRestrictions.has("hotel_chain") ? restrictions.hotelChainId : "",
         tieInCreditCardIds: activeRestrictions.has("tie_in_cards")
@@ -962,6 +966,23 @@ export function PromotionForm({
                           })
                         }
                         onRemove={() => dispatch({ type: "REMOVE_RESTRICTION", key: "geography" })}
+                      />
+                    );
+
+                  if (key === "accommodation_type")
+                    return (
+                      <AccommodationTypeCard
+                        key={key}
+                        allowedAccommodationTypes={restrictions.allowedAccommodationTypes ?? []}
+                        onAllowedAccommodationTypesChange={(types) =>
+                          dispatch({
+                            type: "UPDATE_RESTRICTIONS",
+                            updates: { allowedAccommodationTypes: types },
+                          })
+                        }
+                        onRemove={() =>
+                          dispatch({ type: "REMOVE_RESTRICTION", key: "accommodation_type" })
+                        }
                       />
                     );
 

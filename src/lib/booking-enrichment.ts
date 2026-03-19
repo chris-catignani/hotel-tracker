@@ -16,7 +16,7 @@ type EnrichableBooking = {
     userStatuses?: EliteStatusShape[];
     // Post-normalization (normalizeUserStatuses converts array → singular)
     userStatus?: EliteStatusShape | null;
-  };
+  } | null;
   hotelChainSubBrand?: { basePointRate?: unknown } | null;
 };
 
@@ -42,12 +42,12 @@ export async function enrichBookingWithRate<T extends EnrichableBooking>(booking
   }
 
   // Always resolve calcCurrencyToUsdRate so it's available for cost breakdown formulas
-  const calcCurrency = booking.hotelChain.calculationCurrency ?? "USD";
+  const calcCurrency = booking.hotelChain?.calculationCurrency ?? "USD";
   const calcCurrencyToUsdRate = await resolveCalcCurrencyRate(calcCurrency);
 
   let loyaltyPointsEstimated = false;
   let loyaltyPointsEarned = booking.loyaltyPointsEarned;
-  if (booking.loyaltyPointsEarned == null && resolvedRate != null) {
+  if (booking.hotelChain && booking.loyaltyPointsEarned == null && resolvedRate != null) {
     const basePointRate = resolveBasePointRate(booking.hotelChain, booking.hotelChainSubBrand);
     // Support both pre-normalization (userStatuses[]) and post-normalization (userStatus)
     const eliteStatusRaw =
@@ -76,9 +76,11 @@ export async function enrichBookingWithRate<T extends EnrichableBooking>(booking
     loyaltyPointsEarned,
     isFutureEstimate,
     loyaltyPointsEstimated,
-    hotelChain: {
-      ...booking.hotelChain,
-      calcCurrencyToUsdRate,
-    },
+    hotelChain: booking.hotelChain
+      ? {
+          ...booking.hotelChain,
+          calcCurrencyToUsdRate,
+        }
+      : null,
   };
 }

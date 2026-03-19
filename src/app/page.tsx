@@ -60,7 +60,7 @@ interface BookingWithRelations {
         isFixed: boolean;
       } | null;
     } | null;
-  };
+  } | null;
   hotelChainSubBrand?: {
     id: string;
     name: string;
@@ -209,7 +209,7 @@ export default function DashboardPage() {
   const hotelChainSummaries = useMemo(() => {
     const summaries = bookings.reduce(
       (acc, b) => {
-        const chain = b.hotelChain.name;
+        const chain = b.hotelChain?.name ?? "Apartment / Rental";
         if (!acc[chain]) {
           acc[chain] = {
             chain,
@@ -414,7 +414,7 @@ export default function DashboardPage() {
                                 {booking.property.name}
                               </Link>
                               <div className="text-xs text-muted-foreground mt-0.5">
-                                {booking.hotelChain.name}
+                                {booking.hotelChain?.name ?? "Apartment / Rental"}
                               </div>
                             </TableCell>
                             <TableCell className="text-sm">

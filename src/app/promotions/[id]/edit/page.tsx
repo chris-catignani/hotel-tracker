@@ -47,6 +47,8 @@ function mapApiRestrictionsToForm(
     allowedPaymentTypes: r.allowedPaymentTypes ?? [],
     allowedBookingSources: r.allowedBookingSources ?? [],
     allowedCountryCodes: r.allowedCountryCodes ?? [],
+    allowedAccommodationTypes: (r.allowedAccommodationTypes ??
+      []) as import("@/lib/types").AccommodationType[],
     hotelChainId: r.hotelChainId ?? "",
     prerequisiteStayCount: r.prerequisiteStayCount ? String(r.prerequisiteStayCount) : "",
     prerequisiteNightCount: r.prerequisiteNightCount ? String(r.prerequisiteNightCount) : "",

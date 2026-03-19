@@ -58,12 +58,15 @@ function mapGooglePlace(place: GooglePlace): GeoResult {
   };
 }
 
-export async function searchProperties(query: string): Promise<GeoResult[]> {
+export async function searchProperties(query: string, isHotel = true): Promise<GeoResult[]> {
   const normalized = query.trim().toLowerCase();
   if (normalized.length < 3) return [];
 
+  // Include accommodation type in cache key so hotel vs apartment searches cache separately
+  const cacheKey = isHotel ? normalized : `${normalized}|apt`;
+
   // Check cache first
-  const cached = await prisma.geoCache.findUnique({ where: { queryKey: normalized } });
+  const cached = await prisma.geoCache.findUnique({ where: { queryKey: cacheKey } });
   if (cached) {
     return cached.results as unknown as GeoResult[];
   }
@@ -85,7 +88,7 @@ export async function searchProperties(query: string): Promise<GeoResult[]> {
       textQuery: query,
       languageCode: "en",
       maxResultCount: 5,
-      includedType: "lodging",
+      ...(isHotel && { includedType: "lodging" }),
     }),
   });
 
@@ -100,9 +103,9 @@ export async function searchProperties(query: string): Promise<GeoResult[]> {
 
   // Cache results
   await prisma.geoCache.upsert({
-    where: { queryKey: normalized },
+    where: { queryKey: cacheKey },
     create: {
-      queryKey: normalized,
+      queryKey: cacheKey,
       results: results as unknown as import("@prisma/client").Prisma.JsonArray,
     },
     update: {

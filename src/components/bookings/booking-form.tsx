@@ -11,11 +11,17 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { CERT_TYPE_OPTIONS } from "@/lib/cert-types";
 import { format, parseISO } from "date-fns";
 import { calculatePointsFromChain } from "@/lib/loyalty-utils";
-import { BENEFIT_TYPE_OPTIONS, BOOKING_SOURCE_OPTIONS, PAYMENT_TYPES } from "@/lib/constants";
+import {
+  ACCOMMODATION_TYPE_OPTIONS,
+  BENEFIT_TYPE_OPTIONS,
+  BOOKING_SOURCE_OPTIONS,
+  PAYMENT_TYPES,
+} from "@/lib/constants";
 import { CurrencyCombobox } from "@/components/ui/currency-combobox";
 import { PropertyNameCombobox } from "@/components/ui/property-name-combobox";
 import { ManualGeoModal } from "@/components/ui/manual-geo-modal";
 import {
+  AccommodationType,
   Booking,
   BookingFormData,
   CreditCard,
@@ -77,6 +83,7 @@ export function BookingForm({
   const [manualGeoOpen, setManualGeoOpen] = useState(false);
 
   const {
+    accommodationType,
     hotelChainId,
     hotelChainSubBrandId,
     propertyId,
@@ -156,6 +163,9 @@ export function BookingForm({
     }
   }, [initialData, portals]);
 
+  // Derived booleans from accommodation type
+  const isHotel = accommodationType === "hotel";
+
   // Derived booleans from payment type
   const hasCash = paymentType.includes("cash");
   const hasPoints = paymentType.includes("points");
@@ -213,7 +223,7 @@ export function BookingForm({
 
   const { errors, isValid } = useMemo(() => {
     const errs = {
-      hotelChainId: !hotelChainId ? "Hotel chain is required" : "",
+      hotelChainId: isHotel && !hotelChainId ? "Hotel chain is required" : "",
       propertyName: !propertyName.trim()
         ? "Property name is required"
         : !geoConfirmed
@@ -249,6 +259,7 @@ export function BookingForm({
 
     return { errors: errs, isValid: valid };
   }, [
+    isHotel,
     hotelChainId,
     propertyName,
     geoConfirmed,
@@ -271,8 +282,10 @@ export function BookingForm({
     if (!isValid) return;
 
     const body = {
-      hotelChainId: hotelChainId,
-      hotelChainSubBrandId: hotelChainSubBrandId === "none" ? null : hotelChainSubBrandId,
+      accommodationType,
+      hotelChainId: isHotel ? hotelChainId || null : null,
+      hotelChainSubBrandId:
+        isHotel && hotelChainSubBrandId !== "none" ? hotelChainSubBrandId : null,
       propertyId: propertyId || undefined,
       propertyName,
       placeId: placeId || null,
@@ -300,7 +313,7 @@ export function BookingForm({
           : Number(portalCashbackRate) / 100;
       })(),
       portalCashbackOnTotal: shoppingPortalId !== "none" ? portalCashbackOnTotal : false,
-      loyaltyPointsEarned: loyaltyPointsEarned ? Number(loyaltyPointsEarned) : null,
+      loyaltyPointsEarned: isHotel && loyaltyPointsEarned ? Number(loyaltyPointsEarned) : null,
       bookingSource: bookingSource || null,
       otaAgencyId: bookingSource === "ota" && otaAgencyId !== "none" ? otaAgencyId : null,
       benefits: benefits
@@ -323,52 +336,76 @@ export function BookingForm({
       </CardHeader>
       <CardContent>
         <form onSubmit={handleFormSubmit} className="space-y-6">
+          {/* Accommodation Type */}
+          <div className="space-y-2">
+            <Label htmlFor="accommodationType">Accommodation Type</Label>
+            <AppSelect
+              value={accommodationType}
+              onValueChange={(val) =>
+                dispatch({
+                  type: "SET_ACCOMMODATION_TYPE",
+                  accommodationType: val as AccommodationType,
+                })
+              }
+              options={[...ACCOMMODATION_TYPE_OPTIONS]}
+              data-testid="accommodation-type-select"
+            />
+          </div>
+
           {/* Hotel Chain + Sub-brand + Property Name */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="space-y-2">
-              <Label htmlFor="hotelChainId">Hotel Chain *</Label>
-              <AppSelect
-                value={hotelChainId}
-                error={showErrors ? errors.hotelChainId : ""}
-                onValueChange={(val) => dispatch({ type: "SET_HOTEL_CHAIN_ID", hotelChainId: val })}
-                options={hotelChains.map((chain) => ({
-                  label: chain.name,
-                  value: chain.id,
-                }))}
-                placeholder="Select hotel chain..."
-                data-testid="hotel-chain-select"
-              />
-            </div>
+            {isHotel && (
+              <div className="space-y-2">
+                <Label htmlFor="hotelChainId">Hotel Chain *</Label>
+                <AppSelect
+                  value={hotelChainId}
+                  error={showErrors ? errors.hotelChainId : ""}
+                  onValueChange={(val) =>
+                    dispatch({ type: "SET_HOTEL_CHAIN_ID", hotelChainId: val })
+                  }
+                  options={hotelChains.map((chain) => ({
+                    label: chain.name,
+                    value: chain.id,
+                  }))}
+                  placeholder="Select hotel chain..."
+                  data-testid="hotel-chain-select"
+                />
+              </div>
+            )}
 
-            {/* Sub-brand selector */}
-            <div className="space-y-2">
-              <Label htmlFor="hotelChainSubBrandId">Sub-brand</Label>
-              <AppSelect
-                value={!hotelChainId ? "" : hotelChainSubBrandId}
-                onValueChange={(val) =>
-                  dispatch({ type: "SET_FIELD", field: "hotelChainSubBrandId", value: val })
-                }
-                disabled={
-                  !hotelChainId ||
-                  (hotelChains.find((h) => h.id === hotelChainId)?.hotelChainSubBrands.length ??
-                    0) === 0
-                }
-                options={[
-                  { label: "None / Not applicable", value: "none" },
-                  ...(hotelChains
-                    .find((h) => h.id === hotelChainId)
-                    ?.hotelChainSubBrands.map((sb) => ({
-                      label: sb.name,
-                      value: sb.id,
-                    })) || []),
-                ]}
-                placeholder={!hotelChainId ? "Select chain first..." : "Select sub-brand..."}
-                data-testid="sub-brand-select"
-              />
-            </div>
+            {/* Sub-brand selector — hotel only */}
+            {isHotel && (
+              <div className="space-y-2">
+                <Label htmlFor="hotelChainSubBrandId">Sub-brand</Label>
+                <AppSelect
+                  value={!hotelChainId ? "" : hotelChainSubBrandId}
+                  onValueChange={(val) =>
+                    dispatch({ type: "SET_FIELD", field: "hotelChainSubBrandId", value: val })
+                  }
+                  disabled={
+                    !hotelChainId ||
+                    (hotelChains.find((h) => h.id === hotelChainId)?.hotelChainSubBrands.length ??
+                      0) === 0
+                  }
+                  options={[
+                    { label: "None / Not applicable", value: "none" },
+                    ...(hotelChains
+                      .find((h) => h.id === hotelChainId)
+                      ?.hotelChainSubBrands.map((sb) => ({
+                        label: sb.name,
+                        value: sb.id,
+                      })) || []),
+                  ]}
+                  placeholder={!hotelChainId ? "Select chain first..." : "Select sub-brand..."}
+                  data-testid="sub-brand-select"
+                />
+              </div>
+            )}
 
             <div className="space-y-2">
-              <Label htmlFor="propertyName">Property Name *</Label>
+              <Label htmlFor="propertyName">
+                {isHotel ? "Property Name" : "Property / Rental Name"} *
+              </Label>
               <PropertyNameCombobox
                 id="propertyName"
                 value={propertyName}
@@ -382,6 +419,7 @@ export function BookingForm({
                 onManualEdit={handleManualPropertyEdit}
                 onReset={() => dispatch({ type: "RESET_PROPERTY" })}
                 onCantFind={() => setManualGeoOpen(true)}
+                accommodationType={accommodationType}
                 error={showErrors ? errors.propertyName : ""}
                 data-testid="property-name-input"
               />
@@ -431,7 +469,7 @@ export function BookingForm({
               onValueChange={(v) =>
                 dispatch({ type: "SET_PAYMENT_TYPE", paymentType: v as PaymentType })
               }
-              options={[...PAYMENT_TYPES]}
+              options={PAYMENT_TYPES.filter((pt) => isHotel || !pt.value.includes("cert"))}
               data-testid="payment-type-select"
             />
           </div>
@@ -708,20 +746,24 @@ export function BookingForm({
             )}
           </div>
 
-          {/* Loyalty Points */}
-          <div className="space-y-2">
-            <Label htmlFor="loyaltyPointsEarned">Loyalty Points Earned</Label>
-            <Input
-              id="loyaltyPointsEarned"
-              type="number"
-              min="0"
-              value={loyaltyPointsEarned}
-              readOnly
-              className="bg-muted text-muted-foreground"
-              placeholder="0"
-            />
-            <p className="text-xs text-muted-foreground">Auto-calculated from hotel chain rates.</p>
-          </div>
+          {/* Loyalty Points — hotel stays only */}
+          {isHotel && (
+            <div className="space-y-2">
+              <Label htmlFor="loyaltyPointsEarned">Loyalty Points Earned</Label>
+              <Input
+                id="loyaltyPointsEarned"
+                type="number"
+                min="0"
+                value={loyaltyPointsEarned}
+                readOnly
+                className="bg-muted text-muted-foreground"
+                placeholder="0"
+              />
+              <p className="text-xs text-muted-foreground">
+                Auto-calculated from hotel chain rates.
+              </p>
+            </div>
+          )}
 
           {/* Benefits */}
           <div className="space-y-2">
