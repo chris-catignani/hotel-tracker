@@ -20,52 +20,20 @@ npm run test:e2e     # Run functional E2E tests (Playwright)
 
 After schema changes: restart the dev server to pick up the new Prisma client.
 
-**Schema change workflow:** When a task requires Prisma schema changes, always show the proposed schema diff to the user for review and approval _before_ implementing the rest of the code (API routes, types, UI, tests). This prevents rework when the design needs adjustment.
+## Workflow Mandates
 
-**Migration workflow (replaces `db:push`):**
+**Schema changes:** Always show the proposed `prisma/schema.prisma` diff to the user for review and approval _before_ implementing API routes, types, UI, or tests. This prevents rework when the design needs adjustment.
 
-- Dev: `npm run db:migrate` — runs `prisma migrate dev`, which prompts for a migration name, generates a SQL file in `prisma/migrations/`, applies it to the local DB, and clears `.next`.
-- Production / CI: `npm run db:deploy` — runs `prisma migrate deploy`, which applies any pending migrations. Add this to your deploy script to run automatically on every release.
-- Never use `prisma db push` for schema changes — it has no audit trail and no production story.
+**Migration workflow:**
+
+- Dev: `npm run db:migrate` — `prisma migrate dev`, prompts for a name, generates SQL in `prisma/migrations/`, applies it, clears `.next`.
+- Production / CI: `npm run db:deploy` — `prisma migrate deploy`, applies pending migrations only.
+- Never use `prisma db push` — no audit trail, no production story.
 
 ## Architecture
 
 **Framework:** Next.js 16 App Router, TypeScript, Prisma 6, PostgreSQL, Tailwind CSS 4, shadcn/ui
-
 **Path alias:** `@/*` → `src/*`
-
-### API Routes (`src/app/api/`)
-
-RESTful routes with Next.js `route.ts` handlers:
-
-- `bookings/` — GET list, POST create; `[id]/` — GET, PUT, DELETE
-- `geo/search/` — GET (authenticated); proxies Google Places API, caches in `GeoCache`. Requires `GOOGLE_PLACES_API_KEY` env var
-- `hotel-chains/` — GET list, POST; `[id]/` — GET, PUT, DELETE; `[id]/hotel-chain-sub-brands/` — GET, POST
-- `hotel-chain-sub-brands/[id]/` — PUT, DELETE
-- `credit-cards/` — GET list, POST; `[id]/` — PUT, DELETE
-- `portals/` — GET list, POST; `[id]/` — PUT, DELETE
-- `ota-agencies/` — GET list, POST; `[id]/` — PUT, DELETE
-- `promotions/` — GET list, POST; `[id]/` — GET, PUT, DELETE
-- `booking-promotions/[id]/` — PUT (update `appliedValue`/`verified`)
-- `point-types/` — GET list, POST; `[id]/` — PUT, DELETE
-- `user-statuses/` — GET list, PUT (upsert elite status per hotel chain)
-- `properties/` — GET search; `[id]/` — PUT (update `chainPropertyId`)
-- `price-watches/` — GET list, POST upsert+link booking; `[id]/` — GET, PUT (toggle), DELETE; `[id]/snapshots/` — GET history
-- `cron/refresh-exchange-rates/` — GET (Bearer `CRON_SECRET`); refreshes exchange rates from public CDN
-
-### Key Library Files (`src/lib/`)
-
-- `prisma.ts` — Singleton Prisma client (avoids hot-reload overhead)
-- `promotion-matching.ts` — Core logic: fetches booking, evaluates active promotions against matching criteria (hotel, card, portal, date range, min spend), calculates `appliedValue`, writes `BookingPromotion` records
-- `api-error.ts` — Server error responses; includes stack trace in dev, generic message in prod
-- `client-error.ts` — Client-side error extraction; verbose with `NEXT_PUBLIC_DEBUG=true`
-- `geo-lookup.ts` — `searchProperties(query)`: checks `GeoCache`, calls Google Places API (New) on miss, caches results. Requires `GOOGLE_PLACES_API_KEY` env var; returns `[]` gracefully if unset. Now returns `placeId` and `address` in results (both Basic tier).
-- `countries.ts` — Static `COUNTRIES` list (ISO 3166-1 alpha-2), `countryName()` helper, and `ALPHA3_TO_ALPHA2` map (used if ever needing to normalize third-party alpha-3 codes)
-- `property-utils.ts` — `findOrCreateProperty()`: finds an existing Property by `placeId` or `(name, hotelChainId)`, or creates one. Used by booking POST/PUT to resolve `propertyId`.
-- `price-fetcher.ts` — `PriceFetcher` interface (`canFetch`, `fetchPrice`) and `selectFetcher()`. Add new chain scrapers here.
-- `price-watch-refresh.ts` — `runPriceWatchRefresh(fetchers)`: core shared logic for price refresh runs — queries watches, fetches prices, saves snapshots, converts currencies, sends alerts. Used by both `src/workers/refresh-price-watches.ts` and indirectly by tests.
-- `scrapers/hyatt.ts` — `HyattFetcher`: launches Chromium in "App Mode" (`--app=<url>`) to bypass Kasada bot detection. Always non-headless; in CI `xvfb-run` provides a virtual display. No session cookie required. `parseHyattRates(data)` exported for unit testing. Debug utility: `scripts/debug-hyatt.ts`.
-- `email.ts` — `sendPriceDropAlert()` via Resend. Requires `RESEND_API_KEY` and `RESEND_FROM_EMAIL` env vars; skips silently if unset.
 
 ### Data Model
 
@@ -80,21 +48,16 @@ HotelChain ← Property ← Booking → CreditCard
 ShoppingPortal ← Booking
 ```
 
-Key fields:
+Non-obvious fields worth knowing:
 
-- `Booking`: `propertyId → Property` (required), `pretaxCost`, `taxAmount`, `totalCost`, `portalCashbackRate`, `portalCashbackOnTotal`, `loyaltyPointsEarned`, `pointsRedeemed`, `currency`, `bookingSource` (enum: direct_web/direct_app/ota/other), `otaAgencyId`. Geo data (`countryCode`, `city`, `address`, `latitude`, `longitude`) is now on `Property`, not `Booking`.
-- `Property`: normalized hotel property entity. `name`, `placeId` (Google Places ID, unique), `chainPropertyId` (chain-specific scraper ID — spiritCode for Hyatt), `hotelChainId`, `countryCode`, `city`, `address`, `latitude`, `longitude`, `starRating`
-- `PriceWatch`: one per user per property (`@@unique([userId, propertyId])`). `isEnabled`, `lastCheckedAt`. Links to `PriceWatchBooking[]` and `PriceSnapshot[]`.
-- `PriceWatchBooking`: per-booking config linked to a `PriceWatch`. `cashThreshold`, `awardThreshold`, `dateFlexibilityDays`. One per booking (`bookingId` is unique).
-- `PriceSnapshot`: one row per price fetch. `checkIn`, `checkOut`, `cashPrice`, `cashCurrency`, `awardPrice`, `source` (e.g. `"hyatt_browser"`), `fetchedAt`.
-- `GeoCache`: caches Google Places API results keyed by normalized query string to avoid repeat API calls
-- `BookingBenefit`: `benefitType` (enum: free_breakfast/dining_credit/spa_credit/room_upgrade/late_checkout/early_checkin/other), `label`, `dollarValue` — tracks non-cash perks received per booking
-- `OtaAgency`: simple `name` model; referenced by bookings when `bookingSource = ota`
-- `UserStatus`: one row per hotel chain; tracks the user's current elite tier via `eliteStatusId → HotelChainEliteStatus`
-- `Promotion`: `type` (credit_card/portal/loyalty), `valueType` (fixed/percentage/points_multiplier), `value`, optional `hotelChainId`/`hotelChainSubBrandId`/`creditCardId`/`shoppingPortalId`, `minSpend`, `startDate`/`endDate`
-- `BookingPromotion`: join table with `appliedValue`, `autoApplied`, and `verified`
+- `Booking.propertyId` is **required** — geo data (`countryCode`, `city`, etc.) lives on `Property`, not `Booking`
+- `Booking.accommodationType` — enum: `hotel | apartment`, `@default(hotel)`
+- `Property.chainPropertyId` — chain-specific scraper ID (e.g. spiritCode for Hyatt)
+- `PriceWatch`: `@@unique([userId, propertyId])`; links to `PriceWatchBooking[]` (per-booking thresholds) and `PriceSnapshot[]`
+- `PromotionRestrictions.allowedAccommodationTypes[]` — empty array = unrestricted (all types allowed)
+- `GeoCache` — caches Google Places results keyed by normalized query string
 
-### Net Cost Formula & Explanations
+### Net Cost Formula
 
 ```
 Net Cost = totalCost - promotionSavings - portalCashback - cardReward - loyaltyPointsValue
@@ -102,155 +65,98 @@ Net Cost = totalCost - promotionSavings - portalCashback - cardReward - loyaltyP
 
 **Mandate:** Whenever adding new promotion types, portal reward options, or modifying loyalty logic, you **MUST**:
 
-1. Update the `getNetCostBreakdown` function in `src/lib/net-cost.ts` to include detailed, human-readable explanations (description and formula) for the new logic. These explanations must explicitly state whether the calculation is based on the **pre-tax cost** or the **total cost**.
-2. Update the `CostBreakdown` component (`src/components/cost-breakdown.tsx`) as necessary to accommodate any new breakdown items or calculation types.
+1. Update `getNetCostBreakdown` in `src/lib/net-cost.ts` with human-readable explanations that explicitly state whether the calculation uses **pre-tax cost** or **total cost**.
+2. Update `CostBreakdown` (`src/components/cost-breakdown.tsx`) for any new breakdown items.
 
-- `promotionSavings` = sum(bookingPromotions.appliedValue)
-- `portalCashback` = portalCashbackRate × basis (pre-tax or total)
+- `portalCashback` = portalCashbackRate × basis (`portalCashbackOnTotal ? totalCost : pretaxCost`)
 - `cardReward` = totalCost × creditCard.rewardRate × creditCard.pointValue
-- `loyaltyPointsValue` = loyaltyPointsEarned × hotel.pointValue (basis is typically pre-tax)
+- `loyaltyPointsValue` = loyaltyPointsEarned × hotel.pointValue (pre-tax basis)
 
 ### Promotion Matching & Orphaned Logic
 
-Promotions must be matched and labeled according to three tiers evaluated in order:
+Three tiers evaluated in order:
 
-1. **Structural Match (Invisible if Mismatched):** If any structural criteria fail for this booking, skip the promotion entirely — it is hidden from the UI with no badge.
-   - **Fields:** Hotel Chain, Credit Card, Shopping Portal, Sub-brand Restrictions, Stay Dates, Registration Deadline, Book-by Date, Booking Source, Payment Type, and Tie-in Cards.
-   - There is no "structural orphan" state — structural incompatibility always means invisible.
-2. **Hard Caps (Maxed Out):** Checked before fulfillment. If a hard limit is reached, show $0 with no badge.
-   - **Fields:** Max Stay Count, Once Per Sub-brand, Max Reward Count.
-3. **Fulfillment (Pre-qualifying vs. Orphaned):** Evaluated only if structural match passes and no hard cap was hit.
-   - **Pre-qualifying:** Campaign requirements not yet met (prerequisites, tiers, span-stays nights), but future booked stays exist that could complete it → Show $0 (or pro-rated value for span-stays) with **"Pre-qualifying" badge**.
-   - **Orphaned:** Campaign requirements not met AND no future booked stays can complete it → Show **$0** with **"Orphaned" badge**.
-   - "Orphaned" specifically means: not enough stays/nights accumulated across the campaign to earn the promotion.
+1. **Structural Match (Invisible if Mismatched):** Any structural criterion fails → promotion hidden from UI, no badge.
+   - Fields: Hotel Chain, Credit Card, Shopping Portal, Sub-brand, Stay Dates, Registration Deadline, Book-by Date, Booking Source, Payment Type, Tie-in Cards, **Accommodation Type**.
+   - **Loyalty promos are always structurally invisible for apartment bookings.**
+2. **Hard Caps (Maxed Out):** Cap hit → show $0, no badge. Fields: Max Stay Count, Once Per Sub-brand, Max Reward Count.
+3. **Fulfillment (Pre-qualifying vs. Orphaned):** Evaluated only if structural match passes and no hard cap hit.
+   - **Pre-qualifying:** Requirements not yet met but future booked stays could complete them → $0 with "Pre-qualifying" badge.
+   - **Orphaned:** Requirements not met AND no future stays can complete them → $0 with "Orphaned" badge.
 
 #### Span-stays partial cycle display (`net-cost.ts`)
 
-When a span-stays campaign ends with an incomplete final cycle (`isRemainderOrphaned`), completed cycles earn their full value and the partial cycle earns $0. The partial cycle segment label depends on whether the benefit cap was exhausted:
+Incomplete final cycle earns $0. Label depends on whether the cap was exhausted:
 
-- **"Orphaned Reward Cycle"**: The cap (`maxTotalBonusPoints` or `maxRedemptionValue`) was NOT exhausted — the cycle simply ran out of eligible nights. Computed as: `floor(eligibleNightsAtBooking / minNightsRequired) × benefitValue < maxTotalBonusPoints`.
-- **"Capped Reward Cycle"**: The cap WAS fully exhausted by all completed cycles across the campaign. Computed as: `floor(eligibleNightsAtBooking / minNightsRequired) × benefitValue >= maxTotalBonusPoints`.
+- **"Orphaned Reward Cycle"**: cap NOT exhausted — `floor(eligibleNightsAtBooking / minNightsRequired) × benefitValue < maxTotalBonusPoints`
+- **"Capped Reward Cycle"**: cap WAS exhausted — `floor(...) × benefitValue >= maxTotalBonusPoints`
 
-`eligibleNightsAtBooking` (stored on `BookingPromotionBenefit`) is the cumulative eligible nights at the END of this booking (prior nights + this booking's nights). This is the source of truth for all span-stays display calculations in `net-cost.ts`.
+`eligibleNightsAtBooking` (stored on `BookingPromotionBenefit`) = cumulative eligible nights at END of this booking. Source of truth for all span-stays display calculations in `net-cost.ts`.
 
 ### Loyalty Points Auto-Calculation
 
-`loyaltyPointsEarned` is calculated based on elite status:
-
 - **Percentage-based (e.g. Marriott):** `pretaxCost × baseRate × (1 + bonusPercentage)`
 - **Fixed-rate (e.g. GHA):** `pretaxCost × fixedRate`
+- Calculated server-side in the booking API and client-side via `src/lib/loyalty-utils.ts`. User can override.
+- **Not applicable** to apartment bookings — loyalty fields are hidden in the form.
 
-Calculated server-side in the booking API and client-side in the booking form (user can override).
+### Apartment / Short-term Rental Stays
 
-### UI Pages
-
-- `/` — Dashboard (stats, recent bookings, savings breakdown, hotel chain summary)
-- `/bookings`, `/bookings/new`, `/bookings/[id]`, `/bookings/[id]/edit`
-- `/promotions`, `/promotions/new`, `/promotions/[id]/edit`
-- `/price-watch` — All price watches with latest cash/award prices, toggle, spirit code editor, delete
-- `/settings` — Tabs: My Status (first), Point Types, Hotel Chains, Credit Cards, Shopping Portals, OTA Agencies
-
-### Mobile Design
-
-The app is fully responsive with a mobile-first approach:
-
-- **Layout:** `MobileHeader` (hamburger + Sheet nav) shown on mobile; `Sidebar` shown only on `lg:` breakpoints. Root layout uses `flex-col lg:flex-row`.
-- **Booking list:** `BookingCard` component for mobile (card-based layout); desktop uses a table.
-- **Settings tabs:** Horizontally scrollable on mobile (`overflow-x-auto`).
-- **Forms:** Responsive grid (`grid-cols-1 sm:grid-cols-2`); sticky bottom action bar on mobile, static on desktop.
-- **DatePicker:** Larger tap targets on mobile (`h-11 md:h-9`, `text-base md:text-sm`).
-- **Pattern for dual view:** Settings tabs and the bookings list show card views on mobile and table views on desktop using `md:hidden` / `hidden md:block`.
-
-### Background Workers (`src/workers/`)
-
-Standalone Node.js scripts that run outside the web server. Run directly via `tsx` (not bundled by Next.js).
-
-- `refresh-price-watches.ts` — Daily price watch refresh. Runs via GitHub Actions (`.github/workflows/refresh-price-watches.yml`) at 6am UTC using `xvfb-run npx tsx src/workers/refresh-price-watches.ts`. Trigger manually: `npm run prices:refresh`.
-- `refresh-exchange-rates.ts` — Refreshes `ExchangeRate` table from public CDN. Run manually: `npm run rates:refresh`.
-
-> **Note:** `scripts/` contains dev/debug utilities only (`debug-hyatt.ts`, `trigger-price-refresh.sh`, etc.). Production jobs live in `src/workers/`.
-
-### Shared Utilities
-
-- `src/lib/types.ts` — All TypeScript interfaces and types (centralized; no `any`)
-- `src/lib/constants.ts` — `CURRENCIES`, `PAYMENT_TYPES`, `BOOKING_SOURCE_OPTIONS`, `BENEFIT_TYPE_OPTIONS`, `HOTEL_ID`, `CATEGORY_LABELS`
-- `src/lib/navigation.ts` — `NAV_ITEMS` array used by both `Sidebar` and `MobileHeader`
-- `src/lib/loyalty-utils.ts` — `calculatePointsFromChain()` for client-side loyalty points calculation
-- `src/lib/loyalty-recalculation.ts` — Server-side batch re-calculation of loyalty points (e.g. after hotel rates change)
+- `Booking.accommodationType = apartment` hides hotel chain, sub-brand, loyalty program, and certificate payment fields in the booking form. Price Watch is also hidden (list, card, and detail pages).
+- Geo search omits `includedType: "lodging"` for apartments so addresses and short-term rentals resolve correctly.
+- Promotion matching treats accommodation type as a **structural rule** — promos with `allowedAccommodationTypes` set are invisible to bookings of the wrong type. Loyalty promos are always invisible for apartment bookings.
+- Dashboard has an All / Hotels / Apartments filter toggle (persisted in localStorage). Apartment bookings appear as a single "Apartments / Short-term Rentals" row in the accommodation summary table, pinned to the bottom regardless of sort. The Sub-brand breakdown widget excludes apartment bookings.
 
 ### Authentication & Authorization
 
-- **Library:** Auth.js v5 (`next-auth@beta`), JWT session strategy (not database sessions — Credentials provider requires JWT)
-- **`AUTH_SECRET`** env var required; generate with `openssl rand -base64 32`
-- **Admin user** seeded via `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` env vars
-- **Middleware:** `src/middleware.ts` protects all routes except `/login` and `/api/auth/*`
-- **Auth helpers:** `src/lib/auth-utils.ts` — `getAuthenticatedUserId()` returns the current user's ID or a 401 `NextResponse`; `requireAdmin()` returns `undefined` for admins or a 403 `NextResponse`
-- **Scoping:** All user-data API routes (bookings, promotions, user-statuses) are scoped to `userId`
-- **Role-gating:** Reference data routes (hotel-chains, cards, portals, etc.) require `ADMIN` role for writes
-- **IDOR protection:** Use `findFirst({ where: { id, userId } })` — never `findUnique` with only an `id` field, as it does not verify ownership
+- **IDOR protection:** Use `findFirst({ where: { id, userId } })` — never `findUnique` with only `id`, as it does not verify ownership.
+- **Role-gating:** Reference data routes (hotel-chains, cards, portals, etc.) require `ADMIN` for writes. Use `requireAdmin()` from `src/lib/auth-utils.ts`.
+- All user-data routes (bookings, promotions, user-statuses) must be scoped to `userId` via `getAuthenticatedUserId()`.
 
 ### Important Gotchas
 
-- Prisma `Decimal` fields return as strings from API responses — always wrap with `Number()`
-- **Property name geo confirmation:** The booking form requires the user to select a property from the Google Places autocomplete or use the "Can't find your hotel?" manual entry modal. Free-form text submission is blocked by validation (`geoConfirmed` must be `true`). The `PropertyNameCombobox` component handles the confirmed/unconfirmed UI states; `ManualGeoModal` handles the fallback path. On confirm, the form stores geo fields in state; the booking API calls `findOrCreateProperty()` to upsert a `Property` row and returns `propertyId`.
-- **`Booking.propertyId` is required** — all bookings must have a linked `Property`. Geo data (`countryCode`, `city`, etc.) lives on `Property`, not on `Booking`. When accessing geo data from a booking, use `booking.property.countryCode` etc.
-- After switching geo API providers: clear the `GeoCache` table (`DELETE FROM geo_cache;`) to flush stale cached results
+- Prisma `Decimal` fields return as **strings** from API responses — always wrap with `Number()`
+- **`Booking.propertyId` is required** — resolve it via `findOrCreateProperty()` in `src/lib/property-utils.ts` on every booking create/update
+- **Geo confirmation:** The booking form blocks submission until the user selects a property from autocomplete or uses the manual entry modal (`geoConfirmed` must be `true`). `PropertyNameCombobox` and `ManualGeoModal` handle this flow.
+- After switching geo API providers: `DELETE FROM geo_cache;` to flush stale results
+- After seeding with explicit IDs, sync Postgres sequences to avoid unique-constraint errors: `SELECT setval('<table>_id_seq', (SELECT MAX(id) FROM <table>));`
 - Settings page uses controlled `Dialog` components with separate open/edit state variables
-- `db:push` clears `.next` cache automatically; dev server restart still required after schema changes
-- PostgreSQL on WSL2: start with `sudo service postgresql start` if not running
-- The `react-hooks/set-state-in-effect` ESLint rule is intentionally suppressed in a few places (e.g. `fetchReferenceData` in booking form); use `useCallback` + `useEffect` pattern to load data without triggering the rule where possible
+- PostgreSQL on WSL2: `sudo service postgresql start`
+- `react-hooks/set-state-in-effect` is intentionally suppressed in a few data-fetching effects; use `useCallback` + `useEffect` to avoid it elsewhere
 
 ## Testing
 
-**Framework:** Vitest, React Testing Library (RTL), jsdom, Playwright (E2E)
-
-**Commands:**
-
-- `npm test`: Unit tests
-- `npm run test:e2e`: Functional E2E tests (requires `DATABASE_URL_TEST`)
+**Framework:** Vitest + React Testing Library (unit), Playwright (E2E)
 
 ### Standards
 
-- **Test Coverage:** ALWAYS write unit tests (Vitest/RTL) for every new feature or bug fix. ALWAYS write E2E tests (Playwright) for features that involve UI flows.
-- **Functional Tests:** Located in `e2e/`. Use Playwright for critical user flows. Ensure tests are isolated and idempotent.
-- **Precise Selectors:** ALWAYS use `data-testid` attributes on React components for specific values or elements to be tested (e.g., `data-testid="stat-value-total-bookings"`). This avoids ambiguity and ensures tests are robust against formatting changes.
-- **Pure Logic:** Extract core business logic into pure functions (as seen in `promotion-matching.ts`) to allow for simple unit testing without mocking complex Prisma objects.
-- **Mocking:** Mock large or browser-only dependencies in tests (e.g., `recharts`) to avoid issues with `jsdom` and keep tests fast.
-- **Cost Basis:** When testing cost calculations, always verify that the description/formula explicitly states the cost basis (pre-tax vs total) per the project mandate.
+- **ALWAYS** write unit tests (Vitest/RTL) for every new feature or bug fix.
+- **ALWAYS** write E2E tests (Playwright) for features that involve UI flows.
+- Use `data-testid` attributes for test selectors — never text content (e.g. `data-testid="stat-value-total-bookings"`).
+- Extract business logic into pure functions for unit testing without Prisma mocks (see `promotion-matching.ts`).
+- Mock large/browser-only deps in unit tests (e.g. `recharts`).
+- When testing cost calculations, verify the description/formula explicitly states cost basis (pre-tax vs total).
 
-### E2E Test Design
+### E2E Design
 
-**Isolation strategy:** Each test that needs data creates it via direct API calls and deletes it afterward. Tests MUST NOT create data through the UI — UI form navigation is slow and timing-sensitive (especially the date picker).
+- Create test data via direct API calls; **never through the UI** (slow, timing-sensitive, especially the date picker).
+- Import `test` and `expect` from `./fixtures` (not `@playwright/test`) so fixtures are available.
+- `testBooking` and `apartmentBooking` fixtures in `e2e/fixtures.ts` — create via `POST /api/bookings`, auto-delete after test.
+- Reference data (hotel chains, cards, portals) is seeded once in `e2e/global-setup.ts`; treat as read-only.
+- `e2e/**` has `react-hooks/rules-of-hooks` disabled in `eslint.config.mjs` (Playwright `use` callback false positive) — no per-line disables needed.
 
-**Fixtures:** `e2e/fixtures.ts` exports a custom `test` object (extended from Playwright base) with reusable fixtures:
+### Unit Test Design
 
-- `testBooking` — creates a booking via `POST /api/bookings` with a UUID-unique property name, yields it to the test, then deletes it via `DELETE /api/bookings/:id` after the test completes.
+- Don't use manual `act()` — `render()` and `userEvent` v14+ handle it internally.
+- Prefer `userEvent` over `fireEvent`.
+- Common mocks (next/link, next/navigation, FocusScope) centralized in `vitest-setup.ts`.
+- Keep `testTimeout` at 30s in `vitest.config.ts`.
 
-Always import `test` and `expect` from `./fixtures` (not from `@playwright/test`) in spec files so fixtures are available.
+## GitHub CLI
 
-### Unit Test Design (Vitest / RTL)
-
-- **Avoid Manual `act()`:** Use `render()` and `userEvent` (v14+) directly; they wrap operations in `act()` internally.
-- **Prefer `userEvent` over `fireEvent`:** Simulate full browser event lifecycles.
-- **Centralize Common Mocks:** Move common mocks (e.g., `next/link`, `next/navigation`) to `vitest-setup.ts`.
-- **Prefer Targeted Component Mocking:** Mock the problematic component (e.g., `@radix-ui/react-focus-scope`) over globally mocking browser APIs.
-- **Radix UI Stability:** `vitest-setup.ts` contains global mocks for `FocusScope` and sets `userEvent.setup({ delay: null })`.
-- **Timeouts:** Keep `testTimeout` at 30s in `vitest.config.ts`.
-
-**Reference data** (hotel chains, credit cards, portals) is seeded once in `e2e/global-setup.ts` and treated as read-only by all tests.
-
-**ESLint note:** Playwright fixtures use a `use` callback parameter that triggers a false positive from `react-hooks/rules-of-hooks`. The `eslint.config.mjs` has an `e2e/**` override that disables this rule — do not add per-line `eslint-disable` comments in E2E files.
-
-### GitHub CLI
-
-- **Sub-issue linking:** When creating sub-tasks or sub-issues for a parent GitHub issue, ALWAYS formally link them as children using the 'Sub-issues' feature (via GraphQL `addSubIssue` or equivalent).
-- **Workflow Mandates:**
-  - ALWAYS create a feature branch for code changes.
-  - NOTIFY the user to test changes locally before creating a PR.
-  - ONLY create a PR after user approval.
-  - NEVER merge a PR or delete a branch until explicitly told to do so by the user.
-  - NEVER commit directly to the main branch.
+- **Sub-issue linking:** When creating sub-tasks for a parent issue, always formally link them using the GraphQL `addSubIssue` mutation.
+- **Workflow:** ALWAYS create a feature branch. NEVER commit to `main`. NOTIFY the user to test locally before creating a PR. NEVER merge or delete a branch without explicit instruction.
 - **Do NOT use `gh pr view --comments`** — it queries the deprecated Projects (classic) GraphQL API and returns exit code 1.
-- To read PR review comments use: `gh api repos/{owner}/{repo}/pulls/{pr}/comments`
-- To read general PR/issue comments use: `gh api repos/{owner}/{repo}/issues/{pr}/comments`
-- To read review summaries use: `gh api repos/{owner}/{repo}/pulls/{pr}/reviews`
+  - PR inline comments: `gh api repos/{owner}/{repo}/pulls/{pr}/comments`
+  - General PR/issue comments: `gh api repos/{owner}/{repo}/issues/{pr}/comments`
+  - Review summaries: `gh api repos/{owner}/{repo}/pulls/{pr}/reviews`
