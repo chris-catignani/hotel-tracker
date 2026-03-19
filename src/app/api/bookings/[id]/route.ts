@@ -32,7 +32,9 @@ async function getFullBookingWithUsage(id: string, userId: string) {
         },
       },
       hotelChainSubBrand: true,
-      creditCard: { include: { pointType: true, rewardRules: true } },
+      userCreditCard: {
+        include: { creditCard: { include: { pointType: true, rewardRules: true } } },
+      },
       shoppingPortal: { include: { pointType: true } },
       bookingPromotions: {
         include: {
@@ -166,7 +168,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       pretaxCost,
       taxAmount,
       totalCost,
-      creditCardId,
+      userCreditCardId,
+      bookingDate,
+      paymentTiming,
       shoppingPortalId,
       portalCashbackRate,
       portalCashbackOnTotal,
@@ -212,7 +216,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (pretaxCost !== undefined) data.pretaxCost = Number(pretaxCost);
     if (taxAmount !== undefined) data.taxAmount = Number(taxAmount);
     if (totalCost !== undefined) data.totalCost = Number(totalCost);
-    if (creditCardId !== undefined) data.creditCardId = creditCardId || null;
+    if (userCreditCardId !== undefined) data.userCreditCardId = userCreditCardId || null;
+    if (bookingDate !== undefined) data.bookingDate = bookingDate ? new Date(bookingDate) : null;
+    if (paymentTiming !== undefined) data.paymentTiming = paymentTiming || "postpaid";
     if (shoppingPortalId !== undefined) data.shoppingPortalId = shoppingPortalId || null;
     if (portalCashbackRate !== undefined)
       data.portalCashbackRate = portalCashbackRate ? Number(portalCashbackRate) : null;

@@ -13,7 +13,7 @@ type TestRestrictions = NonNullable<TestPromotion["restrictions"]>;
 
 const mockBooking: MatchingBooking = {
   id: "b1",
-  creditCardId: "card-1",
+  userCreditCard: { creditCardId: "card-1", creditCard: null },
   shoppingPortalId: "portal-2",
   hotelChainId: "chain-3",
   hotelChainSubBrandId: "brand-4",
@@ -29,9 +29,6 @@ const mockBooking: MatchingBooking = {
   hotelChain: {
     basePointRate: 10,
     pointType: { centsPerPoint: 0.015 }, // non-default
-  },
-  creditCard: {
-    pointType: { centsPerPoint: 0.02 }, // distinct non-default
   },
 };
 

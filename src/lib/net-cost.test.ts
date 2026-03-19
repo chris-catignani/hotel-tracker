@@ -22,7 +22,7 @@ describe("net-cost", () => {
     certificates: [],
     otaAgencyId: null,
     bookingSource: null,
-    creditCard: null,
+    userCreditCard: null,
     shoppingPortal: null,
     bookingPromotions: [],
   };
@@ -90,10 +90,12 @@ describe("net-cost", () => {
     it("applies card reward on USD-converted total cost", () => {
       const booking: NetCostBooking = {
         ...eurBooking,
-        creditCard: {
-          name: "Chase Sapphire",
-          rewardRate: 0.01,
-          pointType: { name: "Ultimate Rewards", centsPerPoint: 0.02 },
+        userCreditCard: {
+          creditCard: {
+            name: "Chase Sapphire",
+            rewardRate: 0.01,
+            pointType: { name: "Ultimate Rewards", centsPerPoint: 0.02 },
+          },
         },
       };
       // total USD = 1080; reward = 1080 * 0.01 * 0.02 = 0.216
@@ -413,11 +415,13 @@ describe("net-cost", () => {
   it("should calculate credit card rewards", () => {
     const booking: NetCostBooking = {
       ...mockBaseBooking,
-      creditCard: {
-        name: "Chase Sapphire",
-        rewardRate: 4,
-        pointType: { name: "UR Points", centsPerPoint: 0.015 },
-        rewardRules: [],
+      userCreditCard: {
+        creditCard: {
+          name: "Chase Sapphire",
+          rewardRate: 4,
+          pointType: { name: "UR Points", centsPerPoint: 0.015 },
+          rewardRules: [],
+        },
       },
     };
     const result = getNetCostBreakdown(booking);
@@ -586,18 +590,20 @@ describe("net-cost", () => {
         ...mockBaseBooking.hotelChain,
         id: "hyatt-id",
       } as HotelChain,
-      creditCard: {
-        name: "Chase Hyatt",
-        rewardRate: 1,
-        pointType: { name: "Hyatt Pts", centsPerPoint: 0.015 },
-        rewardRules: [
-          {
-            rewardType: "multiplier",
-            rewardValue: 4,
-            hotelChainId: "hyatt-id",
-            otaAgencyId: null,
-          },
-        ],
+      userCreditCard: {
+        creditCard: {
+          name: "Chase Hyatt",
+          rewardRate: 1,
+          pointType: { name: "Hyatt Pts", centsPerPoint: 0.015 },
+          rewardRules: [
+            {
+              rewardType: "multiplier",
+              rewardValue: 4,
+              hotelChainId: "hyatt-id",
+              otaAgencyId: null,
+            },
+          ],
+        },
       },
     };
     const result = getNetCostBreakdown(booking);
@@ -620,18 +626,20 @@ describe("net-cost", () => {
     const booking: NetCostBooking = {
       ...mockBaseBooking,
       otaAgencyId: "chase-ota-id",
-      creditCard: {
-        name: "Chase Sapphire Reserve",
-        rewardRate: 4,
-        pointType: { name: "UR Pts", centsPerPoint: 0.015 },
-        rewardRules: [
-          {
-            rewardType: "multiplier",
-            rewardValue: 10,
-            hotelChainId: null,
-            otaAgencyId: "chase-ota-id",
-          },
-        ],
+      userCreditCard: {
+        creditCard: {
+          name: "Chase Sapphire Reserve",
+          rewardRate: 4,
+          pointType: { name: "UR Pts", centsPerPoint: 0.015 },
+          rewardRules: [
+            {
+              rewardType: "multiplier",
+              rewardValue: 10,
+              hotelChainId: null,
+              otaAgencyId: "chase-ota-id",
+            },
+          ],
+        },
       },
     };
     const result = getNetCostBreakdown(booking);
@@ -650,18 +658,20 @@ describe("net-cost", () => {
   it("should calculate fixed bonus credit card rewards", () => {
     const booking: NetCostBooking = {
       ...mockBaseBooking,
-      creditCard: {
-        name: "Amex Plat",
-        rewardRate: 2,
-        pointType: { name: "MR Pts", centsPerPoint: 0.007 },
-        rewardRules: [
-          {
-            rewardType: "fixed",
-            rewardValue: 1000,
-            hotelChainId: "h1",
-            otaAgencyId: null,
-          },
-        ],
+      userCreditCard: {
+        creditCard: {
+          name: "Amex Plat",
+          rewardRate: 2,
+          pointType: { name: "MR Pts", centsPerPoint: 0.007 },
+          rewardRules: [
+            {
+              rewardType: "fixed",
+              rewardValue: 1000,
+              hotelChainId: "h1",
+              otaAgencyId: null,
+            },
+          ],
+        },
       },
     };
     const result = getNetCostBreakdown(booking);
@@ -682,24 +692,26 @@ describe("net-cost", () => {
       ...mockBaseBooking,
       hotelChainId: "h1",
       hotelChain: { ...mockBaseBooking.hotelChain, id: "h1" } as HotelChain,
-      creditCard: {
-        name: "Amex Plat",
-        rewardRate: 2,
-        pointType: { name: "MR Pts", centsPerPoint: 0.007 },
-        rewardRules: [
-          {
-            rewardType: "multiplier",
-            rewardValue: 6,
-            hotelChainId: "h1",
-            otaAgencyId: null,
-          },
-          {
-            rewardType: "fixed",
-            rewardValue: 1000,
-            hotelChainId: "h1",
-            otaAgencyId: null,
-          },
-        ],
+      userCreditCard: {
+        creditCard: {
+          name: "Amex Plat",
+          rewardRate: 2,
+          pointType: { name: "MR Pts", centsPerPoint: 0.007 },
+          rewardRules: [
+            {
+              rewardType: "multiplier",
+              rewardValue: 6,
+              hotelChainId: "h1",
+              otaAgencyId: null,
+            },
+            {
+              rewardType: "fixed",
+              rewardValue: 1000,
+              hotelChainId: "h1",
+              otaAgencyId: null,
+            },
+          ],
+        },
       },
     };
     const result = getNetCostBreakdown(booking);
@@ -719,18 +731,20 @@ describe("net-cost", () => {
       otaAgencyId: "expedia",
       hotelChainId: "h1",
       hotelChain: { ...mockBaseBooking.hotelChain, id: "h1" } as HotelChain,
-      creditCard: {
-        name: "Amex Plat",
-        rewardRate: 2,
-        pointType: { name: "MR Pts", centsPerPoint: 0.007 },
-        rewardRules: [
-          {
-            rewardType: "multiplier",
-            rewardValue: 6,
-            hotelChainId: "h1",
-            otaAgencyId: null, // Only for direct bookings
-          },
-        ],
+      userCreditCard: {
+        creditCard: {
+          name: "Amex Plat",
+          rewardRate: 2,
+          pointType: { name: "MR Pts", centsPerPoint: 0.007 },
+          rewardRules: [
+            {
+              rewardType: "multiplier",
+              rewardValue: 6,
+              hotelChainId: "h1",
+              otaAgencyId: null, // Only for direct bookings
+            },
+          ],
+        },
       },
     };
     const result = getNetCostBreakdown(booking);
@@ -889,18 +903,20 @@ describe("net-cost", () => {
         ...mockBaseBooking.hotelChain,
         id: "hyatt-id",
       } as HotelChain,
-      creditCard: {
-        name: "Chase Hyatt",
-        rewardRate: 1,
-        pointType: { name: "Hyatt Pts", centsPerPoint: 0.015 },
-        rewardRules: [
-          {
-            rewardType: "multiplier",
-            rewardValue: 4,
-            hotelChainId: "hyatt-id",
-            otaAgencyId: null,
-          },
-        ],
+      userCreditCard: {
+        creditCard: {
+          name: "Chase Hyatt",
+          rewardRate: 1,
+          pointType: { name: "Hyatt Pts", centsPerPoint: 0.015 },
+          rewardRules: [
+            {
+              rewardType: "multiplier",
+              rewardValue: 4,
+              hotelChainId: "hyatt-id",
+              otaAgencyId: null,
+            },
+          ],
+        },
       },
     };
     const result = getNetCostBreakdown(booking);

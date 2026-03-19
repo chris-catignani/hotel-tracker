@@ -24,12 +24,12 @@ import {
   AccommodationType,
   Booking,
   BookingFormData,
-  CreditCard,
   GeoResult,
   HotelChain,
   OtaAgency,
   PaymentType,
   ShoppingPortal,
+  UserCreditCard,
 } from "@/lib/types";
 import { bookingFormReducer, INITIAL_STATE } from "./booking-form-reducer";
 
@@ -72,7 +72,7 @@ export function BookingForm({
 }: BookingFormProps) {
   // Reference data
   const [hotelChains, setHotelChains] = useState<HotelChain[]>([]);
-  const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
+  const [userCreditCards, setUserCreditCards] = useState<UserCreditCard[]>([]);
   const [portals, setPortals] = useState<ShoppingPortal[]>([]);
   const [otaAgencies, setOtaAgencies] = useState<OtaAgency[]>([]);
 
@@ -105,7 +105,9 @@ export function BookingForm({
     currency,
     pointsRedeemed,
     certificates,
-    creditCardId,
+    userCreditCardId,
+    bookingDate,
+    paymentTiming,
     shoppingPortalId,
     portalCashbackRate,
     portalCashbackOnTotal,
@@ -195,15 +197,15 @@ export function BookingForm({
 
   // Fetch reference data
   const fetchReferenceData = useCallback(async () => {
-    const [hotelChainsRes, cardsRes, portalsRes, agenciesRes, ratesRes] = await Promise.all([
+    const [hotelChainsRes, userCardsRes, portalsRes, agenciesRes, ratesRes] = await Promise.all([
       fetch("/api/hotel-chains"),
-      fetch("/api/credit-cards"),
+      fetch("/api/user-credit-cards"),
       fetch("/api/portals"),
       fetch("/api/ota-agencies"),
       fetch("/api/exchange-rates"),
     ]);
     if (hotelChainsRes.ok) setHotelChains(await hotelChainsRes.json());
-    if (cardsRes.ok) setCreditCards(await cardsRes.json());
+    if (userCardsRes.ok) setUserCreditCards(await userCardsRes.json());
     if (portalsRes.ok) setPortals(await portalsRes.json());
     if (agenciesRes.ok) setOtaAgencies(await agenciesRes.json());
     if (ratesRes.ok) {
@@ -309,7 +311,9 @@ export function BookingForm({
       currency: hasCash ? currency : "USD",
       pointsRedeemed: hasPoints && pointsRedeemed ? Number(pointsRedeemed) : null,
       certificates: hasCert ? certificates.filter((c) => c.trim()) : [],
-      creditCardId: creditCardId === "none" ? null : creditCardId,
+      userCreditCardId: userCreditCardId === "none" ? null : userCreditCardId,
+      bookingDate: paymentTiming === "prepaid" && bookingDate ? bookingDate : null,
+      paymentTiming,
       shoppingPortalId: shoppingPortalId === "none" ? null : shoppingPortalId,
       portalCashbackRate: (() => {
         if (shoppingPortalId === "none" || !portalCashbackRate) return null;
@@ -642,23 +646,65 @@ export function BookingForm({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="creditCardId">Credit Card</Label>
+              <Label htmlFor="userCreditCardId">Credit Card</Label>
               <AppSelect
-                value={creditCardId}
+                value={userCreditCardId}
                 onValueChange={(val) =>
-                  dispatch({ type: "SET_FIELD", field: "creditCardId", value: val })
+                  dispatch({ type: "SET_FIELD", field: "userCreditCardId", value: val })
                 }
                 options={[
                   { label: "None", value: "none" },
-                  ...creditCards.map((card) => ({
-                    label: card.name,
-                    value: card.id,
+                  ...userCreditCards.map((uc) => ({
+                    label: uc.nickname
+                      ? `${uc.creditCard.name} (${uc.nickname})`
+                      : uc.creditCard.name,
+                    value: uc.id,
                   })),
                 ]}
                 placeholder="Select credit card..."
                 data-testid="credit-card-select"
               />
             </div>
+          </div>
+
+          {/* Payment Timing */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="paymentTiming">Payment Timing</Label>
+              <AppSelect
+                value={paymentTiming}
+                onValueChange={(val) =>
+                  dispatch({
+                    type: "SET_FIELD",
+                    field: "paymentTiming",
+                    value: val as "prepaid" | "postpaid",
+                  })
+                }
+                options={[
+                  { label: "Postpaid (charged at check-in)", value: "postpaid" },
+                  { label: "Prepaid (charged at booking)", value: "prepaid" },
+                ]}
+                data-testid="payment-timing-select"
+              />
+            </div>
+            {paymentTiming === "prepaid" && (
+              <div className="space-y-2">
+                <Label htmlFor="bookingDate">Booking Date</Label>
+                <DatePicker
+                  id="bookingDate"
+                  date={bookingDate ? parseISO(bookingDate) : undefined}
+                  setDate={(date) =>
+                    dispatch({
+                      type: "SET_FIELD",
+                      field: "bookingDate",
+                      value: date ? format(date, "yyyy-MM-dd") : "",
+                    })
+                  }
+                  placeholder="Select booking date"
+                  data-testid="booking-date-picker"
+                />
+              </div>
+            )}
           </div>
 
           {bookingSource === "ota" && (

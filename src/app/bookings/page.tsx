@@ -56,7 +56,7 @@ interface Booking {
   pretaxCost: string | number;
   taxAmount: string | number;
   totalCost: string | number;
-  creditCardId: string | null;
+  userCreditCardId: string | null;
   shoppingPortalId: string | null;
   portalCashbackRate: string | number | null;
   portalCashbackOnTotal: boolean;
@@ -85,18 +85,20 @@ interface Booking {
       } | null;
     } | null;
   } | null;
-  creditCard: {
-    id: string;
-    name: string;
-    rewardType: string;
-    rewardRate: string | number;
-    pointType: { name: string; centsPerPoint: string | number } | null;
-    rewardRules?: {
+  userCreditCard: {
+    creditCard: {
+      id: string;
+      name: string;
       rewardType: string;
-      rewardValue: string | number;
-      hotelChainId: string | null;
-      otaAgencyId: string | null;
-    }[];
+      rewardRate: string | number;
+      pointType: { name: string; centsPerPoint: string | number } | null;
+      rewardRules?: {
+        rewardType: string;
+        rewardValue: string | number;
+        hotelChainId: string | null;
+        otaAgencyId: string | null;
+      }[];
+    };
   } | null;
   shoppingPortal: {
     id: string;

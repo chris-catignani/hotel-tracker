@@ -94,16 +94,18 @@ export interface NetCostBooking {
     } | null;
   } | null;
   hotelChainSubBrand?: { basePointRate: string | number | null } | null;
-  creditCard: {
-    name: string;
-    rewardRate: string | number;
-    pointType: { name: string; centsPerPoint: string | number } | null;
-    rewardRules?: {
-      rewardType: string;
-      rewardValue: string | number;
-      hotelChainId: string | null;
-      otaAgencyId: string | null;
-    }[];
+  userCreditCard: {
+    creditCard: {
+      name: string;
+      rewardRate: string | number;
+      pointType: { name: string; centsPerPoint: string | number } | null;
+      rewardRules?: {
+        rewardType: string;
+        rewardValue: string | number;
+        hotelChainId: string | null;
+        otaAgencyId: string | null;
+      }[];
+    };
   } | null;
   shoppingPortal: {
     name: string;
@@ -845,9 +847,9 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
   // 3. Card Reward
   let cardReward = 0;
   let cardRewardCalc: CalculationDetail | undefined;
-  if (booking.creditCard) {
-    const baseRate = Number(booking.creditCard.rewardRate);
-    const rules = booking.creditCard.rewardRules || [];
+  if (booking.userCreditCard?.creditCard) {
+    const baseRate = Number(booking.userCreditCard?.creditCard.rewardRate);
+    const rules = booking.userCreditCard?.creditCard.rewardRules || [];
     const hotelId = booking.hotelChain?.id || booking.hotelChainId;
     const otaId = booking.otaAgencyId;
 
@@ -871,8 +873,8 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
 
     const multiplierToUse = bestMultiplierRule ? Number(bestMultiplierRule.rewardValue) : baseRate;
 
-    const centsPerPoint = booking.creditCard.pointType
-      ? Number(booking.creditCard.pointType.centsPerPoint)
+    const centsPerPoint = booking.userCreditCard?.creditCard.pointType
+      ? Number(booking.userCreditCard?.creditCard.pointType.centsPerPoint)
       : DEFAULT_CENTS_PER_POINT;
     const centsStr = formatCents(centsPerPoint);
 
@@ -887,7 +889,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
         label: "Base Card Earning",
         value: baseValue,
         formula: `${formatCurrency(totalCost)} (total cost) × ${baseRate}x × ${centsStr}¢ = ${formatCurrency(baseValue)}`,
-        description: `Standard earning rate for the ${booking.creditCard.name}.`,
+        description: `Standard earning rate for the ${booking.userCreditCard?.creditCard.name}.`,
       });
 
       cardSegments.push({
@@ -902,7 +904,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
         label: "Base Card Earning",
         value: baseValue,
         formula: `${formatCurrency(totalCost)} (total cost) × ${baseRate}x × ${centsStr}¢ = ${formatCurrency(baseValue)}`,
-        description: `Standard earning rate for the ${booking.creditCard.name}.`,
+        description: `Standard earning rate for the ${booking.userCreditCard?.creditCard.name}.`,
       });
     }
 
@@ -922,10 +924,10 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
     cardRewardCalc = {
       label: "Card Reward",
       appliedValue: cardReward,
-      description: `Total rewards earned using your ${booking.creditCard.name}.`,
+      description: `Total rewards earned using your ${booking.userCreditCard?.creditCard.name}.`,
       groups: [
         {
-          name: booking.creditCard.name,
+          name: booking.userCreditCard?.creditCard.name,
           segments: cardSegments,
         },
       ],

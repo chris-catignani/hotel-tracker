@@ -1,5 +1,12 @@
 import { format, parseISO } from "date-fns";
-import { PaymentType, AccommodationType, Booking, ShoppingPortal, GeoResult } from "@/lib/types";
+import {
+  PaymentTiming,
+  PaymentType,
+  AccommodationType,
+  Booking,
+  ShoppingPortal,
+  GeoResult,
+} from "@/lib/types";
 import { CERT_TYPE_OPTIONS } from "@/lib/cert-types";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -33,7 +40,9 @@ export interface BookingFormState {
   currency: string;
   pointsRedeemed: string;
   certificates: string[];
-  creditCardId: string;
+  userCreditCardId: string;
+  bookingDate: string;
+  paymentTiming: "prepaid" | "postpaid";
   shoppingPortalId: string;
   portalCashbackRate: string;
   portalCashbackOnTotal: boolean;
@@ -99,7 +108,9 @@ export const INITIAL_STATE: BookingFormState = {
   currency: "USD",
   pointsRedeemed: "",
   certificates: [],
-  creditCardId: "none",
+  userCreditCardId: "none",
+  bookingDate: "",
+  paymentTiming: "postpaid",
   shoppingPortalId: "none",
   portalCashbackRate: "",
   portalCashbackOnTotal: false,
@@ -143,7 +154,9 @@ export function buildInitialState(
     currency: initialData.currency || "USD",
     pointsRedeemed: initialData.pointsRedeemed != null ? String(initialData.pointsRedeemed) : "",
     certificates: initialData.certificates.map((c) => c.certType),
-    creditCardId: initialData.creditCardId ?? "none",
+    userCreditCardId: initialData.userCreditCardId ?? "none",
+    bookingDate: initialData.bookingDate ? toDateInputValue(initialData.bookingDate) : "",
+    paymentTiming: initialData.paymentTiming ?? "postpaid",
     shoppingPortalId: initialData.shoppingPortalId ?? "none",
     portalCashbackRate: initialData.portalCashbackRate
       ? portalForBooking?.rewardType === "points"
@@ -175,7 +188,9 @@ type ScalarFields = {
   totalCost: string;
   currency: string;
   pointsRedeemed: string;
-  creditCardId: string;
+  userCreditCardId: string;
+  bookingDate: string;
+  paymentTiming: PaymentTiming;
   shoppingPortalId: string;
   portalCashbackRate: string;
   portalCashbackOnTotal: boolean;

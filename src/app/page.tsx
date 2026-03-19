@@ -67,18 +67,20 @@ interface BookingWithRelations {
     name: string;
     basePointRate: string | number | null;
   } | null;
-  creditCard: {
-    id: string;
-    name: string;
-    rewardType: string;
-    rewardRate: string | number;
-    pointType: { name: string; centsPerPoint: string } | null;
-    rewardRules?: {
+  userCreditCard: {
+    creditCard: {
+      id: string;
+      name: string;
       rewardType: string;
-      rewardValue: string | number;
-      hotelChainId: string | null;
-      otaAgencyId: string | null;
-    }[];
+      rewardRate: string | number;
+      pointType: { name: string; centsPerPoint: string } | null;
+      rewardRules?: {
+        rewardType: string;
+        rewardValue: string | number;
+        hotelChainId: string | null;
+        otaAgencyId: string | null;
+      }[];
+    };
   } | null;
   shoppingPortal: {
     id: string;

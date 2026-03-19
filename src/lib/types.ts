@@ -356,6 +356,20 @@ export interface PriceSnapshot {
 // Booking Related Types
 // ---------------------------------------------------------------------------
 
+export type PaymentTiming = "prepaid" | "postpaid";
+
+export interface UserCreditCard {
+  id: string;
+  userId: string;
+  creditCardId: string;
+  creditCard: CreditCard;
+  nickname: string | null;
+  openedDate: string | null;
+  closedDate: string | null;
+  isActive: boolean;
+  createdAt: string;
+}
+
 export type PaymentType =
   | "cash"
   | "points"
@@ -394,7 +408,10 @@ export interface Booking {
   exchangeRate: string | number | null;
   isFutureEstimate?: boolean;
   loyaltyPointsEstimated?: boolean;
-  creditCardId: string | null;
+  userCreditCardId: string | null;
+  userCreditCard: UserCreditCard | null;
+  bookingDate: string | null;
+  paymentTiming: PaymentTiming;
   shoppingPortalId: string | null;
   portalCashbackRate: string | number | null;
   portalCashbackOnTotal: boolean;
@@ -429,7 +446,9 @@ export interface BookingFormData {
   currency: string;
   pointsRedeemed: number | null;
   certificates: string[];
-  creditCardId: string | null;
+  userCreditCardId: string | null;
+  bookingDate: string | null;
+  paymentTiming: PaymentTiming;
   shoppingPortalId: string | null;
   portalCashbackRate: number | null;
   portalCashbackOnTotal: boolean;

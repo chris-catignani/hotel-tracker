@@ -102,7 +102,7 @@ interface PriceWatchBookingData {
   dateFlexibilityDays: number;
 }
 
-interface Booking extends Omit<NetCostBooking, "bookingPromotions"> {
+interface Booking extends Omit<NetCostBooking, "bookingPromotions" | "userCreditCard"> {
   id: string;
   hotelChainId: string | null;
   accommodationType: string;
@@ -122,7 +122,21 @@ interface Booking extends Omit<NetCostBooking, "bookingPromotions"> {
   exchangeRate: string | number | null;
   isFutureEstimate?: boolean;
   loyaltyPointsEstimated?: boolean;
-  creditCardId: string | null;
+  userCreditCardId: string | null;
+  userCreditCard: {
+    nickname: string | null;
+    creditCard: {
+      name: string;
+      rewardRate: string | number;
+      pointType: { name: string; centsPerPoint: string | number } | null;
+      rewardRules?: {
+        rewardType: string;
+        rewardValue: string | number;
+        hotelChainId: string | null;
+        otaAgencyId: string | null;
+      }[];
+    };
+  } | null;
   shoppingPortalId: string | null;
   notes: string | null;
   createdAt: string;
@@ -381,10 +395,14 @@ export default function BookingDetailPage() {
                 )}
               </div>
             )}
-            {booking.creditCard && (
+            {booking.userCreditCard && (
               <div>
                 <p className="text-sm text-muted-foreground">Credit Card</p>
-                <p className="font-medium">{booking.creditCard.name}</p>
+                <p className="font-medium">
+                  {booking.userCreditCard.nickname
+                    ? `${booking.userCreditCard.creditCard.name} (${booking.userCreditCard.nickname})`
+                    : booking.userCreditCard.creditCard.name}
+                </p>
               </div>
             )}
             {booking.shoppingPortal && (
