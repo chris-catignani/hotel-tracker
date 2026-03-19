@@ -17,6 +17,7 @@ export default function EditBookingPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [formAccommodationType, setFormAccommodationType] = useState("hotel");
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -74,23 +75,26 @@ export default function EditBookingPage() {
             initialData={booking}
             onSubmit={handleSubmit}
             onCancel={() => router.push(`/bookings/${id}`)}
+            onAccommodationTypeChange={setFormAccommodationType}
             submitting={submitting}
             submitLabel="Save Changes"
             title="Booking Details"
           />
-          <BookingPriceWatch
-            bookingId={booking.id}
-            propertyId={booking.propertyId}
-            propertyName={booking.property.name}
-            hotelChainId={booking.hotelChainId ?? undefined}
-            checkIn={booking.checkIn}
-            checkOut={booking.checkOut}
-            numNights={booking.numNights}
-            totalCost={booking.totalCost}
-            currency={booking.currency}
-            pointsRedeemed={booking.pointsRedeemed}
-            initialWatchBooking={booking.priceWatchBooking ?? null}
-          />
+          {formAccommodationType === "hotel" && (
+            <BookingPriceWatch
+              bookingId={booking.id}
+              propertyId={booking.propertyId}
+              propertyName={booking.property.name}
+              hotelChainId={booking.hotelChainId ?? undefined}
+              checkIn={booking.checkIn}
+              checkOut={booking.checkOut}
+              numNights={booking.numNights}
+              totalCost={booking.totalCost}
+              currency={booking.currency}
+              pointsRedeemed={booking.pointsRedeemed}
+              initialWatchBooking={booking.priceWatchBooking ?? null}
+            />
+          )}
         </>
       ) : (
         <p className="text-muted-foreground">Booking not found.</p>

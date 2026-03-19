@@ -10,6 +10,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 interface Booking {
   id: string;
   numNights: number;
+  accommodationType?: string;
   hotelChainSubBrand?: {
     id: string;
     name: string;
@@ -42,6 +43,7 @@ export function SubBrandBreakdown({ bookings }: SubBrandBreakdownProps) {
     const counts: Record<string, number> = {};
 
     bookings.forEach((booking) => {
+      if (booking.accommodationType === "apartment") return;
       const subBrandName = booking.hotelChainSubBrand?.name || "Other";
       const value = mode === "stays" ? 1 : booking.numNights;
       counts[subBrandName] = (counts[subBrandName] || 0) + value;

@@ -13,6 +13,8 @@ interface DashboardStatsProps {
   avgNightSkippedCount: number;
   totalPointsRedeemed: number;
   totalCertificates: number;
+  bookingBreakdown?: { hotels: number; apartments: number };
+  nightsBreakdown?: { hotels: number; apartments: number };
 }
 
 export function DashboardStats({
@@ -26,12 +28,9 @@ export function DashboardStats({
   avgNightSkippedCount,
   totalPointsRedeemed,
   totalCertificates,
+  bookingBreakdown,
+  nightsBreakdown,
 }: DashboardStatsProps) {
-  const statsBefore = [
-    { label: "Total Bookings", value: totalBookings.toString() },
-    { label: "Total Nights", value: totalNights.toString() },
-  ];
-
   const statsAfter = [
     {
       label: "Total Savings",
@@ -69,23 +68,40 @@ export function DashboardStats({
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6 items-stretch">
-      {statsBefore.map((stat) => (
-        <Card key={stat.label}>
-          <CardHeader className="p-4 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground text-center">
-              {stat.label}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <p
-              className="text-2xl font-bold text-center"
-              data-testid={`stat-value-${stat.label.toLowerCase().replace(/\s+/g, "-")}`}
-            >
-              {stat.value}
+      <Card>
+        <CardHeader className="p-4 pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground text-center">
+            Total Bookings
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 pt-0 text-center">
+          <p className="text-2xl font-bold" data-testid="stat-value-total-bookings">
+            {totalBookings}
+          </p>
+          {bookingBreakdown && (
+            <p className="text-xs text-muted-foreground mt-1">
+              {bookingBreakdown.hotels} hotels · {bookingBreakdown.apartments} apts
             </p>
-          </CardContent>
-        </Card>
-      ))}
+          )}
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="p-4 pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground text-center">
+            Total Nights
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 pt-0 text-center">
+          <p className="text-2xl font-bold" data-testid="stat-value-total-nights">
+            {totalNights}
+          </p>
+          {nightsBreakdown && (
+            <p className="text-xs text-muted-foreground mt-1">
+              {nightsBreakdown.hotels} hotel · {nightsBreakdown.apartments} apt
+            </p>
+          )}
+        </CardContent>
+      </Card>
       <Card className="lg:col-span-2">
         <CardHeader className="p-4 pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground text-center">

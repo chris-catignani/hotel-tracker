@@ -138,8 +138,8 @@ export function buildInitialState(
       initialData.pointsRedeemed,
       initialData.certificates
     ),
-    pretaxCost: String(Number(initialData.pretaxCost)),
-    totalCost: String(Number(initialData.totalCost)),
+    pretaxCost: Number(initialData.pretaxCost).toFixed(2),
+    totalCost: Number(initialData.totalCost).toFixed(2),
     currency: initialData.currency || "USD",
     pointsRedeemed: initialData.pointsRedeemed != null ? String(initialData.pointsRedeemed) : "",
     certificates: initialData.certificates.map((c) => c.certType),

@@ -20,7 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { BookingCard } from "@/components/bookings/booking-card";
-import { formatCurrency as formatDollars, formatDate, formatCerts } from "@/lib/utils";
+import { formatCurrency as formatDollars, formatDate, formatCerts, cn } from "@/lib/utils";
 
 interface BookingCertificate {
   id: string;
@@ -186,9 +186,15 @@ const SortHeader = ({
   </TableHead>
 );
 
+const APARTMENT_LABEL = "Apartments / Short-term Rentals";
+const FILTER_STORAGE_KEY = "dashboard-accommodation-filter";
+
+type AccommodationFilter = "all" | "hotel" | "apartment";
+
 export default function DashboardPage() {
   const [bookings, setBookings] = useState<BookingWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
+  const [accommodationFilter, setAccommodationFilter] = useState<AccommodationFilter>("all");
   const [sortConfig, setSortConfig] = useState<{
     key: keyof HotelChainSummary;
     direction: "asc" | "desc";
@@ -196,6 +202,12 @@ export default function DashboardPage() {
     key: "count",
     direction: "desc",
   });
+
+  useEffect(() => {
+    const saved = localStorage.getItem(FILTER_STORAGE_KEY);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (saved === "hotel" || saved === "apartment") setAccommodationFilter(saved);
+  }, []);
 
   useEffect(() => {
     fetch("/api/bookings")
@@ -207,8 +219,22 @@ export default function DashboardPage() {
       .catch(() => setLoading(false));
   }, []);
 
+  const handleFilterChange = (filter: AccommodationFilter) => {
+    setAccommodationFilter(filter);
+    localStorage.setItem(FILTER_STORAGE_KEY, filter);
+  };
+
+  const hasApartments = bookings.some((b) => b.accommodationType === "apartment");
+  const hasHotels = bookings.some((b) => b.accommodationType === "hotel");
+  const showFilter = hasApartments && hasHotels;
+
+  const filteredBookings = useMemo(() => {
+    if (accommodationFilter === "all") return bookings;
+    return bookings.filter((b) => b.accommodationType === accommodationFilter);
+  }, [bookings, accommodationFilter]);
+
   const hotelChainSummaries = useMemo(() => {
-    const summaries = bookings.reduce(
+    const summaries = filteredBookings.reduce(
       (acc, b) => {
         const chain =
           b.accommodationType === "apartment"
@@ -242,9 +268,7 @@ export default function DashboardPage() {
       {} as Record<string, HotelChainSummary>
     );
     return Object.values(summaries);
-  }, [bookings]);
-
-  const APARTMENT_LABEL = "Apartments / Short-term Rentals";
+  }, [filteredBookings]);
 
   const sortedHotelChainSummaries = useMemo(() => {
     return [...hotelChainSummaries].sort((a, b) => {
@@ -293,38 +317,58 @@ export default function DashboardPage() {
     );
   }
 
-  const totalBookings = bookings.length;
+  // Breakdown counts always use unfiltered bookings (shown in "All" view sub-labels)
+  const bookingBreakdown = showFilter
+    ? {
+        hotels: bookings.filter((b) => b.accommodationType === "hotel").length,
+        apartments: bookings.filter((b) => b.accommodationType === "apartment").length,
+      }
+    : undefined;
+  const nightsBreakdown = showFilter
+    ? {
+        hotels: bookings
+          .filter((b) => b.accommodationType === "hotel")
+          .reduce((s, b) => s + b.numNights, 0),
+        apartments: bookings
+          .filter((b) => b.accommodationType === "apartment")
+          .reduce((s, b) => s + b.numNights, 0),
+      }
+    : undefined;
+
+  const totalBookings = filteredBookings.length;
   // Only cash bookings (totalCost > 0) contribute to total spend
-  const cashBookings = bookings.filter((b) => Number(b.totalCost) > 0);
+  const cashBookings = filteredBookings.filter((b) => Number(b.totalCost) > 0);
   const totalSpend = cashBookings.reduce(
     (sum, b) => sum + Number(b.totalCost) * (Number(b.exchangeRate) || 1),
     0
   );
-  const totalSavings = bookings.reduce((sum, b) => sum + calcTotalSavings(b), 0);
-  const totalNights = bookings.reduce((sum, b) => sum + b.numNights, 0);
+  const totalSavings = filteredBookings.reduce((sum, b) => sum + calcTotalSavings(b), 0);
+  const totalNights = filteredBookings.reduce((sum, b) => sum + b.numNights, 0);
 
   // Exclude mixed-payment bookings from avg/night — each stay must use exactly one payment type
   const isMixedPayment = (b: BookingWithRelations) =>
     [Number(b.totalCost) > 0, (b.pointsRedeemed ?? 0) > 0, b.certificates.length > 0].filter(
       Boolean
     ).length > 1;
-  const avgNightSkippedCount = bookings.filter(isMixedPayment).length;
+  const avgNightSkippedCount = filteredBookings.filter(isMixedPayment).length;
 
-  const cashStays = bookings.filter((b) => Number(b.totalCost) > 0 && !isMixedPayment(b));
+  const cashStays = filteredBookings.filter((b) => Number(b.totalCost) > 0 && !isMixedPayment(b));
   const cashStayNights = cashStays.reduce((sum, b) => sum + b.numNights, 0);
   const avgCashNetCostPerNight =
     cashStayNights > 0
       ? cashStays.reduce((sum, b) => sum + calculateNetCost(b), 0) / cashStayNights
       : null;
 
-  const pointsStays = bookings.filter((b) => (b.pointsRedeemed ?? 0) > 0 && !isMixedPayment(b));
+  const pointsStays = filteredBookings.filter(
+    (b) => (b.pointsRedeemed ?? 0) > 0 && !isMixedPayment(b)
+  );
   const pointsStayNights = pointsStays.reduce((sum, b) => sum + b.numNights, 0);
   const avgPointsPerNight =
     pointsStayNights > 0
       ? pointsStays.reduce((sum, b) => sum + (b.pointsRedeemed ?? 0), 0) / pointsStayNights
       : null;
 
-  const certStays = bookings.filter((b) => b.certificates.length > 0 && !isMixedPayment(b));
+  const certStays = filteredBookings.filter((b) => b.certificates.length > 0 && !isMixedPayment(b));
   const certStayNights = certStays.reduce((sum, b) => sum + b.numNights, 0);
   const avgCertPointsPerNight =
     certStayNights > 0
@@ -334,20 +378,41 @@ export default function DashboardPage() {
         ) / certStayNights
       : null;
 
-  const totalPointsRedeemed = bookings.reduce((sum, b) => sum + (b.pointsRedeemed ?? 0), 0);
-  const totalCertificates = bookings.reduce((sum, b) => sum + b.certificates.length, 0);
-  const totalCombinedSpend = bookings.reduce((sum, b) => {
+  const totalPointsRedeemed = filteredBookings.reduce((sum, b) => sum + (b.pointsRedeemed ?? 0), 0);
+  const totalCertificates = filteredBookings.reduce((sum, b) => sum + b.certificates.length, 0);
+  const totalCombinedSpend = filteredBookings.reduce((sum, b) => {
     const { totalCost: usdTotalCost, pointsRedeemedValue, certsValue } = getNetCostBreakdown(b);
     return sum + usdTotalCost + pointsRedeemedValue + certsValue;
   }, 0);
 
-  const recentBookings = bookings.slice(0, 5);
+  const recentBookings = filteredBookings.slice(0, 5);
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">Overview of your bookings and savings</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <p className="text-muted-foreground">Overview of your bookings and savings</p>
+        </div>
+        {showFilter && (
+          <div className="flex shrink-0 rounded-lg border p-0.5 gap-0.5">
+            {(["all", "hotel", "apartment"] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => handleFilterChange(f)}
+                className={cn(
+                  "px-3 py-1.5 text-sm rounded-md transition-colors",
+                  accommodationFilter === f
+                    ? "bg-background shadow-sm font-medium"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                data-testid={`dashboard-filter-${f}`}
+              >
+                {f === "all" ? "All" : f === "hotel" ? "Hotels" : "Apartments"}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <DashboardStats
@@ -361,6 +426,8 @@ export default function DashboardPage() {
         avgNightSkippedCount={avgNightSkippedCount}
         totalPointsRedeemed={totalPointsRedeemed}
         totalCertificates={totalCertificates}
+        bookingBreakdown={accommodationFilter === "all" ? bookingBreakdown : undefined}
+        nightsBreakdown={accommodationFilter === "all" ? nightsBreakdown : undefined}
       />
 
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
@@ -584,8 +651,8 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <PaymentTypeBreakdown bookings={bookings} />
-        <SubBrandBreakdown bookings={bookings} />
+        <PaymentTypeBreakdown bookings={filteredBookings} />
+        {accommodationFilter !== "apartment" && <SubBrandBreakdown bookings={filteredBookings} />}
       </div>
 
       {bookings.length > 0 && (
