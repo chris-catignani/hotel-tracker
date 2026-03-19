@@ -9,7 +9,8 @@ npm run dev          # Start dev server on localhost:3000
 npm run build        # Production build
 npm run lint         # Run ESLint
 
-npm run db:push      # Push schema changes to DB + clear .next cache (use for schema changes)
+npm run db:migrate   # Create + apply a new migration (dev only) + clear .next cache
+npm run db:deploy    # Apply pending migrations (production / CI)
 npm run db:generate  # Regenerate Prisma client only
 npm run db:seed      # Seed reference data (hotels, cards, portals)
 
@@ -20,6 +21,12 @@ npm run test:e2e     # Run functional E2E tests (Playwright)
 After schema changes: restart the dev server to pick up the new Prisma client.
 
 **Schema change workflow:** When a task requires Prisma schema changes, always show the proposed schema diff to the user for review and approval _before_ implementing the rest of the code (API routes, types, UI, tests). This prevents rework when the design needs adjustment.
+
+**Migration workflow (replaces `db:push`):**
+
+- Dev: `npm run db:migrate` — runs `prisma migrate dev`, which prompts for a migration name, generates a SQL file in `prisma/migrations/`, applies it to the local DB, and clears `.next`.
+- Production / CI: `npm run db:deploy` — runs `prisma migrate deploy`, which applies any pending migrations. Add this to your deploy script to run automatically on every release.
+- Never use `prisma db push` for schema changes — it has no audit trail and no production story.
 
 ## Architecture
 
