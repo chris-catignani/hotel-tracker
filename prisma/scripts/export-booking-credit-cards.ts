@@ -9,26 +9,25 @@
  *     DATABASE_URL_PROD="postgresql://..."
  *
  * Usage:
- *   npx tsx prisma/scripts/export-booking-credit-cards.ts
+ *   npm run db:export-cards
  *
  * Output: prisma/data/booking-card-mapping.json
  */
 
 import "dotenv/config";
+import { PrismaClient } from "@prisma/client";
 import { writeFileSync, mkdirSync } from "fs";
 import path from "path";
 
-// Must override DATABASE_URL before PrismaClient is imported/instantiated.
 const prodUrl = process.env.DATABASE_URL_PROD;
 if (!prodUrl) {
   console.error("✗ DATABASE_URL_PROD is not set.");
   console.error("  Add it to your .env.local and try again.");
   process.exit(1);
 }
-process.env.DATABASE_URL = prodUrl;
 
-// Import after DATABASE_URL is set.
-const { PrismaClient } = await import("@prisma/client");
+// Set before instantiating PrismaClient — it reads DATABASE_URL at construction time.
+process.env.DATABASE_URL = prodUrl;
 const prisma = new PrismaClient();
 
 interface BookingCardRow {
@@ -60,11 +59,7 @@ async function main() {
   for (const row of withCard) {
     const key = `${row.user_id}::${row.credit_card_id}`;
     if (!pairsMap.has(key)) {
-      pairsMap.set(key, {
-        userId: row.user_id,
-        creditCardId: row.credit_card_id!,
-        bookingIds: [],
-      });
+      pairsMap.set(key, { userId: row.user_id, creditCardId: row.credit_card_id!, bookingIds: [] });
     }
     pairsMap.get(key)!.bookingIds.push(row.booking_id);
   }
