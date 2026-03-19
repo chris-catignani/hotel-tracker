@@ -9,6 +9,7 @@ import { CreditCardsTab } from "@/components/settings/credit-cards-tab";
 import { ShoppingPortalsTab } from "@/components/settings/shopping-portals-tab";
 import { OtaAgenciesTab } from "@/components/settings/ota-agencies-tab";
 import { MyCardsTab } from "@/components/settings/my-cards-tab";
+import { CardBenefitsTab } from "@/components/settings/card-benefits-tab";
 import { PropertiesTab } from "@/components/settings/properties-tab";
 
 export default function SettingsPage() {
@@ -23,6 +24,7 @@ export default function SettingsPage() {
           <TabsList className="w-full justify-start md:w-auto md:inline-flex min-w-max">
             <TabsTrigger value="my-status">My Status</TabsTrigger>
             <TabsTrigger value="my-cards">My Cards</TabsTrigger>
+            <TabsTrigger value="card-benefits">Card Benefits</TabsTrigger>
             <TabsTrigger value="point-types">Point Types</TabsTrigger>
             <TabsTrigger value="hotels">Hotel Chains</TabsTrigger>
             <TabsTrigger value="credit-cards">Credit Cards</TabsTrigger>
@@ -40,6 +42,13 @@ export default function SettingsPage() {
         </TabsContent>
         <TabsContent className="min-h-0 flex flex-col" value="my-cards" data-testid="tab-my-cards">
           <MyCardsTab />
+        </TabsContent>
+        <TabsContent
+          className="min-h-0 flex flex-col"
+          value="card-benefits"
+          data-testid="tab-card-benefits"
+        >
+          <CardBenefitsTab />
         </TabsContent>
         <TabsContent
           className="min-h-0 flex flex-col"

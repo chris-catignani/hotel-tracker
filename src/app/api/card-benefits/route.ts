@@ -1,0 +1,47 @@
+import { NextRequest, NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
+import { apiError } from "@/lib/api-error";
+import { requireAdmin } from "@/lib/auth-utils";
+import { BenefitPeriod } from "@prisma/client";
+
+export async function GET() {
+  try {
+    const cardBenefits = await prisma.cardBenefit.findMany({
+      include: { hotelChain: { select: { id: true, name: true } } },
+      orderBy: [{ creditCardId: "asc" }, { createdAt: "asc" }],
+    });
+    return NextResponse.json(cardBenefits);
+  } catch (error) {
+    return apiError("Failed to fetch card benefits", error, 500);
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const adminOrResponse = await requireAdmin();
+    if (adminOrResponse instanceof NextResponse) return adminOrResponse;
+
+    const body = await request.json();
+    const { creditCardId, description, value, period, hotelChainId, isActive } = body;
+
+    if (!creditCardId || !description || value == null || !period) {
+      return apiError("creditCardId, description, value, and period are required", null, 400);
+    }
+
+    const cardBenefit = await prisma.cardBenefit.create({
+      data: {
+        creditCardId,
+        description,
+        value: Number(value),
+        period: period as BenefitPeriod,
+        hotelChainId: hotelChainId || null,
+        isActive: isActive ?? true,
+      },
+      include: { hotelChain: { select: { id: true, name: true } } },
+    });
+
+    return NextResponse.json(cardBenefit, { status: 201 });
+  } catch (error) {
+    return apiError("Failed to create card benefit", error, 500, request);
+  }
+}

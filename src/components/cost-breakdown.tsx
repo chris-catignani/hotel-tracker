@@ -128,6 +128,8 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
     portalCashbackCalc,
     cardReward,
     cardRewardCalc,
+    cardBenefitSavings,
+    cardBenefitCalc,
     loyaltyPointsValue,
     loyaltyPointsCalc,
     netCost,
@@ -184,6 +186,18 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
             </div>
             <span data-testid="breakdown-card-reward" className="text-green-600">
               -{formatCurrency(cardReward)}
+            </span>
+          </div>
+        )}
+
+        {(cardBenefitSavings ?? 0) > 0 && (
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center gap-1.5">
+              <span>Card Benefits</span>
+              <CalculationInfo calc={cardBenefitCalc} />
+            </div>
+            <span data-testid="breakdown-card-benefit-savings" className="text-green-600">
+              -{formatCurrency(cardBenefitSavings ?? 0)}
             </span>
           </div>
         )}

@@ -112,6 +112,10 @@ export interface NetCostBooking {
     rewardType: string;
     pointType: { name: string; centsPerPoint: string | number } | null;
   } | null;
+  bookingCardBenefits?: {
+    appliedValue: string | number;
+    cardBenefit: { description: string };
+  }[];
   bookingPromotions: {
     id?: string;
     bookingId?: string;
@@ -172,6 +176,8 @@ export interface NetCostBreakdown {
   totalCost: number;
   promoSavings: number;
   promotions: PromotionBreakdown[];
+  cardBenefitSavings?: number;
+  cardBenefitCalc?: CalculationDetail;
   portalCashback: number;
   portalCashbackCalc?: CalculationDetail;
   cardReward: number;
@@ -799,6 +805,28 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
   const promoSavings = promotions.reduce((sum, p) => sum + p.appliedValue, 0);
 
   // 2. Portal Cashback
+  // 3a. Card Benefit Savings (recurring credits, e.g. "$50/quarter Hilton credit")
+  let cardBenefitSavings = 0;
+  let cardBenefitCalc: CalculationDetail | undefined;
+  if ((booking.bookingCardBenefits ?? []).length > 0) {
+    const benefitSegments: CalculationSegment[] = (booking.bookingCardBenefits ?? []).map((bcb) => {
+      const val = Number(bcb.appliedValue);
+      return {
+        label: bcb.cardBenefit.description,
+        value: val,
+        formula: formatCurrency(val),
+        description: `Applied from card benefit: ${bcb.cardBenefit.description}. Uses total cost basis.`,
+      };
+    });
+    cardBenefitSavings = benefitSegments.reduce((sum, s) => sum + s.value, 0);
+    cardBenefitCalc = {
+      label: "Card Benefits",
+      appliedValue: cardBenefitSavings,
+      description: "Recurring credits from your credit card applied to this booking.",
+      groups: [{ name: "Card Credits", segments: benefitSegments }],
+    };
+  }
+
   const portalBasis = booking.portalCashbackOnTotal ? totalCost : pretaxCost;
   const portalRate = Number(booking.portalCashbackRate || 0);
   let portalCashback = 0;
@@ -1070,6 +1098,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
   const netCost =
     totalCost -
     promoSavings -
+    cardBenefitSavings -
     portalCashback -
     cardReward -
     loyaltyPointsValue +
@@ -1080,6 +1109,8 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
     totalCost,
     promoSavings,
     promotions,
+    cardBenefitSavings,
+    cardBenefitCalc,
     portalCashback,
     portalCashbackCalc,
     cardReward,

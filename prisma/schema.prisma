@@ -24,6 +24,13 @@ enum UserRole {
   ADMIN
 }
 
+enum BenefitPeriod {
+  monthly
+  quarterly
+  semi_annual
+  annual
+}
+
 enum BookingSourceType {
   direct_web
   direct_app
@@ -156,6 +163,7 @@ model HotelChain {
   eliteStatuses         HotelChainEliteStatus[]
   userStatuses          UserStatus[]
   creditCardRewardRules CreditCardRewardRule[]
+  cardBenefits          CardBenefit[]
   promotionRestrictions PromotionRestrictions[]
   properties            Property[]
 
@@ -229,6 +237,7 @@ model CreditCard {
   pointType             PointType?                    @relation(fields: [pointTypeId], references: [id])
   isDeleted             Boolean                       @default(false) @map("is_deleted")
   rewardRules           CreditCardRewardRule[]
+  cardBenefits          CardBenefit[]
   userCreditCards       UserCreditCard[]
   promotions            Promotion[]                   @relation("PromotionCreditCard")
   restrictionTieInCards PromotionRestrictionTieInCard[]
@@ -292,6 +301,7 @@ model Booking {
   notes                 String?
   createdAt             DateTime             @default(now()) @map("created_at")
   bookingPromotions     BookingPromotion[]
+  bookingCardBenefits   BookingCardBenefit[]
   certificates          BookingCertificate[]
   benefits              BookingBenefit[]
   priceWatchBooking     PriceWatchBooking?
@@ -535,6 +545,36 @@ model CreditCardRewardRule {
   createdAt    DateTime                 @default(now()) @map("created_at")
 
   @@map("credit_card_reward_rules")
+}
+
+model CardBenefit {
+  id           String      @id @default(cuid())
+  creditCardId String      @map("credit_card_id")
+  creditCard   CreditCard  @relation(fields: [creditCardId], references: [id], onDelete: Cascade)
+  description  String
+  value        Decimal     @db.Decimal(10, 2)
+  period       BenefitPeriod
+  hotelChainId String?     @map("hotel_chain_id")
+  hotelChain   HotelChain? @relation(fields: [hotelChainId], references: [id], onDelete: SetNull)
+  isActive     Boolean     @default(true) @map("is_active")
+  createdAt    DateTime    @default(now()) @map("created_at")
+
+  bookingCardBenefits BookingCardBenefit[]
+
+  @@map("card_benefits")
+}
+
+model BookingCardBenefit {
+  id            String      @id @default(cuid())
+  bookingId     String      @map("booking_id")
+  booking       Booking     @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  cardBenefitId String      @map("card_benefit_id")
+  cardBenefit   CardBenefit @relation(fields: [cardBenefitId], references: [id], onDelete: Cascade)
+  appliedValue  Decimal     @map("applied_value") @db.Decimal(10, 2)
+  periodKey     String      @map("period_key")
+
+  @@unique([bookingId, cardBenefitId])
+  @@map("booking_card_benefits")
 }
 
 model Property {
