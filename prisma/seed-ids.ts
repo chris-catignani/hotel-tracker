@@ -1,6 +1,13 @@
 // Stable IDs shared across multiple seed files.
 // Define IDs here when they are referenced in more than one seed file.
 
+// One UserCreditCard instance per card product used in seed bookings.
+// These are stable so seed-bookings.ts can reference them by ID.
+export const USER_CREDIT_CARD_ID = {
+  CHASE_SAPPHIRE_RESERVE: "cucccsrcard00000000000001",
+  WELLS_FARGO_AUTOGRAPH: "cuccwfacard00000000000001",
+} as const;
+
 export const CREDIT_CARD_ID = {
   AMEX_PLATINUM: "cme8yfwy2hfqahb6ync8czd24",
   CHASE_SAPPHIRE_RESERVE: "cw4yg6ftdskwq651p3p8nrvnr",

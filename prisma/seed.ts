@@ -1,7 +1,7 @@
 import { PrismaClient, PointCategory } from "@prisma/client";
 import { hash } from "bcryptjs";
 import { HOTEL_ID, SUB_BRAND_ID } from "../src/lib/constants";
-import { CREDIT_CARD_ID, SHOPPING_PORTAL_ID, OTA_AGENCY_ID } from "./seed-ids";
+import { CREDIT_CARD_ID, USER_CREDIT_CARD_ID, SHOPPING_PORTAL_ID, OTA_AGENCY_ID } from "./seed-ids";
 import { seedBookings } from "./seed-bookings";
 import { seedPromotions } from "./seed-promotions";
 import { recalculateLoyaltyForHotelChain } from "../src/lib/loyalty-recalculation";
@@ -758,6 +758,29 @@ async function main() {
       name: "British Airways",
       rewardType: "points",
       pointTypeId: POINT_TYPE_ID.AVIOS,
+    },
+  });
+
+  // UserCreditCard instances — one per card product used in bookings.
+  // Seeded with stable IDs so seed-bookings.ts can reference them directly.
+  await prisma.userCreditCard.upsert({
+    where: { id: USER_CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE },
+    update: { creditCardId: CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE, isActive: true },
+    create: {
+      id: USER_CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE,
+      userId: ADMIN_USER_ID,
+      creditCardId: CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE,
+      isActive: true,
+    },
+  });
+  await prisma.userCreditCard.upsert({
+    where: { id: USER_CREDIT_CARD_ID.WELLS_FARGO_AUTOGRAPH },
+    update: { creditCardId: CREDIT_CARD_ID.WELLS_FARGO_AUTOGRAPH, isActive: true },
+    create: {
+      id: USER_CREDIT_CARD_ID.WELLS_FARGO_AUTOGRAPH,
+      userId: ADMIN_USER_ID,
+      creditCardId: CREDIT_CARD_ID.WELLS_FARGO_AUTOGRAPH,
+      isActive: true,
     },
   });
 

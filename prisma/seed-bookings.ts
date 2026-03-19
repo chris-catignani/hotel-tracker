@@ -1,6 +1,6 @@
 import { PrismaClient, BookingSourceType, CertType, BenefitType } from "@prisma/client";
 import { HOTEL_ID, SUB_BRAND_ID } from "../src/lib/constants";
-import { CREDIT_CARD_ID, SHOPPING_PORTAL_ID } from "./seed-ids";
+import { USER_CREDIT_CARD_ID, SHOPPING_PORTAL_ID } from "./seed-ids";
 
 const prisma = new PrismaClient();
 
@@ -17,7 +17,7 @@ interface BookingSeedData {
   pretaxCost: string;
   taxAmount: string;
   totalCost: string;
-  creditCardId: string | null;
+  userCreditCardId: string | null;
   shoppingPortalId: string | null;
   portalCashbackRate: string | null;
   portalCashbackOnTotal: boolean;
@@ -47,7 +47,7 @@ export async function seedBookings(userId: string) {
       pretaxCost: "0",
       taxAmount: "0",
       totalCost: "0",
-      creditCardId: null,
+      userCreditCardId: null,
       shoppingPortalId: null,
       portalCashbackRate: null,
       portalCashbackOnTotal: false,
@@ -78,7 +78,7 @@ export async function seedBookings(userId: string) {
       pretaxCost: "0",
       taxAmount: "0",
       totalCost: "0",
-      creditCardId: null,
+      userCreditCardId: null,
       shoppingPortalId: null,
       portalCashbackRate: null,
       portalCashbackOnTotal: false,
@@ -105,7 +105,7 @@ export async function seedBookings(userId: string) {
       pretaxCost: "221.45",
       taxAmount: "41.63",
       totalCost: "263.08",
-      creditCardId: CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE,
+      userCreditCardId: USER_CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE,
       shoppingPortalId: SHOPPING_PORTAL_ID.TOPCASHBACK,
       portalCashbackRate: "0.24",
       portalCashbackOnTotal: false,
@@ -132,7 +132,7 @@ export async function seedBookings(userId: string) {
       pretaxCost: "2080.50",
       taxAmount: "166.42",
       totalCost: "2246.92",
-      creditCardId: CREDIT_CARD_ID.WELLS_FARGO_AUTOGRAPH,
+      userCreditCardId: USER_CREDIT_CARD_ID.WELLS_FARGO_AUTOGRAPH,
       shoppingPortalId: SHOPPING_PORTAL_ID.TOPCASHBACK,
       portalCashbackRate: "0.12",
       portalCashbackOnTotal: false,
@@ -159,7 +159,7 @@ export async function seedBookings(userId: string) {
       pretaxCost: "0",
       taxAmount: "0",
       totalCost: "0",
-      creditCardId: null,
+      userCreditCardId: null,
       shoppingPortalId: null,
       portalCashbackRate: null,
       portalCashbackOnTotal: false,
@@ -186,7 +186,7 @@ export async function seedBookings(userId: string) {
       pretaxCost: "588.00",
       taxAmount: "47.04",
       totalCost: "635.04",
-      creditCardId: CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE,
+      userCreditCardId: USER_CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE,
       shoppingPortalId: null,
       portalCashbackRate: null,
       portalCashbackOnTotal: false,
@@ -213,7 +213,7 @@ export async function seedBookings(userId: string) {
       pretaxCost: "650.00",
       taxAmount: "52.00",
       totalCost: "702.00",
-      creditCardId: CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE,
+      userCreditCardId: USER_CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE,
       shoppingPortalId: null,
       portalCashbackRate: null,
       portalCashbackOnTotal: false,
@@ -240,7 +240,7 @@ export async function seedBookings(userId: string) {
       pretaxCost: "1170.00",
       taxAmount: "93.60",
       totalCost: "1263.60",
-      creditCardId: CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE,
+      userCreditCardId: USER_CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE,
       shoppingPortalId: null,
       portalCashbackRate: null,
       portalCashbackOnTotal: false,
@@ -267,7 +267,7 @@ export async function seedBookings(userId: string) {
       pretaxCost: "233.00",
       taxAmount: "18.64",
       totalCost: "251.64",
-      creditCardId: CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE,
+      userCreditCardId: USER_CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE,
       shoppingPortalId: SHOPPING_PORTAL_ID.BRITISH_AIRWAYS,
       portalCashbackRate: "6",
       portalCashbackOnTotal: false,
@@ -294,7 +294,7 @@ export async function seedBookings(userId: string) {
       pretaxCost: "0",
       taxAmount: "0",
       totalCost: "0",
-      creditCardId: null,
+      userCreditCardId: null,
       shoppingPortalId: null,
       portalCashbackRate: null,
       portalCashbackOnTotal: false,
@@ -321,7 +321,7 @@ export async function seedBookings(userId: string) {
       pretaxCost: "0",
       taxAmount: "0",
       totalCost: "0",
-      creditCardId: null,
+      userCreditCardId: null,
       shoppingPortalId: null,
       portalCashbackRate: null,
       portalCashbackOnTotal: false,
@@ -348,7 +348,7 @@ export async function seedBookings(userId: string) {
       pretaxCost: "1008.61",
       taxAmount: "181.55",
       totalCost: "1190.16",
-      creditCardId: CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE,
+      userCreditCardId: USER_CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE,
       shoppingPortalId: SHOPPING_PORTAL_ID.BRITISH_AIRWAYS,
       portalCashbackRate: "6",
       portalCashbackOnTotal: false,
@@ -375,7 +375,7 @@ export async function seedBookings(userId: string) {
       pretaxCost: "235.00",
       taxAmount: "46.75",
       totalCost: "281.75",
-      creditCardId: CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE,
+      userCreditCardId: USER_CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE,
       shoppingPortalId: SHOPPING_PORTAL_ID.BRITISH_AIRWAYS,
       portalCashbackRate: "6",
       portalCashbackOnTotal: false,
@@ -405,7 +405,7 @@ export async function seedBookings(userId: string) {
       pretaxCost: "119000.00",
       taxAmount: "11900.00",
       totalCost: "130900.00",
-      creditCardId: CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE,
+      userCreditCardId: USER_CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE,
       shoppingPortalId: SHOPPING_PORTAL_ID.RAKUTEN,
       portalCashbackRate: "2",
       portalCashbackOnTotal: false,
