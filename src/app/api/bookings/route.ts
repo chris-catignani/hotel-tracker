@@ -4,7 +4,7 @@ import { matchPromotionsForBooking } from "@/lib/promotion-matching";
 import { reevaluateSubsequentBookings } from "@/lib/promotion-matching-helpers";
 import { apiError } from "@/lib/api-error";
 import { calculatePoints, resolveBasePointRate } from "@/lib/loyalty-utils";
-import { CertType, BenefitType } from "@prisma/client";
+import { CertType, BenefitType, AccommodationType } from "@prisma/client";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
 import { fetchExchangeRate, getCurrentRate, resolveCalcCurrencyRate } from "@/lib/exchange-rate";
@@ -88,6 +88,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const {
+      accommodationType,
       hotelChainId,
       propertyId: bodyPropertyId,
       propertyName,
@@ -196,7 +197,8 @@ export async function POST(request: NextRequest) {
     const booking = await prisma.booking.create({
       data: {
         userId,
-        hotelChainId: hotelChainId,
+        accommodationType: (accommodationType ?? "hotel") as AccommodationType,
+        hotelChainId: hotelChainId || null,
         hotelChainSubBrandId: hotelChainSubBrandId || null,
         propertyId,
         checkIn: checkInDate,

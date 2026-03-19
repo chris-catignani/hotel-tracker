@@ -18,6 +18,7 @@ interface PropertyNameComboboxProps {
   onManualEdit: () => void;
   onReset: () => void;
   onCantFind: () => void;
+  accommodationType?: string;
   placeholder?: string;
   error?: string;
   "data-testid"?: string;
@@ -34,6 +35,7 @@ export function PropertyNameCombobox({
   onManualEdit,
   onReset,
   onCantFind,
+  accommodationType,
   placeholder = "Search for your property...",
   error,
   "data-testid": testId,
@@ -45,7 +47,7 @@ export function PropertyNameCombobox({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const fetchSuggestions = useCallback(async (query: string) => {
+  const fetchSuggestions = useCallback(async (query: string, type?: string) => {
     if (query.trim().length < 3) {
       setSuggestions([]);
       setOpen(false);
@@ -55,7 +57,10 @@ export function PropertyNameCombobox({
     setLoading(true);
     setSearchError(false);
     try {
-      const res = await fetch(`/api/geo/search?q=${encodeURIComponent(query)}`);
+      const url = new URL("/api/geo/search", window.location.origin);
+      url.searchParams.set("q", query);
+      if (type) url.searchParams.set("accommodationType", type);
+      const res = await fetch(url.toString());
       if (res.ok) {
         const data: GeoResult[] = await res.json();
         setSuggestions(data);
@@ -81,7 +86,7 @@ export function PropertyNameCombobox({
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      fetchSuggestions(newValue);
+      fetchSuggestions(newValue, accommodationType);
     }, 300);
   };
 
@@ -168,8 +173,11 @@ export function PropertyNameCombobox({
       )}
       {searchError && (
         <p className="mt-1 text-sm text-destructive">
-          Property search unavailable — use &ldquo;Can&apos;t find your hotel?&rdquo; to enter
-          details manually.
+          Property search unavailable — use &ldquo;
+          {accommodationType === "apartment"
+            ? "Can\u2019t find your rental?"
+            : "Can\u2019t find your hotel?"}
+          &rdquo; to enter details manually.
         </p>
       )}
       {showDropdown && (
@@ -206,7 +214,9 @@ export function PropertyNameCombobox({
             data-testid="geo-cant-find"
           >
             <HelpCircle className="h-4 w-4 shrink-0" />
-            Can&apos;t find your hotel?
+            {accommodationType === "apartment"
+              ? "Can\u2019t find your rental?"
+              : "Can\u2019t find your hotel?"}
           </button>
         </div>
       )}

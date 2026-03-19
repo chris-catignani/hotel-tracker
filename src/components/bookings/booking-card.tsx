@@ -20,6 +20,7 @@ interface BookingCardProps {
     isFutureEstimate?: boolean;
     hotelChainSubBrand?: { name: string } | null;
     priceWatchBooking?: { priceWatch: { isEnabled: boolean } } | null;
+    accommodationType?: string;
   };
   onDelete?: (id: string) => void;
   showActions?: boolean;
@@ -45,26 +46,36 @@ export function BookingCard({ booking, onDelete, showActions = false }: BookingC
                 {booking.property.name}
               </Link>
               <div className="flex flex-wrap gap-1 items-center text-xs text-muted-foreground">
-                <Badge variant="outline" className="font-normal px-1.5 py-0">
-                  {booking.hotelChain.name}
-                </Badge>
-                {booking.hotelChainSubBrand && (
-                  <span className="before:content-['·'] before:mr-1">
-                    {booking.hotelChainSubBrand.name}
-                  </span>
-                )}
-                {booking.priceWatchBooking?.priceWatch.isEnabled ? (
-                  <Badge className="font-normal px-1.5 py-0 bg-green-100 text-green-700 border-green-200 hover:bg-green-100">
-                    Watching Price
+                {booking.hotelChain ? (
+                  <Badge variant="outline" className="font-normal px-1.5 py-0">
+                    {booking.hotelChain.name}
                   </Badge>
                 ) : (
                   <Badge
                     variant="outline"
                     className="font-normal px-1.5 py-0 text-muted-foreground"
                   >
-                    {booking.priceWatchBooking ? "Price Watch Off" : "No Price Watch"}
+                    Apartment / Rental
                   </Badge>
                 )}
+                {booking.hotelChainSubBrand && (
+                  <span className="before:content-['·'] before:mr-1">
+                    {booking.hotelChainSubBrand.name}
+                  </span>
+                )}
+                {booking.accommodationType !== "apartment" &&
+                  (booking.priceWatchBooking?.priceWatch.isEnabled ? (
+                    <Badge className="font-normal px-1.5 py-0 bg-green-100 text-green-700 border-green-200 hover:bg-green-100">
+                      Watching Price
+                    </Badge>
+                  ) : (
+                    <Badge
+                      variant="outline"
+                      className="font-normal px-1.5 py-0 text-muted-foreground"
+                    >
+                      {booking.priceWatchBooking ? "Price Watch Off" : "No Price Watch"}
+                    </Badge>
+                  ))}
               </div>
             </div>
             <div className="text-right shrink-0">

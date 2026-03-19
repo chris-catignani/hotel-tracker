@@ -540,4 +540,50 @@ describe("bookingFormReducer", () => {
       expect(state.countryCode).toBeNull();
     });
   });
+
+  describe("SET_ACCOMMODATION_TYPE", () => {
+    it("sets accommodationType to apartment and clears hotel-specific fields", () => {
+      const state: BookingFormState = {
+        ...INITIAL_STATE,
+        hotelChainId: "chain-1",
+        hotelChainSubBrandId: "brand-1",
+        certificates: ["marriott_35k"],
+      };
+      const result = bookingFormReducer(state, {
+        type: "SET_ACCOMMODATION_TYPE",
+        accommodationType: "apartment",
+      });
+      expect(result.accommodationType).toBe("apartment");
+      expect(result.hotelChainId).toBe("");
+      expect(result.hotelChainSubBrandId).toBe("none");
+      expect(result.certificates).toHaveLength(0);
+    });
+
+    it("sets accommodationType to hotel without clearing any fields", () => {
+      const state: BookingFormState = {
+        ...INITIAL_STATE,
+        accommodationType: "apartment",
+        hotelChainId: "",
+      };
+      const result = bookingFormReducer(state, {
+        type: "SET_ACCOMMODATION_TYPE",
+        accommodationType: "hotel",
+      });
+      expect(result.accommodationType).toBe("hotel");
+      // hotel-chain fields are NOT cleared when switching back to hotel
+      expect(result.hotelChainId).toBe("");
+    });
+
+    it("buildInitialState reads accommodationType from booking data", () => {
+      const booking = makeBooking({ accommodationType: "apartment" } as Partial<Booking>);
+      const state = buildInitialState(booking, []);
+      expect(state.accommodationType).toBe("apartment");
+    });
+
+    it("buildInitialState defaults to hotel when accommodationType is missing", () => {
+      const booking = makeBooking();
+      const state = buildInitialState(booking, []);
+      expect(state.accommodationType).toBe("hotel");
+    });
+  });
 });

@@ -3,6 +3,7 @@ import crypto from "crypto";
 
 type TestFixtures = {
   testBooking: { id: string; propertyName: string; hotelChainName: string };
+  apartmentBooking: { id: string; propertyName: string };
   testPromotion: { id: string; name: string };
   testHotelChain: { id: string; name: string };
   testSubBrand: (name?: string) => Promise<{ id: string; name: string; hotelChainId: string }>;
@@ -64,6 +65,30 @@ export const test = base.extend<TestFixtures>({
     });
     const booking = await res.json();
     await use({ id: booking.id, propertyName: uniqueName, hotelChainName: chain.name });
+    await request.delete(`/api/bookings/${booking.id}`);
+  },
+
+  apartmentBooking: async ({ request }, use) => {
+    const uniqueName = `Test Apartment ${crypto.randomUUID()}`;
+    const res = await request.post("/api/bookings", {
+      data: {
+        accommodationType: "apartment",
+        hotelChainId: null,
+        propertyName: uniqueName,
+        checkIn: "2025-02-01",
+        checkOut: "2025-02-08",
+        numNights: 7,
+        pretaxCost: 600,
+        taxAmount: 60,
+        totalCost: 660,
+        currency: "USD",
+        bookingSource: "direct_web",
+        countryCode: "FR",
+        city: "Paris",
+      },
+    });
+    const booking = await res.json();
+    await use({ id: booking.id, propertyName: uniqueName });
     await request.delete(`/api/bookings/${booking.id}`);
   },
 

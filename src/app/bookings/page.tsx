@@ -84,7 +84,7 @@ interface Booking {
         isFixed: boolean;
       } | null;
     } | null;
-  };
+  } | null;
   creditCard: {
     id: string;
     name: string;
@@ -107,6 +107,7 @@ interface Booking {
   bookingPromotions: BookingPromotion[];
   certificates: BookingCertificate[];
   priceWatchBooking: { priceWatch: { isEnabled: boolean } } | null;
+  accommodationType: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -244,28 +245,30 @@ export default function BookingsPage() {
                                 </div>
                               )}
                             </div>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <span className="mt-0.5 shrink-0 cursor-default">
-                                  {booking.priceWatchBooking?.priceWatch.isEnabled ? (
-                                    <Eye className="h-3.5 w-3.5 text-green-600" />
-                                  ) : (
-                                    <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />
-                                  )}
-                                </span>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                {booking.priceWatchBooking
-                                  ? booking.priceWatchBooking.priceWatch.isEnabled
-                                    ? "Price watch enabled — you'll be alerted when rates drop"
-                                    : "Price watch disabled"
-                                  : "No price watch set up for this booking"}
-                              </TooltipContent>
-                            </Tooltip>
+                            {booking.accommodationType !== "apartment" && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="mt-0.5 shrink-0 cursor-default">
+                                    {booking.priceWatchBooking?.priceWatch.isEnabled ? (
+                                      <Eye className="h-3.5 w-3.5 text-green-600" />
+                                    ) : (
+                                      <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />
+                                    )}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {booking.priceWatchBooking
+                                    ? booking.priceWatchBooking.priceWatch.isEnabled
+                                      ? "Price watch enabled — you'll be alerted when rates drop"
+                                      : "Price watch disabled"
+                                    : "No price watch set up for this booking"}
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
                           </div>
                         </TooltipProvider>
                       </TableCell>
-                      <TableCell>{booking.hotelChain.name}</TableCell>
+                      <TableCell>{booking.hotelChain?.name ?? "Apartment / Rental"}</TableCell>
                       <TableCell>{formatDate(booking.checkIn)}</TableCell>
                       <TableCell>{formatDate(booking.checkOut)}</TableCell>
                       <TableCell>{booking.numNights}</TableCell>

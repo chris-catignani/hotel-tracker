@@ -127,3 +127,8 @@ export const BENEFIT_REWARD_TYPE_OPTIONS = [
 ] as const;
 
 export const DEFAULT_EQN_VALUE = 10.0;
+
+export const ACCOMMODATION_TYPE_OPTIONS = [
+  { value: "hotel", label: "Hotel" },
+  { value: "apartment", label: "Apartment / Short-term Rental" },
+] as const;

@@ -1,5 +1,5 @@
 import { format, parseISO } from "date-fns";
-import { PaymentType, Booking, ShoppingPortal, GeoResult } from "@/lib/types";
+import { PaymentType, AccommodationType, Booking, ShoppingPortal, GeoResult } from "@/lib/types";
 import { CERT_TYPE_OPTIONS } from "@/lib/cert-types";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -12,6 +12,7 @@ export type BenefitItem = {
 };
 
 export interface BookingFormState {
+  accommodationType: AccommodationType;
   hotelChainId: string;
   hotelChainSubBrandId: string;
   // Property display + geo fields (sent to API for upsert when propertyId is unknown)
@@ -78,6 +79,7 @@ export function toPaymentType(
 // ── Initial state ─────────────────────────────────────────────────────────────
 
 export const INITIAL_STATE: BookingFormState = {
+  accommodationType: "hotel",
   hotelChainId: "",
   hotelChainSubBrandId: "none",
   propertyId: null,
@@ -117,7 +119,8 @@ export function buildInitialState(
     : null;
 
   return {
-    hotelChainId: initialData.hotelChainId,
+    accommodationType: initialData.accommodationType ?? "hotel",
+    hotelChainId: initialData.hotelChainId ?? "",
     hotelChainSubBrandId: initialData.hotelChainSubBrandId ?? "none",
     propertyId: initialData.propertyId,
     propertyName: initialData.property.name,
@@ -190,6 +193,7 @@ export type Action =
   | { type: "LOAD_INITIAL_DATA"; initialData: Booking; portals: ShoppingPortal[] }
   | { type: "SET_CHECK_IN"; date: Date | undefined }
   | { type: "SET_PAYMENT_TYPE"; paymentType: PaymentType }
+  | { type: "SET_ACCOMMODATION_TYPE"; accommodationType: AccommodationType }
   | { type: "SET_HOTEL_CHAIN_ID"; hotelChainId: string }
   | { type: "SET_BOOKING_SOURCE"; bookingSource: string }
   | { type: "SET_PROPERTY_GEO"; result: GeoResult }
@@ -234,6 +238,21 @@ export function bookingFormReducer(state: BookingFormState, action: Action): Boo
         paymentType: action.paymentType,
         pointsRedeemed: action.paymentType.includes("points") ? state.pointsRedeemed : "",
         certificates: action.paymentType.includes("cert") ? state.certificates : [],
+      };
+
+    case "SET_ACCOMMODATION_TYPE":
+      return {
+        ...state,
+        accommodationType: action.accommodationType,
+        // Switching to apartment clears hotel-specific fields
+        ...(action.accommodationType === "apartment"
+          ? {
+              hotelChainId: "",
+              hotelChainSubBrandId: "none",
+              // Filter out cert-based payments (certs are hotel loyalty program specific)
+              certificates: [],
+            }
+          : {}),
       };
 
     case "SET_HOTEL_CHAIN_ID":

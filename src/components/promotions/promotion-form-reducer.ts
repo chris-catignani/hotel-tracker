@@ -92,6 +92,8 @@ export function mapApiRestrictionsToForm(
     allowedPaymentTypes: r.allowedPaymentTypes ?? [],
     allowedBookingSources: r.allowedBookingSources ?? [],
     allowedCountryCodes: r.allowedCountryCodes ?? [],
+    allowedAccommodationTypes: (r.allowedAccommodationTypes ??
+      []) as import("@/lib/types").AccommodationType[],
     hotelChainId: r.hotelChainId ?? "",
     prerequisiteStayCount: r.prerequisiteStayCount != null ? String(r.prerequisiteStayCount) : "",
     prerequisiteNightCount:
@@ -353,6 +355,8 @@ function restrictionClearedValues(key: RestrictionKey): Partial<PromotionRestric
       return { hotelChainId: "" };
     case "sub_brand_scope":
       return { subBrandIncludeIds: [], subBrandExcludeIds: [] };
+    case "accommodation_type":
+      return { allowedAccommodationTypes: [] };
     default:
       return {};
   }

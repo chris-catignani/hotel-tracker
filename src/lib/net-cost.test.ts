@@ -457,6 +457,10 @@ describe("net-cost", () => {
       loyaltyPointsEarned: 150, // round(100 * 1.25 * 1.2) = 150 (sub-brand rate with elite bonus)
       hotelChain: {
         ...mockBaseBooking.hotelChain,
+        id: "h1",
+        name: "Hyatt",
+        loyaltyProgram: "World of Hyatt",
+        pointType: { name: "Hyatt Points", centsPerPoint: 0.015 },
         basePointRate: 2.5, // chain rate — should NOT be used
         userStatus: {
           eliteStatus: { name: "Silver", isFixed: false, bonusPercentage: 0.2, fixedRate: null },
@@ -469,6 +473,40 @@ describe("net-cost", () => {
     const segments = result.loyaltyPointsCalc?.groups[0].segments ?? [];
     expect(segments[0].formula).toContain("1.25x"); // sub-brand rate in formula
     expect(segments[0].formula).not.toContain("2.5x"); // chain rate not used
+  });
+
+  it("should not crash for apartment booking with null hotelChain", () => {
+    const booking: NetCostBooking = {
+      ...mockBaseBooking,
+      hotelChainId: null,
+      hotelChain: null,
+      loyaltyPointsEarned: 0,
+    };
+    const result = getNetCostBreakdown(booking);
+    expect(result.loyaltyPointsValue).toBe(0);
+    expect(result.netCost).toBe(result.totalCost);
+    // No loyalty breakdown when there's no hotel chain
+    expect(result.loyaltyPointsCalc).toBeUndefined();
+  });
+
+  it("should calculate net cost for apartment booking with portal cashback", () => {
+    const booking: NetCostBooking = {
+      ...mockBaseBooking,
+      hotelChainId: null,
+      hotelChain: null,
+      loyaltyPointsEarned: 0,
+      portalCashbackRate: 0.05,
+      portalCashbackOnTotal: false,
+      shoppingPortal: {
+        name: "Test Portal",
+        rewardType: "cashback",
+        pointType: null,
+      },
+    };
+    const result = getNetCostBreakdown(booking);
+    // 5% of pretax 80 = 4
+    expect(result.portalCashback).toBe(4);
+    expect(result.netCost).toBe(96);
   });
 
   it("should calculate points redeemed value", () => {

@@ -83,9 +83,9 @@ export async function GET(request: NextRequest) {
         const checkInStr = booking.checkIn.toISOString().split("T")[0];
         const rate = await fetchExchangeRate(booking.currency, checkInStr);
 
-        // Compute loyalty points if not overridden
+        // Compute loyalty points if not overridden (hotel stays only)
         let loyaltyPointsEarned = booking.loyaltyPointsEarned;
-        if (loyaltyPointsEarned == null) {
+        if (loyaltyPointsEarned == null && booking.hotelChain) {
           const userStatus = booking.hotelChain.userStatuses[0] ?? null;
           const basePointRate = resolveBasePointRate(
             booking.hotelChain,

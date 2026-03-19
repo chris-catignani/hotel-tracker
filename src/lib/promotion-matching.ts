@@ -69,6 +69,7 @@ type MatchingRestrictions = {
   allowedPaymentTypes: string[];
   allowedBookingSources: string[];
   allowedCountryCodes: string[];
+  allowedAccommodationTypes: string[];
   hotelChainId: string | null;
   prerequisiteStayCount: number | null;
   prerequisiteNightCount: number | null;
@@ -116,6 +117,7 @@ export interface MatchingBooking {
   shoppingPortalId: string | null;
   hotelChainId: string | null;
   hotelChainSubBrandId: string | null;
+  accommodationType?: string | null;
   bookingSource: string | null;
   checkIn: Date | string;
   createdAt: Date | string;
@@ -349,6 +351,13 @@ const CorePromotionRules: Record<string, PromotionRule> = {
     const countryCode = booking.property?.countryCode;
     if (!countryCode) return { valid: false }; // no geo data → hidden
     return { valid: codes.includes(countryCode) };
+  },
+
+  accommodationType: (booking, promo) => {
+    const allowed = promo.restrictions?.allowedAccommodationTypes ?? [];
+    if (allowed.length === 0) return { valid: true }; // no restriction → matches all types
+    const type = booking.accommodationType ?? "hotel";
+    return { valid: allowed.includes(type) };
   },
 
   tieInCard: (booking, promo) => {

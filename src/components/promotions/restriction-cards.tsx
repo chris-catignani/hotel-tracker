@@ -8,9 +8,9 @@ import { Label } from "@/components/ui/label";
 import { DatePicker } from "@/components/ui/date-picker";
 import { parseISO } from "date-fns";
 import { X } from "lucide-react";
-import type { PromotionRestrictionsFormData } from "@/lib/types";
+import type { AccommodationType, PromotionRestrictionsFormData } from "@/lib/types";
 import { AppSelect } from "@/components/ui/app-select";
-import { BOOKING_SOURCE_LABELS } from "@/lib/constants";
+import { ACCOMMODATION_TYPE_OPTIONS, BOOKING_SOURCE_LABELS } from "@/lib/constants";
 import { COUNTRIES, countryName } from "@/lib/countries";
 
 // ─── Types & constants ────────────────────────────────────────────────────────
@@ -28,11 +28,13 @@ export type RestrictionKey =
   | "prerequisite"
   | "booking_source"
   | "hotel_chain"
-  | "geography";
+  | "geography"
+  | "accommodation_type";
 
 /** Canonical display order — cards and picker options always follow this order. */
 export const RESTRICTION_ORDER: RestrictionKey[] = [
   "hotel_chain",
+  "accommodation_type",
   "geography",
   "booking_source",
   "payment_type",
@@ -50,6 +52,7 @@ export const RESTRICTION_ORDER: RestrictionKey[] = [
 /** Restriction keys available at the benefit level (not all apply per-benefit). */
 export const BENEFIT_RESTRICTION_ORDER: RestrictionKey[] = [
   "hotel_chain",
+  "accommodation_type",
   "geography",
   "booking_source",
   "payment_type",
@@ -75,6 +78,7 @@ export const RESTRICTION_LABELS: Record<RestrictionKey, string> = {
   booking_source: "Booking Source",
   hotel_chain: "Hotel Chain Restriction",
   geography: "Geographic Restriction",
+  accommodation_type: "Accommodation Type",
 };
 
 // ─── Auto-detect active restrictions from saved restrictions data ─────────────
@@ -100,6 +104,8 @@ export function deriveActiveRestrictions(
     keys.add("sub_brand_scope");
   if (r.prerequisiteStayCount || r.prerequisiteNightCount) keys.add("prerequisite");
   if (r.allowedCountryCodes && r.allowedCountryCodes.length > 0) keys.add("geography");
+  if (r.allowedAccommodationTypes && r.allowedAccommodationTypes.length > 0)
+    keys.add("accommodation_type");
   return keys;
 }
 
@@ -761,6 +767,43 @@ export function GeographyRestrictionCard({
             {allowedCountryCodes.map((c) => countryName(c)).join(", ")}
           </p>
         )}
+      </div>
+    </RestrictionCard>
+  );
+}
+
+export function AccommodationTypeCard({
+  allowedAccommodationTypes,
+  onAllowedAccommodationTypesChange,
+  onRemove,
+}: {
+  allowedAccommodationTypes: AccommodationType[];
+  onAllowedAccommodationTypesChange: (types: AccommodationType[]) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <RestrictionCard title="Accommodation Type" testId="accommodation_type" onRemove={onRemove}>
+      <p className="text-xs text-muted-foreground">
+        Limit this promotion to specific accommodation types. Leave empty to match all types.
+      </p>
+      <div className="flex flex-col gap-2" data-testid="accommodation-type-options">
+        {ACCOMMODATION_TYPE_OPTIONS.map((opt) => (
+          <label key={opt.value} className="flex items-start gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              className="size-4 rounded border-gray-300 mt-0.5"
+              checked={allowedAccommodationTypes.includes(opt.value)}
+              onChange={(e) => {
+                const newTypes = e.target.checked
+                  ? [...allowedAccommodationTypes, opt.value]
+                  : allowedAccommodationTypes.filter((t) => t !== opt.value);
+                onAllowedAccommodationTypesChange(newTypes);
+              }}
+              data-testid={`accommodation-type-${opt.value}`}
+            />
+            <span className="text-sm font-medium">{opt.label}</span>
+          </label>
+        ))}
       </div>
     </RestrictionCard>
   );

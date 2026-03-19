@@ -70,7 +70,7 @@ interface BookingPriceWatchProps {
   bookingId: string;
   propertyId: string;
   propertyName: string;
-  hotelChainId: string;
+  hotelChainId: string | null | undefined;
   checkIn: string;
   checkOut: string;
   numNights: number;
@@ -84,7 +84,7 @@ export function ChainPropertyIdHint({
   hotelChainId,
   propertyName,
 }: {
-  hotelChainId: string | null;
+  hotelChainId: string | null | undefined;
   propertyName: string;
 }) {
   let content: React.ReactNode;
