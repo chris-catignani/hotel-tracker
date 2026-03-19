@@ -14,10 +14,13 @@
  * Output: prisma/data/booking-card-mapping.json
  */
 
-import "dotenv/config";
+import dotenv from "dotenv";
+import path from "path";
+// dotenv/config only loads .env — explicitly load .env.local so DATABASE_URL_PROD is available
+dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
+dotenv.config(); // fallback for .env
 import { PrismaClient } from "@prisma/client";
 import { writeFileSync, mkdirSync } from "fs";
-import path from "path";
 
 const prodUrl = process.env.DATABASE_URL_PROD;
 if (!prodUrl) {
