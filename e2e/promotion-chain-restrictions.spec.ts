@@ -1,4 +1,5 @@
 import { test, expect } from "./fixtures";
+import { USER_CREDIT_CARD_ID, CREDIT_CARD_ID } from "../prisma/seed-ids";
 
 test.describe("Promotion hotel chain restriction", () => {
   test("Credit Card promo: matches only when booking matches chain restriction", async ({
@@ -10,7 +11,7 @@ test.describe("Promotion hotel chain restriction", () => {
       data: {
         name: `CC Chain restricted ${crypto.randomUUID()}`,
         type: "credit_card",
-        creditCardId: "cme8yfwy2hfqahb6ync8czd24", // Amex Platinum
+        creditCardId: CREDIT_CARD_ID.AMEX_PLATINUM,
         restrictions: { hotelChainId: testHotelChain.id },
         benefits: [
           { rewardType: "cashback", valueType: "fixed", value: 100, certType: null, sortOrder: 0 },
@@ -21,10 +22,11 @@ test.describe("Promotion hotel chain restriction", () => {
     const promo = await promoRes.json();
 
     // 2. Create a booking for the MATCHING chain
+    // Use the seeded Amex Platinum UserCreditCard (creditCardId matches the promotion restriction)
     const bookingMatchRes = await request.post("/api/bookings", {
       data: {
         hotelChainId: testHotelChain.id,
-        creditCardId: "cme8yfwy2hfqahb6ync8czd24",
+        userCreditCardId: USER_CREDIT_CARD_ID.AMEX_PLATINUM,
         propertyName: `Match Stay ${crypto.randomUUID()}`,
         checkIn: "2026-06-01",
         checkOut: "2026-06-03",
@@ -54,7 +56,7 @@ test.describe("Promotion hotel chain restriction", () => {
     const bookingOtherRes = await request.post("/api/bookings", {
       data: {
         hotelChainId: otherChain.id,
-        creditCardId: "cme8yfwy2hfqahb6ync8czd24",
+        userCreditCardId: USER_CREDIT_CARD_ID.AMEX_PLATINUM,
         propertyName: `Other Stay ${crypto.randomUUID()}`,
         checkIn: "2026-06-05",
         checkOut: "2026-06-07",
