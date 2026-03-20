@@ -143,12 +143,27 @@ export async function reapplyBenefitsForUserCard(
   // Find all active benefits for this credit card product
   const benefits = await prisma.cardBenefit.findMany({
     where: { creditCardId: userCard.creditCardId, isActive: true },
-    select: { id: true },
+    select: { id: true, period: true },
   });
 
-  // Re-evaluate each benefit across all of the user's bookings on this card
+  // Collect all unique (benefitId, periodKey) pairs for this user's bookings
+  const bookings = await prisma.booking.findMany({
+    where: { userId, userCreditCard: { creditCardId: userCard.creditCardId } },
+    select: { checkIn: true, bookingDate: true, paymentTiming: true },
+  });
+
+  const pairs = new Map<string, { benefitId: string; periodKey: string }>();
   for (const benefit of benefits) {
-    await reapplyBenefitForAllUsers(benefit.id);
+    for (const booking of bookings) {
+      const chargeDate = getChargeDate(booking);
+      const periodKey = getPeriodKey(chargeDate, benefit.period as BenefitPeriod);
+      const key = `${benefit.id}:${periodKey}`;
+      if (!pairs.has(key)) pairs.set(key, { benefitId: benefit.id, periodKey });
+    }
+  }
+
+  for (const { benefitId, periodKey } of pairs.values()) {
+    await reapplyBenefitForPeriod(benefitId, periodKey, userId);
   }
 }
 

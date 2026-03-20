@@ -7,7 +7,7 @@ import { HOTEL_ID } from "../src/lib/constants";
 // ---------------------------------------------------------------------------
 
 test.describe("Card Benefits — Settings CRUD (admin)", () => {
-  test("creates, edits, and deletes a card benefit", async ({ page, request }) => {
+  test("creates a card benefit", async ({ page, request }) => {
     await page.goto("/settings");
     await page.getByRole("tab", { name: "Card Benefits" }).click();
 
