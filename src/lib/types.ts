@@ -62,6 +62,7 @@ export interface CreditCard {
   pointType: PointType | null;
   isDeleted: boolean;
   rewardRules: CreditCardRewardRule[];
+  cardBenefits?: CardBenefit[];
 }
 
 export type CreditCardRewardRuleType = "multiplier" | "fixed";
@@ -84,6 +85,38 @@ export interface CreditCardRewardRuleFormData {
   otaAgencyId: string | null;
   rewardType: CreditCardRewardRuleType;
   rewardValue: number | string;
+}
+
+export type BenefitPeriod = "monthly" | "quarterly" | "semi_annual" | "annual";
+
+export interface CardBenefit {
+  id: string;
+  creditCardId: string;
+  description: string;
+  value: string | number;
+  period: BenefitPeriod;
+  hotelChainId: string | null;
+  hotelChain?: HotelChain | null;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface CardBenefitFormData {
+  id?: string;
+  description: string;
+  value: number | string;
+  period: BenefitPeriod;
+  hotelChainId: string | null;
+  isActive: boolean;
+}
+
+export interface BookingCardBenefit {
+  id: string;
+  bookingId: string;
+  cardBenefitId: string;
+  cardBenefit: { description: string };
+  appliedValue: string | number;
+  periodKey: string;
 }
 
 export interface ShoppingPortal {
@@ -422,6 +455,7 @@ export interface Booking {
   bookingSource: string | null;
   otaAgencyId: string | null;
   benefits: BookingBenefit[];
+  bookingCardBenefits: BookingCardBenefit[];
   priceWatchBooking?: PriceWatchBooking | null;
 }
 

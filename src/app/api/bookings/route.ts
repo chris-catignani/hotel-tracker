@@ -10,6 +10,7 @@ import { normalizeUserStatuses } from "@/lib/normalize-response";
 import { fetchExchangeRate, getCurrentRate, resolveCalcCurrencyRate } from "@/lib/exchange-rate";
 import { enrichBookingWithRate } from "@/lib/booking-enrichment";
 import { findOrCreateProperty } from "@/lib/property-utils";
+import { reapplyCardBenefitsAffectedByBooking } from "@/lib/card-benefit-apply";
 
 const BOOKING_INCLUDE = (userId: string) =>
   ({
@@ -57,6 +58,7 @@ const BOOKING_INCLUDE = (userId: string) =>
     benefits: true,
     property: true,
     priceWatchBooking: { include: { priceWatch: { select: { isEnabled: true } } } },
+    bookingCardBenefits: { include: { cardBenefit: true } },
   }) as const;
 
 export async function GET(request: NextRequest) {
@@ -250,6 +252,9 @@ export async function POST(request: NextRequest) {
 
     // Re-evaluate subsequent bookings if this is an earlier stay
     await reevaluateSubsequentBookings(booking.id, appliedPromoIds);
+
+    // Apply card benefits (re-evaluates all bookings in affected periods)
+    await reapplyCardBenefitsAffectedByBooking(booking.id);
 
     // Fetch the booking with all relations to return
     const fullBooking = await prisma.booking.findUnique({
