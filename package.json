@@ -12,7 +12,7 @@
     "db:migrate": "prisma migrate dev && rm -rf .next",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "npx tsx prisma/seed.ts",
-    "rates:refresh": "npx tsx src/workers/refresh-exchange-rates.ts",
+    "rates:refresh": "bash scripts/refresh-exchange-rates.sh",
     "prices:refresh": "bash scripts/trigger-price-refresh.sh",
     "postinstall": "prisma generate",
     "test": "vitest run",
