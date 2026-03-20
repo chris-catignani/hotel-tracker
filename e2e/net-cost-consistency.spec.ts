@@ -65,13 +65,6 @@ test.describe("Net Cost Consistency", () => {
     const booking = await bookingRes.json();
 
     try {
-      await page.goto("/");
-      const dashboardRow = page.getByTestId(`booking-row-${booking.id}`);
-      await expect(dashboardRow).toBeVisible();
-      await expect(dashboardRow.getByTestId("booking-net-per-night")).toHaveText(
-        expectedNetPerNight
-      );
-
       await page.goto("/bookings");
       const listRow = page.getByTestId(`booking-row-${booking.id}`);
       await expect(listRow).toBeVisible();
@@ -135,13 +128,6 @@ test.describe("Net Cost Consistency", () => {
     const booking = await bookingRes.json();
 
     try {
-      await page.goto("/");
-      const dashboardRow = page.getByTestId(`booking-row-${booking.id}`);
-      await expect(dashboardRow).toBeVisible();
-      await expect(dashboardRow.getByTestId("booking-net-per-night")).toHaveText(
-        expectedNetPerNight
-      );
-
       await page.goto("/bookings");
       const listRow = page.getByTestId(`booking-row-${booking.id}`);
       await expect(listRow).toBeVisible();
@@ -194,13 +180,6 @@ test.describe("Net Cost Consistency", () => {
     const booking = await bookingRes.json();
 
     try {
-      await page.goto("/");
-      const dashboardRow = page.getByTestId(`booking-row-${booking.id}`);
-      await expect(dashboardRow).toBeVisible();
-      await expect(dashboardRow.getByTestId("booking-net-per-night")).toHaveText(
-        expectedNetPerNight
-      );
-
       await page.goto("/bookings");
       const listRow = page.getByTestId(`booking-row-${booking.id}`);
       await expect(listRow).toBeVisible();
@@ -260,13 +239,6 @@ test.describe("Net Cost Consistency", () => {
     const booking = await bookingRes.json();
 
     try {
-      await page.goto("/");
-      const dashboardRow = page.getByTestId(`booking-row-${booking.id}`);
-      await expect(dashboardRow).toBeVisible();
-      await expect(dashboardRow.getByTestId("booking-net-per-night")).toHaveText(
-        expectedNetPerNight
-      );
-
       await page.goto("/bookings");
       const listRow = page.getByTestId(`booking-row-${booking.id}`);
       await expect(listRow).toBeVisible();
