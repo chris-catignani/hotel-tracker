@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
+import { reapplyBenefitsForUserCard } from "@/lib/card-benefit-apply";
 
 const INCLUDE = {
   creditCard: { include: { pointType: true, rewardRules: true } },
@@ -52,6 +53,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       data,
       include: INCLUDE,
     });
+    // Re-evaluate benefits in case openedDate/closedDate changed
+    await reapplyBenefitsForUserCard(id, userId);
+
     return NextResponse.json(card);
   } catch (error) {
     return apiError("Failed to update user credit card", error, 500, request);

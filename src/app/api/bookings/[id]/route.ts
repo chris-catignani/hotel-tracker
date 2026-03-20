@@ -16,7 +16,10 @@ import { normalizeUserStatuses } from "@/lib/normalize-response";
 import { fetchExchangeRate, getCurrentRate, resolveCalcCurrencyRate } from "@/lib/exchange-rate";
 import { enrichBookingWithRate } from "@/lib/booking-enrichment";
 import { findOrCreateProperty } from "@/lib/property-utils";
-import { applyCardBenefitsForBooking } from "@/lib/card-benefit-apply";
+import {
+  reapplyCardBenefitsAffectedByBooking,
+  reapplyBenefitForPeriod,
+} from "@/lib/card-benefit-apply";
 
 async function getFullBookingWithUsage(id: string, userId: string) {
   const booking = await prisma.booking.findFirst({
@@ -389,6 +392,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       }
     }
 
+    // Capture existing card benefit pairs before update so we can re-evaluate
+    // periods that may no longer match after the change (e.g. card switched)
+    const oldCardBenefitPairs = await prisma.bookingCardBenefit.findMany({
+      where: { bookingId: id },
+      select: { cardBenefitId: true, periodKey: true },
+    });
+
     const booking = await prisma.booking.update({
       where: { id },
       data,
@@ -400,8 +410,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     // Re-evaluate subsequent bookings if this is an earlier stay
     await reevaluateSubsequentBookings(booking.id, appliedPromoIds);
 
-    // Apply card benefits
-    await applyCardBenefitsForBooking(booking.id);
+    // Re-apply card benefits, including any periods affected before the change
+    await reapplyCardBenefitsAffectedByBooking(
+      booking.id,
+      oldCardBenefitPairs.map((p) => ({ benefitId: p.cardBenefitId, periodKey: p.periodKey }))
+    );
 
     // Fetch the booking with all relations to return
     const fullBooking = await getFullBookingWithUsage(booking.id, userId);
@@ -429,6 +442,7 @@ export async function DELETE(
       select: {
         checkIn: true,
         bookingPromotions: { select: { promotionId: true } },
+        bookingCardBenefits: { select: { cardBenefitId: true, periodKey: true } },
       },
     });
 
@@ -451,6 +465,12 @@ export async function DELETE(
       subsequentBookingIds = affected.map((b) => b.id);
     }
 
+    // Capture card benefit pairs before deletion so we can re-evaluate after
+    const cardBenefitPairs = booking.bookingCardBenefits.map((b) => ({
+      benefitId: b.cardBenefitId,
+      periodKey: b.periodKey,
+    }));
+
     // Delete associated booking promotions first
     await prisma.bookingPromotion.deleteMany({
       where: { bookingId: id },
@@ -463,6 +483,11 @@ export async function DELETE(
     // Re-evaluate subsequent bookings
     if (subsequentBookingIds.length > 0) {
       await reevaluateBookings(subsequentBookingIds);
+    }
+
+    // Re-evaluate card benefit periods freed by this deletion
+    for (const { benefitId, periodKey } of cardBenefitPairs) {
+      await reapplyBenefitForPeriod(benefitId, periodKey, userId);
     }
 
     return NextResponse.json({ message: "Booking deleted" });

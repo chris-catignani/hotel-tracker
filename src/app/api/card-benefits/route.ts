@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { requireAdmin } from "@/lib/auth-utils";
 import { BenefitPeriod } from "@prisma/client";
+import { reapplyBenefitForAllUsers } from "@/lib/card-benefit-apply";
 
 export async function GET() {
   try {
@@ -39,6 +40,9 @@ export async function POST(request: NextRequest) {
       },
       include: { hotelChain: { select: { id: true, name: true } } },
     });
+
+    // Retroactively apply to all existing matching bookings
+    await reapplyBenefitForAllUsers(cardBenefit.id);
 
     return NextResponse.json(cardBenefit, { status: 201 });
   } catch (error) {

@@ -1,5 +1,5 @@
 import { test, expect } from "./fixtures";
-import { CREDIT_CARD_ID, USER_CREDIT_CARD_ID } from "../prisma/seed-ids";
+import { CREDIT_CARD_ID } from "../prisma/seed-ids";
 import { HOTEL_ID } from "../src/lib/constants";
 
 // ---------------------------------------------------------------------------
@@ -48,8 +48,14 @@ test.describe("Card Benefits — Settings CRUD (admin)", () => {
   });
 });
 
+// Each test in this group uses `isolatedUserRequest` to get a fresh user with their
+// own UserCreditCard. This prevents parallel chromium/webkit runs from sharing
+// bookings and accidentally exhausting each other's benefit caps.
 test.describe("Card Benefits — Auto-apply on booking", () => {
-  test("benefit is applied when booking matches card and hotel chain", async ({ request }) => {
+  test("benefit is applied when booking matches card and hotel chain", async ({
+    request,
+    isolatedUserRequest,
+  }) => {
     const benefit = await request.post("/api/card-benefits", {
       data: {
         creditCardId: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM,
@@ -62,7 +68,7 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
     });
     const { id: benefitId } = (await benefit.json()) as { id: string };
 
-    const bookingRes = await request.post("/api/bookings", {
+    const bookingRes = await isolatedUserRequest.request.post("/api/bookings", {
       data: {
         hotelChainId: HOTEL_ID.HILTON,
         propertyName: "Test Hilton for Card Benefits",
@@ -76,7 +82,7 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
         bookingSource: "direct_web",
         countryCode: "US",
         city: "Chicago",
-        userCreditCardId: USER_CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM,
+        userCreditCardId: isolatedUserRequest.userCreditCardId,
       },
     });
     const booking = (await bookingRes.json()) as {
@@ -89,12 +95,15 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
       expect(matched).toBeTruthy();
       expect(Number(matched!.appliedValue)).toBe(50);
     } finally {
-      await request.delete(`/api/bookings/${booking.id}`);
+      await isolatedUserRequest.request.delete(`/api/bookings/${booking.id}`);
       await request.delete(`/api/card-benefits/${benefitId}`);
     }
   });
 
-  test("benefit is NOT applied when hotel chain does not match", async ({ request }) => {
+  test("benefit is NOT applied when hotel chain does not match", async ({
+    request,
+    isolatedUserRequest,
+  }) => {
     const benefit = await request.post("/api/card-benefits", {
       data: {
         creditCardId: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM,
@@ -108,7 +117,7 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
     const { id: benefitId } = (await benefit.json()) as { id: string };
 
     // Book at Marriott
-    const bookingRes = await request.post("/api/bookings", {
+    const bookingRes = await isolatedUserRequest.request.post("/api/bookings", {
       data: {
         hotelChainId: HOTEL_ID.MARRIOTT,
         propertyName: "Test Marriott no benefit",
@@ -122,7 +131,7 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
         bookingSource: "direct_web",
         countryCode: "US",
         city: "Chicago",
-        userCreditCardId: USER_CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM,
+        userCreditCardId: isolatedUserRequest.userCreditCardId,
       },
     });
     const booking = (await bookingRes.json()) as {
@@ -134,12 +143,15 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
       const matched = booking.bookingCardBenefits.find((b) => b.cardBenefitId === benefitId);
       expect(matched).toBeUndefined();
     } finally {
-      await request.delete(`/api/bookings/${booking.id}`);
+      await isolatedUserRequest.request.delete(`/api/bookings/${booking.id}`);
       await request.delete(`/api/card-benefits/${benefitId}`);
     }
   });
 
-  test("quarterly cap is respected across two bookings in same quarter", async ({ request }) => {
+  test("quarterly cap is respected across two bookings in same quarter", async ({
+    request,
+    isolatedUserRequest,
+  }) => {
     const benefit = await request.post("/api/card-benefits", {
       data: {
         creditCardId: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM,
@@ -164,10 +176,10 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
       bookingSource: "direct_web",
       countryCode: "US",
       city: "Orlando",
-      userCreditCardId: USER_CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM,
+      userCreditCardId: isolatedUserRequest.userCreditCardId,
     };
 
-    const res1 = await request.post("/api/bookings", {
+    const res1 = await isolatedUserRequest.request.post("/api/bookings", {
       data: { ...bookingData, propertyName: "Test Hilton Cap A" },
     });
     const booking1 = (await res1.json()) as {
@@ -175,7 +187,7 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
       bookingCardBenefits: { cardBenefitId: string; appliedValue: string | number }[];
     };
 
-    const res2 = await request.post("/api/bookings", {
+    const res2 = await isolatedUserRequest.request.post("/api/bookings", {
       data: { ...bookingData, propertyName: "Test Hilton Cap B" },
     });
     const booking2 = (await res2.json()) as {
@@ -191,13 +203,13 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
       const match2 = booking2.bookingCardBenefits.find((b) => b.cardBenefitId === benefitId);
       expect(match2).toBeUndefined();
     } finally {
-      await request.delete(`/api/bookings/${booking1.id}`);
-      await request.delete(`/api/bookings/${booking2.id}`);
+      await isolatedUserRequest.request.delete(`/api/bookings/${booking1.id}`);
+      await isolatedUserRequest.request.delete(`/api/bookings/${booking2.id}`);
       await request.delete(`/api/card-benefits/${benefitId}`);
     }
   });
 
-  test("inactive benefit is NOT applied", async ({ request }) => {
+  test("inactive benefit is NOT applied", async ({ request, isolatedUserRequest }) => {
     const benefit = await request.post("/api/card-benefits", {
       data: {
         creditCardId: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM,
@@ -210,7 +222,7 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
     });
     const { id: benefitId } = (await benefit.json()) as { id: string };
 
-    const bookingRes = await request.post("/api/bookings", {
+    const bookingRes = await isolatedUserRequest.request.post("/api/bookings", {
       data: {
         hotelChainId: HOTEL_ID.HILTON,
         propertyName: "Test Hilton inactive benefit",
@@ -224,7 +236,7 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
         bookingSource: "direct_web",
         countryCode: "US",
         city: "Chicago",
-        userCreditCardId: USER_CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM,
+        userCreditCardId: isolatedUserRequest.userCreditCardId,
       },
     });
     const booking = (await bookingRes.json()) as {
@@ -236,12 +248,283 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
       const matched = booking.bookingCardBenefits.find((b) => b.cardBenefitId === benefitId);
       expect(matched).toBeUndefined();
     } finally {
-      await request.delete(`/api/bookings/${booking.id}`);
+      await isolatedUserRequest.request.delete(`/api/bookings/${booking.id}`);
       await request.delete(`/api/card-benefits/${benefitId}`);
     }
   });
 
-  test("benefit is applied on booking update when card instance is added", async ({ request }) => {
+  test("earlier booking created after the fact claims the credit", async ({
+    request,
+    isolatedUserRequest,
+  }) => {
+    // $50 quarterly Hilton credit
+    const benefit = await request.post("/api/card-benefits", {
+      data: {
+        creditCardId: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM,
+        description: "Test re-eval on earlier booking",
+        value: 50,
+        period: "quarterly",
+        hotelChainId: HOTEL_ID.HILTON,
+        isActive: true,
+      },
+    });
+    const { id: benefitId } = (await benefit.json()) as { id: string };
+
+    // Create a later booking first — it claims the $50
+    const laterRes = await isolatedUserRequest.request.post("/api/bookings", {
+      data: {
+        hotelChainId: HOTEL_ID.HILTON,
+        propertyName: "Test Hilton Later",
+        checkIn: "2025-07-20",
+        checkOut: "2025-07-22",
+        numNights: 2,
+        pretaxCost: 200,
+        taxAmount: 20,
+        totalCost: 220,
+        currency: "USD",
+        bookingSource: "direct_web",
+        countryCode: "US",
+        city: "Dallas",
+        userCreditCardId: isolatedUserRequest.userCreditCardId,
+      },
+    });
+    const laterBooking = (await laterRes.json()) as {
+      id: string;
+      bookingCardBenefits: { cardBenefitId: string; appliedValue: string | number }[];
+    };
+    expect(
+      Number(
+        laterBooking.bookingCardBenefits.find((b) => b.cardBenefitId === benefitId)?.appliedValue
+      )
+    ).toBe(50);
+
+    // Now create an earlier booking in the same quarter — it should claim the credit
+    const earlierRes = await isolatedUserRequest.request.post("/api/bookings", {
+      data: {
+        hotelChainId: HOTEL_ID.HILTON,
+        propertyName: "Test Hilton Earlier",
+        checkIn: "2025-07-05",
+        checkOut: "2025-07-07",
+        numNights: 2,
+        pretaxCost: 200,
+        taxAmount: 20,
+        totalCost: 220,
+        currency: "USD",
+        bookingSource: "direct_web",
+        countryCode: "US",
+        city: "Dallas",
+        userCreditCardId: isolatedUserRequest.userCreditCardId,
+      },
+    });
+    const earlierBooking = (await earlierRes.json()) as {
+      id: string;
+      bookingCardBenefits: { cardBenefitId: string; appliedValue: string | number }[];
+    };
+
+    try {
+      // Earlier booking should now have the $50 credit
+      expect(
+        Number(
+          earlierBooking.bookingCardBenefits.find((b) => b.cardBenefitId === benefitId)
+            ?.appliedValue
+        )
+      ).toBe(50);
+
+      // Later booking should have been re-evaluated and lost the credit
+      const laterRefetch = (await (
+        await isolatedUserRequest.request.get(`/api/bookings/${laterBooking.id}`)
+      ).json()) as {
+        bookingCardBenefits: { cardBenefitId: string }[];
+      };
+      expect(
+        laterRefetch.bookingCardBenefits.find((b) => b.cardBenefitId === benefitId)
+      ).toBeUndefined();
+    } finally {
+      await isolatedUserRequest.request.delete(`/api/bookings/${earlierBooking.id}`);
+      await isolatedUserRequest.request.delete(`/api/bookings/${laterBooking.id}`);
+      await request.delete(`/api/card-benefits/${benefitId}`);
+    }
+  });
+
+  test("deleting a booking releases its credit to the next eligible booking", async ({
+    request,
+    isolatedUserRequest,
+  }) => {
+    const benefit = await request.post("/api/card-benefits", {
+      data: {
+        creditCardId: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM,
+        description: "Test re-eval on delete",
+        value: 50,
+        period: "quarterly",
+        hotelChainId: HOTEL_ID.HILTON,
+        isActive: true,
+      },
+    });
+    const { id: benefitId } = (await benefit.json()) as { id: string };
+
+    const bookingData = {
+      hotelChainId: HOTEL_ID.HILTON,
+      checkIn: "2025-07-10",
+      checkOut: "2025-07-12",
+      numNights: 2,
+      pretaxCost: 200,
+      taxAmount: 20,
+      totalCost: 220,
+      currency: "USD",
+      bookingSource: "direct_web",
+      countryCode: "US",
+      city: "Phoenix",
+      userCreditCardId: isolatedUserRequest.userCreditCardId,
+    };
+
+    // First booking claims the $50
+    const res1 = await isolatedUserRequest.request.post("/api/bookings", {
+      data: { ...bookingData, propertyName: "Test Hilton Delete A" },
+    });
+    const booking1 = (await res1.json()) as {
+      id: string;
+      bookingCardBenefits: { cardBenefitId: string; appliedValue: string | number }[];
+    };
+    expect(
+      Number(booking1.bookingCardBenefits.find((b) => b.cardBenefitId === benefitId)?.appliedValue)
+    ).toBe(50);
+
+    // Second booking in same quarter gets nothing
+    const res2 = await isolatedUserRequest.request.post("/api/bookings", {
+      data: {
+        ...bookingData,
+        checkIn: "2025-07-15",
+        checkOut: "2025-07-17",
+        propertyName: "Test Hilton Delete B",
+      },
+    });
+    const booking2 = (await res2.json()) as {
+      id: string;
+      bookingCardBenefits: { cardBenefitId: string }[];
+    };
+    expect(booking2.bookingCardBenefits.find((b) => b.cardBenefitId === benefitId)).toBeUndefined();
+
+    try {
+      // Delete booking1 — booking2 should now get the $50
+      await isolatedUserRequest.request.delete(`/api/bookings/${booking1.id}`);
+
+      const booking2Refetch = (await (
+        await isolatedUserRequest.request.get(`/api/bookings/${booking2.id}`)
+      ).json()) as {
+        bookingCardBenefits: { cardBenefitId: string; appliedValue: string | number }[];
+      };
+      expect(
+        Number(
+          booking2Refetch.bookingCardBenefits.find((b) => b.cardBenefitId === benefitId)
+            ?.appliedValue
+        )
+      ).toBe(50);
+    } finally {
+      await isolatedUserRequest.request.delete(`/api/bookings/${booking2.id}`);
+      await request.delete(`/api/card-benefits/${benefitId}`);
+    }
+  });
+
+  test("prepaid booking booked earlier claims credit over later postpaid booking in same period", async ({
+    request,
+    isolatedUserRequest,
+  }) => {
+    const benefit = await request.post("/api/card-benefits", {
+      data: {
+        creditCardId: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM,
+        description: "Test prepaid priority",
+        value: 50,
+        period: "quarterly",
+        hotelChainId: HOTEL_ID.HILTON,
+        isActive: true,
+      },
+    });
+    const { id: benefitId } = (await benefit.json()) as { id: string };
+
+    // Postpaid booking: checkIn July 20 → chargeDate = July 20 (Q3)
+    const postpaidRes = await isolatedUserRequest.request.post("/api/bookings", {
+      data: {
+        hotelChainId: HOTEL_ID.HILTON,
+        propertyName: "Test Hilton Postpaid",
+        checkIn: "2025-07-20",
+        checkOut: "2025-07-22",
+        numNights: 2,
+        pretaxCost: 200,
+        taxAmount: 20,
+        totalCost: 220,
+        currency: "USD",
+        bookingSource: "direct_web",
+        countryCode: "US",
+        city: "Seattle",
+        userCreditCardId: isolatedUserRequest.userCreditCardId,
+        paymentTiming: "postpaid",
+      },
+    });
+    const postpaidBooking = (await postpaidRes.json()) as {
+      id: string;
+      bookingCardBenefits: { cardBenefitId: string; appliedValue: string | number }[];
+    };
+    // Postpaid booking initially claims the credit (only booking so far)
+    expect(
+      Number(
+        postpaidBooking.bookingCardBenefits.find((b) => b.cardBenefitId === benefitId)?.appliedValue
+      )
+    ).toBe(50);
+
+    // Prepaid booking: bookingDate July 5 (Q3), stay in August — chargeDate = July 5
+    const prepaidRes = await isolatedUserRequest.request.post("/api/bookings", {
+      data: {
+        hotelChainId: HOTEL_ID.HILTON,
+        propertyName: "Test Hilton Prepaid",
+        checkIn: "2025-08-10",
+        checkOut: "2025-08-12",
+        numNights: 2,
+        pretaxCost: 200,
+        taxAmount: 20,
+        totalCost: 220,
+        currency: "USD",
+        bookingSource: "direct_web",
+        countryCode: "US",
+        city: "Seattle",
+        userCreditCardId: isolatedUserRequest.userCreditCardId,
+        paymentTiming: "prepaid",
+        bookingDate: "2025-07-05",
+      },
+    });
+    const prepaidBooking = (await prepaidRes.json()) as {
+      id: string;
+      bookingCardBenefits: { cardBenefitId: string; appliedValue: string | number }[];
+    };
+
+    try {
+      // Prepaid booking (chargeDate July 5) should claim the credit over postpaid (chargeDate July 20)
+      expect(
+        Number(
+          prepaidBooking.bookingCardBenefits.find((b) => b.cardBenefitId === benefitId)
+            ?.appliedValue
+        )
+      ).toBe(50);
+
+      // Postpaid booking should have been re-evaluated and lost the credit
+      const postpaidRefetch = (await (
+        await isolatedUserRequest.request.get(`/api/bookings/${postpaidBooking.id}`)
+      ).json()) as {
+        bookingCardBenefits: { cardBenefitId: string }[];
+      };
+      expect(
+        postpaidRefetch.bookingCardBenefits.find((b) => b.cardBenefitId === benefitId)
+      ).toBeUndefined();
+    } finally {
+      await isolatedUserRequest.request.delete(`/api/bookings/${prepaidBooking.id}`);
+      await isolatedUserRequest.request.delete(`/api/bookings/${postpaidBooking.id}`);
+      await request.delete(`/api/card-benefits/${benefitId}`);
+    }
+  });
+
+  test("benefit is applied on booking update when card instance is added", async ({
+    request,
+    isolatedUserRequest,
+  }) => {
     // Create benefit first
     const benefit = await request.post("/api/card-benefits", {
       data: {
@@ -256,7 +539,7 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
     const { id: benefitId } = (await benefit.json()) as { id: string };
 
     // Start with no card instance — benefit should not apply
-    const bookingRes = await request.post("/api/bookings", {
+    const bookingRes = await isolatedUserRequest.request.post("/api/bookings", {
       data: {
         hotelChainId: HOTEL_ID.HILTON,
         propertyName: "Test Hilton update card",
@@ -283,8 +566,8 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
 
     try {
       // Update booking to add the card instance
-      const updateRes = await request.put(`/api/bookings/${booking.id}`, {
-        data: { userCreditCardId: USER_CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM },
+      const updateRes = await isolatedUserRequest.request.put(`/api/bookings/${booking.id}`, {
+        data: { userCreditCardId: isolatedUserRequest.userCreditCardId },
       });
       const updated = (await updateRes.json()) as {
         bookingCardBenefits: { cardBenefitId: string; appliedValue: string | number }[];
@@ -293,7 +576,91 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
       expect(matched).toBeTruthy();
       expect(Number(matched!.appliedValue)).toBe(50);
     } finally {
-      await request.delete(`/api/bookings/${booking.id}`);
+      await isolatedUserRequest.request.delete(`/api/bookings/${booking.id}`);
+      await request.delete(`/api/card-benefits/${benefitId}`);
+    }
+  });
+
+  test("benefit is NOT applied to bookings before the card was opened", async ({
+    request,
+    isolatedUserRequest,
+  }) => {
+    // Set the card's openedDate to June 1 — after the April booking but before July
+    await isolatedUserRequest.request.put(
+      `/api/user-credit-cards/${isolatedUserRequest.userCreditCardId}`,
+      { data: { openedDate: "2025-06-01" } }
+    );
+
+    const benefit = await request.post("/api/card-benefits", {
+      data: {
+        creditCardId: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM,
+        description: "Test card open date filter",
+        value: 50,
+        period: "quarterly",
+        hotelChainId: HOTEL_ID.HILTON,
+        isActive: true,
+      },
+    });
+    const { id: benefitId } = (await benefit.json()) as { id: string };
+
+    // Booking BEFORE card opened: checkIn April (Q2, card opened June 1) → should NOT apply
+    const beforeRes = await isolatedUserRequest.request.post("/api/bookings", {
+      data: {
+        hotelChainId: HOTEL_ID.HILTON,
+        propertyName: "Test Hilton Before Open",
+        checkIn: "2025-04-10",
+        checkOut: "2025-04-12",
+        numNights: 2,
+        pretaxCost: 200,
+        taxAmount: 20,
+        totalCost: 220,
+        currency: "USD",
+        bookingSource: "direct_web",
+        countryCode: "US",
+        city: "Atlanta",
+        userCreditCardId: isolatedUserRequest.userCreditCardId,
+      },
+    });
+    const beforeBooking = (await beforeRes.json()) as {
+      id: string;
+      bookingCardBenefits: { cardBenefitId: string }[];
+    };
+
+    // Booking AFTER card opened: checkIn July (Q3) → should apply
+    const afterRes = await isolatedUserRequest.request.post("/api/bookings", {
+      data: {
+        hotelChainId: HOTEL_ID.HILTON,
+        propertyName: "Test Hilton After Open",
+        checkIn: "2025-07-10",
+        checkOut: "2025-07-12",
+        numNights: 2,
+        pretaxCost: 200,
+        taxAmount: 20,
+        totalCost: 220,
+        currency: "USD",
+        bookingSource: "direct_web",
+        countryCode: "US",
+        city: "Atlanta",
+        userCreditCardId: isolatedUserRequest.userCreditCardId,
+      },
+    });
+    const afterBooking = (await afterRes.json()) as {
+      id: string;
+      bookingCardBenefits: { cardBenefitId: string; appliedValue: string | number }[];
+    };
+
+    try {
+      expect(
+        beforeBooking.bookingCardBenefits.find((b) => b.cardBenefitId === benefitId)
+      ).toBeUndefined();
+      expect(
+        Number(
+          afterBooking.bookingCardBenefits.find((b) => b.cardBenefitId === benefitId)?.appliedValue
+        )
+      ).toBe(50);
+    } finally {
+      await isolatedUserRequest.request.delete(`/api/bookings/${beforeBooking.id}`);
+      await isolatedUserRequest.request.delete(`/api/bookings/${afterBooking.id}`);
       await request.delete(`/api/card-benefits/${benefitId}`);
     }
   });
