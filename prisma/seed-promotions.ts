@@ -657,6 +657,22 @@ async function seedBookingPromotions(userId: string) {
         },
       ],
     },
+    {
+      bookingId: "cmgz12kjvzu90qvn5wxrki7ui",
+      promotionName: "Accor APAC 2026",
+      appliedValue: "44.57",
+      bonusPointsApplied: 2026,
+      eligibleNightsAtBooking: 1,
+      benefits: [
+        {
+          rewardType: "points",
+          value: "2026",
+          appliedValue: "44.57",
+          bonusPointsApplied: 2026,
+          eligibleNightsAtBooking: 1,
+        },
+      ],
+    },
   ];
 
   // Clear existing before seeding to avoid duplicates
