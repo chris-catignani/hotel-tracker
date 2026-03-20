@@ -1,4 +1,4 @@
-import { render, screen, act, within } from "@testing-library/react";
+import { render, screen, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CreditCardsTab } from "./credit-cards-tab";
@@ -11,6 +11,7 @@ const mockCards = [
     rewardRate: 5,
     pointTypeId: null,
     pointType: null,
+    rewardRules: [],
     isDeleted: false,
   },
   {
@@ -20,9 +21,28 @@ const mockCards = [
     rewardRate: 3,
     pointTypeId: null,
     pointType: null,
+    rewardRules: [],
     isDeleted: false,
   },
 ];
+
+// CreditCardAccordionItem renders sub-components that fetch data — mock them
+vi.mock("./credit-card-accordion-item", () => ({
+  CreditCardAccordionItem: ({
+    card,
+    onRefetch,
+  }: {
+    card: { id: string; name: string };
+    onRefetch: () => void;
+  }) => (
+    <div data-testid="credit-card-accordion">
+      <span data-testid="credit-card-card-name">{card.name}</span>
+      <button data-testid="delete-credit-card-button" onClick={onRefetch}>
+        Delete
+      </button>
+    </div>
+  ),
+}));
 
 describe("CreditCardsTab", () => {
   beforeEach(() => {
@@ -59,7 +79,6 @@ describe("CreditCardsTab", () => {
 
     expect(screen.getByTestId("credit-cards-empty")).toBeInTheDocument();
     expect(screen.getByText(/No credit cards/i)).toBeInTheDocument();
-    expect(screen.getByText(/Add credit cards to track rewards/i)).toBeInTheDocument();
   });
 
   it("shows fetched credit cards", async () => {
@@ -74,9 +93,7 @@ describe("CreditCardsTab", () => {
       render(<CreditCardsTab />);
     });
 
-    // Check that it's present in both mobile and desktop views
     expect(screen.getByTestId("credit-card-card-name")).toHaveTextContent("Amex Platinum");
-    expect(screen.getByTestId("credit-card-table-name")).toHaveTextContent("Amex Platinum");
   });
 
   it("shows a Delete button for each credit card", async () => {
@@ -91,142 +108,18 @@ describe("CreditCardsTab", () => {
       render(<CreditCardsTab />);
     });
 
-    // Each card in the mobile/desktop view has a delete button
     const deleteButtons = screen.getAllByTestId("delete-credit-card-button");
-    // 2 cards × 2 views = 4 buttons total
-    expect(deleteButtons.length).toBe(4);
+    expect(deleteButtons.length).toBe(2);
   });
 
-  it("opens confirmation dialog when Delete is clicked", async () => {
+  it("opens add dialog when Add Credit Card is clicked", async () => {
     const user = userEvent.setup();
-    vi.mocked(global.fetch).mockImplementation((input: string | Request | URL) => {
-      const url = input instanceof Request ? input.url : input.toString();
-      if (url.includes("/api/credit-cards"))
-        return Promise.resolve({ ok: true, json: async () => [mockCards[0]] } as Response);
-      return Promise.resolve({ ok: true, json: async () => [] } as Response);
-    });
 
     await act(async () => {
       render(<CreditCardsTab />);
     });
 
-    // Click first delete button (mobile view)
-    const deleteButtons = screen.getAllByTestId("delete-credit-card-button");
-    await user.click(deleteButtons[0]);
-
-    expect(screen.getByText("Delete Credit Card?")).toBeInTheDocument();
-    expect(screen.getByText(/Are you sure you want to delete "Amex Platinum"/)).toBeInTheDocument();
-  });
-
-  it("calls DELETE API and refreshes list after confirming deletion", async () => {
-    const user = userEvent.setup();
-    const fetchMock = vi
-      .mocked(global.fetch)
-      .mockImplementation((input: string | Request | URL, options?: RequestInit) => {
-        const url = input instanceof Request ? input.url : input.toString();
-        if (
-          url === "/api/credit-cards" &&
-          (!options || options.method === undefined || options.method === "GET")
-        )
-          return Promise.resolve({ ok: true, json: async () => [mockCards[0]] } as Response);
-        if (url === "/api/credit-cards/1" && options?.method === "DELETE")
-          return Promise.resolve({ ok: true } as Response);
-        return Promise.resolve({ ok: true, json: async () => [] } as Response);
-      });
-
-    await act(async () => {
-      render(<CreditCardsTab />);
-    });
-
-    // Open delete dialog
-    const deleteButtons = screen.getAllByTestId("delete-credit-card-button");
-    await user.click(deleteButtons[0]);
-
-    // Confirm deletion
-    await user.click(screen.getByTestId("confirm-dialog-confirm-button"));
-
-    // Verify DELETE was called
-    expect(fetchMock).toHaveBeenCalledWith("/api/credit-cards/1", { method: "DELETE" });
-    // Verify list was refreshed (fetch called again for credit cards)
-    const cardFetchCalls = fetchMock.mock.calls.filter(([input, opts]) => {
-      const url = input instanceof Request ? input.url : input.toString();
-      return url === "/api/credit-cards" && (!opts || !opts.method || opts.method === "GET");
-    });
-    expect(cardFetchCalls.length).toBeGreaterThanOrEqual(2);
-  });
-
-  it("shows error if deletion fails", async () => {
-    const user = userEvent.setup();
-    vi.mocked(global.fetch).mockImplementation(
-      (input: string | Request | URL, options?: RequestInit) => {
-        const url = input instanceof Request ? input.url : input.toString();
-        if (
-          url === "/api/credit-cards" &&
-          (!options || !options.method || options.method === "GET")
-        )
-          return Promise.resolve({ ok: true, json: async () => [mockCards[0]] } as Response);
-        if (url.includes("/api/credit-cards/1") && options?.method === "DELETE")
-          return Promise.resolve({
-            ok: false,
-            status: 500,
-            json: async () => ({}),
-          } as Response);
-        return Promise.resolve({ ok: true, json: async () => [] } as Response);
-      }
-    );
-
-    await act(async () => {
-      render(<CreditCardsTab />);
-    });
-
-    const deleteButtons = screen.getAllByTestId("delete-credit-card-button");
-    await user.click(deleteButtons[0]);
-
-    await user.click(screen.getByTestId("confirm-dialog-confirm-button"));
-
-    expect(screen.getByText(/Failed to delete credit card/i)).toBeInTheDocument();
-  });
-
-  it("does not call DELETE if dialog is cancelled", async () => {
-    const user = userEvent.setup();
-    const fetchMock = vi
-      .mocked(global.fetch)
-      .mockImplementation((input: string | Request | URL) => {
-        const url = input instanceof Request ? input.url : input.toString();
-        if (url.includes("/api/credit-cards"))
-          return Promise.resolve({ ok: true, json: async () => [mockCards[0]] } as Response);
-        return Promise.resolve({ ok: true, json: async () => [] } as Response);
-      });
-
-    await act(async () => {
-      render(<CreditCardsTab />);
-    });
-
-    const deleteButtons = screen.getAllByTestId("delete-credit-card-button");
-    await user.click(deleteButtons[0]);
-
-    // Cancel the dialog
-    await user.click(screen.getByRole("button", { name: "Cancel" }));
-
-    const deleteCalls = fetchMock.mock.calls.filter(([, opts]) => opts?.method === "DELETE");
-    expect(deleteCalls.length).toBe(0);
-  });
-
-  it("shows desktop table delete button", async () => {
-    vi.mocked(global.fetch).mockImplementation((input: string | Request | URL) => {
-      const url = input instanceof Request ? input.url : input.toString();
-      if (url.includes("/api/credit-cards"))
-        return Promise.resolve({ ok: true, json: async () => [mockCards[0]] } as Response);
-      return Promise.resolve({ ok: true, json: async () => [] } as Response);
-    });
-
-    await act(async () => {
-      render(<CreditCardsTab />);
-    });
-
-    const desktopView = screen.getByTestId("credit-cards-desktop");
-    const deleteBtn = within(desktopView).getByTestId("delete-credit-card-button");
-    expect(deleteBtn).toBeInTheDocument();
-    expect(deleteBtn).toHaveTextContent("Delete");
+    await user.click(screen.getByTestId("add-credit-card-button"));
+    expect(screen.getByText(/Add a credit card\. You can configure/i)).toBeInTheDocument();
   });
 });

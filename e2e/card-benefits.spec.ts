@@ -13,8 +13,8 @@ test.describe("Card Benefits — Settings CRUD (admin)", () => {
 
     await expect(page.locator('[data-testid="tab-credit-cards"]')).toBeVisible();
 
-    // Expand AMEX Business Platinum's benefits section
-    await page.getByTestId(`toggle-benefits-${CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM}`).click();
+    // Expand AMEX Business Platinum accordion to reveal the benefits section
+    await page.getByTestId(`accordion-header-${CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM}`).click();
 
     // Open Add dialog
     await page.getByTestId("add-card-benefit-button").click();
