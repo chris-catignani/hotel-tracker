@@ -389,7 +389,10 @@ export default function DashboardPage() {
     return sum + usdTotalCost + pointsRedeemedValue + certsValue;
   }, 0);
 
-  const recentBookings = filteredBookings.slice(0, 5);
+  const today = new Date().toISOString().split("T")[0];
+  const recentBookings = filteredBookings
+    .filter((b) => b.checkOut.slice(0, 10) >= today)
+    .slice(0, 5);
 
   return (
     <div className="space-y-6">
@@ -438,7 +441,7 @@ export default function DashboardPage() {
         <Card className="lg:col-span-2 xl:col-span-2">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Recent Bookings</CardTitle>
+              <CardTitle>Upcoming Bookings</CardTitle>
               <Link href="/bookings">
                 <Button variant="outline" size="sm">
                   View All
@@ -450,8 +453,8 @@ export default function DashboardPage() {
             {recentBookings.length === 0 ? (
               <EmptyState
                 icon={CalendarDays}
-                title="No bookings yet"
-                description="Start tracking your hotel stays and savings by adding your first booking."
+                title="No upcoming bookings"
+                description="No current or future bookings. Add a new booking or check the bookings list for past stays."
                 action={{
                   label: "Add Booking",
                   href: "/bookings/new",

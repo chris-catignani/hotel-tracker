@@ -878,8 +878,8 @@ async function main() {
   for (const ucc of uccCards) {
     await prisma.userCreditCard.upsert({
       where: { id: ucc.id },
-      update: { creditCardId: ucc.creditCardId, isActive: true },
-      create: { id: ucc.id, userId: ADMIN_USER_ID, creditCardId: ucc.creditCardId, isActive: true },
+      update: { creditCardId: ucc.creditCardId },
+      create: { id: ucc.id, userId: ADMIN_USER_ID, creditCardId: ucc.creditCardId },
     });
   }
 

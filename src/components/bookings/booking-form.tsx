@@ -15,6 +15,7 @@ import {
   ACCOMMODATION_TYPE_OPTIONS,
   BENEFIT_TYPE_OPTIONS,
   BOOKING_SOURCE_OPTIONS,
+  COUNTRY_TO_CURRENCY,
   PAYMENT_TYPES,
 } from "@/lib/constants";
 import { CurrencyCombobox } from "@/components/ui/currency-combobox";
@@ -120,6 +121,13 @@ export function BookingForm({
 
   const handleGeoSelect = (result: GeoResult) => {
     dispatch({ type: "SET_PROPERTY_GEO", result });
+    // Auto-set currency based on country if no costs have been entered yet
+    if (!pretaxCost && !totalCost && result.countryCode) {
+      const suggestedCurrency = COUNTRY_TO_CURRENCY[result.countryCode];
+      if (suggestedCurrency) {
+        dispatch({ type: "SET_FIELD", field: "currency", value: suggestedCurrency });
+      }
+    }
   };
 
   const handleManualPropertyEdit = () => {

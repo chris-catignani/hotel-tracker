@@ -39,14 +39,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     });
     if (!exists) return apiError("User credit card not found", null, 404, request);
 
-    const { creditCardId, nickname, openedDate, closedDate, isActive } = await request.json();
+    const { creditCardId, nickname, openedDate, closedDate } = await request.json();
 
     const data: Record<string, unknown> = {};
     if (creditCardId !== undefined) data.creditCardId = creditCardId;
     if (nickname !== undefined) data.nickname = nickname || null;
     if (openedDate !== undefined) data.openedDate = openedDate ? new Date(openedDate) : null;
     if (closedDate !== undefined) data.closedDate = closedDate ? new Date(closedDate) : null;
-    if (isActive !== undefined) data.isActive = isActive;
 
     const card = await prisma.userCreditCard.update({
       where: { id },

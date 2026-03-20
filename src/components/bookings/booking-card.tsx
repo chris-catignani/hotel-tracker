@@ -30,6 +30,8 @@ export function BookingCard({ booking, onDelete, showActions = false }: BookingC
   const netCost = calculateNetCost(booking);
   const exchangeRate = booking.exchangeRate ? Number(booking.exchangeRate) : 1;
   const usdTotalCost = Number(booking.totalCost) * exchangeRate;
+  const today = new Date().toISOString().split("T")[0];
+  const isFutureBooking = booking.checkIn.slice(0, 10) > today;
 
   return (
     <Card className="overflow-hidden" data-testid={`booking-card-${booking.id}`}>
@@ -64,6 +66,7 @@ export function BookingCard({ booking, onDelete, showActions = false }: BookingC
                   </span>
                 )}
                 {booking.accommodationType !== "apartment" &&
+                  isFutureBooking &&
                   (booking.priceWatchBooking?.priceWatch.isEnabled ? (
                     <Badge className="font-normal px-1.5 py-0 bg-green-100 text-green-700 border-green-200 hover:bg-green-100">
                       Watching Price

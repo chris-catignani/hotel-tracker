@@ -220,7 +220,6 @@ model UserCreditCard {
   nickname     String? // e.g. "AMEX Biz Plat #1" — optional, used when multiple instances exist
   openedDate   DateTime?  @db.Date @map("opened_date")
   closedDate   DateTime?  @db.Date @map("closed_date")
-  isActive     Boolean    @default(true) @map("is_active")
   createdAt    DateTime   @default(now()) @map("created_at")
 
   bookings Booking[]

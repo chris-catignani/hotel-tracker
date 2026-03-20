@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
     const userId = userIdOrResponse;
 
-    const { creditCardId, nickname, openedDate, closedDate, isActive } = await request.json();
+    const { creditCardId, nickname, openedDate, closedDate } = await request.json();
 
     if (!creditCardId) {
       return apiError("creditCardId is required", null, 400, request);
@@ -43,7 +43,6 @@ export async function POST(request: NextRequest) {
         nickname: nickname || null,
         openedDate: openedDate ? new Date(openedDate) : null,
         closedDate: closedDate ? new Date(closedDate) : null,
-        isActive: isActive ?? true,
       },
       include: INCLUDE,
     });

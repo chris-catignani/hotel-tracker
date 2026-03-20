@@ -84,7 +84,7 @@ async function main() {
       uccSkipped++;
     } else {
       const ucc = await prisma.userCreditCard.create({
-        data: { userId: pair.userId, creditCardId: pair.creditCardId, isActive: true },
+        data: { userId: pair.userId, creditCardId: pair.creditCardId },
       });
       console.log(`  ✓ Created UserCreditCard for ${pair.creditCardName} (id: ${ucc.id})`);
       uccId = ucc.id;
