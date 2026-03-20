@@ -9,15 +9,15 @@ import { HOTEL_ID } from "../src/lib/constants";
 test.describe("Card Benefits — Settings CRUD (admin)", () => {
   test("creates a card benefit", async ({ page, request }) => {
     await page.goto("/settings");
-    await page.getByRole("tab", { name: "Card Benefits" }).click();
+    await page.getByRole("tab", { name: "Credit Cards" }).click();
 
-    await expect(page.locator('[data-testid="tab-card-benefits"]')).toBeVisible();
+    await expect(page.locator('[data-testid="tab-credit-cards"]')).toBeVisible();
+
+    // Expand AMEX Business Platinum's benefits section
+    await page.getByTestId(`toggle-benefits-${CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM}`).click();
 
     // Open Add dialog
     await page.getByTestId("add-card-benefit-button").click();
-
-    await page.getByTestId("add-card-select").click();
-    await page.getByRole("option").filter({ hasText: "AMEX Business Platinum" }).first().click();
 
     await page.getByTestId("add-description-input").fill("Quarterly hotel credit UI test");
     await page.getByTestId("add-value-input").fill("50");
@@ -27,7 +27,7 @@ test.describe("Card Benefits — Settings CRUD (admin)", () => {
 
     await page.getByTestId("add-card-benefit-save").click();
 
-    // Verify it appears in the desktop table (mobile view is hidden on desktop viewport)
+    // Verify it appears in the benefits table (desktop viewport)
     await expect(
       page.locator('[data-testid="card-benefit-row"]').filter({
         has: page

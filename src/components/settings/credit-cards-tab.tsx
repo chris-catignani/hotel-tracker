@@ -26,6 +26,7 @@ import {
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { extractApiError } from "@/lib/client-error";
 import {
+  CardBenefit,
   CreditCard,
   CreditCardRewardRuleFormData,
   HotelChain,
@@ -35,14 +36,17 @@ import {
 } from "@/lib/types";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { EmptyState } from "@/components/ui/empty-state";
-import { CreditCard as CreditCardIcon, Plus, Trash2 } from "lucide-react";
+import { CreditCard as CreditCardIcon, ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { CardBenefitsSection } from "./card-benefits-section";
 
 export function CreditCardsTab() {
   const [cards, setCards] = useState<CreditCard[]>([]);
   const [pointTypes, setPointTypes] = useState<PointType[]>([]);
   const [hotelChains, setHotelChains] = useState<HotelChain[]>([]);
   const [otaAgencies, setOtaAgencies] = useState<OtaAgency[]>([]);
+  const [benefits, setBenefits] = useState<CardBenefit[]>([]);
+  const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
 
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -64,11 +68,12 @@ export function CreditCardsTab() {
   const [cardToDelete, setCardToDelete] = useState<CreditCard | null>(null);
 
   const fetchData = useCallback(async () => {
-    const [cardsRes, ptRes, hcRes, otaRes] = await Promise.all([
+    const [cardsRes, ptRes, hcRes, otaRes, benefitsRes] = await Promise.all([
       fetch("/api/credit-cards"),
       fetch("/api/point-types"),
       fetch("/api/hotel-chains"),
       fetch("/api/ota-agencies"),
+      fetch("/api/card-benefits"),
     ]);
     if (cardsRes.ok) setCards(await cardsRes.json());
     else setError(await extractApiError(cardsRes, "Failed to load credit cards."));
@@ -76,7 +81,12 @@ export function CreditCardsTab() {
     if (ptRes.ok) setPointTypes(await ptRes.json());
     if (hcRes.ok) setHotelChains(await hcRes.json());
     if (otaRes.ok) setOtaAgencies(await otaRes.json());
+    if (benefitsRes.ok) setBenefits(await benefitsRes.json());
   }, []);
+
+  const toggleBenefits = (cardId: string) => {
+    setExpandedIds((prev) => ({ ...prev, [cardId]: !prev[cardId] }));
+  };
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -421,6 +431,30 @@ export function CreditCardsTab() {
                       Delete
                     </Button>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full text-muted-foreground"
+                    data-testid={`toggle-benefits-${card.id}`}
+                    onClick={() => toggleBenefits(card.id)}
+                  >
+                    {expandedIds[card.id] ? (
+                      <ChevronUp className="mr-1 size-3" />
+                    ) : (
+                      <ChevronDown className="mr-1 size-3" />
+                    )}
+                    Benefits
+                    {benefits.filter((b) => b.creditCardId === card.id).length > 0 &&
+                      ` (${benefits.filter((b) => b.creditCardId === card.id).length})`}
+                  </Button>
+                  {expandedIds[card.id] && (
+                    <CardBenefitsSection
+                      creditCardId={card.id}
+                      benefits={benefits.filter((b) => b.creditCardId === card.id)}
+                      hotelChains={hotelChains}
+                      onRefetch={fetchData}
+                    />
+                  )}
                 </CardContent>
               </Card>
             ))}
@@ -438,56 +472,89 @@ export function CreditCardsTab() {
                   <TableHead>Reward Type</TableHead>
                   <TableHead>Reward Rate</TableHead>
                   <TableHead>Point Type</TableHead>
+                  <TableHead>Benefits</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {cards.map((card) => (
-                  <TableRow key={card.id} data-testid="credit-card-table-row">
-                    <TableCell className="font-medium" data-testid="credit-card-table-name">
-                      {card.name}
-                    </TableCell>
-                    <TableCell className="capitalize">{card.rewardType}</TableCell>
-                    <TableCell>
-                      {card.rewardRate}x
-                      {card.rewardRules && card.rewardRules.length > 0 && (
-                        <div className="text-[10px] font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full inline-flex ml-1.5 align-middle">
-                          {card.rewardRules.length === 1 ? (
-                            <>
-                              {card.rewardRules[0].rewardType === "multiplier"
-                                ? `(${card.rewardRules[0].rewardValue}x at `
-                                : `(+ ${Number(
-                                    card.rewardRules[0].rewardValue
-                                  ).toLocaleString()} pts `}
-                              {card.rewardRules[0].hotelChain?.name ||
-                                card.rewardRules[0].otaAgency?.name ||
-                                ""}
-                              {card.rewardRules[0].rewardType === "multiplier" ? ")" : ")"}
-                            </>
-                          ) : (
-                            `+ ${card.rewardRules.length} rules`
+                {cards.map((card) => {
+                  const cardBenefits = benefits.filter((b) => b.creditCardId === card.id);
+                  return (
+                    <>
+                      <TableRow key={card.id} data-testid="credit-card-table-row">
+                        <TableCell className="font-medium" data-testid="credit-card-table-name">
+                          {card.name}
+                        </TableCell>
+                        <TableCell className="capitalize">{card.rewardType}</TableCell>
+                        <TableCell>
+                          {card.rewardRate}x
+                          {card.rewardRules && card.rewardRules.length > 0 && (
+                            <div className="text-[10px] font-medium text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full inline-flex ml-1.5 align-middle">
+                              {card.rewardRules.length === 1 ? (
+                                <>
+                                  {card.rewardRules[0].rewardType === "multiplier"
+                                    ? `(${card.rewardRules[0].rewardValue}x at `
+                                    : `(+ ${Number(
+                                        card.rewardRules[0].rewardValue
+                                      ).toLocaleString()} pts `}
+                                  {card.rewardRules[0].hotelChain?.name ||
+                                    card.rewardRules[0].otaAgency?.name ||
+                                    ""}
+                                  {card.rewardRules[0].rewardType === "multiplier" ? ")" : ")"}
+                                </>
+                              ) : (
+                                `+ ${card.rewardRules.length} rules`
+                              )}
+                            </div>
                           )}
-                        </div>
+                        </TableCell>
+                        <TableCell>{card.pointType?.name ?? "—"}</TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            data-testid={`toggle-benefits-${card.id}`}
+                            onClick={() => toggleBenefits(card.id)}
+                          >
+                            {expandedIds[card.id] ? (
+                              <ChevronUp className="mr-1 size-3" />
+                            ) : (
+                              <ChevronDown className="mr-1 size-3" />
+                            )}
+                            {cardBenefits.length > 0 ? `${cardBenefits.length}` : "—"}
+                          </Button>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button variant="ghost" size="sm" onClick={() => handleEdit(card)}>
+                              Edit
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              data-testid="delete-credit-card-button"
+                              onClick={() => handleDeleteClick(card)}
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                      {expandedIds[card.id] && (
+                        <TableRow key={`${card.id}-benefits`}>
+                          <TableCell colSpan={6} className="p-0">
+                            <CardBenefitsSection
+                              creditCardId={card.id}
+                              benefits={cardBenefits}
+                              hotelChains={hotelChains}
+                              onRefetch={fetchData}
+                            />
+                          </TableCell>
+                        </TableRow>
                       )}
-                    </TableCell>
-                    <TableCell>{card.pointType?.name ?? "—"}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => handleEdit(card)}>
-                          Edit
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          data-testid="delete-credit-card-button"
-                          onClick={() => handleDeleteClick(card)}
-                        >
-                          Delete
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                    </>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>

@@ -37,6 +37,8 @@ describe("CreditCardsTab", () => {
         return Promise.resolve({ ok: true, json: async () => [] } as Response);
       if (url.includes("/api/ota-agencies"))
         return Promise.resolve({ ok: true, json: async () => [] } as Response);
+      if (url.includes("/api/card-benefits"))
+        return Promise.resolve({ ok: true, json: async () => [] } as Response);
       return Promise.reject(new Error(`Unknown URL: ${url}`));
     });
   });
