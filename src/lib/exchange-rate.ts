@@ -63,3 +63,58 @@ export async function resolveCalcCurrencyRate(currency: string): Promise<number 
   if (cached != null) return cached;
   return fetchExchangeRate(currency, "latest");
 }
+
+/**
+ * Get the historical exchange rate for a currency on a specific date (YYYY-MM-DD).
+ * Checks ExchangeRateHistory cache first; on miss, fetches from the API and stores
+ * the result so subsequent lookups for the same date are instant.
+ * For future dates, falls back to the current cached rate.
+ */
+export async function getOrFetchHistoricalRate(
+  fromCurrency: string,
+  date: string
+): Promise<number | null> {
+  if (fromCurrency === "USD") return 1;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const isPast = new Date(date) <= today;
+
+  if (!isPast) {
+    // Future date — use current cached rate as best estimate
+    return getCurrentRate(fromCurrency);
+  }
+
+  // Check historical cache first
+  const cached = await prisma.exchangeRateHistory.findUnique({
+    where: {
+      fromCurrency_toCurrency_date: {
+        fromCurrency,
+        toCurrency: "USD",
+        date: new Date(date),
+      },
+    },
+  });
+  if (cached) return Number(cached.rate);
+
+  // Cache miss — fetch from external API and store.
+  // Use upsert to handle concurrent requests for the same date (race condition).
+  const rate = await fetchExchangeRate(fromCurrency, date);
+  await prisma.exchangeRateHistory.upsert({
+    where: {
+      fromCurrency_toCurrency_date: {
+        fromCurrency,
+        toCurrency: "USD",
+        date: new Date(date),
+      },
+    },
+    update: {},
+    create: {
+      fromCurrency,
+      toCurrency: "USD",
+      date: new Date(date),
+      rate,
+    },
+  });
+  return rate;
+}

@@ -15,6 +15,10 @@ import { reapplyBenefitForAllUsers } from "../src/lib/card-benefit-apply";
 
 const prisma = new PrismaClient();
 
+const PARTNERSHIP_EARN_ID = {
+  ACCOR_QANTAS: "cpartnership0accorqantas1",
+};
+
 const POINT_TYPE_ID = {
   HILTON_HONORS: "cyh0r61a810u6qrgfj515tkid",
   MARRIOTT_BONVOY: "ctv910qcpclvq0b9thpcw12x6",
@@ -28,6 +32,7 @@ const POINT_TYPE_ID = {
   AVIOS: "c4rk0idsjpnfriatk1qulswgx",
   BILT: "cbuf26mcgjs61kr9bybazq95j",
   WELLS_FARGO: "c0kuqb3diocim6kgaxo0b3w0r",
+  QANTAS_POINTS: "cqantas0points0type000001",
 };
 
 interface EliteStatusData {
@@ -251,6 +256,12 @@ async function main() {
       name: "Wells Fargo Rewards",
       category: "transferable",
       centsPerPoint: 0.015,
+    },
+    {
+      id: POINT_TYPE_ID.QANTAS_POINTS,
+      name: "Qantas Points",
+      category: "airline",
+      centsPerPoint: 0.012,
     },
   ];
 
@@ -926,6 +937,60 @@ async function main() {
       name: "British Airways",
       rewardType: "points",
       pointTypeId: POINT_TYPE_ID.AVIOS,
+    },
+  });
+
+  // Partnership Earns
+  await prisma.partnershipEarn.upsert({
+    where: { id: PARTNERSHIP_EARN_ID.ACCOR_QANTAS },
+    update: {},
+    create: {
+      id: PARTNERSHIP_EARN_ID.ACCOR_QANTAS,
+      name: "Accor–Qantas",
+      hotelChainId: HOTEL_ID.ACCOR,
+      pointTypeId: POINT_TYPE_ID.QANTAS_POINTS,
+      earnRate: 3,
+      earnCurrency: "AUD",
+      countryCodes: [
+        "AU",
+        "KH",
+        "CN",
+        "HK",
+        "MO",
+        "FJ",
+        "PF",
+        "ID",
+        "JP",
+        "LA",
+        "MY",
+        "MV",
+        "MN",
+        "MM",
+        "NZ",
+        "PH",
+        "SG",
+        "KR",
+        "TW",
+        "TH",
+        "VN",
+      ],
+      isActive: true,
+    },
+  });
+
+  // Seed admin's UserPartnershipEarn — enable Accor-Qantas for the admin user
+  await prisma.userPartnershipEarn.upsert({
+    where: {
+      userId_partnershipEarnId: {
+        userId: ADMIN_USER_ID,
+        partnershipEarnId: PARTNERSHIP_EARN_ID.ACCOR_QANTAS,
+      },
+    },
+    update: {},
+    create: {
+      userId: ADMIN_USER_ID,
+      partnershipEarnId: PARTNERSHIP_EARN_ID.ACCOR_QANTAS,
+      isEnabled: true,
     },
   });
 

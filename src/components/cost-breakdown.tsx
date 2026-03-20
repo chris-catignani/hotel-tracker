@@ -132,6 +132,7 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
     cardBenefitCalc,
     loyaltyPointsValue,
     loyaltyPointsCalc,
+    partnershipEarns,
     netCost,
   } = breakdown;
 
@@ -212,6 +213,24 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
               -{formatCurrency(loyaltyPointsValue)}
             </span>
           </div>
+        )}
+
+        {(partnershipEarns ?? []).map(
+          (earn) =>
+            earn.earnedValue > 0 && (
+              <div key={earn.name} className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-1.5">
+                  <span>{earn.name} Partnership</span>
+                  <CalculationInfo calc={earn.calc} />
+                </div>
+                <span
+                  data-testid={`breakdown-partnership-${earn.name.toLowerCase().replace(/\s+/g, "-")}`}
+                  className="text-green-600"
+                >
+                  -{formatCurrency(earn.earnedValue)}
+                </span>
+              </div>
+            )
         )}
 
         {promotions.length > 0 && (

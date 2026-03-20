@@ -11,6 +11,7 @@ import { fetchExchangeRate, getCurrentRate, resolveCalcCurrencyRate } from "@/li
 import { enrichBookingWithRate } from "@/lib/booking-enrichment";
 import { findOrCreateProperty } from "@/lib/property-utils";
 import { reapplyCardBenefitsAffectedByBooking } from "@/lib/card-benefit-apply";
+import { resolvePartnershipEarns } from "@/lib/partnership-earns";
 
 const BOOKING_INCLUDE = (userId: string) =>
   ({
@@ -78,7 +79,36 @@ export async function GET(request: NextRequest) {
     const normalized = normalizeUserStatuses(bookings) as (typeof bookings)[number][];
     const enriched = await Promise.all(normalized.map(enrichBookingWithRate));
 
-    return NextResponse.json(enriched);
+    // Fetch enabled partnership earns for this user once, then apply to each booking
+    const enabledEarns = await prisma.userPartnershipEarn.findMany({
+      where: { userId, isEnabled: true },
+      include: { partnershipEarn: { include: { pointType: true } } },
+    });
+
+    const withPartnerships = await Promise.all(
+      enriched.map(async (b) => {
+        const partnershipEarns = await resolvePartnershipEarns(
+          {
+            hotelChainId: b.hotelChainId,
+            pretaxCost: Number(b.pretaxCost),
+            exchangeRate: b.exchangeRate ? Number(b.exchangeRate) : null,
+            property: b.property,
+            checkIn: b.checkIn,
+          },
+          enabledEarns.map((e) => ({
+            ...e.partnershipEarn,
+            earnRate: Number(e.partnershipEarn.earnRate),
+            pointType: {
+              ...e.partnershipEarn.pointType,
+              centsPerPoint: Number(e.partnershipEarn.pointType.centsPerPoint),
+            },
+          }))
+        );
+        return { ...b, partnershipEarns };
+      })
+    );
+
+    return NextResponse.json(withPartnerships);
   } catch (error) {
     return apiError("Failed to fetch bookings", error, 500, request);
   }

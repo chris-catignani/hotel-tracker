@@ -1524,4 +1524,57 @@ describe("net-cost", () => {
       });
     });
   });
+
+  describe("Partnership Earns", () => {
+    it("sums partnershipEarns and subtracts from netCost", () => {
+      const booking: NetCostBooking = {
+        ...mockBaseBooking,
+        totalCost: 120,
+        pretaxCost: 100,
+        partnershipEarns: [
+          {
+            name: "Accor–Qantas",
+            earnedValue: 5.71,
+            calc: {
+              label: "Accor–Qantas",
+              appliedValue: 5.71,
+              groups: [],
+            },
+          },
+        ],
+      };
+      const result = getNetCostBreakdown(booking);
+      expect(result.partnershipEarnsValue).toBeCloseTo(5.71);
+      expect(result.netCost).toBeCloseTo(120 - 5.71);
+    });
+
+    it("returns zero partnershipEarnsValue when no earns provided", () => {
+      const result = getNetCostBreakdown({ ...mockBaseBooking, totalCost: 120 });
+      expect(result.partnershipEarnsValue).toBe(0);
+      expect(result.partnershipEarns).toEqual([]);
+    });
+
+    it("sums multiple partnership earns", () => {
+      const booking: NetCostBooking = {
+        ...mockBaseBooking,
+        totalCost: 200,
+        pretaxCost: 170,
+        partnershipEarns: [
+          {
+            name: "Accor–Qantas",
+            earnedValue: 5.71,
+            calc: { label: "Accor–Qantas", appliedValue: 5.71, groups: [] },
+          },
+          {
+            name: "Some Other Partnership",
+            earnedValue: 3.0,
+            calc: { label: "Some Other Partnership", appliedValue: 3.0, groups: [] },
+          },
+        ],
+      };
+      const result = getNetCostBreakdown(booking);
+      expect(result.partnershipEarnsValue).toBeCloseTo(8.71);
+      expect(result.netCost).toBeCloseTo(200 - 8.71);
+    });
+  });
 });

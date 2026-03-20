@@ -60,6 +60,8 @@ describe("CostBreakdown", () => {
     },
     pointsRedeemedValue: 0,
     certsValue: 0,
+    partnershipEarns: [],
+    partnershipEarnsValue: 0,
     netCost: 80,
   };
 
