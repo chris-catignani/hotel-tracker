@@ -11,6 +11,7 @@ import {
 import { seedBookings } from "./seed-bookings";
 import { seedPromotions } from "./seed-promotions";
 import { recalculateLoyaltyForHotelChain } from "../src/lib/loyalty-recalculation";
+import { reapplyBenefitForAllUsers } from "../src/lib/card-benefit-apply";
 
 const prisma = new PrismaClient();
 
@@ -1001,6 +1002,11 @@ async function main() {
   // rates and elite statuses (including Accor's EUR-denominated calculation)
   for (const hotelId of Object.values(HOTEL_ID)) {
     await recalculateLoyaltyForHotelChain(hotelId, ADMIN_USER_ID);
+  }
+
+  // Apply card benefits to bookings — must run after seedBookings so the bookings exist
+  for (const benefitId of Object.values(CARD_BENEFIT_ID)) {
+    await reapplyBenefitForAllUsers(benefitId);
   }
 
   console.log("Seed data created successfully");
