@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -26,7 +27,13 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { AppSelect } from "@/components/ui/app-select";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { extractApiError } from "@/lib/client-error";
-import { CardBenefit, CardBenefitFormData, HotelChain, BenefitPeriod } from "@/lib/types";
+import {
+  CardBenefit,
+  CardBenefitFormData,
+  HotelChain,
+  OtaAgency,
+  BenefitPeriod,
+} from "@/lib/types";
 import { Plus } from "lucide-react";
 
 const PERIOD_OPTIONS = [
@@ -46,9 +53,13 @@ export const PERIOD_LABELS: Record<BenefitPeriod, string> = {
 const EMPTY_FORM: CardBenefitFormData = {
   description: "",
   value: "",
+  maxValuePerBooking: null,
   period: "quarterly",
   hotelChainId: null,
+  otaAgencyIds: [],
   isActive: true,
+  startDate: null,
+  endDate: null,
 };
 
 function formatValue(value: string | number): string {
@@ -59,13 +70,23 @@ function BenefitForm({
   value,
   onChange,
   hotelChainOptions,
+  otaAgencies,
   prefix,
 }: {
   value: CardBenefitFormData;
   onChange: (updates: Partial<CardBenefitFormData>) => void;
   hotelChainOptions: { label: string; value: string }[];
+  otaAgencies: OtaAgency[];
   prefix: string;
 }) {
+  const toggleOta = (otaId: string) => {
+    const current = value.otaAgencyIds;
+    const next = current.includes(otaId)
+      ? current.filter((id) => id !== otaId)
+      : [...current, otaId];
+    onChange({ otaAgencyIds: next });
+  };
+
   return (
     <div className="space-y-4 py-2">
       <div className="space-y-2">
@@ -78,9 +99,10 @@ function BenefitForm({
           data-testid={`${prefix}-description-input`}
         />
       </div>
+
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor={`${prefix}-value`}>Credit Amount ($) *</Label>
+          <Label htmlFor={`${prefix}-value`}>Total Amount ($) *</Label>
           <Input
             id={`${prefix}-value`}
             type="number"
@@ -103,8 +125,27 @@ function BenefitForm({
           />
         </div>
       </div>
+
       <div className="space-y-2">
-        <Label>Hotel Chain (optional)</Label>
+        <Label htmlFor={`${prefix}-max-per-booking`}>
+          Max per Booking ($) <span className="text-muted-foreground font-normal">(optional)</span>
+        </Label>
+        <Input
+          id={`${prefix}-max-per-booking`}
+          type="number"
+          min="0"
+          step="0.01"
+          value={value.maxValuePerBooking ?? ""}
+          onChange={(e) => onChange({ maxValuePerBooking: e.target.value || null })}
+          placeholder="e.g. 250"
+          data-testid={`${prefix}-max-per-booking-input`}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label>
+          Hotel Chain <span className="text-muted-foreground font-normal">(optional)</span>
+        </Label>
         <AppSelect
           value={value.hotelChainId ?? ""}
           onValueChange={(v) => onChange({ hotelChainId: v || null })}
@@ -113,6 +154,60 @@ function BenefitForm({
           data-testid={`${prefix}-chain-select`}
         />
       </div>
+
+      {otaAgencies.length > 0 && (
+        <div className="space-y-2">
+          <Label>
+            OTA Restriction{" "}
+            <span className="text-muted-foreground font-normal">
+              (optional — leave unchecked for any)
+            </span>
+          </Label>
+          <div className="max-h-32 overflow-y-auto space-y-1 rounded-md border p-2">
+            {otaAgencies.map((ota) => (
+              <div key={ota.id} className="flex items-center gap-2">
+                <Checkbox
+                  id={`${prefix}-ota-${ota.id}`}
+                  checked={value.otaAgencyIds.includes(ota.id)}
+                  onCheckedChange={() => toggleOta(ota.id)}
+                  data-testid={`${prefix}-ota-checkbox-${ota.id}`}
+                />
+                <label htmlFor={`${prefix}-ota-${ota.id}`} className="text-sm cursor-pointer">
+                  {ota.name}
+                </label>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor={`${prefix}-start-date`}>
+            Start Date <span className="text-muted-foreground font-normal">(optional)</span>
+          </Label>
+          <Input
+            id={`${prefix}-start-date`}
+            type="date"
+            value={value.startDate ?? ""}
+            onChange={(e) => onChange({ startDate: e.target.value || null })}
+            data-testid={`${prefix}-start-date-input`}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor={`${prefix}-end-date`}>
+            End Date <span className="text-muted-foreground font-normal">(optional)</span>
+          </Label>
+          <Input
+            id={`${prefix}-end-date`}
+            type="date"
+            value={value.endDate ?? ""}
+            onChange={(e) => onChange({ endDate: e.target.value || null })}
+            data-testid={`${prefix}-end-date-input`}
+          />
+        </div>
+      </div>
+
       <div className="flex items-center gap-2">
         <Switch
           id={`${prefix}-active`}
@@ -126,15 +221,25 @@ function BenefitForm({
   );
 }
 
+function benefitSubtitle(benefit: CardBenefit): string {
+  const parts: string[] = [];
+  if (benefit.hotelChain) parts.push(benefit.hotelChain.name);
+  if (benefit.otaAgencies.length > 0)
+    parts.push(benefit.otaAgencies.map((o) => o.otaAgency.name).join(", "));
+  return parts.length > 0 ? parts.join(" · ") : "Any booking";
+}
+
 export function CardBenefitsSection({
   creditCardId,
   benefits,
   hotelChains,
+  otaAgencies,
   onRefetch,
 }: {
   creditCardId: string;
   benefits: CardBenefit[];
   hotelChains: HotelChain[];
+  otaAgencies: OtaAgency[];
   onRefetch: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -154,19 +259,27 @@ export function CardBenefitsSection({
   const isFormValid = (f: CardBenefitFormData) =>
     f.description.trim() && f.value !== "" && Number(f.value) > 0 && f.period;
 
+  const buildBody = (f: CardBenefitFormData) => ({
+    description: f.description,
+    value: Number(f.value),
+    maxValuePerBooking:
+      f.maxValuePerBooking != null && f.maxValuePerBooking !== ""
+        ? Number(f.maxValuePerBooking)
+        : null,
+    period: f.period,
+    hotelChainId: f.hotelChainId || null,
+    otaAgencyIds: f.otaAgencyIds,
+    isActive: f.isActive,
+    startDate: f.startDate || null,
+    endDate: f.endDate || null,
+  });
+
   const handleSubmit = async () => {
     setError(null);
     const res = await fetch("/api/card-benefits", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        creditCardId,
-        description: form.description,
-        value: Number(form.value),
-        period: form.period,
-        hotelChainId: form.hotelChainId || null,
-        isActive: form.isActive,
-      }),
+      body: JSON.stringify({ creditCardId, ...buildBody(form) }),
     });
     if (res.ok) {
       setForm(EMPTY_FORM);
@@ -182,9 +295,14 @@ export function CardBenefitsSection({
     setEditForm({
       description: benefit.description,
       value: String(Number(benefit.value)),
+      maxValuePerBooking:
+        benefit.maxValuePerBooking != null ? String(Number(benefit.maxValuePerBooking)) : null,
       period: benefit.period,
       hotelChainId: benefit.hotelChainId,
+      otaAgencyIds: benefit.otaAgencies.map((o) => o.otaAgencyId),
       isActive: benefit.isActive,
+      startDate: benefit.startDate ? benefit.startDate.slice(0, 10) : null,
+      endDate: benefit.endDate ? benefit.endDate.slice(0, 10) : null,
     });
     setEditOpen(true);
   };
@@ -195,14 +313,7 @@ export function CardBenefitsSection({
     const res = await fetch(`/api/card-benefits/${editBenefit.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        creditCardId,
-        description: editForm.description,
-        value: Number(editForm.value),
-        period: editForm.period,
-        hotelChainId: editForm.hotelChainId || null,
-        isActive: editForm.isActive,
-      }),
+      body: JSON.stringify({ creditCardId, ...buildBody(editForm) }),
     });
     if (res.ok) {
       setEditOpen(false);
@@ -246,7 +357,7 @@ export function CardBenefitsSection({
               Add Benefit
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Add Card Benefit</DialogTitle>
               <DialogDescription>
@@ -257,6 +368,7 @@ export function CardBenefitsSection({
               value={form}
               onChange={(updates) => setForm((prev) => ({ ...prev, ...updates }))}
               hotelChainOptions={hotelChainOptions}
+              otaAgencies={otaAgencies}
               prefix="add"
             />
             <DialogFooter>
@@ -297,9 +409,13 @@ export function CardBenefitsSection({
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {formatValue(benefit.value)} / {PERIOD_LABELS[benefit.period]}
-                  {benefit.hotelChain && ` · ${benefit.hotelChain.name} only`}
+                  {formatValue(benefit.value)}
+                  {benefit.maxValuePerBooking != null &&
+                    ` (${formatValue(benefit.maxValuePerBooking)}/booking)`}
+                  {" / "}
+                  {PERIOD_LABELS[benefit.period]}
                 </p>
+                <p className="text-xs text-muted-foreground">{benefitSubtitle(benefit)}</p>
                 <div className="flex gap-2 pt-1">
                   <Button
                     variant="outline"
@@ -330,7 +446,7 @@ export function CardBenefitsSection({
                   <TableHead>Description</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Period</TableHead>
-                  <TableHead>Hotel Chain</TableHead>
+                  <TableHead>Applies To</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
@@ -341,9 +457,16 @@ export function CardBenefitsSection({
                     <TableCell data-testid="card-benefit-description">
                       {benefit.description}
                     </TableCell>
-                    <TableCell>{formatValue(benefit.value)}</TableCell>
+                    <TableCell>
+                      {formatValue(benefit.value)}
+                      {benefit.maxValuePerBooking != null && (
+                        <span className="text-xs text-muted-foreground block">
+                          {formatValue(benefit.maxValuePerBooking)}/booking max
+                        </span>
+                      )}
+                    </TableCell>
                     <TableCell>{PERIOD_LABELS[benefit.period]}</TableCell>
-                    <TableCell>{benefit.hotelChain?.name ?? "Any"}</TableCell>
+                    <TableCell>{benefitSubtitle(benefit)}</TableCell>
                     <TableCell>
                       <span
                         className={`text-xs px-2 py-0.5 rounded-full ${benefit.isActive ? "bg-green-100 text-green-800" : "bg-muted text-muted-foreground"}`}
@@ -375,7 +498,7 @@ export function CardBenefitsSection({
 
       {/* Edit Dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Card Benefit</DialogTitle>
             <DialogDescription>Update card benefit details.</DialogDescription>
@@ -384,6 +507,7 @@ export function CardBenefitsSection({
             value={editForm}
             onChange={(updates) => setEditForm((prev) => ({ ...prev, ...updates }))}
             hotelChainOptions={hotelChainOptions}
+            otaAgencies={otaAgencies}
             prefix="edit"
           />
           <DialogFooter>

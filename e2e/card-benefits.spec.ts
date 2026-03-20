@@ -1,5 +1,5 @@
 import { test, expect } from "./fixtures";
-import { CREDIT_CARD_ID } from "../prisma/seed-ids";
+import { CREDIT_CARD_ID, OTA_AGENCY_ID } from "../prisma/seed-ids";
 import { HOTEL_ID } from "../src/lib/constants";
 
 // ---------------------------------------------------------------------------
@@ -577,6 +577,272 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
       expect(Number(matched!.appliedValue)).toBe(50);
     } finally {
       await isolatedUserRequest.request.delete(`/api/bookings/${booking.id}`);
+      await request.delete(`/api/card-benefits/${benefitId}`);
+    }
+  });
+
+  test("maxValuePerBooking caps applied value per booking", async ({
+    request,
+    isolatedUserRequest,
+  }) => {
+    // $500 annual benefit, capped at $250 per booking
+    const benefit = await request.post("/api/card-benefits", {
+      data: {
+        creditCardId: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM,
+        description: "Test max per booking cap",
+        value: 500,
+        maxValuePerBooking: 250,
+        period: "annual",
+        hotelChainId: HOTEL_ID.HILTON,
+        isActive: true,
+      },
+    });
+    const { id: benefitId } = (await benefit.json()) as { id: string };
+
+    // First booking: $300 total cost — should get $250 (capped), not $300
+    const res1 = await isolatedUserRequest.request.post("/api/bookings", {
+      data: {
+        hotelChainId: HOTEL_ID.HILTON,
+        propertyName: "Test Max Cap A",
+        checkIn: "2025-04-01",
+        checkOut: "2025-04-03",
+        numNights: 2,
+        pretaxCost: 270,
+        taxAmount: 30,
+        totalCost: 300,
+        currency: "USD",
+        bookingSource: "direct_web",
+        countryCode: "US",
+        city: "Chicago",
+        userCreditCardId: isolatedUserRequest.userCreditCardId,
+      },
+    });
+    const booking1 = (await res1.json()) as {
+      id: string;
+      bookingCardBenefits: { cardBenefitId: string; appliedValue: string | number }[];
+    };
+
+    // Second booking: should get $250 (remaining $250 from the $500 annual pool)
+    const res2 = await isolatedUserRequest.request.post("/api/bookings", {
+      data: {
+        hotelChainId: HOTEL_ID.HILTON,
+        propertyName: "Test Max Cap B",
+        checkIn: "2025-05-01",
+        checkOut: "2025-05-03",
+        numNights: 2,
+        pretaxCost: 270,
+        taxAmount: 30,
+        totalCost: 300,
+        currency: "USD",
+        bookingSource: "direct_web",
+        countryCode: "US",
+        city: "Chicago",
+        userCreditCardId: isolatedUserRequest.userCreditCardId,
+      },
+    });
+    const booking2 = (await res2.json()) as {
+      id: string;
+      bookingCardBenefits: { cardBenefitId: string; appliedValue: string | number }[];
+    };
+
+    try {
+      const match1 = booking1.bookingCardBenefits.find((b) => b.cardBenefitId === benefitId);
+      expect(Number(match1?.appliedValue)).toBe(250);
+
+      const match2 = booking2.bookingCardBenefits.find((b) => b.cardBenefitId === benefitId);
+      expect(Number(match2?.appliedValue)).toBe(250);
+    } finally {
+      await isolatedUserRequest.request.delete(`/api/bookings/${booking1.id}`);
+      await isolatedUserRequest.request.delete(`/api/bookings/${booking2.id}`);
+      await request.delete(`/api/card-benefits/${benefitId}`);
+    }
+  });
+
+  test("benefit is NOT applied to bookings outside startDate/endDate range", async ({
+    request,
+    isolatedUserRequest,
+  }) => {
+    // Benefit valid only for Q3 2025 (July–Sep)
+    const benefit = await request.post("/api/card-benefits", {
+      data: {
+        creditCardId: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM,
+        description: "Test date range filter",
+        value: 50,
+        period: "quarterly",
+        hotelChainId: HOTEL_ID.HILTON,
+        isActive: true,
+        startDate: "2025-07-01",
+        endDate: "2025-09-30",
+      },
+    });
+    const { id: benefitId } = (await benefit.json()) as { id: string };
+
+    // Booking BEFORE startDate (April → Q2) — should NOT apply
+    const beforeRes = await isolatedUserRequest.request.post("/api/bookings", {
+      data: {
+        hotelChainId: HOTEL_ID.HILTON,
+        propertyName: "Test Hilton Before Start",
+        checkIn: "2025-04-10",
+        checkOut: "2025-04-12",
+        numNights: 2,
+        pretaxCost: 200,
+        taxAmount: 20,
+        totalCost: 220,
+        currency: "USD",
+        bookingSource: "direct_web",
+        countryCode: "US",
+        city: "Chicago",
+        userCreditCardId: isolatedUserRequest.userCreditCardId,
+      },
+    });
+    const beforeBooking = (await beforeRes.json()) as {
+      id: string;
+      bookingCardBenefits: { cardBenefitId: string }[];
+    };
+
+    // Booking WITHIN range (July → Q3) — should apply
+    const withinRes = await isolatedUserRequest.request.post("/api/bookings", {
+      data: {
+        hotelChainId: HOTEL_ID.HILTON,
+        propertyName: "Test Hilton Within Range",
+        checkIn: "2025-07-15",
+        checkOut: "2025-07-17",
+        numNights: 2,
+        pretaxCost: 200,
+        taxAmount: 20,
+        totalCost: 220,
+        currency: "USD",
+        bookingSource: "direct_web",
+        countryCode: "US",
+        city: "Chicago",
+        userCreditCardId: isolatedUserRequest.userCreditCardId,
+      },
+    });
+    const withinBooking = (await withinRes.json()) as {
+      id: string;
+      bookingCardBenefits: { cardBenefitId: string; appliedValue: string | number }[];
+    };
+
+    // Booking AFTER endDate (October → Q4) — should NOT apply
+    const afterRes = await isolatedUserRequest.request.post("/api/bookings", {
+      data: {
+        hotelChainId: HOTEL_ID.HILTON,
+        propertyName: "Test Hilton After End",
+        checkIn: "2025-10-10",
+        checkOut: "2025-10-12",
+        numNights: 2,
+        pretaxCost: 200,
+        taxAmount: 20,
+        totalCost: 220,
+        currency: "USD",
+        bookingSource: "direct_web",
+        countryCode: "US",
+        city: "Chicago",
+        userCreditCardId: isolatedUserRequest.userCreditCardId,
+      },
+    });
+    const afterBooking = (await afterRes.json()) as {
+      id: string;
+      bookingCardBenefits: { cardBenefitId: string }[];
+    };
+
+    try {
+      expect(
+        beforeBooking.bookingCardBenefits.find((b) => b.cardBenefitId === benefitId)
+      ).toBeUndefined();
+      expect(
+        Number(
+          withinBooking.bookingCardBenefits.find((b) => b.cardBenefitId === benefitId)?.appliedValue
+        )
+      ).toBe(50);
+      expect(
+        afterBooking.bookingCardBenefits.find((b) => b.cardBenefitId === benefitId)
+      ).toBeUndefined();
+    } finally {
+      await isolatedUserRequest.request.delete(`/api/bookings/${beforeBooking.id}`);
+      await isolatedUserRequest.request.delete(`/api/bookings/${withinBooking.id}`);
+      await isolatedUserRequest.request.delete(`/api/bookings/${afterBooking.id}`);
+      await request.delete(`/api/card-benefits/${benefitId}`);
+    }
+  });
+
+  test("OTA restriction: benefit applies only when booking OTA matches", async ({
+    request,
+    isolatedUserRequest,
+  }) => {
+    // Benefit restricted to AMEX FHR bookings only
+    const benefit = await request.post("/api/card-benefits", {
+      data: {
+        creditCardId: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM,
+        description: "Test OTA restriction",
+        value: 100,
+        period: "annual",
+        isActive: true,
+        otaAgencyIds: [OTA_AGENCY_ID.AMEX_FHR],
+      },
+    });
+    const { id: benefitId } = (await benefit.json()) as { id: string };
+
+    // Booking via AMEX FHR — should apply
+    const fhrRes = await isolatedUserRequest.request.post("/api/bookings", {
+      data: {
+        hotelChainId: HOTEL_ID.HILTON,
+        propertyName: "Test FHR Booking",
+        checkIn: "2025-04-10",
+        checkOut: "2025-04-12",
+        numNights: 2,
+        pretaxCost: 200,
+        taxAmount: 20,
+        totalCost: 220,
+        currency: "USD",
+        bookingSource: "ota",
+        otaAgencyId: OTA_AGENCY_ID.AMEX_FHR,
+        countryCode: "US",
+        city: "Miami",
+        userCreditCardId: isolatedUserRequest.userCreditCardId,
+      },
+    });
+    const fhrBooking = (await fhrRes.json()) as {
+      id: string;
+      bookingCardBenefits: { cardBenefitId: string; appliedValue: string | number }[];
+    };
+
+    // Booking via Chase The Edit (different OTA) — should NOT apply
+    const chaseRes = await isolatedUserRequest.request.post("/api/bookings", {
+      data: {
+        hotelChainId: HOTEL_ID.HILTON,
+        propertyName: "Test Chase Edit Booking",
+        checkIn: "2025-05-10",
+        checkOut: "2025-05-12",
+        numNights: 2,
+        pretaxCost: 200,
+        taxAmount: 20,
+        totalCost: 220,
+        currency: "USD",
+        bookingSource: "ota",
+        otaAgencyId: OTA_AGENCY_ID.CHASE_EDIT,
+        countryCode: "US",
+        city: "Miami",
+        userCreditCardId: isolatedUserRequest.userCreditCardId,
+      },
+    });
+    const chaseBooking = (await chaseRes.json()) as {
+      id: string;
+      bookingCardBenefits: { cardBenefitId: string }[];
+    };
+
+    try {
+      expect(
+        Number(
+          fhrBooking.bookingCardBenefits.find((b) => b.cardBenefitId === benefitId)?.appliedValue
+        )
+      ).toBe(100);
+      expect(
+        chaseBooking.bookingCardBenefits.find((b) => b.cardBenefitId === benefitId)
+      ).toBeUndefined();
+    } finally {
+      await isolatedUserRequest.request.delete(`/api/bookings/${fhrBooking.id}`);
+      await isolatedUserRequest.request.delete(`/api/bookings/${chaseBooking.id}`);
       await request.delete(`/api/card-benefits/${benefitId}`);
     }
   });
