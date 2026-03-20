@@ -396,7 +396,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     // periods that may no longer match after the change (e.g. card switched)
     const oldCardBenefitPairs = await prisma.bookingCardBenefit.findMany({
       where: { bookingId: id },
-      select: { cardBenefitId: true, periodKey: true },
+      select: {
+        cardBenefitId: true,
+        periodKey: true,
+        booking: { select: { userCreditCardId: true } },
+      },
     });
 
     const booking = await prisma.booking.update({
@@ -413,7 +417,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     // Re-apply card benefits, including any periods affected before the change
     await reapplyCardBenefitsAffectedByBooking(
       booking.id,
-      oldCardBenefitPairs.map((p) => ({ benefitId: p.cardBenefitId, periodKey: p.periodKey }))
+      oldCardBenefitPairs
+        .filter((p) => p.booking.userCreditCardId != null)
+        .map((p) => ({
+          benefitId: p.cardBenefitId,
+          periodKey: p.periodKey,
+          userCreditCardId: p.booking.userCreditCardId!,
+        }))
     );
 
     // Fetch the booking with all relations to return
@@ -441,6 +451,7 @@ export async function DELETE(
       where: { id, userId },
       select: {
         checkIn: true,
+        userCreditCardId: true,
         bookingPromotions: { select: { promotionId: true } },
         bookingCardBenefits: { select: { cardBenefitId: true, periodKey: true } },
       },
@@ -466,10 +477,13 @@ export async function DELETE(
     }
 
     // Capture card benefit pairs before deletion so we can re-evaluate after
-    const cardBenefitPairs = booking.bookingCardBenefits.map((b) => ({
-      benefitId: b.cardBenefitId,
-      periodKey: b.periodKey,
-    }));
+    const cardBenefitPairs = booking.userCreditCardId
+      ? booking.bookingCardBenefits.map((b) => ({
+          benefitId: b.cardBenefitId,
+          periodKey: b.periodKey,
+          userCreditCardId: booking.userCreditCardId!,
+        }))
+      : [];
 
     // Delete associated booking promotions first
     await prisma.bookingPromotion.deleteMany({
@@ -486,8 +500,8 @@ export async function DELETE(
     }
 
     // Re-evaluate card benefit periods freed by this deletion
-    for (const { benefitId, periodKey } of cardBenefitPairs) {
-      await reapplyBenefitForPeriod(benefitId, periodKey, userId);
+    for (const { benefitId, periodKey, userCreditCardId } of cardBenefitPairs) {
+      await reapplyBenefitForPeriod(benefitId, periodKey, userCreditCardId);
     }
 
     return NextResponse.json({ message: "Booking deleted" });
