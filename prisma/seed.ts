@@ -1,7 +1,13 @@
-import { PrismaClient, PointCategory } from "@prisma/client";
+import { PrismaClient, PointCategory, BenefitPeriod } from "@prisma/client";
 import { hash } from "bcryptjs";
 import { HOTEL_ID, SUB_BRAND_ID } from "../src/lib/constants";
-import { CREDIT_CARD_ID, USER_CREDIT_CARD_ID, SHOPPING_PORTAL_ID, OTA_AGENCY_ID } from "./seed-ids";
+import {
+  CREDIT_CARD_ID,
+  USER_CREDIT_CARD_ID,
+  SHOPPING_PORTAL_ID,
+  OTA_AGENCY_ID,
+  CARD_BENEFIT_ID,
+} from "./seed-ids";
 import { seedBookings } from "./seed-bookings";
 import { seedPromotions } from "./seed-promotions";
 import { recalculateLoyaltyForHotelChain } from "../src/lib/loyalty-recalculation";
@@ -827,6 +833,74 @@ async function main() {
     },
   });
 
+  // Card Benefits
+  const cardBenefits = [
+    {
+      id: CARD_BENEFIT_ID.AMEX_BUSINESS_PLATINUM_HILTON_CREDIT,
+      creditCardId: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM,
+      description: "$50 Hilton Quarterly Credit",
+      value: 50,
+      period: "quarterly" as BenefitPeriod,
+      hotelChainId: HOTEL_ID.HILTON,
+      maxValuePerBooking: null,
+      otaAgencyIds: [] as string[],
+    },
+    {
+      id: CARD_BENEFIT_ID.AMEX_BUSINESS_PLATINUM_FHR_THC,
+      creditCardId: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM,
+      description: "FHR/THC Benefit",
+      value: 300,
+      period: "semi_annual" as BenefitPeriod,
+      hotelChainId: null,
+      maxValuePerBooking: null,
+      otaAgencyIds: [OTA_AGENCY_ID.AMEX_FHR, OTA_AGENCY_ID.AMEX_THC],
+    },
+    {
+      id: CARD_BENEFIT_ID.AMEX_PLATINUM_FHR_THC,
+      creditCardId: CREDIT_CARD_ID.AMEX_PLATINUM,
+      description: "FHR/THC benefit",
+      value: 300,
+      period: "semi_annual" as BenefitPeriod,
+      hotelChainId: null,
+      maxValuePerBooking: 300,
+      otaAgencyIds: [OTA_AGENCY_ID.AMEX_FHR, OTA_AGENCY_ID.AMEX_THC],
+    },
+    {
+      id: CARD_BENEFIT_ID.CHASE_SAPPHIRE_RESERVE_IHG_CREDIT,
+      creditCardId: CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE,
+      description: "$250 IHG credit",
+      value: 250,
+      period: "annual" as BenefitPeriod,
+      hotelChainId: HOTEL_ID.IHG,
+      maxValuePerBooking: null,
+      otaAgencyIds: [OTA_AGENCY_ID.CHASE_EDIT],
+    },
+    {
+      id: CARD_BENEFIT_ID.CHASE_SAPPHIRE_RESERVE_THE_EDIT,
+      creditCardId: CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE,
+      description: "2 x $250 Chase The Edit Credit",
+      value: 500,
+      period: "annual" as BenefitPeriod,
+      hotelChainId: null,
+      maxValuePerBooking: 250,
+      otaAgencyIds: [OTA_AGENCY_ID.CHASE_EDIT],
+    },
+  ];
+  for (const cb of cardBenefits) {
+    const { otaAgencyIds, ...benefitData } = cb;
+    await prisma.cardBenefit.upsert({
+      where: { id: cb.id },
+      update: benefitData,
+      create: { ...benefitData, isActive: true },
+    });
+    await prisma.cardBenefitOtaAgency.deleteMany({ where: { cardBenefitId: cb.id } });
+    if (otaAgencyIds.length > 0) {
+      await prisma.cardBenefitOtaAgency.createMany({
+        data: otaAgencyIds.map((otaAgencyId) => ({ cardBenefitId: cb.id, otaAgencyId })),
+      });
+    }
+  }
+
   // Shopping Portals
   await prisma.shoppingPortal.upsert({
     where: { id: SHOPPING_PORTAL_ID.RAKUTEN },
@@ -857,29 +931,66 @@ async function main() {
   // UserCreditCard instances — one per card product used in bookings.
   // Seeded with stable IDs so seed-bookings.ts can reference them directly.
   const uccCards = [
-    { id: USER_CREDIT_CARD_ID.AMEX_PLATINUM, creditCardId: CREDIT_CARD_ID.AMEX_PLATINUM },
+    {
+      id: USER_CREDIT_CARD_ID.AMEX_PLATINUM,
+      creditCardId: CREDIT_CARD_ID.AMEX_PLATINUM,
+      nickname: null,
+      openedDate: new Date("2024-12-13"),
+      closedDate: new Date("2026-01-09"),
+    },
     {
       id: USER_CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM,
       creditCardId: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM,
+      nickname: "AMEX Biz Platinum - Chris Sells",
+      openedDate: new Date("2025-12-12"),
+      closedDate: null,
+    },
+    {
+      id: USER_CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM_2,
+      creditCardId: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM,
+      nickname: "AMEX Biz Platinum - Chris Codes",
+      openedDate: new Date("2024-07-06"),
+      closedDate: new Date("2025-11-10"),
     },
     {
       id: USER_CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE,
       creditCardId: CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE,
+      nickname: null,
+      openedDate: new Date("2025-06-30"),
+      closedDate: null,
     },
     {
       id: USER_CREDIT_CARD_ID.CHASE_WORLD_OF_HYATT,
       creditCardId: CREDIT_CARD_ID.CHASE_WORLD_OF_HYATT,
+      nickname: null,
+      openedDate: null,
+      closedDate: null,
     },
     {
       id: USER_CREDIT_CARD_ID.WELLS_FARGO_AUTOGRAPH,
       creditCardId: CREDIT_CARD_ID.WELLS_FARGO_AUTOGRAPH,
+      nickname: null,
+      openedDate: new Date("2024-05-31"),
+      closedDate: null,
     },
   ];
   for (const ucc of uccCards) {
     await prisma.userCreditCard.upsert({
       where: { id: ucc.id },
-      update: { creditCardId: ucc.creditCardId },
-      create: { id: ucc.id, userId: ADMIN_USER_ID, creditCardId: ucc.creditCardId },
+      update: {
+        creditCardId: ucc.creditCardId,
+        nickname: ucc.nickname,
+        openedDate: ucc.openedDate,
+        closedDate: ucc.closedDate,
+      },
+      create: {
+        id: ucc.id,
+        userId: ADMIN_USER_ID,
+        creditCardId: ucc.creditCardId,
+        nickname: ucc.nickname,
+        openedDate: ucc.openedDate,
+        closedDate: ucc.closedDate,
+      },
     });
   }
 

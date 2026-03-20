@@ -104,6 +104,36 @@ vi.mock("@radix-ui/react-focus-scope", async () => {
   };
 });
 
+// Radix UI (@radix-ui/react-presence) reads getComputedStyle().animationName to
+// detect close animations. In jsdom, computed styles are not applied, so
+// animationName returns "" instead of "none". Radix interprets "" !== "none" as
+// "a new animation started" → enters unmountSuspended state → waits for
+// animationend that jsdom never fires. This leaves a lingering setTimeout in the
+// animation handler which, under parallel test execution, interferes with
+// React's scheduler and causes intermittent 30 s timeouts.
+//
+// Replacing Presence with a synchronous mount/unmount wrapper eliminates the
+// animation-waiting path entirely. Our tests never assert on exit animations.
+vi.mock("@radix-ui/react-presence", async () => {
+  const React = await import("react");
+  return {
+    Presence: ({
+      present,
+      children,
+    }: {
+      present: boolean;
+      children: React.ReactNode | ((props: { present: boolean }) => React.ReactNode);
+    }) => {
+      if (!present) return null;
+      return React.createElement(
+        React.Fragment,
+        null,
+        typeof children === "function" ? children({ present }) : children
+      );
+    },
+  };
+});
+
 // Global style to disable animations and transitions for testing
 if (typeof document !== "undefined") {
   const style = document.createElement("style");
