@@ -262,6 +262,7 @@ model OtaAgency {
   name                  String
   bookings              Booking[]
   creditCardRewardRules CreditCardRewardRule[]
+  cardBenefits          CardBenefitOtaAgency[]
 
   @@map("ota_agencies")
 }
@@ -548,20 +549,34 @@ model CreditCardRewardRule {
 }
 
 model CardBenefit {
-  id           String      @id @default(cuid())
-  creditCardId String      @map("credit_card_id")
-  creditCard   CreditCard  @relation(fields: [creditCardId], references: [id], onDelete: Cascade)
-  description  String
-  value        Decimal     @db.Decimal(10, 2)
-  period       BenefitPeriod
-  hotelChainId String?     @map("hotel_chain_id")
-  hotelChain   HotelChain? @relation(fields: [hotelChainId], references: [id], onDelete: SetNull)
-  isActive     Boolean     @default(true) @map("is_active")
-  createdAt    DateTime    @default(now()) @map("created_at")
+  id                 String        @id @default(cuid())
+  creditCardId       String        @map("credit_card_id")
+  creditCard         CreditCard    @relation(fields: [creditCardId], references: [id], onDelete: Cascade)
+  description        String
+  value              Decimal       @db.Decimal(10, 2)
+  maxValuePerBooking Decimal?      @map("max_value_per_booking") @db.Decimal(10, 2)
+  period             BenefitPeriod
+  hotelChainId       String?       @map("hotel_chain_id")
+  hotelChain         HotelChain?   @relation(fields: [hotelChainId], references: [id], onDelete: SetNull)
+  isActive           Boolean       @default(true) @map("is_active")
+  startDate          DateTime?     @map("start_date")
+  endDate            DateTime?     @map("end_date")
+  createdAt          DateTime      @default(now()) @map("created_at")
 
   bookingCardBenefits BookingCardBenefit[]
+  otaAgencies         CardBenefitOtaAgency[]
 
   @@map("card_benefits")
+}
+
+model CardBenefitOtaAgency {
+  cardBenefitId String      @map("card_benefit_id")
+  cardBenefit   CardBenefit @relation(fields: [cardBenefitId], references: [id], onDelete: Cascade)
+  otaAgencyId   String      @map("ota_agency_id")
+  otaAgency     OtaAgency   @relation(fields: [otaAgencyId], references: [id], onDelete: Cascade)
+
+  @@id([cardBenefitId, otaAgencyId])
+  @@map("card_benefit_ota_agencies")
 }
 
 model BookingCardBenefit {

@@ -94,10 +94,14 @@ export interface CardBenefit {
   creditCardId: string;
   description: string;
   value: string | number;
+  maxValuePerBooking: string | number | null;
   period: BenefitPeriod;
   hotelChainId: string | null;
   hotelChain?: HotelChain | null;
+  otaAgencies: { otaAgencyId: string; otaAgency: { id: string; name: string } }[];
   isActive: boolean;
+  startDate: string | null;
+  endDate: string | null;
   createdAt: string;
 }
 
@@ -105,9 +109,13 @@ export interface CardBenefitFormData {
   id?: string;
   description: string;
   value: number | string;
+  maxValuePerBooking: number | string | null;
   period: BenefitPeriod;
   hotelChainId: string | null;
+  otaAgencyIds: string[];
   isActive: boolean;
+  startDate: string | null;
+  endDate: string | null;
 }
 
 export interface BookingCardBenefit {

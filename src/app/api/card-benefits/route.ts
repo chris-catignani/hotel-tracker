@@ -5,10 +5,15 @@ import { requireAdmin } from "@/lib/auth-utils";
 import { BenefitPeriod } from "@prisma/client";
 import { reapplyBenefitForAllUsers } from "@/lib/card-benefit-apply";
 
+const INCLUDE = {
+  hotelChain: { select: { id: true, name: true } },
+  otaAgencies: { include: { otaAgency: { select: { id: true, name: true } } } },
+};
+
 export async function GET() {
   try {
     const cardBenefits = await prisma.cardBenefit.findMany({
-      include: { hotelChain: { select: { id: true, name: true } } },
+      include: INCLUDE,
       orderBy: [{ creditCardId: "asc" }, { createdAt: "asc" }],
     });
     return NextResponse.json(cardBenefits);
@@ -23,7 +28,18 @@ export async function POST(request: NextRequest) {
     if (adminOrResponse instanceof NextResponse) return adminOrResponse;
 
     const body = await request.json();
-    const { creditCardId, description, value, period, hotelChainId, isActive } = body;
+    const {
+      creditCardId,
+      description,
+      value,
+      maxValuePerBooking,
+      period,
+      hotelChainId,
+      otaAgencyIds,
+      isActive,
+      startDate,
+      endDate,
+    } = body;
 
     if (!creditCardId || !description || value == null || !period) {
       return apiError("creditCardId, description, value, and period are required", null, 400);
@@ -34,11 +50,18 @@ export async function POST(request: NextRequest) {
         creditCardId,
         description,
         value: Number(value),
+        maxValuePerBooking: maxValuePerBooking != null ? Number(maxValuePerBooking) : null,
         period: period as BenefitPeriod,
         hotelChainId: hotelChainId || null,
         isActive: isActive ?? true,
+        startDate: startDate ? new Date(startDate) : null,
+        endDate: endDate ? new Date(endDate) : null,
+        otaAgencies:
+          Array.isArray(otaAgencyIds) && otaAgencyIds.length > 0
+            ? { create: otaAgencyIds.map((id: string) => ({ otaAgencyId: id })) }
+            : undefined,
       },
-      include: { hotelChain: { select: { id: true, name: true } } },
+      include: INCLUDE,
     });
 
     // Retroactively apply to all existing matching bookings

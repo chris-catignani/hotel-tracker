@@ -39,8 +39,12 @@ export async function reapplyBenefitForPeriod(
       creditCardId: true,
       hotelChainId: true,
       value: true,
+      maxValuePerBooking: true,
       isActive: true,
       period: true,
+      startDate: true,
+      endDate: true,
+      otaAgencies: { select: { otaAgencyId: true } },
     },
   });
 
@@ -52,12 +56,15 @@ export async function reapplyBenefitForPeriod(
     return;
   }
 
-  // Find all bookings for this user using this card that match the hotel chain restriction
+  const otaAgencyIds = benefit.otaAgencies.map((o) => o.otaAgencyId);
+
+  // Find all bookings for this user using this card that match the hotel chain + OTA restrictions
   const bookings = await prisma.booking.findMany({
     where: {
       userId,
       userCreditCard: { creditCardId: benefit.creditCardId },
       ...(benefit.hotelChainId ? { hotelChainId: benefit.hotelChainId } : {}),
+      ...(otaAgencyIds.length > 0 ? { otaAgencyId: { in: otaAgencyIds } } : {}),
     },
     select: {
       id: true,
@@ -71,8 +78,8 @@ export async function reapplyBenefitForPeriod(
     },
   });
 
-  // Filter to bookings whose charge date falls in this period AND within the card's open window,
-  // then sort by charge date
+  // Filter to bookings whose charge date falls in this period AND within the card's open window
+  // AND within the benefit's optional start/end date range, then sort by charge date
   const eligible = bookings
     .map((b) => ({ ...b, chargeDate: getChargeDate(b) }))
     .filter((b) => {
@@ -87,6 +94,8 @@ export async function reapplyBenefitForPeriod(
       const closed = b.userCreditCard?.closedDate;
       if (opened && chargeDay < opened.getTime()) return false;
       if (closed && chargeDay > closed.getTime()) return false;
+      if (benefit.startDate && chargeDay < benefit.startDate.getTime()) return false;
+      if (benefit.endDate && chargeDay > benefit.endDate.getTime()) return false;
       return true;
     })
     .sort((a, b) => {
@@ -100,6 +109,8 @@ export async function reapplyBenefitForPeriod(
   });
 
   const benefitValue = Number(benefit.value);
+  const maxPerBooking =
+    benefit.maxValuePerBooking != null ? Number(benefit.maxValuePerBooking) : null;
   let remaining = benefitValue;
   const toCreate: {
     bookingId: string;
@@ -111,7 +122,11 @@ export async function reapplyBenefitForPeriod(
   for (const booking of eligible) {
     if (remaining <= 0) break;
     const totalCostUSD = Number(booking.totalCost) * Number(booking.exchangeRate ?? 1);
-    const appliedValue = Math.min(remaining, totalCostUSD);
+    const cap =
+      maxPerBooking != null
+        ? Math.min(remaining, maxPerBooking, totalCostUSD)
+        : Math.min(remaining, totalCostUSD);
+    const appliedValue = cap;
     if (appliedValue > 0) {
       toCreate.push({ bookingId: booking.id, cardBenefitId: benefitId, appliedValue, periodKey });
       remaining -= appliedValue;
@@ -183,6 +198,7 @@ export async function reapplyBenefitForAllUsers(benefitId: string): Promise<void
       hotelChainId: true,
       period: true,
       isActive: true,
+      otaAgencies: { select: { otaAgencyId: true } },
     },
   });
 
@@ -195,14 +211,16 @@ export async function reapplyBenefitForAllUsers(benefitId: string): Promise<void
   }
 
   // Delete ALL existing rows for this benefit first — handles criteria changes
-  // (e.g. hotel chain restriction changed) where old rows may no longer be valid.
   await prisma.bookingCardBenefit.deleteMany({ where: { cardBenefitId: benefitId } });
 
-  // Find all bookings matching this benefit's card (+ optional hotel chain)
+  const otaAgencyIds = benefit.otaAgencies.map((o) => o.otaAgencyId);
+
+  // Find all bookings matching this benefit's card (+ optional hotel chain + OTA restrictions)
   const bookings = await prisma.booking.findMany({
     where: {
       userCreditCard: { creditCardId: benefit.creditCardId },
       ...(benefit.hotelChainId ? { hotelChainId: benefit.hotelChainId } : {}),
+      ...(otaAgencyIds.length > 0 ? { otaAgencyId: { in: otaAgencyIds } } : {}),
     },
     select: { userId: true, checkIn: true, bookingDate: true, paymentTiming: true },
   });
@@ -247,13 +265,19 @@ export async function reapplyCardBenefitsAffectedByBooking(
       bookingDate: true,
       paymentTiming: true,
       hotelChainId: true,
+      otaAgencyId: true,
       userCreditCard: {
         select: {
           creditCard: {
             select: {
               cardBenefits: {
                 where: { isActive: true },
-                select: { id: true, period: true, hotelChainId: true },
+                select: {
+                  id: true,
+                  period: true,
+                  hotelChainId: true,
+                  otaAgencies: { select: { otaAgencyId: true } },
+                },
               },
             },
           },
@@ -277,6 +301,8 @@ export async function reapplyCardBenefitsAffectedByBooking(
     const chargeDate = getChargeDate(booking);
     for (const b of booking.userCreditCard.creditCard.cardBenefits) {
       if (b.hotelChainId && b.hotelChainId !== booking.hotelChainId) continue;
+      const otaIds = b.otaAgencies.map((o) => o.otaAgencyId);
+      if (otaIds.length > 0 && !otaIds.includes(booking.otaAgencyId ?? "")) continue;
       const periodKey = getPeriodKey(chargeDate, b.period as BenefitPeriod);
       pairs.set(`${b.id}:${periodKey}`, { benefitId: b.id, periodKey });
     }
