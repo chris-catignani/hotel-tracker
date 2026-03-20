@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -38,7 +37,6 @@ interface CardFormState {
   nickname: string;
   openedDate: string;
   closedDate: string;
-  isActive: boolean;
 }
 
 const EMPTY_FORM: CardFormState = {
@@ -46,7 +44,6 @@ const EMPTY_FORM: CardFormState = {
   nickname: "",
   openedDate: "",
   closedDate: "",
-  isActive: true,
 };
 
 function formatDate(dateStr: string | null): string {
@@ -109,15 +106,6 @@ function CardFormFields({
           />
         </div>
       </div>
-      <div className="flex items-center gap-2">
-        <Switch
-          id={`${prefix}-active`}
-          checked={value.isActive}
-          onCheckedChange={(checked) => onChange({ isActive: checked })}
-          data-testid={`${prefix}-active-switch`}
-        />
-        <Label htmlFor={`${prefix}-active`}>Active</Label>
-      </div>
     </div>
   );
 }
@@ -167,7 +155,6 @@ export function MyCardsTab() {
         nickname: form.nickname || null,
         openedDate: form.openedDate || null,
         closedDate: form.closedDate || null,
-        isActive: form.isActive,
       }),
     });
     if (res.ok) {
@@ -186,7 +173,6 @@ export function MyCardsTab() {
       nickname: card.nickname || "",
       openedDate: card.openedDate ? card.openedDate.split("T")[0] : "",
       closedDate: card.closedDate ? card.closedDate.split("T")[0] : "",
-      isActive: card.isActive,
     });
     setEditOpen(true);
   };
@@ -202,7 +188,6 @@ export function MyCardsTab() {
         nickname: editForm.nickname || null,
         openedDate: editForm.openedDate || null,
         closedDate: editForm.closedDate || null,
-        isActive: editForm.isActive,
       }),
     });
     if (res.ok) {
@@ -235,6 +220,7 @@ export function MyCardsTab() {
   };
 
   const cardProductOptions = creditCardProducts.map((c) => ({ label: c.name, value: c.id }));
+  const sortedCards = [...cards].sort((a, b) => a.creditCard.name.localeCompare(b.creditCard.name));
 
   return (
     <div className="flex flex-col flex-1 min-h-0 space-y-4">
@@ -325,7 +311,7 @@ export function MyCardsTab() {
         <>
           {/* Mobile View: Cards */}
           <div className="grid grid-cols-1 gap-4 md:hidden" data-testid="my-cards-mobile">
-            {cards.map((card) => (
+            {sortedCards.map((card) => (
               <Card key={card.id} data-testid="my-card-card">
                 <CardContent className="p-4 space-y-2">
                   <div className="flex items-center justify-between">
@@ -333,9 +319,9 @@ export function MyCardsTab() {
                       {cardLabel(card)}
                     </h4>
                     <span
-                      className={`text-xs px-2 py-0.5 rounded-full ${card.isActive ? "bg-green-100 text-green-800" : "bg-muted text-muted-foreground"}`}
+                      className={`text-xs px-2 py-0.5 rounded-full ${!card.closedDate ? "bg-green-100 text-green-800" : "bg-muted text-muted-foreground"}`}
                     >
-                      {card.isActive ? "Active" : "Closed"}
+                      {!card.closedDate ? "Active" : "Closed"}
                     </span>
                   </div>
                   {(card.openedDate || card.closedDate) && (
@@ -385,7 +371,7 @@ export function MyCardsTab() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {cards.map((card) => (
+                {sortedCards.map((card) => (
                   <TableRow key={card.id} data-testid="my-card-row">
                     <TableCell data-testid="my-card-name">{card.creditCard.name}</TableCell>
                     <TableCell>{card.nickname || "—"}</TableCell>
@@ -393,9 +379,9 @@ export function MyCardsTab() {
                     <TableCell>{formatDate(card.closedDate)}</TableCell>
                     <TableCell>
                       <span
-                        className={`text-xs px-2 py-0.5 rounded-full ${card.isActive ? "bg-green-100 text-green-800" : "bg-muted text-muted-foreground"}`}
+                        className={`text-xs px-2 py-0.5 rounded-full ${!card.closedDate ? "bg-green-100 text-green-800" : "bg-muted text-muted-foreground"}`}
                       >
-                        {card.isActive ? "Active" : "Closed"}
+                        {!card.closedDate ? "Active" : "Closed"}
                       </span>
                     </TableCell>
                     <TableCell>

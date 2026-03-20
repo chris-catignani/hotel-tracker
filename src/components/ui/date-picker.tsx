@@ -190,10 +190,10 @@ export function DatePicker({
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>{mobileTrigger}</SheetTrigger>
           <SheetContent side="bottom" className="p-0">
-            <SheetHeader className="px-4 pt-4 pb-2 border-b">
+            <SheetHeader className="px-4 pt-4 pb-4 pr-12 border-b">
               <SheetTitle>{placeholder}</SheetTitle>
             </SheetHeader>
-            <div className="flex justify-center p-4 pb-8">{calendar}</div>
+            <div className="flex justify-center px-4 pt-4 pb-8">{calendar}</div>
           </SheetContent>
         </Sheet>
       )}

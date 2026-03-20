@@ -1,4 +1,4 @@
-import { test as base, type APIRequestContext } from "@playwright/test";
+import { test as base, type APIRequestContext, type Page } from "@playwright/test";
 import crypto from "crypto";
 import { CREDIT_CARD_ID } from "../prisma/seed-ids";
 
@@ -16,6 +16,15 @@ type TestFixtures = {
    * (admin) for card benefit CRUD.
    */
   isolatedUserRequest: { request: APIRequestContext; userCreditCardId: string };
+  /**
+   * An isolated per-test user with both an API request context and a browser page.
+   * Use this when a test needs to assert UI state (e.g. dashboard) that is scoped
+   * to the current user — the page is logged in as the isolated user so their
+   * dashboard only shows their own bookings.
+   * Use the default `request` fixture (admin) for reference-data writes (credit
+   * cards, portals, hotel chains).
+   */
+  isolatedUserWithPage: { page: Page; request: APIRequestContext };
 };
 
 export const test = base.extend<TestFixtures>({
@@ -60,8 +69,8 @@ export const test = base.extend<TestFixtures>({
       data: {
         hotelChainId: chain.id,
         propertyName: uniqueName,
-        checkIn: "2025-01-10",
-        checkOut: "2025-01-15",
+        checkIn: "2099-01-10",
+        checkOut: "2099-01-15",
         numNights: 5,
         pretaxCost: 400,
         taxAmount: 80,
@@ -84,8 +93,8 @@ export const test = base.extend<TestFixtures>({
         accommodationType: "apartment",
         hotelChainId: null,
         propertyName: uniqueName,
-        checkIn: "2025-02-01",
-        checkOut: "2025-02-08",
+        checkIn: "2099-02-01",
+        checkOut: "2099-02-08",
         numNights: 7,
         pretaxCost: 600,
         taxAmount: 60,
@@ -134,6 +143,37 @@ export const test = base.extend<TestFixtures>({
     // Cleanup: delete the UserCreditCard then dispose the context
     // (bookings/benefits are cleaned in each test's own finally block)
     await userRequest.delete(`/api/user-credit-cards/${userCreditCardId}`);
+    await userRequest.dispose();
+  },
+
+  isolatedUserWithPage: async ({ playwright, browser, baseURL }, use) => {
+    const resolvedBase = baseURL ?? "http://127.0.0.1:3001";
+    const email = `test-isolated-${crypto.randomUUID()}@example.com`;
+    const password = "testpass123";
+
+    const userRequest = await playwright.request.newContext({ baseURL: resolvedBase });
+
+    await userRequest.post("/api/auth/register", {
+      data: { email, password, name: "Isolated Test User" },
+    });
+
+    const csrfRes = await userRequest.get("/api/auth/csrf");
+    const { csrfToken } = (await csrfRes.json()) as { csrfToken: string };
+
+    await userRequest.post("/api/auth/callback/credentials", {
+      form: { csrfToken, email, password, callbackUrl: resolvedBase, redirect: "false" },
+    });
+
+    // Share the session cookies with a real browser context so the page is
+    // logged in as the same isolated user.
+    const storageState = await userRequest.storageState();
+    const context = await browser.newContext({ baseURL: resolvedBase, storageState });
+    const page = await context.newPage();
+
+    await use({ page, request: userRequest });
+
+    await page.close();
+    await context.close();
     await userRequest.dispose();
   },
 

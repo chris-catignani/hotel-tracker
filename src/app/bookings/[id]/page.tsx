@@ -119,6 +119,8 @@ interface Booking extends Omit<NetCostBooking, "bookingPromotions" | "userCredit
   checkOut: string;
   numNights: number;
   currency: string;
+  paymentTiming: string;
+  bookingDate: string | null;
   exchangeRate: string | number | null;
   isFutureEstimate?: boolean;
   loyaltyPointsEstimated?: boolean;
@@ -268,6 +270,8 @@ export default function BookingDetailPage() {
 
   const breakdown = getNetCostBreakdown(booking);
   const totalCost = Number(booking.totalCost);
+  const today = new Date().toISOString().split("T")[0];
+  const isFutureBooking = booking.checkIn.slice(0, 10) > today;
 
   const typeBadge = getBookingTypeBadge(booking);
 
@@ -452,6 +456,18 @@ export default function BookingDetailPage() {
                 <p className="font-medium">{formatBookingSource(booking)}</p>
               </div>
             )}
+            {booking.paymentTiming === "prepaid" && (
+              <div>
+                <p className="text-sm text-muted-foreground">Payment Timing</p>
+                <p className="font-medium">Prepaid</p>
+              </div>
+            )}
+            {booking.bookingDate && (
+              <div>
+                <p className="text-sm text-muted-foreground">Booking Date</p>
+                <p className="font-medium">{formatDate(booking.bookingDate)}</p>
+              </div>
+            )}
           </div>
           {booking.notes && (
             <>
@@ -605,8 +621,8 @@ export default function BookingDetailPage() {
         </Card>
       )}
 
-      {/* Price Watch — hotel stays only */}
-      {booking.accommodationType === "hotel" && (
+      {/* Price Watch — future hotel stays only */}
+      {booking.accommodationType === "hotel" && isFutureBooking && (
         <BookingPriceWatch
           bookingId={booking.id}
           propertyId={booking.propertyId}

@@ -89,6 +89,75 @@ export const CURRENCY_OPTIONS = [
 
 export const CURRENCIES = CURRENCY_OPTIONS.map((c) => c.code);
 
+/** Maps ISO 3166-1 alpha-2 country codes to their primary currency code. */
+export const COUNTRY_TO_CURRENCY: Record<string, string> = {
+  US: "USD",
+  GB: "GBP",
+  // Euro zone
+  AT: "EUR",
+  BE: "EUR",
+  CY: "EUR",
+  EE: "EUR",
+  FI: "EUR",
+  FR: "EUR",
+  DE: "EUR",
+  GR: "EUR",
+  IE: "EUR",
+  IT: "EUR",
+  LV: "EUR",
+  LT: "EUR",
+  LU: "EUR",
+  MT: "EUR",
+  NL: "EUR",
+  PT: "EUR",
+  SK: "EUR",
+  SI: "EUR",
+  ES: "EUR",
+  HR: "EUR",
+  // Asia-Pacific
+  JP: "JPY",
+  CN: "CNY",
+  AU: "AUD",
+  HK: "HKD",
+  SG: "SGD",
+  NZ: "NZD",
+  KR: "KRW",
+  TH: "THB",
+  ID: "IDR",
+  MY: "MYR",
+  PH: "PHP",
+  TW: "TWD",
+  VN: "VND",
+  IN: "INR",
+  // Americas
+  CA: "CAD",
+  MX: "MXN",
+  BR: "BRL",
+  // Europe (non-Euro)
+  CH: "CHF",
+  SE: "SEK",
+  NO: "NOK",
+  DK: "DKK",
+  PL: "PLN",
+  CZ: "CZK",
+  HU: "HUF",
+  RO: "RON",
+  TR: "TRY",
+  // Middle East & Africa
+  AE: "AED",
+  SA: "SAR",
+  QA: "QAR",
+  KW: "KWD",
+  IL: "ILS",
+  EG: "EGP",
+  ZA: "ZAR",
+  NG: "NGN",
+  // South Asia
+  PK: "PKR",
+  BD: "BDT",
+  LK: "LKR",
+};
+
 export const PAYMENT_TYPES = [
   { value: "cash", label: "Cash" },
   { value: "points", label: "Points (Award Stay)" },

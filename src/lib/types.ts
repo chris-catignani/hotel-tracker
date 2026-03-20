@@ -407,7 +407,6 @@ export interface UserCreditCard {
   nickname: string | null;
   openedDate: string | null;
   closedDate: string | null;
-  isActive: boolean;
   createdAt: string;
 }
 
