@@ -600,6 +600,7 @@ export function CreditCardAccordionItem({
             creditCardId={card.id}
             benefits={benefits}
             hotelChains={hotelChains}
+            otaAgencies={otaAgencies}
             onRefetch={onRefetch}
           />
         </div>
