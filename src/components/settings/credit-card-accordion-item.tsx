@@ -26,7 +26,7 @@ import {
   PointType,
   CardBenefit,
 } from "@/lib/types";
-import { ChevronDown, ChevronRight, Plus } from "lucide-react";
+import { ChevronDown, ChevronRight, Check, Pencil, Plus } from "lucide-react";
 import { CardBenefitsSection } from "./card-benefits-section";
 
 // ---------------------------------------------------------------------------
@@ -270,63 +270,61 @@ function EarningRatesSection({
         </Button>
       </div>
 
-      {/* Base rate */}
-      <div className="flex items-center justify-between py-2 border-b">
-        <span className="text-sm text-muted-foreground">Base rate</span>
-        <div className="flex items-center gap-3">
-          <span className="text-sm font-medium">
-            {card.rewardRate}x{pointTypeName ? ` ${pointTypeName}` : ""}
-          </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setBaseRewardType(card.rewardType);
-              setBaseRewardRate(String(card.rewardRate));
-              setBasePointTypeId(card.pointTypeId ?? "none");
-              setBaseOpen(true);
-            }}
-          >
-            Edit
-          </Button>
+      {/* Unified earning rates list: base rate + targeted rules */}
+      <div className="divide-y border rounded-md">
+        {/* Base rate row */}
+        <div className="flex items-center justify-between px-3 py-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-sm font-medium truncate">All bookings</span>
+            <span className="text-xs text-muted-foreground shrink-0">base</span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-sm font-medium">
+              {card.rewardRate}x{pointTypeName ? ` ${pointTypeName}` : ""}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setBaseRewardType(card.rewardType);
+                setBaseRewardRate(String(card.rewardRate));
+                setBasePointTypeId(card.pointTypeId ?? "none");
+                setBaseOpen(true);
+              }}
+            >
+              Edit
+            </Button>
+          </div>
         </div>
-      </div>
 
-      {/* Targeted rules */}
-      {(card.rewardRules ?? []).length === 0 ? (
-        <p className="text-xs text-muted-foreground italic text-center py-1">
-          No custom rules — all bookings earn the base rate.
-        </p>
-      ) : (
-        <div className="divide-y">
-          {(card.rewardRules ?? []).map((rule) => (
-            <div key={rule.id} className="flex items-center justify-between py-2">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="text-sm font-medium truncate">{ruleTargetLabel(rule)}</span>
-                <span className="text-xs text-muted-foreground capitalize shrink-0">
-                  {rule.rewardType}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <span className="text-sm font-medium">{ruleValueLabel(rule)}</span>
-                <Button variant="ghost" size="sm" onClick={() => openEditRule(rule)}>
-                  Edit
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setRuleToDelete(rule);
-                    setDeleteOpen(true);
-                  }}
-                >
-                  Delete
-                </Button>
-              </div>
+        {/* Targeted rules */}
+        {(card.rewardRules ?? []).map((rule) => (
+          <div key={rule.id} className="flex items-center justify-between px-3 py-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-sm font-medium truncate">{ruleTargetLabel(rule)}</span>
+              <span className="text-xs text-muted-foreground capitalize shrink-0">
+                {rule.rewardType}
+              </span>
             </div>
-          ))}
-        </div>
-      )}
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-sm font-medium">{ruleValueLabel(rule)}</span>
+              <Button variant="ghost" size="sm" onClick={() => openEditRule(rule)}>
+                Edit
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setRuleToDelete(rule);
+                  setDeleteOpen(true);
+                }}
+              >
+                Delete
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
 
       {/* Edit base rate dialog */}
       <Dialog open={baseOpen} onOpenChange={setBaseOpen}>
@@ -467,6 +465,11 @@ export function CreditCardAccordionItem({
     setEditingName(true);
   };
 
+  const handleNameSaveClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    handleNameSave();
+  };
+
   const handleNameSave = async () => {
     const trimmed = nameValue.trim();
     if (!trimmed || trimmed === card.name) {
@@ -516,34 +519,53 @@ export function CreditCardAccordionItem({
         )}
 
         {editingName ? (
-          <input
-            className="font-semibold text-base bg-transparent border-b border-primary focus:outline-none flex-1 min-w-0"
-            value={nameValue}
-            onChange={(e) => setNameValue(e.target.value)}
-            onBlur={handleNameSave}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleNameSave();
-              if (e.key === "Escape") {
-                setNameValue(card.name);
-                setEditingName(false);
-              }
-            }}
-            autoFocus
-            onClick={(e) => e.stopPropagation()}
-            data-testid="credit-card-name-input"
-          />
+          <>
+            <input
+              className="font-semibold text-base bg-transparent border-b border-primary focus:outline-none flex-1 min-w-0"
+              value={nameValue}
+              onChange={(e) => setNameValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleNameSave();
+                if (e.key === "Escape") {
+                  setNameValue(card.name);
+                  setEditingName(false);
+                }
+              }}
+              autoFocus
+              onClick={(e) => e.stopPropagation()}
+              data-testid="credit-card-name-input"
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="shrink-0 p-1 h-auto"
+              onClick={handleNameSaveClick}
+              data-testid="save-credit-card-name-button"
+            >
+              <Check className="size-4 text-green-600" />
+            </Button>
+          </>
         ) : (
-          <span
-            className="font-semibold text-base cursor-text hover:text-primary flex-1 min-w-0 truncate"
-            title="Click to rename"
-            data-testid="credit-card-card-name"
-            onClick={startEditingName}
-          >
-            {card.name}
-          </span>
+          <>
+            <span
+              className="font-semibold text-base flex-1 min-w-0 truncate"
+              data-testid="credit-card-card-name"
+            >
+              {card.name}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="shrink-0 p-1 h-auto"
+              onClick={startEditingName}
+              data-testid="edit-credit-card-name-button"
+            >
+              <Pencil className="size-4 text-muted-foreground" />
+            </Button>
+          </>
         )}
 
-        {!expanded && (
+        {!expanded && !editingName && (
           <span className="text-sm text-muted-foreground shrink-0 hidden sm:block">
             {card.rewardRate}x{card.pointType ? ` ${card.pointType.name}` : ""}
           </span>
