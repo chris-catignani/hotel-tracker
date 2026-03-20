@@ -56,20 +56,22 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (startDate !== undefined) data.startDate = startDate ? new Date(startDate) : null;
     if (endDate !== undefined) data.endDate = endDate ? new Date(endDate) : null;
 
-    // Update OTA agencies: replace existing rows if otaAgencyIds is provided
-    if (otaAgencyIds !== undefined) {
-      await prisma.cardBenefitOtaAgency.deleteMany({ where: { cardBenefitId: id } });
-      if (Array.isArray(otaAgencyIds) && otaAgencyIds.length > 0) {
-        await prisma.cardBenefitOtaAgency.createMany({
-          data: otaAgencyIds.map((otaAgencyId: string) => ({ cardBenefitId: id, otaAgencyId })),
-        });
+    const cardBenefit = await prisma.$transaction(async (tx) => {
+      // Update OTA agencies: replace existing rows if otaAgencyIds is provided
+      if (otaAgencyIds !== undefined) {
+        await tx.cardBenefitOtaAgency.deleteMany({ where: { cardBenefitId: id } });
+        if (Array.isArray(otaAgencyIds) && otaAgencyIds.length > 0) {
+          await tx.cardBenefitOtaAgency.createMany({
+            data: otaAgencyIds.map((otaAgencyId: string) => ({ cardBenefitId: id, otaAgencyId })),
+          });
+        }
       }
-    }
 
-    const cardBenefit = await prisma.cardBenefit.update({
-      where: { id },
-      data,
-      include: INCLUDE,
+      return tx.cardBenefit.update({
+        where: { id },
+        data,
+        include: INCLUDE,
+      });
     });
 
     // Re-evaluate all existing matching bookings
