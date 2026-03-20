@@ -16,6 +16,7 @@ import { normalizeUserStatuses } from "@/lib/normalize-response";
 import { fetchExchangeRate, getCurrentRate, resolveCalcCurrencyRate } from "@/lib/exchange-rate";
 import { enrichBookingWithRate } from "@/lib/booking-enrichment";
 import { findOrCreateProperty } from "@/lib/property-utils";
+import { resolvePartnershipEarns } from "@/lib/partnership-earns";
 import {
   reapplyCardBenefitsAffectedByBooking,
   reapplyBenefitForPeriod,
@@ -122,7 +123,32 @@ async function getFullBookingWithUsage(id: string, userId: string) {
   };
 
   const normalized = normalizeUserStatuses(result) as typeof result;
-  return enrichBookingWithRate(normalized);
+  const enriched = await enrichBookingWithRate(normalized);
+
+  const enabledEarns = await prisma.userPartnershipEarn.findMany({
+    where: { userId, isEnabled: true },
+    include: { partnershipEarn: { include: { pointType: true } } },
+  });
+
+  const partnershipEarns = await resolvePartnershipEarns(
+    {
+      hotelChainId: enriched.hotelChainId,
+      pretaxCost: Number(enriched.pretaxCost),
+      exchangeRate: enriched.exchangeRate ? Number(enriched.exchangeRate) : null,
+      property: enriched.property,
+      checkIn: enriched.checkIn,
+    },
+    enabledEarns.map((e) => ({
+      ...e.partnershipEarn,
+      earnRate: Number(e.partnershipEarn.earnRate),
+      pointType: {
+        ...e.partnershipEarn.pointType,
+        centsPerPoint: Number(e.partnershipEarn.pointType.centsPerPoint),
+      },
+    }))
+  );
+
+  return { ...enriched, partnershipEarns };
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {

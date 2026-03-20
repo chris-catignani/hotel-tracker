@@ -95,6 +95,7 @@ model User {
   userPromotions  UserPromotion[]
   priceWatches    PriceWatch[]
   userCreditCards UserCreditCard[]
+  userPartnershipEarns UserPartnershipEarn[]
 
   @@map("users")
 }
@@ -145,6 +146,7 @@ model PointType {
   hotelChains     HotelChain[]
   creditCards     CreditCard[]
   shoppingPortals ShoppingPortal[]
+  partnershipEarns PartnershipEarn[]
 
   @@map("point_types")
 }
@@ -166,6 +168,7 @@ model HotelChain {
   cardBenefits          CardBenefit[]
   promotionRestrictions PromotionRestrictions[]
   properties            Property[]
+  partnershipEarns      PartnershipEarn[]
 
   @@map("hotel_chains")
 }
@@ -512,6 +515,36 @@ model BookingPromotionBenefit {
   @@map("booking_promotion_benefits")
 }
 
+model PartnershipEarn {
+  id           String     @id @default(cuid())
+  name         String
+  hotelChainId String?    @map("hotel_chain_id")
+  pointTypeId  String     @map("point_type_id")
+  earnRate     Decimal    @map("earn_rate") @db.Decimal(10, 4)
+  earnCurrency String     @map("earn_currency")
+  countryCodes String[]   @default([]) @map("country_codes")
+  isActive     Boolean    @default(true) @map("is_active")
+
+  hotelChain HotelChain?           @relation(fields: [hotelChainId], references: [id])
+  pointType  PointType             @relation(fields: [pointTypeId], references: [id])
+  userEarns  UserPartnershipEarn[]
+
+  @@map("partnership_earns")
+}
+
+model UserPartnershipEarn {
+  id                String          @id @default(cuid())
+  userId            String          @map("user_id")
+  partnershipEarnId String          @map("partnership_earn_id")
+  isEnabled         Boolean         @default(false) @map("is_enabled")
+
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  partnershipEarn PartnershipEarn @relation(fields: [partnershipEarnId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, partnershipEarnId])
+  @@map("user_partnership_earns")
+}
+
 model ExchangeRate {
   id           Int      @id @default(autoincrement())
   fromCurrency String   @map("from_currency")
@@ -521,6 +554,17 @@ model ExchangeRate {
 
   @@unique([fromCurrency, toCurrency])
   @@map("exchange_rates")
+}
+
+model ExchangeRateHistory {
+  id           Int      @id @default(autoincrement())
+  fromCurrency String   @map("from_currency")
+  toCurrency   String   @map("to_currency")
+  date         DateTime @db.Date
+  rate         Decimal  @db.Decimal(12, 6)
+
+  @@unique([fromCurrency, toCurrency, date])
+  @@map("exchange_rate_history")
 }
 
 model GeoCache {

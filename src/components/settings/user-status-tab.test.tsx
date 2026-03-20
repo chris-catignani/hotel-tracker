@@ -1,6 +1,22 @@
 import { render, screen, act } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { UserStatusTab } from "./user-status-tab";
+
+const PARTNERSHIP_ID = "cpartnership0accorqantas1";
+
+function mockFetch(partnerships: { id: string; name: string; isEnabled: boolean }[] = []) {
+  vi.mocked(global.fetch).mockImplementation((input: string | Request | URL) => {
+    const url = input instanceof Request ? input.url : input.toString();
+    if (url.includes("/api/user-statuses"))
+      return Promise.resolve({ ok: true, json: async () => [] } as Response);
+    if (url.includes("/api/hotel-chains"))
+      return Promise.resolve({ ok: true, json: async () => [] } as Response);
+    if (url.includes("/api/partnership-earns"))
+      return Promise.resolve({ ok: true, json: async () => partnerships } as Response);
+    return Promise.reject(new Error("Unknown URL"));
+  });
+}
 
 describe("UserStatusTab", () => {
   beforeEach(() => {
@@ -9,15 +25,7 @@ describe("UserStatusTab", () => {
   });
 
   it("renders empty state correctly", async () => {
-    vi.mocked(global.fetch).mockImplementation((input: string | Request | URL) => {
-      const url = input instanceof Request ? input.url : input.toString();
-      if (url.includes("/api/user-statuses"))
-        return Promise.resolve({ ok: true, json: async () => [] } as Response);
-      if (url.includes("/api/hotel-chains"))
-        return Promise.resolve({ ok: true, json: async () => [] } as Response);
-      return Promise.reject(new Error("Unknown URL"));
-    });
-
+    mockFetch();
     await act(async () => {
       render(<UserStatusTab />);
     });
@@ -36,6 +44,8 @@ describe("UserStatusTab", () => {
         return Promise.resolve({ ok: true, json: async () => mockStatuses } as Response);
       if (url.includes("/api/hotel-chains"))
         return Promise.resolve({ ok: true, json: async () => mockChains } as Response);
+      if (url.includes("/api/partnership-earns"))
+        return Promise.resolve({ ok: true, json: async () => [] } as Response);
       return Promise.reject(new Error("Unknown URL"));
     });
 
@@ -44,5 +54,66 @@ describe("UserStatusTab", () => {
     });
 
     expect(screen.getByText("Marriott")).toBeInTheDocument();
+  });
+
+  it("does not render partnerships section when none exist", async () => {
+    mockFetch([]);
+    await act(async () => {
+      render(<UserStatusTab />);
+    });
+
+    expect(screen.queryByText(/Hotel Partnerships/i)).not.toBeInTheDocument();
+  });
+
+  it("renders partnership checkboxes when partnerships exist", async () => {
+    mockFetch([{ id: PARTNERSHIP_ID, name: "Accor–Qantas", isEnabled: false }]);
+    await act(async () => {
+      render(<UserStatusTab />);
+    });
+
+    expect(screen.getByText(/Hotel Partnerships/i)).toBeInTheDocument();
+    const checkbox = screen.getByTestId(`partnership-checkbox-${PARTNERSHIP_ID}`);
+    expect(checkbox).toBeInTheDocument();
+    expect(checkbox).not.toBeChecked();
+  });
+
+  it("shows checkbox as checked when partnership is enabled", async () => {
+    mockFetch([{ id: PARTNERSHIP_ID, name: "Accor–Qantas", isEnabled: true }]);
+    await act(async () => {
+      render(<UserStatusTab />);
+    });
+
+    expect(screen.getByTestId(`partnership-checkbox-${PARTNERSHIP_ID}`)).toBeChecked();
+  });
+
+  it("calls POST /api/user-partnership-earns when toggling a checkbox", async () => {
+    mockFetch([{ id: PARTNERSHIP_ID, name: "Accor–Qantas", isEnabled: false }]);
+    const user = userEvent.setup();
+    await act(async () => {
+      render(<UserStatusTab />);
+    });
+
+    vi.mocked(global.fetch).mockImplementation(
+      (input: string | Request | URL, init?: RequestInit) => {
+        const url = input instanceof Request ? input.url : input.toString();
+        if (url.includes("/api/user-partnership-earns") && init?.method === "POST")
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({ isEnabled: true }),
+          } as Response);
+        return Promise.resolve({ ok: true, json: async () => [] } as Response);
+      }
+    );
+
+    const checkbox = screen.getByTestId(`partnership-checkbox-${PARTNERSHIP_ID}`);
+    await user.click(checkbox);
+
+    expect(vi.mocked(global.fetch)).toHaveBeenCalledWith(
+      "/api/user-partnership-earns",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ partnershipEarnId: PARTNERSHIP_ID, isEnabled: true }),
+      })
+    );
   });
 });

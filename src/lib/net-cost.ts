@@ -116,6 +116,8 @@ export interface NetCostBooking {
     appliedValue: string | number;
     cardBenefit: { description: string };
   }[];
+  partnershipEarns?: { name: string; earnedValue: number; calc: CalculationDetail }[];
+  property?: { name?: string; countryCode?: string | null } | null;
   bookingPromotions: {
     id?: string;
     bookingId?: string;
@@ -184,6 +186,8 @@ export interface NetCostBreakdown {
   cardRewardCalc?: CalculationDetail;
   loyaltyPointsValue: number;
   loyaltyPointsCalc?: CalculationDetail;
+  partnershipEarns: { name: string; earnedValue: number; calc: CalculationDetail }[];
+  partnershipEarnsValue: number;
   pointsRedeemedValue: number;
   pointsRedeemedCalc?: CalculationDetail;
   certsValue: number;
@@ -1034,6 +1038,10 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
     };
   }
 
+  // 4b. Partnership Earns (e.g. Accor–Qantas miles)
+  const partnershipEarns = booking.partnershipEarns ?? [];
+  const partnershipEarnsValue = partnershipEarns.reduce((sum, e) => sum + e.earnedValue, 0);
+
   // 5. Points RedeemedValue
   let pointsRedeemedValue = 0;
   let pointsRedeemedCalc: CalculationDetail | undefined;
@@ -1101,7 +1109,8 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
     cardBenefitSavings -
     portalCashback -
     cardReward -
-    loyaltyPointsValue +
+    loyaltyPointsValue -
+    partnershipEarnsValue +
     pointsRedeemedValue +
     certsValue;
 
@@ -1117,6 +1126,8 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
     cardRewardCalc,
     loyaltyPointsValue,
     loyaltyPointsCalc,
+    partnershipEarns,
+    partnershipEarnsValue,
     pointsRedeemedValue,
     pointsRedeemedCalc,
     certsValue,
