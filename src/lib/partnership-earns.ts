@@ -14,7 +14,7 @@ export interface PartnershipEarnInput {
   earnRate: string | number;
   earnCurrency: string;
   countryCodes: string[];
-  pointType: { centsPerPoint: string | number };
+  pointType: { name: string; category: string; centsPerPoint: string | number };
 }
 
 export interface PartnershipEarnResult {
@@ -75,6 +75,8 @@ export async function resolvePartnershipEarns(
     const earnRate = Number(earn.earnRate);
     const centsPerPoint = Number(earn.pointType.centsPerPoint);
     const centsStr = formatCents(centsPerPoint);
+    const pointTypeLabel = earn.pointType.category === "airline" ? "miles" : "points";
+    const pointTypeAbbr = earn.pointType.category === "airline" ? "miles" : "pts";
 
     // Convert USD pretax cost to the earn currency (e.g. AUD)
     // earnCurrencyRate = 1 earnCurrency = X USD, so pretaxInEarnCurrency = pretaxUSD / rate
@@ -85,16 +87,16 @@ export async function resolvePartnershipEarns(
     const calc: CalculationDetail = {
       label: earn.name,
       appliedValue: earnedValue,
-      description: `Points earned via the ${earn.name} partnership. Earn ${earnRate} ${earn.pointType ? "points" : "miles"} per ${earn.earnCurrency} 1 of pre-tax spend.`,
+      description: `${pointTypeLabel.charAt(0).toUpperCase() + pointTypeLabel.slice(1)} earned via the ${earn.name} partnership. Earn ${earnRate} ${pointTypeLabel} per ${earn.earnCurrency} 1 of pre-tax spend.`,
       groups: [
         {
-          name: `${earn.name} Points`,
+          name: `${earn.name} ${earn.pointType.name}`,
           segments: [
             {
               label: "Points Earned",
               value: earnedValue,
-              formula: `${pretaxCostUSD.toFixed(2)} USD ÷ ${earnCurrencyRate.toFixed(4)} ${earn.earnCurrency}/USD = ${pretaxInEarnCurrency.toFixed(2)} ${earn.earnCurrency} × ${earnRate} pts/${earn.earnCurrency} = ${Math.round(pointsEarned).toLocaleString()} pts × ${centsStr}¢ = $${earnedValue.toFixed(2)}`,
-              description: `Pre-tax cost converted to ${earn.earnCurrency}, then multiplied by ${earnRate} pts per ${earn.earnCurrency} 1. Points valued at ${centsStr}¢ each.`,
+              formula: `${pretaxCostUSD.toFixed(2)} USD ÷ ${earnCurrencyRate.toFixed(4)} ${earn.earnCurrency}/USD = ${pretaxInEarnCurrency.toFixed(2)} ${earn.earnCurrency} × ${earnRate} ${pointTypeAbbr}/${earn.earnCurrency} = ${Math.round(pointsEarned).toLocaleString()} ${pointTypeAbbr} × ${centsStr}¢ = $${earnedValue.toFixed(2)}`,
+              description: `Pre-tax cost converted to ${earn.earnCurrency}, then multiplied by ${earnRate} ${pointTypeAbbr} per ${earn.earnCurrency} 1. Points valued at ${centsStr}¢ each.`,
             },
           ],
         },

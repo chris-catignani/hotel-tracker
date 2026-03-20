@@ -4,8 +4,25 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { UserStatusTab } from "./user-status-tab";
 
 const PARTNERSHIP_ID = "cpartnership0accorqantas1";
+const MOCK_PARTNERSHIP: MockPartnership = {
+  id: PARTNERSHIP_ID,
+  name: "Accor–Qantas",
+  isEnabled: false,
+  earnRate: 3,
+  earnCurrency: "AUD",
+  pointType: { name: "Qantas Points", category: "airline", centsPerPoint: 0.012 },
+};
 
-function mockFetch(partnerships: { id: string; name: string; isEnabled: boolean }[] = []) {
+type MockPartnership = {
+  id: string;
+  name: string;
+  isEnabled: boolean;
+  earnRate: number;
+  earnCurrency: string;
+  pointType: { name: string; category: string; centsPerPoint: number };
+};
+
+function mockFetch(partnerships: MockPartnership[] = []) {
   vi.mocked(global.fetch).mockImplementation((input: string | Request | URL) => {
     const url = input instanceof Request ? input.url : input.toString();
     if (url.includes("/api/user-statuses"))
@@ -66,7 +83,7 @@ describe("UserStatusTab", () => {
   });
 
   it("renders partnership checkboxes when partnerships exist", async () => {
-    mockFetch([{ id: PARTNERSHIP_ID, name: "Accor–Qantas", isEnabled: false }]);
+    mockFetch([MOCK_PARTNERSHIP]);
     await act(async () => {
       render(<UserStatusTab />);
     });
@@ -78,7 +95,7 @@ describe("UserStatusTab", () => {
   });
 
   it("shows checkbox as checked when partnership is enabled", async () => {
-    mockFetch([{ id: PARTNERSHIP_ID, name: "Accor–Qantas", isEnabled: true }]);
+    mockFetch([{ ...MOCK_PARTNERSHIP, isEnabled: true }]);
     await act(async () => {
       render(<UserStatusTab />);
     });
@@ -87,7 +104,7 @@ describe("UserStatusTab", () => {
   });
 
   it("calls POST /api/user-partnership-earns when toggling a checkbox", async () => {
-    mockFetch([{ id: PARTNERSHIP_ID, name: "Accor–Qantas", isEnabled: false }]);
+    mockFetch([MOCK_PARTNERSHIP]);
     const user = userEvent.setup();
     await act(async () => {
       render(<UserStatusTab />);
