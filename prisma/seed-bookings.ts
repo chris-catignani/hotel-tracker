@@ -4,6 +4,7 @@ import {
   CertType,
   BenefitType,
   AccommodationType,
+  PaymentTiming,
 } from "@prisma/client";
 import { HOTEL_ID, SUB_BRAND_ID } from "../src/lib/constants";
 import { USER_CREDIT_CARD_ID, SHOPPING_PORTAL_ID, OTA_AGENCY_ID } from "./seed-ids";
@@ -32,6 +33,8 @@ interface BookingSeedData {
   pointsRedeemed: number | null;
   currency: string;
   exchangeRate: number | null;
+  paymentTiming?: PaymentTiming; // omit to use DB default (postpaid)
+  bookingDate?: string | null;
   bookingSource: string | null;
   otaAgencyId: string | null;
   notes: string | null;
@@ -91,6 +94,8 @@ export async function seedBookings(userId: string) {
       pointsRedeemed: null,
       currency: "USD",
       exchangeRate: 1,
+      paymentTiming: "prepaid" as PaymentTiming,
+      bookingDate: "2025-12-30T00:00:00.000Z",
       bookingSource: "ota",
       otaAgencyId: OTA_AGENCY_ID.CHASE_EDIT,
       notes: null,
@@ -139,7 +144,7 @@ export async function seedBookings(userId: string) {
       pretaxCost: "521",
       taxAmount: "68",
       totalCost: "589",
-      userCreditCardId: USER_CREDIT_CARD_ID.AMEX_PLATINUM,
+      userCreditCardId: USER_CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM_2,
       shoppingPortalId: null,
       portalCashbackRate: null,
       portalCashbackOnTotal: false,
@@ -147,6 +152,8 @@ export async function seedBookings(userId: string) {
       pointsRedeemed: null,
       currency: "USD",
       exchangeRate: 1,
+      paymentTiming: "prepaid" as PaymentTiming,
+      bookingDate: "2025-09-21T00:00:00.000Z",
       bookingSource: "ota",
       otaAgencyId: OTA_AGENCY_ID.AMEX_THC,
       notes: null,
@@ -658,6 +665,8 @@ export async function seedBookings(userId: string) {
       pointsRedeemed: null,
       currency: "USD",
       exchangeRate: 1,
+      paymentTiming: "prepaid" as PaymentTiming,
+      bookingDate: "2025-10-30T00:00:00.000Z",
       bookingSource: "ota",
       otaAgencyId: OTA_AGENCY_ID.AMEX_THC,
       notes: null,
@@ -790,7 +799,7 @@ export async function seedBookings(userId: string) {
       pretaxCost: "462",
       taxAmount: "104",
       totalCost: "566",
-      userCreditCardId: USER_CREDIT_CARD_ID.AMEX_PLATINUM,
+      userCreditCardId: USER_CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM,
       shoppingPortalId: null,
       portalCashbackRate: null,
       portalCashbackOnTotal: false,
@@ -798,6 +807,8 @@ export async function seedBookings(userId: string) {
       pointsRedeemed: null,
       currency: "USD",
       exchangeRate: 1,
+      paymentTiming: "prepaid" as PaymentTiming,
+      bookingDate: "2025-12-17T00:00:00.000Z",
       bookingSource: "ota",
       otaAgencyId: OTA_AGENCY_ID.AMEX_FHR,
       notes: null,
@@ -826,6 +837,8 @@ export async function seedBookings(userId: string) {
       pointsRedeemed: null,
       currency: "USD",
       exchangeRate: 1,
+      paymentTiming: "prepaid" as PaymentTiming,
+      bookingDate: "2026-01-27T00:00:00.000Z",
       bookingSource: "ota",
       otaAgencyId: OTA_AGENCY_ID.CHASE_EDIT,
       notes: null,
@@ -910,6 +923,8 @@ export async function seedBookings(userId: string) {
       pointsRedeemed: null,
       currency: "USD",
       exchangeRate: 1,
+      paymentTiming: "prepaid" as PaymentTiming,
+      bookingDate: "2026-02-07T00:00:00.000Z",
       bookingSource: "ota",
       otaAgencyId: OTA_AGENCY_ID.AMEX_FHR,
       notes: null,
