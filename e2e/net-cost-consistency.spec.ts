@@ -34,7 +34,7 @@ test.describe("Net Cost Consistency", () => {
 
     // Create a UserCreditCard instance for the test credit card
     const uccRes = await request.post("/api/user-credit-cards", {
-      data: { creditCardId: creditCard.id, isActive: true },
+      data: { creditCardId: creditCard.id },
     });
     const userCreditCard = await uccRes.json();
 
@@ -51,8 +51,8 @@ test.describe("Net Cost Consistency", () => {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName,
-        checkIn: "1990-01-01",
-        checkOut: "1990-01-03",
+        checkIn: "2099-01-01",
+        checkOut: "2099-01-03",
         numNights,
         pretaxCost: 200,
         taxAmount: 50,
@@ -122,8 +122,8 @@ test.describe("Net Cost Consistency", () => {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName,
-        checkIn: "1990-02-01",
-        checkOut: "1990-02-03",
+        checkIn: "2099-02-01",
+        checkOut: "2099-02-03",
         numNights,
         pretaxCost: 250,
         taxAmount: 50,
@@ -180,8 +180,8 @@ test.describe("Net Cost Consistency", () => {
       data: {
         hotelChainId: HOTEL_ID.HYATT,
         propertyName,
-        checkIn: "1990-03-01",
-        checkOut: "1990-03-03",
+        checkIn: "2099-03-01",
+        checkOut: "2099-03-03",
         numNights,
         pretaxCost,
         taxAmount: 50,
@@ -243,8 +243,8 @@ test.describe("Net Cost Consistency", () => {
       data: {
         hotelChainId: HOTEL_ID.HYATT,
         propertyName,
-        checkIn: "1990-04-01",
-        checkOut: "1990-04-02",
+        checkIn: "2099-04-01",
+        checkOut: "2099-04-02",
         numNights,
         pretaxCost: 200,
         taxAmount: 100,
