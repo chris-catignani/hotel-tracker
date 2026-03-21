@@ -146,6 +146,7 @@ export async function GET(request: NextRequest) {
             where: {
               hotelChainId: { in: hotelChainIds },
               bookingPromotions: { some: {} },
+              checkIn: { gt: today },
             },
             select: { id: true },
           });
