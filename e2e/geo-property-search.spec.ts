@@ -12,14 +12,14 @@ import { test, expect } from "./fixtures";
 
 test.describe("Geo Property Search — Booking with location data", () => {
   test("booking detail page shows location when countryCode and city are present", async ({
-    request,
-    page,
+    isolatedUser,
+    adminRequest,
   }) => {
-    const chains = await request.get("/api/hotel-chains");
+    const chains = await adminRequest.get("/api/hotel-chains");
     const chain = (await chains.json())[0];
 
     const uniqueName = `Geo Test Hotel ${crypto.randomUUID()}`;
-    const res = await request.post("/api/bookings", {
+    const res = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: chain.id,
         propertyName: uniqueName,
@@ -37,32 +37,34 @@ test.describe("Geo Property Search — Booking with location data", () => {
     expect(res.ok()).toBeTruthy();
     const booking = await res.json();
 
-    await page.goto(`/bookings/${booking.id}`);
-    await expect(page.getByTestId("booking-location")).toBeVisible();
-    await expect(page.getByTestId("booking-location")).toContainText("New York");
-    await expect(page.getByTestId("booking-location")).toContainText("US");
+    await isolatedUser.page.goto(`/bookings/${booking.id}`);
+    await expect(isolatedUser.page.getByTestId("booking-location")).toBeVisible();
+    await expect(isolatedUser.page.getByTestId("booking-location")).toContainText("New York");
+    await expect(isolatedUser.page.getByTestId("booking-location")).toContainText("US");
 
     // Cleanup
-    await request.delete(`/api/bookings/${booking.id}`);
+    await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
   });
 
   test("booking detail page does not show location when geo data is absent", async ({
-    page,
     testBooking,
   }) => {
     // testBooking fixture creates a booking without geo data
-    await page.goto(`/bookings/${testBooking.id}`);
+    await testBooking.page.goto(`/bookings/${testBooking.id}`);
 
-    await expect(page.getByRole("heading", { name: "Booking Details" })).toBeVisible();
-    await expect(page.getByTestId("booking-location")).not.toBeVisible();
+    await expect(testBooking.page.getByRole("heading", { name: "Booking Details" })).toBeVisible();
+    await expect(testBooking.page.getByTestId("booking-location")).not.toBeVisible();
   });
 
-  test("booking with countryCode is saved and returned by GET API", async ({ request }) => {
-    const chains = await request.get("/api/hotel-chains");
+  test("booking with countryCode is saved and returned by GET API", async ({
+    isolatedUser,
+    adminRequest,
+  }) => {
+    const chains = await adminRequest.get("/api/hotel-chains");
     const chain = (await chains.json())[0];
 
     const uniqueName = `Geo API Test ${crypto.randomUUID()}`;
-    const createRes = await request.post("/api/bookings", {
+    const createRes = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: chain.id,
         propertyName: uniqueName,
@@ -83,22 +85,22 @@ test.describe("Geo Property Search — Booking with location data", () => {
     expect(created.property.city).toBe("London");
 
     // Verify GET returns the geo data too
-    const getRes = await request.get(`/api/bookings/${created.id}`);
+    const getRes = await isolatedUser.request.get(`/api/bookings/${created.id}`);
     expect(getRes.ok()).toBeTruthy();
     const fetched = await getRes.json();
     expect(fetched.property.countryCode).toBe("GB");
     expect(fetched.property.city).toBe("London");
 
     // Cleanup
-    await request.delete(`/api/bookings/${created.id}`);
+    await isolatedUser.request.delete(`/api/bookings/${created.id}`);
   });
 
-  test("booking geo data can be updated via PUT", async ({ request }) => {
-    const chains = await request.get("/api/hotel-chains");
+  test("booking geo data can be updated via PUT", async ({ isolatedUser, adminRequest }) => {
+    const chains = await adminRequest.get("/api/hotel-chains");
     const chain = (await chains.json())[0];
 
     const uniqueName = `Geo Update Test ${crypto.randomUUID()}`;
-    const createRes = await request.post("/api/bookings", {
+    const createRes = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: chain.id,
         propertyName: uniqueName,
@@ -115,7 +117,7 @@ test.describe("Geo Property Search — Booking with location data", () => {
     expect(created.property.countryCode).toBeNull();
 
     // Update with geo data
-    const putRes = await request.put(`/api/bookings/${created.id}`, {
+    const putRes = await isolatedUser.request.put(`/api/bookings/${created.id}`, {
       data: { countryCode: "MY", city: "Kuala Lumpur" },
     });
     expect(putRes.ok()).toBeTruthy();
@@ -124,6 +126,6 @@ test.describe("Geo Property Search — Booking with location data", () => {
     expect(updated.property.city).toBe("Kuala Lumpur");
 
     // Cleanup
-    await request.delete(`/api/bookings/${created.id}`);
+    await isolatedUser.request.delete(`/api/bookings/${created.id}`);
   });
 });

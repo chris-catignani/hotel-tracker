@@ -5,10 +5,16 @@ import { CREDIT_CARD_ID } from "../prisma/seed-ids";
 const YEAR = new Date().getFullYear();
 
 type TestFixtures = {
-  testBooking: { id: string; propertyName: string; hotelChainName: string };
-  apartmentBooking: { id: string; propertyName: string };
-  pastYearBooking: { id: string; propertyName: string };
-  testPromotion: { id: string; name: string };
+  testBooking: {
+    id: string;
+    propertyName: string;
+    hotelChainName: string;
+    request: APIRequestContext;
+    page: Page;
+  };
+  apartmentBooking: { id: string; propertyName: string; request: APIRequestContext; page: Page };
+  pastYearBooking: { id: string; propertyName: string; request: APIRequestContext; page: Page };
+  testPromotion: { id: string; name: string; request: APIRequestContext; page: Page };
   testHotelChain: { id: string; name: string };
   testSubBrand: (name?: string) => Promise<{ id: string; name: string; hotelChainId: string }>;
   /**
@@ -153,12 +159,12 @@ export const test = base.extend<TestFixtures>({
     }
   },
 
-  testBooking: async ({ request }, use) => {
-    const chains = await request.get("/api/hotel-chains");
+  testBooking: async ({ isolatedUser, adminRequest }, use) => {
+    const chains = await adminRequest.get("/api/hotel-chains");
     const chain = (await chains.json())[0];
 
     const uniqueName = `Test Hotel ${crypto.randomUUID()}`;
-    const res = await request.post("/api/bookings", {
+    const res = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: chain.id,
         propertyName: uniqueName,
@@ -175,13 +181,19 @@ export const test = base.extend<TestFixtures>({
       },
     });
     const booking = await res.json();
-    await use({ id: booking.id, propertyName: uniqueName, hotelChainName: chain.name });
-    await request.delete(`/api/bookings/${booking.id}`);
+    await use({
+      id: booking.id,
+      propertyName: uniqueName,
+      hotelChainName: chain.name,
+      request: isolatedUser.request,
+      page: isolatedUser.page,
+    });
+    await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
   },
 
-  apartmentBooking: async ({ request }, use) => {
+  apartmentBooking: async ({ isolatedUser }, use) => {
     const uniqueName = `Test Apartment ${crypto.randomUUID()}`;
-    const res = await request.post("/api/bookings", {
+    const res = await isolatedUser.request.post("/api/bookings", {
       data: {
         accommodationType: "apartment",
         hotelChainId: null,
@@ -199,18 +211,23 @@ export const test = base.extend<TestFixtures>({
       },
     });
     const booking = await res.json();
-    await use({ id: booking.id, propertyName: uniqueName });
-    await request.delete(`/api/bookings/${booking.id}`);
+    await use({
+      id: booking.id,
+      propertyName: uniqueName,
+      request: isolatedUser.request,
+      page: isolatedUser.page,
+    });
+    await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
   },
 
-  pastYearBooking: async ({ request }, use) => {
-    const chains = await request.get("/api/hotel-chains");
+  pastYearBooking: async ({ isolatedUser, adminRequest }, use) => {
+    const chains = await adminRequest.get("/api/hotel-chains");
     const chain = (await chains.json())[0];
 
     // Use a firmly past year (current - 1) with explicit YYYY-MM-DD dates
     const pastYear = new Date().getFullYear() - 1;
     const uniqueName = `Test Past Year Hotel ${crypto.randomUUID()}`;
-    const res = await request.post("/api/bookings", {
+    const res = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: chain.id,
         propertyName: uniqueName,
@@ -227,8 +244,13 @@ export const test = base.extend<TestFixtures>({
       },
     });
     const booking = await res.json();
-    await use({ id: booking.id, propertyName: uniqueName });
-    await request.delete(`/api/bookings/${booking.id}`);
+    await use({
+      id: booking.id,
+      propertyName: uniqueName,
+      request: isolatedUser.request,
+      page: isolatedUser.page,
+    });
+    await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
   },
 
   isolatedUserRequest: async ({ playwright, baseURL }, use) => {
@@ -298,9 +320,9 @@ export const test = base.extend<TestFixtures>({
     await userRequest.dispose();
   },
 
-  testPromotion: async ({ request }, use) => {
+  testPromotion: async ({ isolatedUser }, use) => {
     const uniqueName = `Test Promo ${crypto.randomUUID()}`;
-    const res = await request.post("/api/promotions", {
+    const res = await isolatedUser.request.post("/api/promotions", {
       data: {
         name: uniqueName,
         type: "loyalty",
@@ -316,8 +338,13 @@ export const test = base.extend<TestFixtures>({
       },
     });
     const promotion = await res.json();
-    await use({ id: promotion.id, name: uniqueName });
-    await request.delete(`/api/promotions/${promotion.id}`);
+    await use({
+      id: promotion.id,
+      name: uniqueName,
+      request: isolatedUser.request,
+      page: isolatedUser.page,
+    });
+    await isolatedUser.request.delete(`/api/promotions/${promotion.id}`);
   },
 });
 
