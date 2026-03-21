@@ -38,7 +38,7 @@ function makeBooking(overrides: Partial<Booking> = {}): Booking {
     taxAmount: "20",
     totalCost: "220",
     currency: "USD",
-    exchangeRate: "1",
+    lockedExchangeRate: "1",
     isFutureEstimate: false,
     userCreditCardId: null,
     userCreditCard: null,

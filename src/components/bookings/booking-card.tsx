@@ -28,7 +28,7 @@ interface BookingCardProps {
 
 export function BookingCard({ booking, onDelete, showActions = false }: BookingCardProps) {
   const netCost = calculateNetCost(booking);
-  const exchangeRate = booking.exchangeRate ? Number(booking.exchangeRate) : 1;
+  const exchangeRate = booking.lockedExchangeRate ? Number(booking.lockedExchangeRate) : 1;
   const usdTotalCost = Number(booking.totalCost) * exchangeRate;
   const today = new Date().toISOString().split("T")[0];
   const isFutureBooking = booking.checkIn.slice(0, 10) > today;

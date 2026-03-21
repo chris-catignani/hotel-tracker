@@ -134,7 +134,7 @@ async function getFullBookingWithUsage(id: string, userId: string) {
     {
       hotelChainId: enriched.hotelChainId,
       pretaxCost: Number(enriched.pretaxCost),
-      exchangeRate: enriched.exchangeRate ? Number(enriched.exchangeRate) : null,
+      lockedExchangeRate: enriched.lockedExchangeRate ? Number(enriched.lockedExchangeRate) : null,
       property: enriched.property,
       checkIn: enriched.checkIn,
     },
@@ -275,14 +275,14 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
       if (finalCurrency === "USD") {
         data.currency = finalCurrency;
-        data.exchangeRate = 1;
+        data.lockedExchangeRate = 1;
       } else if (isPast) {
         data.currency = finalCurrency;
         const checkInStr = finalCheckIn.toISOString().split("T")[0];
-        data.exchangeRate = await fetchExchangeRate(finalCurrency, checkInStr);
+        data.lockedExchangeRate = await fetchExchangeRate(finalCurrency, checkInStr);
       } else {
         data.currency = finalCurrency;
-        data.exchangeRate = null;
+        data.lockedExchangeRate = null;
       }
     } else if (currency !== undefined) {
       data.currency = currency;
@@ -316,10 +316,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
           if (finalHotelChainId && finalPretax) {
             // Resolve exchange rate for USD calculation
-            const resolvedRate = data.exchangeRate
-              ? Number(data.exchangeRate)
-              : current?.exchangeRate
-                ? Number(current.exchangeRate)
+            const resolvedRate = data.lockedExchangeRate
+              ? Number(data.lockedExchangeRate)
+              : current?.lockedExchangeRate
+                ? Number(current.lockedExchangeRate)
                 : finalCurrency === "USD"
                   ? 1
                   : ((await getCurrentRate(finalCurrency)) ?? 1);

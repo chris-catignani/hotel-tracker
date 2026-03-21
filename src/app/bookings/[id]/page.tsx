@@ -121,7 +121,7 @@ interface Booking extends Omit<NetCostBooking, "bookingPromotions" | "userCredit
   currency: string;
   paymentTiming: string;
   bookingDate: string | null;
-  exchangeRate: string | number | null;
+  lockedExchangeRate: string | number | null;
   isFutureEstimate?: boolean;
   loyaltyPointsEstimated?: boolean;
   userCreditCardId: string | null;
@@ -350,10 +350,12 @@ export default function BookingDetailPage() {
                     <p className="font-medium">
                       {formatCurrency(Number(booking.pretaxCost), booking.currency)}
                     </p>
-                    {booking.exchangeRate != null && (
+                    {booking.lockedExchangeRate != null && (
                       <p className="text-sm text-muted-foreground">
                         ≈{" "}
-                        {formatCurrency(Number(booking.pretaxCost) * Number(booking.exchangeRate))}
+                        {formatCurrency(
+                          Number(booking.pretaxCost) * Number(booking.lockedExchangeRate)
+                        )}
                         {booking.isFutureEstimate ? " (est.)" : ""}
                       </p>
                     )}
@@ -382,12 +384,12 @@ export default function BookingDetailPage() {
                     <p className="font-medium" data-testid="total-cost-native">
                       {formatCurrency(totalCost, booking.currency)}
                     </p>
-                    {booking.exchangeRate != null && (
+                    {booking.lockedExchangeRate != null && (
                       <p
                         className="text-sm text-muted-foreground"
                         data-testid="total-cost-usd-equivalent"
                       >
-                        ≈ {formatCurrency(totalCost * Number(booking.exchangeRate))}
+                        ≈ {formatCurrency(totalCost * Number(booking.lockedExchangeRate))}
                         {booking.isFutureEstimate ? " (est.)" : ""}
                       </p>
                     )}

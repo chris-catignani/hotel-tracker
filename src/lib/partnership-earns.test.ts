@@ -22,7 +22,7 @@ const ACCOR_QANTAS_EARN = {
 const APAC_BOOKING = {
   hotelChainId: ACCOR_ID,
   pretaxCost: 100,
-  exchangeRate: 1, // USD booking
+  lockedExchangeRate: 1, // USD booking
   property: { countryCode: "AU" },
   checkIn: "2025-01-10",
 };
@@ -92,7 +92,7 @@ describe("resolvePartnershipEarns", () => {
     vi.mocked(getOrFetchHistoricalRate).mockResolvedValue(0.63);
 
     const results = await resolvePartnershipEarns(
-      { ...APAC_BOOKING, pretaxCost: 200, exchangeRate: 0.63 },
+      { ...APAC_BOOKING, pretaxCost: 200, lockedExchangeRate: 0.63 },
       [ACCOR_QANTAS_EARN]
     );
 

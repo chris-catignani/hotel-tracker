@@ -6,10 +6,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 npm run dev          # Start dev server on localhost:3000
+```
+
+**Required env vars** (copy from `.env.example` or set manually): `DATABASE_URL`, `AUTH_SECRET`, `GOOGLE_MAPS_API_KEY`, `RESEND_API_KEY`, `CRON_SECRET`. For E2E tests: also `DATABASE_URL_TEST`.
+
+```bash
 npm run build        # Production build
 npm run lint         # Run ESLint
 
 npm run db:migrate   # Create + apply a new migration (dev only) + clear .next cache
+                     # To skip interactive name prompt: npx prisma migrate dev --name <migration_name>
 npm run db:deploy    # Apply pending migrations (production / CI)
 npm run db:generate  # Regenerate Prisma client only
 npm run db:seed      # Seed reference data (hotels, cards, portals)
@@ -60,8 +66,11 @@ Non-obvious fields worth knowing:
 ### Net Cost Formula
 
 ```
-Net Cost = totalCost - promotionSavings - portalCashback - cardReward - loyaltyPointsValue
+Net Cost = totalCost + pointsRedeemedValue + certsValue
+           - promotionSavings - portalCashback - cardReward - loyaltyPointsValue
 ```
+
+All USD amounts use `toUSD(nativeAmount, booking.lockedExchangeRate)` — `lockedExchangeRate` is locked at check-in (1 for USD, historical rate for past non-USD, null for future non-USD).
 
 **Mandate:** Whenever adding new promotion types, portal reward options, or modifying loyalty logic, you **MUST**:
 
@@ -69,8 +78,8 @@ Net Cost = totalCost - promotionSavings - portalCashback - cardReward - loyaltyP
 2. Update `CostBreakdown` (`src/components/cost-breakdown.tsx`) for any new breakdown items.
 
 - `portalCashback` = portalCashbackRate × basis (`portalCashbackOnTotal ? totalCost : pretaxCost`)
-- `cardReward` = totalCost × creditCard.rewardRate × creditCard.pointValue
-- `loyaltyPointsValue` = loyaltyPointsEarned × hotel.pointValue (pre-tax basis)
+- `cardReward` = totalCost × creditCard.rewardRate × creditCard.pointType.usdCentsPerPoint
+- `loyaltyPointsValue` = loyaltyPointsEarned × `lockedLoyaltyUsdCentsPerPoint` (if set) or live `pointType.usdCentsPerPoint`
 
 ### Promotion Matching & Orphaned Logic
 
@@ -99,6 +108,8 @@ Incomplete final cycle earns $0. Label depends on whether the cap was exhausted:
 - **Fixed-rate (e.g. GHA):** `pretaxCost × fixedRate`
 - Calculated server-side in the booking API and client-side via `src/lib/loyalty-utils.ts`. User can override.
 - **Not applicable** to apartment bookings — loyalty fields are hidden in the form.
+- **Foreign-currency programs (e.g. Accor):** `PointType` has `programCurrency` (e.g. `EUR`) and `programCentsPerPoint`. `usdCentsPerPoint` is refreshed daily by the exchange rate cron. `Booking.lockedLoyaltyUsdCentsPerPoint` snapshots `programCentsPerPoint × programCurrency/USD rate` at check-in so past stay values don't drift with FX.
+  - **Critical:** always use `fetchExchangeRate(pt.programCurrency, date)` — NOT the booking currency rate — since `programCentsPerPoint` is denominated in `programCurrency` regardless of what the guest paid in.
 
 ### Apartment / Short-term Rental Stays
 
@@ -116,7 +127,8 @@ Incomplete final cycle earns $0. Label depends on whether the cap was exhausted:
 ### Important Gotchas
 
 - Prisma `Decimal` fields return as **strings** from API responses — always wrap with `Number()`
-- **`Booking.propertyId` is required** — resolve it via `findOrCreateProperty()` in `src/lib/property-utils.ts` on every booking create/update
+- **`Booking.propertyId` is required** — resolve it via `findOrCreateProperty()` in `src/lib/property-utils.ts` on every booking create/update. This function is P2002-safe: catches unique constraint races and re-fetches by `(name, hotelChainId)`.
+- **Locked fields:** `Booking.lockedExchangeRate` and `Booking.lockedLoyaltyUsdCentsPerPoint` are written once when `checkIn <= today` (by CREATE/PUT routes and the exchange rate cron). Never recomputed after that.
 - **Geo confirmation:** The booking form blocks submission until the user selects a property from autocomplete or uses the manual entry modal (`geoConfirmed` must be `true`). `PropertyNameCombobox` and `ManualGeoModal` handle this flow.
 - After switching geo API providers: `DELETE FROM geo_cache;` to flush stale results
 - After seeding with explicit IDs, sync Postgres sequences to avoid unique-constraint errors: `SELECT setval('<table>_id_seq', (SELECT MAX(id) FROM <table>));`
@@ -154,9 +166,10 @@ Incomplete final cycle earns $0. Label depends on whether the cap was exhausted:
 
 ## GitHub CLI
 
-- **Sub-issue linking:** When creating sub-tasks for a parent issue, always formally link them using the GraphQL `addSubIssue` mutation.
-- **Workflow:** ALWAYS create a feature branch. NEVER commit to `main`. NOTIFY the user to test locally before creating a PR. NEVER merge or delete a branch without explicit instruction.
-- **Do NOT use `gh pr view --comments`** — it queries the deprecated Projects (classic) GraphQL API and returns exit code 1.
-  - PR inline comments: `gh api repos/{owner}/{repo}/pulls/{pr}/comments`
-  - General PR/issue comments: `gh api repos/{owner}/{repo}/issues/{pr}/comments`
-  - Review summaries: `gh api repos/{owner}/{repo}/pulls/{pr}/reviews`
+- **GitHub MCP plugin is configured** — use `mcp__plugin_github_github__*` tools for GitHub operations where available (reading issues/PRs, creating issues, searching, etc.). Prefer MCP tools over `gh api` calls for read operations.
+- **Playwright MCP plugin is configured** — use `mcp__plugin_playwright_playwright__*` tools for browser automation and UI verification against the running dev server without writing Playwright test files.
+- **Sub-issue linking:** Use `mcp__plugin_github_github__sub_issue_write` to formally link sub-tasks to a parent issue.
+- **Workflow:** ALWAYS create a feature branch. NEVER commit to `main`. NEVER push to remote until the user has tested locally and explicitly approves. NEVER merge or delete a branch without explicit instruction.
+- **After merging a PR:** Always close the associated GitHub Issue: `gh issue close <number> --comment "Implemented in PR #<number>."`
+- **PR CI polling:** Use `gh pr checks <number>` at 30-second intervals (`sleep 30` between calls). Never use `--watch`.
+- **Do NOT use `gh pr view --comments`** — it queries the deprecated Projects (classic) GraphQL API and returns exit code 1. Use MCP tools instead: `pull_request_read`, `pull_request_review_write`, or `gh api` directly.

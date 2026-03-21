@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
           {
             hotelChainId: b.hotelChainId,
             pretaxCost: Number(b.pretaxCost),
-            exchangeRate: b.exchangeRate ? Number(b.exchangeRate) : null,
+            lockedExchangeRate: b.lockedExchangeRate ? Number(b.lockedExchangeRate) : null,
             property: b.property,
             checkIn: b.checkIn,
           },
@@ -269,7 +269,7 @@ export async function POST(request: NextRequest) {
         loyaltyPointsEarned: calculatedPoints,
         pointsRedeemed: pointsRedeemed ? Number(pointsRedeemed) : null,
         currency: resolvedCurrency,
-        exchangeRate: resolvedExchangeRate,
+        lockedExchangeRate: resolvedExchangeRate,
         lockedLoyaltyUsdCentsPerPoint,
         notes: notes || null,
         bookingSource: bookingSource || null,

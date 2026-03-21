@@ -55,10 +55,10 @@ describe("lockedLoyaltyUsdCentsPerPoint locking (Step 2)", () => {
    */
   function computeLockedRate(
     pt: { programCurrency: string | null; programCentsPerPoint: number | null } | null,
-    exchangeRate: number
+    lockedExchangeRate: number
   ): number | undefined {
     if (pt?.programCurrency != null && pt?.programCentsPerPoint != null) {
-      return Number(pt.programCentsPerPoint) * exchangeRate;
+      return Number(pt.programCentsPerPoint) * lockedExchangeRate;
     }
     return undefined;
   }

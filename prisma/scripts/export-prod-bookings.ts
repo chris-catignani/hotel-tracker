@@ -152,7 +152,7 @@ async function main() {
       loyaltyPointsEarned: true,
       pointsRedeemed: true,
       currency: true,
-      exchangeRate: true,
+      lockedExchangeRate: true,
       bookingSource: true,
       otaAgencyId: true,
       notes: true,
@@ -194,7 +194,7 @@ async function main() {
     `  loyaltyPointsEarned: number | null;`,
     `  pointsRedeemed: number | null;`,
     `  currency: string;`,
-    `  exchangeRate: number | null;`,
+    `  lockedExchangeRate: number | null;`,
     `  bookingSource: string | null;`,
     `  otaAgencyId: string | null;`,
     `  notes: string | null;`,
@@ -243,7 +243,9 @@ async function main() {
     lines.push(`      loyaltyPointsEarned: ${num(b.loyaltyPointsEarned)},`);
     lines.push(`      pointsRedeemed: ${num(b.pointsRedeemed)},`);
     lines.push(`      currency: ${str(b.currency)},`);
-    lines.push(`      exchangeRate: ${num(b.exchangeRate ? Number(b.exchangeRate) : null)},`);
+    lines.push(
+      `      lockedExchangeRate: ${num(b.lockedExchangeRate ? Number(b.lockedExchangeRate) : null)},`
+    );
     lines.push(`      bookingSource: ${str(b.bookingSource)},`);
     lines.push(`      otaAgencyId: ${id(OTA_ID_MAP, b.otaAgencyId)},`);
     lines.push(`      notes: ${str(b.notes)},`);

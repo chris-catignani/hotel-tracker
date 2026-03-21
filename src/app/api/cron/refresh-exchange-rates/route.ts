@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
     const pastDueBookings = await prisma.booking.findMany({
       where: {
         checkIn: { lte: today },
-        exchangeRate: null,
+        lockedExchangeRate: null,
         NOT: { currency: "USD" },
       },
       include: {
@@ -114,7 +114,7 @@ export async function GET(request: NextRequest) {
 
         await prisma.booking.update({
           where: { id: booking.id },
-          data: { exchangeRate: rate, loyaltyPointsEarned, lockedLoyaltyUsdCentsPerPoint },
+          data: { lockedExchangeRate: rate, loyaltyPointsEarned, lockedLoyaltyUsdCentsPerPoint },
         });
         lockedBookingIds.push(booking.id);
       } catch (err) {

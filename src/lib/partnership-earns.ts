@@ -32,7 +32,7 @@ export async function resolvePartnershipEarns(
   booking: {
     hotelChainId: string | null;
     pretaxCost: string | number;
-    exchangeRate: string | number | null;
+    lockedExchangeRate: string | number | null;
     property?: { countryCode?: string | null } | null;
     checkIn: Date | string;
   },
@@ -47,7 +47,7 @@ export async function resolvePartnershipEarns(
       : String(booking.checkIn).split("T")[0];
 
   // pretaxCost in native currency → USD
-  const exchangeRate = booking.exchangeRate ? Number(booking.exchangeRate) : 1;
+  const exchangeRate = booking.lockedExchangeRate ? Number(booking.lockedExchangeRate) : 1;
   const pretaxCostUSD = Number(booking.pretaxCost) * exchangeRate;
 
   // Deduplicate earn currencies to avoid redundant API calls
