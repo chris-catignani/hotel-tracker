@@ -143,7 +143,7 @@ export async function GET(request: NextRequest) {
           pointTypesUpdated.push(`${pt.name}=>NO_RATE`);
           continue;
         }
-        const newUsd = Number(Number(pt.programCentsPerPoint) * rate).toFixed(3);
+        const newUsd = Number(Number(pt.programCentsPerPoint) * rate).toFixed(6);
         await prisma.pointType.update({
           where: { id: pt.id },
           data: { usdCentsPerPoint: newUsd },
