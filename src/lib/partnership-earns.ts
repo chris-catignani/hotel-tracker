@@ -14,7 +14,7 @@ export interface PartnershipEarnInput {
   earnRate: string | number;
   earnCurrency: string;
   countryCodes: string[];
-  pointType: { name: string; category: string; centsPerPoint: string | number };
+  pointType: { name: string; category: string; usdCentsPerPoint: string | number };
 }
 
 export interface PartnershipEarnResult {
@@ -73,7 +73,7 @@ export async function resolvePartnershipEarns(
     if (!earnCurrencyRate) continue;
 
     const earnRate = Number(earn.earnRate);
-    const centsPerPoint = Number(earn.pointType.centsPerPoint);
+    const centsPerPoint = Number(earn.pointType.usdCentsPerPoint);
     const centsStr = formatCents(centsPerPoint);
     const pointTypeLabel = earn.pointType.category === "airline" ? "miles" : "points";
     const pointTypeAbbr = earn.pointType.category === "airline" ? "miles" : "pts";

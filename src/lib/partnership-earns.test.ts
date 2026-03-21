@@ -16,7 +16,7 @@ const ACCOR_QANTAS_EARN = {
   earnRate: 3,
   earnCurrency: "AUD",
   countryCodes: ["AU", "SG", "NZ", "JP"],
-  pointType: { name: "Qantas Points", category: "airline", centsPerPoint: 0.012 },
+  pointType: { name: "Qantas Points", category: "airline", usdCentsPerPoint: 0.012 },
 };
 
 const APAC_BOOKING = {

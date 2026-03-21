@@ -10,12 +10,16 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     const { id } = await params;
     const body = await request.json();
-    const { name, category, centsPerPoint } = body;
+    const { name, category, usdCentsPerPoint, programCurrency, programCentsPerPoint } = body;
 
     const data: Record<string, unknown> = {};
     if (name !== undefined) data.name = name;
     if (category !== undefined) data.category = category;
-    if (centsPerPoint !== undefined) data.centsPerPoint = Number(centsPerPoint);
+    if (usdCentsPerPoint !== undefined) data.usdCentsPerPoint = Number(usdCentsPerPoint);
+    if (programCurrency !== undefined) data.programCurrency = programCurrency ?? null;
+    if (programCentsPerPoint !== undefined)
+      data.programCentsPerPoint =
+        programCentsPerPoint != null ? Number(programCentsPerPoint) : null;
 
     const pointType = await prisma.pointType.update({
       where: { id: id },

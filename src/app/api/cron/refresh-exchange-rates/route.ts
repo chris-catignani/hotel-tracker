@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { fetchExchangeRate } from "@/lib/exchange-rate";
+import { fetchExchangeRate, getCurrentRate } from "@/lib/exchange-rate";
 import { apiError } from "@/lib/api-error";
 import { CURRENCIES } from "@/lib/constants";
 import { calculatePoints, resolveBasePointRate } from "@/lib/loyalty-utils";
+import { reevaluateBookings } from "@/lib/promotion-matching";
 import { logger } from "@/lib/logger";
 
 const RATES_CDN =
@@ -70,6 +71,7 @@ export async function GET(request: NextRequest) {
               include: { eliteStatus: true },
               take: 1,
             },
+            pointType: true,
           },
         },
         hotelChainSubBrand: true,
@@ -100,9 +102,19 @@ export async function GET(request: NextRequest) {
           });
         }
 
+        const pt = booking.hotelChain?.pointType;
+        let lockedLoyaltyUsdCentsPerPoint: number | undefined;
+        if (pt?.programCurrency != null && pt?.programCentsPerPoint != null) {
+          // Use the program currency rate, not the booking currency rate:
+          // programCentsPerPoint is denominated in programCurrency (e.g. EUR for Accor),
+          // regardless of what currency the guest paid in.
+          const programRate = await fetchExchangeRate(pt.programCurrency, checkInStr);
+          lockedLoyaltyUsdCentsPerPoint = Number(pt.programCentsPerPoint) * programRate;
+        }
+
         await prisma.booking.update({
           where: { id: booking.id },
-          data: { exchangeRate: rate, loyaltyPointsEarned },
+          data: { exchangeRate: rate, loyaltyPointsEarned, lockedLoyaltyUsdCentsPerPoint },
         });
         lockedBookingIds.push(booking.id);
       } catch (err) {
@@ -114,10 +126,61 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Step 3: Refresh USD value for foreign-currency PointTypes
+    const pointTypesUpdated: string[] = [];
+    const pointTypeBookingIds = new Set<string>();
+
+    try {
+      const foreignPointTypes = await prisma.pointType.findMany({
+        where: { programCurrency: { not: null } },
+        include: { hotelChains: { select: { id: true } } },
+      });
+
+      for (const pt of foreignPointTypes) {
+        if (!pt.programCurrency || pt.programCentsPerPoint == null) continue;
+        const rate = await getCurrentRate(pt.programCurrency);
+        if (rate == null) {
+          pointTypesUpdated.push(`${pt.name}=>NO_RATE`);
+          continue;
+        }
+        const newUsd = Number(Number(pt.programCentsPerPoint) * rate).toFixed(6);
+        await prisma.pointType.update({
+          where: { id: pt.id },
+          data: { usdCentsPerPoint: newUsd },
+        });
+        pointTypesUpdated.push(`${pt.name}=>${newUsd}`);
+
+        // Collect booking IDs that have promotions linked to hotel chains using this point type
+        const hotelChainIds = pt.hotelChains.map((hc) => hc.id);
+        if (hotelChainIds.length > 0) {
+          const affectedBookings = await prisma.booking.findMany({
+            where: {
+              hotelChainId: { in: hotelChainIds },
+              bookingPromotions: { some: {} },
+              checkIn: { gt: today },
+            },
+            select: { id: true },
+          });
+          for (const b of affectedBookings) pointTypeBookingIds.add(b.id);
+        }
+      }
+
+      if (pointTypeBookingIds.size > 0) {
+        await reevaluateBookings([...pointTypeBookingIds]);
+      }
+    } catch (err) {
+      logger.error("Cron job failed during point type USD refresh", err, {
+        context: "REFRESH_POINT_TYPE_USD",
+      });
+      pointTypesUpdated.push(`POINT_TYPE_REFRESH=>ERROR`);
+    }
+
     return NextResponse.json({
       success: true,
       ratesUpdated: upsertResults,
       bookingsLocked: lockedBookingIds.length,
+      pointTypesRefreshed: pointTypesUpdated,
+      bookingsReevaluated: pointTypeBookingIds.size,
       date: todayStr,
     });
   } catch (error) {

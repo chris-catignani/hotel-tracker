@@ -25,14 +25,14 @@ describe("BookingCard", () => {
       name: "Hyatt",
       loyaltyProgram: "World of Hyatt",
       basePointRate: 5,
-      pointType: { name: "Hyatt Points", centsPerPoint: 0.015 },
+      pointType: { name: "Hyatt Points", usdCentsPerPoint: 0.015 },
     },
     hotelChainSubBrand: { name: "Grand Hyatt", basePointRate: null },
     userCreditCard: {
       creditCard: {
         name: "Chase Sapphire Reserve",
         rewardRate: 3,
-        pointType: { name: "Ultimate Rewards", centsPerPoint: 0.02 },
+        pointType: { name: "Ultimate Rewards", usdCentsPerPoint: 0.02 },
       },
     },
     shoppingPortal: {

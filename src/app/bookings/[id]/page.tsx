@@ -130,7 +130,7 @@ interface Booking extends Omit<NetCostBooking, "bookingPromotions" | "userCredit
     creditCard: {
       name: string;
       rewardRate: string | number;
-      pointType: { name: string; centsPerPoint: string | number } | null;
+      pointType: { name: string; usdCentsPerPoint: string | number } | null;
       rewardRules?: {
         rewardType: string;
         rewardValue: string | number;

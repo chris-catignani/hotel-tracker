@@ -139,14 +139,16 @@ model VerificationToken {
 }
 
 model PointType {
-  id              String           @id @default(cuid())
-  name            String
-  category        PointCategory
-  centsPerPoint   Decimal          @map("cents_per_point") @db.Decimal(10, 6)
-  hotelChains     HotelChain[]
-  creditCards     CreditCard[]
-  shoppingPortals ShoppingPortal[]
-  partnershipEarns PartnershipEarn[]
+  id                   String           @id @default(cuid())
+  name                 String
+  category             PointCategory
+  usdCentsPerPoint     Decimal          @map("usd_cents_per_point") @db.Decimal(10, 6)
+  programCurrency      String?          @map("program_currency")
+  programCentsPerPoint Decimal?         @map("program_cents_per_point") @db.Decimal(10, 6)
+  hotelChains          HotelChain[]
+  creditCards          CreditCard[]
+  shoppingPortals      ShoppingPortal[]
+  partnershipEarns     PartnershipEarn[]
 
   @@map("point_types")
 }
@@ -297,7 +299,8 @@ model Booking {
   loyaltyPointsEarned   Int?                 @map("loyalty_points_earned")
   pointsRedeemed        Int?                 @map("points_redeemed")
   currency              String               @default("USD")
-  exchangeRate          Decimal?             @map("exchange_rate") @db.Decimal(12, 6)
+  exchangeRate                  Decimal?             @map("exchange_rate") @db.Decimal(12, 6)
+  lockedLoyaltyUsdCentsPerPoint Decimal?             @map("locked_loyalty_usd_cents_per_point") @db.Decimal(10, 6)
   bookingSource         BookingSourceType?   @map("booking_source")
   otaAgencyId           String?              @map("ota_agency_id")
   otaAgency             OtaAgency?           @relation(fields: [otaAgencyId], references: [id])

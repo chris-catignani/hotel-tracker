@@ -24,6 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { extractApiError } from "@/lib/client-error";
 import { CATEGORY_LABELS } from "@/lib/constants";
 import { PointType } from "@/lib/types";
@@ -36,7 +37,10 @@ export function PointTypesTab() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [category, setCategory] = useState<"hotel" | "airline" | "transferable">("hotel");
-  const [centsPerPoint, setCentsPerPoint] = useState("");
+  const [usdCentsPerPoint, setUsdCentsPerPoint] = useState("");
+  const [isForeignCurrency, setIsForeignCurrency] = useState(false);
+  const [programCurrency, setProgramCurrency] = useState("");
+  const [programCentsPerPoint, setProgramCentsPerPoint] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [showErrors, setShowErrors] = useState(false);
 
@@ -44,7 +48,10 @@ export function PointTypesTab() {
   const [editPt, setEditPt] = useState<PointType | null>(null);
   const [editName, setEditName] = useState("");
   const [editCategory, setEditCategory] = useState<"hotel" | "airline" | "transferable">("hotel");
-  const [editCentsPerPoint, setEditCentsPerPoint] = useState("");
+  const [editUsdCentsPerPoint, setEditUsdCentsPerPoint] = useState("");
+  const [editIsForeignCurrency, setEditIsForeignCurrency] = useState(false);
+  const [editProgramCurrency, setEditProgramCurrency] = useState("");
+  const [editProgramCentsPerPoint, setEditProgramCentsPerPoint] = useState("");
   const [showEditErrors, setShowEditErrors] = useState(false);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -67,13 +74,13 @@ export function PointTypesTab() {
   const validate = useCallback(
     (n: string, cpp: string) => ({
       name: !n.trim() ? "Name is required" : "",
-      centsPerPoint: !cpp ? "Value is required" : "",
+      usdCentsPerPoint: !cpp ? "Value is required" : "",
     }),
     []
   );
 
-  const currentErrors = validate(name, centsPerPoint);
-  const isValid = !currentErrors.name && !currentErrors.centsPerPoint;
+  const currentErrors = validate(name, usdCentsPerPoint);
+  const isValid = !currentErrors.name && !currentErrors.usdCentsPerPoint;
 
   const handleSubmit = async () => {
     setShowErrors(true);
@@ -83,12 +90,22 @@ export function PointTypesTab() {
     const res = await fetch("/api/point-types", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, category, centsPerPoint: Number(centsPerPoint) }),
+      body: JSON.stringify({
+        name,
+        category,
+        usdCentsPerPoint: Number(usdCentsPerPoint),
+        programCurrency: isForeignCurrency ? programCurrency.trim() || null : null,
+        programCentsPerPoint:
+          isForeignCurrency && programCentsPerPoint ? Number(programCentsPerPoint) : null,
+      }),
     });
     if (res.ok) {
       setName("");
       setCategory("hotel");
-      setCentsPerPoint("");
+      setUsdCentsPerPoint("");
+      setIsForeignCurrency(false);
+      setProgramCurrency("");
+      setProgramCentsPerPoint("");
       setShowErrors(false);
       setOpen(false);
       fetchPointTypes();
@@ -101,13 +118,19 @@ export function PointTypesTab() {
     setEditPt(pt);
     setEditName(pt.name);
     setEditCategory(pt.category);
-    setEditCentsPerPoint(String(Number(pt.centsPerPoint)));
+    setEditUsdCentsPerPoint(String(Number(pt.usdCentsPerPoint)));
+    const hasForeign = pt.programCurrency != null;
+    setEditIsForeignCurrency(hasForeign);
+    setEditProgramCurrency(pt.programCurrency ?? "");
+    setEditProgramCentsPerPoint(
+      pt.programCentsPerPoint != null ? String(Number(pt.programCentsPerPoint)) : ""
+    );
     setShowEditErrors(false);
     setEditOpen(true);
   };
 
-  const editErrors = validate(editName, editCentsPerPoint);
-  const isEditValid = !editErrors.name && !editErrors.centsPerPoint;
+  const editErrors = validate(editName, editUsdCentsPerPoint);
+  const isEditValid = !editErrors.name && !editErrors.usdCentsPerPoint;
 
   const handleEditSubmit = async () => {
     if (!editPt) return;
@@ -121,7 +144,12 @@ export function PointTypesTab() {
       body: JSON.stringify({
         name: editName,
         category: editCategory,
-        centsPerPoint: Number(editCentsPerPoint),
+        usdCentsPerPoint: Number(editUsdCentsPerPoint),
+        programCurrency: editIsForeignCurrency ? editProgramCurrency.trim() || null : null,
+        programCentsPerPoint:
+          editIsForeignCurrency && editProgramCentsPerPoint
+            ? Number(editProgramCentsPerPoint)
+            : null,
       }),
     });
     if (res.ok) {
@@ -202,17 +230,54 @@ export function PointTypesTab() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="pt-cpp">Value per Point ($) *</Label>
+                <Label htmlFor="pt-cpp">USD Value per Point ($) *</Label>
                 <Input
                   id="pt-cpp"
                   type="number"
                   step="0.000001"
-                  value={centsPerPoint}
-                  onChange={(e) => setCentsPerPoint(e.target.value)}
+                  value={usdCentsPerPoint}
+                  onChange={(e) => setUsdCentsPerPoint(e.target.value)}
                   placeholder="e.g. 0.005"
-                  error={showErrors ? currentErrors.centsPerPoint : ""}
+                  error={showErrors ? currentErrors.usdCentsPerPoint : ""}
                 />
               </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="pt-foreign-currency"
+                  checked={isForeignCurrency}
+                  onCheckedChange={(v) => setIsForeignCurrency(!!v)}
+                  data-testid="pt-foreign-currency-checkbox"
+                />
+                <Label htmlFor="pt-foreign-currency" className="font-normal cursor-pointer">
+                  Points are denominated in a non-USD currency
+                </Label>
+              </div>
+              {isForeignCurrency && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="pt-program-currency">Program Currency</Label>
+                    <Input
+                      id="pt-program-currency"
+                      value={programCurrency}
+                      onChange={(e) => setProgramCurrency(e.target.value)}
+                      placeholder="e.g. EUR"
+                      data-testid="pt-program-currency"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="pt-program-cpp">Program Value per Point</Label>
+                    <Input
+                      id="pt-program-cpp"
+                      type="number"
+                      step="0.000001"
+                      value={programCentsPerPoint}
+                      onChange={(e) => setProgramCentsPerPoint(e.target.value)}
+                      placeholder="e.g. 0.02"
+                      data-testid="pt-program-cpp"
+                    />
+                  </div>
+                </>
+              )}
             </div>
             <DialogFooter>
               <Button onClick={handleSubmit}>Save</Button>
@@ -260,17 +325,54 @@ export function PointTypesTab() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-pt-cpp">Value per Point ($) *</Label>
+              <Label htmlFor="edit-pt-cpp">USD Value per Point ($) *</Label>
               <Input
                 id="edit-pt-cpp"
                 type="number"
                 step="0.000001"
-                value={editCentsPerPoint}
-                onChange={(e) => setEditCentsPerPoint(e.target.value)}
+                value={editUsdCentsPerPoint}
+                onChange={(e) => setEditUsdCentsPerPoint(e.target.value)}
                 placeholder="e.g. 0.005"
-                error={showEditErrors ? editErrors.centsPerPoint : ""}
+                error={showEditErrors ? editErrors.usdCentsPerPoint : ""}
               />
             </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="edit-pt-foreign-currency"
+                checked={editIsForeignCurrency}
+                onCheckedChange={(v) => setEditIsForeignCurrency(!!v)}
+                data-testid="edit-pt-foreign-currency-checkbox"
+              />
+              <Label htmlFor="edit-pt-foreign-currency" className="font-normal cursor-pointer">
+                Points are denominated in a non-USD currency
+              </Label>
+            </div>
+            {editIsForeignCurrency && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-pt-program-currency">Program Currency</Label>
+                  <Input
+                    id="edit-pt-program-currency"
+                    value={editProgramCurrency}
+                    onChange={(e) => setEditProgramCurrency(e.target.value)}
+                    placeholder="e.g. EUR"
+                    data-testid="edit-pt-program-currency"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-pt-program-cpp">Program Value per Point</Label>
+                  <Input
+                    id="edit-pt-program-cpp"
+                    type="number"
+                    step="0.000001"
+                    value={editProgramCentsPerPoint}
+                    onChange={(e) => setEditProgramCentsPerPoint(e.target.value)}
+                    placeholder="e.g. 0.02"
+                    data-testid="edit-pt-program-cpp"
+                  />
+                </div>
+              </>
+            )}
           </div>
           <DialogFooter>
             <Button onClick={handleEditSubmit}>Save</Button>
@@ -323,9 +425,12 @@ export function PointTypesTab() {
                           {pt.name}
                         </h4>
                         <div className="text-right">
-                          <p className="text-xs text-muted-foreground">Value/Point</p>
+                          <p className="text-xs text-muted-foreground">USD Value/Point</p>
                           <p className="font-medium">
-                            ${parseFloat(Number(pt.centsPerPoint).toFixed(6))}
+                            ${parseFloat(Number(pt.usdCentsPerPoint).toFixed(3))}
+                            {pt.programCurrency && pt.programCentsPerPoint != null
+                              ? ` (${pt.programCurrency} ${parseFloat(Number(pt.programCentsPerPoint).toFixed(3))})`
+                              : ""}
                           </p>
                         </div>
                       </div>
@@ -363,7 +468,7 @@ export function PointTypesTab() {
               <TableHeader className="sticky top-0 bg-background z-20">
                 <TableRow>
                   <TableHead>Name</TableHead>
-                  <TableHead>Value/Point</TableHead>
+                  <TableHead>USD Value/Point</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
@@ -383,7 +488,12 @@ export function PointTypesTab() {
                     ...group.map((pt) => (
                       <TableRow key={pt.id} data-testid="point-type-row">
                         <TableCell data-testid="point-type-name">{pt.name}</TableCell>
-                        <TableCell>${parseFloat(Number(pt.centsPerPoint).toFixed(6))}</TableCell>
+                        <TableCell>
+                          ${parseFloat(Number(pt.usdCentsPerPoint).toFixed(3))}
+                          {pt.programCurrency && pt.programCentsPerPoint != null
+                            ? ` (${pt.programCurrency} ${parseFloat(Number(pt.programCentsPerPoint).toFixed(3))})`
+                            : ""}
+                        </TableCell>
                         <TableCell>
                           <div className="flex gap-2">
                             <Button variant="ghost" size="sm" onClick={() => handleEdit(pt)}>

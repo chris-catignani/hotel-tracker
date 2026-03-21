@@ -15,7 +15,7 @@ describe("net-cost", () => {
       name: "Hyatt",
       loyaltyProgram: "World of Hyatt",
       basePointRate: 10,
-      pointType: { name: "Hyatt Points", centsPerPoint: 0.015 },
+      pointType: { name: "Hyatt Points", usdCentsPerPoint: 0.015 },
     } as HotelChain,
     portalCashbackOnTotal: false,
     portalCashbackRate: 0,
@@ -94,7 +94,7 @@ describe("net-cost", () => {
           creditCard: {
             name: "Chase Sapphire",
             rewardRate: 0.01,
-            pointType: { name: "Ultimate Rewards", centsPerPoint: 0.02 },
+            pointType: { name: "Ultimate Rewards", usdCentsPerPoint: 0.02 },
           },
         },
       };
@@ -398,7 +398,7 @@ describe("net-cost", () => {
       shoppingPortal: {
         name: "Rakuten",
         rewardType: "points",
-        pointType: { name: "Amex Points", centsPerPoint: 0.015 },
+        pointType: { name: "Amex Points", usdCentsPerPoint: 0.015 },
       },
     };
     const result = getNetCostBreakdown(booking);
@@ -419,7 +419,7 @@ describe("net-cost", () => {
         creditCard: {
           name: "Chase Sapphire",
           rewardRate: 4,
-          pointType: { name: "UR Points", centsPerPoint: 0.015 },
+          pointType: { name: "UR Points", usdCentsPerPoint: 0.015 },
           rewardRules: [],
         },
       },
@@ -451,6 +451,30 @@ describe("net-cost", () => {
     );
   });
 
+  it("should use lockedLoyaltyUsdCentsPerPoint when present instead of live pointType value", () => {
+    const booking: NetCostBooking = {
+      ...mockBaseBooking,
+      loyaltyPointsEarned: 2000,
+      lockedLoyaltyUsdCentsPerPoint: 0.022, // locked at check-in (e.g. Accor in EUR)
+      // hotelChain.pointType.usdCentsPerPoint is 0.015 (live, would give 30)
+    };
+    const result = getNetCostBreakdown(booking);
+    // Should use locked rate: 2000 * 0.022 = 44
+    expect(result.loyaltyPointsValue).toBeCloseTo(44, 5);
+    expect(result.loyaltyPointsCalc?.groups[0].segments[0].formula).toContain("2.2¢");
+  });
+
+  it("should fall back to live pointType usdCentsPerPoint when lockedLoyaltyUsdCentsPerPoint is null", () => {
+    const booking: NetCostBooking = {
+      ...mockBaseBooking,
+      loyaltyPointsEarned: 2000,
+      lockedLoyaltyUsdCentsPerPoint: null,
+    };
+    const result = getNetCostBreakdown(booking);
+    // Falls back to 0.015: 2000 * 0.015 = 30
+    expect(result.loyaltyPointsValue).toBe(30);
+  });
+
   it("should use sub-brand basePointRate in loyalty breakdown when present", () => {
     // Regression: breakdown was using chain rate (2.5) instead of sub-brand rate (1.25)
     // for chains like Accor where sub-brands have lower earn rates.
@@ -464,7 +488,7 @@ describe("net-cost", () => {
         id: "h1",
         name: "Hyatt",
         loyaltyProgram: "World of Hyatt",
-        pointType: { name: "Hyatt Points", centsPerPoint: 0.015 },
+        pointType: { name: "Hyatt Points", usdCentsPerPoint: 0.015 },
         basePointRate: 2.5, // chain rate — should NOT be used
         userStatus: {
           eliteStatus: { name: "Silver", isFixed: false, bonusPercentage: 0.2, fixedRate: null },
@@ -594,7 +618,7 @@ describe("net-cost", () => {
         creditCard: {
           name: "Chase Hyatt",
           rewardRate: 1,
-          pointType: { name: "Hyatt Pts", centsPerPoint: 0.015 },
+          pointType: { name: "Hyatt Pts", usdCentsPerPoint: 0.015 },
           rewardRules: [
             {
               rewardType: "multiplier",
@@ -630,7 +654,7 @@ describe("net-cost", () => {
         creditCard: {
           name: "Chase Sapphire Reserve",
           rewardRate: 4,
-          pointType: { name: "UR Pts", centsPerPoint: 0.015 },
+          pointType: { name: "UR Pts", usdCentsPerPoint: 0.015 },
           rewardRules: [
             {
               rewardType: "multiplier",
@@ -662,7 +686,7 @@ describe("net-cost", () => {
         creditCard: {
           name: "Amex Plat",
           rewardRate: 2,
-          pointType: { name: "MR Pts", centsPerPoint: 0.007 },
+          pointType: { name: "MR Pts", usdCentsPerPoint: 0.007 },
           rewardRules: [
             {
               rewardType: "fixed",
@@ -696,7 +720,7 @@ describe("net-cost", () => {
         creditCard: {
           name: "Amex Plat",
           rewardRate: 2,
-          pointType: { name: "MR Pts", centsPerPoint: 0.007 },
+          pointType: { name: "MR Pts", usdCentsPerPoint: 0.007 },
           rewardRules: [
             {
               rewardType: "multiplier",
@@ -735,7 +759,7 @@ describe("net-cost", () => {
         creditCard: {
           name: "Amex Plat",
           rewardRate: 2,
-          pointType: { name: "MR Pts", centsPerPoint: 0.007 },
+          pointType: { name: "MR Pts", usdCentsPerPoint: 0.007 },
           rewardRules: [
             {
               rewardType: "multiplier",
@@ -907,7 +931,7 @@ describe("net-cost", () => {
         creditCard: {
           name: "Chase Hyatt",
           rewardRate: 1,
-          pointType: { name: "Hyatt Pts", centsPerPoint: 0.015 },
+          pointType: { name: "Hyatt Pts", usdCentsPerPoint: 0.015 },
           rewardRules: [
             {
               rewardType: "multiplier",
@@ -932,7 +956,7 @@ describe("net-cost", () => {
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
   describe("Span-stays Orphaned vs Capped partial cycles (Issue #170)", () => {
-    // Shared setup: 7-night booking, 3-night cycle, 3000-point benefit, centsPerPoint=0.02
+    // Shared setup: 7-night booking, 3-night cycle, 3000-point benefit, usdCentsPerPoint=0.02
     // cumulativeAtStart=0, cumulativeAtEnd=7
     // Segments: [0-3 complete=$60, 3-6 complete=$60, 6-7 orphaned partial=$0]
     const makeSpanBooking = (
@@ -944,7 +968,7 @@ describe("net-cost", () => {
       ...mockBaseBooking,
       hotelChain: {
         ...mockBaseBooking.hotelChain,
-        pointType: { name: "Test Pts", centsPerPoint: 0.02 },
+        pointType: { name: "Test Pts", usdCentsPerPoint: 0.02 },
       } as typeof mockBaseBooking.hotelChain,
       numNights: 7,
       bookingPromotions: [
@@ -1110,7 +1134,7 @@ describe("net-cost", () => {
         ...mockBaseBooking,
         hotelChain: {
           ...mockBaseBooking.hotelChain,
-          pointType: { name: "Test Pts", centsPerPoint: 0.02 },
+          pointType: { name: "Test Pts", usdCentsPerPoint: 0.02 },
         } as unknown as any,
         numNights: 9,
         bookingPromotions: [

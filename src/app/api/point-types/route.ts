@@ -20,13 +20,15 @@ export async function POST(request: NextRequest) {
     if (adminError instanceof NextResponse) return adminError;
 
     const body = await request.json();
-    const { name, category, centsPerPoint } = body;
+    const { name, category, usdCentsPerPoint, programCurrency, programCentsPerPoint } = body;
 
     const pointType = await prisma.pointType.create({
       data: {
         name,
         category,
-        centsPerPoint: Number(centsPerPoint),
+        usdCentsPerPoint: Number(usdCentsPerPoint),
+        programCurrency: programCurrency ?? null,
+        programCentsPerPoint: programCentsPerPoint != null ? Number(programCentsPerPoint) : null,
       },
     });
 

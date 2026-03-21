@@ -10,7 +10,7 @@ const MOCK_PARTNERSHIP: MockPartnership = {
   isEnabled: false,
   earnRate: 3,
   earnCurrency: "AUD",
-  pointType: { name: "Qantas Points", category: "airline", centsPerPoint: 0.012 },
+  pointType: { name: "Qantas Points", category: "airline", usdCentsPerPoint: 0.012 },
 };
 
 type MockPartnership = {
@@ -19,7 +19,7 @@ type MockPartnership = {
   isEnabled: boolean;
   earnRate: number;
   earnCurrency: string;
-  pointType: { name: string; category: string; centsPerPoint: number };
+  pointType: { name: string; category: string; usdCentsPerPoint: number };
 };
 
 function mockFetch(partnerships: MockPartnership[] = []) {

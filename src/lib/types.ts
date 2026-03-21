@@ -14,7 +14,9 @@ export interface PointType {
   id: string;
   name: string;
   category: "hotel" | "airline" | "transferable";
-  centsPerPoint: string | number;
+  usdCentsPerPoint: string | number;
+  programCurrency: string | null;
+  programCentsPerPoint: string | number | null;
 }
 
 export interface HotelChainEliteStatus {
@@ -446,6 +448,7 @@ export interface Booking {
   totalCost: string | number;
   currency: string;
   exchangeRate: string | number | null;
+  lockedLoyaltyUsdCentsPerPoint: string | number | null;
   isFutureEstimate?: boolean;
   loyaltyPointsEstimated?: boolean;
   userCreditCardId: string | null;

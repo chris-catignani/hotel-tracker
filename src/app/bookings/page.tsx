@@ -75,7 +75,7 @@ interface Booking {
     name: string;
     loyaltyProgram: string | null;
     basePointRate: string | number | null;
-    pointType: { name: string; centsPerPoint: string | number } | null;
+    pointType: { name: string; usdCentsPerPoint: string | number } | null;
     userStatus?: {
       eliteStatus: {
         name: string;
@@ -91,7 +91,7 @@ interface Booking {
       name: string;
       rewardType: string;
       rewardRate: string | number;
-      pointType: { name: string; centsPerPoint: string | number } | null;
+      pointType: { name: string; usdCentsPerPoint: string | number } | null;
       rewardRules?: {
         rewardType: string;
         rewardValue: string | number;
@@ -104,7 +104,7 @@ interface Booking {
     id: string;
     name: string;
     rewardType: string;
-    pointType: { name: string; centsPerPoint: string | number } | null;
+    pointType: { name: string; usdCentsPerPoint: string | number } | null;
   } | null;
   bookingPromotions: BookingPromotion[];
   certificates: BookingCertificate[];
