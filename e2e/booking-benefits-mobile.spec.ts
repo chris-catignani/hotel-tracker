@@ -4,24 +4,24 @@ test.describe("Booking Benefits Mobile Layout", () => {
   test.use({ viewport: { width: 375, height: 667 } }); // iPhone SE size
 
   test("should not have horizontal overflow in booking benefits when 'Other' is selected", async ({
-    page,
+    isolatedUser,
   }) => {
-    await page.goto("/bookings/new");
+    await isolatedUser.page.goto("/bookings/new");
 
     // Click Add Benefit
-    await page.getByRole("button", { name: "+ Add Benefit" }).click();
+    await isolatedUser.page.getByRole("button", { name: "+ Add Benefit" }).click();
 
     // Select 'Other'
-    const typeSelect = page.getByTestId("benefit-type-select-0");
+    const typeSelect = isolatedUser.page.getByTestId("benefit-type-select-0");
     await typeSelect.click();
-    await page.getByRole("option", { name: "Other" }).click();
+    await isolatedUser.page.getByRole("option", { name: "Other" }).click();
 
     // The 'Description' field should appear
-    const description = page.getByPlaceholder("Description");
+    const description = isolatedUser.page.getByPlaceholder("Description");
     await expect(description).toBeVisible();
 
     // Check for horizontal overflow on the scroll container (usually the body or a wrapper)
-    const hasOverflow = await page.evaluate(() => {
+    const hasOverflow = await isolatedUser.page.evaluate(() => {
       const el = document.documentElement;
       return el.scrollWidth > el.clientWidth;
     });
