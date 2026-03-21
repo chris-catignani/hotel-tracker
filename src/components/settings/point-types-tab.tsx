@@ -24,6 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { extractApiError } from "@/lib/client-error";
 import { CATEGORY_LABELS } from "@/lib/constants";
 import { PointType } from "@/lib/types";
@@ -37,6 +38,7 @@ export function PointTypesTab() {
   const [name, setName] = useState("");
   const [category, setCategory] = useState<"hotel" | "airline" | "transferable">("hotel");
   const [usdCentsPerPoint, setUsdCentsPerPoint] = useState("");
+  const [isForeignCurrency, setIsForeignCurrency] = useState(false);
   const [programCurrency, setProgramCurrency] = useState("");
   const [programCentsPerPoint, setProgramCentsPerPoint] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -47,6 +49,7 @@ export function PointTypesTab() {
   const [editName, setEditName] = useState("");
   const [editCategory, setEditCategory] = useState<"hotel" | "airline" | "transferable">("hotel");
   const [editUsdCentsPerPoint, setEditUsdCentsPerPoint] = useState("");
+  const [editIsForeignCurrency, setEditIsForeignCurrency] = useState(false);
   const [editProgramCurrency, setEditProgramCurrency] = useState("");
   const [editProgramCentsPerPoint, setEditProgramCentsPerPoint] = useState("");
   const [showEditErrors, setShowEditErrors] = useState(false);
@@ -91,14 +94,16 @@ export function PointTypesTab() {
         name,
         category,
         usdCentsPerPoint: Number(usdCentsPerPoint),
-        programCurrency: programCurrency.trim() || null,
-        programCentsPerPoint: programCentsPerPoint ? Number(programCentsPerPoint) : null,
+        programCurrency: isForeignCurrency ? programCurrency.trim() || null : null,
+        programCentsPerPoint:
+          isForeignCurrency && programCentsPerPoint ? Number(programCentsPerPoint) : null,
       }),
     });
     if (res.ok) {
       setName("");
       setCategory("hotel");
       setUsdCentsPerPoint("");
+      setIsForeignCurrency(false);
       setProgramCurrency("");
       setProgramCentsPerPoint("");
       setShowErrors(false);
@@ -114,6 +119,8 @@ export function PointTypesTab() {
     setEditName(pt.name);
     setEditCategory(pt.category);
     setEditUsdCentsPerPoint(String(Number(pt.usdCentsPerPoint)));
+    const hasForeign = pt.programCurrency != null;
+    setEditIsForeignCurrency(hasForeign);
     setEditProgramCurrency(pt.programCurrency ?? "");
     setEditProgramCentsPerPoint(
       pt.programCentsPerPoint != null ? String(Number(pt.programCentsPerPoint)) : ""
@@ -138,8 +145,11 @@ export function PointTypesTab() {
         name: editName,
         category: editCategory,
         usdCentsPerPoint: Number(editUsdCentsPerPoint),
-        programCurrency: editProgramCurrency.trim() || null,
-        programCentsPerPoint: editProgramCentsPerPoint ? Number(editProgramCentsPerPoint) : null,
+        programCurrency: editIsForeignCurrency ? editProgramCurrency.trim() || null : null,
+        programCentsPerPoint:
+          editIsForeignCurrency && editProgramCentsPerPoint
+            ? Number(editProgramCentsPerPoint)
+            : null,
       }),
     });
     if (res.ok) {
@@ -231,28 +241,43 @@ export function PointTypesTab() {
                   error={showErrors ? currentErrors.usdCentsPerPoint : ""}
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="pt-program-currency">Program Currency (optional)</Label>
-                <Input
-                  id="pt-program-currency"
-                  value={programCurrency}
-                  onChange={(e) => setProgramCurrency(e.target.value)}
-                  placeholder="e.g. EUR"
-                  data-testid="pt-program-currency"
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="pt-foreign-currency"
+                  checked={isForeignCurrency}
+                  onCheckedChange={(v) => setIsForeignCurrency(!!v)}
+                  data-testid="pt-foreign-currency-checkbox"
                 />
+                <Label htmlFor="pt-foreign-currency" className="font-normal cursor-pointer">
+                  Points are denominated in a non-USD currency
+                </Label>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="pt-program-cpp">Program Value per Point (optional)</Label>
-                <Input
-                  id="pt-program-cpp"
-                  type="number"
-                  step="0.000001"
-                  value={programCentsPerPoint}
-                  onChange={(e) => setProgramCentsPerPoint(e.target.value)}
-                  placeholder="e.g. 0.02"
-                  data-testid="pt-program-cpp"
-                />
-              </div>
+              {isForeignCurrency && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="pt-program-currency">Program Currency</Label>
+                    <Input
+                      id="pt-program-currency"
+                      value={programCurrency}
+                      onChange={(e) => setProgramCurrency(e.target.value)}
+                      placeholder="e.g. EUR"
+                      data-testid="pt-program-currency"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="pt-program-cpp">Program Value per Point</Label>
+                    <Input
+                      id="pt-program-cpp"
+                      type="number"
+                      step="0.000001"
+                      value={programCentsPerPoint}
+                      onChange={(e) => setProgramCentsPerPoint(e.target.value)}
+                      placeholder="e.g. 0.02"
+                      data-testid="pt-program-cpp"
+                    />
+                  </div>
+                </>
+              )}
             </div>
             <DialogFooter>
               <Button onClick={handleSubmit}>Save</Button>
@@ -311,28 +336,43 @@ export function PointTypesTab() {
                 error={showEditErrors ? editErrors.usdCentsPerPoint : ""}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-pt-program-currency">Program Currency (optional)</Label>
-              <Input
-                id="edit-pt-program-currency"
-                value={editProgramCurrency}
-                onChange={(e) => setEditProgramCurrency(e.target.value)}
-                placeholder="e.g. EUR"
-                data-testid="edit-pt-program-currency"
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="edit-pt-foreign-currency"
+                checked={editIsForeignCurrency}
+                onCheckedChange={(v) => setEditIsForeignCurrency(!!v)}
+                data-testid="edit-pt-foreign-currency-checkbox"
               />
+              <Label htmlFor="edit-pt-foreign-currency" className="font-normal cursor-pointer">
+                Points are denominated in a non-USD currency
+              </Label>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-pt-program-cpp">Program Value per Point (optional)</Label>
-              <Input
-                id="edit-pt-program-cpp"
-                type="number"
-                step="0.000001"
-                value={editProgramCentsPerPoint}
-                onChange={(e) => setEditProgramCentsPerPoint(e.target.value)}
-                placeholder="e.g. 0.02"
-                data-testid="edit-pt-program-cpp"
-              />
-            </div>
+            {editIsForeignCurrency && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-pt-program-currency">Program Currency</Label>
+                  <Input
+                    id="edit-pt-program-currency"
+                    value={editProgramCurrency}
+                    onChange={(e) => setEditProgramCurrency(e.target.value)}
+                    placeholder="e.g. EUR"
+                    data-testid="edit-pt-program-currency"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-pt-program-cpp">Program Value per Point</Label>
+                  <Input
+                    id="edit-pt-program-cpp"
+                    type="number"
+                    step="0.000001"
+                    value={editProgramCentsPerPoint}
+                    onChange={(e) => setEditProgramCentsPerPoint(e.target.value)}
+                    placeholder="e.g. 0.02"
+                    data-testid="edit-pt-program-cpp"
+                  />
+                </div>
+              </>
+            )}
           </div>
           <DialogFooter>
             <Button onClick={handleEditSubmit}>Save</Button>

@@ -159,6 +159,7 @@ describe("PointTypesTab", () => {
 
     await user.type(screen.getByLabelText(/Name/i), "Accor ALL");
     await user.type(screen.getByLabelText(/USD Value per Point/i), "0.022");
+    await user.click(screen.getByTestId("pt-foreign-currency-checkbox"));
     await user.type(screen.getByTestId("pt-program-currency"), "EUR");
     await user.type(screen.getByTestId("pt-program-cpp"), "0.02");
 
