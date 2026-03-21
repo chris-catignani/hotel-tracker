@@ -427,9 +427,9 @@ export function PointTypesTab() {
                         <div className="text-right">
                           <p className="text-xs text-muted-foreground">USD Value/Point</p>
                           <p className="font-medium">
-                            ${parseFloat(Number(pt.usdCentsPerPoint).toFixed(6))}
+                            ${parseFloat(Number(pt.usdCentsPerPoint).toFixed(3))}
                             {pt.programCurrency && pt.programCentsPerPoint != null
-                              ? ` (${pt.programCurrency} ${parseFloat(Number(pt.programCentsPerPoint).toFixed(6))})`
+                              ? ` (${pt.programCurrency} ${parseFloat(Number(pt.programCentsPerPoint).toFixed(3))})`
                               : ""}
                           </p>
                         </div>
@@ -489,9 +489,9 @@ export function PointTypesTab() {
                       <TableRow key={pt.id} data-testid="point-type-row">
                         <TableCell data-testid="point-type-name">{pt.name}</TableCell>
                         <TableCell>
-                          ${parseFloat(Number(pt.usdCentsPerPoint).toFixed(6))}
+                          ${parseFloat(Number(pt.usdCentsPerPoint).toFixed(3))}
                           {pt.programCurrency && pt.programCentsPerPoint != null
-                            ? ` (${pt.programCurrency} ${parseFloat(Number(pt.programCentsPerPoint).toFixed(6))})`
+                            ? ` (${pt.programCurrency} ${parseFloat(Number(pt.programCentsPerPoint).toFixed(3))})`
                             : ""}
                         </TableCell>
                         <TableCell>

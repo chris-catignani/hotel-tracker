@@ -1006,14 +1006,14 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
       loyaltySegments.push({
         label: "Base Loyalty Points",
         value: basePoints * centsPerPoint,
-        formula: `${formatCurrency(effectivePretaxCost)} (pre-tax) × ${baseRate}x = ${basePoints.toLocaleString()} pts`,
+        formula: `${formatCurrency(effectivePretaxCost, calcCurrency)} (pre-tax) × ${baseRate}x = ${basePoints.toLocaleString()} pts × ${centsStr}¢ = ${formatCurrency(basePoints * centsPerPoint)}`,
         description: `Standard earning rate for this hotel chain, applied to the ${costBasisNote}.`,
       });
 
       loyaltySegments.push({
         label: `${elite.name} Elite Bonus`,
         value: bonusPoints * centsPerPoint,
-        formula: `${basePoints.toLocaleString()} base pts × ${bonusPct * 100}% bonus = ${bonusPoints.toLocaleString()} pts`,
+        formula: `${basePoints.toLocaleString()} base pts × ${bonusPct * 100}% bonus = ${bonusPoints.toLocaleString()} pts × ${centsStr}¢ = ${formatCurrency(bonusPoints * centsPerPoint)}`,
         description: `Additional points for your ${elite.name} status.`,
       });
     } else {

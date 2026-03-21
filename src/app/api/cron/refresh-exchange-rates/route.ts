@@ -132,12 +132,12 @@ export async function GET(request: NextRequest) {
           pointTypesUpdated.push(`${pt.name}=>NO_RATE`);
           continue;
         }
-        const newUsd = Number(pt.programCentsPerPoint) * rate;
+        const newUsd = Number(Number(pt.programCentsPerPoint) * rate).toFixed(3);
         await prisma.pointType.update({
           where: { id: pt.id },
           data: { usdCentsPerPoint: newUsd },
         });
-        pointTypesUpdated.push(`${pt.name}=>${newUsd.toFixed(6)}`);
+        pointTypesUpdated.push(`${pt.name}=>${newUsd}`);
 
         // Collect booking IDs that have promotions linked to hotel chains using this point type
         const hotelChainIds = pt.hotelChains.map((hc) => hc.id);

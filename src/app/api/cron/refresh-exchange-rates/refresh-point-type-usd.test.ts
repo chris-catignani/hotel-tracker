@@ -9,7 +9,7 @@ describe("PointType USD refresh calculation", () => {
     const programCentsPerPoint = 0.02; // 2¢ EUR per point
     const eurToUsdRate = 1.1; // 1 EUR = 1.10 USD
     const expected = 0.02 * 1.1; // 0.022
-    expect(Number((programCentsPerPoint * eurToUsdRate).toFixed(6))).toBeCloseTo(expected, 6);
+    expect(Number((programCentsPerPoint * eurToUsdRate).toFixed(3))).toBeCloseTo(expected, 3);
   });
 
   it("skips point types with null programCurrency", () => {
