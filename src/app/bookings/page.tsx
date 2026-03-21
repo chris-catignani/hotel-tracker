@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -17,6 +17,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useYearFilter, buildYearOptions, type YearFilter } from "@/hooks/use-year-filter";
 import { BookingCard } from "@/components/bookings/booking-card";
 import { formatCurrency, formatDate, formatCerts, pruneHotelName } from "@/lib/utils";
 
@@ -123,6 +131,11 @@ export default function BookingsPage() {
   const [bookingToDelete, setBookingToDelete] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
+  const { yearFilter, setYearFilter, filterBookings: filterByYear } = useYearFilter();
+
+  const yearOptions = useMemo(() => buildYearOptions(bookings), [bookings]);
+  const filteredBookings = useMemo(() => filterByYear(bookings), [bookings, filterByYear]);
+
   const fetchBookings = useCallback(async () => {
     setLoading(true);
     const res = await fetch("/api/bookings");
@@ -157,11 +170,34 @@ export default function BookingsPage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl font-bold">Bookings</h1>
-        <Link href="/bookings/new">
-          <Button>Add Booking</Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Select
+            value={String(yearFilter)}
+            onValueChange={(val) => {
+              if (val === "all" || val === "upcoming") {
+                setYearFilter(val as YearFilter);
+              } else {
+                setYearFilter(parseInt(val, 10));
+              }
+            }}
+          >
+            <SelectTrigger className="w-40" data-testid="year-filter-select">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {yearOptions.map((opt) => (
+                <SelectItem key={String(opt.value)} value={String(opt.value)}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Link href="/bookings/new">
+            <Button>Add Booking</Button>
+          </Link>
+        </div>
       </div>
 
       <ConfirmDialog
@@ -185,17 +221,21 @@ export default function BookingsPage() {
           icon={CalendarDays}
           title="No bookings found"
           description="You haven't added any bookings yet. Start by adding your first hotel stay."
-          action={{
-            label: "Add Booking",
-            href: "/bookings/new",
-          }}
+          action={{ label: "Add Booking", href: "/bookings/new" }}
           data-testid="bookings-empty"
+        />
+      ) : filteredBookings.length === 0 ? (
+        <EmptyState
+          icon={CalendarDays}
+          title="No bookings for this period"
+          description="No bookings found for the selected year. Try selecting a different year."
+          data-testid="bookings-empty-year-filter"
         />
       ) : (
         <>
           {/* Mobile View: Cards */}
           <div className="flex flex-col gap-4 md:hidden" data-testid="bookings-list-mobile">
-            {bookings.map((booking) => (
+            {filteredBookings.map((booking) => (
               <BookingCard
                 key={booking.id}
                 booking={{
@@ -229,7 +269,7 @@ export default function BookingsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {bookings.map((booking) => {
+                {filteredBookings.map((booking) => {
                   const exchangeRate = booking.lockedExchangeRate
                     ? Number(booking.lockedExchangeRate)
                     : 1;

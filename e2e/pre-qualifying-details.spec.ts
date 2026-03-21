@@ -1,5 +1,7 @@
 import { test, expect } from "./fixtures";
 
+const YEAR = new Date().getFullYear();
+
 test.describe("Pre-qualifying Promotion Details", () => {
   test("shows prerequisite progress and tier table when this booking fulfills the prerequisite", async ({
     page,
@@ -52,8 +54,8 @@ test.describe("Pre-qualifying Promotion Details", () => {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: "Future Stay",
-        checkIn: "2026-12-01",
-        checkOut: "2026-12-03",
+        checkIn: `${YEAR}-12-01`,
+        checkOut: `${YEAR}-12-03`,
         numNights: 2,
         pretaxCost: 200,
         taxAmount: 30,
@@ -67,8 +69,8 @@ test.describe("Pre-qualifying Promotion Details", () => {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: "Current Stay Prereq",
-        checkIn: "2026-06-01",
-        checkOut: "2026-06-03",
+        checkIn: `${YEAR}-06-01`,
+        checkOut: `${YEAR}-06-03`,
         numNights: 2,
         pretaxCost: 200,
         taxAmount: 30,
@@ -153,8 +155,8 @@ test.describe("Pre-qualifying Promotion Details", () => {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: "Future Stay Tier",
-        checkIn: "2026-12-01",
-        checkOut: "2026-12-03",
+        checkIn: `${YEAR}-12-01`,
+        checkOut: `${YEAR}-12-03`,
         numNights: 2,
         pretaxCost: 200,
         taxAmount: 30,
@@ -168,8 +170,8 @@ test.describe("Pre-qualifying Promotion Details", () => {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: "Current Stay Tier",
-        checkIn: "2026-06-01",
-        checkOut: "2026-06-03",
+        checkIn: `${YEAR}-06-01`,
+        checkOut: `${YEAR}-06-03`,
         numNights: 2,
         pretaxCost: 200,
         taxAmount: 30,
@@ -248,8 +250,8 @@ test.describe("Upcoming Tiers on Actively-Earning Tiered Promotions", () => {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: "Upcoming Tier Stay 1",
-        checkIn: "2026-01-01",
-        checkOut: "2026-01-03",
+        checkIn: `${YEAR}-01-01`,
+        checkOut: `${YEAR}-01-03`,
         numNights: 2,
         pretaxCost: 200,
         taxAmount: 30,
@@ -264,8 +266,8 @@ test.describe("Upcoming Tiers on Actively-Earning Tiered Promotions", () => {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: "Upcoming Tier Stay 2",
-        checkIn: "2026-06-01",
-        checkOut: "2026-06-03",
+        checkIn: `${YEAR}-06-01`,
+        checkOut: `${YEAR}-06-03`,
         numNights: 2,
         pretaxCost: 200,
         taxAmount: 30,
@@ -318,8 +320,8 @@ test.describe("Upcoming Tiers on Actively-Earning Tiered Promotions", () => {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: "Last Tier Stay 1",
-        checkIn: "2026-01-01",
-        checkOut: "2026-01-03",
+        checkIn: `${YEAR}-01-01`,
+        checkOut: `${YEAR}-01-03`,
         numNights: 2,
         pretaxCost: 200,
         taxAmount: 30,
@@ -334,8 +336,8 @@ test.describe("Upcoming Tiers on Actively-Earning Tiered Promotions", () => {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: "Last Tier Stay 2",
-        checkIn: "2026-02-01",
-        checkOut: "2026-02-03",
+        checkIn: `${YEAR}-02-01`,
+        checkOut: `${YEAR}-02-03`,
         numNights: 2,
         pretaxCost: 200,
         taxAmount: 30,
@@ -350,8 +352,8 @@ test.describe("Upcoming Tiers on Actively-Earning Tiered Promotions", () => {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: "Last Tier Stay 3",
-        checkIn: "2026-06-01",
-        checkOut: "2026-06-03",
+        checkIn: `${YEAR}-06-01`,
+        checkOut: `${YEAR}-06-03`,
         numNights: 2,
         pretaxCost: 200,
         taxAmount: 30,

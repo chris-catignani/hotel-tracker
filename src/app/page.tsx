@@ -21,6 +21,14 @@ import {
 } from "@/components/ui/table";
 import { BookingCard } from "@/components/bookings/booking-card";
 import { formatCurrency as formatDollars, formatDate, formatCerts, cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useYearFilter, buildYearOptions, type YearFilter } from "@/hooks/use-year-filter";
 
 interface BookingCertificate {
   id: string;
@@ -205,6 +213,8 @@ export default function DashboardPage() {
     direction: "desc",
   });
 
+  const { yearFilter, setYearFilter, filterBookings: filterByYear } = useYearFilter();
+
   useEffect(() => {
     const saved = localStorage.getItem(FILTER_STORAGE_KEY);
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -226,14 +236,20 @@ export default function DashboardPage() {
     localStorage.setItem(FILTER_STORAGE_KEY, filter);
   };
 
-  const hasApartments = bookings.some((b) => b.accommodationType === "apartment");
-  const hasHotels = bookings.some((b) => b.accommodationType === "hotel");
+  // Year filter applied first on raw bookings (before accommodation filter)
+  const yearFilteredBookings = useMemo(() => filterByYear(bookings), [bookings, filterByYear]);
+
+  // Accommodation filter applied second
+  const filteredBookings = useMemo(() => {
+    if (accommodationFilter === "all") return yearFilteredBookings;
+    return yearFilteredBookings.filter((bk) => bk.accommodationType === accommodationFilter);
+  }, [yearFilteredBookings, accommodationFilter]);
+
+  const hasApartments = yearFilteredBookings.some((b) => b.accommodationType === "apartment");
+  const hasHotels = yearFilteredBookings.some((b) => b.accommodationType === "hotel");
   const showFilter = hasApartments && hasHotels;
 
-  const filteredBookings = useMemo(() => {
-    if (accommodationFilter === "all") return bookings;
-    return bookings.filter((b) => b.accommodationType === accommodationFilter);
-  }, [bookings, accommodationFilter]);
+  const yearOptions = useMemo(() => buildYearOptions(bookings), [bookings]);
 
   const hotelChainSummaries = useMemo(() => {
     const summaries = filteredBookings.reduce(
@@ -302,10 +318,10 @@ export default function DashboardPage() {
     });
   }, [hotelChainSummaries, sortConfig]);
 
-  // Breakdown counts always use unfiltered bookings (shown in "All" view sub-labels)
+  // Breakdown counts use year-filtered bookings (shown in "All" view sub-labels)
   const { bookingBreakdown, nightsBreakdown } = useMemo(() => {
     if (!showFilter) return { bookingBreakdown: undefined, nightsBreakdown: undefined };
-    const counts = bookings.reduce(
+    const counts = yearFilteredBookings.reduce(
       (acc, b) => {
         if (b.accommodationType === "hotel") {
           acc.hotelCount++;
@@ -322,7 +338,7 @@ export default function DashboardPage() {
       bookingBreakdown: { hotels: counts.hotelCount, apartments: counts.apartmentCount },
       nightsBreakdown: { hotels: counts.hotelNights, apartments: counts.apartmentNights },
     };
-  }, [bookings, showFilter]);
+  }, [yearFilteredBookings, showFilter]);
 
   const toggleSort = (key: keyof HotelChainSummary) => {
     setSortConfig((prev) => ({
@@ -401,25 +417,49 @@ export default function DashboardPage() {
           <h1 className="text-3xl font-bold">Dashboard</h1>
           <p className="text-muted-foreground">Overview of your bookings and savings</p>
         </div>
-        {showFilter && (
-          <div className="flex shrink-0 rounded-lg border p-0.5 gap-0.5">
-            {(["all", "hotel", "apartment"] as const).map((f) => (
-              <button
-                key={f}
-                onClick={() => handleFilterChange(f)}
-                className={cn(
-                  "px-3 py-1.5 text-sm rounded-md transition-colors",
-                  accommodationFilter === f
-                    ? "bg-background shadow-sm font-medium"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-                data-testid={`dashboard-filter-${f}`}
-              >
-                {f === "all" ? "All" : f === "hotel" ? "Hotels" : "Apartments"}
-              </button>
-            ))}
-          </div>
-        )}
+        <div className="flex shrink-0 flex-wrap gap-2 items-center justify-end">
+          <Select
+            value={String(yearFilter)}
+            onValueChange={(val) => {
+              if (val === "all" || val === "upcoming") {
+                setYearFilter(val as YearFilter);
+              } else {
+                setYearFilter(parseInt(val, 10));
+              }
+            }}
+          >
+            <SelectTrigger className="w-40" data-testid="year-filter-select">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {yearOptions.map((opt) => (
+                <SelectItem key={String(opt.value)} value={String(opt.value)}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {showFilter && (
+            <div className="flex shrink-0 rounded-lg border p-0.5 gap-0.5">
+              {(["all", "hotel", "apartment"] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => handleFilterChange(f)}
+                  className={cn(
+                    "px-3 py-1.5 text-sm rounded-md transition-colors",
+                    accommodationFilter === f
+                      ? "bg-background shadow-sm font-medium"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                  data-testid={`dashboard-filter-${f}`}
+                >
+                  {f === "all" ? "All" : f === "hotel" ? "Hotels" : "Apartments"}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <DashboardStats
@@ -550,7 +590,7 @@ export default function DashboardPage() {
             <CardTitle>Savings Breakdown</CardTitle>
           </CardHeader>
           <CardContent>
-            {bookings.length === 0 ? (
+            {filteredBookings.length === 0 ? (
               <EmptyState
                 icon={Wallet}
                 title="No savings data"
@@ -561,7 +601,7 @@ export default function DashboardPage() {
             ) : (
               <div className="space-y-4">
                 {(() => {
-                  const totals = bookings.reduce(
+                  const totals = filteredBookings.reduce(
                     (acc, b) => {
                       const { promoSavings, portalCashback, cardReward, loyaltyPointsValue } =
                         getNetCostBreakdown(b);
@@ -662,7 +702,7 @@ export default function DashboardPage() {
         {accommodationFilter !== "apartment" && <SubBrandBreakdown bookings={filteredBookings} />}
       </div>
 
-      {bookings.length > 0 && (
+      {filteredBookings.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Accommodation Summary</CardTitle>

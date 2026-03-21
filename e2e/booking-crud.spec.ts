@@ -1,6 +1,8 @@
 import crypto from "crypto";
 import { test, expect } from "./fixtures";
 
+const YEAR = new Date().getFullYear();
+
 test.describe("Booking List", () => {
   test("shows booking row with property name, hotel chain, and net/night", async ({
     page,
@@ -26,8 +28,8 @@ test.describe("Booking List", () => {
       data: {
         hotelChainId: chain.id,
         propertyName,
-        checkIn: "2025-06-01",
-        checkOut: "2025-06-03",
+        checkIn: `${YEAR}-08-01`,
+        checkOut: `${YEAR}-08-03`,
         numNights: 2,
         pretaxCost: 200,
         taxAmount: 20,

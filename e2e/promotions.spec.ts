@@ -1,6 +1,8 @@
 import { test, expect } from "./fixtures";
 import { USER_CREDIT_CARD_ID, CREDIT_CARD_ID } from "../prisma/seed-ids";
 
+const YEAR = new Date().getFullYear();
+
 test.describe("Promotions CRUD", () => {
   test("should display promotions page with Add Promotion button", async ({ page }) => {
     await page.goto("/promotions");
@@ -569,7 +571,7 @@ test.describe("Promotions restriction picker UX", () => {
         benefits: [
           { rewardType: "cashback", valueType: "fixed", value: 25, certType: null, sortOrder: 0 },
         ],
-        restrictions: { minSpend: "200", registrationDeadline: "2026-06-01" },
+        restrictions: { minSpend: "200", registrationDeadline: `${YEAR}-06-01` },
       },
     });
     expect(res.ok()).toBeTruthy();
@@ -753,8 +755,8 @@ test.describe("Promotions payment type restrictions", () => {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: "Cash Booking",
-        checkIn: "2026-06-01",
-        checkOut: "2026-06-02",
+        checkIn: `${YEAR}-06-01`,
+        checkOut: `${YEAR}-06-02`,
         numNights: 1,
         pretaxCost: 100,
         taxAmount: 20,
@@ -770,8 +772,8 @@ test.describe("Promotions payment type restrictions", () => {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: "Points Booking",
-        checkIn: "2026-06-03",
-        checkOut: "2026-06-04",
+        checkIn: `${YEAR}-06-03`,
+        checkOut: `${YEAR}-06-04`,
         numNights: 1,
         pretaxCost: 0,
         taxAmount: 0,

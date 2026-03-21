@@ -1,5 +1,7 @@
 import { test, expect } from "./fixtures";
 
+const YEAR = new Date().getFullYear();
+
 test.describe("Promotion sub-brand scope (exclude)", () => {
   test("Promotion exclusion: booking at excluded sub-brand does NOT get promotion applied", async ({
     request,
@@ -29,8 +31,8 @@ test.describe("Promotion sub-brand scope (exclude)", () => {
         hotelChainId: testHotelChain.id,
         hotelChainSubBrandId: subBrand1.id,
         propertyName: `Sub1 Test ${crypto.randomUUID()}`,
-        checkIn: "2026-06-01",
-        checkOut: "2026-06-03",
+        checkIn: `${YEAR}-06-01`,
+        checkOut: `${YEAR}-06-03`,
         numNights: 2,
         pretaxCost: 300,
         taxAmount: 50,
@@ -84,8 +86,8 @@ test.describe("Promotion sub-brand scope (exclude)", () => {
         hotelChainId: testHotelChain.id,
         hotelChainSubBrandId: subBrand2.id,
         propertyName: `Sub2 Test ${crypto.randomUUID()}`,
-        checkIn: "2026-06-01",
-        checkOut: "2026-06-03",
+        checkIn: `${YEAR}-06-01`,
+        checkOut: `${YEAR}-06-03`,
         numNights: 2,
         pretaxCost: 300,
         taxAmount: 50,
@@ -139,8 +141,8 @@ test.describe("Promotion sub-brand scope (exclude)", () => {
         hotelChainId: testHotelChain.id,
         hotelChainSubBrandId: subBrand1.id,
         propertyName: `Sub1 Remove Test ${crypto.randomUUID()}`,
-        checkIn: "2026-06-01",
-        checkOut: "2026-06-03",
+        checkIn: `${YEAR}-06-01`,
+        checkOut: `${YEAR}-06-03`,
         numNights: 2,
         pretaxCost: 300,
         taxAmount: 50,

@@ -2,9 +2,12 @@ import { test as base, type APIRequestContext, type Page } from "@playwright/tes
 import crypto from "crypto";
 import { CREDIT_CARD_ID } from "../prisma/seed-ids";
 
+const YEAR = new Date().getFullYear();
+
 type TestFixtures = {
   testBooking: { id: string; propertyName: string; hotelChainName: string };
   apartmentBooking: { id: string; propertyName: string };
+  pastYearBooking: { id: string; propertyName: string };
   testPromotion: { id: string; name: string };
   testHotelChain: { id: string; name: string };
   testSubBrand: (name?: string) => Promise<{ id: string; name: string; hotelChainId: string }>;
@@ -69,8 +72,8 @@ export const test = base.extend<TestFixtures>({
       data: {
         hotelChainId: chain.id,
         propertyName: uniqueName,
-        checkIn: "2099-01-10",
-        checkOut: "2099-01-15",
+        checkIn: `${YEAR}-08-10`,
+        checkOut: `${YEAR}-08-15`,
         numNights: 5,
         pretaxCost: 400,
         taxAmount: 80,
@@ -93,8 +96,8 @@ export const test = base.extend<TestFixtures>({
         accommodationType: "apartment",
         hotelChainId: null,
         propertyName: uniqueName,
-        checkIn: "2099-02-01",
-        checkOut: "2099-02-08",
+        checkIn: `${YEAR}-08-20`,
+        checkOut: `${YEAR}-08-27`,
         numNights: 7,
         pretaxCost: 600,
         taxAmount: 60,
@@ -103,6 +106,34 @@ export const test = base.extend<TestFixtures>({
         bookingSource: "direct_web",
         countryCode: "FR",
         city: "Paris",
+      },
+    });
+    const booking = await res.json();
+    await use({ id: booking.id, propertyName: uniqueName });
+    await request.delete(`/api/bookings/${booking.id}`);
+  },
+
+  pastYearBooking: async ({ request }, use) => {
+    const chains = await request.get("/api/hotel-chains");
+    const chain = (await chains.json())[0];
+
+    // Use a firmly past year (current - 1) with explicit YYYY-MM-DD dates
+    const pastYear = new Date().getFullYear() - 1;
+    const uniqueName = `Test Past Year Hotel ${crypto.randomUUID()}`;
+    const res = await request.post("/api/bookings", {
+      data: {
+        hotelChainId: chain.id,
+        propertyName: uniqueName,
+        checkIn: `${pastYear}-06-01`,
+        checkOut: `${pastYear}-06-05`,
+        numNights: 4,
+        pretaxCost: 400,
+        taxAmount: 40,
+        totalCost: 440,
+        currency: "USD",
+        bookingSource: "direct_web",
+        countryCode: "US",
+        city: "Chicago",
       },
     });
     const booking = await res.json();

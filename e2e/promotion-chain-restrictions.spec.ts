@@ -1,6 +1,8 @@
 import { test, expect } from "./fixtures";
 import { USER_CREDIT_CARD_ID, CREDIT_CARD_ID } from "../prisma/seed-ids";
 
+const YEAR = new Date().getFullYear();
+
 test.describe("Promotion hotel chain restriction", () => {
   test("Credit Card promo: matches only when booking matches chain restriction", async ({
     request,
@@ -28,8 +30,8 @@ test.describe("Promotion hotel chain restriction", () => {
         hotelChainId: testHotelChain.id,
         userCreditCardId: USER_CREDIT_CARD_ID.AMEX_PLATINUM,
         propertyName: `Match Stay ${crypto.randomUUID()}`,
-        checkIn: "2026-06-01",
-        checkOut: "2026-06-03",
+        checkIn: `${YEAR}-06-01`,
+        checkOut: `${YEAR}-06-03`,
         numNights: 2,
         pretaxCost: 300,
         taxAmount: 50,
@@ -58,8 +60,8 @@ test.describe("Promotion hotel chain restriction", () => {
         hotelChainId: otherChain.id,
         userCreditCardId: USER_CREDIT_CARD_ID.AMEX_PLATINUM,
         propertyName: `Other Stay ${crypto.randomUUID()}`,
-        checkIn: "2026-06-05",
-        checkOut: "2026-06-07",
+        checkIn: `${YEAR}-06-05`,
+        checkOut: `${YEAR}-06-07`,
         numNights: 2,
         pretaxCost: 300,
         taxAmount: 50,
