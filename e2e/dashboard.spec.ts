@@ -27,8 +27,8 @@ test.describe("Dashboard", () => {
       data: {
         hotelChainId: chain.id,
         propertyName,
-        checkIn: "2025-03-01",
-        checkOut: "2025-03-04",
+        checkIn: "2026-08-01",
+        checkOut: "2026-08-04",
         numNights: 3,
         pretaxCost: 300,
         taxAmount: 30,
@@ -69,8 +69,8 @@ test.describe("Dashboard", () => {
       data: {
         hotelChainId: chain.id,
         propertyName,
-        checkIn: "2025-03-01",
-        checkOut: "2025-03-04",
+        checkIn: "2026-08-01",
+        checkOut: "2026-08-04",
         numNights: 3,
         pretaxCost: 300,
         taxAmount: 30,
@@ -105,8 +105,8 @@ test.describe("Dashboard", () => {
       data: {
         hotelChainId: chain.id,
         propertyName,
-        checkIn: "2025-03-01",
-        checkOut: "2025-03-04",
+        checkIn: "2026-08-01",
+        checkOut: "2026-08-04",
         numNights: 3,
         pretaxCost: 0,
         taxAmount: 0,
@@ -147,8 +147,8 @@ test.describe("Dashboard", () => {
       data: {
         hotelChainId: chain.id,
         propertyName,
-        checkIn: "2025-03-01",
-        checkOut: "2025-03-04",
+        checkIn: "2026-08-01",
+        checkOut: "2026-08-04",
         numNights: 3,
         pretaxCost: 0,
         taxAmount: 0,
