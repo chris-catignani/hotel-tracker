@@ -70,7 +70,7 @@ Net Cost = totalCost + pointsRedeemedValue + certsValue
            - promotionSavings - portalCashback - cardReward - loyaltyPointsValue
 ```
 
-All USD amounts use `toUSD(nativeAmount, booking.exchangeRate)` — `exchangeRate` is locked at check-in (1 for USD, historical rate for past non-USD, null for future non-USD).
+All USD amounts use `toUSD(nativeAmount, booking.lockedExchangeRate)` — `lockedExchangeRate` is locked at check-in (1 for USD, historical rate for past non-USD, null for future non-USD).
 
 **Mandate:** Whenever adding new promotion types, portal reward options, or modifying loyalty logic, you **MUST**:
 
@@ -128,7 +128,7 @@ Incomplete final cycle earns $0. Label depends on whether the cap was exhausted:
 
 - Prisma `Decimal` fields return as **strings** from API responses — always wrap with `Number()`
 - **`Booking.propertyId` is required** — resolve it via `findOrCreateProperty()` in `src/lib/property-utils.ts` on every booking create/update. This function is P2002-safe: catches unique constraint races and re-fetches by `(name, hotelChainId)`.
-- **Locked fields:** `Booking.exchangeRate` and `Booking.lockedLoyaltyUsdCentsPerPoint` are written once when `checkIn <= today` (by CREATE/PUT routes and the exchange rate cron). Never recomputed after that.
+- **Locked fields:** `Booking.lockedExchangeRate` and `Booking.lockedLoyaltyUsdCentsPerPoint` are written once when `checkIn <= today` (by CREATE/PUT routes and the exchange rate cron). Never recomputed after that.
 - **Geo confirmation:** The booking form blocks submission until the user selects a property from autocomplete or uses the manual entry modal (`geoConfirmed` must be `true`). `PropertyNameCombobox` and `ManualGeoModal` handle this flow.
 - After switching geo API providers: `DELETE FROM geo_cache;` to flush stale results
 - After seeding with explicit IDs, sync Postgres sequences to avoid unique-constraint errors: `SELECT setval('<table>_id_seq', (SELECT MAX(id) FROM <table>));`
