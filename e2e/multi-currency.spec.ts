@@ -167,8 +167,8 @@ test.describe("Multi-Currency Support", () => {
       data: {
         hotelChainId: chain.id,
         propertyName,
-        checkIn: "2024-06-01",
-        checkOut: "2024-06-03",
+        checkIn: "2026-01-15",
+        checkOut: "2026-01-17",
         numNights: 2,
         pretaxCost: 180,
         taxAmount: 20,

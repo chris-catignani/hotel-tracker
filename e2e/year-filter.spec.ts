@@ -9,15 +9,7 @@ test.describe("Year filter — Dashboard", () => {
     page,
     pastYearBooking: _,
   }) => {
-    // Navigate; wait for a successful bookings response (reload once if first is a 500).
     await page.goto("/");
-    const firstResp = await page.waitForResponse((resp) => resp.url().includes("/api/bookings"));
-    if (firstResp.status() !== 200) {
-      await page.reload();
-      await page.waitForResponse(
-        (resp) => resp.url().includes("/api/bookings") && resp.status() === 200
-      );
-    }
     const trigger = page.getByTestId("year-filter-select");
     await expect(trigger).toBeVisible();
     await expect(trigger).toContainText(String(CURRENT_YEAR));
@@ -27,15 +19,7 @@ test.describe("Year filter — Dashboard", () => {
     page,
     pastYearBooking: _,
   }) => {
-    // Navigate; wait for a successful bookings response (reload once if first is a 500).
     await page.goto("/");
-    const firstResp = await page.waitForResponse((resp) => resp.url().includes("/api/bookings"));
-    if (firstResp.status() !== 200) {
-      await page.reload();
-      await page.waitForResponse(
-        (resp) => resp.url().includes("/api/bookings") && resp.status() === 200
-      );
-    }
 
     await page.getByTestId("year-filter-select").click();
     await page.getByRole("option", { name: String(PAST_YEAR) }).click();
@@ -75,15 +59,7 @@ test.describe("Year filter — Dashboard", () => {
     const booking = await res.json();
 
     try {
-      // Navigate; wait for a successful bookings response (reload once if first is a 500).
       await page.goto("/");
-      const firstResp = await page.waitForResponse((resp) => resp.url().includes("/api/bookings"));
-      if (firstResp.status() !== 200) {
-        await page.reload();
-        await page.waitForResponse(
-          (resp) => resp.url().includes("/api/bookings") && resp.status() === 200
-        );
-      }
 
       // Select Upcoming
       await page.getByTestId("year-filter-select").click();
@@ -101,15 +77,7 @@ test.describe("Year filter — Dashboard", () => {
     page,
     pastYearBooking: _,
   }) => {
-    // Navigate; wait for a successful bookings response (reload once if first is a 500).
     await page.goto("/");
-    const firstResp = await page.waitForResponse((resp) => resp.url().includes("/api/bookings"));
-    if (firstResp.status() !== 200) {
-      await page.reload();
-      await page.waitForResponse(
-        (resp) => resp.url().includes("/api/bookings") && resp.status() === 200
-      );
-    }
 
     // Select past year
     await page.getByTestId("year-filter-select").click();
@@ -136,15 +104,6 @@ test.describe("Year filter — Bookings", () => {
   test("selecting past year shows past-year booking in list", async ({ page, pastYearBooking }) => {
     await page.goto("/bookings");
 
-    // Wait for bookings to load so yearOptions are populated (reload once if first is a 500).
-    const firstResp = await page.waitForResponse((resp) => resp.url().includes("/api/bookings"));
-    if (firstResp.status() !== 200) {
-      await page.reload();
-      await page.waitForResponse(
-        (resp) => resp.url().includes("/api/bookings") && resp.status() === 200
-      );
-    }
-
     await page.getByTestId("year-filter-select").click();
     await page.getByRole("option", { name: String(PAST_YEAR) }).click();
 
@@ -154,20 +113,11 @@ test.describe("Year filter — Bookings", () => {
   test("selecting current year hides past-year booking", async ({ page, pastYearBooking }) => {
     await page.goto("/bookings");
 
-    // Wait for bookings to load so yearOptions are populated (reload once if first is a 500).
-    const firstResp = await page.waitForResponse((resp) => resp.url().includes("/api/bookings"));
-    if (firstResp.status() !== 200) {
-      await page.reload();
-      await page.waitForResponse(
-        (resp) => resp.url().includes("/api/bookings") && resp.status() === 200
-      );
-    }
-
     // Explicitly select current year (it should be the default, but set it explicitly)
     await page.getByTestId("year-filter-select").click();
     await page.getByRole("option", { name: String(CURRENT_YEAR), exact: true }).click();
 
-    await expect(page.getByTestId(`booking-row-${pastYearBooking.id}`)).not.toBeVisible();
+    await expect(page.getByTestId(`booking-row-${pastYearBooking.id}`)).not.toBeAttached();
   });
 });
 
@@ -176,15 +126,7 @@ test.describe("Year filter — Persistence", () => {
     page,
     pastYearBooking: _,
   }) => {
-    // Navigate; wait for a successful bookings response (reload once if first is a 500).
     await page.goto("/");
-    const firstResp = await page.waitForResponse((resp) => resp.url().includes("/api/bookings"));
-    if (firstResp.status() !== 200) {
-      await page.reload();
-      await page.waitForResponse(
-        (resp) => resp.url().includes("/api/bookings") && resp.status() === 200
-      );
-    }
 
     // Set past year on Dashboard
     await page.getByTestId("year-filter-select").click();

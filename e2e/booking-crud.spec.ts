@@ -26,8 +26,8 @@ test.describe("Booking List", () => {
       data: {
         hotelChainId: chain.id,
         propertyName,
-        checkIn: "2025-06-01",
-        checkOut: "2025-06-03",
+        checkIn: "2026-08-01",
+        checkOut: "2026-08-03",
         numNights: 2,
         pretaxCost: 200,
         taxAmount: 20,

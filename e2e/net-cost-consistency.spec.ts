@@ -57,8 +57,8 @@ test.describe("Net Cost Consistency", () => {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName,
-        checkIn: "2099-01-01",
-        checkOut: "2099-01-03",
+        checkIn: "2026-08-01",
+        checkOut: "2026-08-03",
         numNights,
         pretaxCost: 200,
         taxAmount: 50,
@@ -129,8 +129,8 @@ test.describe("Net Cost Consistency", () => {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName,
-        checkIn: "2099-02-01",
-        checkOut: "2099-02-03",
+        checkIn: "2026-09-01",
+        checkOut: "2026-09-03",
         numNights,
         pretaxCost: 250,
         taxAmount: 50,
@@ -187,8 +187,8 @@ test.describe("Net Cost Consistency", () => {
       data: {
         hotelChainId: HOTEL_ID.HYATT,
         propertyName,
-        checkIn: "2099-03-01",
-        checkOut: "2099-03-03",
+        checkIn: "2026-10-01",
+        checkOut: "2026-10-03",
         numNights,
         pretaxCost,
         taxAmount: 50,
@@ -252,8 +252,8 @@ test.describe("Net Cost Consistency", () => {
       data: {
         hotelChainId: HOTEL_ID.HYATT,
         propertyName,
-        checkIn: "2099-04-01",
-        checkOut: "2099-04-02",
+        checkIn: "2026-11-01",
+        checkOut: "2026-11-02",
         numNights,
         pretaxCost: 200,
         taxAmount: 100,
