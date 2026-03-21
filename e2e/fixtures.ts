@@ -18,6 +18,17 @@ type TestFixtures = {
   testHotelChain: { id: string; name: string };
   testSubBrand: (name?: string) => Promise<{ id: string; name: string; hotelChainId: string }>;
   /**
+   * A single isolated user with both a current-year and past-year booking.
+   * Use in year-filter tests so that both years appear in the year selector.
+   * The page is logged in as this isolated user.
+   */
+  twoYearBookings: {
+    currentYearBookingId: string;
+    pastYearBookingId: string;
+    request: APIRequestContext;
+    page: Page;
+  };
+  /**
    * An isolated per-test user with their own AMEX Business Platinum UserCreditCard.
    * Use this fixture in card-benefit tests to prevent parallel chromium/webkit runs
    * from sharing bookings and accidentally exhausting each other's benefit caps.
@@ -318,6 +329,66 @@ export const test = base.extend<TestFixtures>({
     await page.close();
     await context.close();
     await userRequest.dispose();
+  },
+
+  /**
+   * A single isolated user with both a current-year booking and a past-year
+   * booking. Use in year-filter tests that need the year selector to show
+   * both years (since buildYearOptions only includes years with actual
+   * bookings — current year is NOT always present by default).
+   */
+  twoYearBookings: async ({ isolatedUser, adminRequest }, use) => {
+    const chains = await adminRequest.get("/api/hotel-chains");
+    const chain = (await chains.json())[0];
+
+    const pastYear = new Date().getFullYear() - 1;
+    const currentYear = new Date().getFullYear();
+
+    const currentRes = await isolatedUser.request.post("/api/bookings", {
+      data: {
+        hotelChainId: chain.id,
+        propertyName: `Current Year Hotel ${crypto.randomUUID()}`,
+        checkIn: `${currentYear}-08-10`,
+        checkOut: `${currentYear}-08-15`,
+        numNights: 5,
+        pretaxCost: 400,
+        taxAmount: 80,
+        totalCost: 480,
+        currency: "USD",
+        bookingSource: "direct_web",
+        countryCode: "US",
+        city: "New York",
+      },
+    });
+    const currentBooking = await currentRes.json();
+
+    const pastRes = await isolatedUser.request.post("/api/bookings", {
+      data: {
+        hotelChainId: chain.id,
+        propertyName: `Past Year Hotel ${crypto.randomUUID()}`,
+        checkIn: `${pastYear}-06-01`,
+        checkOut: `${pastYear}-06-05`,
+        numNights: 4,
+        pretaxCost: 400,
+        taxAmount: 40,
+        totalCost: 440,
+        currency: "USD",
+        bookingSource: "direct_web",
+        countryCode: "US",
+        city: "Chicago",
+      },
+    });
+    const pastBooking = await pastRes.json();
+
+    await use({
+      currentYearBookingId: currentBooking.id,
+      pastYearBookingId: pastBooking.id,
+      request: isolatedUser.request,
+      page: isolatedUser.page,
+    });
+
+    await isolatedUser.request.delete(`/api/bookings/${currentBooking.id}`);
+    await isolatedUser.request.delete(`/api/bookings/${pastBooking.id}`);
   },
 
   testPromotion: async ({ isolatedUser }, use) => {

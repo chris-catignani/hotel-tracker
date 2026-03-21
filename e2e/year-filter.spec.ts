@@ -6,27 +6,25 @@ const PAST_YEAR = CURRENT_YEAR - 1;
 
 test.describe("Year filter — Dashboard", () => {
   test("year selector is visible and defaults to current year", async ({
-    pastYearBooking: _pastYear,
-    testBooking: _currentYear,
+    twoYearBookings: ctx,
   }) => {
-    await _pastYear.page.goto("/");
-    const trigger = _pastYear.page.getByTestId("year-filter-select");
+    await ctx.page.goto("/");
+    const trigger = ctx.page.getByTestId("year-filter-select");
     await expect(trigger).toBeVisible();
     await expect(trigger).toContainText(String(CURRENT_YEAR));
   });
 
   test("selecting past year changes the displayed year in the selector", async ({
-    pastYearBooking: _,
-    testBooking: _currentYear,
+    twoYearBookings: ctx,
   }) => {
-    await _.page.goto("/");
+    await ctx.page.goto("/");
 
-    await _.page.getByTestId("year-filter-select").click();
-    await _.page.getByRole("option", { name: String(PAST_YEAR) }).click();
+    await ctx.page.getByTestId("year-filter-select").click();
+    await ctx.page.getByRole("option", { name: String(PAST_YEAR) }).click();
 
-    await expect(_.page.getByTestId("year-filter-select")).toContainText(String(PAST_YEAR));
+    await expect(ctx.page.getByTestId("year-filter-select")).toContainText(String(PAST_YEAR));
     // Accommodation summary table is still rendered (no crash)
-    await expect(_.page.getByTestId("hotel-chain-summary-desktop")).toBeVisible();
+    await expect(ctx.page.getByTestId("hotel-chain-summary-desktop")).toBeVisible();
   });
 
   test("Upcoming option: today's checkout booking is shown (>= boundary)", async ({
@@ -74,82 +72,68 @@ test.describe("Year filter — Dashboard", () => {
   });
 
   test("year filter and accommodation filter work simultaneously", async ({
-    pastYearBooking: _,
-    testBooking: _currentYear,
+    twoYearBookings: ctx,
   }) => {
-    await _.page.goto("/");
+    await ctx.page.goto("/");
 
     // Select past year
-    await _.page.getByTestId("year-filter-select").click();
-    await _.page.getByRole("option", { name: String(PAST_YEAR) }).click();
+    await ctx.page.getByTestId("year-filter-select").click();
+    await ctx.page.getByRole("option", { name: String(PAST_YEAR) }).click();
 
     // If accommodation filter is visible, click Hotels — page should not crash
-    const hotelsBtn = _.page.getByTestId("dashboard-filter-hotel");
+    const hotelsBtn = ctx.page.getByTestId("dashboard-filter-hotel");
     if (await hotelsBtn.isVisible()) {
       await hotelsBtn.click();
-      await expect(_.page.getByTestId("hotel-chain-summary-desktop")).toBeVisible();
+      await expect(ctx.page.getByTestId("hotel-chain-summary-desktop")).toBeVisible();
     }
 
     // Selector still shows past year
-    await expect(_.page.getByTestId("year-filter-select")).toContainText(String(PAST_YEAR));
+    await expect(ctx.page.getByTestId("year-filter-select")).toContainText(String(PAST_YEAR));
   });
 });
 
 test.describe("Year filter — Bookings", () => {
-  test("year selector is visible on Bookings page", async ({
-    pastYearBooking: _,
-    testBooking: _currentYear,
-  }) => {
-    await _.page.goto("/bookings");
-    await expect(_.page.getByTestId("year-filter-select")).toBeVisible();
+  test("year selector is visible on Bookings page", async ({ twoYearBookings: ctx }) => {
+    await ctx.page.goto("/bookings");
+    await expect(ctx.page.getByTestId("year-filter-select")).toBeVisible();
   });
 
-  test("selecting past year shows past-year booking in list", async ({ pastYearBooking }) => {
-    await pastYearBooking.page.goto("/bookings");
+  test("selecting past year shows past-year booking in list", async ({ twoYearBookings: ctx }) => {
+    await ctx.page.goto("/bookings");
 
-    await pastYearBooking.page.getByTestId("year-filter-select").click();
-    await pastYearBooking.page.getByRole("option", { name: String(PAST_YEAR) }).click();
+    await ctx.page.getByTestId("year-filter-select").click();
+    await ctx.page.getByRole("option", { name: String(PAST_YEAR) }).click();
 
-    await expect(
-      pastYearBooking.page.getByTestId(`booking-row-${pastYearBooking.id}`)
-    ).toBeVisible();
+    await expect(ctx.page.getByTestId(`booking-row-${ctx.pastYearBookingId}`)).toBeVisible();
   });
 
-  test("selecting current year hides past-year booking", async ({
-    pastYearBooking,
-    testBooking: _,
-  }) => {
-    await pastYearBooking.page.goto("/bookings");
+  test("selecting current year hides past-year booking", async ({ twoYearBookings: ctx }) => {
+    await ctx.page.goto("/bookings");
 
     // Explicitly select current year (it should be the default, but set it explicitly)
-    await pastYearBooking.page.getByTestId("year-filter-select").click();
-    await pastYearBooking.page
-      .getByRole("option", { name: String(CURRENT_YEAR), exact: true })
-      .click();
+    await ctx.page.getByTestId("year-filter-select").click();
+    await ctx.page.getByRole("option", { name: String(CURRENT_YEAR), exact: true }).click();
 
-    await expect(
-      pastYearBooking.page.getByTestId(`booking-row-${pastYearBooking.id}`)
-    ).not.toBeAttached();
+    await expect(ctx.page.getByTestId(`booking-row-${ctx.pastYearBookingId}`)).not.toBeAttached();
   });
 });
 
 test.describe("Year filter — Persistence", () => {
   test("year selection persists when navigating from Dashboard to Bookings via sidebar", async ({
-    pastYearBooking: _,
-    testBooking: _currentYear,
+    twoYearBookings: ctx,
   }) => {
-    await _.page.goto("/");
+    await ctx.page.goto("/");
 
     // Set past year on Dashboard
-    await _.page.getByTestId("year-filter-select").click();
-    await _.page.getByRole("option", { name: String(PAST_YEAR) }).click();
-    await expect(_.page.getByTestId("year-filter-select")).toContainText(String(PAST_YEAR));
+    await ctx.page.getByTestId("year-filter-select").click();
+    await ctx.page.getByRole("option", { name: String(PAST_YEAR) }).click();
+    await expect(ctx.page.getByTestId("year-filter-select")).toContainText(String(PAST_YEAR));
 
     // Navigate to Bookings via sidebar link (no page reload)
-    await _.page.getByRole("link", { name: "Bookings" }).first().click();
-    await _.page.waitForURL("/bookings");
+    await ctx.page.getByRole("link", { name: "Bookings" }).first().click();
+    await ctx.page.waitForURL("/bookings");
 
     // Year filter should still be past year
-    await expect(_.page.getByTestId("year-filter-select")).toContainText(String(PAST_YEAR));
+    await expect(ctx.page.getByTestId("year-filter-select")).toContainText(String(PAST_YEAR));
   });
 });
