@@ -143,7 +143,7 @@ async function getFullBookingWithUsage(id: string, userId: string) {
       earnRate: Number(e.partnershipEarn.earnRate),
       pointType: {
         ...e.partnershipEarn.pointType,
-        centsPerPoint: Number(e.partnershipEarn.pointType.centsPerPoint),
+        usdCentsPerPoint: Number(e.partnershipEarn.pointType.usdCentsPerPoint),
       },
     }))
   );

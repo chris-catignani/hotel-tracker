@@ -100,7 +100,7 @@ export async function GET(request: NextRequest) {
             earnRate: Number(e.partnershipEarn.earnRate),
             pointType: {
               ...e.partnershipEarn.pointType,
-              centsPerPoint: Number(e.partnershipEarn.pointType.centsPerPoint),
+              usdCentsPerPoint: Number(e.partnershipEarn.pointType.usdCentsPerPoint),
             },
           }))
         );

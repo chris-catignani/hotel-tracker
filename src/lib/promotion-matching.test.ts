@@ -28,7 +28,7 @@ const mockBooking: MatchingBooking = {
   pointsRedeemed: null,
   hotelChain: {
     basePointRate: 10,
-    pointType: { centsPerPoint: 0.015 }, // non-default
+    pointType: { usdCentsPerPoint: 0.015 }, // non-default
   },
 };
 
@@ -1826,7 +1826,7 @@ describe("spanStays", () => {
       loyaltyPointsEarned: 0,
       hotelChain: {
         ...mockBooking.hotelChain,
-        pointType: { centsPerPoint: 0.02 },
+        pointType: { usdCentsPerPoint: 0.02 },
       },
     };
     const matched = calculateMatchedPromotions(booking, [promo]);
@@ -1895,7 +1895,7 @@ describe("spanStays", () => {
       numNights: 1,
       hotelChain: {
         ...mockBooking.hotelChain,
-        pointType: { centsPerPoint: 0.02 },
+        pointType: { usdCentsPerPoint: 0.02 },
       },
     };
     const matched = calculateMatchedPromotions(booking, [promo], priorUsage);

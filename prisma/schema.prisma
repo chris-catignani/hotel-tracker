@@ -139,14 +139,16 @@ model VerificationToken {
 }
 
 model PointType {
-  id              String           @id @default(cuid())
-  name            String
-  category        PointCategory
-  centsPerPoint   Decimal          @map("cents_per_point") @db.Decimal(10, 6)
-  hotelChains     HotelChain[]
-  creditCards     CreditCard[]
-  shoppingPortals ShoppingPortal[]
-  partnershipEarns PartnershipEarn[]
+  id                   String           @id @default(cuid())
+  name                 String
+  category             PointCategory
+  usdCentsPerPoint     Decimal          @map("usd_cents_per_point") @db.Decimal(10, 6)
+  programCurrency      String?          @map("program_currency")
+  programCentsPerPoint Decimal?         @map("program_cents_per_point") @db.Decimal(10, 6)
+  hotelChains          HotelChain[]
+  creditCards          CreditCard[]
+  shoppingPortals      ShoppingPortal[]
+  partnershipEarns     PartnershipEarn[]
 
   @@map("point_types")
 }

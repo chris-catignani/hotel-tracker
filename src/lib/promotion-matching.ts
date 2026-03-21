@@ -118,7 +118,7 @@ export interface MatchingBooking {
     creditCardId: string;
     creditCard?: {
       pointType?: {
-        centsPerPoint: string | number | Prisma.Decimal | null;
+        usdCentsPerPoint: string | number | Prisma.Decimal | null;
       } | null;
     } | null;
   } | null;
@@ -141,7 +141,7 @@ export interface MatchingBooking {
   hotelChain?: {
     basePointRate?: string | number | Prisma.Decimal | null;
     pointType?: {
-      centsPerPoint: string | number | Prisma.Decimal | null;
+      usdCentsPerPoint: string | number | Prisma.Decimal | null;
     } | null;
   } | null;
   hotelChainSubBrand?: {
@@ -772,8 +772,8 @@ export function calculateMatchedPromotions(
     if (matchedBenefits.length === 0) continue;
 
     // Calculate applied value per benefit
-    const centsPerPoint = booking.hotelChain?.pointType?.centsPerPoint
-      ? Number(booking.hotelChain.pointType.centsPerPoint)
+    const centsPerPoint = booking.hotelChain?.pointType?.usdCentsPerPoint
+      ? Number(booking.hotelChain.pointType.usdCentsPerPoint)
       : 0.01;
 
     const benefitApplications: BenefitApplication[] = [];

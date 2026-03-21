@@ -14,7 +14,9 @@ export interface PointType {
   id: string;
   name: string;
   category: "hotel" | "airline" | "transferable";
-  centsPerPoint: string | number;
+  usdCentsPerPoint: string | number;
+  programCurrency: string | null;
+  programCentsPerPoint: string | number | null;
 }
 
 export interface HotelChainEliteStatus {

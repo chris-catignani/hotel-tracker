@@ -3,7 +3,16 @@ import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { PointTypesTab } from "./point-types-tab";
 
-const mockPt = [{ id: "1", name: "Marriott Points", category: "hotel", centsPerPoint: 0.007 }];
+const mockPt = [
+  {
+    id: "1",
+    name: "Marriott Points",
+    category: "hotel",
+    usdCentsPerPoint: 0.007,
+    programCurrency: null,
+    programCentsPerPoint: null,
+  },
+];
 
 describe("PointTypesTab", () => {
   beforeEach(() => {
@@ -124,5 +133,68 @@ describe("PointTypesTab", () => {
 
     const deleteCalls = fetchMock.mock.calls.filter(([, opts]) => opts?.method === "DELETE");
     expect(deleteCalls.length).toBe(0);
+  });
+
+  it("sends programCurrency and programCentsPerPoint when adding a foreign-currency point type", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi
+      .mocked(global.fetch)
+      .mockImplementation((input: string | Request | URL, options?: RequestInit) => {
+        const url = input instanceof Request ? input.url : input.toString();
+        if (url === "/api/point-types" && (!options || !options.method))
+          return Promise.resolve({ ok: true, json: async () => [] } as Response);
+        if (url === "/api/point-types" && options?.method === "POST")
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({ id: "new", name: "Accor ALL" }),
+          } as Response);
+        return Promise.reject(new Error(`Unknown: ${url}`));
+      });
+
+    await act(async () => {
+      render(<PointTypesTab />);
+    });
+
+    await user.click(screen.getByTestId("add-point-type-button"));
+
+    await user.type(screen.getByLabelText(/Name/i), "Accor ALL");
+    await user.type(screen.getByLabelText(/USD Value per Point/i), "0.022");
+    await user.type(screen.getByTestId("pt-program-currency"), "EUR");
+    await user.type(screen.getByTestId("pt-program-cpp"), "0.02");
+
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    const postCall = fetchMock.mock.calls.find(([, opts]) => opts?.method === "POST");
+    expect(postCall).toBeDefined();
+    const body = JSON.parse(postCall![1]!.body as string);
+    expect(body.usdCentsPerPoint).toBe(0.022);
+    expect(body.programCurrency).toBe("EUR");
+    expect(body.programCentsPerPoint).toBe(0.02);
+  });
+
+  it("shows program currency alongside USD value for non-USD point types", async () => {
+    const foreignPt = [
+      {
+        id: "2",
+        name: "Accor ALL",
+        category: "hotel",
+        usdCentsPerPoint: 0.022,
+        programCurrency: "EUR",
+        programCentsPerPoint: 0.02,
+      },
+    ];
+
+    vi.mocked(global.fetch).mockResolvedValue({
+      ok: true,
+      json: async () => foreignPt,
+    } as Response);
+
+    await act(async () => {
+      render(<PointTypesTab />);
+    });
+
+    const desktopView = screen.getByTestId("point-types-desktop");
+    expect(within(desktopView).getByText(/EUR/)).toBeInTheDocument();
+    expect(within(desktopView).getByText(/0.02/)).toBeInTheDocument();
   });
 });
