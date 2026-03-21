@@ -103,10 +103,14 @@ export async function GET(request: NextRequest) {
         }
 
         const pt = booking.hotelChain?.pointType;
-        const lockedLoyaltyUsdCentsPerPoint =
-          pt?.programCurrency != null && pt?.programCentsPerPoint != null
-            ? Number(pt.programCentsPerPoint) * rate
-            : undefined;
+        let lockedLoyaltyUsdCentsPerPoint: number | undefined;
+        if (pt?.programCurrency != null && pt?.programCentsPerPoint != null) {
+          // Use the program currency rate, not the booking currency rate:
+          // programCentsPerPoint is denominated in programCurrency (e.g. EUR for Accor),
+          // regardless of what currency the guest paid in.
+          const programRate = await fetchExchangeRate(pt.programCurrency, checkInStr);
+          lockedLoyaltyUsdCentsPerPoint = Number(pt.programCentsPerPoint) * programRate;
+        }
 
         await prisma.booking.update({
           where: { id: booking.id },

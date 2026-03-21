@@ -360,6 +360,37 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       }
     }
 
+    // Recompute lockedLoyaltyUsdCentsPerPoint when checkIn or hotelChainId changes,
+    // using the program currency rate (not the booking currency) since programCentsPerPoint
+    // is denominated in programCurrency regardless of what the guest paid in.
+    if (checkIn !== undefined || hotelChainId !== undefined) {
+      const current = await prisma.booking.findFirst({ where: { id, userId } });
+      const finalCheckIn = checkIn ? new Date(checkIn) : (current?.checkIn ?? new Date());
+      const finalHotelChainId =
+        hotelChainId !== undefined ? hotelChainId || null : (current?.hotelChainId ?? null);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const isPast = finalCheckIn <= today;
+
+      if (isPast && finalHotelChainId) {
+        const hcWithPt = await prisma.hotelChain.findUnique({
+          where: { id: finalHotelChainId },
+          select: { pointType: { select: { programCurrency: true, programCentsPerPoint: true } } },
+        });
+        const pt = hcWithPt?.pointType;
+        if (pt?.programCurrency != null && pt?.programCentsPerPoint != null) {
+          const checkInStr = finalCheckIn.toISOString().split("T")[0];
+          const programRate = await fetchExchangeRate(pt.programCurrency, checkInStr);
+          data.lockedLoyaltyUsdCentsPerPoint = Number(pt.programCentsPerPoint) * programRate;
+        } else {
+          data.lockedLoyaltyUsdCentsPerPoint = null;
+        }
+      } else {
+        // Booking moved to future, or no hotel chain — clear the locked rate
+        data.lockedLoyaltyUsdCentsPerPoint = null;
+      }
+    }
+
     // Handle certificates: delete old ones and recreate if provided
     if (certificates !== undefined) {
       await prisma.bookingCertificate.deleteMany({

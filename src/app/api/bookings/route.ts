@@ -230,6 +230,23 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Lock the loyalty point USD rate at check-in for foreign-currency point types (e.g. Accor/EUR).
+    // Uses the program currency rate (not the booking currency rate) since programCentsPerPoint
+    // is denominated in programCurrency regardless of what the guest paid in.
+    let lockedLoyaltyUsdCentsPerPoint: number | null = null;
+    if (isPast && hotelChainId) {
+      const hcWithPt = await prisma.hotelChain.findUnique({
+        where: { id: hotelChainId },
+        select: { pointType: { select: { programCurrency: true, programCentsPerPoint: true } } },
+      });
+      const pt = hcWithPt?.pointType;
+      if (pt?.programCurrency != null && pt?.programCentsPerPoint != null) {
+        const checkInStr = checkInDate.toISOString().split("T")[0];
+        const programRate = await fetchExchangeRate(pt.programCurrency, checkInStr);
+        lockedLoyaltyUsdCentsPerPoint = Number(pt.programCentsPerPoint) * programRate;
+      }
+    }
+
     const booking = await prisma.booking.create({
       data: {
         userId,
@@ -253,6 +270,7 @@ export async function POST(request: NextRequest) {
         pointsRedeemed: pointsRedeemed ? Number(pointsRedeemed) : null,
         currency: resolvedCurrency,
         exchangeRate: resolvedExchangeRate,
+        lockedLoyaltyUsdCentsPerPoint,
         notes: notes || null,
         bookingSource: bookingSource || null,
         otaAgencyId: bookingSource === "ota" && otaAgencyId ? otaAgencyId : null,
