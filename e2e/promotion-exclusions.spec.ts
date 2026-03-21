@@ -4,14 +4,14 @@ const YEAR = new Date().getFullYear();
 
 test.describe("Promotion sub-brand scope (exclude)", () => {
   test("Promotion exclusion: booking at excluded sub-brand does NOT get promotion applied", async ({
-    request,
+    isolatedUser,
     testHotelChain,
     testSubBrand,
   }) => {
     const subBrand1 = await testSubBrand();
 
     const promoName = `Exclusion Test ${crypto.randomUUID()}`;
-    const promoRes = await request.post("/api/promotions", {
+    const promoRes = await isolatedUser.request.post("/api/promotions", {
       data: {
         name: promoName,
         type: "loyalty",
@@ -26,7 +26,7 @@ test.describe("Promotion sub-brand scope (exclude)", () => {
     const promo = await promoRes.json();
 
     // Create a booking at the excluded sub-brand
-    const bookingRes = await request.post("/api/bookings", {
+    const bookingRes = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: testHotelChain.id,
         hotelChainSubBrandId: subBrand1.id,
@@ -45,7 +45,7 @@ test.describe("Promotion sub-brand scope (exclude)", () => {
     const booking = await bookingRes.json();
 
     // Verify the promotion was NOT applied
-    const detailRes = await request.get(`/api/bookings/${booking.id}`);
+    const detailRes = await isolatedUser.request.get(`/api/bookings/${booking.id}`);
     const detail = await detailRes.json();
     const applied = (detail.bookingPromotions ?? []).find(
       (bp: { promotionId: string }) => bp.promotionId === promo.id
@@ -53,12 +53,12 @@ test.describe("Promotion sub-brand scope (exclude)", () => {
     expect(applied).toBeUndefined();
 
     // Cleanup
-    await request.delete(`/api/bookings/${booking.id}`);
-    await request.delete(`/api/promotions/${promo.id}`);
+    await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
+    await isolatedUser.request.delete(`/api/promotions/${promo.id}`);
   });
 
   test("Promotion exclusion: booking at non-excluded sub-brand DOES get promotion applied", async ({
-    request,
+    isolatedUser,
     testHotelChain,
     testSubBrand,
   }) => {
@@ -66,7 +66,7 @@ test.describe("Promotion sub-brand scope (exclude)", () => {
     const subBrand2 = await testSubBrand();
 
     const promoName = `Exclusion Test ${crypto.randomUUID()}`;
-    const promoRes = await request.post("/api/promotions", {
+    const promoRes = await isolatedUser.request.post("/api/promotions", {
       data: {
         name: promoName,
         type: "loyalty",
@@ -81,7 +81,7 @@ test.describe("Promotion sub-brand scope (exclude)", () => {
     const promo = await promoRes.json();
 
     // Create a booking at Sub2 (not excluded)
-    const bookingRes = await request.post("/api/bookings", {
+    const bookingRes = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: testHotelChain.id,
         hotelChainSubBrandId: subBrand2.id,
@@ -100,7 +100,7 @@ test.describe("Promotion sub-brand scope (exclude)", () => {
     const booking = await bookingRes.json();
 
     // Verify the promotion WAS applied
-    const detailRes = await request.get(`/api/bookings/${booking.id}`);
+    const detailRes = await isolatedUser.request.get(`/api/bookings/${booking.id}`);
     const detail = await detailRes.json();
     const applied = (detail.bookingPromotions ?? []).find(
       (bp: { promotionId: string }) => bp.promotionId === promo.id
@@ -109,19 +109,19 @@ test.describe("Promotion sub-brand scope (exclude)", () => {
     expect(Number(applied.appliedValue)).toBe(50);
 
     // Cleanup
-    await request.delete(`/api/bookings/${booking.id}`);
-    await request.delete(`/api/promotions/${promo.id}`);
+    await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
+    await isolatedUser.request.delete(`/api/promotions/${promo.id}`);
   });
 
   test("Promotion exclusion: removing an exclusion causes previously-skipped booking to get promotion applied", async ({
-    request,
+    isolatedUser,
     testHotelChain,
     testSubBrand,
   }) => {
     const subBrand1 = await testSubBrand();
 
     const promoName = `Exclusion Remove Test ${crypto.randomUUID()}`;
-    const promoRes = await request.post("/api/promotions", {
+    const promoRes = await isolatedUser.request.post("/api/promotions", {
       data: {
         name: promoName,
         type: "loyalty",
@@ -136,7 +136,7 @@ test.describe("Promotion sub-brand scope (exclude)", () => {
     const promo = await promoRes.json();
 
     // Create booking at excluded sub-brand
-    const bookingRes = await request.post("/api/bookings", {
+    const bookingRes = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: testHotelChain.id,
         hotelChainSubBrandId: subBrand1.id,
@@ -155,7 +155,7 @@ test.describe("Promotion sub-brand scope (exclude)", () => {
     const booking = await bookingRes.json();
 
     // Verify NOT applied initially
-    const detailBeforeRes = await request.get(`/api/bookings/${booking.id}`);
+    const detailBeforeRes = await isolatedUser.request.get(`/api/bookings/${booking.id}`);
     const detailBefore = await detailBeforeRes.json();
     const appliedBefore = (detailBefore.bookingPromotions ?? []).find(
       (bp: { promotionId: string }) => bp.promotionId === promo.id
@@ -163,7 +163,7 @@ test.describe("Promotion sub-brand scope (exclude)", () => {
     expect(appliedBefore).toBeUndefined();
 
     // Remove the exclusion by updating promotion with empty subBrandExcludeIds
-    const updateRes = await request.put(`/api/promotions/${promo.id}`, {
+    const updateRes = await isolatedUser.request.put(`/api/promotions/${promo.id}`, {
       data: {
         restrictions: { subBrandExcludeIds: [] },
       },
@@ -174,7 +174,7 @@ test.describe("Promotion sub-brand scope (exclude)", () => {
     await expect
       .poll(
         async () => {
-          const detailAfterRes = await request.get(`/api/bookings/${booking.id}`);
+          const detailAfterRes = await isolatedUser.request.get(`/api/bookings/${booking.id}`);
           const detailAfter = await detailAfterRes.json();
           const appliedPromo = (detailAfter.bookingPromotions ?? []).find(
             (bp: { promotionId: string }) => bp.promotionId === promo.id
@@ -190,7 +190,7 @@ test.describe("Promotion sub-brand scope (exclude)", () => {
       .toBe(50);
 
     // Cleanup
-    await request.delete(`/api/bookings/${booking.id}`);
-    await request.delete(`/api/promotions/${promo.id}`);
+    await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
+    await isolatedUser.request.delete(`/api/promotions/${promo.id}`);
   });
 });

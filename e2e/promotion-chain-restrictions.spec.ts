@@ -5,11 +5,12 @@ const YEAR = new Date().getFullYear();
 
 test.describe("Promotion hotel chain restriction", () => {
   test("Credit Card promo: matches only when booking matches chain restriction", async ({
-    request,
+    isolatedUser,
+    adminRequest,
     testHotelChain,
   }) => {
     // 1. Create a Credit Card promotion restricted to a specific chain
-    const promoRes = await request.post("/api/promotions", {
+    const promoRes = await isolatedUser.request.post("/api/promotions", {
       data: {
         name: `CC Chain restricted ${crypto.randomUUID()}`,
         type: "credit_card",
@@ -25,7 +26,7 @@ test.describe("Promotion hotel chain restriction", () => {
 
     // 2. Create a booking for the MATCHING chain
     // Use the seeded Amex Platinum UserCreditCard (creditCardId matches the promotion restriction)
-    const bookingMatchRes = await request.post("/api/bookings", {
+    const bookingMatchRes = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: testHotelChain.id,
         userCreditCardId: USER_CREDIT_CARD_ID.AMEX_PLATINUM,
@@ -43,7 +44,9 @@ test.describe("Promotion hotel chain restriction", () => {
     const bookingMatch = await bookingMatchRes.json();
 
     // Verify applied
-    const matchDetail = await (await request.get(`/api/bookings/${bookingMatch.id}`)).json();
+    const matchDetail = await (
+      await isolatedUser.request.get(`/api/bookings/${bookingMatch.id}`)
+    ).json();
     expect(
       matchDetail.bookingPromotions.some(
         (bp: { promotionId: string }) => bp.promotionId === promo.id
@@ -52,10 +55,10 @@ test.describe("Promotion hotel chain restriction", () => {
 
     // 3. Create a booking for a DIFFERENT chain
     // Find another chain
-    const chains = await (await request.get("/api/hotel-chains")).json();
+    const chains = await (await adminRequest.get("/api/hotel-chains")).json();
     const otherChain = chains.find((c: { id: string }) => c.id !== testHotelChain.id);
 
-    const bookingOtherRes = await request.post("/api/bookings", {
+    const bookingOtherRes = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: otherChain.id,
         userCreditCardId: USER_CREDIT_CARD_ID.AMEX_PLATINUM,
@@ -73,7 +76,9 @@ test.describe("Promotion hotel chain restriction", () => {
     const bookingOther = await bookingOtherRes.json();
 
     // Verify NOT applied
-    const otherDetail = await (await request.get(`/api/bookings/${bookingOther.id}`)).json();
+    const otherDetail = await (
+      await isolatedUser.request.get(`/api/bookings/${bookingOther.id}`)
+    ).json();
     expect(
       otherDetail.bookingPromotions.some(
         (bp: { promotionId: string }) => bp.promotionId === promo.id
@@ -81,8 +86,8 @@ test.describe("Promotion hotel chain restriction", () => {
     ).toBeFalsy();
 
     // Cleanup
-    await request.delete(`/api/bookings/${bookingMatch.id}`);
-    await request.delete(`/api/bookings/${bookingOther.id}`);
-    await request.delete(`/api/promotions/${promo.id}`);
+    await isolatedUser.request.delete(`/api/bookings/${bookingMatch.id}`);
+    await isolatedUser.request.delete(`/api/bookings/${bookingOther.id}`);
+    await isolatedUser.request.delete(`/api/promotions/${promo.id}`);
   });
 });

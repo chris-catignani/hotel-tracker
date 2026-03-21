@@ -4,60 +4,59 @@ import { USER_CREDIT_CARD_ID, CREDIT_CARD_ID } from "../prisma/seed-ids";
 const YEAR = new Date().getFullYear();
 
 test.describe("Promotions CRUD", () => {
-  test("should display promotions page with Add Promotion button", async ({ page }) => {
-    await page.goto("/promotions");
-    await expect(page.getByRole("heading", { name: /Promotions/i })).toBeVisible();
-    await expect(page.getByRole("link", { name: /Add Promotion/i })).toBeVisible();
+  test("should display promotions page with Add Promotion button", async ({ testPromotion }) => {
+    await testPromotion.page.goto("/promotions");
+    await expect(testPromotion.page.getByRole("heading", { name: /Promotions/i })).toBeVisible();
+    await expect(testPromotion.page.getByRole("link", { name: /Add Promotion/i })).toBeVisible();
   });
 
-  test("should show a created promotion in the list", async ({ page, testPromotion }) => {
-    await page.goto("/promotions");
-    const desktopList = page.getByTestId("promotions-list-desktop");
+  test("should show a created promotion in the list", async ({ testPromotion }) => {
+    await testPromotion.page.goto("/promotions");
+    const desktopList = testPromotion.page.getByTestId("promotions-list-desktop");
     await expect(desktopList.getByText(testPromotion.name)).toBeVisible();
   });
 
-  test("should show benefit value in promotions list", async ({ page, testPromotion }) => {
-    await page.goto("/promotions");
+  test("should show benefit value in promotions list", async ({ testPromotion }) => {
+    await testPromotion.page.goto("/promotions");
     // The fixture creates a $25.00 fixed cashback benefit for this promotion
-    const desktopList = page.getByTestId("promotions-list-desktop");
+    const desktopList = testPromotion.page.getByTestId("promotions-list-desktop");
     const row = desktopList.getByRole("row").filter({ hasText: testPromotion.name });
     await expect(row.getByText("$25.00 cashback")).toBeVisible();
   });
 
-  test("should navigate to edit promotion page", async ({ page, testPromotion }) => {
-    await page.goto("/promotions");
+  test("should navigate to edit promotion page", async ({ testPromotion }) => {
+    await testPromotion.page.goto("/promotions");
 
     // Find the row with the test promotion and click Edit
-    const desktopList = page.getByTestId("promotions-list-desktop");
+    const desktopList = testPromotion.page.getByTestId("promotions-list-desktop");
     const row = desktopList.getByRole("row").filter({ hasText: testPromotion.name });
     await row.getByRole("link", { name: "Edit" }).click();
 
-    await expect(page).toHaveURL(/\/promotions\/[a-z0-9]+\/edit/);
-    await expect(page.getByRole("heading", { name: /Edit Promotion/i })).toBeVisible();
+    await expect(testPromotion.page).toHaveURL(/\/promotions\/[a-z0-9]+\/edit/);
+    await expect(
+      testPromotion.page.getByRole("heading", { name: /Edit Promotion/i })
+    ).toBeVisible();
   });
 
-  test("should pre-populate edit form with existing benefit data", async ({
-    page,
-    testPromotion,
-  }) => {
-    await page.goto(`/promotions`);
+  test("should pre-populate edit form with existing benefit data", async ({ testPromotion }) => {
+    await testPromotion.page.goto(`/promotions`);
 
     // Navigate to edit
-    const desktopList = page.getByTestId("promotions-list-desktop");
+    const desktopList = testPromotion.page.getByTestId("promotions-list-desktop");
     const row = desktopList.getByRole("row").filter({ hasText: testPromotion.name });
     await row.getByRole("link", { name: "Edit" }).click();
 
     // Wait for form to load
-    await expect(page.getByTestId("benefit-row-0")).toBeVisible();
+    await expect(testPromotion.page.getByTestId("benefit-row-0")).toBeVisible();
 
     // Verify the benefit value is pre-populated ($25 cashback)
-    const valueInput = page.getByTestId("benefit-value-0");
+    const valueInput = testPromotion.page.getByTestId("benefit-value-0");
     await expect(valueInput).toHaveValue("25");
   });
 
-  test("should delete a promotion", async ({ request, page }) => {
+  test("should delete a promotion", async ({ isolatedUser }) => {
     const uniqueName = `Delete Test Promo ${crypto.randomUUID()}`;
-    const res = await request.post("/api/promotions", {
+    const res = await isolatedUser.request.post("/api/promotions", {
       data: {
         name: uniqueName,
         type: "loyalty",
@@ -68,27 +67,27 @@ test.describe("Promotions CRUD", () => {
     });
     const promo = await res.json();
 
-    await page.goto("/promotions");
-    const desktopList = page.getByTestId("promotions-list-desktop");
+    await isolatedUser.page.goto("/promotions");
+    const desktopList = isolatedUser.page.getByTestId("promotions-list-desktop");
     await expect(desktopList.getByText(uniqueName)).toBeVisible();
 
     // Delete the promotion
     const row = desktopList.getByRole("row").filter({ hasText: uniqueName });
-    page.once("dialog", (dialog) => dialog.accept());
+    isolatedUser.page.once("dialog", (dialog) => dialog.accept());
     await row.getByRole("button", { name: "Delete" }).click();
 
     // Verify the promotion is gone
-    await expect(page.getByText(uniqueName)).toHaveCount(0);
+    await expect(isolatedUser.page.getByText(uniqueName)).toHaveCount(0);
 
     // Cleanup (in case delete failed)
-    await request.delete(`/api/promotions/${promo.id}`).catch(() => {});
+    await isolatedUser.request.delete(`/api/promotions/${promo.id}`).catch(() => {});
   });
 });
 
 test.describe("Promotions multi-benefit via API", () => {
-  test("should create a promotion with multiple benefits via API", async ({ request }) => {
+  test("should create a promotion with multiple benefits via API", async ({ isolatedUser }) => {
     const name = `Multi-benefit Promo ${crypto.randomUUID()}`;
-    const res = await request.post("/api/promotions", {
+    const res = await isolatedUser.request.post("/api/promotions", {
       data: {
         name,
         type: "loyalty",
@@ -120,13 +119,13 @@ test.describe("Promotions multi-benefit via API", () => {
     expect(Number(promo.benefits[2].value)).toBe(1);
 
     // Cleanup
-    await request.delete(`/api/promotions/${promo.id}`);
+    await isolatedUser.request.delete(`/api/promotions/${promo.id}`);
   });
 
-  test("should update promotion benefits via PUT and replace them", async ({ request }) => {
+  test("should update promotion benefits via PUT and replace them", async ({ isolatedUser }) => {
     // Create initial promotion
     const name = `Update Benefit Promo ${crypto.randomUUID()}`;
-    const createRes = await request.post("/api/promotions", {
+    const createRes = await isolatedUser.request.post("/api/promotions", {
       data: {
         name,
         type: "loyalty",
@@ -138,7 +137,7 @@ test.describe("Promotions multi-benefit via API", () => {
     const created = await createRes.json();
 
     // Update with different benefits
-    const updateRes = await request.put(`/api/promotions/${created.id}`, {
+    const updateRes = await isolatedUser.request.put(`/api/promotions/${created.id}`, {
       data: {
         name,
         type: "loyalty",
@@ -172,16 +171,19 @@ test.describe("Promotions multi-benefit via API", () => {
     expect(updated.benefits[1].rewardType).toBe("points");
 
     // Cleanup
-    await request.delete(`/api/promotions/${created.id}`);
+    await isolatedUser.request.delete(`/api/promotions/${created.id}`);
   });
 
-  test("should apply multi-benefit promotion to matching booking", async ({ request }) => {
+  test("should apply multi-benefit promotion to matching booking", async ({
+    isolatedUser,
+    adminRequest,
+  }) => {
     // Get a hotel chain to link the promotion and booking
-    const chainsRes = await request.get("/api/hotel-chains");
+    const chainsRes = await adminRequest.get("/api/hotel-chains");
     const chain = (await chainsRes.json())[0];
 
     // Create a promotion for this chain
-    const promoRes = await request.post("/api/promotions", {
+    const promoRes = await isolatedUser.request.post("/api/promotions", {
       data: {
         name: `Matching Promo ${crypto.randomUUID()}`,
         type: "loyalty",
@@ -195,7 +197,7 @@ test.describe("Promotions multi-benefit via API", () => {
     const promo = await promoRes.json();
 
     // Create a booking for the same chain
-    const bookingRes = await request.post("/api/bookings", {
+    const bookingRes = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: chain.id,
         propertyName: `Match Test ${crypto.randomUUID()}`,
@@ -211,7 +213,7 @@ test.describe("Promotions multi-benefit via API", () => {
     const booking = await bookingRes.json();
 
     // Fetch full booking to check promotions
-    const fullRes = await request.get(`/api/bookings/${booking.id}`);
+    const fullRes = await isolatedUser.request.get(`/api/bookings/${booking.id}`);
     const full = await fullRes.json();
 
     // Should have the promotion applied
@@ -234,18 +236,18 @@ test.describe("Promotions multi-benefit via API", () => {
     expect(Number(eqnBenefit.appliedValue)).toBe(20);
 
     // Cleanup
-    await request.delete(`/api/bookings/${booking.id}`);
-    await request.delete(`/api/promotions/${promo.id}`);
+    await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
+    await isolatedUser.request.delete(`/api/promotions/${promo.id}`);
   });
 });
 
 test.describe("Promotions tiered", () => {
   test("should apply correct tier benefit based on prior matched stays", async ({
-    request,
+    isolatedUser,
     testHotelChain,
   }) => {
     // Create a 2-tier promotion: $50 on stay #1, $75 on stay #2+
-    const promoRes = await request.post("/api/promotions", {
+    const promoRes = await isolatedUser.request.post("/api/promotions", {
       data: {
         name: `Tiered Promo ${crypto.randomUUID()}`,
         type: "loyalty",
@@ -286,7 +288,7 @@ test.describe("Promotions tiered", () => {
     expect(promo.tiers).toHaveLength(2);
 
     // First booking — should get tier 1 ($50)
-    const booking1Res = await request.post("/api/bookings", {
+    const booking1Res = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: `Tiered Stay 1 ${crypto.randomUUID()}`,
@@ -309,7 +311,7 @@ test.describe("Promotions tiered", () => {
     expect(Number(bp1.appliedValue)).toBe(50);
 
     // Second booking — should get tier 2 ($75)
-    const booking2Res = await request.post("/api/bookings", {
+    const booking2Res = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: `Tiered Stay 2 ${crypto.randomUUID()}`,
@@ -328,7 +330,7 @@ test.describe("Promotions tiered", () => {
     await expect
       .poll(
         async () => {
-          const detailRes = await request.get(`/api/bookings/${booking2.id}`);
+          const detailRes = await isolatedUser.request.get(`/api/bookings/${booking2.id}`);
           const detail = await detailRes.json();
           const bp = (detail.bookingPromotions ?? []).find(
             (bp: { promotionId: string }) => bp.promotionId === promo.id
@@ -343,9 +345,9 @@ test.describe("Promotions tiered", () => {
       .toBe(75);
 
     // Cleanup
-    await request.delete(`/api/bookings/${booking1.id}`);
-    await request.delete(`/api/bookings/${booking2.id}`);
-    await request.delete(`/api/promotions/${promo.id}`);
+    await isolatedUser.request.delete(`/api/bookings/${booking1.id}`);
+    await isolatedUser.request.delete(`/api/bookings/${booking2.id}`);
+    await isolatedUser.request.delete(`/api/promotions/${promo.id}`);
   });
 });
 
@@ -357,11 +359,11 @@ test.describe("Promotions tie-in credit card (benefit-level restrictions)", () =
   const OTHER_UCC_ID = USER_CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE;
 
   test("booking WITH tie-in card gets all benefits (base + tie-in)", async ({
-    request,
+    isolatedUser,
     testHotelChain,
   }) => {
     // Base benefit has no restrictions; tie-in benefit is gated by card via benefit-level restrictions
-    const promoRes = await request.post("/api/promotions", {
+    const promoRes = await isolatedUser.request.post("/api/promotions", {
       data: {
         name: `Tie-In Promo ${crypto.randomUUID()}`,
         type: "loyalty",
@@ -393,7 +395,7 @@ test.describe("Promotions tie-in credit card (benefit-level restrictions)", () =
     expect(promo.benefits[1].restrictions.tieInCards[0].creditCardId).toBe(TIE_IN_CARD_ID);
 
     // Create booking WITH the tie-in card
-    const bookingRes = await request.post("/api/bookings", {
+    const bookingRes = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: `Tie-In With Card ${crypto.randomUUID()}`,
@@ -419,15 +421,15 @@ test.describe("Promotions tie-in credit card (benefit-level restrictions)", () =
     expect(appliedPromo.benefitApplications).toHaveLength(2);
 
     // Cleanup
-    await request.delete(`/api/bookings/${booking.id}`);
-    await request.delete(`/api/promotions/${promo.id}`);
+    await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
+    await isolatedUser.request.delete(`/api/promotions/${promo.id}`);
   });
 
   test("booking WITHOUT tie-in card gets only base benefits", async ({
-    request,
+    isolatedUser,
     testHotelChain,
   }) => {
-    const promoRes = await request.post("/api/promotions", {
+    const promoRes = await isolatedUser.request.post("/api/promotions", {
       data: {
         name: `Tie-In Promo No Card ${crypto.randomUUID()}`,
         type: "loyalty",
@@ -456,7 +458,7 @@ test.describe("Promotions tie-in credit card (benefit-level restrictions)", () =
     const promo = await promoRes.json();
 
     // Create booking with a DIFFERENT card (not the tie-in card)
-    const bookingRes = await request.post("/api/bookings", {
+    const bookingRes = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: `Tie-In Without Card ${crypto.randomUUID()}`,
@@ -486,15 +488,15 @@ test.describe("Promotions tie-in credit card (benefit-level restrictions)", () =
     expect(Number(validApplications[0].appliedValue)).toBe(20);
 
     // Cleanup
-    await request.delete(`/api/bookings/${booking.id}`);
-    await request.delete(`/api/promotions/${promo.id}`);
+    await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
+    await isolatedUser.request.delete(`/api/promotions/${promo.id}`);
   });
 
   test("booking without any card gets only base benefits when benefit tie-in card is set", async ({
-    request,
+    isolatedUser,
     testHotelChain,
   }) => {
-    const promoRes = await request.post("/api/promotions", {
+    const promoRes = await isolatedUser.request.post("/api/promotions", {
       data: {
         name: `Tie-In Promo No Payment ${crypto.randomUUID()}`,
         type: "loyalty",
@@ -524,7 +526,7 @@ test.describe("Promotions tie-in credit card (benefit-level restrictions)", () =
     expect(promo.benefits[1].restrictions?.tieInRequiresPayment).toBe(true);
 
     // Create booking with NO credit card
-    const bookingRes = await request.post("/api/bookings", {
+    const bookingRes = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: `Tie-In No Payment ${crypto.randomUUID()}`,
@@ -553,18 +555,17 @@ test.describe("Promotions tie-in credit card (benefit-level restrictions)", () =
     expect(Number(validApplications[0].appliedValue)).toBe(20);
 
     // Cleanup
-    await request.delete(`/api/bookings/${booking.id}`);
-    await request.delete(`/api/promotions/${promo.id}`);
+    await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
+    await isolatedUser.request.delete(`/api/promotions/${promo.id}`);
   });
 });
 
 test.describe("Promotions restriction picker UX", () => {
   test("should auto-populate restriction cards on edit when promotion has restrictions", async ({
-    page,
-    request,
+    isolatedUser,
   }) => {
     const uniqueName = `Restriction Edit Test ${crypto.randomUUID()}`;
-    const res = await request.post("/api/promotions", {
+    const res = await isolatedUser.request.post("/api/promotions", {
       data: {
         name: uniqueName,
         type: "loyalty",
@@ -577,26 +578,27 @@ test.describe("Promotions restriction picker UX", () => {
     expect(res.ok()).toBeTruthy();
     const promo = await res.json();
 
-    await page.goto(`/promotions/${promo.id}/edit`);
-    await expect(page.getByTestId("benefit-row-0")).toBeVisible();
+    await isolatedUser.page.goto(`/promotions/${promo.id}/edit`);
+    await expect(isolatedUser.page.getByTestId("benefit-row-0")).toBeVisible();
 
     // Restriction cards for set fields should be visible
-    await expect(page.getByTestId("restriction-card-min_spend")).toBeVisible();
-    await expect(page.getByTestId("restriction-card-registration")).toBeVisible();
+    await expect(isolatedUser.page.getByTestId("restriction-card-min_spend")).toBeVisible();
+    await expect(isolatedUser.page.getByTestId("restriction-card-registration")).toBeVisible();
 
     // Unset restriction cards should not be present
-    await expect(page.getByTestId("restriction-card-book_by_date")).not.toBeVisible();
-    await expect(page.getByTestId("restriction-card-redemption_caps")).not.toBeVisible();
+    await expect(isolatedUser.page.getByTestId("restriction-card-book_by_date")).not.toBeVisible();
+    await expect(
+      isolatedUser.page.getByTestId("restriction-card-redemption_caps")
+    ).not.toBeVisible();
 
-    await request.delete(`/api/promotions/${promo.id}`);
+    await isolatedUser.request.delete(`/api/promotions/${promo.id}`);
   });
 
   test("should remove a restriction card when its X button is clicked", async ({
-    page,
-    request,
+    isolatedUser,
   }) => {
     const uniqueName = `Restriction Remove Test ${crypto.randomUUID()}`;
-    const res = await request.post("/api/promotions", {
+    const res = await isolatedUser.request.post("/api/promotions", {
       data: {
         name: uniqueName,
         type: "loyalty",
@@ -609,18 +611,18 @@ test.describe("Promotions restriction picker UX", () => {
     expect(res.ok()).toBeTruthy();
     const promo = await res.json();
 
-    await page.goto(`/promotions/${promo.id}/edit`);
-    await expect(page.getByTestId("restriction-card-min_spend")).toBeVisible();
+    await isolatedUser.page.goto(`/promotions/${promo.id}/edit`);
+    await expect(isolatedUser.page.getByTestId("restriction-card-min_spend")).toBeVisible();
 
-    await page.getByTestId("restriction-remove-min_spend").click();
-    await expect(page.getByTestId("restriction-card-min_spend")).not.toBeVisible();
+    await isolatedUser.page.getByTestId("restriction-remove-min_spend").click();
+    await expect(isolatedUser.page.getByTestId("restriction-card-min_spend")).not.toBeVisible();
 
-    await request.delete(`/api/promotions/${promo.id}`);
+    await isolatedUser.request.delete(`/api/promotions/${promo.id}`);
   });
 
-  test("should add a restriction card via the picker", async ({ page, request }) => {
+  test("should add a restriction card via the picker", async ({ isolatedUser }) => {
     const uniqueName = `Restriction Add Test ${crypto.randomUUID()}`;
-    const res = await request.post("/api/promotions", {
+    const res = await isolatedUser.request.post("/api/promotions", {
       data: {
         name: uniqueName,
         type: "loyalty",
@@ -632,31 +634,31 @@ test.describe("Promotions restriction picker UX", () => {
     expect(res.ok()).toBeTruthy();
     const promo = await res.json();
 
-    await page.goto(`/promotions/${promo.id}/edit`);
-    await expect(page.getByTestId("benefit-row-0")).toBeVisible();
+    await isolatedUser.page.goto(`/promotions/${promo.id}/edit`);
+    await expect(isolatedUser.page.getByTestId("benefit-row-0")).toBeVisible();
 
     // No restriction cards present initially
-    await expect(page.getByTestId("restriction-card-min_spend")).not.toBeVisible();
+    await expect(isolatedUser.page.getByTestId("restriction-card-min_spend")).not.toBeVisible();
 
     // Open picker and add Min Spend
-    await page.getByTestId("restriction-picker-button").click();
-    await expect(page.getByTestId("restriction-option-min_spend")).toBeVisible();
-    await page.getByTestId("restriction-option-min_spend").click();
+    await isolatedUser.page.getByTestId("restriction-picker-button").click();
+    await expect(isolatedUser.page.getByTestId("restriction-option-min_spend")).toBeVisible();
+    await isolatedUser.page.getByTestId("restriction-option-min_spend").click();
 
     // Card should now be visible, picker should have closed
-    await expect(page.getByTestId("restriction-card-min_spend")).toBeVisible();
-    await expect(page.getByTestId("restriction-picker-popover")).not.toBeVisible();
+    await expect(isolatedUser.page.getByTestId("restriction-card-min_spend")).toBeVisible();
+    await expect(isolatedUser.page.getByTestId("restriction-picker-popover")).not.toBeVisible();
 
-    await request.delete(`/api/promotions/${promo.id}`);
+    await isolatedUser.request.delete(`/api/promotions/${promo.id}`);
   });
 });
 
 test.describe("Promotions constraints", () => {
   test("should enforce maxStayCount: 1 — only first booking gets promotion", async ({
-    request,
+    isolatedUser,
     testHotelChain,
   }) => {
-    const promoRes = await request.post("/api/promotions", {
+    const promoRes = await isolatedUser.request.post("/api/promotions", {
       data: {
         name: `Max Stay 1 Promo ${crypto.randomUUID()}`,
         type: "loyalty",
@@ -672,7 +674,7 @@ test.describe("Promotions constraints", () => {
     expect(promo.restrictions?.maxStayCount).toBe(1);
 
     // Create first booking
-    const booking1Res = await request.post("/api/bookings", {
+    const booking1Res = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: `Max Stay Test 1 ${crypto.randomUUID()}`,
@@ -696,7 +698,7 @@ test.describe("Promotions constraints", () => {
     expect(Number(bp1.appliedValue)).toBe(50);
 
     // Create second booking
-    const booking2Res = await request.post("/api/bookings", {
+    const booking2Res = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: `Max Stay Test 2 ${crypto.randomUUID()}`,
@@ -721,20 +723,20 @@ test.describe("Promotions constraints", () => {
     expect(bp2.isOrphaned).toBe(false); // Hard cap → Maxed Out, not Orphaned
 
     // Cleanup
-    await request.delete(`/api/bookings/${booking1.id}`);
-    await request.delete(`/api/bookings/${booking2.id}`);
-    await request.delete(`/api/promotions/${promo.id}`);
+    await isolatedUser.request.delete(`/api/bookings/${booking1.id}`);
+    await isolatedUser.request.delete(`/api/bookings/${booking2.id}`);
+    await isolatedUser.request.delete(`/api/promotions/${promo.id}`);
   });
 });
 
 test.describe("Promotions payment type restrictions", () => {
   test("Promotion with 'cash' restriction: applied to cash booking, skipped for points booking", async ({
-    request,
+    isolatedUser,
     testHotelChain,
   }) => {
     // 1. Create a promotion restricted to 'cash' payment type
     const promoName = `Cash Only Promo ${crypto.randomUUID()}`;
-    const promoRes = await request.post("/api/promotions", {
+    const promoRes = await isolatedUser.request.post("/api/promotions", {
       data: {
         name: promoName,
         type: "loyalty",
@@ -751,7 +753,7 @@ test.describe("Promotions payment type restrictions", () => {
     const promo = await promoRes.json();
 
     // 2. Create a cash booking (pretaxCost > 0, pointsRedeemed = 0)
-    const cashBookingRes = await request.post("/api/bookings", {
+    const cashBookingRes = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: "Cash Booking",
@@ -768,7 +770,7 @@ test.describe("Promotions payment type restrictions", () => {
     const cashBooking = await cashBookingRes.json();
 
     // 3. Create a points booking (pretaxCost = 0, pointsRedeemed > 0)
-    const pointsBookingRes = await request.post("/api/bookings", {
+    const pointsBookingRes = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: "Points Booking",
@@ -788,7 +790,9 @@ test.describe("Promotions payment type restrictions", () => {
     await expect
       .poll(
         async () => {
-          const detail = await (await request.get(`/api/bookings/${cashBooking.id}`)).json();
+          const detail = await (
+            await isolatedUser.request.get(`/api/bookings/${cashBooking.id}`)
+          ).json();
           return (detail.bookingPromotions ?? []).some(
             (bp: { promotionId: string }) => bp.promotionId === promo.id
           );
@@ -798,7 +802,9 @@ test.describe("Promotions payment type restrictions", () => {
       .toBe(true);
 
     // 5. Verify points booking SKIPPED the promotion
-    const pointsDetail = await (await request.get(`/api/bookings/${pointsBooking.id}`)).json();
+    const pointsDetail = await (
+      await isolatedUser.request.get(`/api/bookings/${pointsBooking.id}`)
+    ).json();
 
     const pointsApplied = (pointsDetail.bookingPromotions || []).some(
       (bp: { promotionId: string }) => bp.promotionId === promo.id
@@ -806,53 +812,52 @@ test.describe("Promotions payment type restrictions", () => {
     expect(pointsApplied).toBe(false);
 
     // Cleanup
-    await request.delete(`/api/bookings/${cashBooking.id}`);
-    await request.delete(`/api/bookings/${pointsBooking.id}`);
-    await request.delete(`/api/promotions/${promo.id}`);
+    await isolatedUser.request.delete(`/api/bookings/${cashBooking.id}`);
+    await isolatedUser.request.delete(`/api/bookings/${pointsBooking.id}`);
+    await isolatedUser.request.delete(`/api/promotions/${promo.id}`);
   });
 
   test("UI: adding, interacting with, and persisting payment type restriction", async ({
-    page,
-    request,
+    isolatedUser,
     testHotelChain,
   }) => {
     const promoName = `UI Payment Promo ${crypto.randomUUID()}`;
 
-    await page.goto("/promotions/new");
+    await isolatedUser.page.goto("/promotions/new");
 
     // Basic info
-    const nameInput = page.getByTestId("promotion-name-input");
+    const nameInput = isolatedUser.page.getByTestId("promotion-name-input");
     await nameInput.click();
     await nameInput.pressSequentially(promoName, { delay: 50 });
     await expect(nameInput).toHaveValue(promoName);
 
     // Select Loyalty type
-    const typeSelect = page.getByTestId("promotion-type-select");
+    const typeSelect = isolatedUser.page.getByTestId("promotion-type-select");
     await typeSelect.click();
-    const typeOption = page.getByRole("option", { name: "Loyalty" });
+    const typeOption = isolatedUser.page.getByRole("option", { name: "Loyalty" });
     await expect(typeOption).toBeVisible();
     await typeOption.click();
     await expect(typeSelect).toContainText("Loyalty Program");
 
     // Select Hotel Chain
-    const chainSelect = page.getByTestId("hotel-chain-select");
+    const chainSelect = isolatedUser.page.getByTestId("hotel-chain-select");
     await chainSelect.click();
-    const chainOption = page.getByRole("option", { name: testHotelChain.name });
+    const chainOption = isolatedUser.page.getByRole("option", { name: testHotelChain.name });
     await expect(chainOption).toBeVisible();
     await chainOption.click();
     await expect(chainSelect).toContainText(testHotelChain.name);
 
     // Add a benefit
-    const benefitInput = page.getByTestId("benefit-value-0");
+    const benefitInput = isolatedUser.page.getByTestId("benefit-value-0");
     await benefitInput.fill("10");
     await expect(benefitInput).toHaveValue("10");
 
     // Add Restriction
-    await page.getByTestId("restriction-picker-button").click();
-    await page.getByTestId("restriction-option-payment_type").click();
+    await isolatedUser.page.getByTestId("restriction-picker-button").click();
+    await isolatedUser.page.getByTestId("restriction-option-payment_type").click();
 
     // Verify card appears
-    const restrictionCard = page.getByTestId("restriction-card-payment_type");
+    const restrictionCard = isolatedUser.page.getByTestId("restriction-card-payment_type");
     await expect(restrictionCard).toBeVisible();
 
     // Check 'Cash' and 'Points'
@@ -860,15 +865,15 @@ test.describe("Promotions payment type restrictions", () => {
     await restrictionCard.getByTestId("payment-type-points").check();
 
     // Save
-    await page.getByTestId("promotion-form-submit").click({ force: true });
+    await isolatedUser.page.getByTestId("promotion-form-submit").click({ force: true });
 
     // Wait for navigation back to list
-    await expect(page).toHaveURL(/\/promotions$/, { timeout: 15000 });
+    await expect(isolatedUser.page).toHaveURL(/\/promotions$/, { timeout: 15000 });
 
     // Ensure we have latest data
-    await page.reload();
-    await page.waitForLoadState("networkidle");
-    const desktopList = page.getByTestId("promotions-list-desktop");
+    await isolatedUser.page.reload();
+    await isolatedUser.page.waitForLoadState("networkidle");
+    const desktopList = isolatedUser.page.getByTestId("promotions-list-desktop");
     const row = desktopList.locator("tr").filter({ hasText: promoName });
     await expect(row).toBeVisible({ timeout: 15000 });
 
@@ -876,10 +881,10 @@ test.describe("Promotions payment type restrictions", () => {
     await row.getByRole("link", { name: "Edit" }).click();
 
     // Check persistence in Edit page
-    await expect(page).toHaveURL(/\/promotions\/.*\/edit/);
-    const url = page.url();
+    await expect(isolatedUser.page).toHaveURL(/\/promotions\/.*\/edit/);
+    const url = isolatedUser.page.url();
     const promoId = url.split("/")[4]; // /promotions/[id]/edit
-    const editRestrictionCard = page.getByTestId("restriction-card-payment_type");
+    const editRestrictionCard = isolatedUser.page.getByTestId("restriction-card-payment_type");
     await expect(editRestrictionCard).toBeVisible();
     await expect(editRestrictionCard.getByTestId("payment-type-cash")).toBeChecked();
     await expect(editRestrictionCard.getByTestId("payment-type-points")).toBeChecked();
@@ -890,10 +895,10 @@ test.describe("Promotions payment type restrictions", () => {
     await expect(editRestrictionCard).not.toBeVisible();
 
     // Save again to ensure deletion persists
-    await page.getByTestId("promotion-form-submit").click();
-    await page.goto("/promotions");
-    await expect(page).toHaveURL(/\/promotions$/);
-    await page.waitForLoadState("networkidle");
+    await isolatedUser.page.getByTestId("promotion-form-submit").click();
+    await isolatedUser.page.goto("/promotions");
+    await expect(isolatedUser.page).toHaveURL(/\/promotions$/);
+    await isolatedUser.page.waitForLoadState("networkidle");
 
     // Navigate back one more time to be absolutely sure
     await desktopList
@@ -901,33 +906,37 @@ test.describe("Promotions payment type restrictions", () => {
       .filter({ hasText: promoName })
       .getByRole("link", { name: "Edit" })
       .click();
-    await expect(page.getByTestId("restriction-card-payment_type")).not.toBeVisible();
+    await expect(isolatedUser.page.getByTestId("restriction-card-payment_type")).not.toBeVisible();
 
     // Cleanup
-    await request.delete(`/api/promotions/${promoId}`);
+    await isolatedUser.request.delete(`/api/promotions/${promoId}`);
   });
 
-  test("should dynamically hide ineligible restrictions from the picker", async ({ page }) => {
-    await page.goto("/promotions/new");
+  test("should dynamically hide ineligible restrictions from the picker", async ({
+    isolatedUser,
+  }) => {
+    await isolatedUser.page.goto("/promotions/new");
 
     // 1. Initial Type: Loyalty
-    await page.getByTestId("restriction-picker-button").click();
+    await isolatedUser.page.getByTestId("restriction-picker-button").click();
     // For Loyalty, "Hotel Chain Restriction" should be hidden
-    await expect(page.getByTestId("restriction-option-hotel_chain")).not.toBeVisible();
+    await expect(isolatedUser.page.getByTestId("restriction-option-hotel_chain")).not.toBeVisible();
     // "Tie-In Credit Cards" should be visible
-    await expect(page.getByTestId("restriction-option-tie_in_cards")).toBeVisible();
+    await expect(isolatedUser.page.getByTestId("restriction-option-tie_in_cards")).toBeVisible();
 
     // Close picker
-    await page.keyboard.press("Escape");
+    await isolatedUser.page.keyboard.press("Escape");
 
     // 2. Change Type to Credit Card
-    await page.getByText("Loyalty Program").click();
-    await page.getByRole("option", { name: "Credit Card" }).click();
+    await isolatedUser.page.getByText("Loyalty Program").click();
+    await isolatedUser.page.getByRole("option", { name: "Credit Card" }).click();
 
-    await page.getByTestId("restriction-picker-button").click();
+    await isolatedUser.page.getByTestId("restriction-picker-button").click();
     // For Credit Card, "Tie-In Credit Cards" should be hidden
-    await expect(page.getByTestId("restriction-option-tie_in_cards")).not.toBeVisible();
+    await expect(
+      isolatedUser.page.getByTestId("restriction-option-tie_in_cards")
+    ).not.toBeVisible();
     // "Hotel Chain Restriction" should be visible
-    await expect(page.getByTestId("restriction-option-hotel_chain")).toBeVisible();
+    await expect(isolatedUser.page.getByTestId("restriction-option-hotel_chain")).toBeVisible();
   });
 });
