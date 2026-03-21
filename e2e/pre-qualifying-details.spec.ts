@@ -4,12 +4,11 @@ const YEAR = new Date().getFullYear();
 
 test.describe("Pre-qualifying Promotion Details", () => {
   test("shows prerequisite progress and tier table when this booking fulfills the prerequisite", async ({
-    page,
-    request,
+    isolatedUser,
     testHotelChain,
   }) => {
     // Promotion: 1 pre-qualifying stay required, then tiered rewards
-    const promoRes = await request.post("/api/promotions", {
+    const promoRes = await isolatedUser.request.post("/api/promotions", {
       data: {
         name: "PreQualTestPromo",
         type: "loyalty",
@@ -50,7 +49,7 @@ test.describe("Pre-qualifying Promotion Details", () => {
     const promo = await promoRes.json();
 
     // Need a future booking so this stay is pre-qualifying, not orphaned
-    const futureBookingRes = await request.post("/api/bookings", {
+    const futureBookingRes = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: "Future Stay",
@@ -65,7 +64,7 @@ test.describe("Pre-qualifying Promotion Details", () => {
     });
     const futureBooking = await futureBookingRes.json();
 
-    const currentBookingRes = await request.post("/api/bookings", {
+    const currentBookingRes = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: "Current Stay Prereq",
@@ -80,12 +79,12 @@ test.describe("Pre-qualifying Promotion Details", () => {
     });
     const currentBooking = await currentBookingRes.json();
 
-    await page.goto(`/bookings/${currentBooking.id}`);
-    await page.getByTestId("breakdown-promos-toggle").click();
-    await expect(page.getByTestId(`breakdown-promo-item-${promo.id}`)).toBeVisible();
+    await isolatedUser.page.goto(`/bookings/${currentBooking.id}`);
+    await isolatedUser.page.getByTestId("breakdown-promos-toggle").click();
+    await expect(isolatedUser.page.getByTestId(`breakdown-promo-item-${promo.id}`)).toBeVisible();
 
-    await page.getByTestId("calc-info-prequaltestpromo").click();
-    const popover = page.locator("[role='dialog'], .popover-content");
+    await isolatedUser.page.getByTestId("calc-info-prequaltestpromo").click();
+    const popover = isolatedUser.page.locator("[role='dialog'], .popover-content");
     await expect(popover).toBeVisible();
 
     // Prerequisite progress: this booking (stay #1) fulfills the 1-stay requirement
@@ -101,18 +100,17 @@ test.describe("Pre-qualifying Promotion Details", () => {
     await expect(popover.getByText(/Tier 2: Stay 3\+/i)).toBeVisible();
     await expect(popover.getByText(/7,500 pts/i)).toBeVisible();
 
-    await request.delete(`/api/bookings/${currentBooking.id}`);
-    await request.delete(`/api/bookings/${futureBooking.id}`);
-    await request.delete(`/api/promotions/${promo.id}`);
+    await isolatedUser.request.delete(`/api/bookings/${currentBooking.id}`);
+    await isolatedUser.request.delete(`/api/bookings/${futureBooking.id}`);
+    await isolatedUser.request.delete(`/api/promotions/${promo.id}`);
   });
 
   test("shows current position in tier progression when no prerequisite is required", async ({
-    page,
-    request,
+    isolatedUser,
     testHotelChain,
   }) => {
     // Promotion: tier-only (no prerequisiteStayCount), like GHA multi brand
-    const promoRes = await request.post("/api/promotions", {
+    const promoRes = await isolatedUser.request.post("/api/promotions", {
       data: {
         name: "TierOnlyTestPromo",
         type: "loyalty",
@@ -151,7 +149,7 @@ test.describe("Pre-qualifying Promotion Details", () => {
     expect(promoRes.ok()).toBeTruthy();
     const promo = await promoRes.json();
 
-    const futureBookingRes = await request.post("/api/bookings", {
+    const futureBookingRes = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: "Future Stay Tier",
@@ -166,7 +164,7 @@ test.describe("Pre-qualifying Promotion Details", () => {
     });
     const futureBooking = await futureBookingRes.json();
 
-    const currentBookingRes = await request.post("/api/bookings", {
+    const currentBookingRes = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: "Current Stay Tier",
@@ -181,12 +179,12 @@ test.describe("Pre-qualifying Promotion Details", () => {
     });
     const currentBooking = await currentBookingRes.json();
 
-    await page.goto(`/bookings/${currentBooking.id}`);
-    await page.getByTestId("breakdown-promos-toggle").click();
-    await expect(page.getByTestId(`breakdown-promo-item-${promo.id}`)).toBeVisible();
+    await isolatedUser.page.goto(`/bookings/${currentBooking.id}`);
+    await isolatedUser.page.getByTestId("breakdown-promos-toggle").click();
+    await expect(isolatedUser.page.getByTestId(`breakdown-promo-item-${promo.id}`)).toBeVisible();
 
-    await page.getByTestId("calc-info-tieronlytestpromo").click();
-    const popover = page.locator("[role='dialog'], .popover-content");
+    await isolatedUser.page.getByTestId("calc-info-tieronlytestpromo").click();
+    const popover = isolatedUser.page.locator("[role='dialog'], .popover-content");
     await expect(popover).toBeVisible();
 
     // No prerequisite group — this is purely tier-based
@@ -203,9 +201,9 @@ test.describe("Pre-qualifying Promotion Details", () => {
     await expect(popover.getByText(/Tier 2: Stay 3\+/i)).toBeVisible();
     await expect(popover.getByText(/10,000 pts/i)).toBeVisible();
 
-    await request.delete(`/api/bookings/${currentBooking.id}`);
-    await request.delete(`/api/bookings/${futureBooking.id}`);
-    await request.delete(`/api/promotions/${promo.id}`);
+    await isolatedUser.request.delete(`/api/bookings/${currentBooking.id}`);
+    await isolatedUser.request.delete(`/api/bookings/${futureBooking.id}`);
+    await isolatedUser.request.delete(`/api/promotions/${promo.id}`);
   });
 });
 
@@ -229,11 +227,10 @@ test.describe("Upcoming Tiers on Actively-Earning Tiered Promotions", () => {
   ];
 
   test("shows upcoming tiers when on an intermediate tier", async ({
-    page,
-    request,
+    isolatedUser,
     testHotelChain,
   }) => {
-    const promoRes = await request.post("/api/promotions", {
+    const promoRes = await isolatedUser.request.post("/api/promotions", {
       data: {
         name: "UpcomingTierPromo",
         type: "loyalty",
@@ -246,7 +243,7 @@ test.describe("Upcoming Tiers on Actively-Earning Tiered Promotions", () => {
     const promo = await promoRes.json();
 
     // Stay #1: pre-qualifying (stay 1 matches no tier)
-    const stay1Res = await request.post("/api/bookings", {
+    const stay1Res = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: "Upcoming Tier Stay 1",
@@ -262,7 +259,7 @@ test.describe("Upcoming Tiers on Actively-Earning Tiered Promotions", () => {
     const stay1 = await stay1Res.json();
 
     // Stay #2 (current): earns tier 1 (5,000 pts) — should show upcoming tier 2
-    const stay2Res = await request.post("/api/bookings", {
+    const stay2Res = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: "Upcoming Tier Stay 2",
@@ -277,12 +274,12 @@ test.describe("Upcoming Tiers on Actively-Earning Tiered Promotions", () => {
     });
     const stay2 = await stay2Res.json();
 
-    await page.goto(`/bookings/${stay2.id}`);
-    await page.getByTestId("breakdown-promos-toggle").click();
-    await expect(page.getByTestId(`breakdown-promo-item-${promo.id}`)).toBeVisible();
+    await isolatedUser.page.goto(`/bookings/${stay2.id}`);
+    await isolatedUser.page.getByTestId("breakdown-promos-toggle").click();
+    await expect(isolatedUser.page.getByTestId(`breakdown-promo-item-${promo.id}`)).toBeVisible();
 
-    await page.getByTestId("calc-info-upcomingtierpromo").click();
-    const popover = page.locator("[role='dialog'], .popover-content");
+    await isolatedUser.page.getByTestId("calc-info-upcomingtierpromo").click();
+    const popover = isolatedUser.page.locator("[role='dialog'], .popover-content");
     await expect(popover).toBeVisible();
 
     // Earns tier 1 — upcoming section shows future tier only
@@ -293,17 +290,16 @@ test.describe("Upcoming Tiers on Actively-Earning Tiered Promotions", () => {
     // Current tier's reward is shown in the benefit group, not duplicated here
     await expect(popover.getByText(/5,000 Bonus Points/i)).toBeVisible();
 
-    await request.delete(`/api/bookings/${stay2.id}`);
-    await request.delete(`/api/bookings/${stay1.id}`);
-    await request.delete(`/api/promotions/${promo.id}`);
+    await isolatedUser.request.delete(`/api/bookings/${stay2.id}`);
+    await isolatedUser.request.delete(`/api/bookings/${stay1.id}`);
+    await isolatedUser.request.delete(`/api/promotions/${promo.id}`);
   });
 
   test("shows no upcoming tiers section when on the last tier", async ({
-    page,
-    request,
+    isolatedUser,
     testHotelChain,
   }) => {
-    const promoRes = await request.post("/api/promotions", {
+    const promoRes = await isolatedUser.request.post("/api/promotions", {
       data: {
         name: "LastTierPromo",
         type: "loyalty",
@@ -316,7 +312,7 @@ test.describe("Upcoming Tiers on Actively-Earning Tiered Promotions", () => {
     const promo = await promoRes.json();
 
     // Stay #1: pre-qualifying
-    const stay1Res = await request.post("/api/bookings", {
+    const stay1Res = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: "Last Tier Stay 1",
@@ -332,7 +328,7 @@ test.describe("Upcoming Tiers on Actively-Earning Tiered Promotions", () => {
     const stay1 = await stay1Res.json();
 
     // Stay #2: earns tier 1
-    const stay2Res = await request.post("/api/bookings", {
+    const stay2Res = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: "Last Tier Stay 2",
@@ -348,7 +344,7 @@ test.describe("Upcoming Tiers on Actively-Earning Tiered Promotions", () => {
     const stay2 = await stay2Res.json();
 
     // Stay #3 (current): earns tier 2 (stay 3+), the last tier — no upcoming
-    const stay3Res = await request.post("/api/bookings", {
+    const stay3Res = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: "Last Tier Stay 3",
@@ -363,12 +359,12 @@ test.describe("Upcoming Tiers on Actively-Earning Tiered Promotions", () => {
     });
     const stay3 = await stay3Res.json();
 
-    await page.goto(`/bookings/${stay3.id}`);
-    await page.getByTestId("breakdown-promos-toggle").click();
-    await expect(page.getByTestId(`breakdown-promo-item-${promo.id}`)).toBeVisible();
+    await isolatedUser.page.goto(`/bookings/${stay3.id}`);
+    await isolatedUser.page.getByTestId("breakdown-promos-toggle").click();
+    await expect(isolatedUser.page.getByTestId(`breakdown-promo-item-${promo.id}`)).toBeVisible();
 
-    await page.getByTestId("calc-info-lasttierpromo").click();
-    const popover = page.locator("[role='dialog'], .popover-content");
+    await isolatedUser.page.getByTestId("calc-info-lasttierpromo").click();
+    const popover = isolatedUser.page.locator("[role='dialog'], .popover-content");
     await expect(popover).toBeVisible();
 
     // On the last tier — no upcoming section
@@ -377,9 +373,9 @@ test.describe("Upcoming Tiers on Actively-Earning Tiered Promotions", () => {
     // But still shows the current earning
     await expect(popover.getByText(/7,500 Bonus Points/i)).toBeVisible();
 
-    await request.delete(`/api/bookings/${stay3.id}`);
-    await request.delete(`/api/bookings/${stay2.id}`);
-    await request.delete(`/api/bookings/${stay1.id}`);
-    await request.delete(`/api/promotions/${promo.id}`);
+    await isolatedUser.request.delete(`/api/bookings/${stay3.id}`);
+    await isolatedUser.request.delete(`/api/bookings/${stay2.id}`);
+    await isolatedUser.request.delete(`/api/bookings/${stay1.id}`);
+    await isolatedUser.request.delete(`/api/promotions/${promo.id}`);
   });
 });
