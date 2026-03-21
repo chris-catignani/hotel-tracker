@@ -65,7 +65,7 @@ interface BookingShape {
   bookingDate: Date | null;
   paymentTiming: string;
   totalCost: string;
-  exchangeRate: string;
+  lockedExchangeRate: string;
   createdAt: Date;
   userCreditCard: { openedDate: Date | null; closedDate: Date | null };
 }
@@ -93,7 +93,7 @@ function makeBooking(overrides: Partial<BookingShape> = {}): BookingShape {
     bookingDate: null,
     paymentTiming: "postpaid",
     totalCost: "200",
-    exchangeRate: "1",
+    lockedExchangeRate: "1",
     createdAt: new Date("2025-01-01T00:00:00Z"),
     userCreditCard: { openedDate: null, closedDate: null },
     ...overrides,
@@ -139,9 +139,9 @@ describe("reapplyBenefitForPeriod", () => {
 
   it("two card instances each get the full benefit pool independently", async () => {
     // Booking on "Chris Codes" card consumes $200 of the $300 pool
-    const codesBooking = makeBooking({ id: "b-codes", totalCost: "200", exchangeRate: "1" });
+    const codesBooking = makeBooking({ id: "b-codes", totalCost: "200", lockedExchangeRate: "1" });
     // Booking on "Chris Sells" card should ALSO get $200 from its own independent pool
-    const sellsBooking = makeBooking({ id: "b-sells", totalCost: "200", exchangeRate: "1" });
+    const sellsBooking = makeBooking({ id: "b-sells", totalCost: "200", lockedExchangeRate: "1" });
 
     prismaMock.cardBenefit.findUnique.mockResolvedValue(makeBenefit({ value: "300" }));
 
@@ -174,14 +174,14 @@ describe("reapplyBenefitForPeriod", () => {
       id: "b1",
       checkIn: new Date("2025-06-01T00:00:00Z"),
       totalCost: "150",
-      exchangeRate: "1",
+      lockedExchangeRate: "1",
       createdAt: new Date("2025-01-01T00:00:00Z"),
     });
     const booking2 = makeBooking({
       id: "b2",
       checkIn: new Date("2025-09-01T00:00:00Z"),
       totalCost: "150",
-      exchangeRate: "1",
+      lockedExchangeRate: "1",
       createdAt: new Date("2025-01-02T00:00:00Z"),
     });
 
@@ -204,14 +204,14 @@ describe("reapplyBenefitForPeriod", () => {
       id: "b1",
       checkIn: new Date("2025-06-01T00:00:00Z"),
       totalCost: "500",
-      exchangeRate: "1",
+      lockedExchangeRate: "1",
       createdAt: new Date("2025-01-01T00:00:00Z"),
     });
     const booking2 = makeBooking({
       id: "b2",
       checkIn: new Date("2025-09-01T00:00:00Z"),
       totalCost: "500",
-      exchangeRate: "1",
+      lockedExchangeRate: "1",
       createdAt: new Date("2025-01-02T00:00:00Z"),
     });
 
@@ -235,13 +235,13 @@ describe("reapplyBenefitForPeriod", () => {
       id: "b-early",
       checkIn: new Date("2025-01-15T00:00:00Z"),
       totalCost: "200",
-      exchangeRate: "1",
+      lockedExchangeRate: "1",
     });
     const lateBooking = makeBooking({
       id: "b-late",
       checkIn: new Date("2025-06-01T00:00:00Z"),
       totalCost: "200",
-      exchangeRate: "1",
+      lockedExchangeRate: "1",
     });
 
     prismaMock.cardBenefit.findUnique.mockResolvedValue(
@@ -263,13 +263,13 @@ describe("reapplyBenefitForPeriod", () => {
       id: "b-early",
       checkIn: new Date("2025-06-01T00:00:00Z"),
       totalCost: "200",
-      exchangeRate: "1",
+      lockedExchangeRate: "1",
     });
     const lateBooking = makeBooking({
       id: "b-late",
       checkIn: new Date("2025-12-01T00:00:00Z"),
       totalCost: "200",
-      exchangeRate: "1",
+      lockedExchangeRate: "1",
     });
 
     prismaMock.cardBenefit.findUnique.mockResolvedValue(
@@ -291,7 +291,7 @@ describe("reapplyBenefitForPeriod", () => {
       id: "b-early",
       checkIn: new Date("2025-03-01T00:00:00Z"),
       totalCost: "200",
-      exchangeRate: "1",
+      lockedExchangeRate: "1",
       userCreditCard: {
         openedDate: new Date("2025-06-01T00:00:00Z"),
         closedDate: null,
@@ -301,7 +301,7 @@ describe("reapplyBenefitForPeriod", () => {
       id: "b-valid",
       checkIn: new Date("2025-09-01T00:00:00Z"),
       totalCost: "200",
-      exchangeRate: "1",
+      lockedExchangeRate: "1",
       userCreditCard: {
         openedDate: new Date("2025-06-01T00:00:00Z"),
         closedDate: null,
@@ -325,7 +325,7 @@ describe("reapplyBenefitForPeriod", () => {
       id: "b-valid",
       checkIn: new Date("2025-03-01T00:00:00Z"),
       totalCost: "200",
-      exchangeRate: "1",
+      lockedExchangeRate: "1",
       userCreditCard: {
         openedDate: null,
         closedDate: new Date("2025-06-30T00:00:00Z"),
@@ -335,7 +335,7 @@ describe("reapplyBenefitForPeriod", () => {
       id: "b-late",
       checkIn: new Date("2025-09-01T00:00:00Z"),
       totalCost: "200",
-      exchangeRate: "1",
+      lockedExchangeRate: "1",
       userCreditCard: {
         openedDate: null,
         closedDate: new Date("2025-06-30T00:00:00Z"),

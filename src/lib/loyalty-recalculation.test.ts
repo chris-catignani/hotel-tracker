@@ -61,8 +61,20 @@ describe("loyalty-recalculation", () => {
 
     // 2. Mock past bookings (USD, exchangeRate = 1)
     const mockBookings = [
-      { id: "101", pretaxCost: 100, currency: "USD", exchangeRate: 1, hotelChainSubBrandId: null }, // Expected: 1500
-      { id: "102", pretaxCost: 200, currency: "USD", exchangeRate: 1, hotelChainSubBrandId: null }, // Expected: 3000
+      {
+        id: "101",
+        pretaxCost: 100,
+        currency: "USD",
+        lockedExchangeRate: 1,
+        hotelChainSubBrandId: null,
+      }, // Expected: 1500
+      {
+        id: "102",
+        pretaxCost: 200,
+        currency: "USD",
+        lockedExchangeRate: 1,
+        hotelChainSubBrandId: null,
+      }, // Expected: 3000
     ];
     prismaMock.booking.findMany.mockResolvedValue(mockBookings);
 
@@ -113,7 +125,13 @@ describe("loyalty-recalculation", () => {
     // EUR pretax = 110 / 1.1 = 100 EUR
     // Points = round(100 * 2.5) = 250
     const mockBookings = [
-      { id: "b1", pretaxCost: 110, currency: "USD", exchangeRate: 1, hotelChainSubBrandId: null },
+      {
+        id: "b1",
+        pretaxCost: 110,
+        currency: "USD",
+        lockedExchangeRate: 1,
+        hotelChainSubBrandId: null,
+      },
     ];
     prismaMock.booking.findMany.mockResolvedValue(mockBookings);
 
@@ -138,7 +156,13 @@ describe("loyalty-recalculation", () => {
 
     // Booking linked to sub-brand sb1 — should use 5 pts/$, not 10
     const mockBookings = [
-      { id: "b1", pretaxCost: 100, currency: "USD", exchangeRate: 1, hotelChainSubBrandId: "sb1" },
+      {
+        id: "b1",
+        pretaxCost: 100,
+        currency: "USD",
+        lockedExchangeRate: 1,
+        hotelChainSubBrandId: "sb1",
+      },
     ];
     prismaMock.booking.findMany.mockResolvedValue(mockBookings);
 

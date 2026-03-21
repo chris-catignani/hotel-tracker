@@ -74,7 +74,7 @@ export async function reapplyBenefitForPeriod(
       bookingDate: true,
       paymentTiming: true,
       totalCost: true,
-      exchangeRate: true,
+      lockedExchangeRate: true,
       createdAt: true,
       userCreditCard: { select: { openedDate: true, closedDate: true } },
     },
@@ -123,7 +123,7 @@ export async function reapplyBenefitForPeriod(
 
   for (const booking of eligible) {
     if (remaining <= 0) break;
-    const totalCostUSD = Number(booking.totalCost) * Number(booking.exchangeRate ?? 1);
+    const totalCostUSD = Number(booking.totalCost) * Number(booking.lockedExchangeRate ?? 1);
     const cap =
       maxPerBooking != null
         ? Math.min(remaining, maxPerBooking, totalCostUSD)

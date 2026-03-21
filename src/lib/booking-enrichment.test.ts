@@ -24,7 +24,7 @@ const futureDateStr = futureDate.toISOString().split("T")[0];
 
 const baseBooking = {
   currency: "USD",
-  exchangeRate: 1,
+  lockedExchangeRate: 1,
   checkIn: pastDate,
   loyaltyPointsEarned: 1000,
   pretaxCost: "100",
@@ -44,7 +44,7 @@ describe("enrichBookingWithRate", () => {
     it("returns stored exchangeRate of 1, isFutureEstimate=false, no loyalty estimation", async () => {
       const result = await enrichBookingWithRate(baseBooking);
 
-      expect(result.exchangeRate).toBe(1);
+      expect(result.lockedExchangeRate).toBe(1);
       expect(result.isFutureEstimate).toBe(false);
       expect(result.loyaltyPointsEstimated).toBe(false);
       expect(result.loyaltyPointsEarned).toBe(1000);
@@ -57,14 +57,14 @@ describe("enrichBookingWithRate", () => {
       const booking = {
         ...baseBooking,
         currency: "EUR",
-        exchangeRate: 1.08,
+        lockedExchangeRate: 1.08,
         checkIn: pastDate,
         loyaltyPointsEarned: 800,
       };
 
       const result = await enrichBookingWithRate(booking);
 
-      expect(result.exchangeRate).toBe(1.08);
+      expect(result.lockedExchangeRate).toBe(1.08);
       expect(result.isFutureEstimate).toBe(false);
       expect(result.loyaltyPointsEstimated).toBe(false);
       expect(result.loyaltyPointsEarned).toBe(800);
@@ -79,7 +79,7 @@ describe("enrichBookingWithRate", () => {
       const booking = {
         ...baseBooking,
         currency: "EUR",
-        exchangeRate: null,
+        lockedExchangeRate: null,
         checkIn: futureDateStr,
         loyaltyPointsEarned: 500,
       };
@@ -87,7 +87,7 @@ describe("enrichBookingWithRate", () => {
       const result = await enrichBookingWithRate(booking);
 
       expect(mockGetCurrentRate).toHaveBeenCalledWith("EUR");
-      expect(result.exchangeRate).toBe(0.92);
+      expect(result.lockedExchangeRate).toBe(0.92);
       expect(result.isFutureEstimate).toBe(true);
       expect(result.loyaltyPointsEstimated).toBe(false); // points already stored
       expect(result.loyaltyPointsEarned).toBe(500);
@@ -99,14 +99,14 @@ describe("enrichBookingWithRate", () => {
       const booking = {
         ...baseBooking,
         currency: "SGD",
-        exchangeRate: null,
+        lockedExchangeRate: null,
         checkIn: futureDateStr,
         loyaltyPointsEarned: 0,
       };
 
       const result = await enrichBookingWithRate(booking);
 
-      expect(result.exchangeRate).toBeNull();
+      expect(result.lockedExchangeRate).toBeNull();
       expect(result.isFutureEstimate).toBe(true);
     });
 
@@ -117,7 +117,7 @@ describe("enrichBookingWithRate", () => {
       const booking = {
         ...baseBooking,
         currency: "SGD",
-        exchangeRate: null,
+        lockedExchangeRate: null,
         checkIn: futureDateStr,
         loyaltyPointsEarned: null,
         pretaxCost: "500",
@@ -147,7 +147,7 @@ describe("enrichBookingWithRate", () => {
       const booking = {
         ...baseBooking,
         currency: "SGD",
-        exchangeRate: null,
+        lockedExchangeRate: null,
         checkIn: futureDateStr,
         loyaltyPointsEarned: null,
         pretaxCost: "500",
@@ -170,7 +170,7 @@ describe("enrichBookingWithRate", () => {
       const booking = {
         ...baseBooking,
         currency: "MYR",
-        exchangeRate: null,
+        lockedExchangeRate: null,
         checkIn: futureDateStr,
         loyaltyPointsEarned: null,
         pretaxCost: "400",
@@ -195,7 +195,7 @@ describe("enrichBookingWithRate", () => {
       const booking = {
         ...baseBooking,
         currency: "KRW",
-        exchangeRate: null,
+        lockedExchangeRate: null,
         checkIn: futureDateStr,
         loyaltyPointsEarned: null,
       };
@@ -216,7 +216,7 @@ describe("enrichBookingWithRate", () => {
       const booking = {
         ...baseBooking,
         currency: "KRW",
-        exchangeRate: null,
+        lockedExchangeRate: null,
         checkIn: futureDateStr,
         loyaltyPointsEarned: null,
         pretaxCost: "119000",
@@ -245,7 +245,7 @@ describe("enrichBookingWithRate", () => {
       const booking = {
         ...baseBooking,
         currency: "USD",
-        exchangeRate: 1,
+        lockedExchangeRate: 1,
         checkIn: futureDateStr,
         loyaltyPointsEarned: 200,
       };
@@ -253,7 +253,7 @@ describe("enrichBookingWithRate", () => {
       const result = await enrichBookingWithRate(booking);
 
       expect(result.isFutureEstimate).toBe(false);
-      expect(result.exchangeRate).toBe(1);
+      expect(result.lockedExchangeRate).toBe(1);
       expect(mockGetCurrentRate).not.toHaveBeenCalled();
     });
   });

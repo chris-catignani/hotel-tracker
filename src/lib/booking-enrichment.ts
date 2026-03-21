@@ -5,7 +5,7 @@ type EliteStatusShape = { eliteStatus: unknown };
 
 type EnrichableBooking = {
   currency: string;
-  exchangeRate: unknown;
+  lockedExchangeRate: unknown;
   checkIn: Date | string;
   loyaltyPointsEarned: number | null;
   pretaxCost: unknown;
@@ -22,7 +22,7 @@ type EnrichableBooking = {
 
 /**
  * Resolves the exchange rate and dynamic loyalty points for a booking response.
- * - Past/USD bookings: uses the stored exchangeRate.
+ * - Past/USD bookings: uses the stored lockedExchangeRate.
  * - Future non-USD bookings: looks up the current cached rate and marks isFutureEstimate=true.
  * - Loyalty points: computed dynamically when not yet locked (future non-USD).
  * - calcCurrencyToUsdRate: enriched on hotelChain for use in cost breakdown formulas.
@@ -35,7 +35,9 @@ export async function enrichBookingWithRate<T extends EnrichableBooking>(booking
   const isNonUsd = booking.currency !== "USD";
   const isFutureEstimate = isFuture && isNonUsd;
 
-  let resolvedRate: number | null = booking.exchangeRate ? Number(booking.exchangeRate) : null;
+  let resolvedRate: number | null = booking.lockedExchangeRate
+    ? Number(booking.lockedExchangeRate)
+    : null;
   if (resolvedRate == null && !isFutureEstimate) resolvedRate = 1;
   if (resolvedRate == null && isFutureEstimate) {
     resolvedRate = await getCurrentRate(booking.currency);
@@ -72,7 +74,7 @@ export async function enrichBookingWithRate<T extends EnrichableBooking>(booking
 
   return {
     ...booking,
-    exchangeRate: resolvedRate,
+    lockedExchangeRate: resolvedRate,
     loyaltyPointsEarned,
     isFutureEstimate,
     loyaltyPointsEstimated,

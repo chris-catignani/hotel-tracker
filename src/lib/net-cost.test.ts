@@ -50,7 +50,7 @@ describe("net-cost", () => {
     const eurBooking: NetCostBooking = {
       ...mockBaseBooking,
       currency: "EUR",
-      exchangeRate: 1.08,
+      lockedExchangeRate: 1.08,
       pretaxCost: 800,
       totalCost: 1000,
       loyaltyPointsEarned: 0,
@@ -107,7 +107,7 @@ describe("net-cost", () => {
       const booking: NetCostBooking = {
         ...mockBaseBooking,
         currency: "SGD",
-        exchangeRate: null,
+        lockedExchangeRate: null,
         pretaxCost: 500,
         totalCost: 600,
       };

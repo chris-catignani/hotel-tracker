@@ -56,17 +56,17 @@ export interface NetCostBookingPromotionBenefit {
 
 /**
  * Convert a native-currency amount to USD using the stored/resolved exchange rate.
- * For USD bookings, exchangeRate = 1, so this is a no-op.
+ * For USD bookings, lockedExchangeRate = 1, so this is a no-op.
  */
-export function toUSD(nativeAmount: number, exchangeRate: number): number {
-  return nativeAmount * exchangeRate;
+export function toUSD(nativeAmount: number, lockedExchangeRate: number): number {
+  return nativeAmount * lockedExchangeRate;
 }
 
 export interface NetCostBooking {
   totalCost: string | number;
   pretaxCost: string | number;
   currency?: string;
-  exchangeRate?: string | number | null;
+  lockedExchangeRate?: string | number | null;
   numNights: number;
   portalCashbackOnTotal: boolean;
   portalCashbackRate: string | number | null;
@@ -206,7 +206,7 @@ function formatCents(centsPerPoint: number): string {
 export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
   const nativeTotalCost = Number(booking.totalCost);
   const nativePretaxCost = Number(booking.pretaxCost);
-  const exchangeRate = booking.exchangeRate ? Number(booking.exchangeRate) : 1;
+  const exchangeRate = booking.lockedExchangeRate ? Number(booking.lockedExchangeRate) : 1;
   // All cost-based calculations use USD values
   const totalCost = toUSD(nativeTotalCost, exchangeRate);
   const pretaxCost = toUSD(nativePretaxCost, exchangeRate);

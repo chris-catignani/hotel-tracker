@@ -63,7 +63,7 @@ interface Booking {
   loyaltyPointsEarned: number | null;
   pointsRedeemed: number | null;
   currency: string;
-  exchangeRate: string | number | null;
+  lockedExchangeRate: string | number | null;
   isFutureEstimate?: boolean;
   notes: string | null;
   createdAt: string;
@@ -230,7 +230,9 @@ export default function BookingsPage() {
               </TableHeader>
               <TableBody>
                 {bookings.map((booking) => {
-                  const exchangeRate = booking.exchangeRate ? Number(booking.exchangeRate) : 1;
+                  const exchangeRate = booking.lockedExchangeRate
+                    ? Number(booking.lockedExchangeRate)
+                    : 1;
                   const usdTotalCost = Number(booking.totalCost) * exchangeRate;
                   const netCost = calculateNetCost(booking);
 

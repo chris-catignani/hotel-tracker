@@ -37,7 +37,7 @@ interface BookingWithRelations {
   taxAmount: string;
   totalCost: string;
   currency: string;
-  exchangeRate: string | number | null;
+  lockedExchangeRate: string | number | null;
   portalCashbackRate: string | null;
   portalCashbackOnTotal: boolean;
   loyaltyPointsEarned: number | null;
@@ -259,7 +259,7 @@ export default function DashboardPage() {
         acc[chain].totalNet += calculateNetCost(b);
         acc[chain].totalSavings += calcTotalSavings(b);
         // Only cash bookings contribute to spend
-        const usdTotalCost = Number(b.totalCost) * (Number(b.exchangeRate) || 1);
+        const usdTotalCost = Number(b.totalCost) * (Number(b.lockedExchangeRate) || 1);
         if (Number(b.totalCost) > 0) {
           acc[chain].totalSpend += usdTotalCost;
         }
@@ -343,7 +343,7 @@ export default function DashboardPage() {
   // Only cash bookings (totalCost > 0) contribute to total spend
   const cashBookings = filteredBookings.filter((b) => Number(b.totalCost) > 0);
   const totalSpend = cashBookings.reduce(
-    (sum, b) => sum + Number(b.totalCost) * (Number(b.exchangeRate) || 1),
+    (sum, b) => sum + Number(b.totalCost) * (Number(b.lockedExchangeRate) || 1),
     0
   );
   const totalSavings = filteredBookings.reduce((sum, b) => sum + calcTotalSavings(b), 0);

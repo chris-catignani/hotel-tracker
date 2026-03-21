@@ -447,7 +447,7 @@ export interface Booking {
   taxAmount: string | number;
   totalCost: string | number;
   currency: string;
-  exchangeRate: string | number | null;
+  lockedExchangeRate: string | number | null;
   lockedLoyaltyUsdCentsPerPoint: string | number | null;
   isFutureEstimate?: boolean;
   loyaltyPointsEstimated?: boolean;

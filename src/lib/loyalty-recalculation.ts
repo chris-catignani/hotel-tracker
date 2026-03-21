@@ -49,7 +49,7 @@ export async function recalculateLoyaltyForHotelChain(
       id: true,
       pretaxCost: true,
       currency: true,
-      exchangeRate: true,
+      lockedExchangeRate: true,
       hotelChainSubBrandId: true,
     },
   });
@@ -74,7 +74,7 @@ export async function recalculateLoyaltyForHotelChain(
     const rate =
       booking.currency === "USD"
         ? 1
-        : ((booking.exchangeRate ? Number(booking.exchangeRate) : null) ??
+        : ((booking.lockedExchangeRate ? Number(booking.lockedExchangeRate) : null) ??
           rateCache.get(booking.currency) ??
           1);
     const usdPretax = Number(booking.pretaxCost) * rate;
