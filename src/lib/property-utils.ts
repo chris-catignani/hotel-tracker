@@ -41,13 +41,12 @@ export async function findOrCreateProperty(input: PropertyInput): Promise<string
     return created.id;
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
-      // Race condition: another request created the same property between our check and create.
-      // Re-fetch and return the winner's id.
-      const race = input.placeId
-        ? await prisma.property.findUnique({ where: { placeId: input.placeId } })
-        : await prisma.property.findFirst({
-            where: { name: input.propertyName, hotelChainId: input.hotelChainId ?? undefined },
-          });
+      // The (name, hotel_chain_id) unique constraint was violated — the property exists.
+      // Always look up by name+hotelChainId since that's what the constraint is on,
+      // regardless of whether a placeId was provided in this request.
+      const race = await prisma.property.findFirst({
+        where: { name: input.propertyName, hotelChainId: input.hotelChainId ?? undefined },
+      });
       if (race) return race.id;
     }
     throw err;
