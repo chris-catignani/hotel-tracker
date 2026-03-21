@@ -1,6 +1,8 @@
 import { test, expect } from "./fixtures";
 import { HOTEL_ID } from "../src/lib/constants";
 
+const YEAR = new Date().getFullYear();
+
 /**
  * This test verifies that the "Net/Night" and "Net Cost" values are consistent
  * across the Dashboard, Bookings List, and Booking Detail pages.
@@ -57,8 +59,8 @@ test.describe("Net Cost Consistency", () => {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName,
-        checkIn: "2026-08-01",
-        checkOut: "2026-08-03",
+        checkIn: `${YEAR}-08-01`,
+        checkOut: `${YEAR}-08-03`,
         numNights,
         pretaxCost: 200,
         taxAmount: 50,
@@ -129,8 +131,8 @@ test.describe("Net Cost Consistency", () => {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName,
-        checkIn: "2026-09-01",
-        checkOut: "2026-09-03",
+        checkIn: `${YEAR}-09-01`,
+        checkOut: `${YEAR}-09-03`,
         numNights,
         pretaxCost: 250,
         taxAmount: 50,
@@ -187,8 +189,8 @@ test.describe("Net Cost Consistency", () => {
       data: {
         hotelChainId: HOTEL_ID.HYATT,
         propertyName,
-        checkIn: "2026-10-01",
-        checkOut: "2026-10-03",
+        checkIn: `${YEAR}-10-01`,
+        checkOut: `${YEAR}-10-03`,
         numNights,
         pretaxCost,
         taxAmount: 50,
@@ -252,8 +254,8 @@ test.describe("Net Cost Consistency", () => {
       data: {
         hotelChainId: HOTEL_ID.HYATT,
         propertyName,
-        checkIn: "2026-11-01",
-        checkOut: "2026-11-02",
+        checkIn: `${YEAR}-11-01`,
+        checkOut: `${YEAR}-11-02`,
         numNights,
         pretaxCost: 200,
         taxAmount: 100,

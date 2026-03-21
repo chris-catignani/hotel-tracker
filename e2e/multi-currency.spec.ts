@@ -1,6 +1,8 @@
 import crypto from "crypto";
 import { test, expect } from "./fixtures";
 
+const YEAR = new Date().getFullYear();
+
 /**
  * E2E tests for multi-currency support.
  *
@@ -167,8 +169,8 @@ test.describe("Multi-Currency Support", () => {
       data: {
         hotelChainId: chain.id,
         propertyName,
-        checkIn: "2026-01-15",
-        checkOut: "2026-01-17",
+        checkIn: `${YEAR}-01-15`,
+        checkOut: `${YEAR}-01-17`,
         numNights: 2,
         pretaxCost: 180,
         taxAmount: 20,

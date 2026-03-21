@@ -2,6 +2,8 @@ import { test as base, type APIRequestContext, type Page } from "@playwright/tes
 import crypto from "crypto";
 import { CREDIT_CARD_ID } from "../prisma/seed-ids";
 
+const YEAR = new Date().getFullYear();
+
 type TestFixtures = {
   testBooking: { id: string; propertyName: string; hotelChainName: string };
   apartmentBooking: { id: string; propertyName: string };
@@ -70,8 +72,8 @@ export const test = base.extend<TestFixtures>({
       data: {
         hotelChainId: chain.id,
         propertyName: uniqueName,
-        checkIn: "2026-08-10",
-        checkOut: "2026-08-15",
+        checkIn: `${YEAR}-08-10`,
+        checkOut: `${YEAR}-08-15`,
         numNights: 5,
         pretaxCost: 400,
         taxAmount: 80,
@@ -94,8 +96,8 @@ export const test = base.extend<TestFixtures>({
         accommodationType: "apartment",
         hotelChainId: null,
         propertyName: uniqueName,
-        checkIn: "2026-08-20",
-        checkOut: "2026-08-27",
+        checkIn: `${YEAR}-08-20`,
+        checkOut: `${YEAR}-08-27`,
         numNights: 7,
         pretaxCost: 600,
         taxAmount: 60,

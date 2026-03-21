@@ -1,6 +1,8 @@
 import crypto from "crypto";
 import { test, expect } from "./fixtures";
 
+const YEAR = new Date().getFullYear();
+
 /**
  * E2E tests for the dashboard page.
  *
@@ -27,8 +29,8 @@ test.describe("Dashboard", () => {
       data: {
         hotelChainId: chain.id,
         propertyName,
-        checkIn: "2026-08-01",
-        checkOut: "2026-08-04",
+        checkIn: `${YEAR}-08-01`,
+        checkOut: `${YEAR}-08-04`,
         numNights: 3,
         pretaxCost: 300,
         taxAmount: 30,
@@ -69,8 +71,8 @@ test.describe("Dashboard", () => {
       data: {
         hotelChainId: chain.id,
         propertyName,
-        checkIn: "2026-08-01",
-        checkOut: "2026-08-04",
+        checkIn: `${YEAR}-08-01`,
+        checkOut: `${YEAR}-08-04`,
         numNights: 3,
         pretaxCost: 300,
         taxAmount: 30,
@@ -105,8 +107,8 @@ test.describe("Dashboard", () => {
       data: {
         hotelChainId: chain.id,
         propertyName,
-        checkIn: "2026-08-01",
-        checkOut: "2026-08-04",
+        checkIn: `${YEAR}-08-01`,
+        checkOut: `${YEAR}-08-04`,
         numNights: 3,
         pretaxCost: 0,
         taxAmount: 0,
@@ -147,8 +149,8 @@ test.describe("Dashboard", () => {
       data: {
         hotelChainId: chain.id,
         propertyName,
-        checkIn: "2026-08-01",
-        checkOut: "2026-08-04",
+        checkIn: `${YEAR}-08-01`,
+        checkOut: `${YEAR}-08-04`,
         numNights: 3,
         pretaxCost: 0,
         taxAmount: 0,

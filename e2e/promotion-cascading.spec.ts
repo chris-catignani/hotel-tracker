@@ -2,6 +2,8 @@
 import { test, expect } from "./fixtures";
 import crypto from "crypto";
 
+const YEAR = new Date().getFullYear();
+
 test.describe("Promotion Cascading Re-evaluation", () => {
   test("should update later stay rewards when earlier stay is edited (chronological consistency)", async ({
     request,
@@ -38,8 +40,8 @@ test.describe("Promotion Cascading Re-evaluation", () => {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: "Stay 1",
-        checkIn: "2026-01-01",
-        checkOut: "2026-01-03",
+        checkIn: `${YEAR}-01-01`,
+        checkOut: `${YEAR}-01-03`,
         numNights: 2,
         pretaxCost: 200,
         taxAmount: 20,
@@ -56,8 +58,8 @@ test.describe("Promotion Cascading Re-evaluation", () => {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: "Stay 2",
-        checkIn: "2026-02-01",
-        checkOut: "2026-02-03",
+        checkIn: `${YEAR}-02-01`,
+        checkOut: `${YEAR}-02-03`,
         numNights: 2,
         pretaxCost: 200,
         taxAmount: 20,
@@ -74,8 +76,8 @@ test.describe("Promotion Cascading Re-evaluation", () => {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: "Stay 3",
-        checkIn: "2026-03-01",
-        checkOut: "2026-03-03",
+        checkIn: `${YEAR}-03-01`,
+        checkOut: `${YEAR}-03-03`,
         numNights: 2,
         pretaxCost: 200,
         taxAmount: 20,
@@ -152,8 +154,8 @@ test.describe("Promotion Cascading Re-evaluation", () => {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: "Jan Stay",
-        checkIn: "2026-01-01",
-        checkOut: "2026-01-02",
+        checkIn: `${YEAR}-01-01`,
+        checkOut: `${YEAR}-01-02`,
         numNights: 1,
         pretaxCost: 100,
         taxAmount: 10,
@@ -168,8 +170,8 @@ test.describe("Promotion Cascading Re-evaluation", () => {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: "Feb Stay",
-        checkIn: "2026-02-01",
-        checkOut: "2026-02-02",
+        checkIn: `${YEAR}-02-01`,
+        checkOut: `${YEAR}-02-02`,
         numNights: 1,
         pretaxCost: 100,
         taxAmount: 10,

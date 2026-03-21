@@ -110,7 +110,11 @@ test.describe("Year filter — Bookings", () => {
     await expect(page.getByTestId(`booking-row-${pastYearBooking.id}`)).toBeVisible();
   });
 
-  test("selecting current year hides past-year booking", async ({ page, pastYearBooking }) => {
+  test("selecting current year hides past-year booking", async ({
+    page,
+    pastYearBooking,
+    testBooking: _,
+  }) => {
     await page.goto("/bookings");
 
     // Explicitly select current year (it should be the default, but set it explicitly)
