@@ -71,6 +71,7 @@ export async function GET(request: NextRequest) {
               include: { eliteStatus: true },
               take: 1,
             },
+            pointType: true,
           },
         },
         hotelChainSubBrand: true,
@@ -101,9 +102,15 @@ export async function GET(request: NextRequest) {
           });
         }
 
+        const pt = booking.hotelChain?.pointType;
+        const lockedLoyaltyUsdCentsPerPoint =
+          pt?.programCurrency != null && pt?.programCentsPerPoint != null
+            ? Number(pt.programCentsPerPoint) * rate
+            : undefined;
+
         await prisma.booking.update({
           where: { id: booking.id },
-          data: { exchangeRate: rate, loyaltyPointsEarned },
+          data: { exchangeRate: rate, loyaltyPointsEarned, lockedLoyaltyUsdCentsPerPoint },
         });
         lockedBookingIds.push(booking.id);
       } catch (err) {

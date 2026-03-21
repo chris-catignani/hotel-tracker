@@ -451,6 +451,30 @@ describe("net-cost", () => {
     );
   });
 
+  it("should use lockedLoyaltyUsdCentsPerPoint when present instead of live pointType value", () => {
+    const booking: NetCostBooking = {
+      ...mockBaseBooking,
+      loyaltyPointsEarned: 2000,
+      lockedLoyaltyUsdCentsPerPoint: 0.022, // locked at check-in (e.g. Accor in EUR)
+      // hotelChain.pointType.usdCentsPerPoint is 0.015 (live, would give 30)
+    };
+    const result = getNetCostBreakdown(booking);
+    // Should use locked rate: 2000 * 0.022 = 44
+    expect(result.loyaltyPointsValue).toBeCloseTo(44, 5);
+    expect(result.loyaltyPointsCalc?.groups[0].segments[0].formula).toContain("2.2¢");
+  });
+
+  it("should fall back to live pointType usdCentsPerPoint when lockedLoyaltyUsdCentsPerPoint is null", () => {
+    const booking: NetCostBooking = {
+      ...mockBaseBooking,
+      loyaltyPointsEarned: 2000,
+      lockedLoyaltyUsdCentsPerPoint: null,
+    };
+    const result = getNetCostBreakdown(booking);
+    // Falls back to 0.015: 2000 * 0.015 = 30
+    expect(result.loyaltyPointsValue).toBe(30);
+  });
+
   it("should use sub-brand basePointRate in loyalty breakdown when present", () => {
     // Regression: breakdown was using chain rate (2.5) instead of sub-brand rate (1.25)
     // for chains like Accor where sub-brands have lower earn rates.

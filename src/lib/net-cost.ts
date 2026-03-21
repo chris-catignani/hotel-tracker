@@ -71,6 +71,7 @@ export interface NetCostBooking {
   portalCashbackOnTotal: boolean;
   portalCashbackRate: string | number | null;
   loyaltyPointsEarned: number | null;
+  lockedLoyaltyUsdCentsPerPoint?: string | number | null;
   pointsRedeemed: number | null;
   certificates: { certType: string }[];
   hotelChainId: string | null;
@@ -970,7 +971,10 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
   let loyaltyPointsValue = 0;
   let loyaltyPointsCalc: CalculationDetail | undefined;
   if (booking.loyaltyPointsEarned && booking.hotelChain?.pointType) {
-    const centsPerPoint = Number(booking.hotelChain.pointType.usdCentsPerPoint);
+    const centsPerPoint =
+      booking.lockedLoyaltyUsdCentsPerPoint != null
+        ? Number(booking.lockedLoyaltyUsdCentsPerPoint)
+        : Number(booking.hotelChain.pointType.usdCentsPerPoint);
     const pointName = booking.hotelChain.pointType.name || "points";
     const centsStr = formatCents(centsPerPoint);
     loyaltyPointsValue = booking.loyaltyPointsEarned * centsPerPoint;
