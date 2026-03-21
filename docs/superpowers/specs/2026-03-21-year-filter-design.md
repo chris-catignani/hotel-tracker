@@ -7,50 +7,75 @@
 
 ## Overview
 
-Add a year filter dropdown to the Dashboard and Bookings pages so users can view data for a specific year. Includes a "Upcoming" option that shows only current-year future bookings.
+Add a year filter dropdown to the Dashboard and Bookings pages. Includes an "Upcoming" option for current-year future bookings.
 
 ---
 
 ## Decisions
 
-| Question                       | Decision                                                                     |
-| ------------------------------ | ---------------------------------------------------------------------------- |
-| Default selection              | Current year (e.g. 2026)                                                     |
-| Year determined by             | `checkOut` date                                                              |
-| "Upcoming" scope               | Current year AND `checkOut >= today`                                         |
-| Filter persistence             | Shared localStorage key `year-filter`, shared between Dashboard and Bookings |
-| Implementation                 | Client-side filtering — no API changes                                       |
-| Dropdown placement — Dashboard | `Select` to the left of the All/Hotels/Apartments toggle                     |
-| Dropdown placement — Bookings  | `Select` between the page title and Add Booking button                       |
+| Question            | Decision                                                                                                             |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Default selection   | Current year                                                                                                         |
+| Year determined by  | `checkOut` date                                                                                                      |
+| "Upcoming" scope    | Current year AND `checkOut >= today` (normalized to `YYYY-MM-DD`; inclusive — a booking checking out today is shown) |
+| Persistence         | Shared localStorage key `year-filter`                                                                                |
+| Implementation      | Client-side filtering                                                                                                |
+| Dashboard placement | `Select` (`w-40`) left of All/Hotels/Apartments toggle                                                               |
+| Bookings placement  | `Select` (`w-40`) between page title and Add Booking button                                                          |
 
 ---
 
-## Shared Hook — `src/hooks/use-year-filter.ts`
+## Module — `src/hooks/use-year-filter.ts`
+
+### Types
 
 ```ts
 type YearFilter = number | "all" | "upcoming";
+interface YearOption {
+  value: YearFilter;
+  label: string;
+}
 ```
 
-**Responsibilities:**
+### Exports
 
-- Reads/writes `year-filter` from localStorage
-- Defaults to the current calendar year on first visit
-- Exposes `yearFilter`, `setYearFilter`, and `filterBookings(bookings[])` utility
-- Derives available year options from booking data
+1. **`buildYearOptions<T extends { checkOut: string }>(bookings: T[]): YearOption[]`** — pure utility, exported directly from the module (not from the hook). `currentYear` is computed internally via `new Date().getFullYear()`. Must always be called with the raw unfiltered bookings array by convention — passing a filtered array will silently produce an incomplete year list (this is the caller's responsibility, not enforced by types).
 
-**Filtering rules:**
+2. **`useYearFilter()` hook** — returns `{ yearFilter, setYearFilter, filterBookings }` where `filterBookings<T extends { checkOut: string }>(bookings: T[]): T[]` closes over the current `yearFilter`.
 
-- `"all"` → return all bookings unchanged
-- `number` (e.g. `2026`) → return bookings where `checkOut.slice(0, 4) === String(year)`
-- `"upcoming"` → return bookings where `checkOut >= today` AND `checkOut` year === current year
+### Hook behavior
 
-**Year dropdown options** (built from booking data):
+- Reads localStorage `year-filter` on mount; defaults to current year if absent or invalid
+- **Invalid** means the stored string cannot be parsed as a finite integer, `"all"`, or `"upcoming"`. Any integer year — past, current, or future — is valid even if no bookings exist for that year.
+- `setYearFilter` writes to localStorage immediately
 
-1. `{ value: "upcoming", label: "2026 — Upcoming" }` — always first
+### localStorage and multi-user
+
+The `year-filter` key is not user-scoped. If two users share a browser, one user's filter persists for the next. This is an accepted limitation — the accommodation filter (`dashboard-accommodation-filter`) follows the same pattern.
+
+### Date normalization
+
+`.slice(0, 10)` normalizes ISO timestamps to `YYYY-MM-DD`. `today = new Date().toISOString().slice(0, 10)`.
+
+### Filtering rules
+
+- `"all"` → return all bookings
+- `number` (e.g. `2026`) → `checkOut.slice(0, 4) === String(year)`
+- `"upcoming"` → `checkOut.slice(0, 10) >= today` (inclusive) AND `checkOut.slice(0, 4) === String(currentYear)`
+
+`currentYear` in the hook's `filterBookings` = `new Date().getFullYear()` at call time (never cached).
+
+**Cross-year edge case:** Next-year checkouts are intentionally excluded from "Upcoming" even if their `checkOut >= today`.
+
+### `buildYearOptions` output
+
+Always in this order:
+
+1. `{ value: "upcoming", label: "${currentYear} — Upcoming" }` — e.g. `"2026 — Upcoming"`, computed dynamically
 2. `{ value: "all", label: "All Years" }`
-3. One entry per unique checkout year in the data, descending (e.g. `2026`, `2025`, `2024`)
+3. Unique checkout years descending, one entry per year
 
-Years with no bookings are excluded automatically.
+"Upcoming" and "All Years" are always present even when `bookings` is empty.
 
 ---
 
@@ -58,24 +83,30 @@ Years with no bookings are excluded automatically.
 
 ### Dashboard (`src/app/page.tsx`)
 
-- Add a shadcn `Select` (width `w-40`) to the top-right controls area, left of the accommodation toggle
-- On desktop: `[2026 ▾]  [All | Hotels | Apartments]`
-- On mobile: controls wrap — year selector and accommodation toggle stack on a second line (`flex-wrap` added to the container)
-- Apply `filterBookings()` to produce `filteredBookings`; all stats, charts, accommodation summary, and the Savings Breakdown card consume `filteredBookings`
-- **Note:** Savings Breakdown currently uses the raw `bookings` array — must be updated to use `filteredBookings`
-- Upcoming Bookings card continues to show `checkOut >= today` from `filteredBookings` (existing empty state handles no results gracefully)
+**Filter composition order:**
+
+1. `buildYearOptions(bookings)` on raw `bookings` state
+2. `yearFilteredBookings = filterBookings(bookings)` — year filter first
+3. `filteredBookings` = accommodation filter applied to `yearFilteredBookings` (existing logic, unchanged)
+
+**Layout:** `Select` (`w-40`) left of the accommodation toggle; container gets `flex-wrap` (no explicit breakpoint — wraps naturally).
+
+**Widget wiring:** All widgets use `filteredBookings` (year + accommodation filtered). This includes the **Savings Breakdown card**, which currently reads raw `bookings` directly and must be updated to `filteredBookings`.
+
+**Upcoming Bookings card:** Shows `checkOut >= today` from `filteredBookings`. Empty for past-year selections — intentional; existing empty state handles it gracefully.
 
 ### Bookings Page (`src/app/bookings/page.tsx`)
 
-- Add the same `Select` to the header row between the `h1` and the Add Booking button
-- On mobile: header row gets `flex-wrap`; selector is compact enough (`w-40`) to fit alongside the button on most screens, wrapping as needed
-- Apply `filterBookings()` to the fetched bookings before rendering
+- `buildYearOptions` on raw fetched `bookings`
+- `Select` (`w-40`) between `h1` and Add Booking button
+- Header row gets `flex-wrap` (no explicit breakpoint)
+- Apply `filterBookings()` before rendering the list
 
 ---
 
 ## No API Changes
 
-Both pages continue to call `GET /api/bookings` with no query params. All filtering is client-side.
+Both pages continue to call `GET /api/bookings` with no query params.
 
 ---
 
@@ -83,24 +114,44 @@ Both pages continue to call `GET /api/bookings` with no query params. All filter
 
 ### Unit Tests (`src/hooks/use-year-filter.test.ts`)
 
-- `filterBookings("all")` returns all bookings
-- `filterBookings(2026)` returns only bookings with `checkOut` year 2026
-- `filterBookings("upcoming")` returns current-year bookings with `checkOut >= today`
-- Year options derived correctly: sorted descending, no duplicates, "Upcoming" and "All Years" prepended
-- Default is current year
+**`filterBookings`:**
+
+- `"all"` → all bookings returned
+- `2026` → only bookings with `checkOut` year 2026
+- `"upcoming"` → includes current-year booking with `checkOut === today` (boundary: `>=` is inclusive)
+- `"upcoming"` → includes current-year booking with `checkOut > today`
+- `"upcoming"` → excludes current-year booking with `checkOut < today`
+- `"upcoming"` → excludes next-year booking with `checkOut > today`
+
+**`buildYearOptions`:**
+
+- Complete ordered array: index 0 = Upcoming (label contains current year), index 1 = "All Years", then descending year entries — asserted as a full array, not individual elements
+- Deduplicates years (two 2026 bookings → one 2026 entry)
+- Empty input → exactly `[Upcoming, "All Years"]`, nothing else
+
+**`useYearFilter` hook:**
+
+- Default = current year when localStorage is empty
+- Invalid values (`"banana"`, `""`, `"null"`) fall back to current year
+- Valid values (`"all"`, `"upcoming"`, `2025`) are accepted as-is
+
+Invalid localStorage fallback is covered by unit tests only; no E2E test needed.
 
 ### E2E Tests (Playwright)
 
-- Dashboard: year selector is visible
-- Dashboard: selecting a past year updates stats and accommodation summary
-- Dashboard: `"2026 — Upcoming"` option shows only future current-year bookings
-- Bookings page: year selector is visible and filtering works
-- Year selection persists when navigating between Dashboard and Bookings
+**Test data:** Create a booking with `checkOut` in a past calendar year via `POST /api/bookings` directly (consistent with the project's E2E fixture pattern — never via UI navigation).
+
+- Dashboard: year selector visible on load; displayed value is the current year
+- Dashboard: selecting the past year updates the stats and accommodation summary (verified by observing stat value changes)
+- Dashboard: selecting "Upcoming" shows only current-year future bookings
+- Dashboard: year filter and accommodation filter work correctly when both are active simultaneously
+- Bookings page: year selector visible; selecting the past year changes the displayed booking list
+- Persistence: select the past year on Dashboard, then navigate to Bookings via the sidebar nav link (no page reload); the year selector on Bookings shows the same past year
 
 ---
 
 ## Out of Scope
 
 - Promotions page — not mentioned in the issue; can be added later
-- "All Upcoming" option (future bookings across all years) — deferred; can be added later if needed
+- "All Upcoming" option (future bookings across all years) — deferred
 - API-side filtering — not needed at this scale
