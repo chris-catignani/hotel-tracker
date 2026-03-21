@@ -6,6 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 npm run dev          # Start dev server on localhost:3000
+```
+
+**Required env vars** (copy from `.env.example` or set manually): `DATABASE_URL`, `AUTH_SECRET`, `GOOGLE_MAPS_API_KEY`, `RESEND_API_KEY`, `CRON_SECRET`. For E2E tests: also `DATABASE_URL_TEST`.
+
+```bash
 npm run build        # Production build
 npm run lint         # Run ESLint
 
@@ -161,11 +166,10 @@ Incomplete final cycle earns $0. Label depends on whether the cap was exhausted:
 
 ## GitHub CLI
 
-- **Sub-issue linking:** When creating sub-tasks for a parent issue, always formally link them using the GraphQL `addSubIssue` mutation.
+- **GitHub MCP plugin is configured** — use `mcp__plugin_github_github__*` tools for GitHub operations where available (reading issues/PRs, creating issues, searching, etc.). Prefer MCP tools over `gh api` calls for read operations.
+- **Playwright MCP plugin is configured** — use `mcp__plugin_playwright_playwright__*` tools for browser automation and UI verification against the running dev server without writing Playwright test files.
+- **Sub-issue linking:** Use `mcp__plugin_github_github__sub_issue_write` to formally link sub-tasks to a parent issue.
 - **Workflow:** ALWAYS create a feature branch. NEVER commit to `main`. NEVER push to remote until the user has tested locally and explicitly approves. NEVER merge or delete a branch without explicit instruction.
 - **After merging a PR:** Always close the associated GitHub Issue: `gh issue close <number> --comment "Implemented in PR #<number>."`
 - **PR CI polling:** Use `gh pr checks <number>` at 30-second intervals (`sleep 30` between calls). Never use `--watch`.
-- **Do NOT use `gh pr view --comments`** — it queries the deprecated Projects (classic) GraphQL API and returns exit code 1.
-  - PR inline comments: `gh api repos/{owner}/{repo}/pulls/{pr}/comments`
-  - General PR/issue comments: `gh api repos/{owner}/{repo}/issues/{pr}/comments`
-  - Review summaries: `gh api repos/{owner}/{repo}/pulls/{pr}/reviews`
+- **Do NOT use `gh pr view --comments`** — it queries the deprecated Projects (classic) GraphQL API and returns exit code 1. Use MCP tools instead: `pull_request_read`, `pull_request_review_write`, or `gh api` directly.
