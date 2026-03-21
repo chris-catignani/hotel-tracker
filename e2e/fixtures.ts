@@ -28,24 +28,114 @@ type TestFixtures = {
    * cards, portals, hotel chains).
    */
   isolatedUserWithPage: { page: Page; request: APIRequestContext };
+  /**
+   * An isolated per-test user with their own request context and browser page.
+   * Use for all tests that create bookings or promotions. The page is logged in
+   * as this isolated user. Data created via this fixture is invisible to other
+   * parallel tests.
+   */
+  isolatedUser: { request: APIRequestContext; page: Page };
+  /**
+   * Admin user's API request context. Use ONLY for reference data CRUD
+   * (hotel chains, credit cards, portals, sub-brands). Never use for
+   * bookings or promotions.
+   */
+  adminRequest: APIRequestContext;
+  /**
+   * Admin user's browser page. Use ONLY for admin UI tests (e.g. Settings).
+   * Always pair with adminRequest for any data created during the test.
+   */
+  adminPage: Page;
 };
 
 export const test = base.extend<TestFixtures>({
-  testHotelChain: async ({ request }, use) => {
+  adminRequest: async ({ playwright, baseURL }, use) => {
+    const resolvedBase = baseURL ?? "http://127.0.0.1:3001";
+    const email = process.env.SEED_ADMIN_EMAIL ?? "admin@example.com";
+    const password = process.env.SEED_ADMIN_PASSWORD ?? "admin123";
+
+    const adminReq = await playwright.request.newContext({ baseURL: resolvedBase });
+
+    const csrfRes = await adminReq.get("/api/auth/csrf");
+    const { csrfToken } = (await csrfRes.json()) as { csrfToken: string };
+
+    await adminReq.post("/api/auth/callback/credentials", {
+      form: { csrfToken, email, password, callbackUrl: resolvedBase, redirect: "false" },
+    });
+
+    await use(adminReq);
+    await adminReq.dispose();
+  },
+
+  adminPage: async ({ playwright, browser, baseURL }, use) => {
+    const resolvedBase = baseURL ?? "http://127.0.0.1:3001";
+    const email = process.env.SEED_ADMIN_EMAIL ?? "admin@example.com";
+    const password = process.env.SEED_ADMIN_PASSWORD ?? "admin123";
+
+    const adminReq = await playwright.request.newContext({ baseURL: resolvedBase });
+
+    const csrfRes = await adminReq.get("/api/auth/csrf");
+    const { csrfToken } = (await csrfRes.json()) as { csrfToken: string };
+
+    await adminReq.post("/api/auth/callback/credentials", {
+      form: { csrfToken, email, password, callbackUrl: resolvedBase, redirect: "false" },
+    });
+
+    const storageState = await adminReq.storageState();
+    const context = await browser.newContext({ baseURL: resolvedBase, storageState });
+    const page = await context.newPage();
+
+    await use(page);
+
+    await page.close();
+    await context.close();
+    await adminReq.dispose();
+  },
+
+  isolatedUser: async ({ playwright, browser, baseURL }, use) => {
+    const resolvedBase = baseURL ?? "http://127.0.0.1:3001";
+    const email = `test-isolated-${crypto.randomUUID()}@example.com`;
+    const password = "testpass123";
+
+    const userRequest = await playwright.request.newContext({ baseURL: resolvedBase });
+
+    await userRequest.post("/api/auth/register", {
+      data: { email, password, name: "Isolated Test User" },
+    });
+
+    const csrfRes = await userRequest.get("/api/auth/csrf");
+    const { csrfToken } = (await csrfRes.json()) as { csrfToken: string };
+
+    await userRequest.post("/api/auth/callback/credentials", {
+      form: { csrfToken, email, password, callbackUrl: resolvedBase, redirect: "false" },
+    });
+
+    const storageState = await userRequest.storageState();
+    const context = await browser.newContext({ baseURL: resolvedBase, storageState });
+    const page = await context.newPage();
+
+    await use({ request: userRequest, page });
+
+    await page.close();
+    await context.close();
+    await userRequest.dispose();
+  },
+
+  testHotelChain: async ({ adminRequest }, use) => {
     const uniqueName = `Test Chain ${crypto.randomUUID()}`;
-    const res = await request.post("/api/hotel-chains", {
+    const res = await adminRequest.post("/api/hotel-chains", {
       data: { name: uniqueName },
     });
     const chain = await res.json();
     await use({ id: chain.id, name: uniqueName });
-    await request.delete(`/api/hotel-chains/${chain.id}`);
+    await adminRequest.delete(`/api/hotel-chains/${chain.id}`);
   },
 
-  testSubBrand: async ({ request, testHotelChain }, use) => {
+  testSubBrand: async ({ adminRequest, testHotelChain }, use) => {
     const subBrands: string[] = [];
     const createSubBrand = async (name?: string) => {
       const uniqueName = name || `Test SubBrand ${crypto.randomUUID()}`;
-      const res = await request.post(
+      const res = await adminRequest.post(
         `/api/hotel-chains/${testHotelChain.id}/hotel-chain-sub-brands`,
         {
           data: { name: uniqueName },
@@ -59,7 +149,7 @@ export const test = base.extend<TestFixtures>({
     await use(createSubBrand);
 
     for (const id of subBrands) {
-      await request.delete(`/api/hotel-chain-sub-brands/${id}`);
+      await adminRequest.delete(`/api/hotel-chain-sub-brands/${id}`);
     }
   },
 
