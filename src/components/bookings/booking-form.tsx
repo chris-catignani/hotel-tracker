@@ -968,6 +968,7 @@ export function BookingForm({
                                   value: e.target.value,
                                 })
                               }
+                              data-testid={`benefit-label-input-${idx}`}
                             />
                           </div>
                         )}

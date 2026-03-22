@@ -499,7 +499,7 @@ export default function BookingDetailPage() {
 
       {/* Booking Benefits */}
       {booking.benefits.length > 0 && (
-        <Card>
+        <Card data-testid="booking-benefits-card">
           <CardHeader>
             <CardTitle>Booking Benefits</CardTitle>
           </CardHeader>

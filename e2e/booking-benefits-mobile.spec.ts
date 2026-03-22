@@ -16,8 +16,8 @@ test.describe("Booking Benefits Mobile Layout", () => {
     await typeSelect.click();
     await isolatedUser.page.getByRole("option", { name: "Other" }).click();
 
-    // The 'Description' field should appear
-    const description = isolatedUser.page.getByPlaceholder("Description");
+    // The 'Label' field should appear
+    const description = isolatedUser.page.getByTestId("benefit-label-input-0");
     await expect(description).toBeVisible();
 
     // Check for horizontal overflow on the scroll container (usually the body or a wrapper)

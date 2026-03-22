@@ -192,4 +192,93 @@ test.describe("Booking Benefits in Cost Breakdown", () => {
       await request.delete(`/api/bookings/${booking.id}`);
     }
   });
+
+  test("detail page Booking Benefits card shows pts/night, pts, and multiplier values", async ({
+    isolatedUser,
+  }) => {
+    const { request, page } = isolatedUser;
+
+    const bookingRes = await request.post("/api/bookings", {
+      data: {
+        accommodationType: "hotel",
+        hotelChainId: HOTEL_ID.HYATT,
+        propertyName: "Test Property",
+        checkIn: "2025-06-01",
+        checkOut: "2025-06-04",
+        numNights: 3,
+        pretaxCost: 300,
+        taxAmount: 30,
+        totalCost: 330,
+        currency: "USD",
+        benefits: [
+          {
+            benefitType: "other",
+            label: "Nightly Bonus",
+            pointsEarnType: "fixed_per_night",
+            pointsAmount: 1000,
+          },
+          {
+            benefitType: "other",
+            label: "Stay Bonus",
+            pointsEarnType: "fixed_per_stay",
+            pointsAmount: 5000,
+          },
+          {
+            benefitType: "other",
+            label: "Double Base",
+            pointsEarnType: "multiplier_on_base",
+            pointsMultiplier: 2.0,
+          },
+        ],
+      },
+    });
+    expect(bookingRes.ok()).toBeTruthy();
+    const booking = await bookingRes.json();
+
+    try {
+      await page.goto(`/bookings/${booking.id}`);
+
+      const card = page.getByTestId("booking-benefits-card");
+      await expect(card).toBeVisible();
+      await expect(card).toContainText("1,000 pts/night");
+      await expect(card).toContainText("5,000 pts");
+      await expect(card).toContainText("2× multiplier");
+    } finally {
+      await request.delete(`/api/bookings/${booking.id}`);
+    }
+  });
+});
+
+test.describe("Booking Benefits form interactions", () => {
+  test("switching from 'other' to named type clears label, and back to 'other' shows empty label", async ({
+    isolatedUser,
+  }) => {
+    const { page } = isolatedUser;
+
+    await page.goto("/bookings/new");
+
+    await page.getByRole("button", { name: "+ Add Benefit" }).click();
+
+    // Select "Other" type
+    const typeSelect = page.getByTestId("benefit-type-select-0");
+    await typeSelect.click();
+    await page.getByRole("option", { name: "Other" }).click();
+
+    // Type a label
+    const labelInput = page.getByTestId("benefit-label-input-0");
+    await expect(labelInput).toBeVisible();
+    await labelInput.fill("My Custom Perk");
+    await expect(labelInput).toHaveValue("My Custom Perk");
+
+    // Switch to a named type — label input should disappear
+    await typeSelect.click();
+    await page.getByRole("option", { name: "Free Breakfast" }).click();
+    await expect(page.getByTestId("benefit-label-input-0")).not.toBeVisible();
+
+    // Switch back to "Other" — label input should be empty
+    await typeSelect.click();
+    await page.getByRole("option", { name: "Other" }).click();
+    await expect(page.getByTestId("benefit-label-input-0")).toBeVisible();
+    await expect(page.getByTestId("benefit-label-input-0")).toHaveValue("");
+  });
 });
