@@ -80,4 +80,32 @@ describe("validateBenefitConstraints", () => {
       validateBenefitConstraints({ dollarValue: null, pointsEarnType: null }, false)
     ).toBeNull();
   });
+
+  it("rejects pointsAmount when pointsEarnType is null", () => {
+    const result = validateBenefitConstraints(
+      {
+        benefitType: "free_breakfast",
+        pointsEarnType: null,
+        pointsAmount: 500,
+        pointsMultiplier: null,
+        dollarValue: null,
+      },
+      true
+    );
+    expect(result).not.toBeNull();
+  });
+
+  it("rejects pointsMultiplier when pointsEarnType is null", () => {
+    const result = validateBenefitConstraints(
+      {
+        benefitType: "free_breakfast",
+        pointsEarnType: null,
+        pointsAmount: null,
+        pointsMultiplier: 2.0,
+        dollarValue: null,
+      },
+      true
+    );
+    expect(result).not.toBeNull();
+  });
 });

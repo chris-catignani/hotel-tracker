@@ -23,6 +23,10 @@ export function validateBenefitConstraints(
     return "A benefit cannot have both a dollar value and a points earn type";
   }
 
+  if (!hasPoints && (b.pointsAmount != null || b.pointsMultiplier != null)) {
+    return "Points fields (pointsAmount, pointsMultiplier) must be null when pointsEarnType is not set";
+  }
+
   if (hasPoints) {
     if (!VALID_EARN_TYPES.includes(b.pointsEarnType as (typeof VALID_EARN_TYPES)[number])) {
       return `Unknown pointsEarnType: ${b.pointsEarnType}`;
