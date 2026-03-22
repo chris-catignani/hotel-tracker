@@ -14,6 +14,7 @@ import { calculatePoints, resolveBasePointRate } from "@/lib/loyalty-utils";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
 import {
+  fetchExchangeRate,
   getOrFetchHistoricalRate,
   getCurrentRate,
   resolveCalcCurrencyRate,

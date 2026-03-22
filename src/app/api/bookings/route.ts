@@ -8,6 +8,7 @@ import { CertType, BenefitType, AccommodationType } from "@prisma/client";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
 import {
+  fetchExchangeRate,
   getOrFetchHistoricalRate,
   getCurrentRate,
   resolveCalcCurrencyRate,
