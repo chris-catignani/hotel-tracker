@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/select";
 import { useYearFilter, buildYearOptions, type YearFilter } from "@/hooks/use-year-filter";
 import { ErrorBanner } from "@/components/ui/error-banner";
+import { extractApiError } from "@/lib/client-error";
 import * as Sentry from "@sentry/nextjs";
 
 interface BookingCertificate {
@@ -225,23 +226,26 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    fetch("/api/bookings")
-      .then(async (res) => {
+    const doFetch = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch("/api/bookings");
         if (res.ok) {
-          setBookings(await res.json());
+          const data = await res.json();
+          setBookings(Array.isArray(data) ? data : []);
         } else {
-          const body = await res.json().catch(() => ({}));
-          const message = body.error ?? "Failed to load bookings.";
+          const message = await extractApiError(res, "Failed to load bookings.");
           setFetchError(message);
           Sentry.captureException(new Error(message), { extra: { status: res.status } });
         }
-        setLoading(false);
-      })
-      .catch((err) => {
+      } catch (err) {
         setFetchError("Failed to load bookings.");
         Sentry.captureException(err);
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+    doFetch();
   }, []);
 
   const handleFilterChange = (filter: AccommodationFilter) => {

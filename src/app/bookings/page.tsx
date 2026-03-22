@@ -143,15 +143,22 @@ export default function BookingsPage() {
   const fetchBookings = useCallback(async () => {
     setLoading(true);
     setFetchError(null);
-    const res = await fetch("/api/bookings");
-    if (res.ok) {
-      setBookings(await res.json());
-    } else {
-      const message = await extractApiError(res, "Failed to load bookings.");
+    try {
+      const res = await fetch("/api/bookings");
+      if (res.ok) {
+        setBookings(await res.json());
+      } else {
+        const message = await extractApiError(res, "Failed to load bookings.");
+        setFetchError(message);
+        Sentry.captureException(new Error(message), { extra: { status: res.status } });
+      }
+    } catch (err) {
+      const message = "Failed to load bookings.";
       setFetchError(message);
-      Sentry.captureException(new Error(message), { extra: { status: res.status } });
+      Sentry.captureException(err instanceof Error ? err : new Error(message));
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   useEffect(() => {
