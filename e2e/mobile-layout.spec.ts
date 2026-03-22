@@ -34,22 +34,19 @@ test.describe("Mobile Layout & Responsive Components", () => {
     await expect(isolatedUser.page.url()).toContain("/bookings");
   });
 
-  test("should display booking card view instead of tables", async ({
-    isolatedUser,
-    testBooking,
-  }) => {
-    await isolatedUser.page.goto("/bookings");
+  test("should display booking card view instead of tables", async ({ testBooking }) => {
+    await testBooking.page.goto("/bookings");
 
-    const cardList = isolatedUser.page.getByTestId("bookings-list-mobile");
+    const cardList = testBooking.page.getByTestId("bookings-list-mobile");
     await expect(cardList).toBeVisible();
-    await expect(isolatedUser.page.getByTestId("bookings-list-desktop")).not.toBeVisible();
+    await expect(testBooking.page.getByTestId("bookings-list-desktop")).not.toBeVisible();
     await expect(cardList.getByText(testBooking.propertyName)).toBeVisible();
 
     // On Dashboard, should show mobile card view for recent bookings
-    await isolatedUser.page.goto("/");
-    const recentCards = isolatedUser.page.getByTestId("recent-bookings-mobile");
+    await testBooking.page.goto("/");
+    const recentCards = testBooking.page.getByTestId("recent-bookings-mobile");
     await expect(recentCards).toBeVisible();
-    await expect(isolatedUser.page.getByTestId("recent-bookings-desktop")).not.toBeVisible();
+    await expect(testBooking.page.getByTestId("recent-bookings-desktop")).not.toBeVisible();
   });
 
   test("should have horizontally scrollable tabs on Settings page", async ({ isolatedUser }) => {
@@ -100,15 +97,12 @@ test.describe("Mobile Layout & Responsive Components", () => {
     await expect(actions).toHaveClass(/bottom-0/);
   });
 
-  test("should display promotion card view instead of tables", async ({
-    isolatedUser,
-    testPromotion,
-  }) => {
-    await isolatedUser.page.goto("/promotions");
+  test("should display promotion card view instead of tables", async ({ testPromotion }) => {
+    await testPromotion.page.goto("/promotions");
 
-    const mobileList = isolatedUser.page.getByTestId("promotions-list-mobile");
+    const mobileList = testPromotion.page.getByTestId("promotions-list-mobile");
     await expect(mobileList).toBeVisible();
-    await expect(isolatedUser.page.getByTestId("promotions-list-desktop")).not.toBeVisible();
+    await expect(testPromotion.page.getByTestId("promotions-list-desktop")).not.toBeVisible();
     await expect(mobileList.getByText(testPromotion.name)).toBeVisible();
   });
 });
@@ -127,30 +121,27 @@ test.describe("Desktop Layout (Verification)", () => {
     await expect(isolatedUser.page.getByTestId("mobile-nav-toggle")).not.toBeVisible();
   });
 
-  test("should display table view on desktop", async ({ isolatedUser, testBooking }) => {
-    await isolatedUser.page.goto("/bookings");
+  test("should display table view on desktop", async ({ testBooking }) => {
+    await testBooking.page.goto("/bookings");
 
-    await expect(isolatedUser.page.getByTestId("bookings-list-desktop")).toBeVisible();
-    await expect(isolatedUser.page.getByTestId("bookings-list-mobile")).not.toBeVisible();
+    await expect(testBooking.page.getByTestId("bookings-list-desktop")).toBeVisible();
+    await expect(testBooking.page.getByTestId("bookings-list-mobile")).not.toBeVisible();
     await expect(
-      isolatedUser.page.getByRole("cell", { name: testBooking.propertyName })
+      testBooking.page.getByRole("cell", { name: testBooking.propertyName })
     ).toBeVisible();
 
     // On Dashboard, should show table
-    await isolatedUser.page.goto("/");
-    await expect(isolatedUser.page.getByTestId("recent-bookings-desktop")).toBeVisible();
-    await expect(isolatedUser.page.getByTestId("recent-bookings-mobile")).not.toBeVisible();
+    await testBooking.page.goto("/");
+    await expect(testBooking.page.getByTestId("recent-bookings-desktop")).toBeVisible();
+    await expect(testBooking.page.getByTestId("recent-bookings-mobile")).not.toBeVisible();
   });
 
-  test("should display promotion table view on desktop", async ({
-    isolatedUser,
-    testPromotion,
-  }) => {
-    await isolatedUser.page.goto("/promotions");
+  test("should display promotion table view on desktop", async ({ testPromotion }) => {
+    await testPromotion.page.goto("/promotions");
 
-    const desktopList = isolatedUser.page.getByTestId("promotions-list-desktop");
+    const desktopList = testPromotion.page.getByTestId("promotions-list-desktop");
     await expect(desktopList).toBeVisible();
-    await expect(isolatedUser.page.getByTestId("promotions-list-mobile")).not.toBeVisible();
+    await expect(testPromotion.page.getByTestId("promotions-list-mobile")).not.toBeVisible();
     await expect(desktopList.getByRole("cell", { name: testPromotion.name })).toBeVisible();
   });
 });
