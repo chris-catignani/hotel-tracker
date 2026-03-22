@@ -27,6 +27,9 @@ import {
 import { useYearFilter, buildYearOptions, type YearFilter } from "@/hooks/use-year-filter";
 import { BookingCard } from "@/components/bookings/booking-card";
 import { formatCurrency, formatDate, formatCerts, pruneHotelName } from "@/lib/utils";
+import { ErrorBanner } from "@/components/ui/error-banner";
+import { extractApiError } from "@/lib/client-error";
+import * as Sentry from "@sentry/nextjs";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -127,6 +130,7 @@ interface Booking {
 export default function BookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [bookingToDelete, setBookingToDelete] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -138,11 +142,23 @@ export default function BookingsPage() {
 
   const fetchBookings = useCallback(async () => {
     setLoading(true);
-    const res = await fetch("/api/bookings");
-    if (res.ok) {
-      setBookings(await res.json());
+    setFetchError(null);
+    try {
+      const res = await fetch("/api/bookings");
+      if (res.ok) {
+        setBookings(await res.json());
+      } else {
+        const message = await extractApiError(res, "Failed to load bookings.");
+        setFetchError(message);
+        Sentry.captureException(new Error(message), { extra: { status: res.status } });
+      }
+    } catch (err) {
+      const message = "Failed to load bookings.";
+      setFetchError(message);
+      Sentry.captureException(err instanceof Error ? err : new Error(message));
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -207,6 +223,8 @@ export default function BookingsPage() {
         description="Are you sure you want to delete this booking? This cannot be undone."
         onConfirm={handleDeleteConfirm}
       />
+
+      <ErrorBanner error={fetchError} onDismiss={() => setFetchError(null)} />
 
       {deleteError && (
         <p className="text-sm text-destructive" data-testid="booking-delete-error">

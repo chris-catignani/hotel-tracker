@@ -29,6 +29,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useYearFilter, buildYearOptions, type YearFilter } from "@/hooks/use-year-filter";
+import { ErrorBanner } from "@/components/ui/error-banner";
+import { extractApiError } from "@/lib/client-error";
+import * as Sentry from "@sentry/nextjs";
 
 interface BookingCertificate {
   id: string;
@@ -204,6 +207,7 @@ type AccommodationFilter = "all" | "hotel" | "apartment";
 export default function DashboardPage() {
   const [bookings, setBookings] = useState<BookingWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [accommodationFilter, setAccommodationFilter] = useState<AccommodationFilter>("all");
   const [sortConfig, setSortConfig] = useState<{
     key: keyof HotelChainSummary;
@@ -222,13 +226,26 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    fetch("/api/bookings")
-      .then((res) => res.json())
-      .then((data) => {
-        setBookings(Array.isArray(data) ? data : []);
+    const doFetch = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch("/api/bookings");
+        if (res.ok) {
+          const data = await res.json();
+          setBookings(Array.isArray(data) ? data : []);
+        } else {
+          const message = await extractApiError(res, "Failed to load bookings.");
+          setFetchError(message);
+          Sentry.captureException(new Error(message), { extra: { status: res.status } });
+        }
+      } catch (err) {
+        setFetchError("Failed to load bookings.");
+        Sentry.captureException(err);
+      } finally {
         setLoading(false);
-      })
-      .catch(() => setLoading(false));
+      }
+    };
+    doFetch();
   }, []);
 
   const handleFilterChange = (filter: AccommodationFilter) => {
@@ -412,6 +429,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      <ErrorBanner error={fetchError} onDismiss={() => setFetchError(null)} />
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">Dashboard</h1>
