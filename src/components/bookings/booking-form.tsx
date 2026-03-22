@@ -52,25 +52,26 @@ function calcBenefitApproxValue(
   numNights: number,
   pretaxCost: string,
   chainBasePointRate: number,
-  chainUsdCentsPerPoint: number
+  chainUsdCentsPerPoint: number,
+  exchangeRate: number
 ): number | null {
   if (benefit.valueType === "cash") {
     const v = Number(benefit.dollarValue || 0);
     return v > 0 ? v : null;
   }
   if (benefit.valueType === "fixed_per_stay") {
-    const pts = Number(benefit.pointsAmount || 0);
+    const pts = Math.floor(Number(benefit.pointsAmount || 0));
     return pts * chainUsdCentsPerPoint;
   }
   if (benefit.valueType === "fixed_per_night") {
-    const pts = Number(benefit.pointsAmount || 0);
+    const pts = Math.floor(Number(benefit.pointsAmount || 0));
     return pts * numNights * chainUsdCentsPerPoint;
   }
   if (benefit.valueType === "multiplier_on_base") {
     const mult = Number(benefit.pointsMultiplier || 0);
-    const cost = Number(pretaxCost || 0);
-    if (!cost) return null;
-    const extraPts = Math.floor((mult - 1) * chainBasePointRate * cost);
+    const costUsd = Number(pretaxCost || 0) * exchangeRate;
+    if (!costUsd) return null;
+    const extraPts = Math.floor((mult - 1) * chainBasePointRate * costUsd);
     return extraPts * chainUsdCentsPerPoint;
   }
   return null;
@@ -891,7 +892,8 @@ export function BookingForm({
                       Number(numNights || 1),
                       pretaxCost,
                       chainBasePointRate,
-                      chainUsdCentsPerPoint
+                      chainUsdCentsPerPoint,
+                      currentRate
                     );
                     const isOther = benefit.type === "other";
                     return (

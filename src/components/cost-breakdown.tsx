@@ -238,8 +238,8 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
 
         {(bookingBenefitsValue ?? 0) > 0 && (
           <div className="space-y-2">
-            <div
-              className="flex w-full items-center justify-between text-sm hover:bg-muted/50 py-0.5 rounded transition-colors group cursor-pointer"
+            <button
+              className="flex w-full items-center justify-between text-sm hover:bg-muted/50 py-0.5 rounded transition-colors group"
               onClick={() => setIsBenefitsExpanded(!isBenefitsExpanded)}
               data-testid="breakdown-benefits-toggle"
             >
@@ -254,7 +254,7 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
               <span data-testid="breakdown-benefits-value" className="text-green-600">
                 -{formatCurrency(bookingBenefitsValue ?? 0)}
               </span>
-            </div>
+            </button>
 
             {isBenefitsExpanded && (
               <div
