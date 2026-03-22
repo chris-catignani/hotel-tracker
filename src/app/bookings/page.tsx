@@ -76,6 +76,7 @@ interface Booking {
   currency: string;
   lockedExchangeRate: string | number | null;
   isFutureEstimate?: boolean;
+  exchangeRateEstimated?: boolean;
   notes: string | null;
   createdAt: string;
   bookingSource: string | null;
@@ -366,6 +367,11 @@ export default function BookingsPage() {
                                     ? "Estimated at current rate"
                                     : "Locked at check-in rate"}
                                 </p>
+                                {booking.exchangeRateEstimated && (
+                                  <p className="text-amber-600 text-xs mt-0.5">
+                                    Historical rate unavailable — estimated using current rate
+                                  </p>
+                                )}
                               </PopoverContent>
                             </Popover>
                           ) : (

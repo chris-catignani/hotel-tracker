@@ -18,6 +18,7 @@ interface BookingCardProps {
     numNights: number;
     currency?: string;
     isFutureEstimate?: boolean;
+    exchangeRateEstimated?: boolean;
     hotelChainSubBrand?: { name: string } | null;
     priceWatchBooking?: { priceWatch: { isEnabled: boolean } } | null;
     accommodationType?: string;
@@ -145,6 +146,11 @@ export function BookingCard({ booking, onDelete, showActions = false }: BookingC
                               ? "Estimated at current rate"
                               : "Locked at check-in rate"}
                           </p>
+                          {booking.exchangeRateEstimated && (
+                            <p className="text-amber-600 text-xs mt-0.5">
+                              Historical rate unavailable — estimated using current rate
+                            </p>
+                          )}
                         </PopoverContent>
                       </Popover>
                     ) : (
