@@ -1139,7 +1139,10 @@ export function BookingForm({
 
                         {/* Approximate value */}
                         {benefit.valueType !== "" && (
-                          <span className="text-sm text-muted-foreground shrink-0">
+                          <span
+                            className="text-sm text-muted-foreground shrink-0"
+                            data-testid={`benefit-approx-value-${idx}`}
+                          >
                             {approxValue != null && approxValue > 0
                               ? `≈ ${formatCurrency(approxValue)}`
                               : benefit.valueType === "multiplier_on_base"

@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { BookingForm } from "./booking-form";
 import { calculatePointsFromChain } from "@/lib/loyalty-utils";
+import type { Booking } from "@/lib/types";
 
 // Mock the external dependencies
 vi.mock("@/lib/loyalty-utils", () => ({
@@ -234,5 +235,134 @@ describe("BookingForm", () => {
       expect(screen.getByTestId("sub-brand-select")).toBeDisabled();
     });
     expect(screen.getByText("None / Not applicable")).toBeInTheDocument();
+  });
+});
+
+describe("BookingForm benefit approximate value", () => {
+  // chain-1: basePointRate=10, usdCentsPerPoint=0.01
+  const defaultProps = {
+    onSubmit: vi.fn(),
+    onCancel: vi.fn(),
+    submitting: false,
+    submitLabel: "Save",
+    title: "Booking Details",
+  };
+
+  const mockBookingWithMultiplierBenefit = (currency: string): Booking =>
+    ({
+      id: "booking-1",
+      hotelChainId: "chain-1",
+      accommodationType: "hotel",
+      hotelChainSubBrandId: null,
+      propertyId: "prop-1",
+      property: {
+        id: "prop-1",
+        name: "Test Hotel",
+        placeId: null,
+        chainPropertyId: null,
+        hotelChainId: "chain-1",
+        countryCode: "US",
+        city: "NYC",
+        address: null,
+        latitude: null,
+        longitude: null,
+        starRating: null,
+        createdAt: "2025-01-01",
+      },
+      checkIn: "2025-06-01",
+      checkOut: "2025-06-03",
+      numNights: 2,
+      pretaxCost: 100,
+      taxAmount: 10,
+      totalCost: 110,
+      currency,
+      lockedExchangeRate: null,
+      lockedLoyaltyUsdCentsPerPoint: null,
+      userCreditCardId: null,
+      userCreditCard: null,
+      bookingDate: null,
+      paymentTiming: "postpaid",
+      shoppingPortalId: null,
+      portalCashbackRate: null,
+      portalCashbackOnTotal: false,
+      loyaltyPointsEarned: null,
+      pointsRedeemed: null,
+      notes: null,
+      certificates: [],
+      bookingSource: null,
+      otaAgencyId: null,
+      benefits: [
+        {
+          id: "b1",
+          benefitType: "other",
+          label: "Double Points",
+          dollarValue: null,
+          pointsEarnType: "multiplier_on_base",
+          pointsAmount: null,
+          pointsMultiplier: 2,
+        },
+      ],
+      bookingCardBenefits: [],
+    }) as Booking;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(calculatePointsFromChain).mockReturnValue("0");
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url === "/api/hotel-chains") {
+        return Promise.resolve({ ok: true, json: async () => mockHotelChains });
+      }
+      if (url === "/api/exchange-rates") {
+        return Promise.resolve({
+          ok: true,
+          json: async () => [{ fromCurrency: "EUR", rate: "1.1" }],
+        });
+      }
+      if (url === "/api/portals") {
+        // Must return non-empty: LOAD_INITIAL_DATA only fires when portals.length > 0
+        return Promise.resolve({
+          ok: true,
+          json: async () => [
+            { id: "p1", name: "Test Portal", rewardType: "cashback", pointTypeId: null },
+          ],
+        });
+      }
+      return Promise.resolve({ ok: true, json: async () => [] });
+    });
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("multiplier benefit approx value converts native pretaxCost to USD using exchange rate", async () => {
+    // EUR booking: pretaxCost=100 EUR, rate=1.1 → costUsd=110
+    // extraPts = floor((2-1) × 10 × 110) = 1100; value = 1100 × 0.01 = $11.00
+    await act(async () => {
+      render(
+        <BookingForm {...defaultProps} initialData={mockBookingWithMultiplierBenefit("EUR")} />
+      );
+    });
+
+    // Wait for hotel chains + exchange rates to load, then approx value updates from "—" to "$11.00"
+    await waitFor(() => {
+      const approxEl = screen.getByTestId("benefit-approx-value-0");
+      expect(approxEl).toHaveTextContent("≈ $11.00");
+    });
+  });
+
+  it("multiplier benefit approx value is correct for USD booking (rate=1)", async () => {
+    // USD booking: pretaxCost=100 USD, rate=1 → costUsd=100
+    // extraPts = floor((2-1) × 10 × 100) = 1000; value = 1000 × 0.01 = $10.00
+    await act(async () => {
+      render(
+        <BookingForm {...defaultProps} initialData={mockBookingWithMultiplierBenefit("USD")} />
+      );
+    });
+
+    await waitFor(() => {
+      const approxEl = screen.getByTestId("benefit-approx-value-0");
+      expect(approxEl).toHaveTextContent("≈ $10.00");
+    });
   });
 });
