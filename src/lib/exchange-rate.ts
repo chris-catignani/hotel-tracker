@@ -79,10 +79,11 @@ export async function getOrFetchHistoricalRate(
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const isPast = new Date(date) <= today;
+  const isPast = new Date(date) < today;
 
   if (!isPast) {
-    // Future date — use current cached rate as best estimate
+    // Today or future date — use current cached rate as best estimate.
+    // Historical APIs don't have today's data until the day is over.
     return getCurrentRate(fromCurrency);
   }
 

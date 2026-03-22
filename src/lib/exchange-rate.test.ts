@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
-import { fetchExchangeRate, getCurrentRate } from "./exchange-rate";
+import { fetchExchangeRate, getCurrentRate, getOrFetchHistoricalRate } from "./exchange-rate";
 import prisma from "./prisma";
 
 // Mock the fetch global
@@ -12,11 +12,21 @@ vi.mock("./prisma", () => ({
     exchangeRate: {
       findUnique: vi.fn(),
     },
+    exchangeRateHistory: {
+      findUnique: vi.fn(),
+      upsert: vi.fn(),
+    },
   },
+}));
+
+// Mock logger to avoid Sentry side-effects in tests
+vi.mock("./logger", () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn() },
 }));
 
 const prismaMock = prisma as unknown as {
   exchangeRate: { findUnique: Mock };
+  exchangeRateHistory: { findUnique: Mock; upsert: Mock };
 };
 
 describe("fetchExchangeRate", () => {
@@ -96,6 +106,71 @@ describe("fetchExchangeRate", () => {
     await expect(fetchExchangeRate("EUR", "latest")).rejects.toThrow(
       "Invalid rate returned for EUR"
     );
+  });
+});
+
+describe("getOrFetchHistoricalRate", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns 1 for USD without any DB or API calls", async () => {
+    const rate = await getOrFetchHistoricalRate("USD", "2025-01-01");
+    expect(rate).toBe(1);
+    expect(prismaMock.exchangeRateHistory.findUnique).not.toHaveBeenCalled();
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it("uses current cached rate for today's date without calling the historical API", async () => {
+    const today = new Date().toISOString().split("T")[0];
+    prismaMock.exchangeRate.findUnique.mockResolvedValueOnce({ rate: "0.63" });
+
+    const rate = await getOrFetchHistoricalRate("AUD", today);
+    expect(rate).toBe(0.63);
+    expect(mockFetch).not.toHaveBeenCalled();
+    expect(prismaMock.exchangeRateHistory.findUnique).not.toHaveBeenCalled();
+  });
+
+  it("uses current cached rate for future dates without calling the historical API", async () => {
+    prismaMock.exchangeRate.findUnique.mockResolvedValueOnce({ rate: "0.63" });
+
+    const rate = await getOrFetchHistoricalRate("AUD", "2099-01-01");
+    expect(rate).toBe(0.63);
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it("returns cached historical rate without calling the API on cache hit", async () => {
+    prismaMock.exchangeRateHistory.findUnique.mockResolvedValueOnce({ rate: "0.65" });
+
+    const rate = await getOrFetchHistoricalRate("AUD", "2025-06-01");
+    expect(rate).toBe(0.65);
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it("fetches from API on cache miss and stores the result", async () => {
+    prismaMock.exchangeRateHistory.findUnique.mockResolvedValueOnce(null);
+    prismaMock.exchangeRateHistory.upsert.mockResolvedValueOnce({});
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ aud: { usd: 0.64 } }),
+    });
+
+    const rate = await getOrFetchHistoricalRate("AUD", "2025-06-01");
+    expect(rate).toBe(0.64);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(prismaMock.exchangeRateHistory.upsert).toHaveBeenCalledTimes(1);
+  });
+
+  it("falls back to current cached rate when the API fails", async () => {
+    prismaMock.exchangeRateHistory.findUnique.mockResolvedValueOnce(null);
+    mockFetch
+      .mockResolvedValueOnce({ ok: false, status: 404 })
+      .mockResolvedValueOnce({ ok: false, status: 404 });
+    prismaMock.exchangeRate.findUnique.mockResolvedValueOnce({ rate: "0.63" });
+
+    const rate = await getOrFetchHistoricalRate("AUD", "2025-06-01");
+    expect(rate).toBe(0.63);
+    expect(prismaMock.exchangeRateHistory.upsert).not.toHaveBeenCalled();
   });
 });
 
