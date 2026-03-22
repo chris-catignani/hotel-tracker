@@ -956,19 +956,20 @@ export function BookingForm({
 
                         {/* Label input — only for "other" */}
                         {isOther && (
-                          <Input
-                            placeholder="Label"
-                            value={benefit.label}
-                            onChange={(e) =>
-                              dispatch({
-                                type: "UPDATE_BENEFIT",
-                                index: idx,
-                                field: "label",
-                                value: e.target.value,
-                              })
-                            }
-                            className="w-36 shrink-0"
-                          />
+                          <div className="w-36 shrink-0">
+                            <Input
+                              placeholder="Label"
+                              value={benefit.label}
+                              onChange={(e) =>
+                                dispatch({
+                                  type: "UPDATE_BENEFIT",
+                                  index: idx,
+                                  field: "label",
+                                  value: e.target.value,
+                                })
+                              }
+                            />
+                          </div>
                         )}
 
                         {/* Value type select — only for "other" */}
