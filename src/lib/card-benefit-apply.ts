@@ -136,7 +136,21 @@ export async function reapplyBenefitForPeriod(
   }
 
   if (toCreate.length > 0) {
-    await prisma.bookingCardBenefit.createMany({ data: toCreate });
+    try {
+      await prisma.bookingCardBenefit.createMany({ data: toCreate });
+    } catch (err: unknown) {
+      // If the card benefit was deleted concurrently between our read and write
+      // (FK violation P2003), there's nothing to apply. Silently skip.
+      if (
+        err &&
+        typeof err === "object" &&
+        "code" in err &&
+        (err as { code: string }).code === "P2003"
+      ) {
+        return;
+      }
+      throw err;
+    }
   }
 }
 

@@ -21,7 +21,11 @@ test.describe("Dashboard", () => {
     const chain = (await chains.json())[0];
 
     const portals = await adminRequest.get("/api/portals");
-    const portal = (await portals.json())[0];
+    // Explicitly use a cashback portal so portalCashback = rate × pretaxCost × 1 (not × centsPerPoint)
+    // e.g. British Airways portal (points/Avios at 1.2¢) would give 0.05×300×0.012=$0.18 → rounds to $0
+    const allPortals = await portals.json();
+    const portal =
+      allPortals.find((p: { rewardType: string }) => p.rewardType === "cashback") ?? allPortals[0];
 
     // Create a cash booking with a known portal cashback rate
     const propertyName = `Dashboard Portal Test ${crypto.randomUUID()}`;
