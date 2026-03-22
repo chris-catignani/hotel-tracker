@@ -4,7 +4,7 @@ import { matchPromotionsForBooking } from "@/lib/promotion-matching";
 import { reevaluateSubsequentBookings } from "@/lib/promotion-matching-helpers";
 import { apiError } from "@/lib/api-error";
 import { calculatePoints, resolveBasePointRate } from "@/lib/loyalty-utils";
-import { CertType, BenefitType, AccommodationType } from "@prisma/client";
+import { CertType, BenefitType, BenefitPointsEarnType, AccommodationType } from "@prisma/client";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
 import {
@@ -17,6 +17,48 @@ import { enrichBookingWithRate } from "@/lib/booking-enrichment";
 import { findOrCreateProperty } from "@/lib/property-utils";
 import { reapplyCardBenefitsAffectedByBooking } from "@/lib/card-benefit-apply";
 import { resolvePartnershipEarns } from "@/lib/partnership-earns";
+
+async function validateBenefits(
+  benefits: {
+    benefitType?: string;
+    dollarValue?: number | null;
+    pointsEarnType?: string | null;
+    pointsAmount?: number | null;
+    pointsMultiplier?: number | null;
+  }[],
+  hotelChainId: string | null | undefined
+): Promise<string | null> {
+  for (const b of benefits) {
+    const hasPoints = !!b.pointsEarnType;
+    const hasDollar = b.dollarValue != null;
+    if (hasPoints && hasDollar) {
+      return "A benefit cannot have both a dollar value and a points earn type";
+    }
+    if (hasPoints) {
+      if (!hotelChainId) {
+        return "Points benefits require a booking with a hotel chain";
+      }
+      const chain = await prisma.hotelChain.findUnique({
+        where: { id: hotelChainId },
+        select: { pointType: { select: { id: true } } },
+      });
+      if (!chain?.pointType) {
+        return "Points benefits require the hotel chain to have a configured loyalty program";
+      }
+      if (b.pointsEarnType === "fixed_per_stay" || b.pointsEarnType === "fixed_per_night") {
+        if (b.pointsAmount == null)
+          return "fixed_per_stay and fixed_per_night require pointsAmount";
+        if (b.pointsMultiplier != null)
+          return "fixed_per_stay and fixed_per_night cannot have pointsMultiplier";
+      }
+      if (b.pointsEarnType === "multiplier_on_base") {
+        if (b.pointsMultiplier == null) return "multiplier_on_base requires pointsMultiplier";
+        if (b.pointsAmount != null) return "multiplier_on_base cannot have pointsAmount";
+      }
+    }
+  }
+  return null;
+}
 
 const BOOKING_INCLUDE = (userId: string) =>
   ({
@@ -252,6 +294,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const benefitValidationError = await validateBenefits(benefits ?? [], hotelChainId);
+    if (benefitValidationError) {
+      return apiError(benefitValidationError, null, 400, request);
+    }
+
     const booking = await prisma.booking.create({
       data: {
         userId,
@@ -288,12 +335,24 @@ export async function POST(request: NextRequest) {
           : undefined,
         benefits: benefits?.length
           ? {
-              create: (benefits as { benefitType: string; label?: string; dollarValue?: number }[])
+              create: (
+                benefits as {
+                  benefitType: string;
+                  label?: string;
+                  dollarValue?: number | null;
+                  pointsEarnType?: string | null;
+                  pointsAmount?: number | null;
+                  pointsMultiplier?: number | null;
+                }[]
+              )
                 .filter((b) => b.benefitType)
                 .map((b) => ({
                   benefitType: b.benefitType as BenefitType,
                   label: b.label || null,
                   dollarValue: b.dollarValue != null ? Number(b.dollarValue) : null,
+                  pointsEarnType: (b.pointsEarnType as BenefitPointsEarnType) || null,
+                  pointsAmount: b.pointsAmount != null ? Number(b.pointsAmount) : null,
+                  pointsMultiplier: b.pointsMultiplier != null ? Number(b.pointsMultiplier) : null,
                 })),
             }
           : undefined,

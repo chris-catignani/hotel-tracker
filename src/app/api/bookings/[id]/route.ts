@@ -10,6 +10,7 @@ import {
 } from "@/lib/promotion-matching";
 import { reevaluateSubsequentBookings } from "@/lib/promotion-matching-helpers";
 import { apiError } from "@/lib/api-error";
+import { CertType, BenefitType, BenefitPointsEarnType } from "@prisma/client";
 import { calculatePoints, resolveBasePointRate } from "@/lib/loyalty-utils";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
@@ -26,6 +27,48 @@ import {
   reapplyCardBenefitsAffectedByBooking,
   reapplyBenefitForPeriod,
 } from "@/lib/card-benefit-apply";
+
+async function validateBenefits(
+  benefits: {
+    benefitType?: string;
+    dollarValue?: number | null;
+    pointsEarnType?: string | null;
+    pointsAmount?: number | null;
+    pointsMultiplier?: number | null;
+  }[],
+  hotelChainId: string | null | undefined
+): Promise<string | null> {
+  for (const b of benefits) {
+    const hasPoints = !!b.pointsEarnType;
+    const hasDollar = b.dollarValue != null;
+    if (hasPoints && hasDollar) {
+      return "A benefit cannot have both a dollar value and a points earn type";
+    }
+    if (hasPoints) {
+      if (!hotelChainId) {
+        return "Points benefits require a booking with a hotel chain";
+      }
+      const chain = await prisma.hotelChain.findUnique({
+        where: { id: hotelChainId },
+        select: { pointType: { select: { id: true } } },
+      });
+      if (!chain?.pointType) {
+        return "Points benefits require the hotel chain to have a configured loyalty program";
+      }
+      if (b.pointsEarnType === "fixed_per_stay" || b.pointsEarnType === "fixed_per_night") {
+        if (b.pointsAmount == null)
+          return "fixed_per_stay and fixed_per_night require pointsAmount";
+        if (b.pointsMultiplier != null)
+          return "fixed_per_stay and fixed_per_night cannot have pointsMultiplier";
+      }
+      if (b.pointsEarnType === "multiplier_on_base") {
+        if (b.pointsMultiplier == null) return "multiplier_on_base requires pointsMultiplier";
+        if (b.pointsAmount != null) return "multiplier_on_base cannot have pointsAmount";
+      }
+    }
+  }
+  return null;
+}
 
 async function getFullBookingWithUsage(id: string, userId: string) {
   const booking = await prisma.booking.findFirst({
@@ -405,7 +448,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         await prisma.bookingCertificate.createMany({
           data: (certificates as string[]).map((v) => ({
             bookingId: id,
-            certType: v as import("@prisma/client").CertType,
+            certType: v as CertType,
           })),
         });
       }
@@ -413,19 +456,33 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     // Handle benefits: delete old ones and recreate if provided
     if (benefits !== undefined) {
+      const benefitValidationError = await validateBenefits(benefits ?? [], hotelChainId);
+      if (benefitValidationError) {
+        return apiError(benefitValidationError, null, 400, request);
+      }
       await prisma.bookingBenefit.deleteMany({
         where: { bookingId: id },
       });
       const validBenefits = (
-        benefits as { benefitType: string; label?: string; dollarValue?: number }[]
+        benefits as {
+          benefitType: string;
+          label?: string;
+          dollarValue?: number | null;
+          pointsEarnType?: string | null;
+          pointsAmount?: number | null;
+          pointsMultiplier?: number | null;
+        }[]
       ).filter((b) => b.benefitType);
       if (validBenefits.length > 0) {
         await prisma.bookingBenefit.createMany({
           data: validBenefits.map((b) => ({
             bookingId: id,
-            benefitType: b.benefitType as import("@prisma/client").BenefitType,
+            benefitType: b.benefitType as BenefitType,
             label: b.label || null,
             dollarValue: b.dollarValue != null ? Number(b.dollarValue) : null,
+            pointsEarnType: (b.pointsEarnType as BenefitPointsEarnType) || null,
+            pointsAmount: b.pointsAmount != null ? Number(b.pointsAmount) : null,
+            pointsMultiplier: b.pointsMultiplier != null ? Number(b.pointsMultiplier) : null,
           })),
         });
       }
