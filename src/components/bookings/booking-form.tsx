@@ -32,7 +32,8 @@ import {
   ShoppingPortal,
   UserCreditCard,
 } from "@/lib/types";
-import { bookingFormReducer, INITIAL_STATE } from "./booking-form-reducer";
+import { bookingFormReducer, INITIAL_STATE, BenefitItem } from "./booking-form-reducer";
+import { formatCurrency } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -44,6 +45,35 @@ function diffDays(checkIn: string, checkOut: string): number {
   const end = new Date(checkOut);
   const diff = end.getTime() - start.getTime();
   return Math.max(0, Math.round(diff / (1000 * 60 * 60 * 24)));
+}
+
+function calcBenefitApproxValue(
+  benefit: BenefitItem,
+  numNights: number,
+  pretaxCost: string,
+  chainBasePointRate: number,
+  chainUsdCentsPerPoint: number
+): number | null {
+  if (benefit.valueType === "cash") {
+    const v = Number(benefit.dollarValue || 0);
+    return v > 0 ? v : null;
+  }
+  if (benefit.valueType === "fixed_per_stay") {
+    const pts = Number(benefit.pointsAmount || 0);
+    return pts * chainUsdCentsPerPoint;
+  }
+  if (benefit.valueType === "fixed_per_night") {
+    const pts = Number(benefit.pointsAmount || 0);
+    return pts * numNights * chainUsdCentsPerPoint;
+  }
+  if (benefit.valueType === "multiplier_on_base") {
+    const mult = Number(benefit.pointsMultiplier || 0);
+    const cost = Number(pretaxCost || 0);
+    if (!cost) return null;
+    const extraPts = Math.floor((mult - 1) * chainBasePointRate * cost);
+    return extraPts * chainUsdCentsPerPoint;
+  }
+  return null;
 }
 
 // ---------------------------------------------------------------------------
@@ -174,6 +204,13 @@ export function BookingForm({
       dispatch({ type: "LOAD_INITIAL_DATA", initialData, portals });
     }
   }, [initialData, portals]);
+
+  // Reset benefit points fields when hotel chain is cleared
+  useEffect(() => {
+    if (!hotelChainId) {
+      dispatch({ type: "RESET_BENEFIT_POINTS" });
+    }
+  }, [hotelChainId]);
 
   // Derived booleans from accommodation type
   const isHotel = accommodationType === "hotel";
@@ -837,83 +874,275 @@ export function BookingForm({
           )}
 
           {/* Benefits */}
-          <div className="space-y-2">
-            <Label>Booking Benefits</Label>
-            <div className="space-y-3">
-              {benefits.map((benefit, idx) => (
-                <div
-                  key={benefit._id}
-                  className="flex flex-wrap sm:flex-nowrap items-center gap-2 p-3 border rounded-lg sm:p-0 sm:border-none sm:rounded-none"
-                >
-                  <AppSelect
-                    value={benefit.type || "none"}
-                    onValueChange={(v) =>
-                      dispatch({
-                        type: "UPDATE_BENEFIT",
-                        index: idx,
-                        field: "type",
-                        value: v === "none" ? "" : v,
-                      })
-                    }
-                    options={[{ label: "Select type...", value: "none" }, ...BENEFIT_TYPE_OPTIONS]}
-                    placeholder="Select type..."
-                    className="w-full sm:w-56 shrink-0"
-                    data-testid={`benefit-type-select-${idx}`}
-                  />
-                  {benefit.type === "other" && (
-                    <Input
-                      value={benefit.label}
-                      onChange={(e) =>
-                        dispatch({
-                          type: "UPDATE_BENEFIT",
-                          index: idx,
-                          field: "label",
-                          value: e.target.value,
-                        })
-                      }
-                      placeholder="Description"
-                      className="flex-1 min-w-[120px]"
-                    />
-                  )}
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={benefit.dollarValue}
-                      onChange={(e) =>
-                        dispatch({
-                          type: "UPDATE_BENEFIT",
-                          index: idx,
-                          field: "dollarValue",
-                          value: e.target.value,
-                        })
-                      }
-                      placeholder="$ value"
-                      className="flex-1 sm:w-36 shrink-0"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="shrink-0"
-                      onClick={() => dispatch({ type: "REMOVE_BENEFIT", index: idx })}
-                    >
-                      ×
-                    </Button>
-                  </div>
+          {(() => {
+            const selectedChain = hotelChains?.find((c) => c.id === hotelChainId) ?? null;
+            const chainHasLoyalty = !!selectedChain?.pointType;
+            const chainBasePointRate = selectedChain ? Number(selectedChain.basePointRate ?? 0) : 0;
+            const chainUsdCentsPerPoint = selectedChain?.pointType
+              ? Number(selectedChain.pointType.usdCentsPerPoint)
+              : 0;
+            return (
+              <div className="space-y-2">
+                <Label>Booking Benefits</Label>
+                <div className="space-y-3">
+                  {benefits.map((benefit, idx) => {
+                    const approxValue = calcBenefitApproxValue(
+                      benefit,
+                      Number(numNights || 1),
+                      pretaxCost,
+                      chainBasePointRate,
+                      chainUsdCentsPerPoint
+                    );
+                    return (
+                      <div
+                        key={benefit._id}
+                        className="p-3 border rounded-lg space-y-3"
+                        data-testid={`benefit-card-${idx}`}
+                      >
+                        {/* Row 1: type + label + remove */}
+                        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
+                          <AppSelect
+                            value={benefit.type || "none"}
+                            onValueChange={(v) =>
+                              dispatch({
+                                type: "UPDATE_BENEFIT",
+                                index: idx,
+                                field: "type",
+                                value: v === "none" ? "" : v,
+                              })
+                            }
+                            options={[
+                              { label: "Select type...", value: "none" },
+                              ...BENEFIT_TYPE_OPTIONS,
+                            ]}
+                            placeholder="Select type..."
+                            className="w-full sm:w-56 shrink-0"
+                            data-testid={`benefit-type-select-${idx}`}
+                          />
+                          {benefit.type === "other" && (
+                            <Input
+                              placeholder="Label (e.g. Welcome Gift)"
+                              value={benefit.label}
+                              onChange={(e) =>
+                                dispatch({
+                                  type: "UPDATE_BENEFIT",
+                                  index: idx,
+                                  field: "label",
+                                  value: e.target.value,
+                                })
+                              }
+                              className="flex-1"
+                            />
+                          )}
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => dispatch({ type: "REMOVE_BENEFIT", index: idx })}
+                            className="shrink-0"
+                            data-testid={`benefit-remove-${idx}`}
+                          >
+                            ✕
+                          </Button>
+                        </div>
+
+                        {/* Row 2: value type radio */}
+                        <div className="flex flex-wrap gap-3 text-sm">
+                          {(
+                            [
+                              "",
+                              "cash",
+                              "fixed_per_stay",
+                              "fixed_per_night",
+                              "multiplier_on_base",
+                            ] as const
+                          ).map((vt) => {
+                            if (vt !== "" && vt !== "cash" && !chainHasLoyalty) return null;
+                            if (vt === "multiplier_on_base" && !chainBasePointRate) return null;
+                            const labels: Record<string, string> = {
+                              "": "None",
+                              cash: "Cash ($)",
+                              fixed_per_stay: "Pts/stay",
+                              fixed_per_night: "Pts/night",
+                              multiplier_on_base: "Multiplier",
+                            };
+                            return (
+                              <label key={vt} className="flex items-center gap-1 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name={`benefit-vt-${benefit._id}`}
+                                  checked={benefit.valueType === vt}
+                                  onChange={() => {
+                                    dispatch({
+                                      type: "UPDATE_BENEFIT",
+                                      index: idx,
+                                      field: "valueType",
+                                      value: vt,
+                                    });
+                                    if (vt === "" || vt === "cash") {
+                                      dispatch({
+                                        type: "UPDATE_BENEFIT",
+                                        index: idx,
+                                        field: "pointsEarnType",
+                                        value: "",
+                                      });
+                                      dispatch({
+                                        type: "UPDATE_BENEFIT",
+                                        index: idx,
+                                        field: "pointsAmount",
+                                        value: "",
+                                      });
+                                      dispatch({
+                                        type: "UPDATE_BENEFIT",
+                                        index: idx,
+                                        field: "pointsMultiplier",
+                                        value: "",
+                                      });
+                                      if (vt === "") {
+                                        dispatch({
+                                          type: "UPDATE_BENEFIT",
+                                          index: idx,
+                                          field: "dollarValue",
+                                          value: "",
+                                        });
+                                      }
+                                    } else {
+                                      dispatch({
+                                        type: "UPDATE_BENEFIT",
+                                        index: idx,
+                                        field: "dollarValue",
+                                        value: "",
+                                      });
+                                      dispatch({
+                                        type: "UPDATE_BENEFIT",
+                                        index: idx,
+                                        field: "pointsEarnType",
+                                        value: vt,
+                                      });
+                                      dispatch({
+                                        type: "UPDATE_BENEFIT",
+                                        index: idx,
+                                        field: "pointsAmount",
+                                        value: "",
+                                      });
+                                      dispatch({
+                                        type: "UPDATE_BENEFIT",
+                                        index: idx,
+                                        field: "pointsMultiplier",
+                                        value: "",
+                                      });
+                                    }
+                                  }}
+                                  data-testid={`benefit-vt-${idx}-${vt || "none"}`}
+                                />
+                                <span>{labels[vt]}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+
+                        {/* Row 3: conditional value input */}
+                        {benefit.valueType === "cash" ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground">$</span>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              placeholder="0.00"
+                              value={benefit.dollarValue}
+                              onChange={(e) =>
+                                dispatch({
+                                  type: "UPDATE_BENEFIT",
+                                  index: idx,
+                                  field: "dollarValue",
+                                  value: e.target.value,
+                                })
+                              }
+                              className="w-32"
+                              data-testid={`benefit-dollar-${idx}`}
+                            />
+                            {approxValue != null && approxValue > 0 && (
+                              <span className="text-sm text-muted-foreground">
+                                ≈ {formatCurrency(approxValue)}
+                              </span>
+                            )}
+                          </div>
+                        ) : benefit.valueType === "fixed_per_stay" ||
+                          benefit.valueType === "fixed_per_night" ? (
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Input
+                              type="number"
+                              min="0"
+                              placeholder="Points"
+                              value={benefit.pointsAmount}
+                              onChange={(e) =>
+                                dispatch({
+                                  type: "UPDATE_BENEFIT",
+                                  index: idx,
+                                  field: "pointsAmount",
+                                  value: e.target.value,
+                                })
+                              }
+                              className="w-32"
+                              data-testid={`benefit-points-amount-${idx}`}
+                            />
+                            <span className="text-sm text-muted-foreground">
+                              pts
+                              {benefit.valueType === "fixed_per_night"
+                                ? ` × ${numNights || 1} nights`
+                                : ""}
+                            </span>
+                            {approxValue != null && approxValue > 0 && (
+                              <span className="text-sm text-muted-foreground">
+                                ≈ {formatCurrency(approxValue)}
+                              </span>
+                            )}
+                          </div>
+                        ) : benefit.valueType === "multiplier_on_base" ? (
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Input
+                              type="number"
+                              min="1"
+                              step="0.125"
+                              placeholder="e.g. 2.0"
+                              value={benefit.pointsMultiplier}
+                              onChange={(e) =>
+                                dispatch({
+                                  type: "UPDATE_BENEFIT",
+                                  index: idx,
+                                  field: "pointsMultiplier",
+                                  value: e.target.value,
+                                })
+                              }
+                              className="w-24"
+                              data-testid={`benefit-multiplier-${idx}`}
+                            />
+                            <span className="text-sm text-muted-foreground">× base</span>
+                            {approxValue != null ? (
+                              <span className="text-sm text-muted-foreground">
+                                ≈ {formatCurrency(approxValue)}
+                              </span>
+                            ) : (
+                              <span className="text-sm text-muted-foreground">—</span>
+                            )}
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
                 </div>
-              ))}
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => dispatch({ type: "ADD_BENEFIT" })}
-            >
-              + Add Benefit
-            </Button>
-          </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => dispatch({ type: "ADD_BENEFIT" })}
+                >
+                  + Add Benefit
+                </Button>
+              </div>
+            );
+          })()}
 
           {/* Notes */}
           <div className="space-y-2">
