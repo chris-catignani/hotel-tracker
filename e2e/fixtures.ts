@@ -1,6 +1,5 @@
 import { test as base, type APIRequestContext, type Page } from "@playwright/test";
 import crypto from "crypto";
-import { CREDIT_CARD_ID } from "../prisma/seed-ids";
 
 const YEAR = new Date().getFullYear();
 
@@ -28,23 +27,6 @@ type TestFixtures = {
     request: APIRequestContext;
     page: Page;
   };
-  /**
-   * An isolated per-test user with their own AMEX Business Platinum UserCreditCard.
-   * Use this fixture in card-benefit tests to prevent parallel chromium/webkit runs
-   * from sharing bookings and accidentally exhausting each other's benefit caps.
-   * Use the `request` field for booking API calls; use the default `request` fixture
-   * (admin) for card benefit CRUD.
-   */
-  isolatedUserRequest: { request: APIRequestContext; userCreditCardId: string };
-  /**
-   * An isolated per-test user with both an API request context and a browser page.
-   * Use this when a test needs to assert UI state (e.g. dashboard) that is scoped
-   * to the current user — the page is logged in as the isolated user so their
-   * dashboard only shows their own bookings.
-   * Use the default `request` fixture (admin) for reference-data writes (credit
-   * cards, portals, hotel chains).
-   */
-  isolatedUserWithPage: { page: Page; request: APIRequestContext };
   /**
    * An isolated per-test user with their own request context and browser page.
    * Use for all tests that create bookings or promotions. The page is logged in
@@ -262,73 +244,6 @@ export const test = base.extend<TestFixtures>({
       page: isolatedUser.page,
     });
     await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
-  },
-
-  isolatedUserRequest: async ({ playwright, baseURL }, use) => {
-    const resolvedBase = baseURL ?? "http://127.0.0.1:3001";
-    const email = `test-isolated-${crypto.randomUUID()}@example.com`;
-    const password = "testpass123";
-
-    // Use a single request context throughout — it accumulates cookies automatically.
-    const userRequest = await playwright.request.newContext({ baseURL: resolvedBase });
-
-    // Register user (unauthenticated endpoint)
-    await userRequest.post("/api/auth/register", {
-      data: { email, password, name: "Isolated Test User" },
-    });
-
-    // Obtain the CSRF token (also sets the authjs.csrf-token cookie on the context)
-    const csrfRes = await userRequest.get("/api/auth/csrf");
-    const { csrfToken } = (await csrfRes.json()) as { csrfToken: string };
-
-    // Sign in via next-auth's credentials callback — sets authjs.session-token cookie
-    await userRequest.post("/api/auth/callback/credentials", {
-      form: { csrfToken, email, password, callbackUrl: resolvedBase, redirect: "false" },
-    });
-
-    // Create a UserCreditCard for this user (AMEX Business Platinum)
-    const cardRes = await userRequest.post("/api/user-credit-cards", {
-      data: { creditCardId: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM },
-    });
-    const { id: userCreditCardId } = (await cardRes.json()) as { id: string };
-
-    await use({ request: userRequest, userCreditCardId });
-
-    // Cleanup: delete the UserCreditCard then dispose the context
-    // (bookings/benefits are cleaned in each test's own finally block)
-    await userRequest.delete(`/api/user-credit-cards/${userCreditCardId}`);
-    await userRequest.dispose();
-  },
-
-  isolatedUserWithPage: async ({ playwright, browser, baseURL }, use) => {
-    const resolvedBase = baseURL ?? "http://127.0.0.1:3001";
-    const email = `test-isolated-${crypto.randomUUID()}@example.com`;
-    const password = "testpass123";
-
-    const userRequest = await playwright.request.newContext({ baseURL: resolvedBase });
-
-    await userRequest.post("/api/auth/register", {
-      data: { email, password, name: "Isolated Test User" },
-    });
-
-    const csrfRes = await userRequest.get("/api/auth/csrf");
-    const { csrfToken } = (await csrfRes.json()) as { csrfToken: string };
-
-    await userRequest.post("/api/auth/callback/credentials", {
-      form: { csrfToken, email, password, callbackUrl: resolvedBase, redirect: "false" },
-    });
-
-    // Share the session cookies with a real browser context so the page is
-    // logged in as the same isolated user.
-    const storageState = await userRequest.storageState();
-    const context = await browser.newContext({ baseURL: resolvedBase, storageState });
-    const page = await context.newPage();
-
-    await use({ page, request: userRequest });
-
-    await page.close();
-    await context.close();
-    await userRequest.dispose();
   },
 
   /**
