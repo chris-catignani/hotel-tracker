@@ -27,31 +27,7 @@ import {
   reapplyCardBenefitsAffectedByBooking,
   reapplyBenefitForPeriod,
 } from "@/lib/card-benefit-apply";
-import { BenefitInput, validateBenefitConstraints } from "@/lib/booking-benefit-validation";
-
-async function validateBenefits(
-  benefits: BenefitInput[],
-  hotelChainId: string | null | undefined
-): Promise<string | null> {
-  for (const b of benefits) {
-    if (b.pointsEarnType) {
-      if (!hotelChainId) {
-        return "Points benefits require a booking with a hotel chain";
-      }
-      const chain = await prisma.hotelChain.findUnique({
-        where: { id: hotelChainId },
-        select: { pointType: { select: { id: true } } },
-      });
-      const hasLoyaltyProgram = !!chain?.pointType;
-      const error = validateBenefitConstraints(b, hasLoyaltyProgram);
-      if (error) return error;
-    } else {
-      const error = validateBenefitConstraints(b, true); // no chain check needed for non-points
-      if (error) return error;
-    }
-  }
-  return null;
-}
+import { validateBenefits } from "@/lib/booking-benefit-validation";
 
 async function getFullBookingWithUsage(id: string, userId: string) {
   const booking = await prisma.booking.findFirst({

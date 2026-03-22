@@ -17,31 +17,7 @@ import { enrichBookingWithRate } from "@/lib/booking-enrichment";
 import { findOrCreateProperty } from "@/lib/property-utils";
 import { reapplyCardBenefitsAffectedByBooking } from "@/lib/card-benefit-apply";
 import { resolvePartnershipEarns } from "@/lib/partnership-earns";
-import { BenefitInput, validateBenefitConstraints } from "@/lib/booking-benefit-validation";
-
-async function validateBenefits(
-  benefits: BenefitInput[],
-  hotelChainId: string | null | undefined
-): Promise<string | null> {
-  for (const b of benefits) {
-    if (b.pointsEarnType) {
-      if (!hotelChainId) {
-        return "Points benefits require a booking with a hotel chain";
-      }
-      const chain = await prisma.hotelChain.findUnique({
-        where: { id: hotelChainId },
-        select: { pointType: { select: { id: true } } },
-      });
-      const hasLoyaltyProgram = !!chain?.pointType;
-      const error = validateBenefitConstraints(b, hasLoyaltyProgram);
-      if (error) return error;
-    } else {
-      const error = validateBenefitConstraints(b, true); // no chain check needed for non-points
-      if (error) return error;
-    }
-  }
-  return null;
-}
+import { validateBenefits } from "@/lib/booking-benefit-validation";
 
 const BOOKING_INCLUDE = (userId: string) =>
   ({

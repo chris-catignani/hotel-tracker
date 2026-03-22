@@ -1,3 +1,5 @@
+import prisma from "@/lib/prisma";
+
 export type BenefitInput = {
   benefitType?: string;
   dollarValue?: number | null;
@@ -10,6 +12,8 @@ const VALID_EARN_TYPES = ["fixed_per_stay", "fixed_per_night", "multiplier_on_ba
 
 /**
  * Validates the pure field-level constraints on a benefit (no DB calls).
+ * `hasLoyaltyProgram` is only consulted when `pointsEarnType` is set — it is
+ * ignored (and safe to pass any value) for cash/informational benefits.
  * Returns an error message string or null if valid.
  */
 export function validateBenefitConstraints(
@@ -45,5 +49,34 @@ export function validateBenefitConstraints(
     }
   }
 
+  return null;
+}
+
+/**
+ * Validates all benefits in a booking, including a DB lookup to check whether
+ * the hotel chain has a configured loyalty program when pointsEarnType is set.
+ * Returns an error message string or null if all benefits are valid.
+ */
+export async function validateBenefits(
+  benefits: BenefitInput[],
+  hotelChainId: string | null | undefined
+): Promise<string | null> {
+  for (const b of benefits) {
+    if (b.pointsEarnType) {
+      if (!hotelChainId) {
+        return "Points benefits require a booking with a hotel chain";
+      }
+      const chain = await prisma.hotelChain.findUnique({
+        where: { id: hotelChainId },
+        select: { pointType: { select: { id: true } } },
+      });
+      const hasLoyaltyProgram = !!chain?.pointType;
+      const error = validateBenefitConstraints(b, hasLoyaltyProgram);
+      if (error) return error;
+    } else {
+      const error = validateBenefitConstraints(b, true); // no chain check needed for non-points
+      if (error) return error;
+    }
+  }
   return null;
 }
