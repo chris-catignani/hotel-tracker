@@ -13,9 +13,9 @@ test.describe("Partnership Earns", () => {
    */
 
   test("Accor–Qantas line item appears for Accor APAC booking when enabled", async ({
-    isolatedUserWithPage,
+    isolatedUser,
   }) => {
-    const { page, request } = isolatedUserWithPage;
+    const { page, request } = isolatedUser;
 
     // Create an Accor booking with an APAC country code (AU), past date for real exchange rate
     const propertyName = `Accor APAC Test ${crypto.randomUUID()}`;
@@ -61,9 +61,9 @@ test.describe("Partnership Earns", () => {
   });
 
   test("Accor–Qantas line item does not appear for non-APAC Accor booking", async ({
-    isolatedUserWithPage,
+    isolatedUser,
   }) => {
-    const { page, request } = isolatedUserWithPage;
+    const { page, request } = isolatedUser;
 
     // Create an Accor booking with a non-APAC country code (US)
     const propertyName = `Accor Non-APAC Test ${crypto.randomUUID()}`;
@@ -108,8 +108,8 @@ test.describe("Partnership Earns", () => {
     }
   });
 
-  test("Accor–Qantas line item disappears after toggling off", async ({ isolatedUserWithPage }) => {
-    const { page, request } = isolatedUserWithPage;
+  test("Accor–Qantas line item disappears after toggling off", async ({ isolatedUser }) => {
+    const { page, request } = isolatedUser;
 
     const propertyName = `Accor APAC Toggle Test ${crypto.randomUUID()}`;
     const bookingRes = await request.post("/api/bookings", {
