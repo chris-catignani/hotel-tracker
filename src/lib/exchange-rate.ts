@@ -106,14 +106,11 @@ export async function getOrFetchHistoricalRate(
   try {
     rate = await fetchExchangeRate(fromCurrency, date);
   } catch (err) {
-    logger.warn(
-      `Exchange rate fetch failed for ${fromCurrency} on ${date}, falling back to current cached rate`,
-      {
-        fromCurrency,
-        date,
-        error: String(err),
-      }
-    );
+    logger.warn("Exchange rate fetch failed, falling back to current cached rate", {
+      fromCurrency,
+      date,
+      error: err instanceof Error ? { message: err.message, stack: err.stack } : String(err),
+    });
     return getCurrentRate(fromCurrency);
   }
   await prisma.exchangeRateHistory.upsert({
