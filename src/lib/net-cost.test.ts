@@ -1601,4 +1601,247 @@ describe("net-cost", () => {
       expect(result.netCost).toBeCloseTo(200 - 8.71);
     });
   });
+
+  describe("booking benefits", () => {
+    const baseBookingWithBenefits: NetCostBooking = {
+      ...mockBaseBooking,
+      // mockBaseBooking has: hotelChain.pointType.usdCentsPerPoint = 0.015, basePointRate = 10
+      // pretaxCost = 80, totalCost = 100, numNights = 1, lockedExchangeRate = undefined
+      benefits: [],
+    };
+
+    it("returns zero bookingBenefitsValue when no benefits", () => {
+      const result = getNetCostBreakdown(baseBookingWithBenefits);
+      expect(result.bookingBenefitsValue).toBe(0);
+      expect(result.bookingBenefits).toHaveLength(0);
+    });
+
+    it("cash benefit (USD) reduces net cost", () => {
+      const booking: NetCostBooking = {
+        ...baseBookingWithBenefits,
+        benefits: [
+          {
+            benefitType: "free_breakfast",
+            label: null,
+            dollarValue: 25,
+            pointsEarnType: null,
+            pointsAmount: null,
+            pointsMultiplier: null,
+          },
+        ],
+      };
+      const result = getNetCostBreakdown(booking);
+      expect(result.bookingBenefitsValue).toBeCloseTo(25);
+      expect(result.netCost).toBeCloseTo(100 - 25); // totalCost - cashBenefit
+      expect(result.bookingBenefits[0].label).toBe("Free Breakfast");
+    });
+
+    it("cash benefit (non-USD) applies exchange rate", () => {
+      const booking: NetCostBooking = {
+        ...baseBookingWithBenefits,
+        pretaxCost: 800,
+        totalCost: 1000,
+        lockedExchangeRate: 1.08,
+        benefits: [
+          {
+            benefitType: "dining_credit",
+            label: null,
+            dollarValue: 30,
+            pointsEarnType: null,
+            pointsAmount: null,
+            pointsMultiplier: null,
+          },
+        ],
+      };
+      // $30 EUR × 1.08 = $32.40 USD
+      const result = getNetCostBreakdown(booking);
+      expect(result.bookingBenefitsValue).toBeCloseTo(32.4);
+    });
+
+    it("fixed_per_stay: floor(pointsAmount) × usdCentsPerPoint / 100", () => {
+      const booking: NetCostBooking = {
+        ...baseBookingWithBenefits,
+        benefits: [
+          {
+            benefitType: "other",
+            label: "Hyatt Milestone",
+            dollarValue: null,
+            pointsEarnType: "fixed_per_stay",
+            pointsAmount: 2000,
+            pointsMultiplier: null,
+          },
+        ],
+      };
+      // 2000 pts × $0.015/pt = $30
+      const result = getNetCostBreakdown(booking);
+      expect(result.bookingBenefitsValue).toBeCloseTo(30);
+      expect(result.bookingBenefits[0].label).toBe("Hyatt Milestone");
+    });
+
+    it("fixed_per_night: floor(pointsAmount × numNights) × rate", () => {
+      const booking: NetCostBooking = {
+        ...baseBookingWithBenefits,
+        numNights: 3,
+        benefits: [
+          {
+            benefitType: "other",
+            label: null,
+            dollarValue: null,
+            pointsEarnType: "fixed_per_night",
+            pointsAmount: 1000,
+            pointsMultiplier: null,
+          },
+        ],
+      };
+      // 1000 pts × 3 nights × $0.015/pt = $45
+      const result = getNetCostBreakdown(booking);
+      expect(result.bookingBenefitsValue).toBeCloseTo(45);
+    });
+
+    it("multiplier_on_base (no calculationCurrency): (mult-1) × baseRate × nativePretaxCost × centsPerPoint/100", () => {
+      // basePointRate = 10, pretaxCost = 80, multiplier = 2.0
+      // extraPoints = floor((2-1) × 10 × 80) = 800 pts
+      // value = 800 × 0.015 = $12
+      const booking: NetCostBooking = {
+        ...baseBookingWithBenefits,
+        benefits: [
+          {
+            benefitType: "other",
+            label: "Double Base",
+            dollarValue: null,
+            pointsEarnType: "multiplier_on_base",
+            pointsAmount: null,
+            pointsMultiplier: 2.0,
+          },
+        ],
+      };
+      const result = getNetCostBreakdown(booking);
+      expect(result.bookingBenefitsValue).toBeCloseTo(12);
+    });
+
+    it("multiplier_on_base (with calculationCurrency, Accor): converts pretaxCost via calcCurrencyToUsdRate", () => {
+      // Accor: nativePretaxCost=400 EUR, exchangeRate=1.08 (EUR→USD), calcCurrencyToUsdRate=1.08
+      // pretaxInEUR = 400 * 1.08 / 1.08 = 400 EUR
+      // basePointRate = 25 pts/EUR, multiplier = 2.0
+      // extraPoints = floor((2-1) × 25 × 400) = 10000 pts
+      // value = 10000 × 0.002 = $20
+      const booking: NetCostBooking = {
+        ...baseBookingWithBenefits,
+        pretaxCost: 400,
+        totalCost: 500,
+        lockedExchangeRate: 1.08,
+        hotelChain: {
+          ...mockBaseBooking.hotelChain!,
+          basePointRate: 25,
+          calculationCurrency: "EUR",
+          calcCurrencyToUsdRate: 1.08,
+          pointType: { name: "Accor Points", usdCentsPerPoint: 0.002 },
+        },
+        benefits: [
+          {
+            benefitType: "other",
+            label: null,
+            dollarValue: null,
+            pointsEarnType: "multiplier_on_base",
+            pointsAmount: null,
+            pointsMultiplier: 2.0,
+          },
+        ],
+      };
+      const result = getNetCostBreakdown(booking);
+      expect(result.bookingBenefitsValue).toBeCloseTo(20);
+    });
+
+    it("uses lockedLoyaltyUsdCentsPerPoint for past bookings", () => {
+      // locked at 0.02/pt instead of live 0.015/pt
+      const booking: NetCostBooking = {
+        ...baseBookingWithBenefits,
+        lockedLoyaltyUsdCentsPerPoint: 0.02,
+        benefits: [
+          {
+            benefitType: "other",
+            label: null,
+            dollarValue: null,
+            pointsEarnType: "fixed_per_stay",
+            pointsAmount: 1000,
+            pointsMultiplier: null,
+          },
+        ],
+      };
+      // 1000 pts × $0.02/pt = $20 (not $15 from live rate)
+      const result = getNetCostBreakdown(booking);
+      expect(result.bookingBenefitsValue).toBeCloseTo(20);
+    });
+
+    it("null hotel chain: points benefit contributes $0 gracefully", () => {
+      const booking: NetCostBooking = {
+        ...baseBookingWithBenefits,
+        hotelChainId: null,
+        hotelChain: null,
+        benefits: [
+          {
+            benefitType: "other",
+            label: null,
+            dollarValue: null,
+            pointsEarnType: "fixed_per_stay",
+            pointsAmount: 1000,
+            pointsMultiplier: null,
+          },
+        ],
+      };
+      const result = getNetCostBreakdown(booking);
+      expect(result.bookingBenefitsValue).toBe(0);
+    });
+
+    it("chain with null pointType: points benefit contributes $0 gracefully", () => {
+      const booking: NetCostBooking = {
+        ...baseBookingWithBenefits,
+        hotelChain: {
+          ...mockBaseBooking.hotelChain!,
+          pointType: null,
+        },
+        benefits: [
+          {
+            benefitType: "other",
+            label: null,
+            dollarValue: null,
+            pointsEarnType: "fixed_per_stay",
+            pointsAmount: 1000,
+            pointsMultiplier: null,
+          },
+        ],
+      };
+      const result = getNetCostBreakdown(booking);
+      expect(result.bookingBenefitsValue).toBe(0);
+    });
+
+    it("mixed cash + points benefits: both sum into bookingBenefitsValue", () => {
+      const booking: NetCostBooking = {
+        ...baseBookingWithBenefits,
+        benefits: [
+          {
+            benefitType: "dining_credit",
+            label: null,
+            dollarValue: 25,
+            pointsEarnType: null,
+            pointsAmount: null,
+            pointsMultiplier: null,
+          },
+          {
+            benefitType: "other",
+            label: null,
+            dollarValue: null,
+            pointsEarnType: "fixed_per_stay",
+            pointsAmount: 1000,
+            pointsMultiplier: null,
+          },
+        ],
+      };
+      // cash: $25, points: 1000 × $0.015 = $15, total = $40
+      const result = getNetCostBreakdown(booking);
+      expect(result.bookingBenefitsValue).toBeCloseTo(40);
+      expect(result.bookingBenefits).toHaveLength(2);
+      expect(result.netCost).toBeCloseTo(100 - 40);
+    });
+  });
 });
