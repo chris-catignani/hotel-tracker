@@ -161,27 +161,15 @@ describe("getOrFetchHistoricalRate", () => {
     expect(prismaMock.exchangeRateHistory.upsert).toHaveBeenCalledTimes(1);
   });
 
-  it("falls back to current cached rate when the API fails", async () => {
+  it("returns null when the API fails without falling back to the current rate", async () => {
     prismaMock.exchangeRateHistory.findUnique.mockResolvedValueOnce(null);
     mockFetch
       .mockResolvedValueOnce({ ok: false, status: 404 })
       .mockResolvedValueOnce({ ok: false, status: 404 });
-    prismaMock.exchangeRate.findUnique.mockResolvedValueOnce({ rate: "0.63" });
-
-    const rate = await getOrFetchHistoricalRate("AUD", "2025-06-01");
-    expect(rate).toBe(0.63);
-    expect(prismaMock.exchangeRateHistory.upsert).not.toHaveBeenCalled();
-  });
-
-  it("returns null when the API fails and no current rate is cached", async () => {
-    prismaMock.exchangeRateHistory.findUnique.mockResolvedValueOnce(null);
-    mockFetch
-      .mockResolvedValueOnce({ ok: false, status: 404 })
-      .mockResolvedValueOnce({ ok: false, status: 404 });
-    prismaMock.exchangeRate.findUnique.mockResolvedValueOnce(null);
 
     const rate = await getOrFetchHistoricalRate("AUD", "2025-06-01");
     expect(rate).toBeNull();
+    expect(prismaMock.exchangeRate.findUnique).not.toHaveBeenCalled();
     expect(prismaMock.exchangeRateHistory.upsert).not.toHaveBeenCalled();
   });
 });
