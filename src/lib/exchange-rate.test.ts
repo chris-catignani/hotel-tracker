@@ -172,6 +172,18 @@ describe("getOrFetchHistoricalRate", () => {
     expect(rate).toBe(0.63);
     expect(prismaMock.exchangeRateHistory.upsert).not.toHaveBeenCalled();
   });
+
+  it("returns null when the API fails and no current rate is cached", async () => {
+    prismaMock.exchangeRateHistory.findUnique.mockResolvedValueOnce(null);
+    mockFetch
+      .mockResolvedValueOnce({ ok: false, status: 404 })
+      .mockResolvedValueOnce({ ok: false, status: 404 });
+    prismaMock.exchangeRate.findUnique.mockResolvedValueOnce(null);
+
+    const rate = await getOrFetchHistoricalRate("AUD", "2025-06-01");
+    expect(rate).toBeNull();
+    expect(prismaMock.exchangeRateHistory.upsert).not.toHaveBeenCalled();
+  });
 });
 
 describe("getCurrentRate", () => {
