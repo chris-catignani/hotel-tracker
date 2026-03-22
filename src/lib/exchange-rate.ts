@@ -8,7 +8,10 @@ const FALLBACK_BASE = "https://{date}.currency-api.pages.dev";
  * Fetch rate from fawazahmed0/exchange-api: 1 fromCurrency = X USD.
  * Pass a date string (YYYY-MM-DD) for historical rates, or "latest" for current.
  */
-async function fetchExchangeRate(fromCurrency: string, date: string | "latest"): Promise<number> {
+export async function fetchExchangeRate(
+  fromCurrency: string,
+  date: string | "latest"
+): Promise<number> {
   if (fromCurrency === "USD") return 1;
 
   const currency = fromCurrency.toLowerCase();
