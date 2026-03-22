@@ -135,7 +135,6 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
     loyaltyPointsCalc,
     partnershipEarns,
     bookingBenefitsValue,
-    bookingBenefitsCalc,
     bookingBenefits,
     netCost,
   } = breakdown;
@@ -246,7 +245,6 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
             >
               <div className="flex items-center gap-1.5">
                 <span>Booking Benefits</span>
-                <CalculationInfo calc={bookingBenefitsCalc} />
                 {isBenefitsExpanded ? (
                   <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
                 ) : (
@@ -263,22 +261,36 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
                 className="ml-5 space-y-2 border-l pl-3 py-1"
                 data-testid="breakdown-benefits-list"
               >
-                {(bookingBenefits ?? []).map((b, idx) => (
-                  <div key={idx} className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">{b.label}</span>
-                    <div className="flex items-center gap-2">
-                      {b.detail && (
-                        <span
-                          className="text-muted-foreground text-[10px] max-w-[200px] truncate"
-                          title={b.detail}
-                        >
-                          ({b.detail})
-                        </span>
-                      )}
+                {(bookingBenefits ?? []).map((b, idx) => {
+                  const itemCalc = b.detail
+                    ? {
+                        label: b.label,
+                        description: "",
+                        groups: [
+                          {
+                            segments: [
+                              {
+                                label: b.label,
+                                formula: b.detail,
+                                value: b.value,
+                                description: "",
+                              },
+                            ],
+                          },
+                        ],
+                        appliedValue: b.value,
+                      }
+                    : undefined;
+                  return (
+                    <div key={idx} className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-muted-foreground">{b.label}</span>
+                        <CalculationInfo calc={itemCalc} />
+                      </div>
                       <span className="text-green-600">-{formatCurrency(b.value)}</span>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
