@@ -12,18 +12,15 @@ const YEAR = new Date().getFullYear();
  * parallel workers share the admin user.
  */
 test.describe("Net Cost Consistency", () => {
-  // Use serial mode to avoid race conditions on the dashboard's "Recent Bookings" list
-  test.describe.configure({ mode: "serial" });
-
   test("should show consistent Net/Night with boosted card rewards", async ({
-    request,
-    isolatedUserWithPage,
+    adminRequest,
+    isolatedUser,
     testHotelChain,
   }) => {
-    const { page, request: userRequest } = isolatedUserWithPage;
+    const { page, request } = isolatedUser;
 
     // 1. Create a credit card with a boosted reward rule for our test chain (admin)
-    const cardRes = await request.post("/api/credit-cards", {
+    const cardRes = await adminRequest.post("/api/credit-cards", {
       data: {
         name: `Boosted Card ${crypto.randomUUID()}`,
         rewardType: "points",
@@ -41,7 +38,7 @@ test.describe("Net Cost Consistency", () => {
     const creditCard = await cardRes.json();
 
     // Create a UserCreditCard instance for the isolated user
-    const uccRes = await userRequest.post("/api/user-credit-cards", {
+    const uccRes = await request.post("/api/user-credit-cards", {
       data: { creditCardId: creditCard.id },
     });
     const userCreditCard = await uccRes.json();
@@ -55,7 +52,7 @@ test.describe("Net Cost Consistency", () => {
     const expectedNetPerNight = "$100";
     const expectedNetCost = "$200.00";
 
-    const bookingRes = await userRequest.post("/api/bookings", {
+    const bookingRes = await request.post("/api/bookings", {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName,
@@ -88,20 +85,20 @@ test.describe("Net Cost Consistency", () => {
       await page.goto(`/bookings/${booking.id}`);
       await expect(page.getByTestId("breakdown-net-cost")).toHaveText(expectedNetCost);
     } finally {
-      await userRequest.delete(`/api/bookings/${booking.id}`);
-      await userRequest.delete(`/api/user-credit-cards/${userCreditCard.id}`);
-      await request.delete(`/api/credit-cards/${creditCard.id}`);
+      await request.delete(`/api/bookings/${booking.id}`);
+      await request.delete(`/api/user-credit-cards/${userCreditCard.id}`);
+      await adminRequest.delete(`/api/credit-cards/${creditCard.id}`);
     }
   });
 
   test("should show consistent Net/Night with active promotions", async ({
-    isolatedUserWithPage,
+    isolatedUser,
     testHotelChain,
   }) => {
-    const { page, request: userRequest } = isolatedUserWithPage;
+    const { page, request } = isolatedUser;
 
     // 1. Create a promotion with fixed $50 cashback (scoped to the isolated user)
-    const promoRes = await userRequest.post("/api/promotions", {
+    const promoRes = await request.post("/api/promotions", {
       data: {
         name: `Consistency Promo ${crypto.randomUUID()}`,
         type: "loyalty",
@@ -127,7 +124,7 @@ test.describe("Net Cost Consistency", () => {
     const expectedNetPerNight = "$125";
     const expectedNetCost = "$250.00";
 
-    const bookingRes = await userRequest.post("/api/bookings", {
+    const bookingRes = await request.post("/api/bookings", {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName,
@@ -159,15 +156,15 @@ test.describe("Net Cost Consistency", () => {
       await page.goto(`/bookings/${booking.id}`);
       await expect(page.getByTestId("breakdown-net-cost")).toHaveText(expectedNetCost);
     } finally {
-      await userRequest.delete(`/api/bookings/${booking.id}`);
-      await userRequest.delete(`/api/promotions/${promotion.id}`);
+      await request.delete(`/api/bookings/${booking.id}`);
+      await request.delete(`/api/promotions/${promotion.id}`);
     }
   });
 
   test("should show consistent Net/Night with loyalty earnings and elite bonus", async ({
-    isolatedUserWithPage,
+    isolatedUser,
   }) => {
-    const { page, request: userRequest } = isolatedUserWithPage;
+    const { page, request } = isolatedUser;
 
     // Using Hyatt (cxjdwg32a8xf7by36md0mdvuu) - 2¢ per point
     // Global Setup seeds Hyatt with Globalist status (30% bonus).
@@ -185,7 +182,7 @@ test.describe("Net Cost Consistency", () => {
     const expectedNetPerNight = "$177";
     const expectedNetCost = "$354.50";
 
-    const bookingRes = await userRequest.post("/api/bookings", {
+    const bookingRes = await request.post("/api/bookings", {
       data: {
         hotelChainId: HOTEL_ID.HYATT,
         propertyName,
@@ -218,18 +215,18 @@ test.describe("Net Cost Consistency", () => {
       await page.goto(`/bookings/${booking.id}`);
       await expect(page.getByTestId("breakdown-net-cost")).toHaveText(expectedNetCost);
     } finally {
-      await userRequest.delete(`/api/bookings/${booking.id}`);
+      await request.delete(`/api/bookings/${booking.id}`);
     }
   });
 
   test("should show consistent Net/Night with portal cashback (points-based)", async ({
-    request,
-    isolatedUserWithPage,
+    adminRequest,
+    isolatedUser,
   }) => {
-    const { page, request: userRequest } = isolatedUserWithPage;
+    const { page, request } = isolatedUser;
 
     // 1. Create a portal that gives 5 pts/$ (admin)
-    const portalRes = await request.post("/api/portals", {
+    const portalRes = await adminRequest.post("/api/portals", {
       data: {
         name: `Consistency Portal ${crypto.randomUUID()}`,
         rewardType: "points",
@@ -250,7 +247,7 @@ test.describe("Net Cost Consistency", () => {
     const expectedNetPerNight = "$280";
     const expectedNetCost = "$280.00";
 
-    const bookingRes = await userRequest.post("/api/bookings", {
+    const bookingRes = await request.post("/api/bookings", {
       data: {
         hotelChainId: HOTEL_ID.HYATT,
         propertyName,
@@ -286,8 +283,8 @@ test.describe("Net Cost Consistency", () => {
       await page.goto(`/bookings/${booking.id}`);
       await expect(page.getByTestId("breakdown-net-cost")).toHaveText(expectedNetCost);
     } finally {
-      await userRequest.delete(`/api/bookings/${booking.id}`);
-      await request.delete(`/api/portals/${portal.id}`);
+      await request.delete(`/api/bookings/${booking.id}`);
+      await adminRequest.delete(`/api/portals/${portal.id}`);
     }
   });
 });

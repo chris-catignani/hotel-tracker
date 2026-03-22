@@ -157,6 +157,14 @@ Incomplete final cycle earns $0. Label depends on whether the cap was exhausted:
 - Reference data (hotel chains, cards, portals) is seeded once in `e2e/global-setup.ts`; treat as read-only.
 - `e2e/**` has `react-hooks/rules-of-hooks` disabled in `eslint.config.mjs` (Playwright `use` callback false positive) — no per-line disables needed.
 
+#### E2E Isolation Rules (mandatory for all new tests)
+
+- **Use `isolatedUser`** for every test that creates bookings, promotions, or asserts user-scoped UI (dashboard, bookings list). Never use the default `page`/`request` fixtures for user data — they are not authenticated after the removal of `auth.setup.ts`.
+- **Use `adminRequest`** for reference-data writes (hotel chains, credit cards, portals, sub-brands) and `adminPage` for admin UI tests (Settings).
+- **Never use `isolatedUserWithPage` or `isolatedUserRequest`** — these legacy fixtures have been removed. Use `isolatedUser` instead.
+- **No `test.describe.configure({ mode: "serial" })`** — each test must be fully independent. Shared state between serial tests causes flakiness under parallel workers.
+- **UserCreditCard in card-benefit tests**: create inline at test start via `isolatedUser.request.post("/api/user-credit-cards", ...)` and delete in the `finally` block. Do not rely on a fixture to pre-create it.
+
 ### Unit Test Design
 
 - Don't use manual `act()` — `render()` and `userEvent` v14+ handle it internally.

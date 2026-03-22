@@ -6,12 +6,13 @@ const YEAR = new Date().getFullYear();
 
 test.describe("Promotion Cascading Re-evaluation", () => {
   test("should update later stay rewards when earlier stay is edited (chronological consistency)", async ({
-    request,
+    isolatedUser,
+    adminRequest,
     testHotelChain,
   }) => {
     // 1. Create a capped promotion: $100 max redemption, $50 per stay
     const promoName = `Cascading Promo ${crypto.randomUUID()}`;
-    const promoRes = await request.post("/api/promotions", {
+    const promoRes = await isolatedUser.request.post("/api/promotions", {
       data: {
         name: promoName,
         type: "loyalty",
@@ -36,7 +37,7 @@ test.describe("Promotion Cascading Re-evaluation", () => {
     const promo = await promoRes.json();
 
     // 2. Create Booking 1 (Jan 2026) -> Should get $50
-    const booking1Res = await request.post("/api/bookings", {
+    const booking1Res = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: "Stay 1",
@@ -54,7 +55,7 @@ test.describe("Promotion Cascading Re-evaluation", () => {
     expect(Number(bp1.appliedValue)).toBe(50);
 
     // 3. Create Booking 2 (Feb 2026) -> Should get $50 (Total $100, hits cap)
-    const booking2Res = await request.post("/api/bookings", {
+    const booking2Res = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: "Stay 2",
@@ -72,7 +73,7 @@ test.describe("Promotion Cascading Re-evaluation", () => {
     expect(Number(bp2.appliedValue)).toBe(50);
 
     // 4. Create Booking 3 (Mar 2026) -> Should get $0 (Capped)
-    const booking3Res = await request.post("/api/bookings", {
+    const booking3Res = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: "Stay 3",
@@ -94,12 +95,12 @@ test.describe("Promotion Cascading Re-evaluation", () => {
 
     // 5. EDIT Booking 1 to be ineligible (change hotel chain)
     // Create another hotel chain first
-    const otherHotelRes = await request.post("/api/hotel-chains", {
+    const otherHotelRes = await adminRequest.post("/api/hotel-chains", {
       data: { name: "Other Chain", loyaltyProgram: "Other", basePointRate: 0 },
     });
     const otherHotel = await otherHotelRes.json();
 
-    const updateRes = await request.put(`/api/bookings/${booking1.id}`, {
+    const updateRes = await isolatedUser.request.put(`/api/bookings/${booking1.id}`, {
       data: {
         hotelChainId: otherHotel.id,
       },
@@ -110,7 +111,7 @@ test.describe("Promotion Cascading Re-evaluation", () => {
     expect(updateRes.ok()).toBeTruthy();
 
     // 6. Verify Booking 3 now has $50 reward automatically
-    const finalBooking3Res = await request.get(
+    const finalBooking3Res = await isolatedUser.request.get(
       `/api/bookings/${booking3.id}?includePromotions=true`
     );
     expect(finalBooking3Res.ok()).toBeTruthy();
@@ -122,19 +123,19 @@ test.describe("Promotion Cascading Re-evaluation", () => {
     expect(Number(finalBp3.appliedValue)).toBe(50);
 
     // Cleanup
-    await request.delete(`/api/bookings/${booking1.id}`);
-    await request.delete(`/api/bookings/${booking2.id}`);
-    await request.delete(`/api/bookings/${booking3.id}`);
-    await request.delete(`/api/promotions/${promo.id}`);
-    await request.delete(`/api/hotel-chains/${otherHotel.id}`);
+    await isolatedUser.request.delete(`/api/bookings/${booking1.id}`);
+    await isolatedUser.request.delete(`/api/bookings/${booking2.id}`);
+    await isolatedUser.request.delete(`/api/bookings/${booking3.id}`);
+    await isolatedUser.request.delete(`/api/promotions/${promo.id}`);
+    await adminRequest.delete(`/api/hotel-chains/${otherHotel.id}`);
   });
 
   test("should update later stay rewards when earlier stay is deleted", async ({
-    request,
+    isolatedUser,
     testHotelChain,
   }) => {
     // 1. Create a capped promotion: $50 max redemption
-    const promoRes = await request.post("/api/promotions", {
+    const promoRes = await isolatedUser.request.post("/api/promotions", {
       data: {
         name: `Delete Cascading ${crypto.randomUUID()}`,
         type: "loyalty",
@@ -150,7 +151,7 @@ test.describe("Promotion Cascading Re-evaluation", () => {
     const promo = await promoRes.json();
 
     // 2. Booking 1 (Jan) gets the $50
-    const b1Res = await request.post("/api/bookings", {
+    const b1Res = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: "Jan Stay",
@@ -166,7 +167,7 @@ test.describe("Promotion Cascading Re-evaluation", () => {
     const b1 = await b1Res.json();
 
     // 3. Booking 2 (Feb) gets $0 (capped)
-    const b2Res = await request.post("/api/bookings", {
+    const b2Res = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: testHotelChain.id,
         propertyName: "Feb Stay",
@@ -185,21 +186,23 @@ test.describe("Promotion Cascading Re-evaluation", () => {
     expect(Number(bp2Initial.appliedValue)).toBe(0);
 
     // 4. DELETE Booking 1
-    const delRes = await request.delete(`/api/bookings/${b1.id}`);
+    const delRes = await isolatedUser.request.delete(`/api/bookings/${b1.id}`);
     if (!delRes.ok()) {
       console.log(`[ERROR] Delete failed:`, await delRes.text());
     }
     expect(delRes.ok()).toBeTruthy();
 
     // 5. Verify Booking 2 now has $50
-    const b2FinalRes = await request.get(`/api/bookings/${b2.id}?includePromotions=true`);
+    const b2FinalRes = await isolatedUser.request.get(
+      `/api/bookings/${b2.id}?includePromotions=true`
+    );
     const b2Final = await b2FinalRes.json();
     const bp2Final = (b2Final.bookingPromotions || []).find((p: any) => p.promotionId === promo.id);
     expect(bp2Final).toBeDefined();
     expect(Number(bp2Final.appliedValue)).toBe(50);
 
     // Cleanup
-    await request.delete(`/api/bookings/${b2.id}`);
-    await request.delete(`/api/promotions/${promo.id}`);
+    await isolatedUser.request.delete(`/api/bookings/${b2.id}`);
+    await isolatedUser.request.delete(`/api/promotions/${promo.id}`);
   });
 });

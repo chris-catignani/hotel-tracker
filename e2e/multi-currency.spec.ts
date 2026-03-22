@@ -15,12 +15,15 @@ const YEAR = new Date().getFullYear();
  * USD bookings: no conversion display shown.
  */
 test.describe("Multi-Currency Support", () => {
-  test("USD booking shows no currency conversion on detail page", async ({ page, request }) => {
-    const chains = await request.get("/api/hotel-chains");
+  test("USD booking shows no currency conversion on detail page", async ({
+    isolatedUser,
+    adminRequest,
+  }) => {
+    const chains = await adminRequest.get("/api/hotel-chains");
     const chain = (await chains.json())[0];
 
     const propertyName = `USD Booking ${crypto.randomUUID()}`;
-    const bookingRes = await request.post("/api/bookings", {
+    const bookingRes = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: chain.id,
         propertyName,
@@ -38,29 +41,29 @@ test.describe("Multi-Currency Support", () => {
     const booking = await bookingRes.json();
 
     try {
-      await page.goto(`/bookings/${booking.id}`);
+      await isolatedUser.page.goto(`/bookings/${booking.id}`);
 
       // USD bookings should NOT show a native cost or USD equivalent element
-      await expect(page.getByTestId("total-cost-native")).not.toBeAttached();
-      await expect(page.getByTestId("total-cost-usd-equivalent")).not.toBeAttached();
+      await expect(isolatedUser.page.getByTestId("total-cost-native")).not.toBeAttached();
+      await expect(isolatedUser.page.getByTestId("total-cost-usd-equivalent")).not.toBeAttached();
 
       // Should still show the total cost in the USD cost element
-      await expect(page.getByTestId("total-cost-usd")).toHaveText("$220.00");
+      await expect(isolatedUser.page.getByTestId("total-cost-usd")).toHaveText("$220.00");
     } finally {
-      await request.delete(`/api/bookings/${booking.id}`);
+      await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
     }
   });
 
   test("past non-USD booking shows native cost and locked USD equivalent (no est.)", async ({
-    page,
-    request,
+    isolatedUser,
+    adminRequest,
   }) => {
-    const chains = await request.get("/api/hotel-chains");
+    const chains = await adminRequest.get("/api/hotel-chains");
     const chain = (await chains.json())[0];
 
     const propertyName = `EUR Past Booking ${crypto.randomUUID()}`;
     // Use a recent past date with EUR — the external exchange API has data from March 2024+
-    const bookingRes = await request.post("/api/bookings", {
+    const bookingRes = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: chain.id,
         propertyName,
@@ -78,32 +81,32 @@ test.describe("Multi-Currency Support", () => {
     const booking = await bookingRes.json();
 
     try {
-      await page.goto(`/bookings/${booking.id}`);
+      await isolatedUser.page.goto(`/bookings/${booking.id}`);
 
       // Native cost should be shown in EUR format
-      const nativeCost = page.getByTestId("total-cost-native");
+      const nativeCost = isolatedUser.page.getByTestId("total-cost-native");
       await expect(nativeCost).toBeVisible();
       await expect(nativeCost).toContainText("€");
 
       // USD equivalent should be shown without "(est.)"
-      const usdEquivalent = page.getByTestId("total-cost-usd-equivalent");
+      const usdEquivalent = isolatedUser.page.getByTestId("total-cost-usd-equivalent");
       await expect(usdEquivalent).toBeVisible();
       await expect(usdEquivalent).toContainText("$");
       await expect(usdEquivalent).not.toContainText("est.");
     } finally {
-      await request.delete(`/api/bookings/${booking.id}`);
+      await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
     }
   });
 
   test("future non-USD booking shows estimated USD equivalent when cached rate exists", async ({
-    page,
-    request,
+    isolatedUser,
+    adminRequest,
   }) => {
-    const chains = await request.get("/api/hotel-chains");
+    const chains = await adminRequest.get("/api/hotel-chains");
     const chain = (await chains.json())[0];
 
     // Populate the ExchangeRate cache for EUR via the cron endpoint
-    const cronRes = await request.get("/api/cron/refresh-exchange-rates", {
+    const cronRes = await adminRequest.get("/api/cron/refresh-exchange-rates", {
       headers: { Authorization: `Bearer ${process.env.CRON_SECRET || "test-cron-secret"}` },
     });
     expect(cronRes.ok()).toBeTruthy();
@@ -116,7 +119,7 @@ test.describe("Multi-Currency Support", () => {
     const checkOut = futureCheckOut.toISOString().split("T")[0];
 
     const propertyName = `EUR Future Booking ${crypto.randomUUID()}`;
-    const bookingRes = await request.post("/api/bookings", {
+    const bookingRes = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: chain.id,
         propertyName,
@@ -134,38 +137,38 @@ test.describe("Multi-Currency Support", () => {
     const booking = await bookingRes.json();
 
     try {
-      await page.goto(`/bookings/${booking.id}`);
+      await isolatedUser.page.goto(`/bookings/${booking.id}`);
 
       // Native cost should be shown in EUR format
-      const nativeCost = page.getByTestId("total-cost-native");
+      const nativeCost = isolatedUser.page.getByTestId("total-cost-native");
       await expect(nativeCost).toBeVisible();
       await expect(nativeCost).toContainText("€");
 
       // USD equivalent should be shown with "(est.)" label
-      const usdEquivalent = page.getByTestId("total-cost-usd-equivalent");
+      const usdEquivalent = isolatedUser.page.getByTestId("total-cost-usd-equivalent");
       await expect(usdEquivalent).toBeVisible();
       await expect(usdEquivalent).toContainText("$");
       await expect(usdEquivalent).toContainText("est.");
 
       // Loyalty points should show "(est.)" if the hotel chain earns points
-      const loyaltyPoints = page.getByTestId("loyalty-points-earned");
+      const loyaltyPoints = isolatedUser.page.getByTestId("loyalty-points-earned");
       if (await loyaltyPoints.isVisible()) {
         await expect(loyaltyPoints).toContainText("est.");
       }
     } finally {
-      await request.delete(`/api/bookings/${booking.id}`);
+      await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
     }
   });
 
   test("clicking non-USD price in bookings list shows native currency popover", async ({
-    page,
-    request,
+    isolatedUser,
+    adminRequest,
   }) => {
-    const chains = await request.get("/api/hotel-chains");
+    const chains = await adminRequest.get("/api/hotel-chains");
     const chain = (await chains.json())[0];
 
     const propertyName = `EUR Popover Test ${crypto.randomUUID()}`;
-    const bookingRes = await request.post("/api/bookings", {
+    const bookingRes = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: chain.id,
         propertyName,
@@ -183,9 +186,9 @@ test.describe("Multi-Currency Support", () => {
     const booking = await bookingRes.json();
 
     try {
-      await page.goto("/bookings");
+      await isolatedUser.page.goto("/bookings");
 
-      const row = page.getByTestId(`booking-row-${booking.id}`);
+      const row = isolatedUser.page.getByTestId(`booking-row-${booking.id}`);
       await expect(row).toBeVisible();
 
       // The cost cell should show a clickable trigger (dotted underline)
@@ -196,13 +199,13 @@ test.describe("Multi-Currency Support", () => {
       await trigger.click();
 
       // Popover should show the native EUR amount
-      const popover = page.getByTestId("cost-popover-content");
+      const popover = isolatedUser.page.getByTestId("cost-popover-content");
       await expect(popover).toBeVisible();
       await expect(popover).toContainText("€");
       await expect(popover).toContainText("200");
       await expect(popover).toContainText("Locked at check-in rate");
     } finally {
-      await request.delete(`/api/bookings/${booking.id}`);
+      await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
     }
   });
 });

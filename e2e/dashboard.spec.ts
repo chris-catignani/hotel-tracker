@@ -14,18 +14,22 @@ const YEAR = new Date().getFullYear();
 
 test.describe("Dashboard", () => {
   test("savings breakdown portal cashback reflects booking portal rate", async ({
-    page,
-    request,
+    isolatedUser,
+    adminRequest,
   }) => {
-    const chains = await request.get("/api/hotel-chains");
+    const chains = await adminRequest.get("/api/hotel-chains");
     const chain = (await chains.json())[0];
 
-    const portals = await request.get("/api/portals");
-    const portal = (await portals.json())[0];
+    const portals = await adminRequest.get("/api/portals");
+    // Explicitly use a cashback portal so portalCashback = rate × pretaxCost × 1 (not × centsPerPoint)
+    // e.g. British Airways portal (points/Avios at 1.2¢) would give 0.05×300×0.012=$0.18 → rounds to $0
+    const allPortals = await portals.json();
+    const portal =
+      allPortals.find((p: { rewardType: string }) => p.rewardType === "cashback") ?? allPortals[0];
 
     // Create a cash booking with a known portal cashback rate
     const propertyName = `Dashboard Portal Test ${crypto.randomUUID()}`;
-    const bookingRes = await request.post("/api/bookings", {
+    const bookingRes = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: chain.id,
         propertyName,
@@ -46,28 +50,31 @@ test.describe("Dashboard", () => {
     const booking = await bookingRes.json();
 
     try {
-      await page.goto("/");
+      await isolatedUser.page.goto("/");
 
       // Portal cashback line item should be visible and show a positive dollar amount
-      const portalEl = page.getByTestId("savings-breakdown-portal");
+      const portalEl = isolatedUser.page.getByTestId("savings-breakdown-portal");
       await expect(portalEl).toBeVisible();
       const portalText = await portalEl.textContent();
       expect(portalText).toMatch(/^\$\d/);
       expect(portalText).not.toBe("$0");
 
       // Total savings should also be visible
-      await expect(page.getByTestId("savings-breakdown-total")).toBeVisible();
+      await expect(isolatedUser.page.getByTestId("savings-breakdown-total")).toBeVisible();
     } finally {
-      await request.delete(`/api/bookings/${booking.id}`);
+      await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
     }
   });
 
-  test("avg/night cash column shows dollar value for cash booking", async ({ page, request }) => {
-    const chains = await request.get("/api/hotel-chains");
+  test("avg/night cash column shows dollar value for cash booking", async ({
+    isolatedUser,
+    adminRequest,
+  }) => {
+    const chains = await adminRequest.get("/api/hotel-chains");
     const chain = (await chains.json())[0];
 
     const propertyName = `Dashboard Cash Avg Test ${crypto.randomUUID()}`;
-    const bookingRes = await request.post("/api/bookings", {
+    const bookingRes = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: chain.id,
         propertyName,
@@ -85,25 +92,28 @@ test.describe("Dashboard", () => {
     const booking = await bookingRes.json();
 
     try {
-      await page.goto("/");
+      await isolatedUser.page.goto("/");
 
       // Cash avg/night should show a dollar value (not "—")
-      const cashAvg = page.getByTestId("stat-value-avg-cash-net-per-night");
+      const cashAvg = isolatedUser.page.getByTestId("stat-value-avg-cash-net-per-night");
       await expect(cashAvg).toBeVisible();
       const text = await cashAvg.textContent();
       expect(text).toMatch(/^\$/);
       expect(text).not.toBe("—");
     } finally {
-      await request.delete(`/api/bookings/${booking.id}`);
+      await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
     }
   });
 
-  test("avg/night points column shows pts value for points booking", async ({ page, request }) => {
-    const chains = await request.get("/api/hotel-chains");
+  test("avg/night points column shows pts value for points booking", async ({
+    isolatedUser,
+    adminRequest,
+  }) => {
+    const chains = await adminRequest.get("/api/hotel-chains");
     const chain = (await chains.json())[0];
 
     const propertyName = `Dashboard Points Avg Test ${crypto.randomUUID()}`;
-    const bookingRes = await request.post("/api/bookings", {
+    const bookingRes = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: chain.id,
         propertyName,
@@ -122,30 +132,34 @@ test.describe("Dashboard", () => {
     const booking = await bookingRes.json();
 
     try {
-      await page.goto("/");
+      await isolatedUser.page.goto("/");
 
       // Points avg/night should show a "pts" value (not "—")
-      const pointsAvg = page.getByTestId("stat-value-avg-points-per-night");
+      const pointsAvg = isolatedUser.page.getByTestId("stat-value-avg-points-per-night");
       await expect(pointsAvg).toBeVisible();
       const text = await pointsAvg.textContent();
       expect(text).toContain("pts");
       expect(text).not.toBe("—");
     } finally {
-      await request.delete(`/api/bookings/${booking.id}`);
+      await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
     }
   });
 
-  test("avg/night certs column shows pts value for cert booking", async ({ page, request }) => {
+  test("avg/night certs column shows pts value for cert booking", async ({
+    isolatedUser,
+    adminRequest,
+  }) => {
     // Use Marriott chain so marriott_35k certs are valid
-    const chains = await request.get("/api/hotel-chains");
+    const chains = await adminRequest.get("/api/hotel-chains");
     const marriott = (await chains.json()).find(
       (c: { name: string }) => c.name === "Marriott Bonvoy"
     );
     // Fall back to first chain if Marriott not seeded
-    const chain = marriott ?? (await (await request.get("/api/hotel-chains")).json())[0];
+    const chain =
+      marriott ?? (await adminRequest.get("/api/hotel-chains").then((r) => r.json()))[0];
 
     const propertyName = `Dashboard Certs Avg Test ${crypto.randomUUID()}`;
-    const bookingRes = await request.post("/api/bookings", {
+    const bookingRes = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: chain.id,
         propertyName,
@@ -164,16 +178,16 @@ test.describe("Dashboard", () => {
     const booking = await bookingRes.json();
 
     try {
-      await page.goto("/");
+      await isolatedUser.page.goto("/");
 
       // Certs avg/night should show a "pts" value (not "—")
-      const certsAvg = page.getByTestId("stat-value-avg-certs-per-night");
+      const certsAvg = isolatedUser.page.getByTestId("stat-value-avg-certs-per-night");
       await expect(certsAvg).toBeVisible();
       const text = await certsAvg.textContent();
       expect(text).toContain("pts");
       expect(text).not.toBe("—");
     } finally {
-      await request.delete(`/api/bookings/${booking.id}`);
+      await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
     }
   });
 });

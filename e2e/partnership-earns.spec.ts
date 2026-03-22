@@ -6,6 +6,15 @@ const PARTNERSHIP_EARN_ID = "cpartnership0accorqantas1";
 const PARTNERSHIP_TESTID = `partnership-checkbox-${PARTNERSHIP_EARN_ID}`;
 const EARN_LINE_TESTID = "breakdown-partnership-accor–qantas";
 
+/** Wait for the POST /api/user-partnership-earns to commit before navigating.
+ * The checkbox uses an optimistic update so the visual state changes instantly,
+ * but navigating away before the request completes causes an aborted ECONNRESET. */
+async function waitForPartnershipSave(page: import("@playwright/test").Page) {
+  await page.waitForResponse(
+    (r) => r.url().includes("/api/user-partnership-earns") && r.request().method() === "POST"
+  );
+}
+
 test.describe("Partnership Earns", () => {
   /**
    * Each test uses an isolated user so toggling the partnership doesn't
@@ -13,9 +22,9 @@ test.describe("Partnership Earns", () => {
    */
 
   test("Accor–Qantas line item appears for Accor APAC booking when enabled", async ({
-    isolatedUserWithPage,
+    isolatedUser,
   }) => {
-    const { page, request } = isolatedUserWithPage;
+    const { page, request } = isolatedUser;
 
     // Create an Accor booking with an APAC country code (AU), past date for real exchange rate
     const propertyName = `Accor APAC Test ${crypto.randomUUID()}`;
@@ -45,8 +54,10 @@ test.describe("Partnership Earns", () => {
       const checkbox = page.getByTestId(PARTNERSHIP_TESTID);
       await expect(checkbox).toBeVisible();
       if (!(await checkbox.isChecked())) {
+        const savePromise = waitForPartnershipSave(page);
         await checkbox.click();
         await expect(checkbox).toBeChecked();
+        await savePromise;
       }
 
       // Navigate to the booking detail page
@@ -61,9 +72,9 @@ test.describe("Partnership Earns", () => {
   });
 
   test("Accor–Qantas line item does not appear for non-APAC Accor booking", async ({
-    isolatedUserWithPage,
+    isolatedUser,
   }) => {
-    const { page, request } = isolatedUserWithPage;
+    const { page, request } = isolatedUser;
 
     // Create an Accor booking with a non-APAC country code (US)
     const propertyName = `Accor Non-APAC Test ${crypto.randomUUID()}`;
@@ -93,8 +104,10 @@ test.describe("Partnership Earns", () => {
       const checkbox = page.getByTestId(PARTNERSHIP_TESTID);
       await expect(checkbox).toBeVisible();
       if (!(await checkbox.isChecked())) {
+        const savePromise = waitForPartnershipSave(page);
         await checkbox.click();
         await expect(checkbox).toBeChecked();
+        await savePromise;
       }
 
       // Navigate to the booking detail page
@@ -108,8 +121,8 @@ test.describe("Partnership Earns", () => {
     }
   });
 
-  test("Accor–Qantas line item disappears after toggling off", async ({ isolatedUserWithPage }) => {
-    const { page, request } = isolatedUserWithPage;
+  test("Accor–Qantas line item disappears after toggling off", async ({ isolatedUser }) => {
+    const { page, request } = isolatedUser;
 
     const propertyName = `Accor APAC Toggle Test ${crypto.randomUUID()}`;
     const bookingRes = await request.post("/api/bookings", {
@@ -138,8 +151,10 @@ test.describe("Partnership Earns", () => {
       const checkbox = page.getByTestId(PARTNERSHIP_TESTID);
       await expect(checkbox).toBeVisible();
       if (!(await checkbox.isChecked())) {
+        const savePromise = waitForPartnershipSave(page);
         await checkbox.click();
         await expect(checkbox).toBeChecked();
+        await savePromise;
       }
 
       // Verify it shows on booking detail
@@ -152,8 +167,10 @@ test.describe("Partnership Earns", () => {
       await page.waitForLoadState("networkidle");
       const checkbox2 = page.getByTestId(PARTNERSHIP_TESTID);
       await expect(checkbox2).toBeChecked();
+      const savePromise2 = waitForPartnershipSave(page);
       await checkbox2.click();
       await expect(checkbox2).not.toBeChecked();
+      await savePromise2;
 
       // Verify it no longer shows on booking detail
       await page.goto(`/bookings/${booking.id}`);

@@ -22,7 +22,7 @@ async function globalSetup(_config: FullConfig) {
     });
     console.log(pushOutput.toString());
 
-    const seedOutput = execSync("npx prisma db seed", {
+    const seedOutput = execSync("npm run db:seed:e2e", {
       stdio: "pipe",
       env: {
         ...process.env,

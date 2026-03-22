@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { test, expect } from "./fixtures";
 
 /**
@@ -7,18 +8,15 @@ import { test, expect } from "./fixtures";
  */
 
 test.describe("Price Watch API", () => {
-  test("can create a price watch for a booking and retrieve it", async ({
-    request,
-    testBooking,
-  }) => {
+  test("can create a price watch for a booking and retrieve it", async ({ testBooking }) => {
     // Get the property id from the booking
-    const bookingRes = await request.get(`/api/bookings/${testBooking.id}`);
+    const bookingRes = await testBooking.request.get(`/api/bookings/${testBooking.id}`);
     expect(bookingRes.ok()).toBeTruthy();
     const booking = await bookingRes.json();
     const propertyId = booking.propertyId;
 
     // Create a price watch
-    const createRes = await request.post("/api/price-watches", {
+    const createRes = await testBooking.request.post("/api/price-watches", {
       data: {
         propertyId,
         isEnabled: true,
@@ -37,25 +35,25 @@ test.describe("Price Watch API", () => {
     expect(watch.bookings[0].awardThreshold).toBe(30000);
 
     // GET /api/price-watches lists it
-    const listRes = await request.get("/api/price-watches");
+    const listRes = await testBooking.request.get("/api/price-watches");
     expect(listRes.ok()).toBeTruthy();
     const list = await listRes.json();
     expect(list.some((w: { id: string }) => w.id === watch.id)).toBe(true);
 
     // GET /api/price-watches/[id]
-    const getRes = await request.get(`/api/price-watches/${watch.id}`);
+    const getRes = await testBooking.request.get(`/api/price-watches/${watch.id}`);
     expect(getRes.ok()).toBeTruthy();
     const fetched = await getRes.json();
     expect(fetched.id).toBe(watch.id);
 
     // Booking now has priceWatchBooking
-    const bookingRes2 = await request.get(`/api/bookings/${testBooking.id}`);
+    const bookingRes2 = await testBooking.request.get(`/api/bookings/${testBooking.id}`);
     const updatedBooking = await bookingRes2.json();
     expect(updatedBooking.priceWatchBooking).not.toBeNull();
     expect(updatedBooking.priceWatchBooking.priceWatchId).toBe(watch.id);
 
     // Toggle disabled
-    const putRes = await request.put(`/api/price-watches/${watch.id}`, {
+    const putRes = await testBooking.request.put(`/api/price-watches/${watch.id}`, {
       data: { isEnabled: false },
     });
     expect(putRes.ok()).toBeTruthy();
@@ -63,28 +61,27 @@ test.describe("Price Watch API", () => {
     expect(updated.isEnabled).toBe(false);
 
     // Delete
-    const deleteRes = await request.delete(`/api/price-watches/${watch.id}`);
+    const deleteRes = await testBooking.request.delete(`/api/price-watches/${watch.id}`);
     expect(deleteRes.ok()).toBeTruthy();
 
     // Confirm deleted
-    const getAfterDelete = await request.get(`/api/price-watches/${watch.id}`);
+    const getAfterDelete = await testBooking.request.get(`/api/price-watches/${watch.id}`);
     expect(getAfterDelete.status()).toBe(404);
   });
 
   test("creating a watch twice for the same property upserts (does not duplicate)", async ({
-    request,
     testBooking,
   }) => {
-    const bookingRes = await request.get(`/api/bookings/${testBooking.id}`);
+    const bookingRes = await testBooking.request.get(`/api/bookings/${testBooking.id}`);
     const booking = await bookingRes.json();
     const propertyId = booking.propertyId;
 
-    const create1 = await request.post("/api/price-watches", {
+    const create1 = await testBooking.request.post("/api/price-watches", {
       data: { propertyId, isEnabled: true },
     });
     const watch1 = await create1.json();
 
-    const create2 = await request.post("/api/price-watches", {
+    const create2 = await testBooking.request.post("/api/price-watches", {
       data: { propertyId, isEnabled: false },
     });
     const watch2 = await create2.json();
@@ -94,52 +91,67 @@ test.describe("Price Watch API", () => {
     expect(watch2.isEnabled).toBe(false);
 
     // Cleanup
-    await request.delete(`/api/price-watches/${watch1.id}`);
+    await testBooking.request.delete(`/api/price-watches/${watch1.id}`);
   });
 
-  test("snapshots endpoint returns empty array before any fetches", async ({
-    request,
-    testBooking,
-  }) => {
-    const bookingRes = await request.get(`/api/bookings/${testBooking.id}`);
+  test("snapshots endpoint returns empty array before any fetches", async ({ testBooking }) => {
+    const bookingRes = await testBooking.request.get(`/api/bookings/${testBooking.id}`);
     const booking = await bookingRes.json();
 
-    const createRes = await request.post("/api/price-watches", {
+    const createRes = await testBooking.request.post("/api/price-watches", {
       data: { propertyId: booking.propertyId, isEnabled: true },
     });
     const watch = await createRes.json();
 
-    const snapshotsRes = await request.get(`/api/price-watches/${watch.id}/snapshots`);
+    const snapshotsRes = await testBooking.request.get(`/api/price-watches/${watch.id}/snapshots`);
     expect(snapshotsRes.ok()).toBeTruthy();
     const snapshots = await snapshotsRes.json();
     expect(snapshots).toHaveLength(0);
 
     // Cleanup
-    await request.delete(`/api/price-watches/${watch.id}`);
+    await testBooking.request.delete(`/api/price-watches/${watch.id}`);
   });
 });
 
 test.describe("Spirit code inline edit", () => {
+  // Spirit code edits require admin (PUT /api/properties is admin-only).
+  // These tests create a temporary admin booking and navigate as admin.
   test("can set a spirit code on a property from the price watch list page", async ({
-    page,
-    request,
-    testBooking,
+    adminPage,
+    adminRequest,
   }) => {
-    // Get propertyId from the booking
-    const bookingRes = await request.get(`/api/bookings/${testBooking.id}`);
+    // Create a temporary admin booking for this test
+    const chains = await adminRequest.get("/api/hotel-chains");
+    const chain = (await chains.json())[0];
+    const bookingRes = await adminRequest.post("/api/bookings", {
+      data: {
+        hotelChainId: chain.id,
+        propertyName: `Spirit Code Test ${crypto.randomUUID()}`,
+        checkIn: `${new Date().getFullYear()}-09-01`,
+        checkOut: `${new Date().getFullYear()}-09-03`,
+        numNights: 2,
+        pretaxCost: 200,
+        taxAmount: 20,
+        totalCost: 220,
+        currency: "USD",
+        bookingSource: "direct_web",
+        countryCode: "US",
+        city: "Chicago",
+      },
+    });
     const booking = await bookingRes.json();
     const propertyId = booking.propertyId;
 
     // Create a price watch via API
-    const createRes = await request.post("/api/price-watches", {
-      data: { propertyId, isEnabled: true, bookingId: testBooking.id },
+    const createRes = await adminRequest.post("/api/price-watches", {
+      data: { propertyId, isEnabled: true, bookingId: booking.id },
     });
     const watch = await createRes.json();
 
-    await page.goto("/price-watch");
+    await adminPage.goto("/price-watch");
 
     // Scope to the desktop table row to avoid the hidden mobile card duplicate
-    const row = page.getByTestId(`price-watch-row-${watch.id}`);
+    const row = adminPage.getByTestId(`price-watch-row-${watch.id}`);
     await row.getByTestId(`edit-spirit-code-${propertyId}`).click();
 
     // Type the spirit code and press Enter
@@ -152,28 +164,46 @@ test.describe("Spirit code inline edit", () => {
     await expect(row.getByText("TESTCODE")).toBeVisible();
 
     // Cleanup
-    await request.put(`/api/properties/${propertyId}`, {
+    await adminRequest.put(`/api/properties/${propertyId}`, {
       data: { chainPropertyId: null },
     });
-    await request.delete(`/api/price-watches/${watch.id}`);
+    await adminRequest.delete(`/api/price-watches/${watch.id}`);
+    await adminRequest.delete(`/api/bookings/${booking.id}`);
   });
 
-  test("cancelling edit does not save the spirit code", async ({ page, request, testBooking }) => {
-    // Get propertyId from the booking
-    const bookingRes = await request.get(`/api/bookings/${testBooking.id}`);
+  test("cancelling edit does not save the spirit code", async ({ adminPage, adminRequest }) => {
+    // Create a temporary admin booking for this test
+    const chains = await adminRequest.get("/api/hotel-chains");
+    const chain = (await chains.json())[0];
+    const bookingRes = await adminRequest.post("/api/bookings", {
+      data: {
+        hotelChainId: chain.id,
+        propertyName: `Spirit Code Cancel Test ${crypto.randomUUID()}`,
+        checkIn: `${new Date().getFullYear()}-09-05`,
+        checkOut: `${new Date().getFullYear()}-09-07`,
+        numNights: 2,
+        pretaxCost: 200,
+        taxAmount: 20,
+        totalCost: 220,
+        currency: "USD",
+        bookingSource: "direct_web",
+        countryCode: "US",
+        city: "Chicago",
+      },
+    });
     const booking = await bookingRes.json();
     const propertyId = booking.propertyId;
 
     // Create a price watch via API
-    const createRes = await request.post("/api/price-watches", {
-      data: { propertyId, isEnabled: true, bookingId: testBooking.id },
+    const createRes = await adminRequest.post("/api/price-watches", {
+      data: { propertyId, isEnabled: true, bookingId: booking.id },
     });
     const watch = await createRes.json();
 
-    await page.goto("/price-watch");
+    await adminPage.goto("/price-watch");
 
     // Scope to the desktop table row to avoid the hidden mobile card duplicate
-    const row = page.getByTestId(`price-watch-row-${watch.id}`);
+    const row = adminPage.getByTestId(`price-watch-row-${watch.id}`);
     await row.getByTestId(`edit-spirit-code-${propertyId}`).click();
 
     // Type something, then cancel by pressing Escape
@@ -185,28 +215,27 @@ test.describe("Spirit code inline edit", () => {
     await expect(input).not.toBeVisible();
 
     // The typed value should not appear on the page
-    await expect(page.getByText("shouldnotbesaved")).not.toBeVisible();
+    await expect(adminPage.getByText("shouldnotbesaved")).not.toBeVisible();
 
     // Cleanup
-    await request.delete(`/api/price-watches/${watch.id}`);
+    await adminRequest.delete(`/api/price-watches/${watch.id}`);
+    await adminRequest.delete(`/api/bookings/${booking.id}`);
   });
 });
 
 test.describe("Price watch on booking detail page", () => {
-  test("price watch toggle is visible on booking detail page", async ({ page, testBooking }) => {
-    await page.goto(`/bookings/${testBooking.id}`);
-    await expect(page.getByTestId("price-watch-toggle")).toBeVisible();
+  test("price watch toggle is visible on booking detail page", async ({ testBooking }) => {
+    await testBooking.page.goto(`/bookings/${testBooking.id}`);
+    await expect(testBooking.page.getByTestId("price-watch-toggle")).toBeVisible();
   });
 
   test("enabling price watch via API shows threshold inputs on detail page", async ({
-    page,
-    request,
     testBooking,
   }) => {
-    const bookingRes = await request.get(`/api/bookings/${testBooking.id}`);
+    const bookingRes = await testBooking.request.get(`/api/bookings/${testBooking.id}`);
     const booking = await bookingRes.json();
 
-    const createRes = await request.post("/api/price-watches", {
+    const createRes = await testBooking.request.post("/api/price-watches", {
       data: {
         propertyId: booking.propertyId,
         isEnabled: true,
@@ -217,43 +246,47 @@ test.describe("Price watch on booking detail page", () => {
     });
     const watch = await createRes.json();
 
-    await page.goto(`/bookings/${testBooking.id}`);
+    await testBooking.page.goto(`/bookings/${testBooking.id}`);
 
-    await expect(page.getByTestId("cash-threshold-input")).toBeVisible();
-    await expect(page.getByTestId("award-threshold-input")).toBeVisible();
-    await expect(page.getByText(/No price data yet/i)).toBeVisible();
+    await expect(testBooking.page.getByTestId("cash-threshold-input")).toBeVisible();
+    await expect(testBooking.page.getByTestId("award-threshold-input")).toBeVisible();
+    await expect(testBooking.page.getByText(/No price data yet/i)).toBeVisible();
 
     // Cleanup
-    await request.delete(`/api/price-watches/${watch.id}`);
+    await testBooking.request.delete(`/api/price-watches/${watch.id}`);
   });
 });
 
 test.describe("Price watch on booking pages", () => {
-  test("price watch card is visible on the new booking page", async ({ page }) => {
-    await page.goto("/bookings/new");
+  test("price watch card is visible on the new booking page", async ({ isolatedUser }) => {
+    await isolatedUser.page.goto("/bookings/new");
     // Check the unique description text inside the card (avoids matching the nav link)
     await expect(
-      page.getByText("Get alerted when cash or award prices drop below your thresholds.")
+      isolatedUser.page.getByText(
+        "Get alerted when cash or award prices drop below your thresholds."
+      )
     ).toBeVisible();
-    await expect(page.getByTestId("new-booking-price-watch-toggle")).toBeVisible();
+    await expect(isolatedUser.page.getByTestId("new-booking-price-watch-toggle")).toBeVisible();
   });
 
-  test("price watch toggle on new booking page reveals threshold inputs", async ({ page }) => {
-    await page.goto("/bookings/new");
+  test("price watch toggle on new booking page reveals threshold inputs", async ({
+    isolatedUser,
+  }) => {
+    await isolatedUser.page.goto("/bookings/new");
 
     // Threshold inputs should not be visible initially
-    await expect(page.getByTestId("new-booking-cash-threshold")).not.toBeVisible();
+    await expect(isolatedUser.page.getByTestId("new-booking-cash-threshold")).not.toBeVisible();
 
     // Click the toggle
-    await page.getByTestId("new-booking-price-watch-toggle").click();
+    await isolatedUser.page.getByTestId("new-booking-price-watch-toggle").click();
 
     // Inputs should now be visible
-    await expect(page.getByTestId("new-booking-cash-threshold")).toBeVisible();
-    await expect(page.getByTestId("new-booking-award-threshold")).toBeVisible();
+    await expect(isolatedUser.page.getByTestId("new-booking-cash-threshold")).toBeVisible();
+    await expect(isolatedUser.page.getByTestId("new-booking-award-threshold")).toBeVisible();
   });
 
-  test("price watch card is visible on the edit booking page", async ({ page, testBooking }) => {
-    await page.goto(`/bookings/${testBooking.id}/edit`);
-    await expect(page.getByTestId("price-watch-toggle")).toBeVisible();
+  test("price watch card is visible on the edit booking page", async ({ testBooking }) => {
+    await testBooking.page.goto(`/bookings/${testBooking.id}/edit`);
+    await expect(testBooking.page.getByTestId("price-watch-toggle")).toBeVisible();
   });
 });
