@@ -33,26 +33,13 @@ export default defineConfig({
   /* Configure projects for major browsers */
   projects: [
     {
-      name: "setup",
-      testMatch: "**/auth.setup.ts",
-    },
-
-    {
       name: "chromium",
-      use: {
-        ...devices["Desktop Chrome"],
-        storageState: "e2e/.auth/admin.json",
-      },
-      dependencies: ["setup"],
+      use: { ...devices["Desktop Chrome"] },
     },
 
     {
       name: "webkit",
-      use: {
-        ...devices["Desktop Safari"],
-        storageState: "e2e/.auth/admin.json",
-      },
-      dependencies: ["setup"],
+      use: { ...devices["Desktop Safari"] },
     },
   ],
 
