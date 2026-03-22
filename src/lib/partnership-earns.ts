@@ -72,15 +72,6 @@ export async function resolvePartnershipEarns(
   const rateByEarnCurrency = Object.fromEntries(rateEntries);
 
   for (const earn of applicableEarns) {
-    // Filter: must match hotel chain (if restricted)
-    if (earn.hotelChainId && earn.hotelChainId !== booking.hotelChainId) continue;
-
-    // Filter: must match country code (if restricted)
-    if (earn.countryCodes.length > 0) {
-      const countryCode = booking.property?.countryCode;
-      if (!countryCode || !earn.countryCodes.includes(countryCode)) continue;
-    }
-
     const earnCurrencyRate = rateByEarnCurrency[earn.earnCurrency];
     if (!earnCurrencyRate) continue;
 
