@@ -17,24 +17,14 @@ import { enrichBookingWithRate } from "@/lib/booking-enrichment";
 import { findOrCreateProperty } from "@/lib/property-utils";
 import { reapplyCardBenefitsAffectedByBooking } from "@/lib/card-benefit-apply";
 import { resolvePartnershipEarns } from "@/lib/partnership-earns";
+import { BenefitInput, validateBenefitConstraints } from "@/lib/booking-benefit-validation";
 
 async function validateBenefits(
-  benefits: {
-    benefitType?: string;
-    dollarValue?: number | null;
-    pointsEarnType?: string | null;
-    pointsAmount?: number | null;
-    pointsMultiplier?: number | null;
-  }[],
+  benefits: BenefitInput[],
   hotelChainId: string | null | undefined
 ): Promise<string | null> {
   for (const b of benefits) {
-    const hasPoints = !!b.pointsEarnType;
-    const hasDollar = b.dollarValue != null;
-    if (hasPoints && hasDollar) {
-      return "A benefit cannot have both a dollar value and a points earn type";
-    }
-    if (hasPoints) {
+    if (b.pointsEarnType) {
       if (!hotelChainId) {
         return "Points benefits require a booking with a hotel chain";
       }
@@ -42,19 +32,12 @@ async function validateBenefits(
         where: { id: hotelChainId },
         select: { pointType: { select: { id: true } } },
       });
-      if (!chain?.pointType) {
-        return "Points benefits require the hotel chain to have a configured loyalty program";
-      }
-      if (b.pointsEarnType === "fixed_per_stay" || b.pointsEarnType === "fixed_per_night") {
-        if (b.pointsAmount == null)
-          return "fixed_per_stay and fixed_per_night require pointsAmount";
-        if (b.pointsMultiplier != null)
-          return "fixed_per_stay and fixed_per_night cannot have pointsMultiplier";
-      }
-      if (b.pointsEarnType === "multiplier_on_base") {
-        if (b.pointsMultiplier == null) return "multiplier_on_base requires pointsMultiplier";
-        if (b.pointsAmount != null) return "multiplier_on_base cannot have pointsAmount";
-      }
+      const hasLoyaltyProgram = !!chain?.pointType;
+      const error = validateBenefitConstraints(b, hasLoyaltyProgram);
+      if (error) return error;
+    } else {
+      const error = validateBenefitConstraints(b, true); // no chain check needed for non-points
+      if (error) return error;
     }
   }
   return null;
