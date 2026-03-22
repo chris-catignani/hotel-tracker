@@ -13,7 +13,12 @@ import { apiError } from "@/lib/api-error";
 import { calculatePoints, resolveBasePointRate } from "@/lib/loyalty-utils";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
-import { fetchExchangeRate, getCurrentRate, resolveCalcCurrencyRate } from "@/lib/exchange-rate";
+import {
+  fetchExchangeRate,
+  getOrFetchHistoricalRate,
+  getCurrentRate,
+  resolveCalcCurrencyRate,
+} from "@/lib/exchange-rate";
 import { enrichBookingWithRate } from "@/lib/booking-enrichment";
 import { findOrCreateProperty } from "@/lib/property-utils";
 import { resolvePartnershipEarns } from "@/lib/partnership-earns";
@@ -279,7 +284,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       } else if (isPast) {
         data.currency = finalCurrency;
         const checkInStr = finalCheckIn.toISOString().split("T")[0];
-        data.lockedExchangeRate = await fetchExchangeRate(finalCurrency, checkInStr);
+        data.lockedExchangeRate = await getOrFetchHistoricalRate(finalCurrency, checkInStr);
       } else {
         data.currency = finalCurrency;
         data.lockedExchangeRate = null;

@@ -1,5 +1,6 @@
 import { calculatePoints, resolveBasePointRate } from "@/lib/loyalty-utils";
 import { getCurrentRate, resolveCalcCurrencyRate } from "@/lib/exchange-rate";
+import prisma from "@/lib/prisma";
 
 type EliteStatusShape = { eliteStatus: unknown };
 
@@ -72,12 +73,43 @@ export async function enrichBookingWithRate<T extends EnrichableBooking>(booking
     loyaltyPointsEstimated = true;
   }
 
+  let exchangeRateEstimated = false;
+  if (isNonUsd && !isFuture && resolvedRate != null) {
+    const checkInDate = checkIn;
+    const dayBefore = new Date(checkInDate);
+    dayBefore.setDate(dayBefore.getDate() - 1);
+
+    const [historyOnDate, historyDayBefore] = await Promise.all([
+      prisma.exchangeRateHistory.findUnique({
+        where: {
+          fromCurrency_toCurrency_date: {
+            fromCurrency: booking.currency,
+            toCurrency: "USD",
+            date: checkInDate,
+          },
+        },
+      }),
+      prisma.exchangeRateHistory.findUnique({
+        where: {
+          fromCurrency_toCurrency_date: {
+            fromCurrency: booking.currency,
+            toCurrency: "USD",
+            date: dayBefore,
+          },
+        },
+      }),
+    ]);
+
+    exchangeRateEstimated = historyOnDate == null && historyDayBefore == null;
+  }
+
   return {
     ...booking,
     lockedExchangeRate: resolvedRate,
     loyaltyPointsEarned,
     isFutureEstimate,
     loyaltyPointsEstimated,
+    exchangeRateEstimated,
     hotelChain: booking.hotelChain
       ? {
           ...booking.hotelChain,

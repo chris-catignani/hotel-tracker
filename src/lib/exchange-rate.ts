@@ -7,7 +7,6 @@ const FALLBACK_BASE = "https://{date}.currency-api.pages.dev";
 /**
  * Fetch rate from fawazahmed0/exchange-api: 1 fromCurrency = X USD.
  * Pass a date string (YYYY-MM-DD) for historical rates, or "latest" for current.
- * Historical data available from approximately March 2024 onward.
  */
 export async function fetchExchangeRate(
   fromCurrency: string,
@@ -27,7 +26,9 @@ export async function fetchExchangeRate(
     res = await fetch(fallbackUrl, { cache: "no-store" });
   }
   if (!res.ok) {
-    throw new Error(`Exchange rate API error for ${fromCurrency}: ${res.status}`);
+    const err = new Error(`Exchange rate API error for ${fromCurrency}: ${res.status}`);
+    (err as Error & { url: string }).url = fallbackUrl;
+    throw err;
   }
 
   const data = (await res.json()) as Record<string, Record<string, number>>;
@@ -110,6 +111,7 @@ export async function getOrFetchHistoricalRate(
     logger.warn("Exchange rate fetch failed, falling back to current cached rate", {
       fromCurrency,
       date,
+      url: (err as Error & { url?: string }).url,
       error: err instanceof Error ? { message: err.message, stack: err.stack } : String(err),
     });
     return getCurrentRate(fromCurrency);

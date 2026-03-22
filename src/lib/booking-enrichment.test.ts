@@ -11,12 +11,22 @@ vi.mock("./loyalty-utils", async (importOriginal) => {
   return { ...actual, calculatePoints: vi.fn() };
 });
 
+vi.mock("./prisma", () => ({
+  default: {
+    exchangeRateHistory: { findUnique: vi.fn() },
+  },
+}));
+
 import { getCurrentRate, resolveCalcCurrencyRate } from "./exchange-rate";
 import { calculatePoints } from "./loyalty-utils";
+import prisma from "./prisma";
 
 const mockGetCurrentRate = getCurrentRate as Mock;
 const mockResolveCalcCurrencyRate = resolveCalcCurrencyRate as Mock;
 const mockCalculatePoints = calculatePoints as Mock;
+const prismaMock = prisma as unknown as {
+  exchangeRateHistory: { findUnique: Mock };
+};
 
 const pastDate = new Date("2024-06-01T00:00:00Z");
 const futureDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
@@ -53,6 +63,10 @@ describe("enrichBookingWithRate", () => {
   });
 
   describe("past non-USD booking with stored rate", () => {
+    beforeEach(() => {
+      prismaMock.exchangeRateHistory.findUnique.mockResolvedValue({ rate: "0.65" });
+    });
+
     it("uses the stored exchangeRate, no live lookup, isFutureEstimate=false", async () => {
       const booking = {
         ...baseBooking,
@@ -255,6 +269,63 @@ describe("enrichBookingWithRate", () => {
       expect(result.isFutureEstimate).toBe(false);
       expect(result.lockedExchangeRate).toBe(1);
       expect(mockGetCurrentRate).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("exchangeRateEstimated", () => {
+    const pastNonUsdBooking = {
+      ...baseBooking,
+      currency: "AUD",
+      lockedExchangeRate: "0.63",
+      checkIn: new Date("2022-01-15T00:00:00Z"), // very old, pre-API coverage
+    };
+
+    it("is true when no ExchangeRateHistory exists for checkIn or checkIn-1", async () => {
+      prismaMock.exchangeRateHistory.findUnique.mockResolvedValue(null);
+
+      const result = await enrichBookingWithRate(pastNonUsdBooking);
+
+      expect(result.exchangeRateEstimated).toBe(true);
+    });
+
+    it("is false when ExchangeRateHistory exists for checkIn-1 (same-day check-in case)", async () => {
+      // First call (checkIn date) returns null, second call (checkIn-1) returns a record
+      prismaMock.exchangeRateHistory.findUnique
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ rate: "0.63" });
+
+      const result = await enrichBookingWithRate(pastNonUsdBooking);
+
+      expect(result.exchangeRateEstimated).toBe(false);
+    });
+
+    it("is false when ExchangeRateHistory exists for checkIn date itself", async () => {
+      prismaMock.exchangeRateHistory.findUnique.mockResolvedValueOnce({ rate: "0.63" });
+
+      const result = await enrichBookingWithRate(pastNonUsdBooking);
+
+      expect(result.exchangeRateEstimated).toBe(false);
+    });
+
+    it("is false for a USD booking", async () => {
+      const result = await enrichBookingWithRate(baseBooking); // baseBooking is USD
+      expect(result.exchangeRateEstimated).toBe(false);
+      expect(prismaMock.exchangeRateHistory.findUnique).not.toHaveBeenCalled();
+    });
+
+    it("is false for a future non-USD booking", async () => {
+      mockGetCurrentRate.mockResolvedValueOnce(0.63);
+      const futureBooking = {
+        ...baseBooking,
+        currency: "AUD",
+        lockedExchangeRate: null,
+        checkIn: futureDate,
+      };
+
+      const result = await enrichBookingWithRate(futureBooking);
+
+      expect(result.exchangeRateEstimated).toBe(false);
+      expect(prismaMock.exchangeRateHistory.findUnique).not.toHaveBeenCalled();
     });
   });
 });

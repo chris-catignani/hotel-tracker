@@ -7,7 +7,12 @@ import { calculatePoints, resolveBasePointRate } from "@/lib/loyalty-utils";
 import { CertType, BenefitType, AccommodationType } from "@prisma/client";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
-import { fetchExchangeRate, getCurrentRate, resolveCalcCurrencyRate } from "@/lib/exchange-rate";
+import {
+  fetchExchangeRate,
+  getOrFetchHistoricalRate,
+  getCurrentRate,
+  resolveCalcCurrencyRate,
+} from "@/lib/exchange-rate";
 import { enrichBookingWithRate } from "@/lib/booking-enrichment";
 import { findOrCreateProperty } from "@/lib/property-utils";
 import { reapplyCardBenefitsAffectedByBooking } from "@/lib/card-benefit-apply";
@@ -182,7 +187,7 @@ export async function POST(request: NextRequest) {
       resolvedExchangeRate = 1;
     } else if (isPast) {
       const checkInStr = checkInDate.toISOString().split("T")[0];
-      resolvedExchangeRate = await fetchExchangeRate(resolvedCurrency, checkInStr);
+      resolvedExchangeRate = await getOrFetchHistoricalRate(resolvedCurrency, checkInStr);
     }
     // future non-USD: resolvedExchangeRate stays null
 

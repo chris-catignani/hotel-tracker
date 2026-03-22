@@ -4,6 +4,7 @@ import "./globals.css";
 import { Sidebar } from "@/components/sidebar";
 import { MobileHeader } from "@/components/mobile-header";
 import { SessionProvider } from "next-auth/react";
+import { SentryUserContext } from "@/components/sentry-user-context";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,6 +32,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased h-full overflow-hidden`}
       >
         <SessionProvider>
+          <SentryUserContext />
           <div className="flex flex-col lg:flex-row h-dvh bg-background overflow-hidden">
             <MobileHeader />
             <Sidebar />

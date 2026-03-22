@@ -123,6 +123,7 @@ interface Booking extends Omit<NetCostBooking, "bookingPromotions" | "userCredit
   bookingDate: string | null;
   lockedExchangeRate: string | number | null;
   isFutureEstimate?: boolean;
+  exchangeRateEstimated?: boolean;
   loyaltyPointsEstimated?: boolean;
   userCreditCardId: string | null;
   userCreditCard: {
@@ -359,6 +360,11 @@ export default function BookingDetailPage() {
                         {booking.isFutureEstimate ? " (est.)" : ""}
                       </p>
                     )}
+                    {booking.exchangeRateEstimated && (
+                      <p className="text-amber-600 text-xs mt-0.5">
+                        Historical rate unavailable — estimated using current rate
+                      </p>
+                    )}
                   </>
                 ) : (
                   <p className="font-medium">{formatCurrency(Number(booking.pretaxCost))}</p>
@@ -391,6 +397,11 @@ export default function BookingDetailPage() {
                       >
                         ≈ {formatCurrency(totalCost * Number(booking.lockedExchangeRate))}
                         {booking.isFutureEstimate ? " (est.)" : ""}
+                      </p>
+                    )}
+                    {booking.exchangeRateEstimated && (
+                      <p className="text-amber-600 text-xs mt-0.5">
+                        Historical rate unavailable — estimated using current rate
                       </p>
                     )}
                   </>

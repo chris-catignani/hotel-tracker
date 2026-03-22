@@ -109,7 +109,7 @@ Incomplete final cycle earns $0. Label depends on whether the cap was exhausted:
 - Calculated server-side in the booking API and client-side via `src/lib/loyalty-utils.ts`. User can override.
 - **Not applicable** to apartment bookings — loyalty fields are hidden in the form.
 - **Foreign-currency programs (e.g. Accor):** `PointType` has `programCurrency` (e.g. `EUR`) and `programCentsPerPoint`. `usdCentsPerPoint` is refreshed daily by the exchange rate cron. `Booking.lockedLoyaltyUsdCentsPerPoint` snapshots `programCentsPerPoint × programCurrency/USD rate` at check-in so past stay values don't drift with FX.
-  - **Critical:** always use `fetchExchangeRate(pt.programCurrency, date)` — NOT the booking currency rate — since `programCentsPerPoint` is denominated in `programCurrency` regardless of what the guest paid in.
+  - **Critical:** always use `getOrFetchHistoricalRate(pt.programCurrency, date)` — NOT the booking currency rate — since `programCentsPerPoint` is denominated in `programCurrency` regardless of what the guest paid in.
 
 ### Apartment / Short-term Rental Stays
 
