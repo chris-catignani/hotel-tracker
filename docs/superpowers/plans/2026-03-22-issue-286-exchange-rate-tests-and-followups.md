@@ -752,19 +752,29 @@ it("shows estimated rate warning when booking has exchangeRateEstimated=true", a
     ]),
   });
 
+  const user = userEvent.setup();
   render(<BookingsPage />);
 
+  // jsdom has no media queries, so only the mobile card view renders
   await waitFor(() => {
-    expect(screen.getByTestId("booking-row-bk1")).toBeInTheDocument();
+    expect(screen.getByTestId("booking-card-bk1")).toBeInTheDocument();
   });
 
-  // Open the popover to see the estimated rate warning
-  // The warning is inside a Popover — check it exists in the DOM
-  expect(screen.getByText("Historical rate unavailable — estimated using current rate")).toBeInTheDocument();
+  // Open the cost popover to reveal the estimated rate warning.
+  // Both mobile card and desktop table render in jsdom (CSS visibility ignored),
+  // so use getAllByTestId and click the first one.
+  const triggers = screen.getAllByTestId("cost-popover-trigger");
+  await user.click(triggers[0]);
+
+  await waitFor(() => {
+    expect(
+      screen.getByText("Historical rate unavailable — estimated using current rate")
+    ).toBeInTheDocument();
+  });
 });
 ```
 
-Note: The warning `<p>` is rendered inside a `<PopoverContent>`. Radix UI's Popover renders content in the DOM even when not open in jsdom, so the text should be queryable without clicking.
+Note: The warning `<p>` is inside a `<PopoverContent>`. Radix UI's Popover does NOT render content in jsdom until the trigger is clicked — open the popover first before asserting the text.
 
 - [ ] **Step 8: Run lint and unit tests**
 
