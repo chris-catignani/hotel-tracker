@@ -10,6 +10,7 @@ import {
 } from "@/lib/promotion-matching";
 import { reevaluateSubsequentBookings } from "@/lib/promotion-matching-helpers";
 import { apiError } from "@/lib/api-error";
+import { CertType, BenefitType, BenefitPointsEarnType } from "@prisma/client";
 import { calculatePoints, resolveBasePointRate } from "@/lib/loyalty-utils";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
@@ -26,6 +27,7 @@ import {
   reapplyCardBenefitsAffectedByBooking,
   reapplyBenefitForPeriod,
 } from "@/lib/card-benefit-apply";
+import { validateBenefits } from "@/lib/booking-benefit-validation";
 
 async function getFullBookingWithUsage(id: string, userId: string) {
   const booking = await prisma.booking.findFirst({
@@ -405,7 +407,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         await prisma.bookingCertificate.createMany({
           data: (certificates as string[]).map((v) => ({
             bookingId: id,
-            certType: v as import("@prisma/client").CertType,
+            certType: v as CertType,
           })),
         });
       }
@@ -413,19 +415,45 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     // Handle benefits: delete old ones and recreate if provided
     if (benefits !== undefined) {
+      // Resolve effective hotelChainId for benefit validation:
+      // body may not include it if the chain isn't being changed
+      const effectiveHotelChainId =
+        hotelChainId !== undefined
+          ? hotelChainId || null
+          : ((
+              await prisma.booking.findFirst({
+                where: { id, userId },
+                select: { hotelChainId: true },
+              })
+            )?.hotelChainId ?? null);
+
+      const benefitValidationError = await validateBenefits(benefits ?? [], effectiveHotelChainId);
+      if (benefitValidationError) {
+        return apiError(benefitValidationError, null, 400, request);
+      }
       await prisma.bookingBenefit.deleteMany({
         where: { bookingId: id },
       });
       const validBenefits = (
-        benefits as { benefitType: string; label?: string; dollarValue?: number }[]
+        benefits as {
+          benefitType: string;
+          label?: string;
+          dollarValue?: number | null;
+          pointsEarnType?: string | null;
+          pointsAmount?: number | null;
+          pointsMultiplier?: number | null;
+        }[]
       ).filter((b) => b.benefitType);
       if (validBenefits.length > 0) {
         await prisma.bookingBenefit.createMany({
           data: validBenefits.map((b) => ({
             bookingId: id,
-            benefitType: b.benefitType as import("@prisma/client").BenefitType,
+            benefitType: b.benefitType as BenefitType,
             label: b.label || null,
             dollarValue: b.dollarValue != null ? Number(b.dollarValue) : null,
+            pointsEarnType: (b.pointsEarnType as BenefitPointsEarnType) || null,
+            pointsAmount: b.pointsAmount != null ? Number(b.pointsAmount) : null,
+            pointsMultiplier: b.pointsMultiplier != null ? Number(b.pointsMultiplier) : null,
           })),
         });
       }

@@ -165,6 +165,14 @@ export interface NetCostBooking {
     };
     benefitApplications?: NetCostBookingPromotionBenefit[];
   }[];
+  benefits?: {
+    benefitType: string;
+    label: string | null;
+    dollarValue: string | number | null;
+    pointsEarnType: string | null;
+    pointsAmount: number | null;
+    pointsMultiplier: string | number | null;
+  }[];
 }
 
 export interface PromotionBreakdown extends CalculationDetail {
@@ -189,6 +197,9 @@ export interface NetCostBreakdown {
   loyaltyPointsCalc?: CalculationDetail;
   partnershipEarns: { name: string; earnedValue: number; calc: CalculationDetail }[];
   partnershipEarnsValue: number;
+  bookingBenefitsValue: number;
+  bookingBenefitsCalc?: CalculationDetail;
+  bookingBenefits: { label: string; value: number; detail: string }[];
   pointsRedeemedValue: number;
   pointsRedeemedCalc?: CalculationDetail;
   certsValue: number;
@@ -201,6 +212,19 @@ function formatCents(centsPerPoint: number): string {
   if (Number.isInteger(c)) return c.toString();
   // Use toPrecision or simply toString to avoid trailing zeros unless necessary
   return parseFloat(c.toFixed(2)).toString();
+}
+
+function formatBenefitLabel(benefitType: string): string {
+  const labels: Record<string, string> = {
+    free_breakfast: "Free Breakfast",
+    dining_credit: "Dining Credit",
+    spa_credit: "Spa Credit",
+    room_upgrade: "Room Upgrade",
+    late_checkout: "Late Checkout",
+    early_checkin: "Early Check-in",
+    other: "Other Benefit",
+  };
+  return labels[benefitType] ?? benefitType;
 }
 
 export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
@@ -1046,6 +1070,90 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
   const partnershipEarns = booking.partnershipEarns ?? [];
   const partnershipEarnsValue = partnershipEarns.reduce((sum, e) => sum + e.earnedValue, 0);
 
+  // 4c. Booking Benefits (cash perks and points awards from the rate/stay)
+  let bookingBenefitsValue = 0;
+  let bookingBenefitsCalc: CalculationDetail | undefined;
+  const bookingBenefits: { label: string; value: number; detail: string }[] = [];
+
+  const benefitUsdCentsPerPoint =
+    booking.lockedLoyaltyUsdCentsPerPoint != null
+      ? Number(booking.lockedLoyaltyUsdCentsPerPoint)
+      : booking.hotelChain?.pointType?.usdCentsPerPoint != null
+        ? Number(booking.hotelChain.pointType.usdCentsPerPoint)
+        : 0;
+
+  const benefitCalcCurrencyToUsdRate = booking.hotelChain?.calcCurrencyToUsdRate ?? null;
+  const benefitCalculationCurrency = booking.hotelChain?.calculationCurrency ?? null;
+
+  for (const benefit of booking.benefits ?? []) {
+    const benefitLabel = benefit.label || formatBenefitLabel(benefit.benefitType);
+
+    if (benefit.dollarValue != null && Number(benefit.dollarValue) > 0) {
+      // Cash benefit: convert native dollarValue to USD (same currency convention as pretaxCost)
+      const usdValue = toUSD(Number(benefit.dollarValue), exchangeRate);
+      const currencyCode = booking.currency ?? "USD";
+      const detail =
+        exchangeRate !== 1
+          ? `${formatCurrency(Number(benefit.dollarValue), currencyCode)} × ${exchangeRate} (exchange rate) = ${formatCurrency(usdValue)}`
+          : formatCurrency(usdValue);
+      bookingBenefits.push({ label: benefitLabel, value: usdValue, detail });
+      bookingBenefitsValue += usdValue;
+    } else if (benefit.pointsEarnType && benefitUsdCentsPerPoint > 0) {
+      const baseRate =
+        resolveBasePointRate(booking.hotelChain ?? null, booking.hotelChainSubBrand) ?? 0;
+      let extraPoints = 0;
+      let detail = "";
+      const centsStr = formatCents(benefitUsdCentsPerPoint);
+
+      if (benefit.pointsEarnType === "fixed_per_stay") {
+        extraPoints = Math.floor(Number(benefit.pointsAmount ?? 0));
+        detail = `${extraPoints.toLocaleString()} pts × ${centsStr}¢/pt = ${formatCurrency(extraPoints * benefitUsdCentsPerPoint)}`;
+      } else if (benefit.pointsEarnType === "fixed_per_night") {
+        const ptsPerNight = Number(benefit.pointsAmount ?? 0);
+        extraPoints = Math.floor(ptsPerNight * booking.numNights);
+        detail = `floor(${ptsPerNight.toLocaleString()} × ${booking.numNights} nights) = ${extraPoints.toLocaleString()} pts × ${centsStr}¢/pt = ${formatCurrency(extraPoints * benefitUsdCentsPerPoint)}`;
+      } else if (benefit.pointsEarnType === "multiplier_on_base") {
+        const multiplier = Number(benefit.pointsMultiplier ?? 0);
+        // Convert pretax spend to the chain's program currency (mirrors the loyalty calculation)
+        const pretaxInProgram =
+          benefitCalculationCurrency && benefitCalcCurrencyToUsdRate
+            ? (nativePretaxCost * exchangeRate) / benefitCalcCurrencyToUsdRate
+            : nativePretaxCost;
+        extraPoints = Math.floor((multiplier - 1) * baseRate * pretaxInProgram);
+        const programCurrencyLabel = benefitCalculationCurrency ?? booking.currency ?? "USD";
+        detail = `(${multiplier} − 1) × ${baseRate} pts/${programCurrencyLabel} × ${formatCurrency(pretaxInProgram, programCurrencyLabel)} pretax → ${extraPoints.toLocaleString()} pts × ${centsStr}¢/pt = ${formatCurrency(extraPoints * benefitUsdCentsPerPoint)}`;
+      }
+
+      const usdValue = extraPoints * benefitUsdCentsPerPoint;
+      if (usdValue > 0) {
+        bookingBenefits.push({ label: benefitLabel, value: usdValue, detail });
+        bookingBenefitsValue += usdValue;
+      }
+    }
+  }
+
+  if (bookingBenefits.length > 0 && bookingBenefitsValue > 0) {
+    bookingBenefitsCalc = {
+      label: "Booking Benefits",
+      appliedValue: bookingBenefitsValue,
+      description:
+        "The combined value of perks included with this booking. Cash benefits are converted to USD using the booking's exchange rate. Points benefits use the hotel chain's per-point value locked at check-in (or the live rate for future bookings).",
+      groups: bookingBenefits
+        .filter((b) => b.value > 0)
+        .map((b) => ({
+          name: b.label,
+          segments: [
+            {
+              label: b.label,
+              value: b.value,
+              formula: b.detail,
+              description: "",
+            },
+          ],
+        })),
+    };
+  }
+
   // 5. Points RedeemedValue
   let pointsRedeemedValue = 0;
   let pointsRedeemedCalc: CalculationDetail | undefined;
@@ -1114,7 +1222,8 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
     portalCashback -
     cardReward -
     loyaltyPointsValue -
-    partnershipEarnsValue +
+    partnershipEarnsValue -
+    bookingBenefitsValue +
     pointsRedeemedValue +
     certsValue;
 
@@ -1132,6 +1241,9 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
     loyaltyPointsCalc,
     partnershipEarns,
     partnershipEarnsValue,
+    bookingBenefitsValue,
+    bookingBenefitsCalc,
+    bookingBenefits,
     pointsRedeemedValue,
     pointsRedeemedCalc,
     certsValue,

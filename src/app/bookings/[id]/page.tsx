@@ -91,6 +91,9 @@ interface BookingBenefit {
   benefitType: string;
   label: string | null;
   dollarValue: string | number | null;
+  pointsEarnType: string | null;
+  pointsAmount: number | null;
+  pointsMultiplier: string | number | null;
 }
 
 // Ensure Booking interface matches NetCostBooking for the breakdown logic
@@ -496,7 +499,7 @@ export default function BookingDetailPage() {
 
       {/* Booking Benefits */}
       {booking.benefits.length > 0 && (
-        <Card>
+        <Card data-testid="booking-benefits-card">
           <CardHeader>
             <CardTitle>Booking Benefits</CardTitle>
           </CardHeader>
@@ -508,11 +511,23 @@ export default function BookingDetailPage() {
                     {formatBenefitType(b.benefitType)}
                     {b.label ? ` — ${b.label}` : ""}
                   </span>
-                  {b.dollarValue != null && (
+                  {b.dollarValue != null ? (
                     <span className="text-muted-foreground">
                       ${Number(b.dollarValue).toFixed(2)}
                     </span>
-                  )}
+                  ) : b.pointsEarnType === "fixed_per_stay" && b.pointsAmount != null ? (
+                    <span className="text-muted-foreground">
+                      {Number(b.pointsAmount).toLocaleString()} pts
+                    </span>
+                  ) : b.pointsEarnType === "fixed_per_night" && b.pointsAmount != null ? (
+                    <span className="text-muted-foreground">
+                      {Number(b.pointsAmount).toLocaleString()} pts/night
+                    </span>
+                  ) : b.pointsEarnType === "multiplier_on_base" && b.pointsMultiplier != null ? (
+                    <span className="text-muted-foreground">
+                      {Number(b.pointsMultiplier)}× multiplier
+                    </span>
+                  ) : null}
                 </li>
               ))}
             </ul>

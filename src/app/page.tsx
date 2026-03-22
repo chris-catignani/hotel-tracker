@@ -150,10 +150,10 @@ interface BookingWithRelations {
   certificates: BookingCertificate[];
 }
 
-function calcTotalSavings(booking: BookingWithRelations): number {
-  const { promoSavings, portalCashback, cardReward, loyaltyPointsValue } =
+export function calcTotalSavings(booking: BookingWithRelations): number {
+  const { promoSavings, portalCashback, cardReward, loyaltyPointsValue, bookingBenefitsValue } =
     getNetCostBreakdown(booking);
-  return promoSavings + portalCashback + cardReward + loyaltyPointsValue;
+  return promoSavings + portalCashback + cardReward + loyaltyPointsValue + bookingBenefitsValue;
 }
 
 interface HotelChainSummary {

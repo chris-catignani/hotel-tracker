@@ -115,6 +115,7 @@ function CalculationInfo({ calc }: { calc: CalculationDetail | undefined }) {
 
 export function CostBreakdown({ breakdown }: CostBreakdownProps) {
   const [isPromosExpanded, setIsPromosExpanded] = useState(false);
+  const [isBenefitsExpanded, setIsBenefitsExpanded] = useState(false);
 
   const {
     totalCost,
@@ -133,6 +134,8 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
     loyaltyPointsValue,
     loyaltyPointsCalc,
     partnershipEarns,
+    bookingBenefitsValue,
+    bookingBenefits,
     netCost,
   } = breakdown;
 
@@ -231,6 +234,66 @@ export function CostBreakdown({ breakdown }: CostBreakdownProps) {
                 </span>
               </div>
             )
+        )}
+
+        {(bookingBenefitsValue ?? 0) > 0 && (
+          <div className="space-y-2">
+            <button
+              className="flex w-full items-center justify-between text-sm hover:bg-muted/50 py-0.5 rounded transition-colors group"
+              onClick={() => setIsBenefitsExpanded(!isBenefitsExpanded)}
+              data-testid="breakdown-benefits-toggle"
+            >
+              <div className="flex items-center gap-1.5">
+                <span>Booking Benefits</span>
+                {isBenefitsExpanded ? (
+                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                ) : (
+                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                )}
+              </div>
+              <span data-testid="breakdown-benefits-value" className="text-green-600">
+                -{formatCurrency(bookingBenefitsValue ?? 0)}
+              </span>
+            </button>
+
+            {isBenefitsExpanded && (
+              <div
+                className="ml-5 space-y-2 border-l pl-3 py-1"
+                data-testid="breakdown-benefits-list"
+              >
+                {(bookingBenefits ?? []).map((b, idx) => {
+                  const itemCalc = b.detail
+                    ? {
+                        label: b.label,
+                        description: "",
+                        groups: [
+                          {
+                            segments: [
+                              {
+                                label: b.label,
+                                formula: b.detail,
+                                value: b.value,
+                                description: "",
+                              },
+                            ],
+                          },
+                        ],
+                        appliedValue: b.value,
+                      }
+                    : undefined;
+                  return (
+                    <div key={idx} className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-muted-foreground">{b.label}</span>
+                        <CalculationInfo calc={itemCalc} />
+                      </div>
+                      <span className="text-green-600">-{formatCurrency(b.value)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         )}
 
         {promotions.length > 0 && (

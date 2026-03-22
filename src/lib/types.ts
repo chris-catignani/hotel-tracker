@@ -431,6 +431,9 @@ export interface BookingBenefit {
   benefitType: string;
   label: string | null;
   dollarValue: string | number | null;
+  pointsEarnType: string | null;
+  pointsAmount: number | null;
+  pointsMultiplier: string | number | null;
 }
 
 export interface Booking {

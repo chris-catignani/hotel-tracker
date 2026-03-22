@@ -14,7 +14,13 @@ import { CERT_TYPE_OPTIONS } from "@/lib/cert-types";
 export type BenefitItem = {
   type: string;
   label: string;
+  // valueType tracks the selected radio button intent explicitly, avoiding ambiguity
+  // between "None" and "Cash" when dollarValue is empty.
+  valueType: "" | "cash" | "fixed_per_stay" | "fixed_per_night" | "multiplier_on_base";
   dollarValue: string;
+  pointsEarnType: string; // '' | 'fixed_per_stay' | 'fixed_per_night' | 'multiplier_on_base'
+  pointsAmount: string;
+  pointsMultiplier: string;
   _id: string;
 };
 
@@ -166,13 +172,23 @@ export function buildInitialState(
     portalCashbackOnTotal: initialData.portalCashbackOnTotal ?? false,
     bookingSource: initialData.bookingSource || "",
     otaAgencyId: initialData.otaAgencyId ?? "none",
-    benefits: initialData.benefits.map((b) =>
-      makeBenefitItem({
+    benefits: initialData.benefits.map((b) => {
+      // Derive valueType from the stored data for correct radio state on edit
+      const valueType = b.pointsEarnType
+        ? (b.pointsEarnType as BenefitItem["valueType"])
+        : b.dollarValue != null
+          ? "cash"
+          : "";
+      return makeBenefitItem({
         type: b.benefitType,
         label: b.label || "",
+        valueType,
         dollarValue: b.dollarValue != null ? String(Number(b.dollarValue)) : "",
-      })
-    ),
+        pointsEarnType: b.pointsEarnType || "",
+        pointsAmount: b.pointsAmount != null ? String(b.pointsAmount) : "",
+        pointsMultiplier: b.pointsMultiplier != null ? String(Number(b.pointsMultiplier)) : "",
+      });
+    }),
     notes: initialData.notes || "",
     showErrors: false,
   };
@@ -219,7 +235,8 @@ export type Action =
   | { type: "REMOVE_CERTIFICATE"; index: number }
   | { type: "ADD_BENEFIT" }
   | { type: "UPDATE_BENEFIT"; index: number; field: string; value: string }
-  | { type: "REMOVE_BENEFIT"; index: number };
+  | { type: "REMOVE_BENEFIT"; index: number }
+  | { type: "RESET_BENEFIT_POINTS" };
 
 // ── Reducer ───────────────────────────────────────────────────────────────────
 
@@ -347,7 +364,18 @@ export function bookingFormReducer(state: BookingFormState, action: Action): Boo
     case "ADD_BENEFIT":
       return {
         ...state,
-        benefits: [...state.benefits, makeBenefitItem({ type: "", label: "", dollarValue: "" })],
+        benefits: [
+          ...state.benefits,
+          makeBenefitItem({
+            type: "",
+            label: "",
+            valueType: "",
+            dollarValue: "",
+            pointsEarnType: "",
+            pointsAmount: "",
+            pointsMultiplier: "",
+          }),
+        ],
       };
 
     case "UPDATE_BENEFIT":
@@ -362,6 +390,16 @@ export function bookingFormReducer(state: BookingFormState, action: Action): Boo
       return {
         ...state,
         benefits: state.benefits.filter((_, i) => i !== action.index),
+      };
+
+    case "RESET_BENEFIT_POINTS":
+      return {
+        ...state,
+        benefits: state.benefits.map((b) =>
+          b.pointsEarnType
+            ? { ...b, valueType: "", pointsEarnType: "", pointsAmount: "", pointsMultiplier: "" }
+            : b
+        ),
       };
 
     default:

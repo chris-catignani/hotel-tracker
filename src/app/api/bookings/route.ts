@@ -4,7 +4,7 @@ import { matchPromotionsForBooking } from "@/lib/promotion-matching";
 import { reevaluateSubsequentBookings } from "@/lib/promotion-matching-helpers";
 import { apiError } from "@/lib/api-error";
 import { calculatePoints, resolveBasePointRate } from "@/lib/loyalty-utils";
-import { CertType, BenefitType, AccommodationType } from "@prisma/client";
+import { CertType, BenefitType, BenefitPointsEarnType, AccommodationType } from "@prisma/client";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
 import {
@@ -17,6 +17,7 @@ import { enrichBookingWithRate } from "@/lib/booking-enrichment";
 import { findOrCreateProperty } from "@/lib/property-utils";
 import { reapplyCardBenefitsAffectedByBooking } from "@/lib/card-benefit-apply";
 import { resolvePartnershipEarns } from "@/lib/partnership-earns";
+import { validateBenefits } from "@/lib/booking-benefit-validation";
 
 const BOOKING_INCLUDE = (userId: string) =>
   ({
@@ -252,6 +253,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const benefitValidationError = await validateBenefits(benefits ?? [], hotelChainId);
+    if (benefitValidationError) {
+      return apiError(benefitValidationError, null, 400, request);
+    }
+
     const booking = await prisma.booking.create({
       data: {
         userId,
@@ -288,12 +294,24 @@ export async function POST(request: NextRequest) {
           : undefined,
         benefits: benefits?.length
           ? {
-              create: (benefits as { benefitType: string; label?: string; dollarValue?: number }[])
+              create: (
+                benefits as {
+                  benefitType: string;
+                  label?: string;
+                  dollarValue?: number | null;
+                  pointsEarnType?: string | null;
+                  pointsAmount?: number | null;
+                  pointsMultiplier?: number | null;
+                }[]
+              )
                 .filter((b) => b.benefitType)
                 .map((b) => ({
                   benefitType: b.benefitType as BenefitType,
                   label: b.label || null,
                   dollarValue: b.dollarValue != null ? Number(b.dollarValue) : null,
+                  pointsEarnType: (b.pointsEarnType as BenefitPointsEarnType) || null,
+                  pointsAmount: b.pointsAmount != null ? Number(b.pointsAmount) : null,
+                  pointsMultiplier: b.pointsMultiplier != null ? Number(b.pointsMultiplier) : null,
                 })),
             }
           : undefined,

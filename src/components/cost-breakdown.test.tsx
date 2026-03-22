@@ -62,6 +62,9 @@ describe("CostBreakdown", () => {
     certsValue: 0,
     partnershipEarns: [],
     partnershipEarnsValue: 0,
+    bookingBenefitsValue: 0,
+    bookingBenefitsCalc: undefined,
+    bookingBenefits: [],
     netCost: 80,
   };
 
@@ -174,5 +177,22 @@ describe("CostBreakdown", () => {
     expect(screen.queryByText("Card Reward")).not.toBeInTheDocument();
     expect(screen.queryByText("Loyalty Points Value")).not.toBeInTheDocument();
     expect(screen.queryByText("Promotion Savings")).not.toBeInTheDocument();
+  });
+
+  it("Booking Benefits toggle is a button for keyboard accessibility", async () => {
+    const user = userEvent.setup();
+    const breakdownWithBenefits = {
+      ...mockBreakdown,
+      bookingBenefitsValue: 25,
+      bookingBenefits: [{ label: "Free Breakfast", value: 25, detail: "$25.00 cash value" }],
+    };
+    render(<CostBreakdown breakdown={breakdownWithBenefits} />);
+
+    const toggle = screen.getByTestId("breakdown-benefits-toggle");
+    expect(toggle.tagName).toBe("BUTTON");
+
+    // Verify it is also keyboard-operable (role=button is focusable/clickable)
+    await user.click(toggle);
+    expect(screen.getByTestId("breakdown-benefits-list")).toBeInTheDocument();
   });
 });
