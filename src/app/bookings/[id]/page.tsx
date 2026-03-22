@@ -511,11 +511,23 @@ export default function BookingDetailPage() {
                     {formatBenefitType(b.benefitType)}
                     {b.label ? ` — ${b.label}` : ""}
                   </span>
-                  {b.dollarValue != null && (
+                  {b.dollarValue != null ? (
                     <span className="text-muted-foreground">
                       ${Number(b.dollarValue).toFixed(2)}
                     </span>
-                  )}
+                  ) : b.pointsEarnType === "fixed_per_stay" && b.pointsAmount != null ? (
+                    <span className="text-muted-foreground">
+                      {Number(b.pointsAmount).toLocaleString()} pts
+                    </span>
+                  ) : b.pointsEarnType === "fixed_per_night" && b.pointsAmount != null ? (
+                    <span className="text-muted-foreground">
+                      {Number(b.pointsAmount).toLocaleString()} pts/night
+                    </span>
+                  ) : b.pointsEarnType === "multiplier_on_base" && b.pointsMultiplier != null ? (
+                    <span className="text-muted-foreground">
+                      {Number(b.pointsMultiplier)}× multiplier
+                    </span>
+                  ) : null}
                 </li>
               ))}
             </ul>

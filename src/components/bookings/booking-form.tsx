@@ -901,51 +901,58 @@ export function BookingForm({
                         data-testid={`benefit-card-${idx}`}
                       >
                         {/* Benefit type */}
-                        <AppSelect
-                          value={benefit.type || "none"}
-                          onValueChange={(v) => {
-                            const newType = v === "none" ? "" : v;
-                            dispatch({
-                              type: "UPDATE_BENEFIT",
-                              index: idx,
-                              field: "type",
-                              value: newType,
-                            });
-                            if (newType !== "other") {
+                        <div className="w-48 shrink-0">
+                          <AppSelect
+                            value={benefit.type || "none"}
+                            onValueChange={(v) => {
+                              const newType = v === "none" ? "" : v;
                               dispatch({
                                 type: "UPDATE_BENEFIT",
                                 index: idx,
-                                field: "valueType",
-                                value: "cash",
+                                field: "type",
+                                value: newType,
                               });
-                              dispatch({
-                                type: "UPDATE_BENEFIT",
-                                index: idx,
-                                field: "pointsEarnType",
-                                value: "",
-                              });
-                              dispatch({
-                                type: "UPDATE_BENEFIT",
-                                index: idx,
-                                field: "pointsAmount",
-                                value: "",
-                              });
-                              dispatch({
-                                type: "UPDATE_BENEFIT",
-                                index: idx,
-                                field: "pointsMultiplier",
-                                value: "",
-                              });
-                            }
-                          }}
-                          options={[
-                            { label: "Select type...", value: "none" },
-                            ...BENEFIT_TYPE_OPTIONS,
-                          ]}
-                          placeholder="Select type..."
-                          className="w-48 shrink-0"
-                          data-testid={`benefit-type-select-${idx}`}
-                        />
+                              if (newType !== "other") {
+                                dispatch({
+                                  type: "UPDATE_BENEFIT",
+                                  index: idx,
+                                  field: "label",
+                                  value: "",
+                                });
+                                dispatch({
+                                  type: "UPDATE_BENEFIT",
+                                  index: idx,
+                                  field: "valueType",
+                                  value: "cash",
+                                });
+                                dispatch({
+                                  type: "UPDATE_BENEFIT",
+                                  index: idx,
+                                  field: "pointsEarnType",
+                                  value: "",
+                                });
+                                dispatch({
+                                  type: "UPDATE_BENEFIT",
+                                  index: idx,
+                                  field: "pointsAmount",
+                                  value: "",
+                                });
+                                dispatch({
+                                  type: "UPDATE_BENEFIT",
+                                  index: idx,
+                                  field: "pointsMultiplier",
+                                  value: "",
+                                });
+                              }
+                            }}
+                            options={[
+                              { label: "Select type...", value: "none" },
+                              ...BENEFIT_TYPE_OPTIONS,
+                            ]}
+                            placeholder="Select type..."
+                            data-testid={`benefit-type-select-${idx}`}
+                          />
+                        </div>
 
                         {/* Label input — only for "other" */}
                         {isOther && (
@@ -966,86 +973,87 @@ export function BookingForm({
 
                         {/* Value type select — only for "other" */}
                         {isOther && (
-                          <AppSelect
-                            value={benefit.valueType || "none"}
-                            onValueChange={(vt) => {
-                              const newVt = vt === "none" ? "" : vt;
-                              dispatch({
-                                type: "UPDATE_BENEFIT",
-                                index: idx,
-                                field: "valueType",
-                                value: newVt,
-                              });
-                              if (newVt === "" || newVt === "cash") {
+                          <div className="w-36 shrink-0">
+                            <AppSelect
+                              value={benefit.valueType || "none"}
+                              onValueChange={(vt) => {
+                                const newVt = vt === "none" ? "" : vt;
                                 dispatch({
                                   type: "UPDATE_BENEFIT",
                                   index: idx,
-                                  field: "pointsEarnType",
-                                  value: "",
+                                  field: "valueType",
+                                  value: newVt,
                                 });
-                                dispatch({
-                                  type: "UPDATE_BENEFIT",
-                                  index: idx,
-                                  field: "pointsAmount",
-                                  value: "",
-                                });
-                                dispatch({
-                                  type: "UPDATE_BENEFIT",
-                                  index: idx,
-                                  field: "pointsMultiplier",
-                                  value: "",
-                                });
-                                if (newVt === "") {
+                                if (newVt === "" || newVt === "cash") {
+                                  dispatch({
+                                    type: "UPDATE_BENEFIT",
+                                    index: idx,
+                                    field: "pointsEarnType",
+                                    value: "",
+                                  });
+                                  dispatch({
+                                    type: "UPDATE_BENEFIT",
+                                    index: idx,
+                                    field: "pointsAmount",
+                                    value: "",
+                                  });
+                                  dispatch({
+                                    type: "UPDATE_BENEFIT",
+                                    index: idx,
+                                    field: "pointsMultiplier",
+                                    value: "",
+                                  });
+                                  if (newVt === "") {
+                                    dispatch({
+                                      type: "UPDATE_BENEFIT",
+                                      index: idx,
+                                      field: "dollarValue",
+                                      value: "",
+                                    });
+                                  }
+                                } else {
                                   dispatch({
                                     type: "UPDATE_BENEFIT",
                                     index: idx,
                                     field: "dollarValue",
                                     value: "",
                                   });
+                                  dispatch({
+                                    type: "UPDATE_BENEFIT",
+                                    index: idx,
+                                    field: "pointsEarnType",
+                                    value: newVt,
+                                  });
+                                  dispatch({
+                                    type: "UPDATE_BENEFIT",
+                                    index: idx,
+                                    field: "pointsAmount",
+                                    value: "",
+                                  });
+                                  dispatch({
+                                    type: "UPDATE_BENEFIT",
+                                    index: idx,
+                                    field: "pointsMultiplier",
+                                    value: "",
+                                  });
                                 }
-                              } else {
-                                dispatch({
-                                  type: "UPDATE_BENEFIT",
-                                  index: idx,
-                                  field: "dollarValue",
-                                  value: "",
-                                });
-                                dispatch({
-                                  type: "UPDATE_BENEFIT",
-                                  index: idx,
-                                  field: "pointsEarnType",
-                                  value: newVt,
-                                });
-                                dispatch({
-                                  type: "UPDATE_BENEFIT",
-                                  index: idx,
-                                  field: "pointsAmount",
-                                  value: "",
-                                });
-                                dispatch({
-                                  type: "UPDATE_BENEFIT",
-                                  index: idx,
-                                  field: "pointsMultiplier",
-                                  value: "",
-                                });
-                              }
-                            }}
-                            options={[
-                              { label: "No value", value: "none" },
-                              { label: "Cash ($)", value: "cash" },
-                              ...(chainHasLoyalty
-                                ? [
-                                    { label: "Pts/stay", value: "fixed_per_stay" },
-                                    { label: "Pts/night", value: "fixed_per_night" },
-                                    ...(chainBasePointRate
-                                      ? [{ label: "Multiplier", value: "multiplier_on_base" }]
-                                      : []),
-                                  ]
-                                : []),
-                            ]}
-                            className="w-36 shrink-0"
-                            data-testid={`benefit-vt-select-${idx}`}
-                          />
+                              }}
+                              options={[
+                                { label: "No value", value: "none" },
+                                { label: "Cash ($)", value: "cash" },
+                                ...(chainHasLoyalty
+                                  ? [
+                                      { label: "Pts/stay", value: "fixed_per_stay" },
+                                      { label: "Pts/night", value: "fixed_per_night" },
+                                      ...(chainBasePointRate
+                                        ? [{ label: "Multiplier", value: "multiplier_on_base" }]
+                                        : []),
+                                    ]
+                                  : []),
+                              ]}
+                              data-testid={`benefit-vt-select-${idx}`}
+                            />
+                          </div>
                         )}
 
                         {/* Cash value input — shown when valueType is "cash" */}
