@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 const CDN_BASE = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api";
 const FALLBACK_BASE = "https://{date}.currency-api.pages.dev";
@@ -104,7 +105,12 @@ export async function getOrFetchHistoricalRate(
   let rate: number;
   try {
     rate = await fetchExchangeRate(fromCurrency, date);
-  } catch {
+  } catch (err) {
+    logger.warn("Exchange rate fetch failed, falling back to current cached rate", {
+      fromCurrency,
+      date,
+      error: err instanceof Error ? { message: err.message, stack: err.stack } : String(err),
+    });
     return getCurrentRate(fromCurrency);
   }
   await prisma.exchangeRateHistory.upsert({
