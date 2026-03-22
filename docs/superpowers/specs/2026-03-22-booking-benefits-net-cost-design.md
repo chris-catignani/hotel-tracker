@@ -61,7 +61,7 @@ model BookingBenefit {
 - `multiplier_on_base` requires `pointsMultiplier`; `pointsAmount` must be null.
 - If `pointsEarnType` is null, points fields must also be null.
 - Points benefits (`pointsEarnType` is set) are only valid when the booking has a hotel chain **with a configured loyalty program** (`hotelChainId` is non-null AND the chain has a non-null `pointType`). The API must reject points benefits (HTTP 400) if either condition fails.
-- `multiplier_on_base` is only valid for chains where `hotelChain.calculationCurrency` is null. Chains with a non-null `calculationCurrency` (e.g. Accor) would require an additional currency conversion step that is not in scope. The API must reject `multiplier_on_base` benefits (HTTP 400) if `hotelChain.calculationCurrency` is non-null. The form must hide/disable the "Multiplier" option for such chains.
+- `multiplier_on_base` is supported for all chains, including those with a `calculationCurrency` (e.g. Accor). The formula uses `calcCurrencyToUsdRate` to convert pretax spend into the chain's calculation currency before applying `basePointRate` — see Section 2 for details.
 
 ---
 
@@ -94,16 +94,21 @@ The stored value is the **total multiplier**, not the increment. A value of `2.0
 
 ### Formulas
 
-| `pointsEarnType`     | Extra points                                                                | USD value                                |
-| -------------------- | --------------------------------------------------------------------------- | ---------------------------------------- |
-| `fixed_per_stay`     | `pointsAmount`                                                              | `floor(points) × usdCentsPerPoint / 100` |
-| `fixed_per_night`    | `pointsAmount × numNights`                                                  | `floor(points) × usdCentsPerPoint / 100` |
-| `multiplier_on_base` | `(pointsMultiplier − 1) × resolveBasePointRate(booking) × nativePretaxCost` | `floor(points) × usdCentsPerPoint / 100` |
-| cash (`dollarValue`) | —                                                                           | `toUSD(dollarValue, exchangeRate)`       |
+| `pointsEarnType`     | Extra points                                                                       | USD value                                |
+| -------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------- |
+| `fixed_per_stay`     | `pointsAmount`                                                                     | `floor(points) × usdCentsPerPoint / 100` |
+| `fixed_per_night`    | `pointsAmount × numNights`                                                         | `floor(points) × usdCentsPerPoint / 100` |
+| `multiplier_on_base` | `(pointsMultiplier − 1) × resolveBasePointRate(booking) × pretaxInProgramCurrency` | `floor(points) × usdCentsPerPoint / 100` |
+| cash (`dollarValue`) | —                                                                                  | `toUSD(dollarValue, exchangeRate)`       |
 
 **Rounding:** Apply `Math.floor()` to all point counts before converting to USD, consistent with the existing loyalty points calculation.
 
-**`multiplier_on_base` — units clarification:** `nativePretaxCost` = `Number(booking.pretaxCost)` — the raw booking-currency amount (same variable used in the existing `getNetCostBreakdown` loyalty section). `resolveBasePointRate(booking)` returns points per unit of the booking's **native currency** (e.g. points/JPY for a JPY booking, points/USD for a USD booking). This is exactly the same interpretation as the existing loyalty auto-calculation and produces consistent results. This formula is only valid for chains with `calculationCurrency` = null (enforced in Section 1).
+**`multiplier_on_base` — units clarification:** `resolveBasePointRate(booking)` returns points per unit of the chain's **program currency**. `pretaxInProgramCurrency` is derived as follows — identical to how the existing loyalty calculation works:
+
+- Chain has **no `calculationCurrency`** (e.g. Marriott, Hyatt): `pretaxInProgramCurrency = nativePretaxCost` (i.e. `Number(booking.pretaxCost)`)
+- Chain has a **`calculationCurrency`** (e.g. Accor, earns per EUR): `pretaxInProgramCurrency = nativePretaxCost × exchangeRate / calcCurrencyToUsdRate`, which converts native → USD → calculationCurrency
+
+`calcCurrencyToUsdRate` is already on `NetCostBooking` via `hotelChain.calcCurrencyToUsdRate`. This mirrors the existing Accor loyalty calculation exactly.
 
 **`usdCentsPerPoint`** = `lockedLoyaltyUsdCentsPerPoint` if set (past booking), else `hotelChain.pointType.usdCentsPerPoint` (live rate for future bookings). Same fallback logic as the existing loyalty points value calculation.
 
@@ -153,8 +158,8 @@ The `CalculationDetail` for the "Booking Benefits" info dialog:
 - Cash (EUR booking): `"€30.00 × 1.08 (EUR/USD rate) = $32.40"`
 - Fixed per stay: `"2,000 pts × $0.017/pt = $34.00"`
 - Fixed per night: `"1,000 pts × 3 nights × $0.004/pt = $12.00"`
-- Multiplier (USD booking): `"(2.0 − 1) × 10.5 pts/USD × $300 pretax → 3,150 pts × $0.017/pt = $53.55"`
-- Multiplier (JPY booking): `"(2.0 − 1) × 0.1 pts/JPY × ¥40,000 pretax → 4,000 pts × $0.017/pt = $68.00"`
+- Multiplier (USD booking, no calculationCurrency): `"(2.0 − 1) × 10.5 pts/USD × $300 pretax → 3,150 pts × $0.017/pt = $53.55"`
+- Multiplier (EUR booking via Accor, calculationCurrency = EUR): `"(2.0 − 1) × 25 pts/EUR × (€400 pretax) → 10,000 pts × $0.002/pt = $20.00"`
 
 ---
 
@@ -205,8 +210,7 @@ Each benefit becomes a small card replacing the current single-row layout:
 - All four value types show an approximate **dollar value** inline, computed from the booking's hotel chain's live `usdCentsPerPoint` (not the locked rate — the form always operates on current values).
 - If `pretaxCost` is not yet entered (empty or zero), the multiplier approximate value shows `"—"` rather than $0.00.
 - "Pts/stay", "Pts/night", and "Multiplier" options are hidden/disabled when the booking has no hotel chain attached (e.g. apartment bookings).
-- "Multiplier" is additionally hidden/disabled when the booking's hotel chain has a non-null `calculationCurrency` (e.g. Accor).
-- "Multiplier" also requires the booking's hotel chain to have a `basePointRate` set.
+- "Multiplier" requires the booking's hotel chain to have a `basePointRate` set.
 - If the user switches value type, the fields from the previous type are cleared in form state (e.g. switching from "Pts/stay" to "Cash" clears `pointsAmount`; switching from "Cash" to "Pts/night" clears `dollarValue`).
 - **Edit flow — hotel chain removal:** When the hotel chain is deselected, reset any benefits whose `pointsEarnType` is non-empty to `''` (None) immediately via a `useEffect` watching `hotelChainId` in the form reducer/component.
 
@@ -253,7 +257,6 @@ benefits: {
 - Accept new fields on each benefit in the request body
 - Validate mutual-exclusivity rules before writing; return HTTP 400 via `api-error.ts` on violation
 - Reject points benefits (HTTP 400) if the booking has no `hotelChainId` or the chain has no `pointType`
-- Reject `multiplier_on_base` benefits (HTTP 400) if the hotel chain has a non-null `calculationCurrency`
 - No changes to locking logic (reuses `lockedLoyaltyUsdCentsPerPoint`)
 
 ### Exchange rate cron
@@ -270,7 +273,8 @@ No changes required.
 - Cash benefit (non-USD booking) applies exchange rate correctly
 - `fixed_per_stay`: correct floor(points) × rate calculation
 - `fixed_per_night`: correct floor(points × numNights) × rate calculation
-- `multiplier_on_base`: correct floor((multiplier − 1) × baseRate × nativePretaxCost) calculation
+- `multiplier_on_base` (no calculationCurrency): correct floor((multiplier − 1) × baseRate × nativePretaxCost) calculation
+- `multiplier_on_base` (with calculationCurrency, e.g. Accor): correct conversion via calcCurrencyToUsdRate before applying baseRate
 - Past booking uses `lockedLoyaltyUsdCentsPerPoint`; future booking uses live `usdCentsPerPoint`
 - Mixed booking (cash + points benefits): both contribute to `bookingBenefitsValue`
 - No hotel chain (or chain with no pointType): points benefit contributes $0 gracefully
