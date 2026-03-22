@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { fetchExchangeRate, getCurrentRate } from "@/lib/exchange-rate";
+import { fetchExchangeRate, getOrFetchHistoricalRate, getCurrentRate } from "@/lib/exchange-rate";
 import { apiError } from "@/lib/api-error";
 import { CURRENCIES } from "@/lib/constants";
 import { calculatePoints, resolveBasePointRate } from "@/lib/loyalty-utils";
@@ -83,7 +83,14 @@ export async function GET(request: NextRequest) {
     for (const booking of pastDueBookings) {
       try {
         const checkInStr = booking.checkIn.toISOString().split("T")[0];
-        const rate = await fetchExchangeRate(booking.currency, checkInStr);
+        const rate = await getOrFetchHistoricalRate(booking.currency, checkInStr);
+        if (rate == null) {
+          logger.warn(`No exchange rate available for booking ${booking.id}, skipping lock`, {
+            currency: booking.currency,
+            checkIn: checkInStr,
+          });
+          continue;
+        }
 
         // Compute loyalty points if not overridden (hotel stays only)
         let loyaltyPointsEarned = booking.loyaltyPointsEarned;
