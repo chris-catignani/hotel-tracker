@@ -62,6 +62,9 @@ describe("CostBreakdown", () => {
     certsValue: 0,
     partnershipEarns: [],
     partnershipEarnsValue: 0,
+    bookingBenefitsValue: 0,
+    bookingBenefitsCalc: undefined,
+    bookingBenefits: [],
     netCost: 80,
   };
 
