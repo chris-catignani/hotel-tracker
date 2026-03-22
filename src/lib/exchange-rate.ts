@@ -102,19 +102,17 @@ export async function getOrFetchHistoricalRate(
 
   // Cache miss — fetch from external API and store.
   // Use upsert to handle concurrent requests for the same date (race condition).
-  // If the external API doesn't have data for this date (e.g. dates before ~March 2024),
-  // fall back to the current cached rate rather than throwing and crashing the caller.
   let rate: number;
   try {
     rate = await fetchExchangeRate(fromCurrency, date);
   } catch (err) {
-    logger.warn("Exchange rate fetch failed, falling back to current cached rate", {
+    logger.warn("Historical exchange rate fetch failed", {
       fromCurrency,
       date,
       url: (err as Error & { url?: string }).url,
       error: err instanceof Error ? { message: err.message, stack: err.stack } : String(err),
     });
-    return getCurrentRate(fromCurrency);
+    return null;
   }
   await prisma.exchangeRateHistory.upsert({
     where: {
