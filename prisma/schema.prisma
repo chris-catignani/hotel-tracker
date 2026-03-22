@@ -58,6 +58,12 @@ enum BenefitType {
   other
 }
 
+enum BenefitPointsEarnType {
+  fixed_per_stay
+  fixed_per_night
+  multiplier_on_base
+}
+
 enum AccommodationType {
   hotel
   apartment
@@ -322,8 +328,11 @@ model BookingBenefit {
   bookingId   String      @map("booking_id")
   benefitType BenefitType @map("benefit_type")
   label       String?
-  dollarValue Decimal?    @map("dollar_value") @db.Decimal(10, 2)
-  booking     Booking     @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  dollarValue      Decimal?               @map("dollar_value") @db.Decimal(10, 2)
+  pointsEarnType   BenefitPointsEarnType? @map("points_earn_type")
+  pointsAmount     Int?                   @map("points_amount")
+  pointsMultiplier Decimal?               @map("points_multiplier") @db.Decimal(6, 3)
+  booking          Booking                @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
   @@map("booking_benefits")
 }
