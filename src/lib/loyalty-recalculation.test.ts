@@ -24,7 +24,6 @@ vi.mock("./promotion-matching", () => ({
 
 vi.mock("./exchange-rate", () => ({
   getCurrentRate: vi.fn().mockResolvedValue(1),
-  fetchExchangeRate: vi.fn().mockResolvedValue(1),
   resolveCalcCurrencyRate: vi.fn().mockResolvedValue(null),
 }));
 

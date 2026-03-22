@@ -14,7 +14,6 @@ import { calculatePoints, resolveBasePointRate } from "@/lib/loyalty-utils";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
 import {
-  fetchExchangeRate,
   getOrFetchHistoricalRate,
   getCurrentRate,
   resolveCalcCurrencyRate,
@@ -385,8 +384,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         const pt = hcWithPt?.pointType;
         if (pt?.programCurrency != null && pt?.programCentsPerPoint != null) {
           const checkInStr = finalCheckIn.toISOString().split("T")[0];
-          const programRate = await fetchExchangeRate(pt.programCurrency, checkInStr);
-          data.lockedLoyaltyUsdCentsPerPoint = Number(pt.programCentsPerPoint) * programRate;
+          const programRate = await getOrFetchHistoricalRate(pt.programCurrency, checkInStr);
+          if (programRate != null) {
+            data.lockedLoyaltyUsdCentsPerPoint = Number(pt.programCentsPerPoint) * programRate;
+          }
         } else {
           data.lockedLoyaltyUsdCentsPerPoint = null;
         }

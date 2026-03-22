@@ -8,7 +8,6 @@ import { CertType, BenefitType, AccommodationType } from "@prisma/client";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
 import {
-  fetchExchangeRate,
   getOrFetchHistoricalRate,
   getCurrentRate,
   resolveCalcCurrencyRate,
@@ -247,8 +246,10 @@ export async function POST(request: NextRequest) {
       const pt = hcWithPt?.pointType;
       if (pt?.programCurrency != null && pt?.programCentsPerPoint != null) {
         const checkInStr = checkInDate.toISOString().split("T")[0];
-        const programRate = await fetchExchangeRate(pt.programCurrency, checkInStr);
-        lockedLoyaltyUsdCentsPerPoint = Number(pt.programCentsPerPoint) * programRate;
+        const programRate = await getOrFetchHistoricalRate(pt.programCurrency, checkInStr);
+        if (programRate != null) {
+          lockedLoyaltyUsdCentsPerPoint = Number(pt.programCentsPerPoint) * programRate;
+        }
       }
     }
 

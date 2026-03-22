@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { fetchExchangeRate, getOrFetchHistoricalRate, getCurrentRate } from "@/lib/exchange-rate";
+import { getOrFetchHistoricalRate, getCurrentRate } from "@/lib/exchange-rate";
 import { apiError } from "@/lib/api-error";
 import { CURRENCIES } from "@/lib/constants";
 import { calculatePoints, resolveBasePointRate } from "@/lib/loyalty-utils";
@@ -115,8 +115,10 @@ export async function GET(request: NextRequest) {
           // Use the program currency rate, not the booking currency rate:
           // programCentsPerPoint is denominated in programCurrency (e.g. EUR for Accor),
           // regardless of what currency the guest paid in.
-          const programRate = await fetchExchangeRate(pt.programCurrency, checkInStr);
-          lockedLoyaltyUsdCentsPerPoint = Number(pt.programCentsPerPoint) * programRate;
+          const programRate = await getOrFetchHistoricalRate(pt.programCurrency, checkInStr);
+          if (programRate != null) {
+            lockedLoyaltyUsdCentsPerPoint = Number(pt.programCentsPerPoint) * programRate;
+          }
         }
 
         await prisma.booking.update({
