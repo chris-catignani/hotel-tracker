@@ -339,7 +339,18 @@ export function BookingForm({
         .map((b) => ({
           benefitType: b.type,
           label: b.label || null,
-          dollarValue: b.dollarValue ? Number(b.dollarValue) : null,
+          // Use valueType to determine which fields to send — avoids sending stale
+          // field values when the user switched between value types
+          dollarValue: b.valueType === "cash" && b.dollarValue ? Number(b.dollarValue) : null,
+          pointsEarnType: b.valueType !== "" && b.valueType !== "cash" ? b.valueType : null,
+          pointsAmount:
+            b.valueType !== "" && b.valueType !== "cash" && b.pointsAmount
+              ? Number(b.pointsAmount)
+              : null,
+          pointsMultiplier:
+            b.valueType !== "" && b.valueType !== "cash" && b.pointsMultiplier
+              ? Number(b.pointsMultiplier)
+              : null,
         })),
       notes: notes || null,
     };
