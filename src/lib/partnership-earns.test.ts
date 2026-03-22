@@ -51,37 +51,34 @@ describe("resolvePartnershipEarns", () => {
     expect(getOrFetchHistoricalRate).not.toHaveBeenCalled();
   });
 
-  it("filters out earns for non-matching hotel chain", async () => {
-    vi.mocked(getOrFetchHistoricalRate).mockResolvedValue(0.63);
-
+  it("filters out earns for non-matching hotel chain without fetching exchange rates", async () => {
     const results = await resolvePartnershipEarns(
       { ...APAC_BOOKING, hotelChainId: "cx123notaccor" },
       [ACCOR_QANTAS_EARN]
     );
 
     expect(results).toEqual([]);
+    expect(getOrFetchHistoricalRate).not.toHaveBeenCalled();
   });
 
-  it("filters out earns for non-APAC country", async () => {
-    vi.mocked(getOrFetchHistoricalRate).mockResolvedValue(0.63);
-
+  it("filters out earns for non-APAC country without fetching exchange rates", async () => {
     const results = await resolvePartnershipEarns(
       { ...APAC_BOOKING, property: { countryCode: "US" } },
       [ACCOR_QANTAS_EARN]
     );
 
     expect(results).toEqual([]);
+    expect(getOrFetchHistoricalRate).not.toHaveBeenCalled();
   });
 
-  it("filters out earns when property countryCode is null", async () => {
-    vi.mocked(getOrFetchHistoricalRate).mockResolvedValue(0.63);
-
+  it("filters out earns when property countryCode is null without fetching exchange rates", async () => {
     const results = await resolvePartnershipEarns(
       { ...APAC_BOOKING, property: { countryCode: null } },
       [ACCOR_QANTAS_EARN]
     );
 
     expect(results).toEqual([]);
+    expect(getOrFetchHistoricalRate).not.toHaveBeenCalled();
   });
 
   it("correctly converts non-USD booking to earn currency", async () => {

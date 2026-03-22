@@ -46,12 +46,24 @@ export async function resolvePartnershipEarns(
       ? booking.checkIn.toISOString().split("T")[0]
       : String(booking.checkIn).split("T")[0];
 
+  // Pre-filter earns to only those that could apply to this booking.
+  // This avoids fetching exchange rates for earns that will be filtered out anyway.
+  const applicableEarns = enabledEarns.filter((earn) => {
+    if (earn.hotelChainId && earn.hotelChainId !== booking.hotelChainId) return false;
+    if (earn.countryCodes.length > 0) {
+      const countryCode = booking.property?.countryCode;
+      if (!countryCode || !earn.countryCodes.includes(countryCode)) return false;
+    }
+    return true;
+  });
+  if (!applicableEarns.length) return [];
+
   // pretaxCost in native currency → USD
   const exchangeRate = booking.lockedExchangeRate ? Number(booking.lockedExchangeRate) : 1;
   const pretaxCostUSD = Number(booking.pretaxCost) * exchangeRate;
 
   // Deduplicate earn currencies to avoid redundant API calls
-  const uniqueCurrencies = [...new Set(enabledEarns.map((e) => e.earnCurrency))];
+  const uniqueCurrencies = [...new Set(applicableEarns.map((e) => e.earnCurrency))];
   const rateEntries = await Promise.all(
     uniqueCurrencies.map(
       async (currency) => [currency, await getOrFetchHistoricalRate(currency, checkInStr)] as const
@@ -59,7 +71,7 @@ export async function resolvePartnershipEarns(
   );
   const rateByEarnCurrency = Object.fromEntries(rateEntries);
 
-  for (const earn of enabledEarns) {
+  for (const earn of applicableEarns) {
     // Filter: must match hotel chain (if restricted)
     if (earn.hotelChainId && earn.hotelChainId !== booking.hotelChainId) continue;
 
