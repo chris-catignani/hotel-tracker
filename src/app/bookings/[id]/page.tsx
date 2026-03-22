@@ -91,6 +91,9 @@ interface BookingBenefit {
   benefitType: string;
   label: string | null;
   dollarValue: string | number | null;
+  pointsEarnType: string | null;
+  pointsAmount: number | null;
+  pointsMultiplier: string | number | null;
 }
 
 // Ensure Booking interface matches NetCostBooking for the breakdown logic
