@@ -198,7 +198,7 @@ export interface NetCostBreakdown {
   partnershipEarns: { name: string; earnedValue: number; calc: CalculationDetail }[];
   partnershipEarnsValue: number;
   bookingBenefitsValue: number;
-  bookingBenefitsCalc: CalculationDetail | undefined;
+  bookingBenefitsCalc?: CalculationDetail;
   bookingBenefits: { label: string; value: number; detail: string }[];
   pointsRedeemedValue: number;
   pointsRedeemedCalc?: CalculationDetail;
@@ -1111,7 +1111,7 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
       } else if (benefit.pointsEarnType === "fixed_per_night") {
         const ptsPerNight = Number(benefit.pointsAmount ?? 0);
         extraPoints = Math.floor(ptsPerNight * booking.numNights);
-        detail = `${ptsPerNight.toLocaleString()} pts × ${booking.numNights} nights × ${centsStr}¢/pt = ${formatCurrency(extraPoints * benefitUsdCentsPerPoint)}`;
+        detail = `floor(${ptsPerNight.toLocaleString()} × ${booking.numNights} nights) = ${extraPoints.toLocaleString()} pts × ${centsStr}¢/pt = ${formatCurrency(extraPoints * benefitUsdCentsPerPoint)}`;
       } else if (benefit.pointsEarnType === "multiplier_on_base") {
         const multiplier = Number(benefit.pointsMultiplier ?? 0);
         // Convert pretax spend to the chain's program currency (mirrors the loyalty calculation)
