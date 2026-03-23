@@ -40,7 +40,7 @@ describe("PointTypesTab", () => {
 
     render(<PointTypesTab />);
 
-    expect(screen.getByTestId("point-types-empty")).toBeInTheDocument();
+    expect(await screen.findByTestId("point-types-empty")).toBeInTheDocument();
     expect(screen.getByText(/No point types/i)).toBeInTheDocument();
     expect(screen.getByText(/Define point values/i)).toBeInTheDocument();
   });
@@ -54,7 +54,7 @@ describe("PointTypesTab", () => {
     render(<PointTypesTab />);
 
     // Verify it appears in both views
-    const mobileView = screen.getByTestId("point-types-mobile");
+    const mobileView = await screen.findByTestId("point-types-mobile");
     const desktopView = screen.getByTestId("point-types-desktop");
 
     expect(within(mobileView).getByText("Marriott Points")).toBeInTheDocument();
@@ -70,7 +70,7 @@ describe("PointTypesTab", () => {
 
     render(<PointTypesTab />);
 
-    const desktopView = screen.getByTestId("point-types-desktop");
+    const desktopView = await screen.findByTestId("point-types-desktop");
     const deleteBtn = within(desktopView).getByRole("button", { name: "Delete" });
     await user.click(deleteBtn);
 
@@ -95,7 +95,7 @@ describe("PointTypesTab", () => {
 
     render(<PointTypesTab />);
 
-    const desktopView = screen.getByTestId("point-types-desktop");
+    const desktopView = await screen.findByTestId("point-types-desktop");
     const deleteBtn = within(desktopView).getByRole("button", { name: "Delete" });
     await user.click(deleteBtn);
 
@@ -113,7 +113,7 @@ describe("PointTypesTab", () => {
 
     render(<PointTypesTab />);
 
-    const desktopView = screen.getByTestId("point-types-desktop");
+    const desktopView = await screen.findByTestId("point-types-desktop");
     const deleteBtn = within(desktopView).getByRole("button", { name: "Delete" });
     await user.click(deleteBtn);
 
@@ -178,7 +178,7 @@ describe("PointTypesTab", () => {
 
     render(<PointTypesTab />);
 
-    const desktopView = screen.getByTestId("point-types-desktop");
+    const desktopView = await screen.findByTestId("point-types-desktop");
     expect(within(desktopView).getByText(/EUR/)).toBeInTheDocument();
     expect(within(desktopView).getByText(/0.02/)).toBeInTheDocument();
   });

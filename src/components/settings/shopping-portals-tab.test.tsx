@@ -36,7 +36,7 @@ describe("ShoppingPortalsTab", () => {
 
     render(<ShoppingPortalsTab />);
 
-    expect(screen.getByTestId("portals-empty")).toBeInTheDocument();
+    expect(await screen.findByTestId("portals-empty")).toBeInTheDocument();
     expect(screen.getByText(/No shopping portals/i)).toBeInTheDocument();
     expect(screen.getByText(/Add portals like Rakuten/i)).toBeInTheDocument();
   });
@@ -54,7 +54,7 @@ describe("ShoppingPortalsTab", () => {
 
     render(<ShoppingPortalsTab />);
 
-    const desktopView = screen.getByTestId("portals-desktop");
+    const desktopView = await screen.findByTestId("portals-desktop");
     expect(within(desktopView).getByText("Rakuten")).toBeInTheDocument();
   });
 });

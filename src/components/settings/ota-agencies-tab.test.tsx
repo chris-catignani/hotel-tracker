@@ -31,7 +31,7 @@ describe("OtaAgenciesTab", () => {
 
     render(<OtaAgenciesTab />);
 
-    expect(screen.getByTestId("ota-agencies-empty")).toBeInTheDocument();
+    expect(await screen.findByTestId("ota-agencies-empty")).toBeInTheDocument();
     expect(screen.getByText(/No OTA agencies/i)).toBeInTheDocument();
     expect(screen.getByText(/Add agencies like Expedia/i)).toBeInTheDocument();
   });
@@ -44,7 +44,7 @@ describe("OtaAgenciesTab", () => {
 
     render(<OtaAgenciesTab />);
 
-    const desktopView = screen.getByTestId("agencies-desktop");
+    const desktopView = await screen.findByTestId("agencies-desktop");
     expect(within(desktopView).getByText("Expedia")).toBeInTheDocument();
   });
 
@@ -58,7 +58,7 @@ describe("OtaAgenciesTab", () => {
     render(<OtaAgenciesTab />);
 
     // Find delete button in the desktop view table
-    const desktopView = screen.getByTestId("agencies-desktop");
+    const desktopView = await screen.findByTestId("agencies-desktop");
     const deleteBtn = within(desktopView).getByRole("button", { name: "Delete" });
     await user.click(deleteBtn);
 
@@ -81,7 +81,7 @@ describe("OtaAgenciesTab", () => {
 
     render(<OtaAgenciesTab />);
 
-    const desktopView = screen.getByTestId("agencies-desktop");
+    const desktopView = await screen.findByTestId("agencies-desktop");
     const deleteBtn = within(desktopView).getByRole("button", { name: "Delete" });
     await user.click(deleteBtn);
 
@@ -99,7 +99,7 @@ describe("OtaAgenciesTab", () => {
 
     render(<OtaAgenciesTab />);
 
-    const desktopView = screen.getByTestId("agencies-desktop");
+    const desktopView = await screen.findByTestId("agencies-desktop");
     const deleteBtn = within(desktopView).getByRole("button", { name: "Delete" });
     await user.click(deleteBtn);
 

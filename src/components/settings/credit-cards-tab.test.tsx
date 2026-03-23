@@ -73,7 +73,7 @@ describe("CreditCardsTab", () => {
   it("shows empty state message", async () => {
     render(<CreditCardsTab />);
 
-    expect(screen.getByTestId("credit-cards-empty")).toBeInTheDocument();
+    expect(await screen.findByTestId("credit-cards-empty")).toBeInTheDocument();
     expect(screen.getByText(/No credit cards/i)).toBeInTheDocument();
   });
 
@@ -87,7 +87,7 @@ describe("CreditCardsTab", () => {
 
     render(<CreditCardsTab />);
 
-    expect(screen.getByTestId("credit-card-card-name")).toHaveTextContent("Amex Platinum");
+    expect(await screen.findByTestId("credit-card-card-name")).toHaveTextContent("Amex Platinum");
   });
 
   it("shows a Delete button for each credit card", async () => {
@@ -100,7 +100,7 @@ describe("CreditCardsTab", () => {
 
     render(<CreditCardsTab />);
 
-    const deleteButtons = screen.getAllByTestId("delete-credit-card-button");
+    const deleteButtons = await screen.findAllByTestId("delete-credit-card-button");
     expect(deleteButtons.length).toBe(2);
   });
 

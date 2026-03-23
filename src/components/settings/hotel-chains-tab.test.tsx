@@ -36,7 +36,7 @@ describe("HotelChainsTab", () => {
 
     render(<HotelChainsTab />);
 
-    expect(screen.getByTestId("hotel-chains-empty")).toBeInTheDocument();
+    expect(await screen.findByTestId("hotel-chains-empty")).toBeInTheDocument();
     expect(screen.getByText(/No hotel chains/i)).toBeInTheDocument();
     expect(screen.getByText(/Add hotel chains like Marriott/i)).toBeInTheDocument();
   });
@@ -63,7 +63,7 @@ describe("HotelChainsTab", () => {
     render(<HotelChainsTab />);
 
     // Check that it's present in both mobile and desktop views using specific test IDs
-    expect(screen.getByTestId("hotel-chain-card-name")).toHaveTextContent("Marriott");
+    expect(await screen.findByTestId("hotel-chain-card-name")).toHaveTextContent("Marriott");
     expect(screen.getByTestId("hotel-chain-table-name")).toHaveTextContent("Marriott");
   });
 });

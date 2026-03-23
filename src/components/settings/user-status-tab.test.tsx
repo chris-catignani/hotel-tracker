@@ -66,7 +66,7 @@ describe("UserStatusTab", () => {
 
     render(<UserStatusTab />);
 
-    expect(screen.getByText("Marriott")).toBeInTheDocument();
+    expect(await screen.findByText("Marriott")).toBeInTheDocument();
   });
 
   it("does not render partnerships section when none exist", async () => {
@@ -80,8 +80,8 @@ describe("UserStatusTab", () => {
     mockFetch([MOCK_PARTNERSHIP]);
     render(<UserStatusTab />);
 
-    expect(screen.getByText(/Hotel Partnerships/i)).toBeInTheDocument();
-    const checkbox = screen.getByTestId(`partnership-checkbox-${PARTNERSHIP_ID}`);
+    expect(await screen.findByText(/Hotel Partnerships/i)).toBeInTheDocument();
+    const checkbox = await screen.findByTestId(`partnership-checkbox-${PARTNERSHIP_ID}`);
     expect(checkbox).toBeInTheDocument();
     expect(checkbox).not.toBeChecked();
   });
@@ -90,7 +90,7 @@ describe("UserStatusTab", () => {
     mockFetch([{ ...MOCK_PARTNERSHIP, isEnabled: true }]);
     render(<UserStatusTab />);
 
-    expect(screen.getByTestId(`partnership-checkbox-${PARTNERSHIP_ID}`)).toBeChecked();
+    expect(await screen.findByTestId(`partnership-checkbox-${PARTNERSHIP_ID}`)).toBeChecked();
   });
 
   it("calls POST /api/user-partnership-earns when toggling a checkbox", async () => {
@@ -110,7 +110,7 @@ describe("UserStatusTab", () => {
       }
     );
 
-    const checkbox = screen.getByTestId(`partnership-checkbox-${PARTNERSHIP_ID}`);
+    const checkbox = await screen.findByTestId(`partnership-checkbox-${PARTNERSHIP_ID}`);
     await user.click(checkbox);
 
     expect(vi.mocked(global.fetch)).toHaveBeenCalledWith(
