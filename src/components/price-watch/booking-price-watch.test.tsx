@@ -1,4 +1,4 @@
-import { render, screen, act, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { BookingPriceWatch } from "./booking-price-watch";
@@ -155,9 +155,7 @@ describe("BookingPriceWatch", () => {
   });
 
   it("renders with toggle off when no watch exists", async () => {
-    await act(async () => {
-      render(<BookingPriceWatch {...defaultProps} initialWatchBooking={null} />);
-    });
+    render(<BookingPriceWatch {...defaultProps} initialWatchBooking={null} />);
 
     const toggle = screen.getByTestId("price-watch-toggle");
     expect(toggle).toBeInTheDocument();
@@ -171,9 +169,7 @@ describe("BookingPriceWatch", () => {
       json: async () => mockWatch,
     } as Response);
 
-    await act(async () => {
-      render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
-    });
+    render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
 
     await waitFor(() => {
       expect(screen.getByTestId("latest-cash-price")).toBeInTheDocument();
@@ -189,9 +185,7 @@ describe("BookingPriceWatch", () => {
       json: async () => mockWatch,
     } as Response);
 
-    await act(async () => {
-      render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
-    });
+    render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
 
     await waitFor(() => {
       expect(screen.getByTestId("toggle-room-rates")).toBeInTheDocument();
@@ -209,9 +203,7 @@ describe("BookingPriceWatch", () => {
       json: async () => mockWatch,
     } as Response);
 
-    await act(async () => {
-      render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
-    });
+    render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
 
     await waitFor(() => {
       expect(screen.getByTestId("toggle-room-rates")).toBeInTheDocument();
@@ -238,9 +230,7 @@ describe("BookingPriceWatch", () => {
       json: async () => mockWatch,
     } as Response);
 
-    await act(async () => {
-      render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
-    });
+    render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
 
     await waitFor(() => {
       expect(screen.getByTestId("toggle-room-rates")).toBeInTheDocument();
@@ -261,9 +251,7 @@ describe("BookingPriceWatch", () => {
       json: async () => mockWatch,
     } as Response);
 
-    await act(async () => {
-      render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
-    });
+    render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
 
     await waitFor(() => {
       expect(screen.getByTestId("toggle-room-rates")).toBeInTheDocument();
@@ -284,9 +272,7 @@ describe("BookingPriceWatch", () => {
       json: async () => mockWatch,
     } as Response);
 
-    await act(async () => {
-      render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
-    });
+    render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
 
     await waitFor(() => {
       expect(screen.getByTestId("toggle-room-rates")).toBeInTheDocument();
@@ -306,9 +292,7 @@ describe("BookingPriceWatch", () => {
       json: async () => mockWatch,
     } as Response);
 
-    await act(async () => {
-      render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
-    });
+    render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
 
     await waitFor(() => {
       expect(screen.getByTestId("toggle-room-rates")).toBeInTheDocument();
@@ -331,9 +315,7 @@ describe("BookingPriceWatch", () => {
       json: async () => mockWatch,
     } as Response);
 
-    await act(async () => {
-      render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
-    });
+    render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
 
     await waitFor(() => {
       expect(screen.getByTestId("toggle-room-rates")).toBeInTheDocument();
@@ -390,9 +372,7 @@ describe("BookingPriceWatch", () => {
       json: async () => accorWatch,
     } as Response);
 
-    await act(async () => {
-      render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
-    });
+    render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
 
     await waitFor(() => {
       expect(screen.getByTestId("toggle-room-rates")).toBeInTheDocument();
@@ -425,9 +405,7 @@ describe("BookingPriceWatch", () => {
       json: async () => watchNoRooms,
     } as Response);
 
-    await act(async () => {
-      render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
-    });
+    render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
 
     await waitFor(() => {
       expect(screen.getByTestId("latest-cash-price")).toBeInTheDocument();
@@ -443,9 +421,7 @@ describe("BookingPriceWatch", () => {
       json: async () => watchNoSnapshots,
     } as Response);
 
-    await act(async () => {
-      render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
-    });
+    render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
 
     await waitFor(() => {
       expect(
@@ -466,9 +442,7 @@ describe("BookingPriceWatch", () => {
       json: async () => watchUndefinedRooms,
     } as Response);
 
-    await act(async () => {
-      render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
-    });
+    render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
 
     await waitFor(() => {
       expect(screen.getByTestId("latest-cash-price")).toBeInTheDocument();
@@ -488,15 +462,13 @@ describe("BookingPriceWatch", () => {
     } as Response);
     const user = userEvent.setup();
 
-    await act(async () => {
-      render(
-        <BookingPriceWatch
-          {...defaultProps}
-          pointsRedeemed={null}
-          initialWatchBooking={initialWatchBooking}
-        />
-      );
-    });
+    render(
+      <BookingPriceWatch
+        {...defaultProps}
+        pointsRedeemed={null}
+        initialWatchBooking={initialWatchBooking}
+      />
+    );
 
     await waitFor(() => {
       expect(screen.getByTestId("toggle-room-rates")).toBeInTheDocument();
@@ -521,15 +493,13 @@ describe("BookingPriceWatch", () => {
     } as Response);
     const user = userEvent.setup();
 
-    await act(async () => {
-      render(
-        <BookingPriceWatch
-          {...defaultProps}
-          pointsRedeemed={12000}
-          initialWatchBooking={initialWatchBooking}
-        />
-      );
-    });
+    render(
+      <BookingPriceWatch
+        {...defaultProps}
+        pointsRedeemed={12000}
+        initialWatchBooking={initialWatchBooking}
+      />
+    );
 
     await waitFor(() => {
       expect(screen.getByTestId("toggle-room-rates")).toBeInTheDocument();
@@ -550,9 +520,7 @@ describe("BookingPriceWatch", () => {
     } as Response);
     const user = userEvent.setup();
 
-    await act(async () => {
-      render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
-    });
+    render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
 
     await waitFor(() => {
       expect(screen.getByTestId("toggle-room-rates")).toBeInTheDocument();
@@ -575,9 +543,7 @@ describe("BookingPriceWatch", () => {
     } as Response);
     const user = userEvent.setup();
 
-    await act(async () => {
-      render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
-    });
+    render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
 
     await waitFor(() => {
       expect(screen.getByTestId("toggle-room-rates")).toBeInTheDocument();
@@ -602,9 +568,7 @@ describe("BookingPriceWatch", () => {
     } as Response);
     const user = userEvent.setup();
 
-    await act(async () => {
-      render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
-    });
+    render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
 
     await waitFor(() => {
       expect(screen.getByTestId("toggle-room-rates")).toBeInTheDocument();
@@ -634,15 +598,13 @@ describe("BookingPriceWatch", () => {
         ok: true,
         json: async () => mockWatch,
       } as Response);
-      await act(async () => {
-        render(
-          <BookingPriceWatch
-            {...defaultProps}
-            {...overrides}
-            initialWatchBooking={initialWatchBooking}
-          />
-        );
-      });
+      render(
+        <BookingPriceWatch
+          {...defaultProps}
+          {...overrides}
+          initialWatchBooking={initialWatchBooking}
+        />
+      );
       await waitFor(() => {
         expect(screen.getByTestId("cash-threshold-input")).toBeInTheDocument();
       });

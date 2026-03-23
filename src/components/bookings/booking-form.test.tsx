@@ -1,4 +1,4 @@
-import { render, screen, act, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { BookingForm } from "./booking-form";
@@ -139,21 +139,15 @@ describe("BookingForm", () => {
 
   it("shows geo confirmation error when property name is typed but not confirmed", async () => {
     const user = userEvent.setup();
-    await act(async () => {
-      render(<BookingForm {...defaultProps} />);
-    });
+    render(<BookingForm {...defaultProps} />);
 
     // Type a property name without confirming via autocomplete
     const propertyInput = screen.getByTestId("property-name-input");
-    await act(async () => {
-      await user.type(propertyInput, "Park Hyatt");
-    });
+    await user.type(propertyInput, "Park Hyatt");
 
     // Submit the form to trigger validation
     const submitButton = screen.getByTestId("booking-form-submit");
-    await act(async () => {
-      await user.click(submitButton);
-    });
+    await user.click(submitButton);
 
     expect(
       screen.getByText(/please select your property from the list or enter details manually/i)
@@ -162,9 +156,7 @@ describe("BookingForm", () => {
   });
 
   it("renders correctly with basic fields", async () => {
-    await act(async () => {
-      render(<BookingForm {...defaultProps} />);
-    });
+    render(<BookingForm {...defaultProps} />);
     expect(screen.getByText("Booking Details")).toBeInTheDocument();
     expect(screen.getByText(/Hotel Chain \*/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Property Name/i)).toBeInTheDocument();
@@ -172,42 +164,32 @@ describe("BookingForm", () => {
 
   it("calculates number of nights correctly when dates change", async () => {
     const user = userEvent.setup();
-    await act(async () => {
-      render(<BookingForm {...defaultProps} />);
-    });
+    render(<BookingForm {...defaultProps} />);
 
     const checkInInput = screen.getByLabelText(/Check-in Date/i);
     const checkOutInput = screen.getByLabelText(/Check-out Date/i);
     const numNightsInput = screen.getByLabelText(/Number of Nights/i) as HTMLInputElement;
 
-    await act(async () => {
-      await user.type(checkInInput, "2026-03-01");
-      await user.clear(checkOutInput);
-      await user.type(checkOutInput, "2026-03-05");
-    });
+    await user.type(checkInInput, "2026-03-01");
+    await user.clear(checkOutInput);
+    await user.type(checkOutInput, "2026-03-05");
 
     expect(numNightsInput.value).toBe("4");
   });
 
   it("calls onCancel when cancel button is clicked", async () => {
     const user = userEvent.setup();
-    await act(async () => {
-      render(<BookingForm {...defaultProps} />);
-    });
+    render(<BookingForm {...defaultProps} />);
 
     const cancelButton = screen.getByRole("button", { name: /Cancel/i });
-    await act(async () => {
-      await user.click(cancelButton);
-    });
+    await user.click(cancelButton);
 
     expect(defaultProps.onCancel).toHaveBeenCalled();
   });
 
   it("Sub-brand selector is always visible but disabled if no chain or no sub-brands", async () => {
     const user = userEvent.setup();
-    await act(async () => {
-      render(<BookingForm {...defaultProps} />);
-    });
+    render(<BookingForm {...defaultProps} />);
 
     // 1. Initially disabled (no chain selected)
     const subBrandSelector = screen.getByTestId("sub-brand-select");
@@ -338,11 +320,7 @@ describe("BookingForm benefit approximate value", () => {
   it("multiplier benefit approx value converts native pretaxCost to USD using exchange rate", async () => {
     // EUR booking: pretaxCost=100 EUR, rate=1.1 → costUsd=110
     // extraPts = floor((2-1) × 10 × 110) = 1100; value = 1100 × 0.01 = $11.00
-    await act(async () => {
-      render(
-        <BookingForm {...defaultProps} initialData={mockBookingWithMultiplierBenefit("EUR")} />
-      );
-    });
+    render(<BookingForm {...defaultProps} initialData={mockBookingWithMultiplierBenefit("EUR")} />);
 
     // Wait for hotel chains + exchange rates to load, then approx value updates from "—" to "$11.00"
     await waitFor(() => {
@@ -354,11 +332,7 @@ describe("BookingForm benefit approximate value", () => {
   it("multiplier benefit approx value is correct for USD booking (rate=1)", async () => {
     // USD booking: pretaxCost=100 USD, rate=1 → costUsd=100
     // extraPts = floor((2-1) × 10 × 100) = 1000; value = 1000 × 0.01 = $10.00
-    await act(async () => {
-      render(
-        <BookingForm {...defaultProps} initialData={mockBookingWithMultiplierBenefit("USD")} />
-      );
-    });
+    render(<BookingForm {...defaultProps} initialData={mockBookingWithMultiplierBenefit("USD")} />);
 
     await waitFor(() => {
       const approxEl = screen.getByTestId("benefit-approx-value-0");

@@ -1,4 +1,4 @@
-import { render, screen, act } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi } from "vitest";
 import { PaymentTypeBreakdown } from "./payment-type-breakdown";
@@ -47,9 +47,7 @@ describe("PaymentTypeBreakdown", () => {
   ];
 
   it("calculates stays breakdown correctly", async () => {
-    await act(async () => {
-      render(<PaymentTypeBreakdown bookings={mockBookings} />);
-    });
+    render(<PaymentTypeBreakdown bookings={mockBookings} />);
 
     // By default it shows "Stays" mode
     expect(screen.getByTestId("pie-slice-Cash")).toHaveTextContent("Cash: 1");
@@ -59,9 +57,7 @@ describe("PaymentTypeBreakdown", () => {
 
   it("calculates nights breakdown correctly", async () => {
     const user = userEvent.setup();
-    await act(async () => {
-      render(<PaymentTypeBreakdown bookings={mockBookings} />);
-    });
+    render(<PaymentTypeBreakdown bookings={mockBookings} />);
 
     // Switch to Nights mode
     await user.click(screen.getByText("Nights"));
@@ -82,9 +78,7 @@ describe("PaymentTypeBreakdown", () => {
         certificates: [],
       },
     ];
-    await act(async () => {
-      render(<PaymentTypeBreakdown bookings={combinationBookings} />);
-    });
+    render(<PaymentTypeBreakdown bookings={combinationBookings} />);
 
     expect(screen.getByTestId("pie-slice-Combination")).toHaveTextContent("Combination: 1");
 
@@ -120,9 +114,7 @@ describe("PaymentTypeBreakdown", () => {
         certificates: [],
       },
     ];
-    await act(async () => {
-      render(<PaymentTypeBreakdown bookings={incidentalBooking} />);
-    });
+    render(<PaymentTypeBreakdown bookings={incidentalBooking} />);
 
     // In "stays" mode, it still counts as a combination
     expect(screen.getByTestId("pie-slice-Combination")).toHaveTextContent("Combination: 1");
@@ -144,9 +136,7 @@ describe("PaymentTypeBreakdown", () => {
         certificates: [{ id: "1", certType: "cat4" }], // 1 cert
       },
     ];
-    await act(async () => {
-      render(<PaymentTypeBreakdown bookings={certPlusCash} />);
-    });
+    render(<PaymentTypeBreakdown bookings={certPlusCash} />);
     await user.click(screen.getByText("Nights"));
 
     // Deduction: 1 cert night, 2 cash nights
@@ -155,9 +145,7 @@ describe("PaymentTypeBreakdown", () => {
   });
 
   it("shows empty state when no bookings", async () => {
-    await act(async () => {
-      render(<PaymentTypeBreakdown bookings={[]} />);
-    });
+    render(<PaymentTypeBreakdown bookings={[]} />);
 
     expect(screen.getByTestId("payment-type-empty")).toBeInTheDocument();
     expect(screen.getByText(/No data/i)).toBeInTheDocument();

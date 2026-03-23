@@ -1,4 +1,4 @@
-import { render, screen, act, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { PointTypesTab } from "./point-types-tab";
@@ -26,9 +26,7 @@ describe("PointTypesTab", () => {
       json: async () => [],
     } as Response);
 
-    await act(async () => {
-      render(<PointTypesTab />);
-    });
+    render(<PointTypesTab />);
 
     expect(screen.getByText("Point Types")).toBeInTheDocument();
     expect(screen.getByTestId("add-point-type-button")).toBeInTheDocument();
@@ -40,9 +38,7 @@ describe("PointTypesTab", () => {
       json: async () => [],
     } as Response);
 
-    await act(async () => {
-      render(<PointTypesTab />);
-    });
+    render(<PointTypesTab />);
 
     expect(screen.getByTestId("point-types-empty")).toBeInTheDocument();
     expect(screen.getByText(/No point types/i)).toBeInTheDocument();
@@ -55,9 +51,7 @@ describe("PointTypesTab", () => {
       json: async () => mockPt,
     } as Response);
 
-    await act(async () => {
-      render(<PointTypesTab />);
-    });
+    render(<PointTypesTab />);
 
     // Verify it appears in both views
     const mobileView = screen.getByTestId("point-types-mobile");
@@ -74,9 +68,7 @@ describe("PointTypesTab", () => {
       json: async () => mockPt,
     } as Response);
 
-    await act(async () => {
-      render(<PointTypesTab />);
-    });
+    render(<PointTypesTab />);
 
     const desktopView = screen.getByTestId("point-types-desktop");
     const deleteBtn = within(desktopView).getByRole("button", { name: "Delete" });
@@ -101,9 +93,7 @@ describe("PointTypesTab", () => {
         return Promise.reject(new Error(`Unknown: ${url}`));
       });
 
-    await act(async () => {
-      render(<PointTypesTab />);
-    });
+    render(<PointTypesTab />);
 
     const desktopView = screen.getByTestId("point-types-desktop");
     const deleteBtn = within(desktopView).getByRole("button", { name: "Delete" });
@@ -121,9 +111,7 @@ describe("PointTypesTab", () => {
       json: async () => mockPt,
     } as Response);
 
-    await act(async () => {
-      render(<PointTypesTab />);
-    });
+    render(<PointTypesTab />);
 
     const desktopView = screen.getByTestId("point-types-desktop");
     const deleteBtn = within(desktopView).getByRole("button", { name: "Delete" });
@@ -151,9 +139,7 @@ describe("PointTypesTab", () => {
         return Promise.reject(new Error(`Unknown: ${url}`));
       });
 
-    await act(async () => {
-      render(<PointTypesTab />);
-    });
+    render(<PointTypesTab />);
 
     await user.click(screen.getByTestId("add-point-type-button"));
 
@@ -190,9 +176,7 @@ describe("PointTypesTab", () => {
       json: async () => foreignPt,
     } as Response);
 
-    await act(async () => {
-      render(<PointTypesTab />);
-    });
+    render(<PointTypesTab />);
 
     const desktopView = screen.getByTestId("point-types-desktop");
     expect(within(desktopView).getByText(/EUR/)).toBeInTheDocument();

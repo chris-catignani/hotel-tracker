@@ -1,4 +1,4 @@
-import { render, screen, act } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import { DashboardStats } from "./dashboard-stats";
 
@@ -17,9 +17,7 @@ describe("DashboardStats", () => {
   };
 
   it("renders all summary statistics with correct formatting", async () => {
-    await act(async () => {
-      render(<DashboardStats {...defaultProps} />);
-    });
+    render(<DashboardStats {...defaultProps} />);
 
     // Precise value checks using data-testid
     expect(screen.getByTestId("stat-value-total-bookings")).toHaveTextContent("5");
@@ -52,9 +50,7 @@ describe("DashboardStats", () => {
       totalPointsRedeemed: 0,
       totalCertificates: 0,
     };
-    await act(async () => {
-      render(<DashboardStats {...zeroProps} />);
-    });
+    render(<DashboardStats {...zeroProps} />);
 
     expect(screen.getByTestId("stat-value-total-bookings")).toHaveTextContent("0");
     expect(screen.getByTestId("stat-value-total-nights")).toHaveTextContent("0");
@@ -72,24 +68,18 @@ describe("DashboardStats", () => {
   });
 
   it("handles singular certificate correctly", async () => {
-    await act(async () => {
-      render(<DashboardStats {...defaultProps} totalCertificates={1} />);
-    });
+    render(<DashboardStats {...defaultProps} totalCertificates={1} />);
     expect(screen.getByText("1 cert")).toBeInTheDocument();
     expect(screen.queryByText("1 certs")).not.toBeInTheDocument();
   });
 
   it("does not show skipped warning when avgNightSkippedCount is 0", async () => {
-    await act(async () => {
-      render(<DashboardStats {...defaultProps} avgNightSkippedCount={0} />);
-    });
+    render(<DashboardStats {...defaultProps} avgNightSkippedCount={0} />);
     expect(screen.queryByTestId("avg-night-skipped-warning")).not.toBeInTheDocument();
   });
 
   it("shows skipped warning with correct count for combination bookings", async () => {
-    await act(async () => {
-      render(<DashboardStats {...defaultProps} avgNightSkippedCount={3} />);
-    });
+    render(<DashboardStats {...defaultProps} avgNightSkippedCount={3} />);
     const warning = screen.getByTestId("avg-night-skipped-warning");
     expect(warning).toBeInTheDocument();
     expect(warning).toHaveTextContent("3");
@@ -97,9 +87,7 @@ describe("DashboardStats", () => {
   });
 
   it("shows singular form in skipped warning for one combination booking", async () => {
-    await act(async () => {
-      render(<DashboardStats {...defaultProps} avgNightSkippedCount={1} />);
-    });
+    render(<DashboardStats {...defaultProps} avgNightSkippedCount={1} />);
     const warning = screen.getByTestId("avg-night-skipped-warning");
     expect(warning).toHaveTextContent("1");
     expect(warning).toHaveTextContent("combination booking excluded");
@@ -107,11 +95,9 @@ describe("DashboardStats", () => {
   });
 
   it("formats large numbers with commas", async () => {
-    await act(async () => {
-      render(
-        <DashboardStats {...defaultProps} totalSpend={1000000.49} totalPointsRedeemed={1250000} />
-      );
-    });
+    render(
+      <DashboardStats {...defaultProps} totalSpend={1000000.49} totalPointsRedeemed={1250000} />
+    );
     expect(screen.getByText("$1,000,000")).toBeInTheDocument();
     expect(screen.getByText("1,250,000 pts")).toBeInTheDocument();
   });

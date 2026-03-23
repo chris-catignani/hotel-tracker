@@ -1,4 +1,4 @@
-import { render, screen, act } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, it, expect, vi, afterEach } from "vitest";
 import SettingsPage from "@/app/settings/page";
 
@@ -34,9 +34,7 @@ describe("SettingsPage Tabs", () => {
   });
 
   it("renders all tab contents with correct data-testids", async () => {
-    await act(async () => {
-      render(<SettingsPage />);
-    });
+    render(<SettingsPage />);
 
     expect(screen.getByTestId("tab-my-status")).toBeInTheDocument();
     expect(screen.getByTestId("tab-point-types")).toBeInTheDocument();
@@ -47,9 +45,7 @@ describe("SettingsPage Tabs", () => {
   });
 
   it("initially shows the my-status tab content", async () => {
-    await act(async () => {
-      render(<SettingsPage />);
-    });
+    render(<SettingsPage />);
     expect(screen.getByTestId("mock-user-status")).toBeInTheDocument();
   });
 });

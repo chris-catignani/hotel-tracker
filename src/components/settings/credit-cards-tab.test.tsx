@@ -1,4 +1,4 @@
-import { render, screen, act } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CreditCardsTab } from "./credit-cards-tab";
@@ -64,18 +64,14 @@ describe("CreditCardsTab", () => {
   });
 
   it("renders correctly", async () => {
-    await act(async () => {
-      render(<CreditCardsTab />);
-    });
+    render(<CreditCardsTab />);
 
     expect(screen.getByText("Credit Cards")).toBeInTheDocument();
     expect(screen.getByTestId("add-credit-card-button")).toBeInTheDocument();
   });
 
   it("shows empty state message", async () => {
-    await act(async () => {
-      render(<CreditCardsTab />);
-    });
+    render(<CreditCardsTab />);
 
     expect(screen.getByTestId("credit-cards-empty")).toBeInTheDocument();
     expect(screen.getByText(/No credit cards/i)).toBeInTheDocument();
@@ -89,9 +85,7 @@ describe("CreditCardsTab", () => {
       return Promise.resolve({ ok: true, json: async () => [] } as Response);
     });
 
-    await act(async () => {
-      render(<CreditCardsTab />);
-    });
+    render(<CreditCardsTab />);
 
     expect(screen.getByTestId("credit-card-card-name")).toHaveTextContent("Amex Platinum");
   });
@@ -104,9 +98,7 @@ describe("CreditCardsTab", () => {
       return Promise.resolve({ ok: true, json: async () => [] } as Response);
     });
 
-    await act(async () => {
-      render(<CreditCardsTab />);
-    });
+    render(<CreditCardsTab />);
 
     const deleteButtons = screen.getAllByTestId("delete-credit-card-button");
     expect(deleteButtons.length).toBe(2);
@@ -115,9 +107,7 @@ describe("CreditCardsTab", () => {
   it("opens add dialog when Add Credit Card is clicked", async () => {
     const user = userEvent.setup();
 
-    await act(async () => {
-      render(<CreditCardsTab />);
-    });
+    render(<CreditCardsTab />);
 
     await user.click(screen.getByTestId("add-credit-card-button"));
     expect(screen.getByText(/Add a credit card\. You can configure/i)).toBeInTheDocument();

@@ -1,4 +1,4 @@
-import { render, screen, act } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { UserStatusTab } from "./user-status-tab";
@@ -43,9 +43,7 @@ describe("UserStatusTab", () => {
 
   it("renders empty state correctly", async () => {
     mockFetch();
-    await act(async () => {
-      render(<UserStatusTab />);
-    });
+    render(<UserStatusTab />);
 
     expect(screen.getByText(/My Elite Status/i)).toBeInTheDocument();
     expect(screen.getByTestId("user-status-table")).toBeInTheDocument();
@@ -66,27 +64,21 @@ describe("UserStatusTab", () => {
       return Promise.reject(new Error("Unknown URL"));
     });
 
-    await act(async () => {
-      render(<UserStatusTab />);
-    });
+    render(<UserStatusTab />);
 
     expect(screen.getByText("Marriott")).toBeInTheDocument();
   });
 
   it("does not render partnerships section when none exist", async () => {
     mockFetch([]);
-    await act(async () => {
-      render(<UserStatusTab />);
-    });
+    render(<UserStatusTab />);
 
     expect(screen.queryByText(/Hotel Partnerships/i)).not.toBeInTheDocument();
   });
 
   it("renders partnership checkboxes when partnerships exist", async () => {
     mockFetch([MOCK_PARTNERSHIP]);
-    await act(async () => {
-      render(<UserStatusTab />);
-    });
+    render(<UserStatusTab />);
 
     expect(screen.getByText(/Hotel Partnerships/i)).toBeInTheDocument();
     const checkbox = screen.getByTestId(`partnership-checkbox-${PARTNERSHIP_ID}`);
@@ -96,9 +88,7 @@ describe("UserStatusTab", () => {
 
   it("shows checkbox as checked when partnership is enabled", async () => {
     mockFetch([{ ...MOCK_PARTNERSHIP, isEnabled: true }]);
-    await act(async () => {
-      render(<UserStatusTab />);
-    });
+    render(<UserStatusTab />);
 
     expect(screen.getByTestId(`partnership-checkbox-${PARTNERSHIP_ID}`)).toBeChecked();
   });
@@ -106,9 +96,7 @@ describe("UserStatusTab", () => {
   it("calls POST /api/user-partnership-earns when toggling a checkbox", async () => {
     mockFetch([MOCK_PARTNERSHIP]);
     const user = userEvent.setup();
-    await act(async () => {
-      render(<UserStatusTab />);
-    });
+    render(<UserStatusTab />);
 
     vi.mocked(global.fetch).mockImplementation(
       (input: string | Request | URL, init?: RequestInit) => {

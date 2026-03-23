@@ -1,4 +1,4 @@
-import { render, screen, act, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { OtaAgenciesTab } from "./ota-agencies-tab";
@@ -17,9 +17,7 @@ describe("OtaAgenciesTab", () => {
       json: async () => [],
     } as Response);
 
-    await act(async () => {
-      render(<OtaAgenciesTab />);
-    });
+    render(<OtaAgenciesTab />);
 
     expect(screen.getByText("OTA Agencies")).toBeInTheDocument();
     expect(screen.getByTestId("add-agency-button")).toBeInTheDocument();
@@ -31,9 +29,7 @@ describe("OtaAgenciesTab", () => {
       json: async () => [],
     } as Response);
 
-    await act(async () => {
-      render(<OtaAgenciesTab />);
-    });
+    render(<OtaAgenciesTab />);
 
     expect(screen.getByTestId("ota-agencies-empty")).toBeInTheDocument();
     expect(screen.getByText(/No OTA agencies/i)).toBeInTheDocument();
@@ -46,9 +42,7 @@ describe("OtaAgenciesTab", () => {
       json: async () => mockAgencies,
     } as Response);
 
-    await act(async () => {
-      render(<OtaAgenciesTab />);
-    });
+    render(<OtaAgenciesTab />);
 
     const desktopView = screen.getByTestId("agencies-desktop");
     expect(within(desktopView).getByText("Expedia")).toBeInTheDocument();
@@ -61,9 +55,7 @@ describe("OtaAgenciesTab", () => {
       json: async () => mockAgencies,
     } as Response);
 
-    await act(async () => {
-      render(<OtaAgenciesTab />);
-    });
+    render(<OtaAgenciesTab />);
 
     // Find delete button in the desktop view table
     const desktopView = screen.getByTestId("agencies-desktop");
@@ -87,9 +79,7 @@ describe("OtaAgenciesTab", () => {
         return Promise.reject(new Error(`Unknown: ${url}`));
       });
 
-    await act(async () => {
-      render(<OtaAgenciesTab />);
-    });
+    render(<OtaAgenciesTab />);
 
     const desktopView = screen.getByTestId("agencies-desktop");
     const deleteBtn = within(desktopView).getByRole("button", { name: "Delete" });
@@ -107,9 +97,7 @@ describe("OtaAgenciesTab", () => {
       json: async () => mockAgencies,
     } as Response);
 
-    await act(async () => {
-      render(<OtaAgenciesTab />);
-    });
+    render(<OtaAgenciesTab />);
 
     const desktopView = screen.getByTestId("agencies-desktop");
     const deleteBtn = within(desktopView).getByRole("button", { name: "Delete" });
