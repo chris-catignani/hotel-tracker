@@ -6,22 +6,20 @@ Built with Next.js, Prisma, shadcn/ui, and Tailwind CSS.
 
 ## Features
 
-- **Booking management** -- Track hotel stays with pre-tax cost, taxes, credit card used, shopping portal, and loyalty points earned; property autocomplete powered by Google Places API
-- **Promotion tracking** -- Define promotions (hotel credits, card offers, portal bonuses, loyalty multipliers) with matching rules
-- **Auto-matching** -- Promotions automatically apply to bookings based on hotel chain, credit card, portal, date range, and spend thresholds
-- **Net cost calculation** -- See the true cost of each stay after all savings:
-  ```
-  Net Cost = Total Cost - Promotions - Portal Cashback - Card Rewards
-  ```
-- **Dashboard** -- Summary stats, savings breakdown by category, and per-hotel-chain analysis
-- **Price Watch** -- Monitor live hotel rates (cash + award) for upcoming stays; email alerts when prices drop below your thresholds
-- **Settings** -- Manage your hotel chains, credit cards, and shopping portals
+- **Booking management** — Track hotel and apartment stays with pre-tax cost, taxes, credit card used, shopping portal, and loyalty points earned; property autocomplete powered by Google Places API
+- **Multi-currency support** — Book in any currency; exchange rates are locked at check-in so past stay values don't drift
+- **Promotion tracking** — Define promotions (hotel credits, card offers, portal bonuses, loyalty multipliers) with matching rules
+- **Auto-matching** — Promotions automatically apply to bookings based on hotel chain, credit card, portal, date range, and spend thresholds
+- **Net cost calculation** — See the true cost of each stay after all savings: promotions, portal cashback, card rewards, and loyalty points earned
+- **Dashboard** — Summary stats, savings breakdown by category, and per-hotel-chain analysis; filter by hotels or apartments
+- **Price Watch** — Monitor live hotel rates (cash + award) for upcoming stays; email alerts when prices drop below your thresholds
+- **Settings** — Manage your hotel chains, credit cards, and shopping portals
 
 ## Prerequisites
 
 - **Node.js** 18+
-- **PostgreSQL** -- a running Postgres instance (local or cloud)
-- **Google Places API key** -- for property name autocomplete (~$200/month free credit; billing account required)
+- **PostgreSQL** — a running Postgres instance (local or cloud)
+- **Google Places API key** — for property name autocomplete (billing account required; ~$200/month free credit)
 
 ## Local Development Setup
 
@@ -33,75 +31,32 @@ cd hotel-tracker
 npm install
 ```
 
-### 2. Set up the database
+### 2. Configure environment
 
-Copy the example env file and update `DATABASE_URL` with your Postgres connection string:
+Copy the example env file and fill in your values:
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env`:
+Required variables:
 
 ```
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/hotel_tracker"
+AUTH_SECRET="<openssl rand -base64 32>"
+GOOGLE_MAPS_API_KEY="your-google-places-api-key"
 ```
 
-If you need to create the database first:
+### 3. Set up the database
 
 ```bash
-psql -U postgres -c "CREATE DATABASE hotel_tracker;"
+npm run db:migrate   # Apply migrations (dev)
+npm run db:seed      # Seed reference data + create admin user
 ```
 
-### 3. Push schema to database
+The seed step uses `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD` from `.env` to create the first admin user.
 
-```bash
-npm run db:push
-```
-
-### Google Places API Setup
-
-The booking form uses the Google Places API (New) to power property name autocomplete, with `includedType: lodging` so only hotels appear in results.
-
-1. Go to [console.cloud.google.com](https://console.cloud.google.com) and create or select a project
-2. Enable the **Places API (New)** (not the legacy Places API)
-3. Create an API key under **APIs & Services → Credentials**
-4. Optionally restrict the key to **Places API (New)** to limit exposure
-5. Add it to `.env`:
-
-```
-GOOGLE_PLACES_API_KEY="your-google-places-api-key"
-```
-
-The app degrades gracefully without a key — the property name field still works as a plain text input, but autocomplete suggestions won't appear.
-
-> **Pricing:** Google provides ~$200/month in free credit. Only Basic tier fields are requested (display name, address components, location), which are billed at $32/1,000 requests — roughly 6,000 free searches per month. A billing account is required even for the free tier.
-
-### Authentication Setup
-
-Copy `.env.example` to `.env` and set a strong `AUTH_SECRET`:
-
-```bash
-openssl rand -base64 32
-```
-
-Add to `.env`:
-
-```
-AUTH_SECRET="<your-generated-secret>"
-SEED_ADMIN_EMAIL="your@email.com"
-SEED_ADMIN_PASSWORD="your-secure-password"
-```
-
-### 4. Seed reference data (optional)
-
-Loads sample hotel chains, credit cards, shopping portals, bookings, and promotions. Also creates the first admin user using `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD` from `.env`.
-
-```bash
-npm run db:seed
-```
-
-### 5. Start the dev server
+### 4. Start the dev server
 
 ```bash
 npm run dev
@@ -109,213 +64,46 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-## Pages
+## Testing (E2E)
 
-| Route                   | Description                                               |
-| ----------------------- | --------------------------------------------------------- |
-| `/`                     | Dashboard with stats, recent bookings, savings breakdown  |
-| `/bookings`             | All bookings list with net cost                           |
-| `/bookings/new`         | Add a new booking                                         |
-| `/bookings/[id]`        | Booking detail with cost breakdown and applied promotions |
-| `/bookings/[id]/edit`   | Edit a booking                                            |
-| `/promotions`           | All promotions with type-based tabs                       |
-| `/promotions/new`       | Add a new promotion                                       |
-| `/promotions/[id]/edit` | Edit a promotion                                          |
-| `/price-watch`          | All price watches with latest rates and alert thresholds  |
-| `/settings`             | Manage hotels, credit cards, and shopping portals         |
-
-## Database Schema
-
-Six tables managed by Prisma:
-
-- **hotels** -- Hotel chains and their loyalty programs
-- **credit_cards** -- Cards with reward type, earn rate, and point value
-- **shopping_portals** -- Cashback portals (Rakuten, TopCashback, etc.)
-- **bookings** -- Hotel stays with all cost fields and references to card/portal used
-- **promotions** -- Promotion rules with type, value, matching criteria, and date ranges
-- **booking_promotions** -- Join table tracking which promotions were applied to which bookings
-
-## Useful Commands
-
-```bash
-npm run dev          # Start dev server
-npm run build        # Production build
-npm run db:push      # Push schema to database
-npm run db:seed      # Seed reference data
-npm run db:generate  # Regenerate Prisma client
-npm run test         # Run unit tests (Vitest)
-npm run test:e2e     # Run functional E2E tests (Playwright)
-npx prisma studio    # Open Prisma Studio (visual DB browser)
-```
-
-## Functional Testing (E2E)
-
-We use **Playwright** for end-to-end functional tests.
-
-### 1. Setup
-
-Add a dedicated test database URL to your `.env` file. You do not need to create the database manually; Prisma will create it for you if it doesn't exist.
+Add a dedicated test database URL to `.env`:
 
 ```
 DATABASE_URL_TEST="postgresql://postgres:postgres@localhost:5432/hotel_tracker_test"
 ```
 
-### 2. Run Tests
-
 ```bash
 npx playwright install  # Install browser engines (first time only)
-npm run test:e2e        # Run tests headlessly (AI/CI default)
-npm run test:e2e:show   # Run tests and open HTML report (Human default)
+npm run test:e2e        # Run tests headlessly
+npm run test:e2e:show   # Run tests and open HTML report
 npm run test:e2e:ui     # Run tests with interactive UI
 ```
 
 The E2E suite automatically resets and seeds the test database before running.
 
-### 3. Auth Setup for E2E Tests
-
-`AUTH_SECRET` must be set in your `.env` file for E2E tests to work. The test server needs it to sign and verify JWT cookies.
-
-### 4. Debugging Failures
-
-If a test fails, Playwright is configured to record a video and a "trace" (interactive debug log).
-
-#### Locally
-
-1. Run tests using `npm run test:e2e:show`.
-2. The browser will open the report automatically.
-3. Click on a failed test and scroll to the **Video** or **Traces** section.
-
-#### In CI (GitHub Actions)
-
-1. Go to the **Actions** tab in your GitHub repository.
-2. Click on the failed workflow run.
-3. Scroll down to the **Artifacts** section at the bottom.
-4. Download the `playwright-report` to view videos and interactive traces.
-
 ## Deploying to Vercel
 
-1. Push your repo to GitHub
-2. Import the project in [Vercel](https://vercel.com)
-3. Add a Postgres database (Neon or Vercel Postgres) from the Vercel dashboard
-4. Vercel will automatically set `DATABASE_URL` -- ensure it matches your Prisma config
-5. Add a build command override if needed: `npx prisma generate && next build`
-6. After the first deploy, push the schema: `npx prisma db push`
-7. Add required environment variables in Vercel project settings:
-   - `AUTH_SECRET`: Generate with `openssl rand -base64 32`
-   - `SEED_ADMIN_EMAIL`: Your admin email
-   - `SEED_ADMIN_PASSWORD`: A strong password
-   - `GOOGLE_PLACES_API_KEY`: Your Google Places API key (see Google Places API Setup above)
-   - `CRON_SECRET`: Generate with `openssl rand -base64 32` (used to authenticate cron endpoints)
+1. Push your repo to GitHub and import the project in [Vercel](https://vercel.com)
+2. Add a Postgres database (Neon or Vercel Postgres) from the Vercel dashboard
+3. Add required environment variables in Vercel project settings:
+   - `DATABASE_URL`: Your Postgres connection string
+   - `AUTH_SECRET`: `openssl rand -base64 32`
+   - `GOOGLE_MAPS_API_KEY`: Your Google Places API key
+   - `CRON_SECRET`: `openssl rand -base64 32` (authenticates cron endpoints)
    - `RESEND_API_KEY`: From [resend.com](https://resend.com) (required for price drop email alerts)
-   - `RESEND_FROM_EMAIL`: Verified sender address on Resend (required for price drop email alerts)
-8. Run `npm run db:seed` via Vercel's one-off task runner or a local connection to the production DB to create the admin user.
-
-## Exchange Rate Cron Job
-
-The app supports non-USD bookings. Exchange rates are stored in the `ExchangeRate` table and refreshed daily via a Vercel Cron Job.
-
-### How it works
-
-- **Schedule:** daily at midnight UTC (`0 0 * * *`), configured in `vercel.json`
-- **Endpoint:** `GET /api/cron/refresh-exchange-rates`
-- **What it does:**
-  1. Fetches current rates for all supported currencies (via a free public CDN) and upserts them into the `ExchangeRate` table
-  2. Locks in the historical check-in-date rate for any non-USD future bookings whose check-in date has now passed, and recalculates loyalty points in USD at that rate
-
-### Setup on Vercel
-
-1. Generate a secret token:
+   - `RESEND_FROM_EMAIL`: Verified sender address on Resend
+4. Add build command override: `npx prisma generate && next build`
+5. After the first deploy, run the following via a local connection to the production DB:
    ```bash
-   openssl rand -base64 32
-   ```
-2. Add it as an environment variable in your Vercel project settings:
-
-   ```
-   CRON_SECRET="<your-generated-secret>"
+   npm run db:deploy  # Apply migrations
+   npm run db:seed    # Create the admin user
    ```
 
-   Vercel automatically sends this as `Authorization: Bearer <secret>` when invoking the cron endpoint. The endpoint returns `401` for any request missing a valid token.
-
-3. The cron job is defined in `vercel.json` and Vercel will activate it automatically on deploy — no additional configuration needed.
-
-### Initial data population
-
-The `ExchangeRate` table starts empty. After your first deploy, trigger the cron manually to populate it:
-
-```bash
-curl -X GET https://<your-vercel-domain>/api/cron/refresh-exchange-rates \
-  -H "Authorization: Bearer <your-cron-secret>"
-```
-
-After that, Vercel will keep rates up to date automatically each night.
-
-## Price Watch Setup
-
-The price watch feature monitors live hotel room rates (cash and award/points) for upcoming stays and sends email alerts when prices drop below your configured thresholds.
-
-### Supported Chains
-
-| Chain  | Cash Rates | Award Rates | Notes                         |
-| ------ | ---------- | ----------- | ----------------------------- |
-| Hyatt  | ✅         | ✅          | Uses Playwright + spirit code |
-| Others | —          | —           | Not yet supported             |
-
-### Email Alerts (Resend)
-
-1. Create a free account at [resend.com](https://resend.com)
-2. Add and verify a sender domain (or use the Resend test address)
-3. Create an API key
-4. Add to your environment:
-   ```
-   RESEND_API_KEY="re_..."
-   RESEND_FROM_EMAIL="alerts@yourdomain.com"
-   ```
-
-### Hyatt Rate Monitoring
-
-Hyatt rates are fetched using an automated browser (Playwright) that bypasses bot detection by launching in "App Mode" directly to the Hyatt rates API.
-
-#### Step 1 — Requirement
-
-No session cookies or environment variables are required for Hyatt monitoring. The scraper runs a headed (non-headless) Chromium instance locally.
-
-#### Step 2 — Set the spirit code on a property
-
-The Hyatt API identifies properties by a **spirit code** — a 5-character lowercase string visible in every Hyatt property URL:
-
-```
-https://www.hyatt.com/en-US/hotel/illinois/park-hyatt-chicago/chiph
-                                                                ^^^^^
-                                                           spiritCode = "chiph"
-```
-
-Set it on the property via the **Price Watch** page — click the pencil icon next to a watch and type the spirit code. Or via the API:
-
-```bash
-curl -X PUT https://your-app.vercel.app/api/properties/{propertyId} \
-  -H "Content-Type: application/json" \
-  -d '{"chainPropertyId": "chiph"}'
-```
-
-#### Step 3 — Enable price watch on a booking
-
-1. Open a booking's detail or edit page
-2. Scroll to the **Price Watch** section
-3. Toggle it on and optionally set cash/award thresholds
-
-#### Debugging
-
-If you encounter issues with Hyatt price fetching, you can run the standalone debug script to test the bypass logic:
-
-```bash
-npx tsx scripts/debug-hyatt.ts
-```
+## Price Watch
 
 ### Cron Schedule (GitHub Actions)
 
-Price watches run daily via GitHub Actions. This design is necessary because the Playwright-based scraper requires a full Linux environment and virtual display (`xvfb`) to bypass Hyatt's bot detection, which exceeds the capabilities of serverless functions (e.g. Vercel).
-
-The workflow is defined in `.github/workflows/refresh-price-watches.yml` and runs at **6am UTC**.
+Price watches run daily at **6am UTC** via GitHub Actions (`.github/workflows/refresh-price-watches.yml`). This runs outside Vercel because the Playwright-based scrapers require a full Linux environment with a virtual display.
 
 Add these secrets to your GitHub repository (**Settings → Secrets → Actions**):
 
@@ -325,29 +113,20 @@ Add these secrets to your GitHub repository (**Settings → Secrets → Actions*
 | `RESEND_API_KEY`    | Your Resend API key                        |
 | `RESEND_FROM_EMAIL` | Your verified Resend sender email          |
 
-You can also trigger the workflow manually from the **Actions** tab.
-
-#### Local Execution
-
-To run the full refresh manually on your local machine:
+To run manually:
 
 ```bash
 npm run prices:refresh
-# or to dispatch it on GitHub Actions:
+# or trigger on GitHub Actions:
 ./scripts/trigger-price-refresh.sh
 ```
 
 ## Managing Users
 
-The app is single-admin by default. To create additional users:
+Self-registration is closed. New users can be created via `POST /api/auth/register`. Admin users can write to reference data (hotel chains, credit cards, portals); regular users manage their own bookings and promotions.
 
-- **Self-registration is closed.** New users can be created via the `POST /api/auth/register` endpoint (see source for payload shape).
-- **Admin users only** can write to reference data (hotel chains, credit cards, portals, etc.). Regular users can manage their own bookings and promotions.
-- To promote a user to admin, update the `role` column in the `users` table: `UPDATE users SET role = 'ADMIN' WHERE email = 'user@example.com';`
+To promote a user to admin:
 
-## Tech Stack
-
-- **Framework:** Next.js 16 (App Router)
-- **Database:** PostgreSQL with Prisma 6 ORM
-- **UI:** Tailwind CSS + shadcn/ui
-- **Language:** TypeScript
+```sql
+UPDATE users SET role = 'ADMIN' WHERE email = 'user@example.com';
+```
