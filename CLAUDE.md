@@ -135,6 +135,7 @@ Incomplete final cycle earns $0. Label depends on whether the cap was exhausted:
 - Settings page uses controlled `Dialog` components with separate open/edit state variables
 - PostgreSQL on WSL2: `sudo service postgresql start`
 - `react-hooks/set-state-in-effect` is intentionally suppressed in a few data-fetching effects; use `useCallback` + `useEffect` to avoid it elsewhere
+- Error handling: `src/lib/api-error.ts` (server) + `src/lib/client-error.ts` (client). Set `NEXT_PUBLIC_DEBUG=true` in `.env` for detailed errors in UI
 
 ## Testing
 
