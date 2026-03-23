@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm run dev          # Start dev server on localhost:3000
 ```
 
-**Required env vars** (copy from `.env.example` or set manually): `DATABASE_URL`, `AUTH_SECRET`, `GOOGLE_MAPS_API_KEY`, `RESEND_API_KEY`, `CRON_SECRET`. For E2E tests: also `DATABASE_URL_TEST`.
+**Required env vars** (copy from `.env.example` or set manually): `DATABASE_URL`, `AUTH_SECRET`, `GOOGLE_PLACES_API_KEY`, `RESEND_API_KEY`, `CRON_SECRET`. For E2E tests: also `DATABASE_URL_TEST`.
 
 ```bash
 npm run build        # Production build

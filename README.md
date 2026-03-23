@@ -44,7 +44,7 @@ Required variables:
 ```
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/hotel_tracker"
 AUTH_SECRET="<openssl rand -base64 32>"
-GOOGLE_MAPS_API_KEY="your-google-places-api-key"
+GOOGLE_PLACES_API_KEY="your-google-places-api-key"
 ```
 
 ### 3. Set up the database
@@ -88,7 +88,7 @@ The E2E suite automatically resets and seeds the test database before running.
 3. Add required environment variables in Vercel project settings:
    - `DATABASE_URL`: Your Postgres connection string
    - `AUTH_SECRET`: `openssl rand -base64 32`
-   - `GOOGLE_MAPS_API_KEY`: Your Google Places API key
+   - `GOOGLE_PLACES_API_KEY`: Your Google Places API key
    - `CRON_SECRET`: `openssl rand -base64 32` (authenticates cron endpoints)
    - `RESEND_API_KEY`: From [resend.com](https://resend.com) (required for price drop email alerts)
    - `RESEND_FROM_EMAIL`: Verified sender address on Resend
