@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm run dev          # Start dev server on localhost:3000
 ```
 
-**Required env vars** (copy from `.env.example` or set manually): `DATABASE_URL`, `AUTH_SECRET`, `GOOGLE_MAPS_API_KEY`, `RESEND_API_KEY`, `CRON_SECRET`. For E2E tests: also `DATABASE_URL_TEST`.
+**Required env vars** (copy from `.env.example` or set manually): `DATABASE_URL`, `AUTH_SECRET`, `GOOGLE_PLACES_API_KEY`, `RESEND_API_KEY`, `CRON_SECRET`. For E2E tests: also `DATABASE_URL_TEST`.
 
 ```bash
 npm run build        # Production build
@@ -135,6 +135,7 @@ Incomplete final cycle earns $0. Label depends on whether the cap was exhausted:
 - Settings page uses controlled `Dialog` components with separate open/edit state variables
 - PostgreSQL on WSL2: `sudo service postgresql start`
 - `react-hooks/set-state-in-effect` is intentionally suppressed in a few data-fetching effects; use `useCallback` + `useEffect` to avoid it elsewhere
+- Error handling: `src/lib/api-error.ts` (server) + `src/lib/client-error.ts` (client). Set `NEXT_PUBLIC_DEBUG=true` in `.env` for detailed errors in UI
 
 ## Testing
 
