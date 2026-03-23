@@ -1,10 +1,9 @@
-import { render, screen, act } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { HotelChainsTab } from "./hotel-chains-tab";
 
 describe("HotelChainsTab", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     global.fetch = vi.fn();
   });
 
@@ -18,9 +17,7 @@ describe("HotelChainsTab", () => {
       return Promise.reject(new Error("Unknown URL"));
     });
 
-    await act(async () => {
-      render(<HotelChainsTab />);
-    });
+    render(<HotelChainsTab />);
 
     expect(screen.getByText("Hotel Chains")).toBeInTheDocument();
     expect(screen.getByTestId("add-hotel-chain-button")).toBeInTheDocument();
@@ -36,11 +33,9 @@ describe("HotelChainsTab", () => {
       return Promise.reject(new Error("Unknown URL"));
     });
 
-    await act(async () => {
-      render(<HotelChainsTab />);
-    });
+    render(<HotelChainsTab />);
 
-    expect(screen.getByTestId("hotel-chains-empty")).toBeInTheDocument();
+    expect(await screen.findByTestId("hotel-chains-empty")).toBeInTheDocument();
     expect(screen.getByText(/No hotel chains/i)).toBeInTheDocument();
     expect(screen.getByText(/Add hotel chains like Marriott/i)).toBeInTheDocument();
   });
@@ -64,12 +59,10 @@ describe("HotelChainsTab", () => {
       return Promise.reject(new Error("Unknown URL"));
     });
 
-    await act(async () => {
-      render(<HotelChainsTab />);
-    });
+    render(<HotelChainsTab />);
 
     // Check that it's present in both mobile and desktop views using specific test IDs
-    expect(screen.getByTestId("hotel-chain-card-name")).toHaveTextContent("Marriott");
+    expect(await screen.findByTestId("hotel-chain-card-name")).toHaveTextContent("Marriott");
     expect(screen.getByTestId("hotel-chain-table-name")).toHaveTextContent("Marriott");
   });
 });

@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import HealthPage from "./page";
 
 const mockFetch = vi.fn();
@@ -58,10 +58,6 @@ function mockError() {
     json: async () => ({ error: "Forbidden" }),
   });
 }
-
-beforeEach(() => {
-  vi.clearAllMocks();
-});
 
 describe("HealthPage", () => {
   it("renders GitHub Actions statuses", async () => {

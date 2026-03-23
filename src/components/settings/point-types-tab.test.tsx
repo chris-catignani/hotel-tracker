@@ -1,4 +1,4 @@
-import { render, screen, act, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { PointTypesTab } from "./point-types-tab";
@@ -16,7 +16,6 @@ const mockPt = [
 
 describe("PointTypesTab", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     global.fetch = vi.fn();
   });
 
@@ -26,9 +25,7 @@ describe("PointTypesTab", () => {
       json: async () => [],
     } as Response);
 
-    await act(async () => {
-      render(<PointTypesTab />);
-    });
+    render(<PointTypesTab />);
 
     expect(screen.getByText("Point Types")).toBeInTheDocument();
     expect(screen.getByTestId("add-point-type-button")).toBeInTheDocument();
@@ -40,11 +37,9 @@ describe("PointTypesTab", () => {
       json: async () => [],
     } as Response);
 
-    await act(async () => {
-      render(<PointTypesTab />);
-    });
+    render(<PointTypesTab />);
 
-    expect(screen.getByTestId("point-types-empty")).toBeInTheDocument();
+    expect(await screen.findByTestId("point-types-empty")).toBeInTheDocument();
     expect(screen.getByText(/No point types/i)).toBeInTheDocument();
     expect(screen.getByText(/Define point values/i)).toBeInTheDocument();
   });
@@ -55,12 +50,10 @@ describe("PointTypesTab", () => {
       json: async () => mockPt,
     } as Response);
 
-    await act(async () => {
-      render(<PointTypesTab />);
-    });
+    render(<PointTypesTab />);
 
     // Verify it appears in both views
-    const mobileView = screen.getByTestId("point-types-mobile");
+    const mobileView = await screen.findByTestId("point-types-mobile");
     const desktopView = screen.getByTestId("point-types-desktop");
 
     expect(within(mobileView).getByText("Marriott Points")).toBeInTheDocument();
@@ -74,11 +67,9 @@ describe("PointTypesTab", () => {
       json: async () => mockPt,
     } as Response);
 
-    await act(async () => {
-      render(<PointTypesTab />);
-    });
+    render(<PointTypesTab />);
 
-    const desktopView = screen.getByTestId("point-types-desktop");
+    const desktopView = await screen.findByTestId("point-types-desktop");
     const deleteBtn = within(desktopView).getByRole("button", { name: "Delete" });
     await user.click(deleteBtn);
 
@@ -101,11 +92,9 @@ describe("PointTypesTab", () => {
         return Promise.reject(new Error(`Unknown: ${url}`));
       });
 
-    await act(async () => {
-      render(<PointTypesTab />);
-    });
+    render(<PointTypesTab />);
 
-    const desktopView = screen.getByTestId("point-types-desktop");
+    const desktopView = await screen.findByTestId("point-types-desktop");
     const deleteBtn = within(desktopView).getByRole("button", { name: "Delete" });
     await user.click(deleteBtn);
 
@@ -121,11 +110,9 @@ describe("PointTypesTab", () => {
       json: async () => mockPt,
     } as Response);
 
-    await act(async () => {
-      render(<PointTypesTab />);
-    });
+    render(<PointTypesTab />);
 
-    const desktopView = screen.getByTestId("point-types-desktop");
+    const desktopView = await screen.findByTestId("point-types-desktop");
     const deleteBtn = within(desktopView).getByRole("button", { name: "Delete" });
     await user.click(deleteBtn);
 
@@ -151,9 +138,7 @@ describe("PointTypesTab", () => {
         return Promise.reject(new Error(`Unknown: ${url}`));
       });
 
-    await act(async () => {
-      render(<PointTypesTab />);
-    });
+    render(<PointTypesTab />);
 
     await user.click(screen.getByTestId("add-point-type-button"));
 
@@ -190,11 +175,9 @@ describe("PointTypesTab", () => {
       json: async () => foreignPt,
     } as Response);
 
-    await act(async () => {
-      render(<PointTypesTab />);
-    });
+    render(<PointTypesTab />);
 
-    const desktopView = screen.getByTestId("point-types-desktop");
+    const desktopView = await screen.findByTestId("point-types-desktop");
     expect(within(desktopView).getByText(/EUR/)).toBeInTheDocument();
     expect(within(desktopView).getByText(/0.02/)).toBeInTheDocument();
   });

@@ -4,26 +4,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { DatePicker } from "./date-picker";
 import { format } from "date-fns";
 
-// Mock matchMedia
-Object.defineProperty(window, "matchMedia", {
-  writable: true,
-  value: vi.fn().mockImplementation((query) => ({
-    matches: query.includes("min-width: 768px"), // Default to desktop if query matches
-    media: query,
-    onchange: null,
-    addListener: vi.fn(), // Deprecated
-    removeListener: vi.fn(), // Deprecated
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  })),
-});
-
 describe("DatePicker", () => {
   const mockSetDate = vi.fn();
 
   beforeEach(() => {
-    vi.clearAllMocks();
     vi.mocked(window.matchMedia).mockImplementation((query) => ({
       matches: query.includes("min-width: 768px"),
       media: query,

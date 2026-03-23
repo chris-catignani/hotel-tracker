@@ -1,4 +1,4 @@
-import { render, screen, act } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CreditCardsTab } from "./credit-cards-tab";
@@ -46,7 +46,6 @@ vi.mock("./credit-card-accordion-item", () => ({
 
 describe("CreditCardsTab", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     global.fetch = vi.fn().mockImplementation((input: string | Request | URL) => {
       const url = input instanceof Request ? input.url : input.toString();
       if (url.includes("/api/credit-cards"))
@@ -64,20 +63,16 @@ describe("CreditCardsTab", () => {
   });
 
   it("renders correctly", async () => {
-    await act(async () => {
-      render(<CreditCardsTab />);
-    });
+    render(<CreditCardsTab />);
 
     expect(screen.getByText("Credit Cards")).toBeInTheDocument();
     expect(screen.getByTestId("add-credit-card-button")).toBeInTheDocument();
   });
 
   it("shows empty state message", async () => {
-    await act(async () => {
-      render(<CreditCardsTab />);
-    });
+    render(<CreditCardsTab />);
 
-    expect(screen.getByTestId("credit-cards-empty")).toBeInTheDocument();
+    expect(await screen.findByTestId("credit-cards-empty")).toBeInTheDocument();
     expect(screen.getByText(/No credit cards/i)).toBeInTheDocument();
   });
 
@@ -89,11 +84,9 @@ describe("CreditCardsTab", () => {
       return Promise.resolve({ ok: true, json: async () => [] } as Response);
     });
 
-    await act(async () => {
-      render(<CreditCardsTab />);
-    });
+    render(<CreditCardsTab />);
 
-    expect(screen.getByTestId("credit-card-card-name")).toHaveTextContent("Amex Platinum");
+    expect(await screen.findByTestId("credit-card-card-name")).toHaveTextContent("Amex Platinum");
   });
 
   it("shows a Delete button for each credit card", async () => {
@@ -104,20 +97,16 @@ describe("CreditCardsTab", () => {
       return Promise.resolve({ ok: true, json: async () => [] } as Response);
     });
 
-    await act(async () => {
-      render(<CreditCardsTab />);
-    });
+    render(<CreditCardsTab />);
 
-    const deleteButtons = screen.getAllByTestId("delete-credit-card-button");
+    const deleteButtons = await screen.findAllByTestId("delete-credit-card-button");
     expect(deleteButtons.length).toBe(2);
   });
 
   it("opens add dialog when Add Credit Card is clicked", async () => {
     const user = userEvent.setup();
 
-    await act(async () => {
-      render(<CreditCardsTab />);
-    });
+    render(<CreditCardsTab />);
 
     await user.click(screen.getByTestId("add-credit-card-button"));
     expect(screen.getByText(/Add a credit card\. You can configure/i)).toBeInTheDocument();

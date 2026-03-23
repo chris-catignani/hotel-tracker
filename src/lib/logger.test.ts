@@ -16,7 +16,6 @@ vi.mock("@sentry/node", () => ({
 
 describe("logger", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     vi.spyOn(console, "log").mockImplementation(() => {});
     vi.spyOn(console, "warn").mockImplementation(() => {});
     vi.spyOn(console, "error").mockImplementation(() => {});

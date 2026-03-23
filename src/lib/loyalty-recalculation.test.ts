@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
+import { describe, it, expect, vi, type Mock } from "vitest";
 import { recalculateLoyaltyForHotelChain } from "./loyalty-recalculation";
 import prisma from "./prisma";
 import { reevaluateBookings } from "./promotion-matching";
@@ -36,10 +36,6 @@ const prismaMock = prisma as unknown as {
 const resolveCalcCurrencyRateMock = resolveCalcCurrencyRate as unknown as Mock;
 
 describe("loyalty-recalculation", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   it("should recalculate points and trigger promotion re-evaluation", async () => {
     // 1. Mock the hotel chain (Base rate: 10, Status bonus: 50%)
     const mockChain = {

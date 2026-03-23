@@ -79,7 +79,6 @@ const USD_SCRAPER_RESULT = {
 const mockFetcher = { canFetch: vi.fn(() => true), fetchPrice: vi.fn() };
 
 beforeEach(() => {
-  vi.clearAllMocks();
   vi.mocked(prisma.priceWatch.update).mockResolvedValue({} as never);
   vi.mocked(prisma.priceSnapshot.create).mockResolvedValue({ id: "snap-1" } as never);
   vi.mocked(selectFetcher).mockReturnValue(mockFetcher);

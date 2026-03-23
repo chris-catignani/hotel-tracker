@@ -11,6 +11,8 @@ export default defineConfig({
     exclude: ["node_modules", "e2e/**"],
     testTimeout: 30000,
     hookTimeout: 30000,
+    clearMocks: true,
+    restoreMocks: true,
   },
   resolve: {
     alias: {

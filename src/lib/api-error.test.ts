@@ -22,7 +22,6 @@ describe("apiError", () => {
 
   afterEach(() => {
     vi.unstubAllEnvs();
-    vi.clearAllMocks();
   });
 
   it("should return a generic error in production", async () => {

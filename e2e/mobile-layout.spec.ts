@@ -31,7 +31,7 @@ test.describe("Mobile Layout & Responsive Components", () => {
     // Close drawer by clicking a link
     await drawer.getByTestId("nav-item-bookings").click();
     await expect(isolatedUser.page.getByTestId("mobile-nav-content")).not.toBeVisible();
-    await expect(isolatedUser.page.url()).toContain("/bookings");
+    await expect(isolatedUser.page).toHaveURL(/\/bookings/);
   });
 
   test("should display booking card view instead of tables", async ({ testBooking }) => {

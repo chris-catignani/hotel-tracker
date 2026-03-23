@@ -1,14 +1,10 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import BookingsPage from "./page";
 
 const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
-
-beforeEach(() => {
-  vi.clearAllMocks();
-});
 
 describe("BookingsPage", () => {
   it("shows an error banner and no booking rows when the bookings API fails", async () => {

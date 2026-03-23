@@ -1,10 +1,9 @@
-import { render, screen, act, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ShoppingPortalsTab } from "./shopping-portals-tab";
 
 describe("ShoppingPortalsTab", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     global.fetch = vi.fn();
   });
 
@@ -18,9 +17,7 @@ describe("ShoppingPortalsTab", () => {
       return Promise.reject(new Error("Unknown URL"));
     });
 
-    await act(async () => {
-      render(<ShoppingPortalsTab />);
-    });
+    render(<ShoppingPortalsTab />);
 
     expect(screen.getByText("Shopping Portals")).toBeInTheDocument();
     expect(screen.getByTestId("add-portal-button")).toBeInTheDocument();
@@ -36,11 +33,9 @@ describe("ShoppingPortalsTab", () => {
       return Promise.reject(new Error("Unknown URL"));
     });
 
-    await act(async () => {
-      render(<ShoppingPortalsTab />);
-    });
+    render(<ShoppingPortalsTab />);
 
-    expect(screen.getByTestId("portals-empty")).toBeInTheDocument();
+    expect(await screen.findByTestId("portals-empty")).toBeInTheDocument();
     expect(screen.getByText(/No shopping portals/i)).toBeInTheDocument();
     expect(screen.getByText(/Add portals like Rakuten/i)).toBeInTheDocument();
   });
@@ -56,11 +51,9 @@ describe("ShoppingPortalsTab", () => {
       return Promise.reject(new Error("Unknown URL"));
     });
 
-    await act(async () => {
-      render(<ShoppingPortalsTab />);
-    });
+    render(<ShoppingPortalsTab />);
 
-    const desktopView = screen.getByTestId("portals-desktop");
+    const desktopView = await screen.findByTestId("portals-desktop");
     expect(within(desktopView).getByText("Rakuten")).toBeInTheDocument();
   });
 });

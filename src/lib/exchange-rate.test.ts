@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
+import { describe, it, expect, vi, type Mock } from "vitest";
 import { fetchExchangeRate, getCurrentRate, getOrFetchHistoricalRate } from "./exchange-rate";
 import prisma from "./prisma";
 
@@ -30,10 +30,6 @@ const prismaMock = prisma as unknown as {
 };
 
 describe("fetchExchangeRate", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   it("returns 1 immediately for USD without fetching", async () => {
     const rate = await fetchExchangeRate("USD", "latest");
     expect(rate).toBe(1);
@@ -110,10 +106,6 @@ describe("fetchExchangeRate", () => {
 });
 
 describe("getOrFetchHistoricalRate", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   it("returns 1 for USD without any DB or API calls", async () => {
     const rate = await getOrFetchHistoricalRate("USD", "2025-01-01");
     expect(rate).toBe(1);
@@ -175,10 +167,6 @@ describe("getOrFetchHistoricalRate", () => {
 });
 
 describe("getCurrentRate", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   it("returns 1 for USD without querying the DB", async () => {
     const rate = await getCurrentRate("USD");
     expect(rate).toBe(1);

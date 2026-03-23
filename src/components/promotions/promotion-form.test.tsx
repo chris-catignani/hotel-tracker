@@ -9,7 +9,6 @@ global.fetch = vi.fn();
 
 describe("PromotionForm", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     vi.mocked(global.fetch).mockImplementation((url: string | URL | Request) => {
       const urlStr = url.toString();
       if (urlStr === "/api/hotel-chains")

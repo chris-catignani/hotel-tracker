@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NavItemsList } from "./nav-items-list";
 import { usePathname } from "next/navigation";
 
@@ -24,10 +24,6 @@ describe("NavItemsList", () => {
       status: "authenticated",
       update: vi.fn(),
     });
-  });
-
-  afterEach(() => {
-    vi.clearAllMocks();
   });
 
   it("renders all navigation items for admin users", () => {

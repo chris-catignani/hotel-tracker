@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { NextResponse } from "next/server";
 import { UserRole } from "@prisma/client";
 import { getAuthenticatedUserId, requireAdmin } from "./auth-utils";
@@ -10,10 +10,6 @@ vi.mock("@/auth", () => ({
 import { auth } from "@/auth";
 
 describe("getAuthenticatedUserId", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   it("returns the userId string when session has user.id", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "user-123", email: "test@example.com" },
@@ -45,10 +41,6 @@ describe("getAuthenticatedUserId", () => {
 });
 
 describe("requireAdmin", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   it("returns undefined when user role is ADMIN", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "user-123", email: "admin@example.com", role: UserRole.ADMIN },
