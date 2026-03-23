@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { BookingPriceWatch } from "./booking-price-watch";
 
 // Rooms designed so cash sort and award sort produce different orderings:
@@ -150,10 +150,6 @@ const initialWatchBooking = {
 };
 
 describe("BookingPriceWatch", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   it("renders with toggle off when no watch exists", async () => {
     render(<BookingPriceWatch {...defaultProps} initialWatchBooking={null} />);
 

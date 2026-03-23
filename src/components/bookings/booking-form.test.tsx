@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { BookingForm } from "./booking-form";
 import { calculatePointsFromChain } from "@/lib/loyalty-utils";
 import type { Booking } from "@/lib/types";
@@ -116,7 +116,6 @@ describe("BookingForm", () => {
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
     vi.mocked(calculatePointsFromChain).mockReturnValue("1000");
     // Mock global fetch
     global.fetch = vi.fn().mockImplementation((url) => {
@@ -131,10 +130,6 @@ describe("BookingForm", () => {
         json: async () => [],
       });
     });
-  });
-
-  afterEach(() => {
-    vi.clearAllMocks();
   });
 
   it("shows geo confirmation error when property name is typed but not confirmed", async () => {
@@ -288,7 +283,6 @@ describe("BookingForm benefit approximate value", () => {
     }) as Booking;
 
   beforeEach(() => {
-    vi.clearAllMocks();
     vi.mocked(calculatePointsFromChain).mockReturnValue("0");
     global.fetch = vi.fn().mockImplementation((url: string) => {
       if (url === "/api/hotel-chains") {
@@ -311,10 +305,6 @@ describe("BookingForm benefit approximate value", () => {
       }
       return Promise.resolve({ ok: true, json: async () => [] });
     });
-  });
-
-  afterEach(() => {
-    vi.clearAllMocks();
   });
 
   it("multiplier benefit approx value converts native pretaxCost to USD using exchange rate", async () => {

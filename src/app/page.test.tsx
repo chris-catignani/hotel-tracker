@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import DashboardPage from "./page";
 
 // recharts doesn't work in jsdom — mock the components that use it
@@ -12,10 +12,6 @@ vi.mock("@/components/sub-brand-breakdown", () => ({
 
 const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
-
-beforeEach(() => {
-  vi.clearAllMocks();
-});
 
 describe("DashboardPage", () => {
   it("shows an error banner when the bookings API fails", async () => {

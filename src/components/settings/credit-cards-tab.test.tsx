@@ -46,7 +46,6 @@ vi.mock("./credit-card-accordion-item", () => ({
 
 describe("CreditCardsTab", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     global.fetch = vi.fn().mockImplementation((input: string | Request | URL) => {
       const url = input instanceof Request ? input.url : input.toString();
       if (url.includes("/api/credit-cards"))

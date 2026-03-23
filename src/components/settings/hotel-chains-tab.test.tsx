@@ -4,7 +4,6 @@ import { HotelChainsTab } from "./hotel-chains-tab";
 
 describe("HotelChainsTab", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     global.fetch = vi.fn();
   });
 

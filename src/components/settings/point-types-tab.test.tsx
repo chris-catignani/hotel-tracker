@@ -16,7 +16,6 @@ const mockPt = [
 
 describe("PointTypesTab", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     global.fetch = vi.fn();
   });
 

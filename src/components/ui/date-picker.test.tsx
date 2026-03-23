@@ -8,7 +8,6 @@ describe("DatePicker", () => {
   const mockSetDate = vi.fn();
 
   beforeEach(() => {
-    vi.clearAllMocks();
     vi.mocked(window.matchMedia).mockImplementation((query) => ({
       matches: query.includes("min-width: 768px"),
       media: query,

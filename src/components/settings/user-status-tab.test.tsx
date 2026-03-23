@@ -37,7 +37,6 @@ function mockFetch(partnerships: MockPartnership[] = []) {
 
 describe("UserStatusTab", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     global.fetch = vi.fn();
   });
 

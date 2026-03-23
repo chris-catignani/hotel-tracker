@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import NewBookingPage from "./page";
 
 // Mock next/navigation
@@ -59,7 +59,6 @@ vi.mock("@/components/ui/error-banner", () => ({
 
 describe("NewBookingPage", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     global.fetch = vi.fn().mockImplementation((url: string) => {
       if (url === "/api/bookings") {
         return Promise.resolve({
@@ -75,10 +74,6 @@ describe("NewBookingPage", () => {
       }
       return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
     });
-  });
-
-  afterEach(() => {
-    vi.clearAllMocks();
   });
 
   it("renders the price watch card", () => {

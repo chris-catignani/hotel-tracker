@@ -7,7 +7,6 @@ const mockAgencies = [{ id: "1", name: "Expedia" }];
 
 describe("OtaAgenciesTab", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     global.fetch = vi.fn();
   });
 

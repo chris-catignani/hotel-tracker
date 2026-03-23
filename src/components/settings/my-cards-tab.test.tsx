@@ -25,7 +25,6 @@ const mockCard: UserCreditCard = {
 };
 
 beforeEach(() => {
-  vi.restoreAllMocks();
   global.fetch = vi.fn(async (url: RequestInfo | URL) => {
     if (String(url).includes("/api/user-credit-cards")) {
       return { ok: true, json: async () => [mockCard] } as Response;

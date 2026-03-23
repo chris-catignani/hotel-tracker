@@ -46,10 +46,6 @@ const baseBooking = {
 };
 
 describe("enrichBookingWithRate", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe("USD booking (past)", () => {
     it("returns stored exchangeRate of 1, isFutureEstimate=false, no loyalty estimation", async () => {
       const result = await enrichBookingWithRate(baseBooking);

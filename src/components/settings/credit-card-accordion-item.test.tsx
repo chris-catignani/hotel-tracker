@@ -30,7 +30,6 @@ const defaultProps = {
 
 describe("CreditCardAccordionItem", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) } as Response);
   });
 

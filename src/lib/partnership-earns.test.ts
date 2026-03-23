@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { resolvePartnershipEarns } from "./partnership-earns";
 
 // Mock getOrFetchHistoricalRate so tests don't hit the external API or DB
@@ -28,10 +28,6 @@ const APAC_BOOKING = {
 };
 
 describe("resolvePartnershipEarns", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   it("calculates Qantas miles for Accor APAC booking", async () => {
     // 1 AUD = 0.63 USD, so pretaxCostUSD=100, pretaxAUD=100/0.63≈158.73, miles=158.73*3≈476.19, value=476.19*0.012≈$5.71
     vi.mocked(getOrFetchHistoricalRate).mockResolvedValue(0.63);

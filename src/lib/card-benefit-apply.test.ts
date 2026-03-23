@@ -106,7 +106,6 @@ function makeBooking(overrides: Partial<BookingShape> = {}): BookingShape {
 
 describe("reapplyBenefitForPeriod", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     prismaMock.bookingCardBenefit.deleteMany.mockResolvedValue({ count: 0 });
     prismaMock.bookingCardBenefit.createMany.mockResolvedValue({ count: 0 });
   });
@@ -154,7 +153,6 @@ describe("reapplyBenefitForPeriod", () => {
       ],
     });
 
-    vi.clearAllMocks();
     prismaMock.bookingCardBenefit.deleteMany.mockResolvedValue({ count: 0 });
     prismaMock.bookingCardBenefit.createMany.mockResolvedValue({ count: 0 });
 
@@ -411,7 +409,6 @@ describe("reapplyBenefitForPeriod", () => {
 
 describe("reapplyCardBenefitsAffectedByBooking", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     prismaMock.bookingCardBenefit.deleteMany.mockResolvedValue({ count: 0 });
     prismaMock.bookingCardBenefit.createMany.mockResolvedValue({ count: 0 });
   });

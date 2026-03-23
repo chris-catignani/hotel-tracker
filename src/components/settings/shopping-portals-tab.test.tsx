@@ -4,7 +4,6 @@ import { ShoppingPortalsTab } from "./shopping-portals-tab";
 
 describe("ShoppingPortalsTab", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     global.fetch = vi.fn();
   });
 

@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import SettingsPage from "@/app/settings/page";
 
 // Mock the components inside the tabs to avoid deep rendering complexity
@@ -29,10 +29,6 @@ vi.mock("next-auth/react", () => ({
 }));
 
 describe("SettingsPage Tabs", () => {
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
-
   it("renders all tab contents with correct data-testids", async () => {
     render(<SettingsPage />);
 

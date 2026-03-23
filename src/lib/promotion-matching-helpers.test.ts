@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
+import { describe, it, expect, vi, type Mock } from "vitest";
 import prisma from "./prisma";
 import {
   reevaluateSubsequentBookings,
@@ -29,10 +29,6 @@ const prismaMock = prisma as unknown as {
 };
 
 describe("cascading-reevaluation", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   it("should re-evaluate only relevant subsequent bookings when promotionIds are provided", async () => {
     const bookingId = "b1";
     const promoIds = ["p1"];
