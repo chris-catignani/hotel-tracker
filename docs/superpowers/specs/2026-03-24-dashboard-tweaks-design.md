@@ -189,7 +189,7 @@ Pass `filteredBookings` to all three.
 
 - Correct bucket assignment for Net/Night (positive value)
 - Negative net cost clamped to $0–50 bucket
-- Award stays ($0 totalCost) excluded from Total/Night metric
+- Award stays ($0 totalCost) included in Total/Night metric via redemption value (`pointsRedeemedValue + certsValue`)
 - Nights mode sums correctly
 - Empty state renders when no qualifying bookings
 
