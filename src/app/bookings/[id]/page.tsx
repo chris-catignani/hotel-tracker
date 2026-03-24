@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -20,6 +19,11 @@ import {
 } from "@/components/ui/table";
 import { CostBreakdown } from "@/components/cost-breakdown";
 import { BookingPriceWatch } from "@/components/price-watch/booking-price-watch";
+import { useApiQuery } from "@/hooks/use-api-query";
+import { apiFetch } from "@/lib/api-fetch";
+import { logger } from "@/lib/logger";
+import { toast } from "sonner";
+import { ErrorBanner } from "@/components/ui/error-banner";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -216,46 +220,47 @@ export default function BookingDetailPage() {
   const params = useParams();
   const id = params.id as string;
 
-  const [booking, setBooking] = useState<Booking | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const fetchBooking = useCallback(async () => {
-    setLoading(true);
-    const res = await fetch(`/api/bookings/${id}`);
-    if (res.ok) setBooking(await res.json());
-    setLoading(false);
-  }, [id]);
+  const {
+    data: booking,
+    loading,
+    error: fetchError,
+    clearError,
+    refetch: refetchBooking,
+  } = useApiQuery<Booking>(`/api/bookings/${id}`, {
+    onError: (err) =>
+      logger.error("Failed to fetch booking", err.error, { bookingId: id, status: err.status }),
+  });
 
   const toggleVerified = async (bp: BookingPromotion) => {
-    const res = await fetch(`/api/booking-promotions/${bp.id}`, {
+    const result = await apiFetch(`/api/booking-promotions/${bp.id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ verified: !bp.verified }),
+      body: { verified: !bp.verified },
     });
-    if (res.ok) {
-      setBooking((prev) =>
-        prev
-          ? {
-              ...prev,
-              bookingPromotions: prev.bookingPromotions.map((p) =>
-                p.id === bp.id ? { ...p, verified: !bp.verified } : p
-              ),
-            }
-          : prev
-      );
+    if (!result.ok) {
+      logger.error("Failed to update promotion verification", result.error, {
+        bookingPromotionId: bp.id,
+        status: result.status,
+      });
+      toast.error("Failed to update. Please try again.");
+      return;
     }
+    refetchBooking();
   };
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchBooking();
-  }, [fetchBooking]);
 
   if (loading) {
     return (
       <div className="space-y-6">
         <h1 className="text-2xl font-bold">Booking Details</h1>
         <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold">Booking Details</h1>
+        <ErrorBanner error="Failed to load booking. Please try again." onDismiss={clearError} />
       </div>
     );
   }
