@@ -12,6 +12,7 @@ import { seedBookings } from "./seed-bookings";
 import { seedPromotions } from "./seed-promotions";
 import { recalculateLoyaltyForHotelChain } from "../src/lib/loyalty-recalculation";
 import { reapplyBenefitForAllUsers } from "../src/lib/card-benefit-apply";
+import { finalizeCheckedInBookings } from "../src/lib/booking-enrichment";
 
 const prisma = new PrismaClient();
 
@@ -1103,6 +1104,9 @@ async function main() {
 
   await seedBookings(ADMIN_USER_ID);
   await seedPromotions(ADMIN_USER_ID);
+
+  // Finalize checked-in bookings: lock exchange rates and loyalty points for past non-USD bookings
+  await finalizeCheckedInBookings(ADMIN_USER_ID);
 
   // Recalculate loyalty points for all chains so stored values reflect current
   // rates and elite statuses (including Accor's EUR-denominated calculation)

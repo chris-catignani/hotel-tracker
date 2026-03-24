@@ -1,6 +1,12 @@
 import { calculatePoints, resolveBasePointRate } from "@/lib/loyalty-utils";
-import { getCurrentRate, resolveCalcCurrencyRate } from "@/lib/exchange-rate";
+import {
+  getCurrentRate,
+  resolveCalcCurrencyRate,
+  fetchExchangeRate,
+  getOrFetchHistoricalRate,
+} from "@/lib/exchange-rate";
 import prisma from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 type EliteStatusShape = { eliteStatus: unknown };
 
@@ -117,4 +123,94 @@ export async function enrichBookingWithRate<T extends EnrichableBooking>(booking
         }
       : null,
   };
+}
+
+/**
+ * For all past-due bookings where checkIn <= today, lockedExchangeRate is null,
+ * and currency != USD: locks the exchange rate, calculates loyalty points, and
+ * locks lockedLoyaltyUsdCentsPerPoint. Optionally scoped to a single user (e.g.
+ * during seeding). Returns the IDs of bookings that were successfully finalized.
+ */
+export async function finalizeCheckedInBookings(userId?: string): Promise<string[]> {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const pastDueBookings = await prisma.booking.findMany({
+    where: {
+      ...(userId ? { userId } : {}),
+      checkIn: { lte: today },
+      lockedExchangeRate: null,
+      NOT: { currency: "USD" },
+    },
+    include: {
+      hotelChain: { include: { pointType: true } },
+      hotelChainSubBrand: true,
+    },
+  });
+
+  // Batch-fetch userStatuses for all bookings that will need loyalty point calculation
+  const bookingsNeedingLoyalty = pastDueBookings.filter(
+    (b) => b.loyaltyPointsEarned == null && b.hotelChain != null
+  );
+  const userStatusRows = await prisma.userStatus.findMany({
+    where: {
+      OR: bookingsNeedingLoyalty.map((b) => ({
+        userId: b.userId,
+        hotelChainId: b.hotelChain!.id,
+      })),
+    },
+    include: { eliteStatus: true },
+  });
+  const userStatusMap = new Map(
+    userStatusRows.map((us) => [`${us.userId}_${us.hotelChainId}`, us])
+  );
+
+  const finalizedIds: string[] = [];
+
+  for (const booking of pastDueBookings) {
+    try {
+      const checkInStr = booking.checkIn.toISOString().split("T")[0];
+      const rate = await getOrFetchHistoricalRate(booking.currency, checkInStr);
+      if (rate == null) {
+        logger.warn("No exchange rate available for booking, skipping finalization", {
+          bookingId: booking.id,
+          currency: booking.currency,
+          checkIn: checkInStr,
+        });
+        continue;
+      }
+
+      let loyaltyPointsEarned = booking.loyaltyPointsEarned;
+      if (loyaltyPointsEarned == null && booking.hotelChain) {
+        const userStatus = userStatusMap.get(`${booking.userId}_${booking.hotelChain.id}`) ?? null;
+        const basePointRate = resolveBasePointRate(booking.hotelChain, booking.hotelChainSubBrand);
+        const usdPretaxCost = Number(booking.pretaxCost) * rate;
+        loyaltyPointsEarned = calculatePoints({
+          pretaxCost: usdPretaxCost,
+          basePointRate,
+          eliteStatus: userStatus?.eliteStatus ?? null,
+        });
+      }
+
+      const pt = booking.hotelChain?.pointType;
+      let lockedLoyaltyUsdCentsPerPoint: number | undefined;
+      if (pt?.programCurrency != null && pt?.programCentsPerPoint != null) {
+        const programRate = await fetchExchangeRate(pt.programCurrency, checkInStr);
+        lockedLoyaltyUsdCentsPerPoint = Number(pt.programCentsPerPoint) * programRate;
+      }
+
+      await prisma.booking.update({
+        where: { id: booking.id },
+        data: { lockedExchangeRate: rate, loyaltyPointsEarned, lockedLoyaltyUsdCentsPerPoint },
+      });
+      finalizedIds.push(booking.id);
+    } catch (err) {
+      logger.error("Failed to finalize checked-in booking", err, {
+        context: "FINALIZE_CHECKED_IN_BOOKING",
+        bookingId: booking.id,
+      });
+    }
+  }
+
+  return finalizedIds;
 }
