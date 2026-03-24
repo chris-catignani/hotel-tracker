@@ -5,12 +5,12 @@ import { getAuthenticatedUserId } from "@/lib/auth-utils";
 
 /** GET /api/price-watches/[id]/snapshots — full price history */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
     const userId = userIdOrResponse;
 
-    const { id } = await params;
     const watch = await prisma.priceWatch.findFirst({
       where: { id, userId },
       select: { id: true },

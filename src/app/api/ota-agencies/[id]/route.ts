@@ -4,8 +4,8 @@ import { apiError } from "@/lib/api-error";
 import { requireAdmin } from "@/lib/auth-utils";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
-    const { id } = await params;
     const agency = await prisma.otaAgency.findUnique({
       where: { id: id },
     });
@@ -17,11 +17,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
     const adminError = await requireAdmin();
     if (adminError instanceof NextResponse) return adminError;
 
-    const { id } = await params;
     const { name } = await request.json();
     const agency = await prisma.otaAgency.update({
       where: { id: id },
@@ -37,11 +37,11 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const adminError = await requireAdmin();
     if (adminError instanceof NextResponse) return adminError;
 
-    const { id } = await params;
     // Check if being used by any bookings
     const count = await prisma.booking.count({
       where: { otaAgencyId: id },

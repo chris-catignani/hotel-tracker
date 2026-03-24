@@ -159,12 +159,12 @@ async function getFullBookingWithUsage(id: string, userId: string) {
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
     const userId = userIdOrResponse;
 
-    const { id } = await params;
     const booking = await getFullBookingWithUsage(id, userId);
 
     if (!booking) {
@@ -178,12 +178,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
     const userId = userIdOrResponse;
-
-    const { id } = await params;
 
     const exists = await prisma.booking.findFirst({ where: { id, userId }, select: { id: true } });
     if (!exists) return apiError("Booking not found", null, 404, request, { bookingId: id });
@@ -529,12 +528,11 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
     const userId = userIdOrResponse;
-
-    const { id } = await params;
 
     // Find booking and its applied promotions before deleting (also verifies ownership)
     const booking = await prisma.booking.findFirst({

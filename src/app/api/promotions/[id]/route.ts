@@ -40,12 +40,12 @@ const PROMOTION_INCLUDE = {
 } as const;
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
 
     const userId = userIdOrResponse;
-    const { id } = await params;
     const promotion = await prisma.promotion.findFirst({
       where: { id, userId },
       include: PROMOTION_INCLUDE,
@@ -62,11 +62,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
     const userId = userIdOrResponse;
-    const { id } = await params;
 
     const exists = await prisma.promotion.findFirst({
       where: { id, userId },
@@ -287,12 +287,11 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
     const userId = userIdOrResponse;
-
-    const { id } = await params;
 
     const exists = await prisma.promotion.findFirst({
       where: { id, userId },

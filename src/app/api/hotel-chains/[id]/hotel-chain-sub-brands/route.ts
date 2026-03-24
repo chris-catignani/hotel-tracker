@@ -4,8 +4,8 @@ import { apiError } from "@/lib/api-error";
 import { requireAdmin } from "@/lib/auth-utils";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
-    const { id } = await params;
     const subBrands = await prisma.hotelChainSubBrand.findMany({
       where: { hotelChainId: id },
       orderBy: {
@@ -19,11 +19,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
     const adminError = await requireAdmin();
     if (adminError instanceof NextResponse) return adminError;
 
-    const { id } = await params;
     const { name, basePointRate } = await request.json();
 
     const subBrand = await prisma.hotelChainSubBrand.create({

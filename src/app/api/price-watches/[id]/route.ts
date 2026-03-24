@@ -35,12 +35,12 @@ const PRICE_WATCH_INCLUDE = {
 } as const;
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
     const userId = userIdOrResponse;
 
-    const { id } = await params;
     const watch = await prisma.priceWatch.findFirst({
       where: { id, userId },
       include: PRICE_WATCH_INCLUDE,
@@ -55,12 +55,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
 /** PUT /api/price-watches/[id] — toggle isEnabled */
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
     const userId = userIdOrResponse;
 
-    const { id } = await params;
     const exists = await prisma.priceWatch.findFirst({
       where: { id, userId },
       select: { id: true },
@@ -87,12 +87,12 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
     const userId = userIdOrResponse;
 
-    const { id } = await params;
     const exists = await prisma.priceWatch.findFirst({
       where: { id, userId },
       select: { id: true },

@@ -7,12 +7,12 @@ import { normalizeUserStatuses } from "@/lib/normalize-response";
 import { parseCalculationCurrency } from "@/app/api/hotel-chains/route";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
     const userId = userIdOrResponse;
 
-    const { id } = await params;
     const hotelChain = await prisma.hotelChain.findUnique({
       where: { id: id },
       include: {
@@ -35,6 +35,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
     const adminError = await requireAdmin();
     if (adminError instanceof NextResponse) return adminError;
@@ -43,7 +44,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
     const userId = userIdOrResponse;
 
-    const { id } = await params;
     const body = await request.json();
     const { name, loyaltyProgram, basePointRate, calculationCurrency, pointTypeId } = body;
 
@@ -109,11 +109,10 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const adminError = await requireAdmin();
     if (adminError instanceof NextResponse) return adminError;
-
-    const { id } = await params;
 
     // Check for existing bookings
     const bookingCount = await prisma.booking.count({

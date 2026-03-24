@@ -11,8 +11,8 @@ const INCLUDE = {
 };
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
-    const { id } = await params;
     const cardBenefit = await prisma.cardBenefit.findUnique({
       where: { id },
       include: INCLUDE,
@@ -26,11 +26,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
     const adminOrResponse = await requireAdmin();
     if (adminOrResponse instanceof NextResponse) return adminOrResponse;
 
-    const { id } = await params;
     const body = await request.json();
     const {
       creditCardId,
@@ -88,11 +88,11 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const adminOrResponse = await requireAdmin();
     if (adminOrResponse instanceof NextResponse) return adminOrResponse;
 
-    const { id } = await params;
     await prisma.cardBenefit.delete({ where: { id } });
     return NextResponse.json({ message: "Card benefit deleted" });
   } catch (error) {
