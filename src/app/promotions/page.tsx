@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { logger } from "@/lib/logger";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,6 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ErrorBanner } from "@/components/ui/error-banner";
 import { Plus, Tag } from "lucide-react";
 import { PromotionCard } from "@/components/promotions/promotion-card";
 import { Promotion } from "@/lib/types";
@@ -25,45 +26,36 @@ import {
   typeBadgeVariant,
   typeLabel,
 } from "@/lib/promotion-utils";
+import { useApiQuery } from "@/hooks/use-api-query";
+import { apiFetch } from "@/lib/api-fetch";
+import { toast } from "sonner";
 
 export default function PromotionsPage() {
-  const [promotions, setPromotions] = useState<Promotion[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    data: promotionsData,
+    loading,
+    error: fetchError,
+    clearError,
+    refetch: refetchPromotions,
+  } = useApiQuery<Promotion[]>("/api/promotions", {
+    onError: (err) => logger.error("Failed to fetch promotions", err.error, { status: err.status }),
+  });
+  const promotions = useMemo(() => promotionsData ?? [], [promotionsData]);
+
   const [activeTab, setActiveTab] = useState("all");
-
-  const fetchPromotions = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/promotions");
-      if (res.ok) {
-        const data = await res.json();
-        setPromotions(data);
-      } else {
-        logger.error("Failed to fetch promotions", null, { status: res.status });
-      }
-    } catch (error) {
-      logger.error("Failed to fetch promotions", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchPromotions();
-  }, []);
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this promotion?")) return;
-    try {
-      const res = await fetch(`/api/promotions/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        fetchPromotions();
-      } else {
-        logger.error("Failed to delete promotion", null, { status: res.status, id });
-      }
-    } catch (error) {
-      logger.error("Failed to delete promotion", error, { id });
+    const result = await apiFetch(`/api/promotions/${id}`, { method: "DELETE" });
+    if (!result.ok) {
+      logger.error("Failed to delete promotion", result.error, {
+        promotionId: id,
+        status: result.status,
+      });
+      toast.error("Failed to delete promotion. Please try again.");
+      return;
     }
+    refetchPromotions();
   };
 
   const filteredPromotions =
@@ -80,6 +72,11 @@ export default function PromotionsPage() {
           </Link>
         </Button>
       </div>
+
+      <ErrorBanner
+        error={fetchError ? "Failed to load promotions. Please try again." : null}
+        onDismiss={clearError}
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 min-h-0">
         <TabsList className="shrink-0">
