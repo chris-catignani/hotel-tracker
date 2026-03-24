@@ -8,6 +8,7 @@ const eslintConfig = defineConfig([
   {
     ignores: [
       ".next/**",
+      ".worktrees/**",
       "out/**",
       "build/**",
       "playwright-report/**",
