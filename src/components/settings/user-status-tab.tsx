@@ -12,9 +12,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { extractApiError } from "@/lib/client-error";
+import { apiFetch } from "@/lib/api-fetch";
+import { logger } from "@/lib/logger";
 import { HotelChain, UserStatus } from "@/lib/types";
-import { ErrorBanner } from "@/components/ui/error-banner";
+import { toast } from "sonner";
 
 interface PartnershipEarn {
   id: string;
@@ -29,7 +30,6 @@ export function UserStatusTab() {
   const [userStatuses, setUserStatuses] = useState<UserStatus[]>([]);
   const [hotelChains, setHotelChains] = useState<HotelChain[]>([]);
   const [partnerships, setPartnerships] = useState<PartnershipEarn[]>([]);
-  const [error, setError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     const [statusRes, chainsRes, partnershipsRes] = await Promise.all([
@@ -51,40 +51,39 @@ export function UserStatusTab() {
     setPartnerships((prev) =>
       prev.map((p) => (p.id === partnershipEarnId ? { ...p, isEnabled: checked } : p))
     );
-    setError(null);
-    const res = await fetch("/api/user-partnership-earns", {
+    const result = await apiFetch("/api/user-partnership-earns", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ partnershipEarnId, isEnabled: checked }),
+      body: { partnershipEarnId, isEnabled: checked },
     });
-    if (!res.ok) {
+    if (!result.ok) {
       setPartnerships((prev) =>
         prev.map((p) => (p.id === partnershipEarnId ? { ...p, isEnabled: !checked } : p))
       );
-      setError(await extractApiError(res, "Failed to update partnership preference."));
+      logger.error("Failed to update partnership preference", result.error, {
+        status: result.status,
+      });
+      toast.error("Failed to update partnership preference. Please try again.");
     }
   };
 
   const handleStatusChange = async (hotelChainId: string, eliteStatusId: string) => {
-    setError(null);
-    const res = await fetch("/api/user-statuses", {
+    const result = await apiFetch("/api/user-statuses", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+      body: {
         hotelChainId,
         eliteStatusId: eliteStatusId === "none" ? null : eliteStatusId,
-      }),
+      },
     });
-    if (res.ok) {
+    if (result.ok) {
       fetchData();
     } else {
-      setError(await extractApiError(res, "Failed to update status."));
+      logger.error("Failed to update status", result.error, { status: result.status });
+      toast.error("Failed to update status. Please try again.");
     }
   };
 
   return (
     <div className="space-y-4">
-      <ErrorBanner error={error} onDismiss={() => setError(null)} />
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">My Elite Status</h2>
       </div>
