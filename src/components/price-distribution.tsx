@@ -75,7 +75,7 @@ export function PriceDistribution({ bookings }: PriceDistributionProps) {
       }
 
       const bucketLabel = getBucket(perNight);
-      const increment = mode === "stays" ? 1 : booking.numNights;
+      const increment = mode === "stays" ? 1 : dateNights;
       counts[bucketLabel] += increment;
     });
 

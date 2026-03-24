@@ -116,12 +116,12 @@ describe("PriceDistribution", () => {
     expect(totalCount).toBe(1); // Award stay is included, not excluded
   });
 
-  it("Nights mode sums numNights per bucket", async () => {
+  it("Nights mode sums dateNights per bucket", async () => {
     const user = userEvent.setup();
-    const booking = makeBooking({ totalCost: 300, numNights: 5 });
+    const booking = makeBooking({ totalCost: 300, numNights: 3 });
     render(<PriceDistribution bookings={[booking as never]} />);
     await user.click(screen.getByText("Nights"));
-    expect(screen.getByTestId("bar-$100–150")).toHaveTextContent("$100–150: 5");
+    expect(screen.getByTestId("bar-$100–150")).toHaveTextContent("$100–150: 3");
   });
 
   it("Total/Night mode uses gross cost for cash stays", async () => {
