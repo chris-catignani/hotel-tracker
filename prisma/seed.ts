@@ -40,6 +40,7 @@ interface EliteStatusData {
   bonusPercentage?: number;
   fixedRate?: number;
   isFixed?: boolean;
+  pointsFloorTo?: number;
   eliteTierLevel: number;
 }
 
@@ -572,10 +573,10 @@ async function main() {
     },
   });
   await upsertEliteStatuses(HOTEL_ID.GHA_DISCOVERY, [
-    { name: "Silver", fixedRate: 4, isFixed: true, eliteTierLevel: 1 },
-    { name: "Gold", fixedRate: 5, isFixed: true, eliteTierLevel: 2 },
-    { name: "Platinum", fixedRate: 6, isFixed: true, eliteTierLevel: 3 },
-    { name: "Titanium", fixedRate: 7, isFixed: true, eliteTierLevel: 4 },
+    { name: "Silver", fixedRate: 4, isFixed: true, pointsFloorTo: 100, eliteTierLevel: 1 },
+    { name: "Gold", fixedRate: 5, isFixed: true, pointsFloorTo: 100, eliteTierLevel: 2 },
+    { name: "Platinum", fixedRate: 6, isFixed: true, pointsFloorTo: 100, eliteTierLevel: 3 },
+    { name: "Titanium", fixedRate: 7, isFixed: true, pointsFloorTo: 100, eliteTierLevel: 4 },
   ]);
   await upsertSubBrands(HOTEL_ID.GHA_DISCOVERY, [
     { name: "Anantara" },

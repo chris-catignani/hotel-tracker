@@ -25,6 +25,7 @@ export interface HotelChainEliteStatus {
   bonusPercentage: number | null;
   fixedRate: number | null;
   isFixed: boolean;
+  pointsFloorTo: number | null;
 }
 
 export interface UserStatus {

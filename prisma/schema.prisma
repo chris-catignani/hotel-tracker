@@ -203,6 +203,7 @@ model HotelChainEliteStatus {
   bonusPercentage Decimal?     @map("bonus_percentage") @db.Decimal(10, 4) // e.g. 0.50 for 50%
   fixedRate       Decimal?     @map("fixed_rate") @db.Decimal(10, 4) // e.g. 7.0 for 7 points/$1
   isFixed         Boolean      @default(false) @map("is_fixed")
+  pointsFloorTo   Int?         @map("points_floor_to") // floor earned points to nearest N (e.g. 100 for GHA); null = Math.round
   userStatuses    UserStatus[]
 
   @@unique([hotelChainId, name])

@@ -358,6 +358,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
                     bonusPercentage: userStatus.eliteStatus.bonusPercentage,
                     fixedRate: userStatus.eliteStatus.fixedRate,
                     isFixed: userStatus.eliteStatus.isFixed,
+                    pointsFloorTo: userStatus.eliteStatus.pointsFloorTo,
                   }
                 : null,
             });
