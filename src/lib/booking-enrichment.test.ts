@@ -1,9 +1,11 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
-import { enrichBookingWithRate } from "./booking-enrichment";
+import { enrichBookingWithRate, finalizeCheckedInBookings } from "./booking-enrichment";
 
 vi.mock("./exchange-rate", () => ({
   getCurrentRate: vi.fn(),
   resolveCalcCurrencyRate: vi.fn().mockResolvedValue(null),
+  getOrFetchHistoricalRate: vi.fn(),
+  fetchExchangeRate: vi.fn(),
 }));
 
 vi.mock("./loyalty-utils", async (importOriginal) => {
@@ -14,18 +16,29 @@ vi.mock("./loyalty-utils", async (importOriginal) => {
 vi.mock("./prisma", () => ({
   default: {
     exchangeRateHistory: { findUnique: vi.fn() },
+    booking: { findMany: vi.fn(), update: vi.fn() },
+    userStatus: { findUnique: vi.fn() },
   },
 }));
 
-import { getCurrentRate, resolveCalcCurrencyRate } from "./exchange-rate";
+import {
+  getCurrentRate,
+  resolveCalcCurrencyRate,
+  getOrFetchHistoricalRate,
+  fetchExchangeRate,
+} from "./exchange-rate";
 import { calculatePoints } from "./loyalty-utils";
 import prisma from "./prisma";
 
 const mockGetCurrentRate = getCurrentRate as Mock;
 const mockResolveCalcCurrencyRate = resolveCalcCurrencyRate as Mock;
 const mockCalculatePoints = calculatePoints as Mock;
+const mockGetOrFetchHistoricalRate = getOrFetchHistoricalRate as Mock;
+const mockFetchExchangeRate = fetchExchangeRate as Mock;
 const prismaMock = prisma as unknown as {
   exchangeRateHistory: { findUnique: Mock };
+  booking: { findMany: Mock; update: Mock };
+  userStatus: { findUnique: Mock };
 };
 
 const pastDate = new Date("2024-06-01T00:00:00Z");
@@ -250,7 +263,7 @@ describe("enrichBookingWithRate", () => {
     });
   });
 
-  describe("future USD booking", () => {
+  describe("future USD booking (enrichBookingWithRate)", () => {
     it("uses stored exchangeRate=1 and is never a future estimate (USD)", async () => {
       const booking = {
         ...baseBooking,
@@ -268,7 +281,7 @@ describe("enrichBookingWithRate", () => {
     });
   });
 
-  describe("exchangeRateEstimated", () => {
+  describe("exchangeRateEstimated (enrichBookingWithRate)", () => {
     const pastNonUsdBooking = {
       ...baseBooking,
       currency: "AUD",
@@ -323,5 +336,170 @@ describe("enrichBookingWithRate", () => {
       expect(result.exchangeRateEstimated).toBe(false);
       expect(prismaMock.exchangeRateHistory.findUnique).not.toHaveBeenCalled();
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// finalizeCheckedInBookings
+// ---------------------------------------------------------------------------
+
+const makePastBooking = (overrides: Record<string, unknown> = {}) => ({
+  id: "booking-1",
+  userId: "user-1",
+  currency: "EUR",
+  checkIn: new Date("2025-01-15T00:00:00Z"),
+  pretaxCost: "100",
+  loyaltyPointsEarned: null,
+  hotelChain: null,
+  hotelChainSubBrand: null,
+  ...overrides,
+});
+
+describe("finalizeCheckedInBookings", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    prismaMock.booking.update.mockResolvedValue({});
+    prismaMock.userStatus.findUnique.mockResolvedValue(null);
+  });
+
+  it("returns empty array when there are no past-due bookings", async () => {
+    prismaMock.booking.findMany.mockResolvedValue([]);
+
+    const result = await finalizeCheckedInBookings();
+
+    expect(result).toEqual([]);
+    expect(prismaMock.booking.update).not.toHaveBeenCalled();
+  });
+
+  it("locks the exchange rate and returns the booking id", async () => {
+    prismaMock.booking.findMany.mockResolvedValue([makePastBooking()]);
+    mockGetOrFetchHistoricalRate.mockResolvedValue(1.08);
+
+    const result = await finalizeCheckedInBookings();
+
+    expect(result).toEqual(["booking-1"]);
+    expect(prismaMock.booking.update).toHaveBeenCalledWith({
+      where: { id: "booking-1" },
+      data: expect.objectContaining({ lockedExchangeRate: 1.08 }),
+    });
+  });
+
+  it("skips a booking when the historical rate is unavailable", async () => {
+    prismaMock.booking.findMany.mockResolvedValue([makePastBooking()]);
+    mockGetOrFetchHistoricalRate.mockResolvedValue(null);
+
+    const result = await finalizeCheckedInBookings();
+
+    expect(result).toEqual([]);
+    expect(prismaMock.booking.update).not.toHaveBeenCalled();
+  });
+
+  it("fetches userStatus using the booking's userId, not a random user", async () => {
+    const hotelChain = { id: "chain-1", basePointRate: 10, pointType: null };
+    prismaMock.booking.findMany.mockResolvedValue([
+      makePastBooking({ userId: "user-42", hotelChain }),
+    ]);
+    mockGetOrFetchHistoricalRate.mockResolvedValue(1.1);
+    mockCalculatePoints.mockReturnValue(500);
+
+    await finalizeCheckedInBookings();
+
+    expect(prismaMock.userStatus.findUnique).toHaveBeenCalledWith({
+      where: { userId_hotelChainId: { userId: "user-42", hotelChainId: "chain-1" } },
+      include: { eliteStatus: true },
+    });
+  });
+
+  it("passes the fetched elite status into calculatePoints", async () => {
+    const eliteStatus = { isFixed: false, bonusPercentage: 0.5, fixedRate: null };
+    const hotelChain = { id: "chain-1", basePointRate: 10, pointType: null };
+    prismaMock.booking.findMany.mockResolvedValue([
+      makePastBooking({ hotelChain, pretaxCost: "200" }),
+    ]);
+    mockGetOrFetchHistoricalRate.mockResolvedValue(1.0);
+    prismaMock.userStatus.findUnique.mockResolvedValue({ eliteStatus });
+    mockCalculatePoints.mockReturnValue(300);
+
+    await finalizeCheckedInBookings();
+
+    expect(mockCalculatePoints).toHaveBeenCalledWith(
+      expect.objectContaining({ eliteStatus, pretaxCost: 200 })
+    );
+    expect(prismaMock.booking.update).toHaveBeenCalledWith({
+      where: { id: "booking-1" },
+      data: expect.objectContaining({ loyaltyPointsEarned: 300 }),
+    });
+  });
+
+  it("does not recalculate loyalty points when already set on the booking", async () => {
+    const hotelChain = { id: "chain-1", basePointRate: 10, pointType: null };
+    prismaMock.booking.findMany.mockResolvedValue([
+      makePastBooking({ hotelChain, loyaltyPointsEarned: 999 }),
+    ]);
+    mockGetOrFetchHistoricalRate.mockResolvedValue(1.0);
+
+    await finalizeCheckedInBookings();
+
+    expect(mockCalculatePoints).not.toHaveBeenCalled();
+    expect(prismaMock.booking.update).toHaveBeenCalledWith({
+      where: { id: "booking-1" },
+      data: expect.objectContaining({ loyaltyPointsEarned: 999 }),
+    });
+  });
+
+  it("locks lockedLoyaltyUsdCentsPerPoint for a foreign-currency point type", async () => {
+    const pointType = { programCurrency: "EUR", programCentsPerPoint: "0.5" };
+    const hotelChain = { id: "chain-1", basePointRate: 10, pointType };
+    prismaMock.booking.findMany.mockResolvedValue([
+      makePastBooking({ hotelChain, loyaltyPointsEarned: 100 }),
+    ]);
+    mockGetOrFetchHistoricalRate.mockResolvedValue(1.1);
+    mockFetchExchangeRate.mockResolvedValue(1.08); // EUR→USD
+
+    await finalizeCheckedInBookings();
+
+    expect(mockFetchExchangeRate).toHaveBeenCalledWith("EUR", "2025-01-15");
+    expect(prismaMock.booking.update).toHaveBeenCalledWith({
+      where: { id: "booking-1" },
+      data: expect.objectContaining({ lockedLoyaltyUsdCentsPerPoint: 0.5 * 1.08 }),
+    });
+  });
+
+  it("continues processing remaining bookings after a per-booking error", async () => {
+    prismaMock.booking.findMany.mockResolvedValue([
+      makePastBooking({ id: "booking-bad" }),
+      makePastBooking({ id: "booking-good" }),
+    ]);
+    mockGetOrFetchHistoricalRate
+      .mockRejectedValueOnce(new Error("API down"))
+      .mockResolvedValueOnce(1.05);
+
+    const result = await finalizeCheckedInBookings();
+
+    expect(result).toEqual(["booking-good"]);
+    expect(prismaMock.booking.update).toHaveBeenCalledTimes(1);
+  });
+
+  it("scopes the findMany query to userId when provided", async () => {
+    prismaMock.booking.findMany.mockResolvedValue([]);
+
+    await finalizeCheckedInBookings("user-seed");
+
+    expect(prismaMock.booking.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ userId: "user-seed" }),
+      })
+    );
+  });
+
+  it("does not include userId in the query when called without argument", async () => {
+    prismaMock.booking.findMany.mockResolvedValue([]);
+
+    await finalizeCheckedInBookings();
+
+    const callArg = prismaMock.booking.findMany.mock.calls[0][0] as {
+      where: Record<string, unknown>;
+    };
+    expect(callArg.where).not.toHaveProperty("userId");
   });
 });

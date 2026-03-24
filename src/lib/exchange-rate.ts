@@ -1,6 +1,5 @@
 import prisma from "@/lib/prisma";
 import { logger } from "@/lib/logger";
-import { calculatePoints, resolveBasePointRate } from "@/lib/loyalty-utils";
 
 const CDN_BASE = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api";
 const FALLBACK_BASE = "https://{date}.currency-api.pages.dev";
@@ -132,84 +131,4 @@ export async function getOrFetchHistoricalRate(
     },
   });
   return rate;
-}
-
-/**
- * Lock exchange rates (and compute loyalty points) for all past-due bookings
- * where checkIn <= today, lockedExchangeRate is null, and currency != USD.
- * Optionally scoped to a single user (e.g. during seeding).
- * Returns the IDs of bookings that were successfully locked.
- */
-export async function lockExchangeRatesForPastBookings(userId?: string): Promise<string[]> {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const pastDueBookings = await prisma.booking.findMany({
-    where: {
-      ...(userId ? { userId } : {}),
-      checkIn: { lte: today },
-      lockedExchangeRate: null,
-      NOT: { currency: "USD" },
-    },
-    include: {
-      hotelChain: {
-        include: {
-          userStatuses: {
-            include: { eliteStatus: true },
-            take: 1,
-          },
-          pointType: true,
-        },
-      },
-      hotelChainSubBrand: true,
-    },
-  });
-
-  const lockedBookingIds: string[] = [];
-
-  for (const booking of pastDueBookings) {
-    try {
-      const checkInStr = booking.checkIn.toISOString().split("T")[0];
-      const rate = await getOrFetchHistoricalRate(booking.currency, checkInStr);
-      if (rate == null) {
-        logger.warn(`No exchange rate available for booking ${booking.id}, skipping lock`, {
-          currency: booking.currency,
-          checkIn: checkInStr,
-        });
-        continue;
-      }
-
-      let loyaltyPointsEarned = booking.loyaltyPointsEarned;
-      if (loyaltyPointsEarned == null && booking.hotelChain) {
-        const userStatus = booking.hotelChain.userStatuses[0] ?? null;
-        const basePointRate = resolveBasePointRate(booking.hotelChain, booking.hotelChainSubBrand);
-        const usdPretaxCost = Number(booking.pretaxCost) * rate;
-        loyaltyPointsEarned = calculatePoints({
-          pretaxCost: usdPretaxCost,
-          basePointRate,
-          eliteStatus: userStatus?.eliteStatus ?? null,
-        });
-      }
-
-      const pt = booking.hotelChain?.pointType;
-      let lockedLoyaltyUsdCentsPerPoint: number | undefined;
-      if (pt?.programCurrency != null && pt?.programCentsPerPoint != null) {
-        const programRate = await fetchExchangeRate(pt.programCurrency, checkInStr);
-        lockedLoyaltyUsdCentsPerPoint = Number(pt.programCentsPerPoint) * programRate;
-      }
-
-      await prisma.booking.update({
-        where: { id: booking.id },
-        data: { lockedExchangeRate: rate, loyaltyPointsEarned, lockedLoyaltyUsdCentsPerPoint },
-      });
-      lockedBookingIds.push(booking.id);
-    } catch (err) {
-      logger.error(`Failed to lock rate for booking ${booking.id}`, err, {
-        context: "LOCK_BOOKING_RATE",
-        bookingId: booking.id,
-      });
-    }
-  }
-
-  return lockedBookingIds;
 }

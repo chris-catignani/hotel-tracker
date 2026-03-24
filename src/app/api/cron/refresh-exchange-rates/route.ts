@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getCurrentRate, lockExchangeRatesForPastBookings } from "@/lib/exchange-rate";
+import { getCurrentRate } from "@/lib/exchange-rate";
+import { finalizeCheckedInBookings } from "@/lib/booking-enrichment";
 import { apiError } from "@/lib/api-error";
 import { CURRENCIES } from "@/lib/constants";
 import { reevaluateBookings } from "@/lib/promotion-matching";
@@ -56,7 +57,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Step 2: Lock in exchange rates for past-due future bookings
-    const lockedBookingIds = await lockExchangeRatesForPastBookings();
+    const lockedBookingIds = await finalizeCheckedInBookings();
 
     // Step 3: Refresh USD value for foreign-currency PointTypes
     const pointTypesUpdated: string[] = [];
