@@ -5,6 +5,9 @@ import Link from "next/link";
 import { DashboardStats } from "@/components/dashboard-stats";
 import { PaymentTypeBreakdown } from "@/components/payment-type-breakdown";
 import { SubBrandBreakdown } from "@/components/sub-brand-breakdown";
+import { PriceDistribution } from "@/components/price-distribution";
+import { MonthlyTravelPattern } from "@/components/monthly-travel-pattern";
+import { GeoDistribution } from "@/components/geo-distribution";
 import { calculateNetCost, getNetCostBreakdown } from "@/lib/net-cost";
 import { certPointsValue } from "@/lib/cert-types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -766,6 +769,9 @@ export default function DashboardPage() {
 
         <PaymentTypeBreakdown bookings={filteredBookings} />
         {accommodationFilter !== "apartment" && <SubBrandBreakdown bookings={filteredBookings} />}
+        <PriceDistribution bookings={filteredBookings} />
+        <MonthlyTravelPattern bookings={filteredBookings} />
+        <GeoDistribution bookings={filteredBookings} />
       </div>
 
       {filteredBookings.length > 0 && (
