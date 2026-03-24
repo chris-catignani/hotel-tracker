@@ -46,10 +46,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       include: PRICE_WATCH_INCLUDE,
     });
 
-    if (!watch) return apiError("Price watch not found", null, 404, request);
+    if (!watch) return apiError("Price watch not found", null, 404, request, { priceWatchId: id });
     return NextResponse.json(watch);
   } catch (error) {
-    return apiError("Failed to fetch price watch", error, 500, request);
+    return apiError("Failed to fetch price watch", error, 500, request, { priceWatchId: id });
   }
 }
 
@@ -65,7 +65,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       where: { id, userId },
       select: { id: true },
     });
-    if (!exists) return apiError("Price watch not found", null, 404, request);
+    if (!exists) return apiError("Price watch not found", null, 404, request, { priceWatchId: id });
 
     const body = await request.json();
     const { isEnabled } = body;
@@ -78,7 +78,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(watch);
   } catch (error) {
-    return apiError("Failed to update price watch", error, 500, request);
+    return apiError("Failed to update price watch", error, 500, request, { priceWatchId: id });
   }
 }
 
@@ -97,11 +97,11 @@ export async function DELETE(
       where: { id, userId },
       select: { id: true },
     });
-    if (!exists) return apiError("Price watch not found", null, 404, request);
+    if (!exists) return apiError("Price watch not found", null, 404, request, { priceWatchId: id });
 
     await prisma.priceWatch.delete({ where: { id } });
     return NextResponse.json({ message: "Price watch deleted" });
   } catch (error) {
-    return apiError("Failed to delete price watch", error, 500, request);
+    return apiError("Failed to delete price watch", error, 500, request, { priceWatchId: id });
   }
 }

@@ -15,7 +15,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       where: { id, userId },
       select: { id: true },
     });
-    if (!watch) return apiError("Price watch not found", null, 404, request);
+    if (!watch) return apiError("Price watch not found", null, 404, request, { priceWatchId: id });
 
     const snapshots = await prisma.priceSnapshot.findMany({
       where: { priceWatchId: id },
@@ -25,6 +25,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(snapshots);
   } catch (error) {
-    return apiError("Failed to fetch snapshots", error, 500, request);
+    return apiError("Failed to fetch snapshots", error, 500, request, { priceWatchId: id });
   }
 }

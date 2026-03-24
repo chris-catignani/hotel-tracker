@@ -31,12 +31,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     });
 
     if (!bookingPromotion) {
-      return apiError("Booking promotion not found", null, 404, request);
+      return apiError("Booking promotion not found", null, 404, request, {
+        bookingPromotionId: id,
+      });
     }
 
     return NextResponse.json(bookingPromotion);
   } catch (error) {
-    return apiError("Failed to fetch booking promotion", error, 500, request);
+    return apiError("Failed to fetch booking promotion", error, 500, request, {
+      bookingPromotionId: id,
+    });
   }
 }
 
@@ -53,7 +57,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       where: { id, booking: { userId } },
       select: { id: true },
     });
-    if (!exists) return apiError("Booking promotion not found", null, 404, request);
+    if (!exists)
+      return apiError("Booking promotion not found", null, 404, request, {
+        bookingPromotionId: id,
+      });
 
     const bookingPromotion = await prisma.bookingPromotion.update({
       where: { id },
@@ -62,6 +69,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     return NextResponse.json(bookingPromotion);
   } catch (error) {
-    return apiError("Failed to update booking promotion", error, 500, request);
+    return apiError("Failed to update booking promotion", error, 500, request, {
+      bookingPromotionId: id,
+    });
   }
 }

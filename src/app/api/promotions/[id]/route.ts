@@ -52,12 +52,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     });
 
     if (!promotion) {
-      return apiError("Promotion not found", null, 404, request);
+      return apiError("Promotion not found", null, 404, request, { promotionId: id });
     }
 
     return NextResponse.json(promotion);
   } catch (error) {
-    return apiError("Failed to fetch promotion", error, 500, request);
+    return apiError("Failed to fetch promotion", error, 500, request, { promotionId: id });
   }
 }
 
@@ -72,7 +72,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       where: { id, userId },
       select: { id: true },
     });
-    if (!exists) return apiError("Promotion not found", null, 404, request);
+    if (!exists) return apiError("Promotion not found", null, 404, request, { promotionId: id });
 
     const body = await request.json();
     const {
@@ -279,7 +279,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(promotion);
   } catch (error) {
-    return apiError("Failed to update promotion", error, 500, request);
+    return apiError("Failed to update promotion", error, 500, request, { promotionId: id });
   }
 }
 
@@ -298,7 +298,7 @@ export async function DELETE(
       where: { id, userId },
       select: { id: true },
     });
-    if (!exists) return apiError("Promotion not found", null, 404, request);
+    if (!exists) return apiError("Promotion not found", null, 404, request, { promotionId: id });
 
     // Find bookings that currently have this promotion applied
     const affectedBookings = await prisma.booking.findMany({
@@ -336,6 +336,6 @@ export async function DELETE(
 
     return NextResponse.json({ message: "Promotion deleted" });
   } catch (error) {
-    return apiError("Failed to delete promotion", error, 500, request);
+    return apiError("Failed to delete promotion", error, 500, request, { promotionId: id });
   }
 }
