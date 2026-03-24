@@ -55,3 +55,6 @@ e2e/.auth/
 .playwright-mcp/
 .env*.local
 .worktrees/
+
+# Superpowers brainstorming sessions
+.superpowers/
