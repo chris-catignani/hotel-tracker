@@ -231,6 +231,7 @@ export async function POST(request: NextRequest) {
               bonusPercentage: userStatus.eliteStatus.bonusPercentage,
               fixedRate: userStatus.eliteStatus.fixedRate,
               isFixed: userStatus.eliteStatus.isFixed,
+              pointsFloorTo: userStatus.eliteStatus.pointsFloorTo,
             }
           : null,
       });

@@ -20,6 +20,7 @@ interface CalculationInput {
     isFixed: boolean;
     fixedRate: number | string | Prisma.Decimal | null;
     bonusPercentage: number | string | Prisma.Decimal | null;
+    pointsFloorTo?: number | null;
   } | null;
 }
 
@@ -50,7 +51,11 @@ export function calculatePoints({
   if (eliteStatus) {
     if (eliteStatus.isFixed && eliteStatus.fixedRate != null) {
       // Fixed rate (e.g. GHA Discovery 7%)
-      return Math.round(effectivePretaxCost * Number(eliteStatus.fixedRate));
+      const raw = effectivePretaxCost * Number(eliteStatus.fixedRate);
+      if (eliteStatus.pointsFloorTo && eliteStatus.pointsFloorTo > 0) {
+        return Math.floor(raw / eliteStatus.pointsFloorTo) * eliteStatus.pointsFloorTo;
+      }
+      return Math.round(raw);
     } else if (eliteStatus.bonusPercentage != null) {
       // Percentage bonus on base (e.g. Marriott 50% bonus)
       const bonusMultiplier = 1 + Number(eliteStatus.bonusPercentage);
@@ -77,6 +82,7 @@ interface LoyaltyCalculationParams {
         isFixed: boolean;
         fixedRate: number | null;
         bonusPercentage: number | null;
+        pointsFloorTo: number | null;
       } | null;
     } | null;
   }[];
@@ -115,6 +121,7 @@ export function calculatePointsFromChain({
           isFixed: eliteStatus.isFixed,
           bonusPercentage: eliteStatus.bonusPercentage,
           fixedRate: eliteStatus.fixedRate,
+          pointsFloorTo: eliteStatus.pointsFloorTo,
         }
       : null,
   });

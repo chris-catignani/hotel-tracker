@@ -95,6 +95,21 @@ describe("loyalty-utils", () => {
       ).toBe(250);
     });
 
+    it("should floor fixed-rate points to nearest pointsFloorTo", () => {
+      const eliteStatus = {
+        isFixed: true,
+        fixedRate: 7,
+        bonusPercentage: null,
+        pointsFloorTo: 100,
+      };
+      // 170.43 * 7 = 1193.01 → floor to 1100
+      expect(calculatePoints({ pretaxCost: 170.43, basePointRate: null, eliteStatus })).toBe(1100);
+      // 157.14 * 7 = 1099.98 → floor to 1000
+      expect(calculatePoints({ pretaxCost: 157.14, basePointRate: null, eliteStatus })).toBe(1000);
+      // 200 * 7 = 1400 → exactly on boundary, stays 1400
+      expect(calculatePoints({ pretaxCost: 200, basePointRate: null, eliteStatus })).toBe(1400);
+    });
+
     it("should not convert when calculationCurrency is USD", () => {
       expect(
         calculatePoints({
