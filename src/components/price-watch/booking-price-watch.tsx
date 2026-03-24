@@ -233,26 +233,23 @@ export function BookingPriceWatch({
     setSaving(true);
     if (!watch) {
       // Enable — create the watch
-      const result = await apiFetch<PriceWatchData & { bookings?: { bookingId: string }[] }>(
-        "/api/price-watches",
-        {
-          method: "POST",
-          body: {
-            propertyId,
-            isEnabled: true,
-            bookingId,
-            cashThreshold: cashThreshold ? Number(cashThreshold) : null,
-            awardThreshold: awardThreshold ? Number(awardThreshold) : null,
-          },
-        }
-      );
+      const result = await apiFetch<
+        PriceWatchData & { bookings?: (PriceWatchBookingData & { bookingId: string })[] }
+      >("/api/price-watches", {
+        method: "POST",
+        body: {
+          propertyId,
+          isEnabled: true,
+          bookingId,
+          cashThreshold: cashThreshold ? Number(cashThreshold) : null,
+          awardThreshold: awardThreshold ? Number(awardThreshold) : null,
+        },
+      });
       if (!result.ok) {
         toast.error("Failed to update price watch. Please try again.");
       } else {
         setWatch(result.data);
-        const pwb = result.data.bookings?.find(
-          (b: { bookingId: string }) => b.bookingId === bookingId
-        );
+        const pwb = result.data.bookings?.find((b) => b.bookingId === bookingId);
         if (pwb) setWatchBooking(pwb);
       }
     } else {
@@ -273,26 +270,25 @@ export function BookingPriceWatch({
   const handleSaveThresholds = async () => {
     if (!watch) return;
     setSaving(true);
-    const result = await apiFetch<PriceWatchData & { bookings?: { bookingId: string }[] }>(
-      "/api/price-watches",
-      {
-        method: "POST",
-        body: {
-          propertyId,
-          isEnabled: watch.isEnabled,
-          bookingId,
-          cashThreshold: cashThreshold ? Number(cashThreshold) : null,
-          awardThreshold: awardThreshold ? Number(awardThreshold) : null,
-        },
-      }
-    );
+    const result = await apiFetch<
+      PriceWatchData & { bookings?: (PriceWatchBookingData & { bookingId: string })[] }
+    >("/api/price-watches", {
+      method: "POST",
+      body: {
+        propertyId,
+        isEnabled: watch.isEnabled,
+        bookingId,
+        cashThreshold: cashThreshold ? Number(cashThreshold) : null,
+        awardThreshold: awardThreshold ? Number(awardThreshold) : null,
+      },
+    });
     setSaving(false);
     if (!result.ok) {
       toast.error("Failed to save thresholds. Please try again.");
       return;
     }
     setWatch(result.data);
-    const pwb = result.data.bookings?.find((b: { bookingId: string }) => b.bookingId === bookingId);
+    const pwb = result.data.bookings?.find((b) => b.bookingId === bookingId);
     if (pwb) setWatchBooking(pwb);
   };
 
