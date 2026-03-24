@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -28,8 +28,10 @@ import { useYearFilter, buildYearOptions, type YearFilter } from "@/hooks/use-ye
 import { BookingCard } from "@/components/bookings/booking-card";
 import { formatCurrency, formatDate, formatCerts, pruneHotelName } from "@/lib/utils";
 import { ErrorBanner } from "@/components/ui/error-banner";
-import { extractApiError } from "@/lib/client-error";
-import * as Sentry from "@sentry/nextjs";
+import { useApiQuery } from "@/hooks/use-api-query";
+import { apiFetch } from "@/lib/api-fetch";
+import { logger } from "@/lib/logger";
+import { toast } from "sonner";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -129,43 +131,24 @@ interface Booking {
 // ---------------------------------------------------------------------------
 
 export default function BookingsPage() {
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [fetchError, setFetchError] = useState<string | null>(null);
+  const {
+    data: bookingsData,
+    loading,
+    error: fetchError,
+    clearError,
+    refetch: refetchBookings,
+  } = useApiQuery<Booking[]>("/api/bookings", {
+    onError: (err) => logger.error("Failed to fetch bookings", err.error, { status: err.status }),
+  });
+  const bookings = useMemo(() => bookingsData ?? [], [bookingsData]);
+
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [bookingToDelete, setBookingToDelete] = useState<string | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const { yearFilter, setYearFilter, filterBookings: filterByYear } = useYearFilter();
 
   const yearOptions = useMemo(() => buildYearOptions(bookings), [bookings]);
   const filteredBookings = useMemo(() => filterByYear(bookings), [bookings, filterByYear]);
-
-  const fetchBookings = useCallback(async () => {
-    setLoading(true);
-    setFetchError(null);
-    try {
-      const res = await fetch("/api/bookings");
-      if (res.ok) {
-        setBookings(await res.json());
-      } else {
-        const message = await extractApiError(res, "Failed to load bookings.");
-        setFetchError(message);
-        Sentry.captureException(new Error(message), { extra: { status: res.status } });
-      }
-    } catch (err) {
-      const message = "Failed to load bookings.";
-      setFetchError(message);
-      Sentry.captureException(err instanceof Error ? err : new Error(message));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchBookings();
-  }, [fetchBookings]);
 
   const handleDeleteClick = (id: string) => {
     setBookingToDelete(id);
@@ -175,14 +158,17 @@ export default function BookingsPage() {
   const handleDeleteConfirm = async () => {
     if (bookingToDelete === null) return;
     setDeleteOpen(false);
-    setDeleteError(null);
-    const res = await fetch(`/api/bookings/${bookingToDelete}`, { method: "DELETE" });
-    if (res.ok) {
-      setBookingToDelete(null);
-      fetchBookings();
-    } else {
-      setDeleteError("Failed to delete booking. Please try again.");
+    const result = await apiFetch(`/api/bookings/${bookingToDelete}`, { method: "DELETE" });
+    if (!result.ok) {
+      logger.error("Failed to delete booking", result.error, {
+        bookingId: bookingToDelete,
+        status: result.status,
+      });
+      toast.error("Failed to delete booking. Please try again.");
+      return;
     }
+    setBookingToDelete(null);
+    refetchBookings();
   };
 
   return (
@@ -225,13 +211,10 @@ export default function BookingsPage() {
         onConfirm={handleDeleteConfirm}
       />
 
-      <ErrorBanner error={fetchError} onDismiss={() => setFetchError(null)} />
-
-      {deleteError && (
-        <p className="text-sm text-destructive" data-testid="booking-delete-error">
-          {deleteError}
-        </p>
-      )}
+      <ErrorBanner
+        error={fetchError ? "Failed to load bookings. Please try again." : null}
+        onDismiss={clearError}
+      />
 
       {loading ? (
         <p className="text-center text-muted-foreground py-8">Loading...</p>
