@@ -14,8 +14,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AppSelect } from "@/components/ui/app-select";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { ErrorBanner } from "@/components/ui/error-banner";
-import { extractApiError } from "@/lib/client-error";
+import { apiFetch } from "@/lib/api-fetch";
+import { logger } from "@/lib/logger";
+import { toast } from "sonner";
 import {
   CreditCard,
   CreditCardRewardRule,
@@ -146,8 +147,6 @@ function EarningRatesSection({
   const [baseRewardRate, setBaseRewardRate] = useState(String(card.rewardRate));
   const [basePointTypeId, setBasePointTypeId] = useState(card.pointTypeId ?? "none");
 
-  const [error, setError] = useState<string | null>(null);
-
   const existingRules = (card.rewardRules ?? []).map(
     (r): CreditCardRewardRuleFormData => ({
       id: r.id,
@@ -159,16 +158,16 @@ function EarningRatesSection({
   );
 
   const putCard = async (body: Record<string, unknown>) => {
-    const res = await fetch(`/api/credit-cards/${card.id}`, {
+    const result = await apiFetch(`/api/credit-cards/${card.id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body,
     });
-    if (res.ok) {
+    if (result.ok) {
       onRefetch();
       return true;
     }
-    setError(await extractApiError(res, "Failed to update card."));
+    logger.error("Failed to update card", result.error, { status: result.status });
+    toast.error("Failed to update card. Please try again.");
     return false;
   };
 
@@ -251,8 +250,6 @@ function EarningRatesSection({
 
   return (
     <div className="space-y-3">
-      <ErrorBanner error={error} onDismiss={() => setError(null)} />
-
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Earning Rates
@@ -457,7 +454,6 @@ export function CreditCardAccordionItem({
   const [editingName, setEditingName] = useState(false);
   const [nameValue, setNameValue] = useState(card.name);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const startEditingName = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -477,16 +473,16 @@ export function CreditCardAccordionItem({
       setEditingName(false);
       return;
     }
-    const res = await fetch(`/api/credit-cards/${card.id}`, {
+    const result = await apiFetch(`/api/credit-cards/${card.id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: trimmed }),
+      body: { name: trimmed },
     });
-    if (res.ok) {
+    if (result.ok) {
       setEditingName(false);
       onRefetch();
     } else {
-      setError(await extractApiError(res, "Failed to update card name."));
+      logger.error("Failed to update card name", result.error, { status: result.status });
+      toast.error("Failed to update card name. Please try again.");
       setNameValue(card.name);
       setEditingName(false);
     }
@@ -494,18 +490,17 @@ export function CreditCardAccordionItem({
 
   const handleDeleteConfirm = async () => {
     setDeleteOpen(false);
-    const res = await fetch(`/api/credit-cards/${card.id}`, { method: "DELETE" });
-    if (res.ok) {
+    const result = await apiFetch(`/api/credit-cards/${card.id}`, { method: "DELETE" });
+    if (result.ok) {
       onRefetch();
     } else {
-      setError(await extractApiError(res, "Failed to delete credit card."));
+      logger.error("Failed to delete credit card", result.error, { status: result.status });
+      toast.error("Failed to delete credit card. Please try again.");
     }
   };
 
   return (
     <div className="border rounded-lg overflow-hidden" data-testid="credit-card-accordion">
-      <ErrorBanner error={error} onDismiss={() => setError(null)} />
-
       {/* Header */}
       <div
         className="flex items-center gap-3 p-4 cursor-pointer hover:bg-muted/30 select-none"
