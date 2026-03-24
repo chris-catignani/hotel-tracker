@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/sidebar";
 import { MobileHeader } from "@/components/mobile-header";
 import { SessionProvider } from "next-auth/react";
 import { SentryUserContext } from "@/components/sentry-user-context";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,6 +34,7 @@ export default function RootLayout({
       >
         <SessionProvider>
           <SentryUserContext />
+          <Toaster richColors position="top-right" />
           <div className="flex flex-col lg:flex-row h-dvh bg-background overflow-hidden">
             <MobileHeader />
             <Sidebar />
