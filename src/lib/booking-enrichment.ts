@@ -148,6 +148,23 @@ export async function finalizeCheckedInBookings(userId?: string): Promise<string
     },
   });
 
+  // Batch-fetch userStatuses for all bookings that will need loyalty point calculation
+  const bookingsNeedingLoyalty = pastDueBookings.filter(
+    (b) => b.loyaltyPointsEarned == null && b.hotelChain != null
+  );
+  const userStatusRows = await prisma.userStatus.findMany({
+    where: {
+      OR: bookingsNeedingLoyalty.map((b) => ({
+        userId: b.userId,
+        hotelChainId: b.hotelChain!.id,
+      })),
+    },
+    include: { eliteStatus: true },
+  });
+  const userStatusMap = new Map(
+    userStatusRows.map((us) => [`${us.userId}_${us.hotelChainId}`, us])
+  );
+
   const finalizedIds: string[] = [];
 
   for (const booking of pastDueBookings) {
@@ -165,12 +182,7 @@ export async function finalizeCheckedInBookings(userId?: string): Promise<string
 
       let loyaltyPointsEarned = booking.loyaltyPointsEarned;
       if (loyaltyPointsEarned == null && booking.hotelChain) {
-        const userStatus = await prisma.userStatus.findUnique({
-          where: {
-            userId_hotelChainId: { userId: booking.userId, hotelChainId: booking.hotelChain.id },
-          },
-          include: { eliteStatus: true },
-        });
+        const userStatus = userStatusMap.get(`${booking.userId}_${booking.hotelChain.id}`) ?? null;
         const basePointRate = resolveBasePointRate(booking.hotelChain, booking.hotelChainSubBrand);
         const usdPretaxCost = Number(booking.pretaxCost) * rate;
         loyaltyPointsEarned = calculatePoints({

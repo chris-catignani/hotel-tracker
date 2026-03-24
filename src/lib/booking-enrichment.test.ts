@@ -17,7 +17,7 @@ vi.mock("./prisma", () => ({
   default: {
     exchangeRateHistory: { findUnique: vi.fn() },
     booking: { findMany: vi.fn(), update: vi.fn() },
-    userStatus: { findUnique: vi.fn() },
+    userStatus: { findMany: vi.fn() },
   },
 }));
 
@@ -38,7 +38,7 @@ const mockFetchExchangeRate = fetchExchangeRate as Mock;
 const prismaMock = prisma as unknown as {
   exchangeRateHistory: { findUnique: Mock };
   booking: { findMany: Mock; update: Mock };
-  userStatus: { findUnique: Mock };
+  userStatus: { findMany: Mock };
 };
 
 const pastDate = new Date("2024-06-01T00:00:00Z");
@@ -359,7 +359,7 @@ describe("finalizeCheckedInBookings", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     prismaMock.booking.update.mockResolvedValue({});
-    prismaMock.userStatus.findUnique.mockResolvedValue(null);
+    prismaMock.userStatus.findMany.mockResolvedValue([]);
   });
 
   it("returns empty array when there are no past-due bookings", async () => {
@@ -394,7 +394,7 @@ describe("finalizeCheckedInBookings", () => {
     expect(prismaMock.booking.update).not.toHaveBeenCalled();
   });
 
-  it("fetches userStatus using the booking's userId, not a random user", async () => {
+  it("fetches userStatuses in a single batch query scoped to booking userId/hotelChainId pairs", async () => {
     const hotelChain = { id: "chain-1", basePointRate: 10, pointType: null };
     prismaMock.booking.findMany.mockResolvedValue([
       makePastBooking({ userId: "user-42", hotelChain }),
@@ -404,8 +404,8 @@ describe("finalizeCheckedInBookings", () => {
 
     await finalizeCheckedInBookings();
 
-    expect(prismaMock.userStatus.findUnique).toHaveBeenCalledWith({
-      where: { userId_hotelChainId: { userId: "user-42", hotelChainId: "chain-1" } },
+    expect(prismaMock.userStatus.findMany).toHaveBeenCalledWith({
+      where: { OR: [{ userId: "user-42", hotelChainId: "chain-1" }] },
       include: { eliteStatus: true },
     });
   });
@@ -414,10 +414,12 @@ describe("finalizeCheckedInBookings", () => {
     const eliteStatus = { isFixed: false, bonusPercentage: 0.5, fixedRate: null };
     const hotelChain = { id: "chain-1", basePointRate: 10, pointType: null };
     prismaMock.booking.findMany.mockResolvedValue([
-      makePastBooking({ hotelChain, pretaxCost: "200" }),
+      makePastBooking({ userId: "user-1", hotelChain, pretaxCost: "200" }),
     ]);
     mockGetOrFetchHistoricalRate.mockResolvedValue(1.0);
-    prismaMock.userStatus.findUnique.mockResolvedValue({ eliteStatus });
+    prismaMock.userStatus.findMany.mockResolvedValue([
+      { userId: "user-1", hotelChainId: "chain-1", eliteStatus },
+    ]);
     mockCalculatePoints.mockReturnValue(300);
 
     await finalizeCheckedInBookings();
