@@ -85,28 +85,10 @@ export function PriceDistribution({ bookings }: PriceDistributionProps) {
   const hasData = data.some((d) => d.count > 0);
 
   return (
-    <Card data-testid="price-distribution-card">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-base font-semibold">Price Distribution</CardTitle>
-        <div className="flex gap-1 flex-wrap justify-end">
-          <div className="flex gap-1 bg-secondary p-1 rounded-md">
-            <Button
-              variant={metric === "net" ? "default" : "ghost"}
-              size="sm"
-              className="h-7 text-xs px-2"
-              onClick={() => setMetric("net")}
-            >
-              Net/Night
-            </Button>
-            <Button
-              variant={metric === "total" ? "default" : "ghost"}
-              size="sm"
-              className="h-7 text-xs px-2"
-              onClick={() => setMetric("total")}
-            >
-              Total/Night
-            </Button>
-          </div>
+    <Card className="flex flex-col min-h-[320px] pb-0" data-testid="price-distribution-card">
+      <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+        <CardTitle className="text-base font-semibold mt-1">Price Distribution</CardTitle>
+        <div className="flex flex-row flex-wrap gap-1.5 items-center justify-end">
           <div className="flex gap-1 bg-secondary p-1 rounded-md">
             <Button
               variant={mode === "stays" ? "default" : "ghost"}
@@ -125,33 +107,72 @@ export function PriceDistribution({ bookings }: PriceDistributionProps) {
               Nights
             </Button>
           </div>
+          <div className="flex gap-1 bg-secondary p-1 rounded-md">
+            <Button
+              variant={metric === "net" ? "default" : "ghost"}
+              size="sm"
+              className="h-7 text-xs px-2"
+              onClick={() => setMetric("net")}
+            >
+              Net/Night
+            </Button>
+            <Button
+              variant={metric === "total" ? "default" : "ghost"}
+              size="sm"
+              className="h-7 text-xs px-2"
+              onClick={() => setMetric("total")}
+            >
+              Total/Night
+            </Button>
+          </div>
         </div>
       </CardHeader>
-      <CardContent>
-        {!hasData ? (
-          <EmptyState
-            icon={BarChart2}
-            title="No data"
-            description="Price distribution will appear once you add bookings."
-            className="border-none bg-transparent"
-          />
-        ) : (
-          <ResponsiveContainer width="100%" height={160}>
-            <BarChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-              <XAxis dataKey="label" tick={{ fontSize: 10 }} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "var(--background)",
-                  borderColor: "var(--border)",
-                  borderRadius: "8px",
-                }}
-                itemStyle={{ fontSize: 12 }}
-              />
-              <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        )}
+      <CardContent className="flex-1 flex flex-col pl-3 pr-3 pb-3">
+        <div className="flex-1 min-h-[140px]">
+          {!hasData ? (
+            <EmptyState
+              icon={BarChart2}
+              title="No data"
+              description="Price distribution will appear once you add bookings."
+              className="border-none bg-transparent"
+            />
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+                <XAxis
+                  dataKey="label"
+                  interval={0}
+                  height={45}
+                  tick={({ x, y, payload }) => (
+                    <g transform={`translate(${x},${y})`}>
+                      <text
+                        x={0}
+                        y={0}
+                        dy={4}
+                        textAnchor="end"
+                        fontSize={9}
+                        fill="currentColor"
+                        transform="rotate(-35)"
+                      >
+                        {payload.value}
+                      </text>
+                    </g>
+                  )}
+                />
+                <YAxis allowDecimals={false} tick={{ fontSize: 10 }} width={25} interval={0} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "var(--background)",
+                    borderColor: "var(--border)",
+                    borderRadius: "8px",
+                  }}
+                  itemStyle={{ fontSize: 12 }}
+                />
+                <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

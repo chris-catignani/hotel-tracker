@@ -49,24 +49,26 @@ export function MonthlyTravelPattern({ bookings }: MonthlyTravelPatternProps) {
 
   if (bookings.length === 0) {
     return (
-      <Card data-testid="monthly-travel-pattern-card">
+      <Card className="flex flex-col min-h-[320px] pb-0" data-testid="monthly-travel-pattern-card">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-base font-semibold">Monthly Travel Pattern</CardTitle>
         </CardHeader>
-        <CardContent>
-          <EmptyState
-            icon={CalendarRange}
-            title="No data"
-            description="Monthly travel patterns will appear once you add bookings."
-            className="border-none bg-transparent"
-          />
+        <CardContent className="flex-1 flex items-center">
+          <div className="w-full">
+            <EmptyState
+              icon={CalendarRange}
+              title="No data"
+              description="Monthly travel patterns will appear once you add bookings."
+              className="border-none bg-transparent"
+            />
+          </div>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card data-testid="monthly-travel-pattern-card">
+    <Card className="flex flex-col min-h-[320px] pb-0" data-testid="monthly-travel-pattern-card">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-base font-semibold">Monthly Travel Pattern</CardTitle>
         <div className="flex gap-1 bg-secondary p-1 rounded-md">
@@ -88,26 +90,28 @@ export function MonthlyTravelPattern({ bookings }: MonthlyTravelPatternProps) {
           </Button>
         </div>
       </CardHeader>
-      <CardContent>
-        <ResponsiveContainer width="100%" height={160}>
-          <BarChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-            <XAxis dataKey="month" tick={{ fontSize: 10 }} />
-            <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
-            <Tooltip
-              labelFormatter={(_label, payload) => {
-                const item = payload?.[0]?.payload as { fullMonth?: string } | undefined;
-                return item?.fullMonth ?? "";
-              }}
-              contentStyle={{
-                backgroundColor: "var(--background)",
-                borderColor: "var(--border)",
-                borderRadius: "8px",
-              }}
-              itemStyle={{ fontSize: 12 }}
-            />
-            <Bar dataKey="count" fill="#10b981" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+      <CardContent className="flex-1 flex flex-col pl-3 pr-3 pb-3">
+        <div className="flex-1 min-h-[140px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+              <XAxis dataKey="month" tick={{ fontSize: 10 }} interval={0} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 10 }} width={25} interval={0} />
+              <Tooltip
+                labelFormatter={(_label, payload) => {
+                  const item = payload?.[0]?.payload as { fullMonth?: string } | undefined;
+                  return item?.fullMonth ?? "";
+                }}
+                contentStyle={{
+                  backgroundColor: "var(--background)",
+                  borderColor: "var(--border)",
+                  borderRadius: "8px",
+                }}
+                itemStyle={{ fontSize: 12 }}
+              />
+              <Bar dataKey="count" fill="#10b981" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </CardContent>
     </Card>
   );

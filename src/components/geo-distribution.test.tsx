@@ -3,29 +3,31 @@ import userEvent from "@testing-library/user-event";
 import { describe, it, expect } from "vitest";
 import { GeoDistribution } from "./geo-distribution";
 
-function makeBooking(id: string, countryCode: string | null, city: string | null) {
+function makeBooking(id: string, countryCode: string | null, city: string | null, numNights = 1) {
   return {
     id,
+    numNights,
     property: { name: "Hotel", countryCode, city },
   };
 }
 
 describe("GeoDistribution", () => {
-  it("groups bookings by country code", () => {
+  it("groups bookings by country code and displays full country name", () => {
     const bookings = [
       makeBooking("1", "US", "New York"),
       makeBooking("2", "US", "Chicago"),
       makeBooking("3", "FR", "Paris"),
     ];
     render(<GeoDistribution bookings={bookings as never[]} />);
-    expect(screen.getByText("US")).toBeInTheDocument();
-    expect(screen.getByText("FR")).toBeInTheDocument();
-    // US should show 2 stays
+    // Displays full country names
+    expect(screen.getByText("United States")).toBeInTheDocument();
+    expect(screen.getByText("France")).toBeInTheDocument();
+    // testid still uses raw country code; US should show 2 stays
     const usRow = screen.getByTestId("geo-row-US");
     expect(usRow).toHaveTextContent("2");
   });
 
-  it("groups bookings by city when City toggle is selected", async () => {
+  it("groups bookings by city with country code suffix when City toggle is selected", async () => {
     const user = userEvent.setup();
     const bookings = [
       makeBooking("1", "US", "New York"),
@@ -34,8 +36,8 @@ describe("GeoDistribution", () => {
     ];
     render(<GeoDistribution bookings={bookings as never[]} />);
     await user.click(screen.getByText("City"));
-    expect(screen.getByTestId("geo-row-New York")).toHaveTextContent("2");
-    expect(screen.getByTestId("geo-row-Chicago")).toHaveTextContent("1");
+    expect(screen.getByTestId("geo-row-New York, US")).toHaveTextContent("2");
+    expect(screen.getByTestId("geo-row-Chicago, US")).toHaveTextContent("1");
   });
 
   it("excludes bookings with null countryCode from country view", () => {
@@ -66,5 +68,18 @@ describe("GeoDistribution", () => {
     render(<GeoDistribution bookings={bookings as never[]} />);
     expect(screen.getByTestId("geo-distribution-card")).toBeInTheDocument();
     expect(screen.queryByTestId(/^geo-row-/)).not.toBeInTheDocument();
+  });
+
+  it("Nights mode sums numNights per country", async () => {
+    const user = userEvent.setup();
+    const bookings = [
+      makeBooking("1", "US", "New York", 3),
+      makeBooking("2", "US", "Chicago", 5),
+      makeBooking("3", "FR", "Paris", 2),
+    ];
+    render(<GeoDistribution bookings={bookings as never[]} />);
+    await user.click(screen.getByText("Nights"));
+    expect(screen.getByTestId("geo-row-US")).toHaveTextContent("8");
+    expect(screen.getByTestId("geo-row-FR")).toHaveTextContent("2");
   });
 });
