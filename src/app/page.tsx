@@ -40,7 +40,11 @@ interface BookingCertificate {
 
 interface BookingWithRelations {
   id: string;
-  property: { name: string };
+  property: {
+    name: string;
+    countryCode: string | null;
+    city: string | null;
+  };
   checkIn: string;
   checkOut: string;
   numNights: number;
@@ -707,10 +711,11 @@ export default function DashboardPage() {
                   ];
 
                   const maxValue = Math.max(...items.map((i) => i.value), 1);
+                  const sortedItems = [...items].sort((a, b) => a.value - b.value);
 
                   return (
                     <>
-                      {items.map((item) => (
+                      {sortedItems.map((item) => (
                         <div key={item.label} className="space-y-1">
                           <div className="flex justify-between text-sm">
                             <span>{item.label}</span>
