@@ -156,7 +156,7 @@ export function PaymentTypeBreakdown({ bookings }: PaymentTypeBreakdownProps) {
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col justify-center pt-0">
+      <CardContent className="flex-1 flex flex-col pt-0">
         {total === 0 ? (
           <EmptyState
             icon={PieChartIcon}
@@ -166,15 +166,15 @@ export function PaymentTypeBreakdown({ bookings }: PaymentTypeBreakdownProps) {
             data-testid="payment-type-empty"
           />
         ) : (
-          <div className="h-64 w-full">
+          <div className="flex-1 min-h-56 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={data.chartData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
+                  innerRadius={55}
+                  outerRadius={95}
                   paddingAngle={5}
                   dataKey="value"
                 >

@@ -1,24 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import { SubBrandBreakdown } from "./sub-brand-breakdown";
-
-// Mock Recharts to avoid issues in JSDOM
-vi.mock("recharts", () => ({
-  ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  PieChart: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  Pie: ({ data }: { data: { name: string; value: number }[] }) => (
-    <div data-testid="pie-chart">
-      {data.map((entry, i: number) => (
-        <div key={i} data-testid={`pie-slice-${entry.name.toLowerCase().replace(/\s+/g, "-")}`}>
-          {entry.name}: {entry.value}
-        </div>
-      ))}
-    </div>
-  ),
-  Cell: () => null,
-  Tooltip: () => null,
-}));
 
 describe("SubBrandBreakdown", () => {
   const mockBookings = [
@@ -35,7 +18,7 @@ describe("SubBrandBreakdown", () => {
     {
       id: "3",
       numNights: 1,
-      hotelChainSubBrand: null, // Should be "Other / Independent"
+      hotelChainSubBrand: null,
     },
     {
       id: "4",
@@ -47,25 +30,26 @@ describe("SubBrandBreakdown", () => {
   it("calculates stays breakdown correctly", () => {
     render(<SubBrandBreakdown bookings={mockBookings} />);
 
-    // Default mode is "stays"
-    expect(screen.getByTestId("pie-slice-courtyard")).toHaveTextContent("Courtyard: 2");
-    expect(screen.getByTestId("pie-slice-residence-inn")).toHaveTextContent("Residence Inn: 1");
-    expect(screen.getByTestId("pie-slice-other")).toHaveTextContent("Other: 1");
+    expect(screen.getByTestId("legend-item-courtyard")).toHaveTextContent("Courtyard");
+    expect(screen.getByTestId("legend-item-courtyard")).toHaveTextContent("2");
+    expect(screen.getByTestId("legend-item-residence-inn")).toHaveTextContent("Residence Inn");
+    expect(screen.getByTestId("legend-item-residence-inn")).toHaveTextContent("1");
+    expect(screen.getByTestId("legend-item-other")).toHaveTextContent("Other");
+    expect(screen.getByTestId("legend-item-other")).toHaveTextContent("1");
   });
 
   it("calculates nights breakdown correctly", async () => {
     const user = userEvent.setup();
     render(<SubBrandBreakdown bookings={mockBookings} />);
 
-    // Switch to "nights" mode
     await user.click(screen.getByText("Nights"));
 
-    expect(screen.getByTestId("pie-slice-courtyard")).toHaveTextContent("Courtyard: 4");
-    expect(screen.getByTestId("pie-slice-residence-inn")).toHaveTextContent("Residence Inn: 2");
-    expect(screen.getByTestId("pie-slice-other")).toHaveTextContent("Other: 1");
+    expect(screen.getByTestId("legend-item-courtyard")).toHaveTextContent("4");
+    expect(screen.getByTestId("legend-item-residence-inn")).toHaveTextContent("2");
+    expect(screen.getByTestId("legend-item-other")).toHaveTextContent("1");
   });
 
-  it("limits to 10 items and groups remaining into 'Remaining'", () => {
+  it("limits to top 10 items without a Remaining entry", () => {
     const manyBookings = Array.from({ length: 15 }, (_, i) => ({
       id: String(i),
       numNights: 1,
@@ -74,9 +58,9 @@ describe("SubBrandBreakdown", () => {
 
     render(<SubBrandBreakdown bookings={manyBookings} />);
 
-    const slices = screen.getAllByTestId(/pie-slice-/);
-    expect(slices).toHaveLength(10);
-    expect(screen.getByTestId("pie-slice-remaining")).toHaveTextContent("Remaining: 6");
+    const rows = screen.getAllByTestId(/^legend-item-/);
+    expect(rows).toHaveLength(10);
+    expect(screen.queryByTestId("legend-item-remaining")).not.toBeInTheDocument();
   });
 
   it("shows empty state when no bookings", () => {
@@ -95,8 +79,8 @@ describe("SubBrandBreakdown", () => {
 
     render(<SubBrandBreakdown bookings={skewedBookings} />);
 
-    const slices = screen.getAllByTestId(/pie-slice-/);
-    expect(slices[0]).toHaveTextContent("Large: 2");
-    expect(slices[1]).toHaveTextContent("Small: 1");
+    const rows = screen.getAllByTestId(/^legend-item-/);
+    expect(rows[0]).toHaveTextContent("Large");
+    expect(rows[1]).toHaveTextContent("Small");
   });
 });

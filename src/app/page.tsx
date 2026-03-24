@@ -5,6 +5,9 @@ import Link from "next/link";
 import { DashboardStats } from "@/components/dashboard-stats";
 import { PaymentTypeBreakdown } from "@/components/payment-type-breakdown";
 import { SubBrandBreakdown } from "@/components/sub-brand-breakdown";
+import { PriceDistribution } from "@/components/price-distribution";
+import { MonthlyTravelPattern } from "@/components/monthly-travel-pattern";
+import { GeoDistribution } from "@/components/geo-distribution";
 import { calculateNetCost, getNetCostBreakdown } from "@/lib/net-cost";
 import { certPointsValue } from "@/lib/cert-types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,7 +43,11 @@ interface BookingCertificate {
 
 interface BookingWithRelations {
   id: string;
-  property: { name: string };
+  property: {
+    name: string;
+    countryCode: string | null;
+    city: string | null;
+  };
   checkIn: string;
   checkOut: string;
   numNights: number;
@@ -707,10 +714,11 @@ export default function DashboardPage() {
                   ];
 
                   const maxValue = Math.max(...items.map((i) => i.value), 1);
+                  const sortedItems = [...items].sort((a, b) => a.value - b.value);
 
                   return (
                     <>
-                      {items.map((item) => (
+                      {sortedItems.map((item) => (
                         <div key={item.label} className="space-y-1">
                           <div className="flex justify-between text-sm">
                             <span>{item.label}</span>
@@ -761,6 +769,9 @@ export default function DashboardPage() {
 
         <PaymentTypeBreakdown bookings={filteredBookings} />
         {accommodationFilter !== "apartment" && <SubBrandBreakdown bookings={filteredBookings} />}
+        <PriceDistribution bookings={filteredBookings} />
+        <MonthlyTravelPattern bookings={filteredBookings} />
+        <GeoDistribution bookings={filteredBookings} />
       </div>
 
       {filteredBookings.length > 0 && (
