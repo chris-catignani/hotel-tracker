@@ -32,14 +32,32 @@ export function UserStatusTab() {
   const [partnerships, setPartnerships] = useState<PartnershipEarn[]>([]);
 
   const fetchData = useCallback(async () => {
-    const [statusRes, chainsRes, partnershipsRes] = await Promise.all([
-      fetch("/api/user-statuses"),
-      fetch("/api/hotel-chains"),
-      fetch("/api/partnership-earns"),
+    const [statusResult, chainsResult, partnershipsResult] = await Promise.all([
+      apiFetch<UserStatus[]>("/api/user-statuses"),
+      apiFetch<HotelChain[]>("/api/hotel-chains"),
+      apiFetch<PartnershipEarn[]>("/api/partnership-earns"),
     ]);
-    if (statusRes.ok) setUserStatuses(await statusRes.json());
-    if (chainsRes.ok) setHotelChains(await chainsRes.json());
-    if (partnershipsRes.ok) setPartnerships(await partnershipsRes.json());
+    if (statusResult.ok) setUserStatuses(statusResult.data);
+    else {
+      logger.error("Failed to fetch user statuses", statusResult.error, {
+        status: statusResult.status,
+      });
+      toast.error("Failed to load user statuses. Please try again.");
+    }
+    if (chainsResult.ok) setHotelChains(chainsResult.data);
+    else {
+      logger.error("Failed to fetch hotel chains", chainsResult.error, {
+        status: chainsResult.status,
+      });
+      toast.error("Failed to load hotel chains. Please try again.");
+    }
+    if (partnershipsResult.ok) setPartnerships(partnershipsResult.data);
+    else {
+      logger.error("Failed to fetch partnerships", partnershipsResult.error, {
+        status: partnershipsResult.status,
+      });
+      toast.error("Failed to load partnerships. Please try again.");
+    }
   }, []);
 
   useEffect(() => {
