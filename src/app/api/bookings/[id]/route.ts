@@ -159,34 +159,33 @@ async function getFullBookingWithUsage(id: string, userId: string) {
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
     const userId = userIdOrResponse;
 
-    const { id } = await params;
     const booking = await getFullBookingWithUsage(id, userId);
 
     if (!booking) {
-      return apiError("Booking not found", null, 404, request);
+      return apiError("Booking not found", null, 404, request, { bookingId: id });
     }
 
     return NextResponse.json(booking);
   } catch (error) {
-    return apiError("Failed to fetch booking", error, 500, request);
+    return apiError("Failed to fetch booking", error, 500, request, { bookingId: id });
   }
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
     const userId = userIdOrResponse;
 
-    const { id } = await params;
-
     const exists = await prisma.booking.findFirst({ where: { id, userId }, select: { id: true } });
-    if (!exists) return apiError("Booking not found", null, 404, request);
+    if (!exists) return apiError("Booking not found", null, 404, request, { bookingId: id });
 
     const body = await request.json();
     const {
@@ -429,7 +428,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
       const benefitValidationError = await validateBenefits(benefits ?? [], effectiveHotelChainId);
       if (benefitValidationError) {
-        return apiError(benefitValidationError, null, 400, request);
+        return apiError(benefitValidationError, null, 400, request, { bookingId: id });
       }
       await prisma.bookingBenefit.deleteMany({
         where: { bookingId: id },
@@ -521,7 +520,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(fullBooking);
   } catch (error) {
-    return apiError("Failed to update booking", error, 500, request);
+    return apiError("Failed to update booking", error, 500, request, { bookingId: id });
   }
 }
 
@@ -529,12 +528,11 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
     const userId = userIdOrResponse;
-
-    const { id } = await params;
 
     // Find booking and its applied promotions before deleting (also verifies ownership)
     const booking = await prisma.booking.findFirst({
@@ -548,7 +546,7 @@ export async function DELETE(
     });
 
     if (!booking) {
-      return apiError("Booking not found", null, 404, request);
+      return apiError("Booking not found", null, 404, request, { bookingId: id });
     }
 
     // Capture promotion IDs and find affected subsequent bookings BEFORE deleting.
@@ -596,6 +594,6 @@ export async function DELETE(
 
     return NextResponse.json({ message: "Booking deleted" });
   } catch (error) {
-    return apiError("Failed to delete booking", error, 500, request);
+    return apiError("Failed to delete booking", error, 500, request, { bookingId: id });
   }
 }

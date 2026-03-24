@@ -7,12 +7,12 @@ import { normalizeUserStatuses } from "@/lib/normalize-response";
 import { parseCalculationCurrency } from "@/app/api/hotel-chains/route";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
     const userId = userIdOrResponse;
 
-    const { id } = await params;
     const hotelChain = await prisma.hotelChain.findUnique({
       where: { id: id },
       include: {
@@ -26,14 +26,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         },
       },
     });
-    if (!hotelChain) return apiError("Hotel chain not found", null, 404, request);
+    if (!hotelChain)
+      return apiError("Hotel chain not found", null, 404, request, { hotelChainId: id });
     return NextResponse.json(normalizeUserStatuses(hotelChain));
   } catch (error) {
-    return apiError("Failed to fetch hotel chain", error, 500, request);
+    return apiError("Failed to fetch hotel chain", error, 500, request, { hotelChainId: id });
   }
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
     const adminError = await requireAdmin();
     if (adminError instanceof NextResponse) return adminError;
@@ -42,7 +44,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
     const userId = userIdOrResponse;
 
-    const { id } = await params;
     const body = await request.json();
     const { name, loyaltyProgram, basePointRate, calculationCurrency, pointTypeId } = body;
 
@@ -100,7 +101,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(normalizeUserStatuses(hotelChain));
   } catch (error) {
-    return apiError("Failed to update hotel chain", error, 500, request);
+    return apiError("Failed to update hotel chain", error, 500, request, { hotelChainId: id });
   }
 }
 
@@ -108,11 +109,10 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const adminError = await requireAdmin();
     if (adminError instanceof NextResponse) return adminError;
-
-    const { id } = await params;
 
     // Check for existing bookings
     const bookingCount = await prisma.booking.count({
@@ -144,6 +144,6 @@ export async function DELETE(
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    return apiError("Failed to delete hotel chain", error, 500, request);
+    return apiError("Failed to delete hotel chain", error, 500, request, { hotelChainId: id });
   }
 }

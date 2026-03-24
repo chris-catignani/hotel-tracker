@@ -85,7 +85,7 @@ describe("PointTypesTab", () => {
       .mocked(global.fetch)
       .mockImplementation((input: string | Request | URL, options?: RequestInit) => {
         const url = input instanceof Request ? input.url : input.toString();
-        if (url === "/api/point-types" && (!options || !options.method))
+        if (url === "/api/point-types" && (!options?.method || options.method === "GET"))
           return Promise.resolve({ ok: true, json: async () => mockPt } as Response);
         if (url === "/api/point-types/1" && options?.method === "DELETE")
           return Promise.resolve({ ok: true } as Response);
@@ -100,7 +100,10 @@ describe("PointTypesTab", () => {
 
     await user.click(screen.getByTestId("confirm-dialog-confirm-button"));
 
-    expect(fetchMock).toHaveBeenCalledWith("/api/point-types/1", { method: "DELETE" });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/point-types/1",
+      expect.objectContaining({ method: "DELETE" })
+    );
   });
 
   it("does not call DELETE if dialog is cancelled", async () => {
@@ -128,7 +131,7 @@ describe("PointTypesTab", () => {
       .mocked(global.fetch)
       .mockImplementation((input: string | Request | URL, options?: RequestInit) => {
         const url = input instanceof Request ? input.url : input.toString();
-        if (url === "/api/point-types" && (!options || !options.method))
+        if (url === "/api/point-types" && (!options?.method || options.method === "GET"))
           return Promise.resolve({ ok: true, json: async () => [] } as Response);
         if (url === "/api/point-types" && options?.method === "POST")
           return Promise.resolve({

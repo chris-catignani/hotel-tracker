@@ -11,7 +11,8 @@ export function apiError(
   message: string,
   error: unknown,
   status: number = 500,
-  request?: NextRequest
+  request?: NextRequest,
+  context?: Record<string, unknown>
 ) {
   const isDev = process.env.NODE_ENV === "development";
 
@@ -19,6 +20,7 @@ export function apiError(
   logger.error(message, error, {
     path: request?.nextUrl.pathname,
     method: request?.method,
+    ...context,
   });
 
   const body: Record<string, unknown> = { error: message };

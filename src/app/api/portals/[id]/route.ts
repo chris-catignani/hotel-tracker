@@ -4,11 +4,11 @@ import { apiError } from "@/lib/api-error";
 import { requireAdmin } from "@/lib/auth-utils";
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
     const adminError = await requireAdmin();
     if (adminError instanceof NextResponse) return adminError;
 
-    const { id } = await params;
     const body = await request.json();
     const { name, rewardType, pointTypeId } = body;
 
@@ -25,7 +25,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(portal);
   } catch (error) {
-    return apiError("Failed to update portal", error, 500, request);
+    return apiError("Failed to update portal", error, 500, request, { portalId: id });
   }
 }
 
@@ -33,16 +33,16 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const adminError = await requireAdmin();
     if (adminError instanceof NextResponse) return adminError;
 
-    const { id } = await params;
     await prisma.shoppingPortal.delete({
       where: { id: id },
     });
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    return apiError("Failed to delete portal", error, 500, request);
+    return apiError("Failed to delete portal", error, 500, request, { portalId: id });
   }
 }

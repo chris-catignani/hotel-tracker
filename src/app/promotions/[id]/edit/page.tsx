@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { logger } from "@/lib/logger";
 import { PromotionForm } from "@/components/promotions/promotion-form";
+import { ErrorBanner } from "@/components/ui/error-banner";
+import { useApiQuery } from "@/hooks/use-api-query";
+import { apiFetch } from "@/lib/api-fetch";
+import { toast } from "sonner";
 import {
   Promotion,
   PromotionFormData,
@@ -77,88 +81,79 @@ function mapApiBenefitToForm(
   };
 }
 
+function mapPromoToFormData(promo: Promotion): Partial<PromotionFormData> {
+  const restrictionsForm = mapApiRestrictionsToForm(promo.restrictions);
+  // registrationDate lives in userPromotions, not in restrictions
+  restrictionsForm.registrationDate = toDateInputValue(
+    promo.userPromotions?.[0]?.registrationDate || null
+  );
+
+  const promoTiers = promo.tiers || [];
+  const tierRequirementType = promoTiers.some((t) => t.minNights != null || t.maxNights != null)
+    ? "nights"
+    : "stays";
+
+  return {
+    name: promo.name,
+    type: promo.type as PromotionType,
+    benefits: (promo.benefits || []).map((b, i) => mapApiBenefitToForm(b, i)),
+    tiers: promoTiers.map(
+      (tier): PromotionTierFormData => ({
+        minStays: tier.minStays,
+        maxStays: tier.maxStays,
+        minNights: tier.minNights,
+        maxNights: tier.maxNights,
+        benefits: (tier.benefits || []).map((b, i) => mapApiBenefitToForm(b, i)),
+      })
+    ),
+    tierRequirementType,
+    hotelChainId: promo.hotelChainId,
+    creditCardId: promo.creditCardId,
+    shoppingPortalId: promo.shoppingPortalId,
+    startDate: toDateInputValue(promo.startDate),
+    endDate: toDateInputValue(promo.endDate),
+    restrictions: restrictionsForm,
+  };
+}
+
 export default function EditPromotionPage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
 
-  const [loading, setLoading] = useState(true);
-  const [initialData, setInitialData] = useState<Partial<PromotionFormData> | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (!id) return;
+  const {
+    data: promo,
+    loading,
+    error: fetchError,
+    clearError,
+  } = useApiQuery<Promotion>(`/api/promotions/${id}`, {
+    onError: (err) =>
+      logger.error("Failed to fetch promotion", err.error, { id, status: err.status }),
+  });
 
-    fetch(`/api/promotions/${id}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch promotion");
-        return res.json();
-      })
-      .then((promo: Promotion) => {
-        const restrictionsForm = mapApiRestrictionsToForm(promo.restrictions);
-        // registrationDate lives in userPromotions, not in restrictions
-        restrictionsForm.registrationDate = toDateInputValue(
-          promo.userPromotions?.[0]?.registrationDate || null
-        );
-
-        const promoTiers = promo.tiers || [];
-        const tierRequirementType = promoTiers.some(
-          (t) => t.minNights != null || t.maxNights != null
-        )
-          ? "nights"
-          : "stays";
-
-        setInitialData({
-          name: promo.name,
-          type: promo.type as PromotionType,
-          benefits: (promo.benefits || []).map((b, i) => mapApiBenefitToForm(b, i)),
-          tiers: promoTiers.map(
-            (tier): PromotionTierFormData => ({
-              minStays: tier.minStays,
-              maxStays: tier.maxStays,
-              minNights: tier.minNights,
-              maxNights: tier.maxNights,
-              benefits: (tier.benefits || []).map((b, i) => mapApiBenefitToForm(b, i)),
-            })
-          ),
-          tierRequirementType,
-          hotelChainId: promo.hotelChainId,
-          creditCardId: promo.creditCardId,
-          shoppingPortalId: promo.shoppingPortalId,
-          startDate: toDateInputValue(promo.startDate),
-          endDate: toDateInputValue(promo.endDate),
-          restrictions: restrictionsForm,
-        });
-        setLoading(false);
-      })
-      .catch((error) => {
-        logger.error("Failed to fetch promotion", error, { id });
-        setLoading(false);
-      });
-  }, [id]);
+  const initialData = promo ? mapPromoToFormData(promo) : null;
 
   const handleSubmit = async (data: PromotionFormData) => {
     setSubmitting(true);
-    try {
-      const res = await fetch(`/api/promotions/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+    const result = await apiFetch<Promotion>(`/api/promotions/${id}`, {
+      method: "PUT",
+      body: data,
+    });
+    setSubmitting(false);
+    if (!result.ok) {
+      logger.error("Failed to update promotion", result.error, {
+        id,
+        status: result.status,
       });
-
-      if (res.ok) {
-        router.push("/promotions");
-      } else {
-        logger.error("Failed to update promotion", null, { status: res.status, id });
-        setSubmitting(false);
-      }
-    } catch (error) {
-      logger.error("Failed to update promotion", error, { id });
-      setSubmitting(false);
+      toast.error("Failed to save promotion. Please try again.");
+      return;
     }
+    router.push("/promotions");
   };
 
-  if (loading) {
+  if (loading && !promo) {
     return (
       <div className="flex items-center justify-center py-12">
         <p className="text-muted-foreground text-sm">Loading promotion...</p>
@@ -169,6 +164,12 @@ export default function EditPromotionPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <h1 className="text-2xl font-semibold tracking-tight">Edit Promotion</h1>
+
+      <ErrorBanner
+        error={fetchError ? "Failed to load promotion. Please try again." : null}
+        onDismiss={clearError}
+      />
+
       <PromotionForm
         initialData={initialData || undefined}
         onSubmit={handleSubmit}

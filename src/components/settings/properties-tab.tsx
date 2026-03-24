@@ -15,9 +15,11 @@ import {
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Building2, Loader2 } from "lucide-react";
-import { extractApiError } from "@/lib/client-error";
+import { apiFetch } from "@/lib/api-fetch";
+import { logger } from "@/lib/logger";
 import type { Property } from "@/lib/types";
 import { HOTEL_ID } from "@/lib/constants";
+import { toast } from "sonner";
 
 interface PropertyWithChain extends Property {
   hotelChain?: { name: string } | null;
@@ -43,9 +45,9 @@ export function PropertiesTab() {
 
   const fetchProperties = useCallback(async () => {
     setLoading(true);
-    const res = await fetch("/api/properties?includeChain=true");
-    if (res.ok) {
-      const data = await res.json();
+    const result = await apiFetch<PropertyWithChain[]>("/api/properties?includeChain=true");
+    if (result.ok) {
+      const data = result.data;
       setProperties(data);
       // Seed edit state from current values
       const initial: Record<string, string> = {};
@@ -54,7 +56,7 @@ export function PropertiesTab() {
       }
       setEdits(initial);
     } else {
-      setError(await extractApiError(res, "Failed to load properties."));
+      setError(result.error.message);
     }
     setLoading(false);
   }, []);
@@ -67,17 +69,17 @@ export function PropertiesTab() {
   const handleSave = async (property: PropertyWithChain) => {
     const value = edits[property.id]?.trim() ?? "";
     setSaving((s) => ({ ...s, [property.id]: true }));
-    setError(null);
-    const res = await fetch(`/api/properties/${property.id}`, {
+    const result = await apiFetch<PropertyWithChain>(`/api/properties/${property.id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chainPropertyId: value || null }),
+      body: { chainPropertyId: value || null },
     });
-    if (res.ok) {
-      const updated: PropertyWithChain = await res.json();
-      setProperties((prev) => prev.map((p) => (p.id === property.id ? { ...p, ...updated } : p)));
+    if (result.ok) {
+      setProperties((prev) =>
+        prev.map((p) => (p.id === property.id ? { ...p, ...result.data } : p))
+      );
     } else {
-      setError(await extractApiError(res, "Failed to save chain property ID."));
+      logger.error("Failed to save chain property ID", result.error, { status: result.status });
+      toast.error("Failed to save chain property ID. Please try again.");
     }
     setSaving((s) => ({ ...s, [property.id]: false }));
   };

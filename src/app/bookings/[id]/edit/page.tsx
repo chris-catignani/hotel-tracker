@@ -1,55 +1,50 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { BookingForm } from "@/components/bookings/booking-form";
 import { BookingPriceWatch } from "@/components/price-watch/booking-price-watch";
 import { Booking, BookingFormData } from "@/lib/types";
 import { ErrorBanner } from "@/components/ui/error-banner";
-import { extractApiError } from "@/lib/client-error";
+import { useApiQuery } from "@/hooks/use-api-query";
+import { apiFetch } from "@/lib/api-fetch";
+import { logger } from "@/lib/logger";
+import { toast } from "sonner";
 
 export default function EditBookingPage() {
   const params = useParams();
   const id = params.id as string;
   const router = useRouter();
 
-  const [booking, setBooking] = useState<Booking | null>(null);
-  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [formAccommodationType, setFormAccommodationType] = useState("hotel");
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    const res = await fetch(`/api/bookings/${id}`);
-    if (res.ok) {
-      setBooking(await res.json());
-    } else {
-      setError(await extractApiError(res, "Failed to load booking."));
-    }
-    setLoading(false);
-  }, [id]);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchData();
-  }, [fetchData]);
+  const {
+    data: booking,
+    loading,
+    error: fetchError,
+    clearError,
+  } = useApiQuery<Booking>(`/api/bookings/${id}`, {
+    onError: (err) =>
+      logger.error("Failed to fetch booking", err.error, { bookingId: id, status: err.status }),
+  });
 
   const handleSubmit = async (data: BookingFormData) => {
-    setError(null);
     setSubmitting(true);
-    const res = await fetch(`/api/bookings/${id}`, {
+    const result = await apiFetch<Booking>(`/api/bookings/${id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
+      body: data,
     });
-
-    if (res.ok) {
-      router.push(`/bookings/${id}`);
-    } else {
-      setSubmitting(false);
-      setError(await extractApiError(res, "Failed to update booking."));
+    setSubmitting(false);
+    if (!result.ok) {
+      logger.error("Failed to update booking", result.error, {
+        bookingId: id,
+        status: result.status,
+      });
+      toast.error("Failed to save booking. Please try again.");
+      return;
     }
+    router.push(`/bookings/${id}`);
   };
 
   if (loading && !booking) {
@@ -67,7 +62,10 @@ export default function EditBookingPage() {
         <h1 className="text-2xl font-bold">Edit Booking</h1>
       </div>
 
-      <ErrorBanner error={error} onDismiss={() => setError(null)} />
+      <ErrorBanner
+        error={fetchError ? "Failed to load booking. Please try again." : null}
+        onDismiss={clearError}
+      />
 
       {booking ? (
         <>

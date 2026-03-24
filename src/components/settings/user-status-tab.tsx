@@ -12,9 +12,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { extractApiError } from "@/lib/client-error";
+import { apiFetch } from "@/lib/api-fetch";
+import { logger } from "@/lib/logger";
 import { HotelChain, UserStatus } from "@/lib/types";
-import { ErrorBanner } from "@/components/ui/error-banner";
+import { toast } from "sonner";
 
 interface PartnershipEarn {
   id: string;
@@ -29,17 +30,34 @@ export function UserStatusTab() {
   const [userStatuses, setUserStatuses] = useState<UserStatus[]>([]);
   const [hotelChains, setHotelChains] = useState<HotelChain[]>([]);
   const [partnerships, setPartnerships] = useState<PartnershipEarn[]>([]);
-  const [error, setError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
-    const [statusRes, chainsRes, partnershipsRes] = await Promise.all([
-      fetch("/api/user-statuses"),
-      fetch("/api/hotel-chains"),
-      fetch("/api/partnership-earns"),
+    const [statusResult, chainsResult, partnershipsResult] = await Promise.all([
+      apiFetch<UserStatus[]>("/api/user-statuses"),
+      apiFetch<HotelChain[]>("/api/hotel-chains"),
+      apiFetch<PartnershipEarn[]>("/api/partnership-earns"),
     ]);
-    if (statusRes.ok) setUserStatuses(await statusRes.json());
-    if (chainsRes.ok) setHotelChains(await chainsRes.json());
-    if (partnershipsRes.ok) setPartnerships(await partnershipsRes.json());
+    if (statusResult.ok) setUserStatuses(statusResult.data);
+    else {
+      logger.error("Failed to fetch user statuses", statusResult.error, {
+        status: statusResult.status,
+      });
+      toast.error("Failed to load user statuses. Please try again.");
+    }
+    if (chainsResult.ok) setHotelChains(chainsResult.data);
+    else {
+      logger.error("Failed to fetch hotel chains", chainsResult.error, {
+        status: chainsResult.status,
+      });
+      toast.error("Failed to load hotel chains. Please try again.");
+    }
+    if (partnershipsResult.ok) setPartnerships(partnershipsResult.data);
+    else {
+      logger.error("Failed to fetch partnerships", partnershipsResult.error, {
+        status: partnershipsResult.status,
+      });
+      toast.error("Failed to load partnerships. Please try again.");
+    }
   }, []);
 
   useEffect(() => {
@@ -51,40 +69,39 @@ export function UserStatusTab() {
     setPartnerships((prev) =>
       prev.map((p) => (p.id === partnershipEarnId ? { ...p, isEnabled: checked } : p))
     );
-    setError(null);
-    const res = await fetch("/api/user-partnership-earns", {
+    const result = await apiFetch("/api/user-partnership-earns", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ partnershipEarnId, isEnabled: checked }),
+      body: { partnershipEarnId, isEnabled: checked },
     });
-    if (!res.ok) {
+    if (!result.ok) {
       setPartnerships((prev) =>
         prev.map((p) => (p.id === partnershipEarnId ? { ...p, isEnabled: !checked } : p))
       );
-      setError(await extractApiError(res, "Failed to update partnership preference."));
+      logger.error("Failed to update partnership preference", result.error, {
+        status: result.status,
+      });
+      toast.error("Failed to update partnership preference. Please try again.");
     }
   };
 
   const handleStatusChange = async (hotelChainId: string, eliteStatusId: string) => {
-    setError(null);
-    const res = await fetch("/api/user-statuses", {
+    const result = await apiFetch("/api/user-statuses", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+      body: {
         hotelChainId,
         eliteStatusId: eliteStatusId === "none" ? null : eliteStatusId,
-      }),
+      },
     });
-    if (res.ok) {
+    if (result.ok) {
       fetchData();
     } else {
-      setError(await extractApiError(res, "Failed to update status."));
+      logger.error("Failed to update status", result.error, { status: result.status });
+      toast.error("Failed to update status. Please try again.");
     }
   };
 
   return (
     <div className="space-y-4">
-      <ErrorBanner error={error} onDismiss={() => setError(null)} />
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">My Elite Status</h2>
       </div>

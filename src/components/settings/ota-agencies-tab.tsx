@@ -23,11 +23,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { extractApiError } from "@/lib/client-error";
+import { apiFetch } from "@/lib/api-fetch";
+import { logger } from "@/lib/logger";
 import { OtaAgency } from "@/lib/types";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ScrollText } from "lucide-react";
+import { toast } from "sonner";
 
 export function OtaAgenciesTab() {
   const [agencies, setAgencies] = useState<OtaAgency[]>([]);
@@ -43,9 +45,9 @@ export function OtaAgenciesTab() {
   const [agencyToDelete, setAgencyToDelete] = useState<OtaAgency | null>(null);
 
   const fetchAgencies = useCallback(async () => {
-    const res = await fetch("/api/ota-agencies");
-    if (res.ok) setAgencies(await res.json());
-    else setError(await extractApiError(res, "Failed to load OTA agencies."));
+    const result = await apiFetch<OtaAgency[]>("/api/ota-agencies");
+    if (result.ok) setAgencies(result.data);
+    else setError(result.error.message);
   }, []);
 
   useEffect(() => {
@@ -54,18 +56,17 @@ export function OtaAgenciesTab() {
   }, [fetchAgencies]);
 
   const handleSubmit = async () => {
-    setError(null);
-    const res = await fetch("/api/ota-agencies", {
+    const result = await apiFetch("/api/ota-agencies", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
+      body: { name },
     });
-    if (res.ok) {
+    if (result.ok) {
       setName("");
       setOpen(false);
       fetchAgencies();
     } else {
-      setError(await extractApiError(res, "Failed to add OTA agency."));
+      logger.error("Failed to add OTA agency", result.error, { status: result.status });
+      toast.error("Failed to add OTA agency. Please try again.");
     }
   };
 
@@ -77,18 +78,17 @@ export function OtaAgenciesTab() {
 
   const handleEditSubmit = async () => {
     if (!editAgency) return;
-    setError(null);
-    const res = await fetch(`/api/ota-agencies/${editAgency.id}`, {
+    const result = await apiFetch(`/api/ota-agencies/${editAgency.id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: editName }),
+      body: { name: editName },
     });
-    if (res.ok) {
+    if (result.ok) {
       setEditOpen(false);
       setEditAgency(null);
       fetchAgencies();
     } else {
-      setError(await extractApiError(res, "Failed to update OTA agency."));
+      logger.error("Failed to update OTA agency", result.error, { status: result.status });
+      toast.error("Failed to update OTA agency. Please try again.");
     }
   };
 
@@ -100,15 +100,15 @@ export function OtaAgenciesTab() {
   const handleDeleteConfirm = async () => {
     if (!agencyToDelete) return;
     setDeleteOpen(false);
-    setError(null);
-    const res = await fetch(`/api/ota-agencies/${agencyToDelete.id}`, { method: "DELETE" });
-    if (res.ok) {
+    const result = await apiFetch(`/api/ota-agencies/${agencyToDelete.id}`, { method: "DELETE" });
+    if (result.ok) {
       setAgencyToDelete(null);
       fetchAgencies();
-    } else if (res.status === 409) {
-      setError("Cannot delete: this agency is referenced by existing bookings.");
+    } else if (result.status === 409) {
+      toast.error("Cannot delete: this agency is referenced by existing bookings.");
     } else {
-      setError(await extractApiError(res, "Failed to delete OTA agency."));
+      logger.error("Failed to delete OTA agency", result.error, { status: result.status });
+      toast.error("Failed to delete OTA agency. Please try again.");
     }
   };
 

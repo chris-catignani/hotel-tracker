@@ -4,8 +4,8 @@ import { apiError } from "@/lib/api-error";
 import { requireAdmin } from "@/lib/auth-utils";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
-    const { id } = await params;
     const subBrands = await prisma.hotelChainSubBrand.findMany({
       where: { hotelChainId: id },
       orderBy: {
@@ -14,16 +14,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     });
     return NextResponse.json(subBrands);
   } catch (error) {
-    return apiError("Failed to fetch sub-brands", error, 500, request);
+    return apiError("Failed to fetch sub-brands", error, 500, request, { hotelChainId: id });
   }
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
     const adminError = await requireAdmin();
     if (adminError instanceof NextResponse) return adminError;
 
-    const { id } = await params;
     const { name, basePointRate } = await request.json();
 
     const subBrand = await prisma.hotelChainSubBrand.create({
@@ -36,6 +36,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     return NextResponse.json(subBrand, { status: 201 });
   } catch (error) {
-    return apiError("Failed to create sub-brand", error, 500, request);
+    return apiError("Failed to create sub-brand", error, 500, request, { hotelChainId: id });
   }
 }

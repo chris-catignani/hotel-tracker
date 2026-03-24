@@ -4,11 +4,11 @@ import { apiError } from "@/lib/api-error";
 import { requireAdmin } from "@/lib/auth-utils";
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
     const adminError = await requireAdmin();
     if (adminError instanceof NextResponse) return adminError;
 
-    const { id } = await params;
     const body = await request.json();
     const { name, category, usdCentsPerPoint, programCurrency, programCentsPerPoint } = body;
 
@@ -28,7 +28,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(pointType);
   } catch (error) {
-    return apiError("Failed to update point type", error, 500, request);
+    return apiError("Failed to update point type", error, 500, request, { pointTypeId: id });
   }
 }
 
@@ -36,11 +36,10 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const adminError = await requireAdmin();
     if (adminError instanceof NextResponse) return adminError;
-
-    const { id } = await params;
 
     // Check if in use
     const hotelChainCount = await prisma.hotelChain.count({ where: { pointTypeId: id } });
@@ -52,13 +51,14 @@ export async function DELETE(
         "Cannot delete point type that is in use by other records",
         null,
         400,
-        request
+        request,
+        { pointTypeId: id }
       );
     }
 
     await prisma.pointType.delete({ where: { id: id } });
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    return apiError("Failed to delete point type", error, 500, request);
+    return apiError("Failed to delete point type", error, 500, request, { pointTypeId: id });
   }
 }

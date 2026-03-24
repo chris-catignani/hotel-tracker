@@ -25,12 +25,14 @@ import {
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { AppSelect } from "@/components/ui/app-select";
 import { DatePicker } from "@/components/ui/date-picker";
-import { extractApiError } from "@/lib/client-error";
+import { apiFetch } from "@/lib/api-fetch";
+import { logger } from "@/lib/logger";
 import { CreditCard, UserCreditCard } from "@/lib/types";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { EmptyState } from "@/components/ui/empty-state";
 import { CreditCard as CreditCardIcon } from "lucide-react";
 import { format, parseISO } from "date-fns";
+import { toast } from "sonner";
 
 interface CardFormState {
   creditCardId: string;
@@ -129,14 +131,14 @@ export function MyCardsTab() {
   const [cardToDelete, setCardToDelete] = useState<UserCreditCard | null>(null);
 
   const fetchCards = useCallback(async () => {
-    const res = await fetch("/api/user-credit-cards");
-    if (res.ok) setCards(await res.json());
-    else setError(await extractApiError(res, "Failed to load cards."));
+    const result = await apiFetch<UserCreditCard[]>("/api/user-credit-cards");
+    if (result.ok) setCards(result.data);
+    else setError(result.error.message);
   }, []);
 
   const fetchCreditCardProducts = useCallback(async () => {
-    const res = await fetch("/api/credit-cards");
-    if (res.ok) setCreditCardProducts(await res.json());
+    const result = await apiFetch<CreditCard[]>("/api/credit-cards");
+    if (result.ok) setCreditCardProducts(result.data);
   }, []);
 
   useEffect(() => {
@@ -146,23 +148,22 @@ export function MyCardsTab() {
   }, [fetchCards, fetchCreditCardProducts]);
 
   const handleSubmit = async () => {
-    setError(null);
-    const res = await fetch("/api/user-credit-cards", {
+    const result = await apiFetch("/api/user-credit-cards", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+      body: {
         creditCardId: form.creditCardId,
         nickname: form.nickname || null,
         openedDate: form.openedDate || null,
         closedDate: form.closedDate || null,
-      }),
+      },
     });
-    if (res.ok) {
+    if (result.ok) {
       setForm(EMPTY_FORM);
       setOpen(false);
       fetchCards();
     } else {
-      setError(await extractApiError(res, "Failed to add card."));
+      logger.error("Failed to add card", result.error, { status: result.status });
+      toast.error("Failed to add card. Please try again.");
     }
   };
 
@@ -179,23 +180,22 @@ export function MyCardsTab() {
 
   const handleEditSubmit = async () => {
     if (!editCard) return;
-    setError(null);
-    const res = await fetch(`/api/user-credit-cards/${editCard.id}`, {
+    const result = await apiFetch(`/api/user-credit-cards/${editCard.id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+      body: {
         creditCardId: editForm.creditCardId,
         nickname: editForm.nickname || null,
         openedDate: editForm.openedDate || null,
         closedDate: editForm.closedDate || null,
-      }),
+      },
     });
-    if (res.ok) {
+    if (result.ok) {
       setEditOpen(false);
       setEditCard(null);
       fetchCards();
     } else {
-      setError(await extractApiError(res, "Failed to update card."));
+      logger.error("Failed to update card", result.error, { status: result.status });
+      toast.error("Failed to update card. Please try again.");
     }
   };
 
@@ -207,15 +207,17 @@ export function MyCardsTab() {
   const handleDeleteConfirm = async () => {
     if (!cardToDelete) return;
     setDeleteOpen(false);
-    setError(null);
-    const res = await fetch(`/api/user-credit-cards/${cardToDelete.id}`, { method: "DELETE" });
-    if (res.ok) {
+    const result = await apiFetch(`/api/user-credit-cards/${cardToDelete.id}`, {
+      method: "DELETE",
+    });
+    if (result.ok) {
       setCardToDelete(null);
       fetchCards();
-    } else if (res.status === 409) {
-      setError("Cannot delete: this card instance is referenced by existing bookings.");
+    } else if (result.status === 409) {
+      toast.error("Cannot delete: this card instance is referenced by existing bookings.");
     } else {
-      setError(await extractApiError(res, "Failed to delete card."));
+      logger.error("Failed to delete card", result.error, { status: result.status });
+      toast.error("Failed to delete card. Please try again.");
     }
   };
 

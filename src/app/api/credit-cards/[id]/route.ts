@@ -15,11 +15,11 @@ const CARD_INCLUDE = {
 } as const;
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
     const adminError = await requireAdmin();
     if (adminError instanceof NextResponse) return adminError;
 
-    const { id } = await params;
     const body = await request.json();
     const { name, rewardType, rewardRate, pointTypeId, rewardRules } = body;
 
@@ -64,7 +64,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(creditCard);
   } catch (error) {
-    return apiError("Failed to update credit card", error, 500, request);
+    return apiError("Failed to update credit card", error, 500, request, { creditCardId: id });
   }
 }
 
@@ -72,17 +72,17 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const adminError = await requireAdmin();
     if (adminError instanceof NextResponse) return adminError;
 
-    const { id } = await params;
     await prisma.creditCard.update({
       where: { id: id },
       data: { isDeleted: true },
     });
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    return apiError("Failed to delete credit card", error, 500, request);
+    return apiError("Failed to delete credit card", error, 500, request, { creditCardId: id });
   }
 }

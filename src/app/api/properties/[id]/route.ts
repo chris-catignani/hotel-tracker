@@ -5,6 +5,7 @@ import { getAuthenticatedUserId, requireAdmin } from "@/lib/auth-utils";
 
 /** PUT /api/properties/[id] — update chainPropertyId (spiritCode etc); admin only */
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
@@ -12,7 +13,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const adminError = await requireAdmin();
     if (adminError) return adminError;
 
-    const { id } = await params;
     const body = await request.json();
     const { chainPropertyId } = body;
 
@@ -33,6 +33,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(property);
   } catch (error) {
-    return apiError("Failed to update property", error, 500, request);
+    return apiError("Failed to update property", error, 500, request, { propertyId: id });
   }
 }

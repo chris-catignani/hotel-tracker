@@ -65,4 +65,20 @@ describe("apiError", () => {
     expect(response.status).toBe(500);
     expect(body.debug).toEqual({ raw: "Just a string error" });
   });
+
+  it("merges context fields into logger.error extra", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const { logger } = await import("./logger");
+    const loggerSpy = vi.spyOn(logger, "error");
+
+    apiError("Failed to fetch booking", new Error("DB error"), 500, undefined, {
+      bookingId: "b-123",
+    });
+
+    expect(loggerSpy).toHaveBeenCalledWith(
+      "Failed to fetch booking",
+      expect.any(Error),
+      expect.objectContaining({ bookingId: "b-123" })
+    );
+  });
 });

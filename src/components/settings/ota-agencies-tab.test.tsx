@@ -71,7 +71,7 @@ describe("OtaAgenciesTab", () => {
       .mocked(global.fetch)
       .mockImplementation((input: string | Request | URL, options?: RequestInit) => {
         const url = input instanceof Request ? input.url : input.toString();
-        if (url === "/api/ota-agencies" && (!options || !options.method))
+        if (url === "/api/ota-agencies" && (!options?.method || options.method === "GET"))
           return Promise.resolve({ ok: true, json: async () => mockAgencies } as Response);
         if (url === "/api/ota-agencies/1" && options?.method === "DELETE")
           return Promise.resolve({ ok: true } as Response);
@@ -86,7 +86,10 @@ describe("OtaAgenciesTab", () => {
 
     await user.click(screen.getByTestId("confirm-dialog-confirm-button"));
 
-    expect(fetchMock).toHaveBeenCalledWith("/api/ota-agencies/1", { method: "DELETE" });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/ota-agencies/1",
+      expect.objectContaining({ method: "DELETE" })
+    );
   });
 
   it("does not call DELETE if dialog is cancelled", async () => {

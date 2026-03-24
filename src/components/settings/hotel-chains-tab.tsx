@@ -24,11 +24,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { extractApiError } from "@/lib/client-error";
+import { apiFetch } from "@/lib/api-fetch";
+import { logger } from "@/lib/logger";
 import { HotelChain, PointType } from "@/lib/types";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Building2 } from "lucide-react";
+import { toast } from "sonner";
 
 export function HotelChainsTab() {
   const [hotelChains, setHotelChains] = useState<HotelChain[]>([]);
@@ -58,13 +60,13 @@ export function HotelChainsTab() {
   const sbHotelChain = hotelChains.find((h) => h.id === sbHotelChainId) ?? null;
 
   const fetchData = useCallback(async () => {
-    const [hotelChainsRes, ptRes] = await Promise.all([
-      fetch("/api/hotel-chains"),
-      fetch("/api/point-types"),
+    const [hotelChainsResult, ptResult] = await Promise.all([
+      apiFetch<HotelChain[]>("/api/hotel-chains"),
+      apiFetch<PointType[]>("/api/point-types"),
     ]);
-    if (hotelChainsRes.ok) setHotelChains(await hotelChainsRes.json());
-    else setError(await extractApiError(hotelChainsRes, "Failed to load hotel chains."));
-    if (ptRes.ok) setPointTypes(await ptRes.json());
+    if (hotelChainsResult.ok) setHotelChains(hotelChainsResult.data);
+    else setError(hotelChainsResult.error.message);
+    if (ptResult.ok) setPointTypes(ptResult.data);
   }, []);
 
   useEffect(() => {
@@ -73,19 +75,17 @@ export function HotelChainsTab() {
   }, [fetchData]);
 
   const handleSubmit = async () => {
-    setError(null);
-    const res = await fetch("/api/hotel-chains", {
+    const result = await apiFetch("/api/hotel-chains", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+      body: {
         name,
         loyaltyProgram: loyaltyProgram || null,
         basePointRate: basePointRate ? Number(basePointRate) : null,
         calculationCurrency,
         pointTypeId: pointTypeId !== "none" ? pointTypeId : null,
-      }),
+      },
     });
-    if (res.ok) {
+    if (result.ok) {
       setName("");
       setLoyaltyProgram("");
       setBasePointRate("");
@@ -94,7 +94,8 @@ export function HotelChainsTab() {
       setOpen(false);
       fetchData();
     } else {
-      setError(await extractApiError(res, "Failed to add hotel chain."));
+      logger.error("Failed to add hotel chain", result.error, { status: result.status });
+      toast.error("Failed to add hotel chain. Please try again.");
     }
   };
 
@@ -110,24 +111,23 @@ export function HotelChainsTab() {
 
   const handleEditSubmit = async () => {
     if (!editHotelChain) return;
-    setError(null);
-    const res = await fetch(`/api/hotel-chains/${editHotelChain.id}`, {
+    const result = await apiFetch(`/api/hotel-chains/${editHotelChain.id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+      body: {
         name: editName,
         loyaltyProgram: editLoyaltyProgram || null,
         basePointRate: editBasePointRate ? Number(editBasePointRate) : null,
         calculationCurrency: editCalculationCurrency,
         pointTypeId: editPointTypeId !== "none" ? editPointTypeId : null,
-      }),
+      },
     });
-    if (res.ok) {
+    if (result.ok) {
       setEditOpen(false);
       setEditHotelChain(null);
       fetchData();
     } else {
-      setError(await extractApiError(res, "Failed to update hotel chain."));
+      logger.error("Failed to update hotel chain", result.error, { status: result.status });
+      toast.error("Failed to update hotel chain. Please try again.");
     }
   };
 
@@ -140,33 +140,32 @@ export function HotelChainsTab() {
 
   const handleAddSubBrand = async () => {
     if (!sbHotelChainId) return;
-    setError(null);
-    const res = await fetch(`/api/hotel-chains/${sbHotelChainId}/hotel-chain-sub-brands`, {
+    const result = await apiFetch(`/api/hotel-chains/${sbHotelChainId}/hotel-chain-sub-brands`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+      body: {
         name: sbName,
         basePointRate: sbBaseRate ? Number(sbBaseRate) : null,
-      }),
+      },
     });
-    if (res.ok) {
+    if (result.ok) {
       setSbName("");
       setSbBaseRate("");
       fetchData();
     } else {
-      setError(await extractApiError(res, "Failed to add hotel chain sub-brand."));
+      logger.error("Failed to add sub-brand", result.error, { status: result.status });
+      toast.error("Failed to add hotel chain sub-brand. Please try again.");
     }
   };
 
   const handleDeleteSubBrand = async (sbId: string) => {
-    setError(null);
-    const res = await fetch(`/api/hotel-chain-sub-brands/${sbId}`, { method: "DELETE" });
-    if (res.ok) {
+    const result = await apiFetch(`/api/hotel-chain-sub-brands/${sbId}`, { method: "DELETE" });
+    if (result.ok) {
       fetchData();
-    } else if (res.status === 409) {
-      setError("Cannot delete: this hotel chain sub-brand is referenced by existing bookings.");
+    } else if (result.status === 409) {
+      toast.error("Cannot delete: this hotel chain sub-brand is referenced by existing bookings.");
     } else {
-      setError(await extractApiError(res, "Failed to delete hotel chain sub-brand."));
+      logger.error("Failed to delete sub-brand", result.error, { status: result.status });
+      toast.error("Failed to delete hotel chain sub-brand. Please try again.");
     }
   };
 

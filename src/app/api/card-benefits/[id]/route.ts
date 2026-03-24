@@ -11,25 +11,26 @@ const INCLUDE = {
 };
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
-    const { id } = await params;
     const cardBenefit = await prisma.cardBenefit.findUnique({
       where: { id },
       include: INCLUDE,
     });
-    if (!cardBenefit) return apiError("Card benefit not found", null, 404, request);
+    if (!cardBenefit)
+      return apiError("Card benefit not found", null, 404, request, { cardBenefitId: id });
     return NextResponse.json(cardBenefit);
   } catch (error) {
-    return apiError("Failed to fetch card benefit", error, 500, request);
+    return apiError("Failed to fetch card benefit", error, 500, request, { cardBenefitId: id });
   }
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
     const adminOrResponse = await requireAdmin();
     if (adminOrResponse instanceof NextResponse) return adminOrResponse;
 
-    const { id } = await params;
     const body = await request.json();
     const {
       creditCardId,
@@ -79,7 +80,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(cardBenefit);
   } catch (error) {
-    return apiError("Failed to update card benefit", error, 500, request);
+    return apiError("Failed to update card benefit", error, 500, request, { cardBenefitId: id });
   }
 }
 
@@ -87,14 +88,14 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const adminOrResponse = await requireAdmin();
     if (adminOrResponse instanceof NextResponse) return adminOrResponse;
 
-    const { id } = await params;
     await prisma.cardBenefit.delete({ where: { id } });
     return NextResponse.json({ message: "Card benefit deleted" });
   } catch (error) {
-    return apiError("Failed to delete card benefit", error, 500, request);
+    return apiError("Failed to delete card benefit", error, 500, request, { cardBenefitId: id });
   }
 }

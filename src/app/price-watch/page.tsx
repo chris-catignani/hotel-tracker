@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,8 +20,11 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { formatCurrency, formatDate, pruneHotelName } from "@/lib/utils";
 import { ErrorBanner } from "@/components/ui/error-banner";
-import { extractApiError } from "@/lib/client-error";
 import { HOTEL_ID } from "@/lib/constants";
+import { useApiQuery } from "@/hooks/use-api-query";
+import { apiFetch } from "@/lib/api-fetch";
+import { logger } from "@/lib/logger";
+import { toast } from "sonner";
 
 interface PriceSnapshot {
   lowestRefundableCashPrice: string | number | null;
@@ -177,58 +180,56 @@ function ChainPropertyIdEditor({
 }
 
 export default function PriceWatchPage() {
-  const [watches, setWatches] = useState<PriceWatch[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    data: watchesData,
+    loading,
+    error: fetchError,
+    clearError,
+    refetch: refetchWatches,
+  } = useApiQuery<PriceWatch[]>("/api/price-watches", {
+    onError: (err) =>
+      logger.error("Failed to fetch price watches", err.error, { status: err.status }),
+  });
+  const watches = watchesData ?? [];
+
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [editingPropertyId, setEditingPropertyId] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState("");
   const [savingPropertyId, setSavingPropertyId] = useState<string | null>(null);
 
-  const loadWatches = useCallback(async () => {
-    setLoading(true);
-    const res = await fetch("/api/price-watches");
-    if (res.ok) {
-      const data = await res.json();
-      setWatches(data);
-    }
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    loadWatches();
-  }, [loadWatches]);
-
   const handleToggle = async (watch: PriceWatch, enabled: boolean) => {
     setTogglingId(watch.id);
-    setError(null);
-    const res = await fetch(`/api/price-watches/${watch.id}`, {
+    const result = await apiFetch<PriceWatch>(`/api/price-watches/${watch.id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isEnabled: enabled }),
+      body: { isEnabled: enabled },
     });
-    if (res.ok) {
-      const updated = await res.json();
-      setWatches((prev) => prev.map((w) => (w.id === watch.id ? updated : w)));
-    } else {
-      setError(await extractApiError(res, "Failed to update price watch."));
-    }
     setTogglingId(null);
+    if (!result.ok) {
+      logger.error("Failed to update price watch", result.error, {
+        priceWatchId: watch.id,
+        status: result.status,
+      });
+      toast.error("Failed to update price watch. Please try again.");
+      return;
+    }
+    refetchWatches();
   };
 
   const handleDelete = async (watch: PriceWatch) => {
     if (!confirm(`Stop watching prices for ${pruneHotelName(watch.property.name)}?`)) return;
     setDeletingId(watch.id);
-    setError(null);
-    const res = await fetch(`/api/price-watches/${watch.id}`, { method: "DELETE" });
-    if (res.ok) {
-      setWatches((prev) => prev.filter((w) => w.id !== watch.id));
-    } else {
-      setError(await extractApiError(res, "Failed to delete price watch."));
-    }
+    const result = await apiFetch(`/api/price-watches/${watch.id}`, { method: "DELETE" });
     setDeletingId(null);
+    if (!result.ok) {
+      logger.error("Failed to delete price watch", result.error, {
+        priceWatchId: watch.id,
+        status: result.status,
+      });
+      toast.error("Failed to delete price watch. Please try again.");
+      return;
+    }
+    refetchWatches();
   };
 
   const handleEditChainPropertyId = (propertyId: string, current: string | null) => {
@@ -243,27 +244,25 @@ export default function PriceWatchPage() {
 
   const handleSaveChainPropertyId = async (propertyId: string) => {
     setSavingPropertyId(propertyId);
-    setError(null);
-    const res = await fetch(`/api/properties/${propertyId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chainPropertyId: editingValue.trim() || null }),
-    });
-    if (res.ok) {
-      const saved = editingValue.trim() || null;
-      setWatches((prev) =>
-        prev.map((w) =>
-          w.property.id === propertyId
-            ? { ...w, property: { ...w.property, chainPropertyId: saved } }
-            : w
-        )
-      );
-      setEditingPropertyId(null);
-      setEditingValue("");
-    } else {
-      setError(await extractApiError(res, "Failed to save spirit code."));
-    }
+    const result = await apiFetch<{ chainPropertyId: string | null }>(
+      `/api/properties/${propertyId}`,
+      {
+        method: "PUT",
+        body: { chainPropertyId: editingValue.trim() || null },
+      }
+    );
     setSavingPropertyId(null);
+    if (!result.ok) {
+      logger.error("Failed to save chain property ID", result.error, {
+        propertyId,
+        status: result.status,
+      });
+      toast.error("Failed to save. Please try again.");
+      return;
+    }
+    refetchWatches();
+    setEditingPropertyId(null);
+    setEditingValue("");
   };
 
   if (loading) {
@@ -283,7 +282,10 @@ export default function PriceWatchPage() {
         </p>
       </div>
 
-      <ErrorBanner error={error} onDismiss={() => setError(null)} />
+      <ErrorBanner
+        error={fetchError ? "Failed to load price watches. Please try again." : null}
+        onDismiss={clearError}
+      />
 
       {watches.length === 0 ? (
         <Card>

@@ -9,35 +9,39 @@ const INCLUDE = {
 } as const;
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
     const userId = userIdOrResponse;
 
-    const { id } = await params;
     const card = await prisma.userCreditCard.findFirst({
       where: { id, userId },
       include: INCLUDE,
     });
-    if (!card) return apiError("User credit card not found", null, 404, request);
+    if (!card)
+      return apiError("User credit card not found", null, 404, request, { userCreditCardId: id });
     return NextResponse.json(card);
   } catch (error) {
-    return apiError("Failed to fetch user credit card", error, 500, request);
+    return apiError("Failed to fetch user credit card", error, 500, request, {
+      userCreditCardId: id,
+    });
   }
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
     const userId = userIdOrResponse;
 
-    const { id } = await params;
     const exists = await prisma.userCreditCard.findFirst({
       where: { id, userId },
       select: { id: true },
     });
-    if (!exists) return apiError("User credit card not found", null, 404, request);
+    if (!exists)
+      return apiError("User credit card not found", null, 404, request, { userCreditCardId: id });
 
     const { creditCardId, nickname, openedDate, closedDate } = await request.json();
 
@@ -57,7 +61,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(card);
   } catch (error) {
-    return apiError("Failed to update user credit card", error, 500, request);
+    return apiError("Failed to update user credit card", error, 500, request, {
+      userCreditCardId: id,
+    });
   }
 }
 
@@ -65,17 +71,18 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
     const userId = userIdOrResponse;
 
-    const { id } = await params;
     const exists = await prisma.userCreditCard.findFirst({
       where: { id, userId },
       select: { id: true },
     });
-    if (!exists) return apiError("User credit card not found", null, 404, request);
+    if (!exists)
+      return apiError("User credit card not found", null, 404, request, { userCreditCardId: id });
 
     // Check if any bookings reference this card instance
     const bookingCount = await prisma.booking.count({ where: { userCreditCardId: id } });
@@ -84,13 +91,16 @@ export async function DELETE(
         "Cannot delete: this card instance is referenced by existing bookings.",
         null,
         409,
-        request
+        request,
+        { userCreditCardId: id }
       );
     }
 
     await prisma.userCreditCard.delete({ where: { id } });
     return NextResponse.json({ message: "User credit card deleted" });
   } catch (error) {
-    return apiError("Failed to delete user credit card", error, 500, request);
+    return apiError("Failed to delete user credit card", error, 500, request, {
+      userCreditCardId: id,
+    });
   }
 }

@@ -14,12 +14,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AppSelect } from "@/components/ui/app-select";
-import { extractApiError } from "@/lib/client-error";
+import { apiFetch } from "@/lib/api-fetch";
+import { logger } from "@/lib/logger";
 import { CardBenefit, CreditCard, HotelChain, OtaAgency, PointType } from "@/lib/types";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { EmptyState } from "@/components/ui/empty-state";
 import { CreditCard as CreditCardIcon } from "lucide-react";
 import { CreditCardAccordionItem } from "./credit-card-accordion-item";
+import { toast } from "sonner";
 
 export function CreditCardsTab() {
   const [cards, setCards] = useState<CreditCard[]>([]);
@@ -36,19 +38,19 @@ export function CreditCardsTab() {
   const [pointTypeId, setPointTypeId] = useState("none");
 
   const fetchData = useCallback(async () => {
-    const [cardsRes, ptRes, hcRes, otaRes, benefitsRes] = await Promise.all([
-      fetch("/api/credit-cards"),
-      fetch("/api/point-types"),
-      fetch("/api/hotel-chains"),
-      fetch("/api/ota-agencies"),
-      fetch("/api/card-benefits"),
+    const [cardsResult, ptResult, hcResult, otaResult, benefitsResult] = await Promise.all([
+      apiFetch<CreditCard[]>("/api/credit-cards"),
+      apiFetch<PointType[]>("/api/point-types"),
+      apiFetch<HotelChain[]>("/api/hotel-chains"),
+      apiFetch<OtaAgency[]>("/api/ota-agencies"),
+      apiFetch<CardBenefit[]>("/api/card-benefits"),
     ]);
-    if (cardsRes.ok) setCards(await cardsRes.json());
-    else setError(await extractApiError(cardsRes, "Failed to load credit cards."));
-    if (ptRes.ok) setPointTypes(await ptRes.json());
-    if (hcRes.ok) setHotelChains(await hcRes.json());
-    if (otaRes.ok) setOtaAgencies(await otaRes.json());
-    if (benefitsRes.ok) setBenefits(await benefitsRes.json());
+    if (cardsResult.ok) setCards(cardsResult.data);
+    else setError(cardsResult.error.message);
+    if (ptResult.ok) setPointTypes(ptResult.data);
+    if (hcResult.ok) setHotelChains(hcResult.data);
+    if (otaResult.ok) setOtaAgencies(otaResult.data);
+    if (benefitsResult.ok) setBenefits(benefitsResult.data);
   }, []);
 
   useEffect(() => {
@@ -57,19 +59,17 @@ export function CreditCardsTab() {
   }, [fetchData]);
 
   const handleSubmit = async () => {
-    setError(null);
-    const res = await fetch("/api/credit-cards", {
+    const result = await apiFetch("/api/credit-cards", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+      body: {
         name,
         rewardType,
         rewardRate: Number(rewardRate),
         pointTypeId: pointTypeId !== "none" ? pointTypeId : null,
         rewardRules: [],
-      }),
+      },
     });
-    if (res.ok) {
+    if (result.ok) {
       setName("");
       setRewardType("points");
       setRewardRate("");
@@ -77,7 +77,8 @@ export function CreditCardsTab() {
       setOpen(false);
       fetchData();
     } else {
-      setError(await extractApiError(res, "Failed to add credit card."));
+      logger.error("Failed to add credit card", result.error, { status: result.status });
+      toast.error("Failed to add credit card. Please try again.");
     }
   };
 

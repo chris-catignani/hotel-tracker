@@ -25,8 +25,9 @@ import {
 } from "@/components/ui/table";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { AppSelect } from "@/components/ui/app-select";
-import { ErrorBanner } from "@/components/ui/error-banner";
-import { extractApiError } from "@/lib/client-error";
+import { apiFetch } from "@/lib/api-fetch";
+import { logger } from "@/lib/logger";
+import { toast } from "sonner";
 import {
   CardBenefit,
   CardBenefitFormData,
@@ -252,8 +253,6 @@ export function CardBenefitsSection({
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [benefitToDelete, setBenefitToDelete] = useState<CardBenefit | null>(null);
 
-  const [error, setError] = useState<string | null>(null);
-
   const hotelChainOptions = hotelChains.map((h) => ({ label: h.name, value: h.id }));
 
   const isFormValid = (f: CardBenefitFormData) =>
@@ -275,18 +274,17 @@ export function CardBenefitsSection({
   });
 
   const handleSubmit = async () => {
-    setError(null);
-    const res = await fetch("/api/card-benefits", {
+    const result = await apiFetch("/api/card-benefits", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ creditCardId, ...buildBody(form) }),
+      body: { creditCardId, ...buildBody(form) },
     });
-    if (res.ok) {
+    if (result.ok) {
       setForm(EMPTY_FORM);
       setOpen(false);
       onRefetch();
     } else {
-      setError(await extractApiError(res, "Failed to add card benefit."));
+      logger.error("Failed to add card benefit", result.error, { status: result.status });
+      toast.error("Failed to add card benefit. Please try again.");
     }
   };
 
@@ -309,18 +307,17 @@ export function CardBenefitsSection({
 
   const handleEditSubmit = async () => {
     if (!editBenefit) return;
-    setError(null);
-    const res = await fetch(`/api/card-benefits/${editBenefit.id}`, {
+    const result = await apiFetch(`/api/card-benefits/${editBenefit.id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ creditCardId, ...buildBody(editForm) }),
+      body: { creditCardId, ...buildBody(editForm) },
     });
-    if (res.ok) {
+    if (result.ok) {
       setEditOpen(false);
       setEditBenefit(null);
       onRefetch();
     } else {
-      setError(await extractApiError(res, "Failed to update card benefit."));
+      logger.error("Failed to update card benefit", result.error, { status: result.status });
+      toast.error("Failed to update card benefit. Please try again.");
     }
   };
 
@@ -332,20 +329,20 @@ export function CardBenefitsSection({
   const handleDeleteConfirm = async () => {
     if (!benefitToDelete) return;
     setDeleteOpen(false);
-    setError(null);
-    const res = await fetch(`/api/card-benefits/${benefitToDelete.id}`, { method: "DELETE" });
-    if (res.ok) {
+    const result = await apiFetch(`/api/card-benefits/${benefitToDelete.id}`, {
+      method: "DELETE",
+    });
+    if (result.ok) {
       setBenefitToDelete(null);
       onRefetch();
     } else {
-      setError(await extractApiError(res, "Failed to delete card benefit."));
+      logger.error("Failed to delete card benefit", result.error, { status: result.status });
+      toast.error("Failed to delete card benefit. Please try again.");
     }
   };
 
   return (
     <div className="p-4 space-y-3 bg-muted/20 border-t">
-      <ErrorBanner error={error} onDismiss={() => setError(null)} />
-
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Benefits
