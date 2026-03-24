@@ -52,7 +52,7 @@ export function calculatePoints({
     if (eliteStatus.isFixed && eliteStatus.fixedRate != null) {
       // Fixed rate (e.g. GHA Discovery 7%)
       const raw = effectivePretaxCost * Number(eliteStatus.fixedRate);
-      if (eliteStatus.pointsFloorTo) {
+      if (eliteStatus.pointsFloorTo && eliteStatus.pointsFloorTo > 0) {
         return Math.floor(raw / eliteStatus.pointsFloorTo) * eliteStatus.pointsFloorTo;
       }
       return Math.round(raw);
