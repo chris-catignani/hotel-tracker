@@ -151,9 +151,24 @@ interface BookingWithRelations {
 }
 
 export function calcTotalSavings(booking: BookingWithRelations): number {
-  const { promoSavings, portalCashback, cardReward, loyaltyPointsValue, bookingBenefitsValue } =
-    getNetCostBreakdown(booking);
-  return promoSavings + portalCashback + cardReward + loyaltyPointsValue + bookingBenefitsValue;
+  const {
+    promoSavings,
+    portalCashback,
+    cardReward,
+    loyaltyPointsValue,
+    bookingBenefitsValue,
+    cardBenefitSavings,
+    partnershipEarnsValue,
+  } = getNetCostBreakdown(booking);
+  return (
+    promoSavings +
+    portalCashback +
+    cardReward +
+    loyaltyPointsValue +
+    bookingBenefitsValue +
+    (cardBenefitSavings ?? 0) +
+    partnershipEarnsValue
+  );
 }
 
 interface HotelChainSummary {
