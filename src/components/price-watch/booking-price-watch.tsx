@@ -9,7 +9,8 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Eye, Loader2, ChevronDown, ChevronUp, ArrowUpDown } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { extractApiError } from "@/lib/client-error";
+import { apiFetch } from "@/lib/api-fetch";
+import { toast } from "sonner";
 import { HOTEL_ID } from "@/lib/constants";
 import {
   Table,
@@ -176,11 +177,12 @@ export function BookingPriceWatch({
 
   // Load the full watch data on mount if a PriceWatchBooking exists
   const loadWatch = useCallback(async (priceWatchId: string) => {
-    const res = await fetch(`/api/price-watches/${priceWatchId}`);
-    if (res.ok) setWatch(await res.json());
+    const result = await apiFetch<PriceWatchData>(`/api/price-watches/${priceWatchId}`);
+    if (result.ok) setWatch(result.data);
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (initialWatchBooking) loadWatch(initialWatchBooking.priceWatchId);
   }, [initialWatchBooking, loadWatch]);
   const [cashThreshold, setCashThreshold] = useState(
@@ -192,7 +194,6 @@ export function BookingPriceWatch({
     initialWatchBooking?.awardThreshold != null ? String(initialWatchBooking.awardThreshold) : ""
   );
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [showRooms, setShowRooms] = useState(false);
   const [expandedRooms, setExpandedRooms] = useState<Set<string>>(new Set());
   const defaultSortColumn: SortColumn = pointsRedeemed ? "award" : "cash";
@@ -229,71 +230,70 @@ export function BookingPriceWatch({
   const latestSnapshot = watch?.snapshots?.[0] ?? null;
 
   const handleToggle = async (enabled: boolean) => {
-    setError(null);
     setSaving(true);
-    try {
-      if (!watch) {
-        // Enable — create the watch
-        const res = await fetch("/api/price-watches", {
+    if (!watch) {
+      // Enable — create the watch
+      const result = await apiFetch<PriceWatchData & { bookings?: { bookingId: string }[] }>(
+        "/api/price-watches",
+        {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+          body: {
             propertyId,
             isEnabled: true,
             bookingId,
             cashThreshold: cashThreshold ? Number(cashThreshold) : null,
             awardThreshold: awardThreshold ? Number(awardThreshold) : null,
-          }),
-        });
-        if (!res.ok) throw new Error(await extractApiError(res, "Request failed"));
-        const data = await res.json();
-        setWatch(data);
-        const pwb = data.bookings?.find((b: { bookingId: string }) => b.bookingId === bookingId);
-        if (pwb) setWatchBooking(pwb);
+          },
+        }
+      );
+      if (!result.ok) {
+        toast.error("Failed to update price watch. Please try again.");
       } else {
-        // Toggle existing watch
-        const res = await fetch(`/api/price-watches/${watch.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ isEnabled: enabled }),
-        });
-        if (!res.ok) throw new Error(await extractApiError(res, "Request failed"));
-        const data = await res.json();
-        setWatch(data);
+        setWatch(result.data);
+        const pwb = result.data.bookings?.find(
+          (b: { bookingId: string }) => b.bookingId === bookingId
+        );
+        if (pwb) setWatchBooking(pwb);
       }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to update price watch");
-    } finally {
-      setSaving(false);
+    } else {
+      // Toggle existing watch
+      const result = await apiFetch<PriceWatchData>(`/api/price-watches/${watch.id}`, {
+        method: "PUT",
+        body: { isEnabled: enabled },
+      });
+      if (!result.ok) {
+        toast.error("Failed to update price watch. Please try again.");
+      } else {
+        setWatch(result.data);
+      }
     }
+    setSaving(false);
   };
 
   const handleSaveThresholds = async () => {
     if (!watch) return;
-    setError(null);
     setSaving(true);
-    try {
-      const res = await fetch("/api/price-watches", {
+    const result = await apiFetch<PriceWatchData & { bookings?: { bookingId: string }[] }>(
+      "/api/price-watches",
+      {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        body: {
           propertyId,
           isEnabled: watch.isEnabled,
           bookingId,
           cashThreshold: cashThreshold ? Number(cashThreshold) : null,
           awardThreshold: awardThreshold ? Number(awardThreshold) : null,
-        }),
-      });
-      if (!res.ok) throw new Error(await extractApiError(res, "Request failed"));
-      const data = await res.json();
-      setWatch(data);
-      const pwb = data.bookings?.find((b: { bookingId: string }) => b.bookingId === bookingId);
-      if (pwb) setWatchBooking(pwb);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to save thresholds");
-    } finally {
-      setSaving(false);
+        },
+      }
+    );
+    setSaving(false);
+    if (!result.ok) {
+      toast.error("Failed to save thresholds. Please try again.");
+      return;
     }
+    setWatch(result.data);
+    const pwb = result.data.bookings?.find((b: { bookingId: string }) => b.bookingId === bookingId);
+    if (pwb) setWatchBooking(pwb);
   };
 
   return (
@@ -681,8 +681,6 @@ export function BookingPriceWatch({
             )}
           </>
         )}
-
-        {error && <p className="text-xs text-destructive">{error}</p>}
       </CardContent>
     </Card>
   );
