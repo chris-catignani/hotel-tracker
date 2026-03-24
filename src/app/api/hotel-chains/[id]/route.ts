@@ -26,10 +26,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         },
       },
     });
-    if (!hotelChain) return apiError("Hotel chain not found", null, 404, request);
+    if (!hotelChain)
+      return apiError("Hotel chain not found", null, 404, request, { hotelChainId: id });
     return NextResponse.json(normalizeUserStatuses(hotelChain));
   } catch (error) {
-    return apiError("Failed to fetch hotel chain", error, 500, request);
+    return apiError("Failed to fetch hotel chain", error, 500, request, { hotelChainId: id });
   }
 }
 
@@ -100,7 +101,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(normalizeUserStatuses(hotelChain));
   } catch (error) {
-    return apiError("Failed to update hotel chain", error, 500, request);
+    return apiError("Failed to update hotel chain", error, 500, request, { hotelChainId: id });
   }
 }
 
@@ -144,6 +145,6 @@ export async function DELETE(
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    return apiError("Failed to delete hotel chain", error, 500, request);
+    return apiError("Failed to delete hotel chain", error, 500, request, { hotelChainId: id });
   }
 }

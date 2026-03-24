@@ -64,7 +64,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(creditCard);
   } catch (error) {
-    return apiError("Failed to update credit card", error, 500, request);
+    return apiError("Failed to update credit card", error, 500, request, { creditCardId: id });
   }
 }
 
@@ -83,6 +83,6 @@ export async function DELETE(
     });
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    return apiError("Failed to delete credit card", error, 500, request);
+    return apiError("Failed to delete credit card", error, 500, request, { creditCardId: id });
   }
 }

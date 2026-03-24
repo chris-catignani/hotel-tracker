@@ -33,6 +33,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json(property);
   } catch (error) {
-    return apiError("Failed to update property", error, 500, request);
+    return apiError("Failed to update property", error, 500, request, { propertyId: id });
   }
 }
