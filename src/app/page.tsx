@@ -636,20 +636,41 @@ export default function DashboardPage() {
                 {(() => {
                   const totals = filteredBookings.reduce(
                     (acc, b) => {
-                      const { promoSavings, portalCashback, cardReward, loyaltyPointsValue } =
-                        getNetCostBreakdown(b);
+                      const {
+                        promoSavings,
+                        portalCashback,
+                        cardReward,
+                        loyaltyPointsValue,
+                        bookingBenefitsValue,
+                        cardBenefitSavings,
+                        partnershipEarnsValue,
+                      } = getNetCostBreakdown(b);
                       acc.promoSavings += promoSavings;
                       acc.portalCashback += portalCashback;
                       acc.cardRewards += cardReward;
                       acc.loyaltyPointsValue += loyaltyPointsValue;
+                      acc.bookingBenefitsValue += bookingBenefitsValue;
+                      acc.cardBenefitSavings += cardBenefitSavings ?? 0;
+                      acc.partnershipEarnsValue += partnershipEarnsValue;
                       return acc;
                     },
-                    { promoSavings: 0, portalCashback: 0, cardRewards: 0, loyaltyPointsValue: 0 }
+                    {
+                      promoSavings: 0,
+                      portalCashback: 0,
+                      cardRewards: 0,
+                      loyaltyPointsValue: 0,
+                      bookingBenefitsValue: 0,
+                      cardBenefitSavings: 0,
+                      partnershipEarnsValue: 0,
+                    }
                   );
                   const totalPromoSavings = totals.promoSavings;
                   const totalPortalCashback = totals.portalCashback;
                   const totalCardRewards = totals.cardRewards;
                   const totalLoyaltyPointsValue = totals.loyaltyPointsValue;
+                  const totalBookingBenefitsValue = totals.bookingBenefitsValue;
+                  const totalCardBenefitSavings = totals.cardBenefitSavings;
+                  const totalPartnershipEarnsValue = totals.partnershipEarnsValue;
 
                   const items = [
                     {
@@ -675,6 +696,24 @@ export default function DashboardPage() {
                       value: totalLoyaltyPointsValue,
                       color: "bg-orange-500",
                       testId: "savings-breakdown-loyalty",
+                    },
+                    {
+                      label: "Card Benefits",
+                      value: totalCardBenefitSavings,
+                      color: "bg-pink-500",
+                      testId: "savings-breakdown-card-benefits",
+                    },
+                    {
+                      label: "Partnership Earns",
+                      value: totalPartnershipEarnsValue,
+                      color: "bg-teal-500",
+                      testId: "savings-breakdown-partnership",
+                    },
+                    {
+                      label: "Booking Benefits",
+                      value: totalBookingBenefitsValue,
+                      color: "bg-yellow-500",
+                      testId: "savings-breakdown-booking-benefits",
                     },
                   ];
 
