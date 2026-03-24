@@ -94,9 +94,9 @@ export function MonthlyTravelPattern({ bookings }: MonthlyTravelPatternProps) {
             <XAxis dataKey="month" tick={{ fontSize: 10 }} />
             <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
             <Tooltip
-              labelFormatter={(label: string, payload) => {
+              labelFormatter={(_label, payload) => {
                 const item = payload?.[0]?.payload as { fullMonth?: string } | undefined;
-                return item?.fullMonth ?? label;
+                return item?.fullMonth ?? "";
               }}
               contentStyle={{
                 backgroundColor: "var(--background)",
