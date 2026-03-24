@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { BookingForm } from "@/components/bookings/booking-form";
 import { BookingFormData } from "@/lib/types";
 import { ErrorBanner } from "@/components/ui/error-banner";
-import { extractApiError } from "@/lib/client-error";
+import { apiFetch } from "@/lib/api-fetch";
 import { logger } from "@/lib/logger";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -27,44 +27,38 @@ export default function NewBookingPage() {
   const handleSubmit = async (data: BookingFormData) => {
     setError(null);
     setSubmitting(true);
-    const res = await fetch("/api/bookings", {
+
+    const result = await apiFetch<{ id: string; propertyId: string }>("/api/bookings", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
+      body: data,
     });
 
-    if (!res.ok) {
+    if (!result.ok) {
       setSubmitting(false);
-      setError(await extractApiError(res, "Failed to create booking."));
+      logger.error("Failed to create booking", result.error, { status: result.status });
+      setError("Failed to create booking. Please try again.");
       return;
     }
 
-    const booking = await res.json();
+    const booking = result.data;
 
     if (priceWatchEnabled) {
-      try {
-        const watchRes = await fetch("/api/price-watches", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            propertyId: booking.propertyId,
-            isEnabled: true,
-            bookingId: booking.id,
-            cashThreshold: cashThreshold ? Number(cashThreshold) : null,
-            awardThreshold: awardThreshold ? Number(awardThreshold) : null,
-          }),
-        });
-        if (!watchRes.ok) {
-          const message = await extractApiError(watchRes, "API error");
-          logger.error(`Price watch creation failed: ${message}`, null, {
-            bookingId: booking.id,
-            propertyId: booking.propertyId,
-          });
-        }
-      } catch (e) {
-        logger.error("Error creating price watch", e, {
+      const watchResult = await apiFetch("/api/price-watches", {
+        method: "POST",
+        body: {
+          propertyId: booking.propertyId,
+          isEnabled: true,
+          bookingId: booking.id,
+          cashThreshold: cashThreshold ? Number(cashThreshold) : null,
+          awardThreshold: awardThreshold ? Number(awardThreshold) : null,
+        },
+      });
+      if (!watchResult.ok) {
+        // Price watch failure is non-fatal; booking already created
+        logger.error("Failed to create price watch", watchResult.error, {
           bookingId: booking.id,
           propertyId: booking.propertyId,
+          status: watchResult.status,
         });
       }
     }
