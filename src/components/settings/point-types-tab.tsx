@@ -25,12 +25,14 @@ import {
 } from "@/components/ui/table";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { extractApiError } from "@/lib/client-error";
+import { apiFetch } from "@/lib/api-fetch";
+import { logger } from "@/lib/logger";
 import { CATEGORY_LABELS } from "@/lib/constants";
 import { PointType } from "@/lib/types";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Coins } from "lucide-react";
+import { toast } from "sonner";
 
 export function PointTypesTab() {
   const [pointTypes, setPointTypes] = useState<PointType[]>([]);
@@ -58,11 +60,11 @@ export function PointTypesTab() {
   const [ptToDelete, setPtToDelete] = useState<PointType | null>(null);
 
   const fetchPointTypes = useCallback(async () => {
-    const res = await fetch("/api/point-types");
-    if (res.ok) {
-      setPointTypes(await res.json());
+    const result = await apiFetch<PointType[]>("/api/point-types");
+    if (result.ok) {
+      setPointTypes(result.data);
     } else {
-      setError(await extractApiError(res, "Failed to load point types."));
+      setError(result.error.message);
     }
   }, []);
 
@@ -86,20 +88,18 @@ export function PointTypesTab() {
     setShowErrors(true);
     if (!isValid) return;
 
-    setError(null);
-    const res = await fetch("/api/point-types", {
+    const result = await apiFetch("/api/point-types", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+      body: {
         name,
         category,
         usdCentsPerPoint: Number(usdCentsPerPoint),
         programCurrency: isForeignCurrency ? programCurrency.trim() || null : null,
         programCentsPerPoint:
           isForeignCurrency && programCentsPerPoint ? Number(programCentsPerPoint) : null,
-      }),
+      },
     });
-    if (res.ok) {
+    if (result.ok) {
       setName("");
       setCategory("hotel");
       setUsdCentsPerPoint("");
@@ -110,7 +110,8 @@ export function PointTypesTab() {
       setOpen(false);
       fetchPointTypes();
     } else {
-      setError(await extractApiError(res, "Failed to add point type."));
+      logger.error("Failed to add point type", result.error, { status: result.status });
+      toast.error("Failed to add point type. Please try again.");
     }
   };
 
@@ -137,11 +138,9 @@ export function PointTypesTab() {
     setShowEditErrors(true);
     if (!isEditValid) return;
 
-    setError(null);
-    const res = await fetch(`/api/point-types/${editPt.id}`, {
+    const result = await apiFetch(`/api/point-types/${editPt.id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+      body: {
         name: editName,
         category: editCategory,
         usdCentsPerPoint: Number(editUsdCentsPerPoint),
@@ -150,15 +149,16 @@ export function PointTypesTab() {
           editIsForeignCurrency && editProgramCentsPerPoint
             ? Number(editProgramCentsPerPoint)
             : null,
-      }),
+      },
     });
-    if (res.ok) {
+    if (result.ok) {
       setEditOpen(false);
       setEditPt(null);
       setShowEditErrors(false);
       fetchPointTypes();
     } else {
-      setError(await extractApiError(res, "Failed to update point type."));
+      logger.error("Failed to update point type", result.error, { status: result.status });
+      toast.error("Failed to update point type. Please try again.");
     }
   };
 
@@ -170,15 +170,15 @@ export function PointTypesTab() {
   const handleDeleteConfirm = async () => {
     if (!ptToDelete) return;
     setDeleteOpen(false);
-    setError(null);
-    const res = await fetch(`/api/point-types/${ptToDelete.id}`, { method: "DELETE" });
-    if (res.ok) {
+    const result = await apiFetch(`/api/point-types/${ptToDelete.id}`, { method: "DELETE" });
+    if (result.ok) {
       setPtToDelete(null);
       fetchPointTypes();
-    } else if (res.status === 409) {
-      setError("Cannot delete: this point type is in use by hotel chains, cards, or portals.");
+    } else if (result.status === 409) {
+      toast.error("Cannot delete: this point type is in use by hotel chains, cards, or portals.");
     } else {
-      setError(await extractApiError(res, "Failed to delete point type."));
+      logger.error("Failed to delete point type", result.error, { status: result.status });
+      toast.error("Failed to delete point type. Please try again.");
     }
   };
 

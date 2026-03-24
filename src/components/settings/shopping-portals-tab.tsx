@@ -23,11 +23,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { extractApiError } from "@/lib/client-error";
+import { apiFetch } from "@/lib/api-fetch";
+import { logger } from "@/lib/logger";
 import { PointType, ShoppingPortal } from "@/lib/types";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Globe } from "lucide-react";
+import { toast } from "sonner";
 
 export function ShoppingPortalsTab() {
   const [portals, setPortals] = useState<ShoppingPortal[]>([]);
@@ -45,13 +47,13 @@ export function ShoppingPortalsTab() {
   const [editPointTypeId, setEditPointTypeId] = useState("none");
 
   const fetchData = useCallback(async () => {
-    const [portalsRes, ptRes] = await Promise.all([
-      fetch("/api/portals"),
-      fetch("/api/point-types"),
+    const [portalsResult, ptResult] = await Promise.all([
+      apiFetch<ShoppingPortal[]>("/api/portals"),
+      apiFetch<PointType[]>("/api/point-types"),
     ]);
-    if (portalsRes.ok) setPortals(await portalsRes.json());
-    else setError(await extractApiError(portalsRes, "Failed to load shopping portals."));
-    if (ptRes.ok) setPointTypes(await ptRes.json());
+    if (portalsResult.ok) setPortals(portalsResult.data);
+    else setError(portalsResult.error.message);
+    if (ptResult.ok) setPointTypes(ptResult.data);
   }, []);
 
   useEffect(() => {
@@ -60,24 +62,23 @@ export function ShoppingPortalsTab() {
   }, [fetchData]);
 
   const handleSubmit = async () => {
-    setError(null);
-    const res = await fetch("/api/portals", {
+    const result = await apiFetch("/api/portals", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+      body: {
         name,
         rewardType,
         pointTypeId: rewardType === "points" && pointTypeId !== "none" ? pointTypeId : null,
-      }),
+      },
     });
-    if (res.ok) {
+    if (result.ok) {
       setName("");
       setRewardType("cashback");
       setPointTypeId("none");
       setOpen(false);
       fetchData();
     } else {
-      setError(await extractApiError(res, "Failed to add shopping portal."));
+      logger.error("Failed to add shopping portal", result.error, { status: result.status });
+      toast.error("Failed to add shopping portal. Please try again.");
     }
   };
 
@@ -91,23 +92,22 @@ export function ShoppingPortalsTab() {
 
   const handleEditSubmit = async () => {
     if (!editPortal) return;
-    setError(null);
-    const res = await fetch(`/api/portals/${editPortal.id}`, {
+    const result = await apiFetch(`/api/portals/${editPortal.id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+      body: {
         name: editName,
         rewardType: editRewardType,
         pointTypeId:
           editRewardType === "points" && editPointTypeId !== "none" ? editPointTypeId : null,
-      }),
+      },
     });
-    if (res.ok) {
+    if (result.ok) {
       setEditOpen(false);
       setEditPortal(null);
       fetchData();
     } else {
-      setError(await extractApiError(res, "Failed to update shopping portal."));
+      logger.error("Failed to update shopping portal", result.error, { status: result.status });
+      toast.error("Failed to update shopping portal. Please try again.");
     }
   };
 
