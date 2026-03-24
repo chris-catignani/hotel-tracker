@@ -30,8 +30,8 @@ import {
 } from "@/components/ui/select";
 import { useYearFilter, buildYearOptions, type YearFilter } from "@/hooks/use-year-filter";
 import { ErrorBanner } from "@/components/ui/error-banner";
-import { extractApiError } from "@/lib/client-error";
-import * as Sentry from "@sentry/nextjs";
+import { useApiQuery } from "@/hooks/use-api-query";
+import { logger } from "@/lib/logger";
 
 interface BookingCertificate {
   id: string;
@@ -205,9 +205,15 @@ const FILTER_STORAGE_KEY = "dashboard-accommodation-filter";
 type AccommodationFilter = "all" | "hotel" | "apartment";
 
 export default function DashboardPage() {
-  const [bookings, setBookings] = useState<BookingWithRelations[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [fetchError, setFetchError] = useState<string | null>(null);
+  const {
+    data: bookings,
+    loading,
+    error: fetchError,
+    clearError,
+  } = useApiQuery<BookingWithRelations[]>("/api/bookings", {
+    onError: (err) => logger.error("Failed to fetch bookings", err.error, { status: err.status }),
+  });
+  const safeBookings = useMemo(() => bookings ?? [], [bookings]);
   const [accommodationFilter, setAccommodationFilter] = useState<AccommodationFilter>("all");
   const [sortConfig, setSortConfig] = useState<{
     key: keyof HotelChainSummary;
@@ -225,36 +231,16 @@ export default function DashboardPage() {
     if (saved === "hotel" || saved === "apartment") setAccommodationFilter(saved);
   }, []);
 
-  useEffect(() => {
-    const doFetch = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch("/api/bookings");
-        if (res.ok) {
-          const data = await res.json();
-          setBookings(Array.isArray(data) ? data : []);
-        } else {
-          const message = await extractApiError(res, "Failed to load bookings.");
-          setFetchError(message);
-          Sentry.captureException(new Error(message), { extra: { status: res.status } });
-        }
-      } catch (err) {
-        setFetchError("Failed to load bookings.");
-        Sentry.captureException(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    doFetch();
-  }, []);
-
   const handleFilterChange = (filter: AccommodationFilter) => {
     setAccommodationFilter(filter);
     localStorage.setItem(FILTER_STORAGE_KEY, filter);
   };
 
   // Year filter applied first on raw bookings (before accommodation filter)
-  const yearFilteredBookings = useMemo(() => filterByYear(bookings), [bookings, filterByYear]);
+  const yearFilteredBookings = useMemo(
+    () => filterByYear(safeBookings),
+    [safeBookings, filterByYear]
+  );
 
   // Accommodation filter applied second
   const filteredBookings = useMemo(() => {
@@ -266,7 +252,7 @@ export default function DashboardPage() {
   const hasHotels = yearFilteredBookings.some((b) => b.accommodationType === "hotel");
   const showFilter = hasApartments && hasHotels;
 
-  const yearOptions = useMemo(() => buildYearOptions(bookings), [bookings]);
+  const yearOptions = useMemo(() => buildYearOptions(safeBookings), [safeBookings]);
 
   const hotelChainSummaries = useMemo(() => {
     const summaries = filteredBookings.reduce(
@@ -429,7 +415,10 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <ErrorBanner error={fetchError} onDismiss={() => setFetchError(null)} />
+      <ErrorBanner
+        error={fetchError ? "Failed to load bookings. Please try again." : null}
+        onDismiss={clearError}
+      />
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">Dashboard</h1>
