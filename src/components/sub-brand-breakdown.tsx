@@ -57,7 +57,7 @@ export function SubBrandBreakdown({ bookings }: SubBrandBreakdownProps) {
   const total = data.reduce((sum, item) => sum + item.value, 0);
 
   return (
-    <Card className="flex flex-col h-full">
+    <Card className="flex flex-col h-full" data-testid="sub-brand-breakdown-card">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-base font-semibold">Top 10 Hotel Brands</CardTitle>
         <div className="flex gap-1 bg-secondary p-1 rounded-md">
