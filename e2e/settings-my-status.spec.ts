@@ -28,14 +28,22 @@ test.describe("Settings — My Status", () => {
   });
 
   test("resetting status to base member persists after reload", async ({ isolatedUser }) => {
-    const { page } = isolatedUser;
+    const { page, request } = isolatedUser;
+
+    // Set initial "Explorist" state via API so the test starts with a known non-base status
+    const chainsRes = await request.get("/api/hotel-chains");
+    const chains = await chainsRes.json();
+    const hyattChain = chains.find((c: { id: string }) => c.id === HOTEL_ID.HYATT);
+    const exploristStatus = hyattChain.eliteStatuses.find(
+      (s: { name: string }) => s.name === "Explorist"
+    );
+    await request.post("/api/user-statuses", {
+      data: { hotelChainId: HOTEL_ID.HYATT, eliteStatusId: exploristStatus.id },
+    });
+
     await page.goto("/settings");
     await expect(page.getByTestId("tab-my-status")).toBeVisible();
     await expect(page.getByTestId("user-status-table")).toBeVisible();
-
-    // First set a non-base status, then reset it
-    await page.getByTestId(`status-select-${HOTEL_ID.HYATT}`).click();
-    await page.getByRole("option", { name: "Explorist" }).click();
 
     await page.getByTestId(`status-select-${HOTEL_ID.HYATT}`).click();
     await page.getByRole("option", { name: "Base Member / No Status" }).click();
