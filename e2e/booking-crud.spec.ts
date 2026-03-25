@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import { test, expect } from "./fixtures";
+import { HOTEL_ID } from "@/lib/constants";
 
 const YEAR = new Date().getFullYear();
 
@@ -127,6 +128,107 @@ test.describe("Booking Edit", () => {
 
     await expect(testBooking.page).toHaveURL(`/bookings/${testBooking.id}`);
     await expect(testBooking.page.getByText("should not be saved")).not.toBeVisible();
+  });
+});
+
+test.describe("Booking Detail - Cost Breakdown Varieties", () => {
+  // Hyatt: 2¢ per point (usdCentsPerPoint = 0.02)
+
+  test("award stay shows points redeemed value and correct net cost", async ({ isolatedUser }) => {
+    const { request, page } = isolatedUser;
+
+    // 30,000 pts × $0.02 = $600.00 points value; netCost = $0 + $600 = $600.00
+    const res = await request.post("/api/bookings", {
+      data: {
+        hotelChainId: HOTEL_ID.HYATT,
+        propertyName: `Award Stay ${crypto.randomUUID()}`,
+        checkIn: "2025-06-01",
+        checkOut: "2025-06-03",
+        numNights: 2,
+        pretaxCost: 0,
+        taxAmount: 0,
+        totalCost: 0,
+        pointsRedeemed: 30000,
+        loyaltyPointsEarned: 0,
+        currency: "USD",
+      },
+    });
+    const booking = await res.json();
+
+    try {
+      await page.goto(`/bookings/${booking.id}`);
+
+      await expect(page.getByTestId("breakdown-cash-cost")).toHaveText("$0.00");
+      await expect(page.getByTestId("breakdown-points-value")).toHaveText("+$600.00");
+      await expect(page.getByTestId("breakdown-net-cost")).toHaveText("$600.00");
+    } finally {
+      await request.delete(`/api/bookings/${booking.id}`);
+    }
+  });
+
+  test("cert stay shows certificate value and correct net cost", async ({ isolatedUser }) => {
+    const { request, page } = isolatedUser;
+
+    // hyatt_cat1_4 = 15,000 pts × $0.02 = $300.00 cert value; netCost = $0 + $300 = $300.00
+    const res = await request.post("/api/bookings", {
+      data: {
+        hotelChainId: HOTEL_ID.HYATT,
+        propertyName: `Cert Stay ${crypto.randomUUID()}`,
+        checkIn: "2025-07-01",
+        checkOut: "2025-07-02",
+        numNights: 1,
+        pretaxCost: 0,
+        taxAmount: 0,
+        totalCost: 0,
+        certificates: ["hyatt_cat1_4"],
+        loyaltyPointsEarned: 0,
+        currency: "USD",
+      },
+    });
+    const booking = await res.json();
+
+    try {
+      await page.goto(`/bookings/${booking.id}`);
+
+      await expect(page.getByTestId("breakdown-cash-cost")).toHaveText("$0.00");
+      await expect(page.getByTestId("breakdown-certs-value")).toHaveText("+$300.00");
+      await expect(page.getByTestId("breakdown-net-cost")).toHaveText("$300.00");
+    } finally {
+      await request.delete(`/api/bookings/${booking.id}`);
+    }
+  });
+
+  test("points + cash combo shows both cash cost and points value", async ({ isolatedUser }) => {
+    const { request, page } = isolatedUser;
+
+    // totalCost = $200 cash + 10,000 pts × $0.02 = $200 points value
+    // netCost = $200 + $200 = $400.00
+    const res = await request.post("/api/bookings", {
+      data: {
+        hotelChainId: HOTEL_ID.HYATT,
+        propertyName: `Points Cash Combo ${crypto.randomUUID()}`,
+        checkIn: "2025-08-01",
+        checkOut: "2025-08-03",
+        numNights: 2,
+        pretaxCost: 160,
+        taxAmount: 40,
+        totalCost: 200,
+        pointsRedeemed: 10000,
+        loyaltyPointsEarned: 0,
+        currency: "USD",
+      },
+    });
+    const booking = await res.json();
+
+    try {
+      await page.goto(`/bookings/${booking.id}`);
+
+      await expect(page.getByTestId("breakdown-cash-cost")).toHaveText("$200.00");
+      await expect(page.getByTestId("breakdown-points-value")).toHaveText("+$200.00");
+      await expect(page.getByTestId("breakdown-net-cost")).toHaveText("$400.00");
+    } finally {
+      await request.delete(`/api/bookings/${booking.id}`);
+    }
   });
 });
 
