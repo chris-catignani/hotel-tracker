@@ -54,7 +54,7 @@ describe("apiFetch", () => {
       json: async () => {
         throw new SyntaxError("Unexpected end of JSON input");
       },
-    } as Response);
+    } as unknown as Response);
 
     const result = await apiFetch<void>("/api/test");
     expect(result).toEqual({ ok: true, data: undefined });
