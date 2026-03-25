@@ -303,7 +303,11 @@ export default function BookingDetailPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             {booking.property.name}
-            {typeBadge && <Badge variant="secondary">{typeBadge}</Badge>}
+            {typeBadge && (
+              <Badge variant="secondary" data-testid="booking-type-badge">
+                {typeBadge}
+              </Badge>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -322,7 +326,9 @@ export default function BookingDetailPage() {
             {booking.hotelChainSubBrand && (
               <div>
                 <p className="text-sm text-muted-foreground">Sub-brand</p>
-                <p className="font-medium">{booking.hotelChainSubBrand.name}</p>
+                <p className="font-medium" data-testid="booking-sub-brand">
+                  {booking.hotelChainSubBrand.name}
+                </p>
               </div>
             )}
             {booking.hotelChain?.loyaltyProgram && (
@@ -423,7 +429,7 @@ export default function BookingDetailPage() {
             {booking.userCreditCard && (
               <div>
                 <p className="text-sm text-muted-foreground">Credit Card</p>
-                <p className="font-medium">
+                <p className="font-medium" data-testid="booking-credit-card">
                   {booking.userCreditCard.nickname
                     ? `${booking.userCreditCard.creditCard.name} (${booking.userCreditCard.nickname})`
                     : booking.userCreditCard.creditCard.name}
@@ -433,7 +439,7 @@ export default function BookingDetailPage() {
             {booking.shoppingPortal && (
               <div>
                 <p className="text-sm text-muted-foreground">Shopping Portal</p>
-                <p className="font-medium">
+                <p className="font-medium" data-testid="booking-portal">
                   {booking.shoppingPortal.name}
                   {booking.portalCashbackRate
                     ? booking.shoppingPortal.rewardType === "points"
@@ -474,13 +480,17 @@ export default function BookingDetailPage() {
             {booking.bookingSource && (
               <div>
                 <p className="text-sm text-muted-foreground">Booking Source</p>
-                <p className="font-medium">{formatBookingSource(booking)}</p>
+                <p className="font-medium" data-testid="booking-source">
+                  {formatBookingSource(booking)}
+                </p>
               </div>
             )}
             {booking.paymentTiming === "prepaid" && (
               <div>
                 <p className="text-sm text-muted-foreground">Payment Timing</p>
-                <p className="font-medium">Prepaid</p>
+                <p className="font-medium" data-testid="booking-prepaid">
+                  Prepaid
+                </p>
               </div>
             )}
             {booking.bookingDate && (

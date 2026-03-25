@@ -367,12 +367,15 @@ export default function BookingsPage() {
                           "—"
                         )}
                       </TableCell>
-                      <TableCell className="text-right text-sm">
+                      <TableCell
+                        className="text-right text-sm"
+                        data-testid="booking-points-redeemed"
+                      >
                         {booking.pointsRedeemed
                           ? `${booking.pointsRedeemed.toLocaleString("en-US")} pts`
                           : "—"}
                       </TableCell>
-                      <TableCell className="text-right text-sm">
+                      <TableCell className="text-right text-sm" data-testid="booking-certs">
                         {formatCerts(booking.certificates, true)}
                       </TableCell>
                       <TableCell
