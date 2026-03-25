@@ -47,7 +47,7 @@ export async function DELETE(
       where: { otaAgencyId: id },
     });
     if (count > 0) {
-      return apiError("Cannot delete agency that is in use by bookings", null, 400, request, {
+      return apiError("Cannot delete agency that is in use by bookings", null, 409, request, {
         otaAgencyId: id,
       });
     }

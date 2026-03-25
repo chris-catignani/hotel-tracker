@@ -184,7 +184,7 @@ export function PropertiesTab() {
               </TableHeader>
               <TableBody>
                 {properties.map((property) => (
-                  <TableRow key={property.id} data-testid={`property-row-${property.id}`}>
+                  <TableRow key={property.id} data-testid="property-row">
                     <TableCell
                       className="font-medium max-w-56 truncate"
                       data-testid="property-name"
