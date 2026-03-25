@@ -198,6 +198,7 @@ const SortHeader = ({
   <TableHead
     className={`cursor-pointer hover:bg-muted/50 transition-colors ${className}`}
     onClick={() => onSort(column)}
+    data-testid={`sort-header-${column}`}
   >
     <div
       className={`flex items-center gap-1 ${className.includes("text-right") ? "justify-end" : ""}`}
