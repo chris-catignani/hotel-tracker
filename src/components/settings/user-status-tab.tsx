@@ -136,6 +136,7 @@ export function UserStatusTab() {
                     ]}
                     className="w-[200px]"
                     placeholder="Select status..."
+                    data-testid={`status-select-${chain.id}`}
                   />
                 </TableCell>
               </TableRow>
