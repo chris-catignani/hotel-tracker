@@ -119,6 +119,5 @@ Three tiers evaluated in order:
 
 - **GitHub MCP plugin is configured** — use `mcp__plugin_github_github__*` tools for GitHub operations where available (reading issues/PRs, creating issues, searching, etc.). Prefer MCP tools over `gh api` calls for read operations.
 - **Playwright MCP plugin is configured** — use `mcp__plugin_playwright_playwright__*` tools for browser automation and UI verification against the running dev server without writing Playwright test files.
-- **After merging a PR:** Always close the associated GitHub Issue: `gh issue close <number> --comment "Implemented in PR #<number>."`
 - **PR CI polling:** Use `gh pr checks <number>` at 30-second intervals (`sleep 30` between calls). Never use `--watch`.
 - **Do NOT use `gh pr view --comments`** — it queries the deprecated Projects (classic) GraphQL API and returns exit code 1. Use MCP tools instead: `pull_request_read`, `pull_request_review_write`, or `gh api` directly.
