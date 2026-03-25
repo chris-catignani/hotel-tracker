@@ -17,7 +17,7 @@
     "prices:refresh": "bash scripts/trigger-price-refresh.sh",
     "postinstall": "prisma generate",
     "test": "vitest run",
-    "test:e2e": "playwright test",
+    "test:e2e": "next build && playwright test",
     "test:e2e:show": "playwright test --reporter=html",
     "test:e2e:ui": "playwright test --ui",
     "prepare": "husky",

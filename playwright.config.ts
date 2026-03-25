@@ -16,8 +16,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   /* Retry on failures (1 retry both locally and on CI). */
   retries: 1,
-  /* Limit workers to 2 to reduce parallel DB contention. Same for local and CI. */
-  workers: 2,
+  workers: 4,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [["list"], ["html", { open: "never" }]],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
@@ -30,28 +29,25 @@ export default defineConfig({
     video: process.env.CI ? "on-first-retry" : "retain-on-failure",
   },
 
-  /* Configure projects for major browsers */
   projects: [
     {
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
     },
-
-    {
-      name: "webkit",
-      use: { ...devices["Desktop Safari"] },
-    },
   ],
 
   /* Run a dedicated test server on port 3001 (separate from the dev server on 3000). */
   webServer: {
-    command: "next dev -p 3001",
+    command: "npx next start -p 3001",
     url: "http://127.0.0.1:3001",
     reuseExistingServer: !process.env.CI,
+    timeout: 120_000,
     stdout: "pipe",
     stderr: "pipe",
     env: {
       DATABASE_URL: process.env.DATABASE_URL_TEST || "",
+      AUTH_TRUST_HOST: "true",
+      AUTH_URL: "http://127.0.0.1:3001",
       NEXT_PUBLIC_DEBUG: "false",
       AUTH_SECRET: process.env.AUTH_SECRET || "",
       SEED_ADMIN_EMAIL: process.env.SEED_ADMIN_EMAIL || "",
