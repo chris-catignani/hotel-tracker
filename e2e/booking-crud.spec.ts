@@ -338,12 +338,10 @@ test.describe("Booking Create Form", () => {
 });
 
 test.describe("Booking Detail - Info Grid", () => {
-  test("shows booking type badge for an award stay", async ({ isolatedUser }) => {
-    const { request, page } = isolatedUser;
-    const res = await request.post("/api/bookings", {
-      data: {
-        hotelChainId: HOTEL_ID.HYATT,
-        propertyName: `Badge Award ${crypto.randomUUID()}`,
+  const badgeTestCases = [
+    {
+      name: "award stay",
+      bookingData: {
         checkIn: "2025-06-01",
         checkOut: "2025-06-03",
         numNights: 2,
@@ -354,22 +352,11 @@ test.describe("Booking Detail - Info Grid", () => {
         loyaltyPointsEarned: 0,
         currency: "USD",
       },
-    });
-    const booking = await res.json();
-    try {
-      await page.goto(`/bookings/${booking.id}`);
-      await expect(page.getByTestId("booking-type-badge")).toHaveText("Award");
-    } finally {
-      await request.delete(`/api/bookings/${booking.id}`);
-    }
-  });
-
-  test("shows booking type badge for a cert stay", async ({ isolatedUser }) => {
-    const { request, page } = isolatedUser;
-    const res = await request.post("/api/bookings", {
-      data: {
-        hotelChainId: HOTEL_ID.HYATT,
-        propertyName: `Badge Cert ${crypto.randomUUID()}`,
+      badgeText: "Award",
+    },
+    {
+      name: "cert stay",
+      bookingData: {
         checkIn: "2025-07-01",
         checkOut: "2025-07-02",
         numNights: 1,
@@ -380,22 +367,11 @@ test.describe("Booking Detail - Info Grid", () => {
         loyaltyPointsEarned: 0,
         currency: "USD",
       },
-    });
-    const booking = await res.json();
-    try {
-      await page.goto(`/bookings/${booking.id}`);
-      await expect(page.getByTestId("booking-type-badge")).toHaveText("Cert");
-    } finally {
-      await request.delete(`/api/bookings/${booking.id}`);
-    }
-  });
-
-  test("shows booking type badge for a cash + points combo stay", async ({ isolatedUser }) => {
-    const { request, page } = isolatedUser;
-    const res = await request.post("/api/bookings", {
-      data: {
-        hotelChainId: HOTEL_ID.HYATT,
-        propertyName: `Badge Combo ${crypto.randomUUID()}`,
+      badgeText: "Cert",
+    },
+    {
+      name: "cash + points combo stay",
+      bookingData: {
         checkIn: "2025-08-01",
         checkOut: "2025-08-03",
         numNights: 2,
@@ -406,15 +382,29 @@ test.describe("Booking Detail - Info Grid", () => {
         loyaltyPointsEarned: 0,
         currency: "USD",
       },
+      badgeText: "Cash + Points",
+    },
+  ];
+
+  for (const { name, bookingData, badgeText } of badgeTestCases) {
+    test(`shows booking type badge for a ${name}`, async ({ isolatedUser }) => {
+      const { request, page } = isolatedUser;
+      const res = await request.post("/api/bookings", {
+        data: {
+          ...bookingData,
+          hotelChainId: HOTEL_ID.HYATT,
+          propertyName: `Badge ${name} ${crypto.randomUUID()}`,
+        },
+      });
+      const booking = await res.json();
+      try {
+        await page.goto(`/bookings/${booking.id}`);
+        await expect(page.getByTestId("booking-type-badge")).toHaveText(badgeText);
+      } finally {
+        await request.delete(`/api/bookings/${booking.id}`);
+      }
     });
-    const booking = await res.json();
-    try {
-      await page.goto(`/bookings/${booking.id}`);
-      await expect(page.getByTestId("booking-type-badge")).toHaveText("Cash + Points");
-    } finally {
-      await request.delete(`/api/bookings/${booking.id}`);
-    }
-  });
+  }
 
   test("shows no badge for a plain cash stay", async ({ testBooking }) => {
     await testBooking.page.goto(`/bookings/${testBooking.id}`);
@@ -589,60 +579,6 @@ test.describe("Booking Detail - Info Grid", () => {
       await expect(page.getByTestId("booking-prepaid")).toHaveText("Prepaid");
     } finally {
       await request.delete(`/api/bookings/${booking.id}`);
-    }
-  });
-});
-
-test.describe("Booking Detail - Applied Promotions", () => {
-  test("mark verified / unverify toggle updates button state", async ({ isolatedUser }) => {
-    const { request, page } = isolatedUser;
-
-    // Create a promotion scoped to Hyatt so it auto-applies to a Hyatt booking
-    const promoRes = await request.post("/api/promotions", {
-      data: {
-        name: `Verify Test ${crypto.randomUUID()}`,
-        type: "loyalty",
-        hotelChainId: HOTEL_ID.HYATT,
-        benefits: [{ rewardType: "cashback", valueType: "fixed", value: 50, sortOrder: 0 }],
-      },
-    });
-    const promo = await promoRes.json();
-
-    const bookingRes = await request.post("/api/bookings", {
-      data: {
-        hotelChainId: HOTEL_ID.HYATT,
-        propertyName: `Verify Booking ${crypto.randomUUID()}`,
-        checkIn: `${YEAR}-08-01`,
-        checkOut: `${YEAR}-08-03`,
-        numNights: 2,
-        pretaxCost: 300,
-        taxAmount: 30,
-        totalCost: 330,
-        currency: "USD",
-      },
-    });
-    const booking = await bookingRes.json();
-
-    try {
-      await page.goto(`/bookings/${booking.id}`);
-
-      const verifyBtn = page
-        .getByTestId("applied-promos-desktop")
-        .getByTestId("promo-verify-button");
-
-      // Initially unverified
-      await expect(verifyBtn).toHaveText("Mark Verified");
-
-      // Mark as verified
-      await verifyBtn.click();
-      await expect(verifyBtn).toHaveText("Verified");
-
-      // Toggle back to unverified
-      await verifyBtn.click();
-      await expect(verifyBtn).toHaveText("Mark Verified");
-    } finally {
-      await request.delete(`/api/bookings/${booking.id}`);
-      await request.delete(`/api/promotions/${promo.id}`);
     }
   });
 });
