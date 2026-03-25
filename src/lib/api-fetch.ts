@@ -24,6 +24,11 @@ export async function apiFetch<T>(
       return { ok: false, status: res.status, error: new Error(message) };
     }
 
+    // 204 No Content has no body — skip JSON parsing
+    if (res.status === 204) {
+      return { ok: true, data: undefined as T };
+    }
+
     const data = (await res.json()) as T;
     return { ok: true, data };
   } catch (e) {

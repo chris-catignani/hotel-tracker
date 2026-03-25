@@ -47,6 +47,19 @@ describe("apiFetch", () => {
     }
   });
 
+  it("returns ok:true with undefined data on 204 No Content", async () => {
+    vi.mocked(global.fetch).mockResolvedValue({
+      ok: true,
+      status: 204,
+      json: async () => {
+        throw new SyntaxError("Unexpected end of JSON input");
+      },
+    } as Response);
+
+    const result = await apiFetch<void>("/api/test");
+    expect(result).toEqual({ ok: true, data: undefined });
+  });
+
   it("returns ok:false with status 0 and cause chain on network error", async () => {
     const networkErr = new Error("Connection refused");
     vi.mocked(global.fetch).mockRejectedValue(networkErr);

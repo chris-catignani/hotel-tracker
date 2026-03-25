@@ -347,9 +347,15 @@ export function HotelChainsTab() {
                 />
               ) : (
                 sbHotelChain.hotelChainSubBrands.map((sb) => (
-                  <div key={sb.id} className="flex items-center gap-2 border-b pb-2 last:border-0">
+                  <div
+                    key={sb.id}
+                    className="flex items-center gap-2 border-b pb-2 last:border-0"
+                    data-testid="sub-brand-row"
+                  >
                     <div className="flex-1">
-                      <p className="text-sm font-medium">{sb.name}</p>
+                      <p className="text-sm font-medium" data-testid="sub-brand-name">
+                        {sb.name}
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         Base Rate:{" "}
                         {sb.basePointRate != null
@@ -362,6 +368,7 @@ export function HotelChainsTab() {
                       size="icon"
                       className="h-8 w-8 text-destructive"
                       onClick={() => handleDeleteSubBrand(sb.id)}
+                      data-testid="sub-brand-delete-button"
                     >
                       &times;
                     </Button>
@@ -489,10 +496,20 @@ export function HotelChainsTab() {
                     <TableCell>{hotelChain.pointType?.name ?? "—"}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => openSubBrands(hotelChain)}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openSubBrands(hotelChain)}
+                          data-testid="hotel-chain-sub-brands-button"
+                        >
                           Sub-brands
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleEdit(hotelChain)}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit(hotelChain)}
+                          data-testid="hotel-chain-edit-button"
+                        >
                           Edit
                         </Button>
                       </div>
