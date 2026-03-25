@@ -492,6 +492,16 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
       }
 
       if (isSpanned && restrictions?.minNightsRequired) {
+        // Span-stays partial cycle display logic.
+        //
+        // `eligibleNightsAtBooking` = cumulative eligible nights at the END of this booking,
+        // across the entire promotion campaign (stored on BookingPromotionBenefit). It is the
+        // source of truth for all cycle calculations — NOT just the nights in this stay.
+        //
+        // A partial (incomplete) cycle at the end of a booking falls into one of three states:
+        //   - "Capped Reward Cycle":      benefit cap was exhausted by completed cycles → $0, no more value possible
+        //   - "Orphaned Reward Cycle":    cap not exhausted, but no future booked stays can complete it → $0
+        //   - "Pre-qualifying Reward Cycle": cap not exhausted, and a future booked stay can complete it → $0 pending
         const minNights = restrictions.minNightsRequired;
         const cumulativeAtEnd = ba.eligibleNightsAtBooking || bp.eligibleNightsAtBooking || 0;
         const nightsInStay = booking.numNights;

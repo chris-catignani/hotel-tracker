@@ -121,6 +121,26 @@ npm run prices:refresh
 ./scripts/trigger-price-refresh.sh
 ```
 
+## Troubleshooting
+
+**PostgreSQL not running (WSL2):**
+
+```bash
+sudo service postgresql start
+```
+
+**Geo autocomplete returning stale results** (e.g. after switching API providers):
+
+```sql
+DELETE FROM geo_cache;
+```
+
+**Unique-constraint errors after seeding with explicit IDs** — Postgres sequences may be behind the inserted IDs. Sync them:
+
+```sql
+SELECT setval('<table>_id_seq', (SELECT MAX(id) FROM <table>));
+```
+
 ## Managing Users
 
 Self-registration is closed. New users can be created via `POST /api/auth/register`. Admin users can write to reference data (hotel chains, credit cards, portals); regular users manage their own bookings and promotions.
@@ -129,4 +149,10 @@ To promote a user to admin:
 
 ```sql
 UPDATE users SET role = 'ADMIN' WHERE email = 'user@example.com';
+```
+
+**Note:** `npm run db:seed` upserts the admin user by email. If you change `SEED_ADMIN_EMAIL` in `.env`, it will create a **new** admin user rather than updating the existing one. To change the admin email, update it directly in the database:
+
+```sql
+UPDATE users SET email = 'new@example.com' WHERE role = 'ADMIN';
 ```
