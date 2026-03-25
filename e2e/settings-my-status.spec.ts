@@ -20,7 +20,12 @@ test.describe("Settings — My Status", () => {
     // Select a seeded Hyatt elite status
     // Seeded Hyatt statuses: Discoverist, Explorist, Globalist
     await page.getByTestId(`status-select-${HOTEL_ID.HYATT}`).click();
-    await page.getByRole("option", { name: "Explorist" }).click();
+    await Promise.all([
+      page.waitForResponse(
+        (resp) => resp.url().includes("/api/user-statuses") && resp.status() < 400
+      ),
+      page.getByRole("option", { name: "Explorist" }).click(),
+    ]);
 
     await page.reload();
     await expect(page.getByTestId("user-status-table")).toBeVisible();
@@ -46,7 +51,12 @@ test.describe("Settings — My Status", () => {
     await expect(page.getByTestId("user-status-table")).toBeVisible();
 
     await page.getByTestId(`status-select-${HOTEL_ID.HYATT}`).click();
-    await page.getByRole("option", { name: "Base Member / No Status" }).click();
+    await Promise.all([
+      page.waitForResponse(
+        (resp) => resp.url().includes("/api/user-statuses") && resp.status() < 400
+      ),
+      page.getByRole("option", { name: "Base Member / No Status" }).click(),
+    ]);
 
     await page.reload();
     await expect(page.getByTestId("user-status-table")).toBeVisible();
