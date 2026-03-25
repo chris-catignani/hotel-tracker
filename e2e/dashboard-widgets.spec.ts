@@ -91,7 +91,7 @@ test.describe("Dashboard — widget mode toggles", () => {
 
       // Switch to City view
       await geoCard.getByRole("button", { name: "City" }).click();
-      await expect(geoCard.getByTestId("geo-row-New York")).toBeVisible();
+      await expect(geoCard.getByTestId("geo-row-New York, US")).toBeVisible();
       // Country row should no longer appear
       await expect(geoCard.getByTestId("geo-row-US")).not.toBeVisible();
     } finally {
@@ -250,7 +250,7 @@ test.describe("Dashboard — widget mode toggles", () => {
       // Default: Stays mode — legend shows "No Sub-brand" for a hotel booking without a sub-brand
       const legend = isolatedUser.page.getByTestId("sub-brand-breakdown-legend");
       await expect(legend).toBeVisible();
-      await expect(legend.getByTestId("legend-item-no-sub-brand")).toBeVisible();
+      await expect(legend.getByTestId("legend-item-other")).toBeVisible();
 
       // Switch to Nights mode — legend still shows
       await isolatedUser.page

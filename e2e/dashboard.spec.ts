@@ -122,12 +122,9 @@ test.describe("Dashboard — stat cards", () => {
     isolatedUser,
     adminRequest,
   }) => {
-    const chains = await adminRequest.get("/api/hotel-chains");
-    const marriott = (await chains.json()).find(
-      (c: { name: string }) => c.name === "Marriott Bonvoy"
-    );
-    const chain =
-      marriott ?? (await adminRequest.get("/api/hotel-chains").then((r) => r.json()))[0];
+    const allChains = await adminRequest.get("/api/hotel-chains").then((r) => r.json());
+    const marriott = allChains.find((c: { name: string }) => c.name === "Marriott Bonvoy");
+    const chain = marriott ?? allChains[0];
 
     const propertyName = `Certs Spend Stat Test ${crypto.randomUUID()}`;
     const bookingRes = await isolatedUser.request.post("/api/bookings", {
@@ -408,12 +405,10 @@ test.describe("Dashboard — SubBrandBreakdown widget", () => {
     try {
       await isolatedUser.page.goto("/");
 
-      // Widget renders — either showing empty state or legend
-      const emptyState = isolatedUser.page.getByTestId("sub-brand-breakdown-empty");
+      // Booking has no sub-brand — widget shows "Other" in the legend
       const legend = isolatedUser.page.getByTestId("sub-brand-breakdown-legend");
-      const isEmptyVisible = await emptyState.isVisible();
-      const isLegendVisible = await legend.isVisible();
-      expect(isEmptyVisible || isLegendVisible).toBe(true);
+      await expect(legend).toBeVisible();
+      await expect(legend.getByTestId("legend-item-other")).toBeVisible();
     } finally {
       await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
     }
@@ -558,13 +553,10 @@ test.describe("Dashboard", () => {
     adminRequest,
   }) => {
     // Use Marriott chain so marriott_35k certs are valid
-    const chains = await adminRequest.get("/api/hotel-chains");
-    const marriott = (await chains.json()).find(
-      (c: { name: string }) => c.name === "Marriott Bonvoy"
-    );
+    const allChains = await adminRequest.get("/api/hotel-chains").then((r) => r.json());
+    const marriott = allChains.find((c: { name: string }) => c.name === "Marriott Bonvoy");
     // Fall back to first chain if Marriott not seeded
-    const chain =
-      marriott ?? (await adminRequest.get("/api/hotel-chains").then((r) => r.json()))[0];
+    const chain = marriott ?? allChains[0];
 
     const propertyName = `Dashboard Certs Avg Test ${crypto.randomUUID()}`;
     const bookingRes = await isolatedUser.request.post("/api/bookings", {
