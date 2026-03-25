@@ -50,7 +50,7 @@ export async function DELETE(
       return apiError(
         "Cannot delete point type that is in use by other records",
         null,
-        400,
+        409,
         request,
         { pointTypeId: id }
       );
