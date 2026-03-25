@@ -38,7 +38,7 @@ export default defineConfig({
 
   /* Run a dedicated test server on port 3001 (separate from the dev server on 3000). */
   webServer: {
-    command: "next build && next start -p 3001",
+    command: "npx next start -p 3001",
     url: "http://127.0.0.1:3001",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
