@@ -249,10 +249,20 @@ export function OtaAgenciesTab() {
                     <TableCell data-testid="agency-name">{agency.name}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => handleEdit(agency)}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          data-testid="agency-edit-button"
+                          onClick={() => handleEdit(agency)}
+                        >
                           Edit
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDeleteClick(agency)}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          data-testid="agency-delete-button"
+                          onClick={() => handleDeleteClick(agency)}
+                        >
                           Delete
                         </Button>
                       </div>
