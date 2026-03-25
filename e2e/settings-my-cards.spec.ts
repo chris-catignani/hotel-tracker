@@ -30,7 +30,12 @@ test.describe("Settings — My Cards", () => {
       await page.getByTestId("add-my-card-button").click();
       await page.getByTestId("add-card-select").click();
       await page.getByRole("option", { name: card.name }).click();
-      await page.getByTestId("add-my-card-save").click();
+      await Promise.all([
+        page.waitForResponse(
+          (resp) => resp.url().includes("/api/user-credit-cards") && resp.status() < 400
+        ),
+        page.getByTestId("add-my-card-save").click(),
+      ]);
 
       await expect(
         page
@@ -77,7 +82,12 @@ test.describe("Settings — My Cards", () => {
 
       const nickname = `Nick ${crypto.randomUUID().slice(0, 8)}`;
       await page.getByTestId("edit-nickname-input").fill(nickname);
-      await page.getByTestId("edit-my-card-save").click();
+      await Promise.all([
+        page.waitForResponse(
+          (resp) => resp.url().includes("/api/user-credit-cards") && resp.status() < 400
+        ),
+        page.getByTestId("edit-my-card-save").click(),
+      ]);
 
       await expect(
         page
@@ -117,7 +127,12 @@ test.describe("Settings — My Cards", () => {
         .filter({ has: page.getByTestId("my-card-name").filter({ hasText: card.name }) });
 
       await row.getByTestId("my-card-delete-button").click();
-      await page.getByRole("dialog").getByRole("button", { name: "Delete" }).click();
+      await Promise.all([
+        page.waitForResponse(
+          (resp) => resp.url().includes("/api/user-credit-cards") && resp.status() < 400
+        ),
+        page.getByRole("dialog").getByRole("button", { name: "Delete" }).click(),
+      ]);
 
       await expect(row).not.toBeVisible();
     } finally {
@@ -168,7 +183,12 @@ test.describe("Settings — My Cards", () => {
         .filter({ has: page.getByTestId("my-card-name").filter({ hasText: card.name }) });
 
       await row.getByTestId("my-card-delete-button").click();
-      await page.getByRole("dialog").getByRole("button", { name: "Delete" }).click();
+      await Promise.all([
+        page.waitForResponse(
+          (resp) => resp.url().includes("/api/user-credit-cards") && resp.status() === 409
+        ),
+        page.getByRole("dialog").getByRole("button", { name: "Delete" }).click(),
+      ]);
 
       await expect(
         page.getByText("Cannot delete: this card instance is referenced by existing bookings.")

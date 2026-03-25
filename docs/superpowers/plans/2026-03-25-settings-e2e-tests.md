@@ -522,22 +522,18 @@ test.describe("Settings — Hotel Chains", () => {
       await adminPage.getByRole("tab", { name: "Hotel Chains" }).click();
       await expect(adminPage.getByTestId("tab-hotels")).toBeVisible();
 
-      const row = adminPage
-        .locator('[data-testid="hotel-chain-table-row"]')
-        .filter({
-          has: adminPage.getByTestId("hotel-chain-table-name").filter({ hasText: original }),
-        });
+      const row = adminPage.locator('[data-testid="hotel-chain-table-row"]').filter({
+        has: adminPage.getByTestId("hotel-chain-table-name").filter({ hasText: original }),
+      });
 
       await row.getByTestId("hotel-chain-edit-button").click();
       await adminPage.getByLabel("Name").fill(updated);
       await adminPage.getByRole("button", { name: "Save" }).click();
 
       await expect(
-        adminPage
-          .locator('[data-testid="hotel-chain-table-row"]')
-          .filter({
-            has: adminPage.getByTestId("hotel-chain-table-name").filter({ hasText: updated }),
-          })
+        adminPage.locator('[data-testid="hotel-chain-table-row"]').filter({
+          has: adminPage.getByTestId("hotel-chain-table-name").filter({ hasText: updated }),
+        })
       ).toBeVisible();
     } finally {
       await adminRequest.delete(`/api/hotel-chains/${chain.id}`);
@@ -555,11 +551,9 @@ test.describe("Settings — Hotel Chains", () => {
       await adminPage.getByRole("tab", { name: "Hotel Chains" }).click();
       await expect(adminPage.getByTestId("tab-hotels")).toBeVisible();
 
-      const row = adminPage
-        .locator('[data-testid="hotel-chain-table-row"]')
-        .filter({
-          has: adminPage.getByTestId("hotel-chain-table-name").filter({ hasText: chainName }),
-        });
+      const row = adminPage.locator('[data-testid="hotel-chain-table-row"]').filter({
+        has: adminPage.getByTestId("hotel-chain-table-name").filter({ hasText: chainName }),
+      });
 
       await row.getByTestId("hotel-chain-sub-brands-button").click();
       await adminPage.getByLabel("Name *").fill(sbName);
@@ -586,11 +580,9 @@ test.describe("Settings — Hotel Chains", () => {
       await adminPage.getByRole("tab", { name: "Hotel Chains" }).click();
       await expect(adminPage.getByTestId("tab-hotels")).toBeVisible();
 
-      const row = adminPage
-        .locator('[data-testid="hotel-chain-table-row"]')
-        .filter({
-          has: adminPage.getByTestId("hotel-chain-table-name").filter({ hasText: chainName }),
-        });
+      const row = adminPage.locator('[data-testid="hotel-chain-table-row"]').filter({
+        has: adminPage.getByTestId("hotel-chain-table-name").filter({ hasText: chainName }),
+      });
 
       await row.getByTestId("hotel-chain-sub-brands-button").click();
       await expect(adminPage.getByText(sbName)).toBeVisible();
