@@ -388,10 +388,20 @@ export function MyCardsTab() {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => handleEdit(card)}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit(card)}
+                          data-testid="my-card-edit-button"
+                        >
                           Edit
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDeleteClick(card)}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteClick(card)}
+                          data-testid="my-card-delete-button"
+                        >
                           Delete
                         </Button>
                       </div>
