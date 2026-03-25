@@ -1,6 +1,8 @@
 import prisma from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 
+// Both URLs use the same fawazahmed0 dataset — the fallback is a mirror, not a different source.
+// Historical data is only available from ~March 2024 onward; older dates will 404 on both.
 const CDN_BASE = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api";
 const FALLBACK_BASE = "https://{date}.currency-api.pages.dev";
 
@@ -71,6 +73,7 @@ export async function resolveCalcCurrencyRate(currency: string): Promise<number 
  * Checks ExchangeRateHistory cache first; on miss, fetches from the API and stores
  * the result so subsequent lookups for the same date are instant.
  * For future dates, falls back to the current cached rate.
+ * Returns null if the API fetch fails (e.g. dates before ~March 2024 have no data).
  */
 export async function getOrFetchHistoricalRate(
   fromCurrency: string,
@@ -106,6 +109,8 @@ export async function getOrFetchHistoricalRate(
   try {
     rate = await fetchExchangeRate(fromCurrency, date);
   } catch (err) {
+    // The fawazahmed0 API only has data from ~March 2024 onward — older dates will 404.
+    // Return null gracefully so callers degrade rather than crash.
     logger.warn("Historical exchange rate fetch failed", {
       fromCurrency,
       date,
