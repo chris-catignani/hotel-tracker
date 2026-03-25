@@ -40,7 +40,7 @@ export default defineConfig({
   webServer: {
     command: "next build && next start -p 3001",
     url: "http://127.0.0.1:3001",
-    reuseExistingServer: false,
+    reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     stdout: "pipe",
     stderr: "pipe",
