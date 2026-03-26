@@ -3,6 +3,10 @@ import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi } from "vitest";
 import BookingsPage from "./page";
 
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(),
+}));
+
 const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
 
@@ -21,6 +25,121 @@ describe("BookingsPage", () => {
     });
 
     expect(screen.queryAllByTestId(/^booking-row-/)).toHaveLength(0);
+  });
+
+  it("shows amber needs-review badge on booking with needsReview=true", async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => [
+        {
+          id: "bk-review",
+          currency: "USD",
+          lockedExchangeRate: "1",
+          pretaxCost: "100",
+          taxAmount: "10",
+          totalCost: "110",
+          checkIn: "2026-06-14",
+          checkOut: "2026-06-18",
+          numNights: 4,
+          isFutureEstimate: false,
+          exchangeRateEstimated: false,
+          hotelChainId: null,
+          hotelChain: null,
+          hotelChainSubBrand: null,
+          shoppingPortal: null,
+          portalCashbackRate: null,
+          portalCashbackOnTotal: false,
+          userCreditCard: null,
+          loyaltyPointsEarned: null,
+          pointsRedeemed: null,
+          loyaltyPointsEstimated: false,
+          certificates: [],
+          bookingPromotions: [],
+          benefits: [],
+          propertyId: "prop1",
+          property: {
+            name: "Test Hotel",
+            countryCode: "US",
+            city: "Salt Lake City",
+            address: null,
+            latitude: null,
+            longitude: null,
+          },
+          partnershipEarns: [],
+          accommodationType: "hotel",
+          needsReview: true,
+          ingestionMethod: "email",
+          confirmationNumber: "12345",
+          priceWatchBooking: null,
+        },
+      ],
+    });
+
+    render(<BookingsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("needs-review-badge")).toBeInTheDocument();
+    });
+  });
+
+  it("does not show needs-review badge when booking has needsReview=false", async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => [
+        {
+          id: "bk-no-review",
+          currency: "USD",
+          lockedExchangeRate: "1",
+          pretaxCost: "100",
+          taxAmount: "10",
+          totalCost: "110",
+          checkIn: "2026-01-14",
+          checkOut: "2026-01-18",
+          numNights: 4,
+          isFutureEstimate: false,
+          exchangeRateEstimated: false,
+          hotelChainId: null,
+          hotelChain: null,
+          hotelChainSubBrand: null,
+          shoppingPortal: null,
+          portalCashbackRate: null,
+          portalCashbackOnTotal: false,
+          userCreditCard: null,
+          loyaltyPointsEarned: null,
+          pointsRedeemed: null,
+          loyaltyPointsEstimated: false,
+          certificates: [],
+          bookingPromotions: [],
+          benefits: [],
+          propertyId: "prop1",
+          property: {
+            name: "Test Hotel",
+            countryCode: "US",
+            city: "Salt Lake City",
+            address: null,
+            latitude: null,
+            longitude: null,
+          },
+          partnershipEarns: [],
+          accommodationType: "hotel",
+          needsReview: false,
+          ingestionMethod: "manual",
+          confirmationNumber: null,
+          priceWatchBooking: null,
+        },
+      ],
+    });
+
+    render(<BookingsPage />);
+
+    // Wait for data to load
+    await waitFor(() => {
+      expect(screen.getByTestId("booking-card-bk-no-review")).toBeInTheDocument();
+    });
+
+    expect(screen.queryByTestId("needs-review-badge")).not.toBeInTheDocument();
   });
 
   it("shows estimated rate warning when booking has exchangeRateEstimated=true", async () => {

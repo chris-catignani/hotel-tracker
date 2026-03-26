@@ -465,6 +465,9 @@ export interface Booking {
   loyaltyPointsEarned: number | null;
   pointsRedeemed: number | null;
   notes: string | null;
+  confirmationNumber: string | null;
+  ingestionMethod: "manual" | "email";
+  needsReview: boolean;
   certificates: BookingCertificate[];
   bookingSource: string | null;
   otaAgencyId: string | null;
@@ -509,6 +512,7 @@ export interface BookingFormData {
     dollarValue: number | null;
   }[];
   notes: string | null;
+  confirmationNumber: string | null;
 }
 
 export interface BookingPromotion {

@@ -80,3 +80,57 @@ export async function sendPriceDropAlert(params: PriceDropAlertParams): Promise<
     html: lines.join("\n"),
   });
 }
+
+export async function sendIngestionConfirmation({
+  to,
+  propertyName,
+  checkIn,
+  checkOut,
+  bookingId,
+}: {
+  to: string;
+  propertyName: string;
+  checkIn: string;
+  checkOut: string;
+  bookingId: string;
+}): Promise<void> {
+  const resend = getResend();
+  const from = process.env.RESEND_FROM_EMAIL;
+  if (!resend || !from) return;
+  const appUrl = process.env.NEXTAUTH_URL ?? process.env.VERCEL_URL ?? "http://localhost:3000";
+  const bookingUrl = `${appUrl}/bookings/${bookingId}`;
+  await resend.emails.send({
+    from,
+    to,
+    subject: `Booking created: ${escapeHtml(propertyName)}`,
+    html:
+      `<p>Your booking at <strong>${escapeHtml(propertyName)}</strong> ` +
+      `(${escapeHtml(checkIn)} – ${escapeHtml(checkOut)}) has been added to your tracker.</p>` +
+      `<p><a href="${escapeHtml(bookingUrl)}">View &amp; complete the booking →</a></p>` +
+      `<p style="color:#92400e;font-size:0.875rem;">This booking was created from a forwarded email. ` +
+      `Open it to add your credit card and any missing details.</p>`,
+  });
+}
+
+export async function sendIngestionError({
+  to,
+  reason,
+}: {
+  to: string;
+  reason: string;
+}): Promise<void> {
+  const resend = getResend();
+  const from = process.env.RESEND_FROM_EMAIL;
+  if (!resend || !from) return;
+  const appUrl = process.env.NEXTAUTH_URL ?? process.env.VERCEL_URL ?? "http://localhost:3000";
+  const newBookingUrl = `${appUrl}/bookings/new`;
+  await resend.emails.send({
+    from,
+    to,
+    subject: "Could not parse your hotel confirmation email",
+    html:
+      `<p>We received your forwarded hotel confirmation email but couldn't create a booking automatically.</p>` +
+      `<p>Reason: ${escapeHtml(reason)}</p>` +
+      `<p><a href="${escapeHtml(newBookingUrl)}">Create the booking manually →</a></p>`,
+  });
+}

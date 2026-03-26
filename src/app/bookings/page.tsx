@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { CalendarDays, Eye, EyeOff } from "lucide-react";
@@ -124,13 +126,14 @@ interface Booking {
   certificates: BookingCertificate[];
   priceWatchBooking: { priceWatch: { isEnabled: boolean } } | null;
   accommodationType: string;
+  needsReview: boolean;
 }
 
 // ---------------------------------------------------------------------------
 // Bookings Page
 // ---------------------------------------------------------------------------
 
-export default function BookingsPage() {
+function BookingsPageInner() {
   const {
     data: bookingsData,
     loading,
@@ -145,10 +148,19 @@ export default function BookingsPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [bookingToDelete, setBookingToDelete] = useState<string | null>(null);
 
+  const searchParams = useSearchParams();
+  const filterParam = searchParams.get("filter");
+
   const { yearFilter, setYearFilter, filterBookings: filterByYear } = useYearFilter();
 
   const yearOptions = useMemo(() => buildYearOptions(bookings), [bookings]);
-  const filteredBookings = useMemo(() => filterByYear(bookings), [bookings, filterByYear]);
+  const filteredBookings = useMemo(() => {
+    const yearFiltered = filterByYear(bookings);
+    if (filterParam === "needs-review") {
+      return yearFiltered.filter((b) => b.needsReview);
+    }
+    return yearFiltered;
+  }, [bookings, filterByYear, filterParam]);
 
   const handleDeleteClick = (id: string) => {
     setBookingToDelete(id);
@@ -291,6 +303,15 @@ export default function BookingsPage() {
                                 </div>
                               )}
                             </div>
+                            {booking.needsReview && (
+                              <Badge
+                                data-testid="needs-review-badge"
+                                variant="outline"
+                                className="border-amber-400 bg-amber-50 text-amber-700 text-xs shrink-0"
+                              >
+                                Review
+                              </Badge>
+                            )}
                             {booking.accommodationType !== "apartment" && (
                               <Tooltip>
                                 <TooltipTrigger asChild>
@@ -412,5 +433,13 @@ export default function BookingsPage() {
         </>
       )}
     </div>
+  );
+}
+
+export default function BookingsPage() {
+  return (
+    <Suspense>
+      <BookingsPageInner />
+    </Suspense>
   );
 }

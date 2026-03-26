@@ -1,0 +1,2830 @@
+Delivered-To: chris.catignani@gmail.com
+Received: by 2002:a05:7010:56eb:b0:500:d9d8:62a0 with SMTP id t11csp2292603mdh;
+        Sun, 15 Mar 2026 06:18:18 -0700 (PDT)
+X-Received: by 2002:a05:690e:12c4:b0:64c:adfd:209d with SMTP id 956f58d0204a3-64e62f8fa9bmr10724834d50.35.1773580698703;
+        Sun, 15 Mar 2026 06:18:18 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1773580698; cv=none;
+        d=google.com; s=arc-20240605;
+        b=lURRuZN7BZvS6e0WcHXIgc4q91/pMEdRPIreT9JMN2Ll1JGCQxYbFZOEj0tFMSq1I9
+         +gazR9KYU/dI2ldUP61hWfkTgXjquqHjVzgX9jNgmnq4VETbvQIEkd7o/gEWOZApGbvO
+         sA+Key1hzno1cnQom0UvrrSydHMiDXUFgDjTonyBTXN2kDqhE48wtn7fFk8QQXSXlHQp
+         2lHKwaLphRPeG9f1o7cMs74+NLtulaE/IyVfHsQkScXOfiCWJYXmwttjtmn2KTSz42Pb
+         DN0zI5WgkKXLfPjU65Nmz0O078p797LCAbvRWNvq1+rNdTZkzpkHH4deySf0hLIc7FsW
+         EW4Q==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
+        h=from:subject:mime-version:date:message-id:to:dkim-signature;
+        bh=SQLNOxivm46TSLaCYAPq/FeiR7pX3vDoV7dLTNXpuh0=;
+        fh=f7GuxESQjwnxwLD1SAPk04143tnE8OcHo/hU2reyUjg=;
+        b=SyTcsjEoTiR3JSiq/ofu+s0nQieD6piJ9hcp1pIzrM46T13sB0cB5VoMS/WzQbpaRB
+         rUEvxAow3ZuZGbhkLWITFafb/0CFDU4BF67oWqjFKHnLfa7VnfT3p/w6zb2edciFm/Rz
+         HmIhKwwPrtZlKpO45CQX/kFJaJxklXYfHDpDPthsFcFFRmla51YRySc7Ere9XEMkL8gt
+         L+O/bxksZRiGNBrCoKj0scwsfbZMZlLqaNN0fKMXE5y/7ROY6UwasqZBhu/SdpFwVF/W
+         CY2ULBEhpo/UKClhxxo3/Nw+Dkc8T6/ShLchojqFAQougbNd7OhU3aeT9TflzmCrl+Wo
+         cBXw==;
+        dara=google.com
+ARC-Authentication-Results: i=1; mx.google.com;
+       dkim=pass header.i=@reservations.hyatt.com header.s=scph0625 header.b="MeZQQ2/n";
+       spf=pass (google.com: domain of msprvs1=20534qtad28-t=bounces-266693-1661@reservations.hyatt.com designates 137.22.237.181 as permitted sender) smtp.mailfrom="msprvs1=20534qtad28-t=bounces-266693-1661@reservations.hyatt.com";
+       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=hyatt.com
+Return-Path: <msprvs1=20534qtad28-t=bounces-266693-1661@reservations.hyatt.com>
+Received: from duredg2y.reservations.hyatt.com (duredg2y.reservations.hyatt.com. [137.22.237.181])
+        by mx.google.com with ESMTPS id 956f58d0204a3-64e65c04a94si6342118d50.191.2026.03.15.06.18.18
+        for <chris.catignani@gmail.com>
+        (version=TLS1_2 cipher=ECDHE-ECDSA-AES128-GCM-SHA256 bits=128/128);
+        Sun, 15 Mar 2026 06:18:18 -0700 (PDT)
+Received-SPF: pass (google.com: domain of msprvs1=20534qtad28-t=bounces-266693-1661@reservations.hyatt.com designates 137.22.237.181 as permitted sender) client-ip=137.22.237.181;
+Authentication-Results: mx.google.com;
+       dkim=pass header.i=@reservations.hyatt.com header.s=scph0625 header.b="MeZQQ2/n";
+       spf=pass (google.com: domain of msprvs1=20534qtad28-t=bounces-266693-1661@reservations.hyatt.com designates 137.22.237.181 as permitted sender) smtp.mailfrom="msprvs1=20534qtad28-t=bounces-266693-1661@reservations.hyatt.com";
+       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=hyatt.com
+Return-Path: <msprvs1=20534qtad28-t=bounces-266693-1661@reservations.hyatt.com>
+X-MSFBL: AtKQy+xFRebIzV2Hm99LTAeOdcrQ70Edfc1gWFULTeA=|eyJjdXN0b21lcl9pZCI 6IjI2NjY5MyIsInRlbmFudF9pZCI6InNwYyIsInIiOiJjaHJpcy5jYXRpZ25hbml AZ21haWwuY29tIiwic3ViYWNjb3VudF9pZCI6IjE2NjEiLCJtZXNzYWdlX2lkIjo iNjliMjk5YjFiNjY5N2NlZjRlZTQifQ==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=reservations.hyatt.com; s=scph0625; t=1773580697; i=@reservations.hyatt.com; bh=SQLNOxivm46TSLaCYAPq/FeiR7pX3vDoV7dLTNXpuh0=; h=To:Message-ID:Date:Content-Type:Subject:From:From:To:Cc:Subject; b=MeZQQ2/nHyZcWPiUHM532SjmEheTzHcrWb72bSwie7PFbvtzz1jYsFwE4R5iJD98S
+	 HTCojaKg73h/8xygAtUg4ydTBVJimzO+6friZmj0jFcim/TSZ2wR2eNxaJmPywMXBU
+	 tKEDxLRYQFNBqA5y+dEEXPgpqwWqTT5RIlpDAaXbUod4BdU3hZiAk4QeSeVrk6bafe
+	 oG6I36lhMOKh8nCajkOrdAE3rrIid2SFzHYSpncOIh/Gyw8Z+uGDFdoiZSrd69wKXa
+	 4qQwtLd0tLhVCmlA96LYsgjW8LJtdyHBlctFHVUVlynAinB6LZFPQk5oZ3Nz60XDdK
+	 0iWtymeQUaT8A==
+Received: from [10.90.4.157] ([10.90.4.157]) by i-05c1afefca25dc230.mta1vrest.sd.prd.sparkpost (ecelerity 5.2.0.75207 r(msys-ecelerity:tags/5.2.0.3)) with REST id 4E/E4-15484-991B6B96; Sun, 15 Mar 2026 13:18:17 +0000
+To: chris.catignani@gmail.com
+Message-ID: <4E.E4.15484.991B6B96@i-05c1afefca25dc230.mta1vrest.sd.prd.sparkpost>
+Date: Sun, 15 Mar 2026 13:18:17 +0000
+Content-Type: multipart/alternative; boundary="_----QY8n6nFcZdshQnj4mdW71w===_5D/E4-15484-991B6B96"
+MIME-Version: 1.0
+Subject: Reservation Details for Your Upcoming Stay at Hyatt Regency Salt Lake City
+From: Hyatt Regency <noreply@reservations.hyatt.com>
+
+--_----QY8n6nFcZdshQnj4mdW71w===_5D/E4-15484-991B6B96
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="UTF-8"
+
+Everything you need to know for your upcoming stay.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  World of Hyatt Logo=20
+( https://click.hyatt.com/f/a/pJJMP-QLwd2_Emh0bk7kHg~~/AAQRxRA~/wIuRRFQe6jn=
+lAwjojXN-n0svXZGwbJlhy_BdZc8vS41V6xCmq45awWxeL0-ss-z1pNuIYFKho0GJ3n6R12t9wQ=
+x_AUBUrOEGz-1dRAjjxFA-vd7Nq-f-O0v91SjcCQoxlYAq2GEIu-dzFIKb0wzGrQ~~ )
+
+   Book Now=20
+( https://click.hyatt.com/f/a/GRuhzOtYtt1mvD4mzYKJcw~~/AAQRxRA~/wIuRRFQe6jn=
+lAwjojXN-n0svXZGwbJlhy_BdZc8vS41CZMe4VsvjsvDz3ActFBiaoPoSYohwjeUxwDHiXyvqFN=
+kOqiZtlNlX1qqgiAOsIM7VuyJyXuL0t1s78QjQexYRaxqp2KshTxH7X49OO1zgsg~~ ) | My A=
+ccount=20
+( https://click.hyatt.com/f/a/A_LCPFdWVouQ_H6THjFZZQ~~/AAQRxRA~/owmPtCka3Aj=
+kcfk7BkMI5PfSTtol3RGrtL4qc8FerLBS_fqyvgfAXh16ac13VMdaO4QgCqvdVZuuzpUlncaGUN=
+m9mERqLoWm6AqN3_kfUYijvGMicxRJyHPgUbJRl_Og5jKIfo97REPQGwrjy4rRYVD5Cxiq_h2kM=
+mKGe1MRZxzO1T2rtI70ze3ZbgJLAgWM )
+| Customer Service=20
+( https://click.hyatt.com/f/a/Megifmh8MrVGplm8o-_X-Q~~/AAQRxRA~/vvK58XsOp9V=
+XoX58h57rE5adphfY3u3CPV8k8rXjn37uSSazNqVkNyiVlhxeoL1-zWSUBEkBqeZgbOb-nkW9Lp=
+E0na6Vl6wxt-AjFikHbPZVcYL0WYemJq-mdbENeairbmTyHMuTOloGaO7v_i2gmw~~ )     Bo=
+ok Now=20
+( https://click.hyatt.com/f/a/g7s8qb-qGpfJnDDeKNWLXA~~/AAQRxRA~/wIuRRFQe6jn=
+lAwjojXN-n0svXZGwbJlhy_BdZc8vS41kXKSi9SbLjEG8gs2cLKKGGnmkp5oHagoLnKeWnUzGdm=
+u8hdfqpxKnNQBVp-bPTydxm2MY34e_u68XuQwnwBcFqOMks6lof6YBMfcxz_xkbg~~ ) | My A=
+ccount=20
+( https://click.hyatt.com/f/a/mvySvvFgp_PWXFbe58iKxg~~/AAQRxRA~/owmPtCka3Aj=
+kcfk7BkMI5PfSTtol3RGrtL4qc8FerLBS_fqyvgfAXh16ac13VMdaO4QgCqvdVZuuzpUlncaGUC=
+BUZfZ3bD1OMNUaQaO6kqFZ2nthJrUit-q-6z7Mrcb5gBi0HdPtw1q0lLwpjYjxWX3T4c4fapysb=
+ukadhvrHjK6EfgtO_93KXVVCRClW_nM )
+ | Customer Service=20
+( https://click.hyatt.com/f/a/wWY_gYFRL2Ywa4KAdeie8Q~~/AAQRxRA~/vvK58XsOp9V=
+XoX58h57rE5adphfY3u3CPV8k8rXjn37DkgzIWsIJxx0kvW23e5r_-dOopBfHZh-LISmkP26aqq=
+eGf4pZc1GbKJUVAWCBxqEKBwe2abHeXGVVc6yZ-FGpchM_Tww0bgz6g3Ko1Ft4NA~~ )
+
+
+Everything you need to know for your upcoming stay.
+
+
+Hyatt Regency Salt Lake City logo (
+https://click.hyatt.com/f/a/yu1-XonkKxYW78dbn5H-1w~~/AAQRxRA~/1X1NA0U0Tyg3p=
+odH6q3egYAcN_NGzu6VzneIDARW8wZhsHUCbIX6gR0QunRwxaoMMoB7c42k_kO1FnzPXFSru00m=
+ojJkcNfskh_vqxUvdpLTQL3_S13xRHFeD4KRmTZ7kB01EfckCE9cyj6HUmc0R11xSb0oejXwiGt=
+rxVj3geDgnDoUy-aSW3AVT0j5FZEC )
+
+
+
+*****************************************************************
+Welcome to
+*****************************************************************
+
+*****************************************************************
+Hyatt Regency Salt Lake City
+*****************************************************************
+
+
+Hyatt Regency Salt Lake City logo (
+https://click.hyatt.com/f/a/yu1-XonkKxYW78dbn5H-1w~~/AAQRxRA~/1X1NA0U0Tyg3p=
+odH6q3egYAcN_NGzu6VzneIDARW8wZhsHUCbIX6gR0QunRwxaoMMoB7c42k_kO1FnzPXFSru00m=
+ojJkcNfskh_vqxUvdpLTQL3_S13xRHFeD4KRmTZ7kB01EfckCE9cyj6HUmc0R11xSb0oejXwiGt=
+rxVj3geDgnDoUy-aSW3AVT0j5FZEC )
+
+You=E2=80=99re all set for your upcoming visit to Salt Lake City, Christoph=
+er. Consider this reservation an open invitation to unwind, to dream, to pl=
+an, to discover something new. Stay for business, leisure or a blend of bot=
+h, and leave&nbsp;inspired.
+
+
+
+You=E2=80=99re all set for your upcoming visit to Salt Lake City, Christoph=
+er. Consider this reservation an open invitation to unwind, to dream, to pl=
+an, to discover something new. Stay for business, leisure or a blend of bot=
+h, and leave&nbsp;inspired.
+
+
+
+-----------------------------------------------------------------
+Reservation Details
+-----------------------------------------------------------------
+
+-----------------------------------------------------------------
+Confirmation #
+-----------------------------------------------------------------
+
+64167883
+
+-----------------------------------------------------------------
+Guest Name
+-----------------------------------------------------------------
+
+Christopher Catignani
+
+-----------------------------------------------------------------
+Membership #
+-----------------------------------------------------------------
+
+*****902P
+
+-----------------------------------------------------------------
+Check-in
+-----------------------------------------------------------------
+
+
+
+
+Thursday,
+14-Jan-2027
+
+
+04:00 PM
+
+
+
+
+-----------------------------------------------------------------
+Check-Out
+-----------------------------------------------------------------
+
+
+
+
+Monday,
+18-Jan-2027
+
+
+11:00 AM
+
+
+
+
+-----------------------------------------------------------------
+Adults
+-----------------------------------------------------------------
+
+1
+
+-----------------------------------------------------------------
+Children
+-----------------------------------------------------------------
+
+0
+
+-----------------------------------------------------------------
+Room(s) booked
+-----------------------------------------------------------------
+
+1
+
+
+-----------------------------------------------------------------
+Room type
+-----------------------------------------------------------------
+
+1
+King
+Bed
+
+
+
+
+-----------------------------------------------------------------
+Room description
+-----------------------------------------------------------------
+
+King Bed: Modern Design With Open Concept Comfortable Sitting Area
+
+
+
+
+-----------------------------------------------------------------
+Preferences and policies
+-----------------------------------------------------------------
+
+GLOBALIST
+Your preferences have been submitted and are subject to hotel availability.
+
+
+
+-----------------------------------------------------------------
+Nightly rate per room
+-----------------------------------------------------------------
+
+January 14=20
+- 160.72 US DOLLARS
+January 15 - January 17=20
+- 142.10 US DOLLARS
+
+
+-----------------------------------------------------------------
+Type of rate
+-----------------------------------------------------------------
+
+HYATT LEVERAGE
+
+-----------------------------------------------------------------
+Rate information
+-----------------------------------------------------------------
+
+Exclusive rate for Hyatt Leverage travelers. flexible cancellation. Rate Pu=
+rchased
+Rate is eligible to earn points and tier credit.
+
+
+
+
+-----------------------------------------------------------------
+Additional tax, fees and service charges
+-----------------------------------------------------------------
+
+
+
+CITY TAX
+----------------------------------
+
+8.450%
+
+
+
+STATE TAX
+----------------------------------
+
+7.070%
+
+
+
+COUNTY FEE
+----------------------------------
+
+1.000%
+
+
+
+SLCO ASSESSMENT
+----------------------------------
+
+2.000%
+
+
+
+
+
+
+-----------------------------------------------------------------
+Contact
+-----------------------------------------------------------------
+
+   Address
+170 South West Temple,
+Salt Lake City,
+UT,
+US
+84101
+
+   Phone
++1 801 596 1234 (
+tel:+1 801 596 1234 )
+
+   Email
+slcrs-shared.mb-guest-services@hyatt.com
+
+   Website
+Hotel Website (
+https://click.hyatt.com/f/a/yu1-XonkKxYW78dbn5H-1w~~/AAQRxRA~/1X1NA0U0Tyg3p=
+odH6q3egYAcN_NGzu6VzneIDARW8wZhsHUCbIX6gR0QunRwxaoMMoB7c42k_kO1FnzPXFSru00m=
+ojJkcNfskh_vqxUvdpLTQL3_S13xRHFeD4KRmTZ7kB01EfckCE9cyj6HUmc0R11xSb0oejXwiGt=
+rxVj3geDgnDoUy-aSW3AVT0j5FZEC )
+
+
+
+
+-----------------------------------------------------------------
+Note from Hyatt Regency Salt Lake City
+-----------------------------------------------------------------
+
+THANK YOU FOR CHOOSING HYATT REGENCY SALT LAKE CITY. CHECK-IN IS AT 4PM, WI=
+TH CHECK-OUT AT 11AM. JOIN US IN ONE OF OUR 4 ON-SITE RESTAURANTS, INCLUDIN=
+G OUR 6TH FLOOR ROOFTOP SIGNATURE RESTAURANT, MAR MUNTANYA. WE LOOK FORWARD=
+ TO YOUR ARRIVAL!
+
+
+
+
+*********************
+Need to make changes?
+*********************
+
+We look forward to welcoming you to our hotel. Please
+let us know if there is anything we can do to help you make the
+most of your time away.
+
+=E2=9C=8E MODIFY BOOKING (
+https://click.hyatt.com/f/a/_Luy1Efx1G3vYLh_e_nxPQ~~/AAQRxRA~/xOmRqSWkreWGa=
+q-3Rl_2lpx3mMHiBwJc9bBo_InkQFUmGlbSE6iLufTxjxj3Ujeicy39V_QrgC87hk_TfdufqRp5=
+C7is-83vgFniKVLiZAJuEC8TaNSdFyo2gy5V3eADKimETvVubLisKK3X25rZ9Q~~ )         =
+=E2=9C=95 CANCEL BOOKING (
+https://click.hyatt.com/f/a/_Luy1Efx1G3vYLh_e_nxPQ~~/AAQRxRA~/xOmRqSWkreWGa=
+q-3Rl_2lpx3mMHiBwJc9bBo_InkQFUmGlbSE6iLufTxjxj3Ujeicy39V_QrgC87hk_TfdufqRp5=
+C7is-83vgFniKVLiZAJuEC8TaNSdFyo2gy5V3eADKimETvVubLisKK3X25rZ9Q~~ )         =
+              =E2=9C=8E
+MODIFY BOOKING ( https://click.hyatt.com/f/a/_Luy1Efx1G3vYLh_e_nxPQ~~/AAQRx=
+RA~/xOmRqSWkreWGaq-3Rl_2lpx3mMHiBwJc9bBo_InkQFUmGlbSE6iLufTxjxj3Ujeicy39V_Q=
+rgC87hk_TfdufqRp5C7is-83vgFniKVLiZAJuEC8TaNSdFyo2gy5V3eADKimETvVubLisKK3X25=
+rZ9Q~~ )           =E2=9C=95
+CANCEL BOOKING ( https://click.hyatt.com/f/a/_Luy1Efx1G3vYLh_e_nxPQ~~/AAQRx=
+RA~/xOmRqSWkreWGaq-3Rl_2lpx3mMHiBwJc9bBo_InkQFUmGlbSE6iLufTxjxj3Ujeicy39V_Q=
+rgC87hk_TfdufqRp5C7is-83vgFniKVLiZAJuEC8TaNSdFyo2gy5V3eADKimETvVubLisKK3X25=
+rZ9Q~~ )
+
+-------------------
+CANCELLATION POLICY
+-------------------
+
+11:59PM HOTEL TIME 2 DAYS BFR ARRV OR PAY 1 NIGHT FEE /CCARD RQRD
+
+
+
+
+      *Reservations
+confirmed or changed by World of Hyatt Explorist or Globalist
+members can be cancelled until 1=E2=80=8C1:59 pm the day before arrival,
+when the hotel=E2=80=99s cancellation period stated above is not more
+than 48 hours. This 24-hour cancellation period benefit is not
+valid for stays at Hyatt Vacation Club, Miraval resorts, or other
+non-participating hotels. It also does not apply: (i) to prepaid
+or non-refundable rates; (ii) when the cancellation period stated
+above is more than 48 hours; or (iii) for reservations book at
+corporate negotiated or group contract rates. This benefit is
+based on a member=E2=80=99s tier status at the time of cancellation. The
+cancellation windows are based on the hotel=E2=80=99s local time.
+
+
+      Changes to the dates of
+stay, number of guests per room or number of rooms confirmed will
+be subject to current pricing which may be different than
+previously confirmed rates. Taxes and fees are subject to change
+based on dates of stay and local jurisdiction.
+
+Earning World of Hyatt points and tier credit is subject to World
+of Hyatt complete Terms and Conditions.
+
+
+
+
+Mobile Device Icon
+WOH LOGO       =20
+
+----------------------------------
+Get the app to easily access your reservations
+----------------------------------
+
+Modify or cancel your booking, submit special requests and so
+much more.
+
+Download on the App Store ( https://click.hyatt.com/f/a/gPo5wP2XY0lPBxt5cNB=
+TDA~~/AAQRxRA~/uCiU8o7vu7v3ZX8KvujnluahQR7iBJldrpyJRId_lwnTy7tzfxbbaGcSOwWb=
+fJc_r0xDBX2KHs0yIFig4xeExTobkbP7Rp0Pa2vl-yrIB_o_gJOPuluxbyxxGxoVBQd2iJis4ct=
+Gwys0mXhGAAIgbhlLAS7uw_PL1pISlHwr6dU~
+)  Get it on Google Play ( https://click.hyatt.com/f/a/K8y2nQYiX71Lxkm7lI6N=
+cA~~/AAQRxRA~/V6jMrhW55YYns7LdK_jyuTgzLfN9ODPDWcxg-7sdsqEOdbyF8GMOYQZgsVp3K=
+ohQsz2kHiBWjiXgpgJEaMPzyIfTqS0wVieTxDv-ELwgeOTOBKsIEnkPiJuYS_Lp0q9jK75SWt2O=
+GfLmgR_vYYmIYhXG3YCYAtfEULcJL4NeJQE~ )
+
+
+
+
+*****************************************************************
+While you're here
+*****************************************************************
+
+
+ (
+https://click.hyatt.com/f/a/IWTDTwiDnNQQJ76C0-jt8Q~~/AAQRxRA~/NEAxKx2UT0K1U=
+fTFHEyNximtxqYk4PQyYslcksv5B7JDWIpitLTprJu5HZRn88woQw1RTphRDmHFNP-C8iF-kovU=
+rnCnrQDLxlNmexCjGYWqzoNl0loN4Je46J8jSr5hcIIhBjbAYt4RZTr_mpk7RoBcm5S9mkqWeaN=
+aT5K7jsg~ )
+
+
+----------------------------------
+Explore Salt Lake City
+
+----------------------------------
+
+Stay at Hyatt Regency Salt Lake City and enjoy easy access to charming down=
+town Salt Lake City and the surrounding area, featuring museums, theaters a=
+nd thrilling seasonal outdoor activities.
+
+DISCOVER MORE =E2=9D=AF (
+https://click.hyatt.com/f/a/IWTDTwiDnNQQJ76C0-jt8Q~~/AAQRxRA~/NEAxKx2UT0K1U=
+fTFHEyNximtxqYk4PQyYslcksv5B7JDWIpitLTprJu5HZRn88woQw1RTphRDmHFNP-C8iF-kovU=
+rnCnrQDLxlNmexCjGYWqzoNl0loN4Je46J8jSr5hcIIhBjbAYt4RZTr_mpk7RoBcm5S9mkqWeaN=
+aT5K7jsg~ )
+
+
+
+ (
+https://click.hyatt.com/f/a/twKp6aLk71UwDuG3I9VIPA~~/AAQRxRA~/NEAxKx2UT0K1U=
+fTFHEyNximtxqYk4PQyYslcksv5B7K7y0x_wS8tu0mRiOceePcY3VRRIUX3oauwT_gRgaEeXW-V=
+2YAcprIA0L8olgbcRGyzs_kFVs01JZQNWtYbkBrB0brvpuX3ilR6z88wULz3oXN9Nv9sxjJgRaY=
+KQQILfLI~ )
+
+
+Dining
+----------------------------------
+
+
+
+----------------------------------
+Unwind at Contribution Cocktail Lounge
+----------------------------------
+
+At Hyatt Regency Salt Lake City, Contribution Cocktail Lounge is your downt=
+own hub to mix, mingle and connect. Enjoy batch crafted cocktails, curated =
+beers and wine on tap, whether gathering at the bar or settling in for an i=
+nspired happy hour.
+
+LEARN MORE =E2=9D=AF (
+https://click.hyatt.com/f/a/twKp6aLk71UwDuG3I9VIPA~~/AAQRxRA~/NEAxKx2UT0K1U=
+fTFHEyNximtxqYk4PQyYslcksv5B7K7y0x_wS8tu0mRiOceePcY3VRRIUX3oauwT_gRgaEeXW-V=
+2YAcprIA0L8olgbcRGyzs_kFVs01JZQNWtYbkBrB0brvpuX3ilR6z88wULz3oXN9Nv9sxjJgRaY=
+KQQILfLI~ )
+
+
+Visa ( https://click.hyatt.com/f/a/oczXh6NAN85beoevBKcxZg~~/AAQRxRA~/NEAxKx=
+2UT0K1UfTFHEyNximtxqYk4PQyYslcksv5B7Kc1VhwKtPzsXII1TPErMhfq0FCcpgKKppT542Jl=
+KhKbyiPupt1TEMTvr7rVA571bF-Y-wakw-WSHjAP9XaatcZMKjjbZgB2V-oWxqiVfWoD5s94Bak=
+qaelk2dBibEWBcA~ )
+
+**********************************
+Earn up to 3X total Bonus Points with DoorDash
+**********************************
+
+Craving comfort or a late-night bite? Now through April 22, 2026, earn 3X t=
+otal Bonus Points on DoorDash restaurant orders and 2X total Bonus Points o=
+n all other DoorDash orders with your World of Hyatt Credit Card. Plus, get=
+ 50% off 1 order (max $10) delivered to an eligible Hyatt hotel in the U.S.=
+ through April 22, 2026. Your promo code will be automatically applied at c=
+heckout. Terms apply.
+----------------------------------
+
+LEARN MORE =E2=9D=AF  (
+https://click.hyatt.com/f/a/oczXh6NAN85beoevBKcxZg~~/AAQRxRA~/NEAxKx2UT0K1U=
+fTFHEyNximtxqYk4PQyYslcksv5B7Kc1VhwKtPzsXII1TPErMhfq0FCcpgKKppT542JlKhKbyiP=
+upt1TEMTvr7rVA571bF-Y-wakw-WSHjAP9XaatcZMKjjbZgB2V-oWxqiVfWoD5s94Bakqaelk2d=
+BibEWBcA~ )
+
+ (
+https://click.hyatt.com/f/a/uGEzAOBKQY8LgrTcCUoMDg~~/AAQRxRA~/NEAxKx2UT0K1U=
+fTFHEyNximtxqYk4PQyYslcksv5B7LWyqV__je3w0K5BiOyDGjV0rfM8N0-qjVqVFmsRe7rZr2N=
+Zq635q7UpRSMjqYeD8oeBaAeqw0MXEQusl-qX2w5Rolhh8J9jFtx3cjXG_MwPpDPqR83NK5RCNK=
+8HJwxK3o~ )
+
+**********************************
+Welcome the day=20
+**********************************
+
+Remember that as a Globalist, you can enjoy continental breakfast and night=
+ly hors d=E2=80=99oeuvres in the Club lounge=E2=80=94or enjoy complimentary=
+ full breakfast daily at participating Hyatt hotels and resorts without a C=
+lub lounge.
+
+EXPLORE BENEFITS =E2=9D=AF (
+https://click.hyatt.com/f/a/uGEzAOBKQY8LgrTcCUoMDg~~/AAQRxRA~/NEAxKx2UT0K1U=
+fTFHEyNximtxqYk4PQyYslcksv5B7LWyqV__je3w0K5BiOyDGjV0rfM8N0-qjVqVFmsRe7rZr2N=
+Zq635q7UpRSMjqYeD8oeBaAeqw0MXEQusl-qX2w5Rolhh8J9jFtx3cjXG_MwPpDPqR83NK5RCNK=
+8HJwxK3o~ )
+
+
+  STAY IN TOUCH
+
+Facebook ( https://click.hyatt.com/f/a/yw6CESyjqS2V8u3pl6d4mA~~/AAQRxRA~/vv=
+K58XsOp9VXoX58h57rE1jBwT8pkaheI39z75KwSVk8a7VF6XAgSuBDFDxBVKRtXqJNg3JE6fsPf=
+NcgwUT9Rpj888-Ia7kra4FnMN9Iya3bM_e2nFyuSSA75qh1vIEkMBtDqNAZTPbWnvMi5wcozw~~=
+ )
+Twitter ( https://click.hyatt.com/f/a/h5vWCEOBAtrzLNvMPeaEjw~~/AAQRxRA~/z8X=
+eArbqCrTLiMPU8iZ0eix1Y4xyhIJYgvsI2_10tsDw9J7ecY12dfHK_bUSyQWpkyKCKvbkvICzgw=
+vn7y-LWMJUhu6Ew_3Z2Q0k21lLtxssqCJ7E9atw4txhMu-B0wi_i39P1UzyqudMyFTHbNncQ~~ =
+)
+YoutubeCustom ( https://click.hyatt.com/f/a/PbDyZ_uA2Q24PzHYzOXDwA~~/AAQRxR=
+A~/fejOsZk4ae7ysNJTkvgK3zUKVlfYycCeUOVz22Wa3GeEuf7-SU4B82pnEIad0zFwtAp2Au6y=
+SQKNjpzN41AuK9RnYo6zLlKN-QJIH2VX11BUVkQt7fKWt9G2jD0rhxLFRxzsdpf4OvmE8RGGiHC=
+EqQ~~ )
+Pinterest=20
+( https://click.hyatt.com/f/a/jz5GPzkw029ywb6QU_XIuA~~/AAQRxRA~/HNM6S6XZLzI=
+lTNQxumNMt4ne75zVRnqS89itPK9HoTWltsjlKQZ6MgU6bYfsCQumvJc-rlXLfy4VXyOL3WBnzk=
+PkZjCP9A5fawqrd5SW24xo0EgBDw66t8ho_DWuRLKn6nMeFvawLdo_sdALobS8_Ke237RtM1eQg=
+wUGN-HmT6Y~ )
+Instagram ( https://click.hyatt.com/f/a/-1pp6ogN1zXK9QMDcgSLsw~~/AAQRxRA~/-=
+18ITyRIghI5rk3ZbdVRT0G8CU-bRe6ZhEEIhLYq2F3vg4MQhmZHg5UcC06cN9cHIxwAwb5hoAKi=
+ea36X9alxp9u02OQ03p1A_GGyjlyKzgpCpUiavyYpdml8tPOSyYW9Ba63_DNJ2VzGspm3GtJMw~=
+~ )
+
+
+  *Learn which hotels are
+participating at hyatt.com/standard. **Coming soon to World of
+Hyatt.=20
+( https://click.hyatt.com/f/a/htAUybdiKp7gzh6iQcp2xw~~/AAQRxRA~/oeWJCR7mnUo=
+gIeg3WbJmJtHWzh6gzxVpK7dt6MmQvm4dA6L3HgYj4rSbYkMAjFnwtM3s-DNGiA01nQLQakgLSN=
+8xQ4K-OZJCAdzyCg8roq_iq6bWZupsJs_ot4Ffn6wdI6CFFTFpaknZ4m29yDQN67OxrLKvYrC4_=
+bpGquRPE1xDZeHsER5lokO8sHH1wpPQpxIeYc59UnP0V8OoDojokw~~ )
+ *Learn which hotels are participating at hyatt.com/standard.
+**Coming soon to World of Hyatt.=20
+( https://click.hyatt.com/f/a/bmRz0e4KfR8MJSWRqAPvmw~~/AAQRxRA~/oeWJCR7mnUo=
+gIeg3WbJmJtHWzh6gzxVpK7dt6MmQvm4dA6L3HgYj4rSbYkMAjFnwtM3s-DNGiA01nQLQakgLSN=
+8xQ4K-OZJCAdzyCg8roq9u7JVSsYKl0qrn1RLiSQNssCcs-mGydKhlHRr5CgS1efv00Y2_nQJVN=
+JxPnUKf8Jw0IvElfEHVp4dOSvf_AImxjDEb8-OXYJvg6V4PwqjLvg~~ )
+  =20
+
+
+  In the interests of your
+privacy and cybersecurity safety, we ask that you do not send
+your credit card details in any written correspondence. Please
+contact us=20
+( https://click.hyatt.com/f/a/g-pPJaVCY9bGK3K6u2-WOA~~/AAQRxRA~/uCiU8o7vu7v=
+3ZX8KvujnlpSrw-ZVJzWI0niFXQmpqdlt7JQAG7Vdw8Dn_amRn1A80DVa6QKpkfSxoJwDGbVaf9=
+6praf6UGeO_g0d4hfgA1mmXisRPuORmy2vN35P2tiu9Ktw1rdcX-Xnl-u7IDh8hMJEY9-JKE1w1=
+P_njeGcn3c~ ) with
+those details.
+
+You=E2=80=99re receiving this message because you have provided your
+email to receive communications from Hyatt. For details on our
+privacy policies, please visit privacy.hyatt.com=20
+( https://click.hyatt.com/f/a/InSZzdGkR_h74WXce8cw_Q~~/AAQRxRA~/5Xpxx9OAH3d=
+CxxPAJ4i0Fl0csocOuiABu9n867KwhnyLJ0AttY0JL4vYhkdJZPO1Xj6peOJj7iHIWfnygYGsSJ=
+jwADUHUloZ8Ei_6Ybnle5kG_UT8aCtFRGyLEK_tzyeBPqZ9ws3HMqr2CZRFuAwNA~~ ).
+
+Please be aware that hotel stays are subject to the Hyatt.com
+terms ( https://click.hyatt.com/f/a/C9JRJWwp9caBY6Od2HZBQg~~/AAQRxRA~/HNM6S=
+6XZLzIlTNQxumNMtxhgJrnJ78h_LhDojIESZCWHFcODOaUfT2mOiRDMJZpaiDrHPJytvEYfNGJu=
+dqFEV0WApJWBNF0eRy-PzLAi3At2dz12loiH4KUwKjhTs-BX29A-fMj31x9D-AqtUeksJ-xo6_F=
+gdxQPHJ4VQnjlJTQ~ ) .
+
+If you have any questions or comments about this email, please
+contact us=20
+( https://click.hyatt.com/f/a/FVWeGP73Q4LriJyLhtOslQ~~/AAQRxRA~/uCiU8o7vu7v=
+3ZX8KvujnlpSrw-ZVJzWI0niFXQmpqdlt7JQAG7Vdw8Dn_amRn1A86m3_L_cr30_C1QwlfjzlBX=
+EulX4yMKJYJpcW6Deh89dUfRe02A8-kxxpe_bndTeQZz4yC-HTQ_eReyFwsM-NWTozVfRd95A5j=
+ZynVXifp4U~ ).
+Please do not reply to this email.
+
+As used in this email, the terms "we," "our," "Hyatt" and "Hyatt
+Hotels & Resorts" encompass hotels operated, managed, franchised,
+owned, leased, developed, licensed or provided services by
+subsidiaries and affiliates of Hyatt Hotels Corporation. The
+trademarks Hyatt, World of Hyatt, Park Hyatt, Alila, Miraval,
+Impression by Secrets, The Unbound Collection by Hyatt, Andaz,
+Thompson Hotels, The Standard, Dream, The StandardX, Breathless
+Resorts & Spas, JdV by Hyatt, Bunkhouse Hotels, Me and All
+Hotels, Zo=C3=ABtry, Hyatt Ziva, Hyatt Zilara, Secrets, Dreams, Hyatt
+Vivid, Sunscape, Alua Hotels & Resorts, Grand Hyatt, Hyatt
+Regency, Destination by Hyatt, Hyatt Centric, Hyatt Vacation
+Club, Caption by Hyatt, Unscripted by Hyatt, Hyatt Place, Hyatt
+House, Hyatt Studios, Hyatt Select, and related marks are
+trademarks of Hyatt Corporation or its affiliates.
+
+=C2=A9 2026 Hyatt Corporation. All
+rights reserved.
+--_----QY8n6nFcZdshQnj4mdW71w===_5D/E4-15484-991B6B96
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/html; charset="UTF-8"
+
+<!DOCTYPE html>
+<html xmlns:v=3D"urn:schemas-microsoft-com:vml" xmlns:o=3D"urn:schemas-micr=
+osoft-com:office:office" lang=3D"en">
+<head>
+<title></title>
+<meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3Dutf-8">
+<meta name=3D"viewport" content=3D"width=3Ddevice-width,initial-scale=3D1">
+<!--[if mso]>
+<xml><w:WordDocument xmlns:w=3D"urn:schemas-microsoft-com:office:word"><w:D=
+ontUseAdvancedTypographyReadingMail/></w:WordDocument>
+<o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch><o:AllowPNG/=
+></o:OfficeDocumentSettings></xml>
+<![endif]--><!--[if !mso]><!--><link href=3D"https://fonts.googleapis.com/c=
+ss?family=3DNoto+Sans" rel=3D"stylesheet" type=3D"text/css">
+<!--<![endif]--><style>
+*{box-sizing:border-box}body{margin:0;padding:0}a[x-apple-data-detectors]{c=
+olor:inherit!important;text-decoration:inherit!important}#MessageViewBody a=
+{color:inherit;text-decoration:none}p{line-height:inherit}.desktop_hide,.de=
+sktop_hide table{mso-hide:all;display:none;max-height:0;overflow:hidden}.im=
+age_block img+div{display:none}sub,sup{font-size:75%;line-height:0} @media =
+(max-width:620px){.image_block div.fullWidth{max-width:100%!important}.mobi=
+le_hide{display:none}.row-content{width:100%!important}.stack .column{width=
+:100%;display:block}.mobile_hide{min-height:0;max-height:0;max-width:0;over=
+flow:hidden;font-size:0}.desktop_hide,.desktop_hide table{display:table!imp=
+ortant;max-height:none!important}.row-4 .column-2 .block-2.paragraph_block =
+td.pad>div,.row-4 .column-2 .block-3.paragraph_block td.pad>div,.row-6 .col=
+umn-2 .block-5.paragraph_block td.pad>div,.row-6 .column-2 .block-6.paragra=
+ph_block td.pad>div,.row-7 .column-1 .block-4.heading_block h3,.row-7 .colu=
+mn-1 .block-7.paragraph_block td.pad>div,.row-7 .column-1 .block-8.paragrap=
+h_block td.pad>div,.row-8 .column-1 .block-4.heading_block h3,.row-9 .colum=
+n-2 .block-3.paragraph_block td.pad>div,.row-9 .column-2 .block-4.paragraph=
+_block td.pad>div{font-size:16px!important}.row-4 .column-2 .block-2.paragr=
+aph_block td.pad,.row-6 .column-2 .block-5.paragraph_block td.pad,.row-7 .c=
+olumn-1 .block-7.paragraph_block td.pad{padding:0 15px 10px!important}.row-=
+4 .column-2 .block-1.heading_block h2,.row-6 .column-2 .block-4.heading_blo=
+ck h2{text-align:left!important;font-size:18px!important}.row-4 .column-2 .=
+block-1.heading_block td.pad,.row-6 .column-2 .block-4.heading_block td.pad=
+,.row-7 .column-1 .block-6.heading_block td.pad{padding:10px 15px 5px!impor=
+tant}.row-4 .column-2 .block-3.paragraph_block td.pad{padding:0 15px 5px!im=
+portant}.row-4 .column-2 .block-4.paragraph_block td.pad{padding:0 0 15px 1=
+5px!important}.row-6 .column-2 .block-2.heading_block h3{text-align:left!im=
+portant;font-size:16px!important}.row-6 .column-2 .block-2.heading_block td=
+.pad,.row-7 .column-1 .block-4.heading_block td.pad{padding:10px 15px 0!imp=
+ortant}.row-6 .column-2 .block-6.paragraph_block td.pad,.row-7 .column-1 .b=
+lock-8.paragraph_block td.pad{padding:0 15px 15px!important}.row-7 .column-=
+1 .block-6.heading_block h2{font-size:18px!important}.row-8 .column-1 .bloc=
+k-3.heading_block h1{font-size:24px!important}.row-9 .column-2 .block-1.ima=
+ge_block td.pad{padding:20px 20px 10px!important}.row-9 .column-2 .block-3.=
+paragraph_block td.pad{padding:0 20px!important}.row-9 .column-2 .block-4.p=
+aragraph_block td.pad{padding:10px 20px 15px!important}.row-9 .column-2 .bl=
+ock-2.heading_block td.pad{padding:10px 20px 5px!important}.row-7 .row-cont=
+ent{padding:0 0 25px!important}}
+</style>
+<!--[if mso ]><style>sup, sub { font-size: 100% !important; } sup { mso-tex=
+t-raise:10% } sub { mso-text-raise:-10% }</style> <![endif]--><style>
+    @media only screen and (max-width: 600px) {
+      table.responsive-table {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 100% !important;
+      }
+      td.stack-mobile {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        padding-right: 0 !important;
+        padding-left: 0 !important;
+        float: left !important;=20
+        clear: both !important;
+      }
+      .mobile-center { text-align: center !important; }
+      .mobile-left { text-align: left !important; }
+      .mobile-spacing {=20
+        padding-top: 15px !important;=20
+        padding-left: 0 !important;=20
+      }
+      .mobile-dpt-spacing {=20
+        padding-top: 20px !important;=20
+        padding-left: 0 !important;=20
+      }
+      .mobile-body-text-style {=20
+        font-size: 16px !important;=20
+      }
+      .mobile-heading-text-style {=20
+        font-size: 18px !important;=20
+      }
+    }
+</style>
+</head>
+<body>
+<div style=3D"display:none !important;visibility:hidden;mso-hide:all;font-s=
+ize:1px;color:#ffffff;line-height:1px;max-height:0px;max-width:0px;opacity:=
+0;overflow:hidden;">Everything you need to know for your upcoming stay.</di=
+v>
+<p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ =20
+
+
+ =20
+
+
+ =20
+
+
+
+ =20
+
+
+
+
+
+
+
+
+
+
+</p>
+<table class=3D"nl-container" width=3D"100%" border=3D"0" cellpadding=3D"0"=
+ cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;mso-ta=
+ble-rspace:0;background-color:#fff"><tbody><tr><td>
+<table class=3D"row row-1" align=3D"center" width=3D"100%" border=3D"0" cel=
+lpadding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-l=
+space:0;mso-table-rspace:0"><tbody><tr><td><table class=3D"row-content stac=
+k" align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=
+=3D"presentation" style=3D"mso-table-lspace:0;mso-table-rspace:0;background=
+-color:#fff;color:#000;width:600px;margin:0 auto" width=3D"600"><tbody><tr>=
+<td class=3D"column column-1" width=3D"100%" style=3D"mso-table-lspace:0;ms=
+o-table-rspace:0;font-weight:400;text-align:left;padding-bottom:5px;padding=
+-top:5px;vertical-align:top">
+<table class=3D"html_block block-1" width=3D"100%" border=3D"0" cellpadding=
+=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;=
+mso-table-rspace:0"><tr><td class=3D"pad"><div style=3D"font-family:'Noto S=
+ans',Arial,Sans-serif;text-align:center" align=3D"center">
+  <table class=3D"nl-container" width=3D"100%" border=3D"0" cellpadding=3D"=
+0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;mso-=
+table-rspace:0;background-color:#fff"><tbody><tr><td><table class=3D"row ro=
+w-1" align=3D"center" width=3D"100%" border=3D"0" cellpadding=3D"0" cellspa=
+cing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;mso-table-rspa=
+ce:0"><tbody><tr><td><table class=3D"row-content stack" align=3D"center" bo=
+rder=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentation" style=
+=3D"mso-table-lspace:0;mso-table-rspace:0;background-color:#fff;border-radi=
+us:0;color:#000;padding-bottom:5px;width:600px;margin:0 auto" width=3D"600"=
+><tbody><tr>
+<td class=3D"column column-1" width=3D"50%" style=3D"mso-table-lspace:0;mso=
+-table-rspace:0;font-weight:400;text-align:left;padding-top:5px;vertical-al=
+ign:middle"><table class=3D"image_block block-1" width=3D"100%" border=3D"0=
+" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-ta=
+ble-lspace:0;mso-table-rspace:0"><tr><td class=3D"pad" style=3D"padding-lef=
+t:30px;width:100%;padding-right:0"><div class=3D"alignment" align=3D"left">=
+<div style=3D"max-width:165px"><a href=3D"https://click.hyatt.com/f/a/iopB_=
+Gqqbf2Bro3oJvj4fQ~~/AAQRxRA~/ykDrY_VxdqqaonA9viH6d1xTZQXjc3EKuqNDf2_oUv7hxJ=
+xlIX8GHTh8XobugPGAnNg8idvXvMHbbbP3QZd167X1TN7LGrhEbsX5Ph7Xcki29SKFEH2kFWD3x=
+Z5mpuADYkacuw_miW-hI0Ze_Uu_TWowQ1cNZmYzZLA7yq-tGop7ciq6kambTvPqOMVnl2uOOVVn=
+GYwArZ93RdiWYFTan78VcqE-KCBN_XdFX4SwYK8~" target=3D"_blank"><img src=3D"htt=
+ps://braze-images.com/appboy/communication/assets/image_assets/images/68893=
+8ec7f3283006662e8be/original.png?1753823468" style=3D"display:block;height:=
+auto;border:0;width:100%" width=3D"165" alt=3D"World of Hyatt Logo" title=
+=3D"World of Hyatt Logo" height=3D"auto"></a></div></div></td></tr></table>=
+</td>
+<td class=3D"column column-2" width=3D"50%" style=3D"mso-table-lspace:0;mso=
+-table-rspace:0;font-weight:400;text-align:left;padding-bottom:5px;padding-=
+top:5px;vertical-align:middle">
+<table class=3D"html_block block-1" width=3D"100%" border=3D"0" cellpadding=
+=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;=
+mso-table-rspace:0"><tr><td class=3D"pad"><div style=3D"font-family:Arial,A=
+rial,Sans-serif;text-align:center" align=3D"center">
+</div></td></tr></table>
+<table class=3D"menu_block block-2 mobile_hide" width=3D"100%" border=3D"0"=
+ cellpadding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-tab=
+le-lspace:0;mso-table-rspace:0"><tr><td class=3D"pad" style=3D"color:#000;f=
+ont-family:inherit;font-size:12px;font-weight:400;text-align:right"><table =
+width=3D"100%" cellpadding=3D"0" cellspacing=3D"0" border=3D"0" role=3D"pre=
+sentation" style=3D"mso-table-lspace:0;mso-table-rspace:0"><tr><td class=3D=
+"alignment" style=3D"text-align:right;font-size:0"><div class=3D"menu-links=
+">
+<!--[if mso]><table role=3D"presentation" border=3D"0" cellpadding=3D"0" ce=
+llspacing=3D"0" align=3D"right" style=3D""><tr style=3D"text-align:right;">=
+<![endif]-->
+<!--[if mso]><td style=3D"padding-top:5px;padding-right:5px;padding-bottom:=
+0px;padding-left:5px"><![endif]--><a href=3D"https://click.hyatt.com/f/a/l-=
+YdiYtpxkHJBCp4gq_vmg~~/AAQRxRA~/ykDrY_VxdqqaonA9viH6d1xTZQXjc3EKuqNDf2_oUv7=
+Z6Rv68DepczG8RHmsS_Peox8G5dlvfE-GzqaPgbVLP2NBQU_Wf4FgYSAraoqd78BN__X_Q6ILL4=
+qX5tNv1pjI1vmaesjFpPRhfmA5pa13hCTnJwT8R0h8MEpMwaE8QWi3H_GIOVjenffeVKojw40bg=
+eDbK4OWKUyDnaznSmKVnTRsvhF0L45lAJRPdNfR0Ts~" target=3D"_self" style=3D"mso-=
+hide:false;padding-top:5px;padding-bottom:0px;padding-left:5px;padding-righ=
+t:5px;display:inline-block;color:#0072CE;font-family:'Arial', 'Arial', Sans=
+-serif;font-size:12px;text-decoration:none;letter-spacing:normal;">Book Now=
+</a><!--[if mso]></td><td><![endif]-->
+<span class=3D"sep" style=3D"word-break: break-word; font-size: 12px; font-=
+family: 'Arial', 'Arial', Sans-serif; color: #000000;">|</span><!--[if mso]=
+></td><![endif]--><!--[if mso]><td style=3D"padding-top:5px;padding-right:5=
+px;padding-bottom:0px;padding-left:5px"><![endif]-->
+<a href=3D"https://click.hyatt.com/f/a/n2dTM82heoRh4fIQej7RlQ~~/AAQRxRA~/hN=
+m4LRAO4Q4ObaOALO_FmEiRwUnNz8WbEOb44EPES8u-gIjKZTwUTUfWCNxTdFhb17tif5gkS3C_v=
+dJFzn9jGUTiJOQWXsjmwijO9q1ol5BhZj9nUVM5yiNLKisps0WtPM-2x7LqAHTwuKIB3a_riNro=
+ImnkP08hUV1I_JNk-9Cg2tVl4x-z8VSJErBt1DXQG3PNVMdiWFrsetjJJyBOw1rCj5d_osEb0pv=
+OSf6BjBrIp5kJ9GdKYvhBA8kKQ9QfPv_yv9SuC-zkcBcwtwMEcA~~" target=3D"_self" sty=
+le=3D"mso-hide:false;padding-top:5px;padding-bottom:0px;padding-left:5px;pa=
+dding-right:5px;display:inline-block;color:#0072CE;font-family:'Arial', 'Ar=
+ial', Sans-serif;font-size:12px;text-decoration:none;letter-spacing:normal;=
+">My Account</a><!--[if mso]></td><td><![endif]--><span class=3D"sep" style=
+=3D"word-break: break-word; font-size: 12px; font-family: 'Arial', 'Arial',=
+ Sans-serif; color: #000000;">|</span>
+<!--[if mso]></td><![endif]--><!--[if mso]><td style=3D"padding-top:5px;pad=
+ding-right:5px;padding-bottom:0px;padding-left:5px"><![endif]--><a href=3D"=
+https://click.hyatt.com/f/a/oZfCeZ2RU4jL3Qe-Qhx6CQ~~/AAQRxRA~/uStln-T4m7tWU=
+HOvpO3subZoJhGBdwGBtHHIOqcaLD43G_i62aaFD45Peg3Y35OCATqUyieJQ2ZwvXc8ZrGlQ4Um=
+J47Y5byEUXDSSMwRAz2HEKTiP2fzCmrYXUoyeAXyM2LiaDNoOJ0P7e64_tIj5zBNGrKdMcmHcDD=
+k4TFomBVvCzbAyfu-WHgJtHSxoejZAO0dwvEqQlp3i_jNoaMVFAIfdP3r3TzqjHupK1W9uoY~" =
+target=3D"_self" style=3D"mso-hide:false;padding-top:5px;padding-bottom:0px=
+;padding-left:5px;padding-right:5px;display:inline-block;color:#0072CE;font=
+-family:'Arial', 'Arial', Sans-serif;font-size:12px;text-decoration:none;le=
+tter-spacing:normal;">Customer Service</a><!--[if mso]></td><![endif]-->
+<!--[if mso]></tr></table><![endif]-->
+</div></td></tr></table></td></tr></table>
+<table class=3D"menu_block block-3 desktop_hide" width=3D"100%" border=3D"0=
+" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-ta=
+ble-lspace:0;mso-table-rspace:0;mso-hide:all;display:none;max-height:0;over=
+flow:hidden"><tr><td class=3D"pad" style=3D"color:#000;font-family:inherit;=
+font-size:12px;font-weight:400;padding-left:25px;text-align:left"><table wi=
+dth=3D"100%" cellpadding=3D"0" cellspacing=3D"0" border=3D"0" role=3D"prese=
+ntation" style=3D"mso-table-lspace:0;mso-table-rspace:0;mso-hide:all;displa=
+y:none;max-height:0;overflow:hidden"><tr><td class=3D"alignment" style=3D"t=
+ext-align:left;font-size:0"><div class=3D"menu-links">
+<!--[if mso]><table role=3D"presentation" border=3D"0" cellpadding=3D"0" ce=
+llspacing=3D"0" align=3D"left" style=3D"mso-hide:all;display:none;max-heigh=
+t:0;overflow:hidden"><tr style=3D"text-align:left;"><![endif]-->
+<!--[if mso]><td style=3D"padding-top:5px;padding-right:5px;padding-bottom:=
+0px;padding-left:5px"><![endif]--><a href=3D"https://click.hyatt.com/f/a/LK=
+WIDbsK28SWLsvw4fS_ag~~/AAQRxRA~/ykDrY_VxdqqaonA9viH6d1xTZQXjc3EKuqNDf2_oUv7=
+necGlAHG2fQ95yg8a-3AgXdyTkScuBVx9YIRRlA91jVVEVSy8M2TC3fgmBaddcygg530X5-BW6h=
+gHtcQ7oKVa8mOMo6Nd_r9Rz7nwtBqCo3QYw_geBUFlfj4QZGv5ZNJYEPpBwLS7DtVKUp7IXi-fz=
+oPSMPK5pCs1XUlgPh1x0cHb-DlGqwaW9Umpyz6FT7k~" target=3D"_self" style=3D"mso-=
+hide:all;padding-top:5px;padding-bottom:0px;padding-left:5px;padding-right:=
+5px;display:inline-block;color:#0072CE;font-family:'Arial', 'Arial', Sans-s=
+erif;font-size:12px;text-decoration:none;letter-spacing:normal;">Book Now</=
+a><!--[if mso]></td><td><![endif]-->
+<span class=3D"sep" style=3D"word-break: break-word; mso-hide: all; font-si=
+ze: 12px; font-family: 'Arial', 'Arial', Sans-serif; color: #000000;">|</sp=
+an><!--[if mso]></td><![endif]--><!--[if mso]><td style=3D"padding-top:5px;=
+padding-right:5px;padding-bottom:0px;padding-left:5px"><![endif]-->
+<a href=3D"https://click.hyatt.com/f/a/q77GM7zSQN-ng_ZzSEEzXg~~/AAQRxRA~/hN=
+m4LRAO4Q4ObaOALO_FmEiRwUnNz8WbEOb44EPES8u-gIjKZTwUTUfWCNxTdFhb17tif5gkS3C_v=
+dJFzn9jGbVhoWxQTCseboXIsKwbNXINO7aImqES8XWSPz-caDdI3orOvuEcFd58j3Des_iEJCpD=
+G36IviuhIxtX8cOuVVHXVUluIechHPPl6UhUg7NQurnXl2VymiQte58iUYrs8fvHmnyorz07JQg=
+w90bBVFqrR7-hnGu52g4691ja2GgrZbGq-pi_KanNb8oaL7HcBw~~" target=3D"_self" sty=
+le=3D"mso-hide:all;padding-top:5px;padding-bottom:0px;padding-left:5px;padd=
+ing-right:5px;display:inline-block;color:#0072CE;font-family:'Arial', 'Aria=
+l', Sans-serif;font-size:12px;text-decoration:none;letter-spacing:normal;">=
+My Account</a><!--[if mso]></td><td><![endif]-->
+<span class=3D"sep" style=3D"word-break: break-word; mso-hide: all; font-si=
+ze: 12px; font-family: 'Arial', 'Arial', Sans-serif; color: #000000;">|</sp=
+an><!--[if mso]></td><![endif]--><!--[if mso]><td style=3D"padding-top:5px;=
+padding-right:5px;padding-bottom:0px;padding-left:5px"><![endif]-->
+<a href=3D"https://click.hyatt.com/f/a/gUleEvl0byTCnFcSr9yyhA~~/AAQRxRA~/uS=
+tln-T4m7tWUHOvpO3subZoJhGBdwGBtHHIOqcaLD5yWX2dTmQo22-MJVkMJoqX7FMGgzQ1PyFjk=
+1qE1uAAptnX2Lr1vZeNTef1LkDqHIw76hTjUAxDKz5spNXJygJyv3ecFsohgRgE84UasZQRTIKH=
+i0tgQaxkRVhrXHXV_fAQraiAfwjDq6WPSVSGG4gT8LtHuZ3MJWxSQ9NfTsKDWFWe2s1cTq04Jc8=
+MVnjBTxw~" target=3D"_self" style=3D"mso-hide:all;padding-top:5px;padding-b=
+ottom:0px;padding-left:5px;padding-right:5px;display:inline-block;color:#00=
+72CE;font-family:'Arial', 'Arial', Sans-serif;font-size:12px;text-decoratio=
+n:none;letter-spacing:normal;">Customer Service</a><!--[if mso]></td><![end=
+if]--><!--[if mso]></tr></table><![endif]-->
+</div></td></tr></table></td></tr></table>
+<table class=3D"html_block block-4" width=3D"100%" border=3D"0" cellpadding=
+=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;=
+mso-table-rspace:0"><tr><td class=3D"pad"><div style=3D"font-family:Arial,A=
+rial,Sans-serif;text-align:center" align=3D"center"></div></td></tr></table=
+>
+</td>
+</tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table>
+<!-- End -->
+
+
+  </div></td></tr></table>
+<table class=3D"divider_block block-2" width=3D"100%" border=3D"0" cellpadd=
+ing=3D"10" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspac=
+e:0;mso-table-rspace:0"><tr><td class=3D"pad"><div class=3D"alignment" alig=
+n=3D"center"><table border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=
+=3D"presentation" width=3D"100%" style=3D"mso-table-lspace:0;mso-table-rspa=
+ce:0"><tr><td class=3D"divider_inner" style=3D"font-size:1px;line-height:1p=
+x;border-top:1px solid #bbb"><span style=3D"word-break: break-word;">=E2=80=
+=8A</span></td></tr></table></div></td></tr></table>
+<table class=3D"paragraph_block block-3" width=3D"100%" border=3D"0" cellpa=
+dding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspa=
+ce:0;mso-table-rspace:0;word-break:break-word"><tr><td class=3D"pad" style=
+=3D"padding-bottom:10px;padding-left:30px;padding-right:10px"><div style=3D=
+"color:#676767;direction:ltr;font-family:'Noto Sans',Arial,Sans-serif;font-=
+size:12px;font-weight:400;letter-spacing:0;line-height:NaN;text-align:left;=
+mso-line-height-alt:NaNpx"><p style=3D"margin:0">
+Everything you need to know for your upcoming stay.</p></div></td></tr></ta=
+ble>
+</td></tr></tbody></table></td></tr></tbody></table>
+<table class=3D"row row-2" align=3D"center" width=3D"100%" border=3D"0" cel=
+lpadding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-l=
+space:0;mso-table-rspace:0"><tbody><tr><td><table class=3D"row-content stac=
+k" align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=
+=3D"presentation" style=3D"mso-table-lspace:0;mso-table-rspace:0;background=
+-color:#f8f8f8;border-radius:0;color:#000;width:600px;margin:0 auto" width=
+=3D"600"><tbody><tr><td class=3D"column column-1" width=3D"100%" style=3D"m=
+so-table-lspace:0;mso-table-rspace:0;font-weight:400;text-align:left;vertic=
+al-align:top">
+<table class=3D"html_block block-1" width=3D"100%" border=3D"0" cellpadding=
+=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;=
+mso-table-rspace:0"><tr><td class=3D"pad"><div style=3D"font-family:'Noto S=
+ans',Arial,Sans-serif;text-align:center" align=3D"center"></div></td></tr><=
+/table>
+<table class=3D"html_block block-4" width=3D"100%" border=3D"0" cellpadding=
+=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;=
+mso-table-rspace:0"><tr><td class=3D"pad"><div style=3D"font-family:'Noto S=
+ans',Arial,Sans-serif;text-align:center" align=3D"center"><div class=3D"our=
+-class">
+  <table class=3D"image_block block-1" width=3D"100%" border=3D"0" cellpadd=
+ing=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace=
+:0;mso-table-rspace:0">
+    <tr>
+      <td class=3D"pad" style=3D"padding-bottom:10px;padding-left:30px;padd=
+ing-right:30px;padding-top:25px;width:100%; background-color: #E8E5DE">
+        <div class=3D"alignment" align=3D"center">
+          <div style=3D"max-width:180px">
+            <a href=3D"https://click.hyatt.com/f/a/B6KG4j7cy5WxKs4_V2fX9Q~~=
+/AAQRxRA~/DaTYt6eQs6ltBdBZfDLiBxBWb-Ezcpk5LQ5F0ndbSLCDMEwSceT51jVNjQ3xcWNAw=
+XhU5Cu5C9mnjagcm0yE4uchHXQQM1pHXkx_QdhS68kxvf5gUwJUJ4Sm2lLLuBVSWH3lz5Z-fytz=
+lISc7-NXFyzgtKx6cscVAOcKK2HCK8z1rLIOjfe_-7hvJ0Nygtd30ytaWJ9rsdIJlh0-TM7aBpb=
+m_IZ5ozQyvdDEoKqB41Kkq4e7q2M0flxLscQURAj8KoRkbK_MH6ChdLvKRELmhw~~" target=
+=3D"_blank">
+              <img src=3D"https://email-assets.hyatt.global/assets/images/p=
+roperty-logos/content/dam/hyatt/hyattdam/images/2023/08/17/1550/HR-L019c-st=
+k-R-color-RGB.png/HR-L019c-stk-R-color-RGB.DLOGO.png" style=3D"display:bloc=
+k;height:auto;border:0;width:100%" width=3D"180" alt=3D"Hyatt Regency Salt =
+Lake City logo" title=3D"Hyatt Regency Salt Lake City logo" height=3D"auto"=
+>
+            </a>
+          </div>
+        </div>
+      </td>
+    </tr>
+  </table>
+</div></div></td></tr></table>
+<table class=3D"html_block block-5" width=3D"100%" border=3D"0" cellpadding=
+=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;=
+mso-table-rspace:0"><tr><td class=3D"pad"><div style=3D"font-family:'Noto S=
+ans',Arial,Sans-serif;text-align:center" align=3D"center"></div></td></tr><=
+/table>
+<table class=3D"html_block block-6" width=3D"100%" border=3D"0" cellpadding=
+=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;=
+mso-table-rspace:0"><tr><td class=3D"pad"><div style=3D"font-family:'Noto S=
+ans',Arial,Sans-serif;text-align:center" align=3D"center">
+</div></td></tr></table>
+<table class=3D"html_block block-9" width=3D"100%" border=3D"0" cellpadding=
+=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;=
+mso-table-rspace:0"><tr><td class=3D"pad"><div style=3D"font-family:'Noto S=
+ans',Arial,Sans-serif;text-align:center" align=3D"center"><div class=3D"our=
+-class">
+  <table class=3D"heading_block" width=3D"100%" border=3D"0" cellpadding=3D=
+"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;mso=
+-table-rspace:0">
+    <tr>
+      <td class=3D"pad block-2" style=3D"padding-left:30px;padding-right:30=
+px;padding-top:20px;text-align:center;width:100%; background-color: #E8E5DE=
+">
+        <h1 style=3D"margin:0;color: #211551 ;direction:ltr;font-family:'No=
+to Sans',Arial,Sans-serif;font-size:20px;font-weight:400;letter-spacing:nor=
+mal;line-height:1.2;text-align:center;margin-top:0;margin-bottom:0;mso-line=
+-height-alt:24px">
+          <span class=3D"tinyMce-placeholder" style=3D"word-break: break-wo=
+rd;">Welcome to</span>
+        </h1>
+      </td>
+    </tr>
+  </table>
+  <table class=3D"heading_block block-3" width=3D"100%" border=3D"0" cellpa=
+dding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspa=
+ce:0;mso-table-rspace:0">
+    <tr>
+      <td class=3D"pad" style=3D"padding-bottom:25px;padding-left:30px;padd=
+ing-right:30px;padding-top:10px;text-align:center;width:100%; background-co=
+lor: #E8E5DE">
+        <h1 style=3D"margin:0;color: #211551 ;direction:ltr;font-family:'No=
+to Sans',Arial,Sans-serif;font-size:24px;font-weight:700;letter-spacing:nor=
+mal;line-height:1.2;text-align:center;margin-top:0;margin-bottom:0;mso-line=
+-height-alt:29px">
+          <span class=3D"tinyMce-placeholder" style=3D"word-break: break-wo=
+rd;">Hyatt Regency Salt Lake City</span>
+        </h1>
+      </td>
+    </tr>
+  </table>
+</div></div></td></tr></table>
+<table class=3D"html_block block-10" width=3D"100%" border=3D"0" cellpaddin=
+g=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0=
+;mso-table-rspace:0"><tr><td class=3D"pad"><div style=3D"font-family:'Noto =
+Sans',Arial,Sans-serif;text-align:center" align=3D"center">
+</div></td></tr></table>
+<table class=3D"image_block block-11" width=3D"100%" border=3D"0" cellpaddi=
+ng=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:=
+0;mso-table-rspace:0"><tr><td class=3D"pad" style=3D"width:100%;padding-rig=
+ht:0;padding-left:0"><div class=3D"alignment" align=3D"center"><div class=
+=3D"fullWidth" style=3D"max-width:600px"><a href=3D"https://click.hyatt.com=
+/f/a/B6KG4j7cy5WxKs4_V2fX9Q~~/AAQRxRA~/DaTYt6eQs6ltBdBZfDLiBxBWb-Ezcpk5LQ5F=
+0ndbSLCDMEwSceT51jVNjQ3xcWNAwXhU5Cu5C9mnjagcm0yE4uchHXQQM1pHXkx_QdhS68kxvf5=
+gUwJUJ4Sm2lLLuBVSWH3lz5Z-fytzlISc7-NXFyzgtKx6cscVAOcKK2HCK8z1rLIOjfe_-7hvJ0=
+Nygtd30ytaWJ9rsdIJlh0-TM7aBpbm_IZ5ozQyvdDEoKqB41Kkq4e7q2M0flxLscQURAj8KoRkb=
+K_MH6ChdLvKRELmhw~~" target=3D"_blank">
+<img src=3D"https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2022=
+/11/03/1128/SLCRS-P0062-Lobby-Center-Wide.jpg/SLCRS-P0062-Lobby-Center-Wide=
+.16x9.jpg?imwidth=3D1280" style=3D"display: block; height: auto; border: 0;=
+ width: 100%;" width=3D"600" alt=3D"Hyatt Regency Salt Lake City logo" titl=
+e=3D"Hyatt Regency Salt Lake City logo" height=3D"auto"></a></div></div></t=
+d></tr></table>
+<table class=3D"html_block block-12 mobile_hide" width=3D"100%" border=3D"0=
+" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-ta=
+ble-lspace:0;mso-table-rspace:0"><tr><td class=3D"pad"><div style=3D"font-f=
+amily:'Noto Sans',Arial,Sans-serif;text-align:center" align=3D"center">
+<div class=3D"our-class">
+  <table class=3D"paragraph_block" width=3D"100%" border=3D"0" cellpadding=
+=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;=
+mso-table-rspace:0;word-break:break-word; background-color: #E8E5DE">
+    <tr>
+      <td class=3D"pad" style=3D"padding-bottom:5px;padding-left:30px;paddi=
+ng-right:30px;padding-top:25px; background-color: #E8E5DE">
+        <div style=3D"color: #2A2B2F ;direction:ltr;font-family:'Noto Sans'=
+,Arial,Sans-serif;font-size:14px;font-weight:400;letter-spacing:0;line-heig=
+ht:1.5;text-align:center;mso-line-height-alt:21px">
+          <p style=3D"margin:0">You=E2=80=99re all set for your upcoming vi=
+sit to Salt Lake City, Christopher. Consider this reservation an open invit=
+ation to unwind, to dream, to plan, to discover something new. Stay for bus=
+iness, leisure or a blend of both, and leave&nbsp;inspired.<br><br>
+          </p>
+        </div>
+      </td>
+    </tr>
+  </table>
+</div>
+</div></td></tr></table>
+<table class=3D"html_block block-13 desktop_hide" width=3D"100%" border=3D"=
+0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-t=
+able-lspace:0;mso-table-rspace:0;mso-hide:all;display:none;max-height:0;ove=
+rflow:hidden"><tr><td class=3D"pad"><div style=3D"font-family:'Noto Sans',A=
+rial,Sans-serif;text-align:center" align=3D"center">
+<!--[if false]><!-->
+<div class=3D"our-class">
+  <table class=3D"paragraph_block" width=3D"100%" border=3D"0" cellpadding=
+=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;=
+mso-table-rspace:0;word-break:break-word; background-color: #E8E5DE">
+    <tr>
+      <td class=3D"pad" style=3D"padding-bottom:5px;padding-left:30px;paddi=
+ng-right:30px;padding-top:25px; background-color: #E8E5DE">
+        <div style=3D"color: #2A2B2F ;direction:ltr;font-family:'Noto Sans'=
+,Arial,Sans-serif;font-size:16px;font-weight:400;letter-spacing:0;line-heig=
+ht:1.5;text-align:center;mso-line-height-alt:23px">
+          <p style=3D"margin:0">You=E2=80=99re all set for your upcoming vi=
+sit to Salt Lake City, Christopher. Consider this reservation an open invit=
+ation to unwind, to dream, to plan, to discover something new. Stay for bus=
+iness, leisure or a blend of both, and leave&nbsp;inspired.<br><br>
+          </p>
+        </div>
+      </td>
+    </tr>
+  </table>
+</div>
+<!--<![endif]-->
+</div></td></tr></table>
+</td></tr></tbody></table></td></tr></tbody></table>
+<table class=3D"row row-3" align=3D"center" width=3D"100%" border=3D"0" cel=
+lpadding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-l=
+space:0;mso-table-rspace:0"><tbody><tr><td><table class=3D"row-content stac=
+k" align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=
+=3D"presentation" style=3D"mso-table-lspace:0;mso-table-rspace:0;background=
+-color:#fff;color:#000;border-radius:0;width:600px;margin:0 auto" width=3D"=
+600"><tbody><tr><td class=3D"column column-1" width=3D"100%" style=3D"mso-t=
+able-lspace:0;mso-table-rspace:0;font-weight:400;text-align:left;vertical-a=
+lign:top">
+<table class=3D"html_block block-1" width=3D"100%" border=3D"0" cellpadding=
+=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;=
+mso-table-rspace:0"><tr><td class=3D"pad"><div style=3D"font-family:'Noto S=
+ans',Arial,Sans-serif;text-align:center" align=3D"center">
+<div class=3D"braze-content-block">
+  <table width=3D"100%" bgcolor=3D"#f8f8f8" border=3D"0" cellpadding=3D"0" =
+cellspacing=3D"0" role=3D"presentation" style=3D"background-color:#f8f8f8; =
+width: 100%;">
+    <tbody>
+      <tr>
+        <td align=3D"center" style=3D"padding: 25px 15px 25px 15px;">
+         =20
+          <table class=3D"responsive-table" width=3D"100%" border=3D"0" cel=
+lpadding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"width:100%;=
+ max-width:480px; margin:0 auto; background-color: #ffffff;">
+           =20
+            <tr>
+              <td style=3D"background-color:#211551; padding: 20px 15px;">
+                <table width=3D"100%" border=3D"0" cellpadding=3D"0" cellsp=
+acing=3D"0" role=3D"presentation">
+                  <tr>
+                    <td class=3D"stack-mobile" align=3D"left" valign=3D"mid=
+dle" width=3D"55%" style=3D"width: 55%; text-align: left; vertical-align: m=
+iddle;">
+                      <h2 style=3D"margin:0; color:#FFFFFF; font-family:'No=
+to Sans',Arial,sans-serif; font-size:16px; font-weight:700; line-height:1.2=
+;">
+                        Reservation Details
+                      </h2>
+                    </td>
+                    <td class=3D"stack-mobile mobile-spacing mobile-left" a=
+lign=3D"right" valign=3D"top" width=3D"45%" style=3D"width: 45%; text-align=
+: right;">
+                        <h2 style=3D"margin:0; color:#FFFFFF; font-family:'=
+Noto Sans',Arial,sans-serif; font-size:14px; font-weight:700; line-height:1=
+.2;">
+                          <span style=3D"white-space: nowrap;">Confirmation=
+ #</span>
+                        </h2>
+                        <div style=3D"font-family:'Noto Sans',Arial,sans-se=
+rif; font-size:14px; font-weight:400; line-height:1.2; color:#FFFFFF; margi=
+n-top: 2px;">
+                          64167883
+                        </div>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr>
+              <td align=3D"center" style=3D"background-color:#ffffff;">
+                <table width=3D"100%" border=3D"0" cellpadding=3D"0" cellsp=
+acing=3D"0" role=3D"presentation">
+                  <tr>
+                    <td style=3D"padding: 10px 15px;">
+                        <table width=3D"100%" border=3D"0" cellpadding=3D"0=
+" cellspacing=3D"0" role=3D"presentation">
+                          <tr>
+                            <td class=3D"stack-mobile" width=3D"50%" valign=
+=3D"top" style=3D"width: 50%; text-align: left; padding-bottom: 10px;">
+                                <h2 style=3D"margin:0; color:#000; font-fam=
+ily:'Noto Sans',Arial,sans-serif; font-size:16px; font-weight:700; line-hei=
+ght:1.2;">
+                                  Guest Name
+                                </h2>
+                                <div style=3D"font-family:'Noto Sans',Arial=
+,sans-serif; font-size:14px; font-weight:400; line-height:1.4; color:#000;"=
+>
+                                  Christopher Catignani
+                                </div>
+                            </td>
+                            <td class=3D"stack-mobile mobile-left" width=3D=
+"50%" valign=3D"top" style=3D"width: 50%; text-align: right;">
+                                <h2 style=3D"margin:0; color:#000; font-fam=
+ily:'Noto Sans',Arial,sans-serif; font-size:16px; font-weight:700; line-hei=
+ght:1.2;">
+                                  Membership #
+                                </h2>
+                                <div style=3D"font-family:'Noto Sans',Arial=
+,sans-serif; font-size:14px; font-weight:400; line-height:1.4; color:#000;"=
+>
+                                  *****902P
+                                </div>
+                            </td>
+                          </tr>
+                        </table>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style=3D"padding: 0; background-color: #ffffff; wid=
+th: 100%;">
+                      <table width=3D"100%" border=3D"0" cellpadding=3D"0" =
+cellspacing=3D"0" role=3D"presentation">
+                        <tbody>
+                          <tr>
+                            <td class=3D"divider_inner" style=3D"font-size:=
+ 1px; line-height: 1px; border-top: 1px solid #bbb; height: 1px;">
+                              <span style=3D"word-break: break-word;">&nbsp=
+;</span>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td style=3D"padding: 10px 15px;">
+                      <table width=3D"100%" border=3D"0" cellpadding=3D"0" =
+cellspacing=3D"0" role=3D"presentation">
+                        <tr>
+                          <td class=3D"stack-mobile" width=3D"50%" valign=
+=3D"top" style=3D"width: 50%; text-align: left; padding-bottom: 10px;">
+                              <h2 style=3D"margin:0; color:#000; font-famil=
+y:'Noto Sans',Arial,sans-serif; font-size:16px; font-weight:700; line-heigh=
+t:1.2;">
+                                Check-in
+                              </h2>
+                              <div style=3D"font-family:'Noto Sans',Arial,s=
+ans-serif; font-size:14px; font-weight:400; line-height:1.4; color:#000;">
+                               =20
+ =20
+   =20
+      Thursday, 14-Jan-2027
+   =20
+   =20
+      <br>04:00 PM
+   =20
+ =20
+
+                              </div>
+                          </td>
+                          <td class=3D"stack-mobile mobile-left" width=3D"5=
+0%" valign=3D"top" style=3D"width: 50%; text-align: right;">
+                              <h2 style=3D"margin:0; color:#000; font-famil=
+y:'Noto Sans',Arial,sans-serif; font-size:16px; font-weight:700; line-heigh=
+t:1.2;">
+                                Check-Out
+                              </h2>
+                              <div style=3D"font-family:'Noto Sans',Arial,s=
+ans-serif; font-size:14px; font-weight:400; line-height:1.4; color:#000;">
+                               =20
+ =20
+   =20
+      Monday, 18-Jan-2027
+   =20
+    <br>
+   =20
+      11:00 AM
+   =20
+ =20
+
+                              </div>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+
+                <tr>
+                  <td style=3D"padding: 0; background-color: #ffffff; width=
+: 100%;">
+                    <table width=3D"100%" border=3D"0" cellpadding=3D"0" ce=
+llspacing=3D"0" role=3D"presentation">
+                      <tbody>
+                        <tr>
+                          <td class=3D"divider_inner" style=3D"font-size: 1=
+px; line-height: 1px; border-top: 1px solid #bbb; height: 1px;">
+                            <span style=3D"word-break: break-word;">&nbsp;<=
+/span>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+
+                  <tr>
+                    <td style=3D"padding: 10px 15px;">
+                        <table width=3D"100%" border=3D"0" cellpadding=3D"0=
+" cellspacing=3D"0" role=3D"presentation">
+                          <tr>
+                            <td width=3D"50%" style=3D"width: 50%; vertical=
+-align: top; padding-right: 0px; text-align: left; padding-bottom: 10px;">
+                              <h2 style=3D"margin:0; color:#000; font-famil=
+y:'Noto Sans',Arial,sans-serif; font-size:16px; font-weight:700; line-heigh=
+t:1.2;">
+                                Adults
+                              </h2>
+                              <div style=3D"font-family:'Noto Sans',Arial,s=
+ans-serif; font-size:14px; font-weight:400; line-height:1.2; margin-top: 4p=
+x;">
+                                <p style=3D"margin:0">1</p>
+                              </div>
+                            </td>
+                            <td width=3D"50%" style=3D"width: 50%; vertical=
+-align: top; text-align: right;">
+                              <h2 style=3D"margin:0; color:#000; font-famil=
+y:'Noto Sans',Arial,sans-serif; font-size:16px; font-weight:700; line-heigh=
+t:1.2;">
+                                Children
+                              </h2>
+                              <div style=3D"font-family:'Noto Sans',Arial,s=
+ans-serif; font-size:14px; font-weight:400; line-height:1.2; margin-top: 4p=
+x;">
+                                <p style=3D"margin:0">0</p>
+                              </div>
+                            </td>
+                          </tr>
+                        </table>
+                    </td>
+                  </tr>
+
+                <tr>
+                  <td style=3D"padding: 0; background-color: #ffffff; width=
+: 100%;">
+                    <table width=3D"100%" border=3D"0" cellpadding=3D"0" ce=
+llspacing=3D"0" role=3D"presentation">
+                      <tbody>
+                        <tr>
+                          <td class=3D"divider_inner" style=3D"font-size: 1=
+px; line-height: 1px; border-top: 1px solid #bbb; height: 1px;">
+                            <span style=3D"word-break: break-word;">&nbsp;<=
+/span>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td width=3D"100%">
+                    <table width=3D"100%" border=3D"0" cellpadding=3D"0" ce=
+llspacing=3D"0" role=3D"presentation">
+                      <tbody>
+                        <tr>
+                          <td align=3D"center" style=3D"padding: 0px 15px;"=
+>
+                            <table class=3D"responsive-table" width=3D"100%=
+" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentation" st=
+yle=3D"width:100%; max-width:450px; margin:0 auto;">
+                              <tr>
+                                <td style=3D"padding: 10px 0 2px 0; text-al=
+ign: left;">
+                                  <h2 style=3D"margin:0; color:#000; font-f=
+amily:'Noto Sans',Arial,sans-serif; font-size:16px; font-weight:700; line-h=
+eight:1.2;">
+                                    Room(s) booked
+                                  </h2>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td style=3D"padding: 0px 0 10px 0; text-al=
+ign: left;">
+                                  <div style=3D"font-family:'Noto Sans',Ari=
+al,sans-serif; font-size:14px; font-weight:400; line-height:1.2; color:#000=
+;">
+                                    1
+                                  </div>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+               =20
+               =20
+                <tr>
+                  <td align=3D"center" style=3D"padding: 0px 15px;">
+                    <table class=3D"responsive-table" width=3D"100%" border=
+=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"w=
+idth:100%; max-width:450px; margin:0 auto; table-layout: fixed;">
+                      <tbody>
+                        <tr>
+                          <td style=3D"padding: 10px 0 2px 0; text-align: l=
+eft;">
+                            <h2 style=3D"margin:0; color:#000; font-family:=
+'Noto Sans',Arial,Sans-serif; font-size:16px; font-weight:700; line-height:=
+1.2;">
+                              Room type
+                            </h2>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style=3D"padding: 0 0 10px 0; text-align: lef=
+t;">
+                            <div style=3D"font-family:'Noto Sans',Arial,San=
+s-serif; font-size:14px; font-weight:400; line-height:1.2; color:#000;">
+                              <p style=3D"margin:0">1 King Bed </p>
+                            </div>
+                          </td>
+                        </tr>
+                       =20
+                        <tr>
+                          <td style=3D"padding: 10px 0 2px 0; text-align: l=
+eft;">
+                            <h2 style=3D"margin:0; color:#000; font-family:=
+'Noto Sans',Arial,Sans-serif; font-size:16px; font-weight:700; line-height:=
+1.2;">
+                              Room description
+                            </h2>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style=3D"padding: 0 0 10px 0; text-align: lef=
+t;">
+                            <div style=3D"font-family:'Noto Sans',Arial,San=
+s-serif; font-size:14px; font-weight:400; line-height:1.4; color:#000;">
+                              <p style=3D"margin:0">King Bed: Modern Design=
+ With Open Concept Comfortable Sitting Area</p>
+                            </div>
+                          </td>
+                        </tr>
+                       =20
+                       =20
+                        <tr>
+                          <td style=3D"padding: 10px 0 2px 0; text-align: l=
+eft;">
+                            <h2 style=3D"margin:0; color:#000; font-family:=
+'Noto Sans',Arial,Sans-serif; font-size:16px; font-weight:700; line-height:=
+1.2;">
+                              Preferences and policies
+                            </h2>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style=3D"padding: 0 0 10px 0; text-align: lef=
+t;">
+                            <div style=3D"font-family:'Noto Sans',Arial,San=
+s-serif; font-size:14px; font-weight:400; line-height:1.4; color:#000;">
+                              <p style=3D"margin:0">GLOBALIST<br>
+                              <span style=3D"font-size: 12px;">Your prefere=
+nces have been submitted and are subject to hotel availability.</span></p>
+                            </div>
+                          </td>
+                        </tr>
+                       =20
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td style=3D"padding: 0; background-color: #ffffff; width=
+: 100%;">
+                    <table width=3D"100%" border=3D"0" cellpadding=3D"0" ce=
+llspacing=3D"0" role=3D"presentation">
+                      <tbody>
+                        <tr>
+                          <td class=3D"divider_inner" style=3D"font-size: 1=
+px; line-height: 1px; border-top: 1px solid #bbb; height: 1px;">
+                            <span style=3D"word-break: break-word;">&nbsp;<=
+/span>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td align=3D"center" style=3D"padding: 0px 15px;">
+                    <table class=3D"responsive-table" width=3D"100%" border=
+=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"w=
+idth:100%; max-width:450px; margin:0 auto; table-layout: fixed;">
+                      <tbody>
+                        <tr>
+                          <td style=3D"padding: 10px 0 2px 0; text-align: l=
+eft;">
+                            <h2 style=3D"margin:0; color:#000; font-family:=
+'Noto Sans',Arial,Sans-serif; font-size:16px; font-weight:700; line-height:=
+1.2;">
+                              Nightly rate per room
+                            </h2>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style=3D"padding: 0 0 10px 0; text-align: lef=
+t;">
+                            <div style=3D"font-family:'Noto Sans',Arial,San=
+s-serif; font-size:14px; font-weight:400; line-height:1.4; color:#000;">
+                              <p style=3D"margin:0">January 14  - 160.72 US=
+ DOLLARS<br>January 15 - January 17  - 142.10 US DOLLARS<br></p>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style=3D"padding: 10px 0 2px 0; text-align: l=
+eft;">
+                            <h2 style=3D"margin:0; color:#000; font-family:=
+'Noto Sans',Arial,Sans-serif; font-size:16px; font-weight:700; line-height:=
+1.2;">
+                              Type of rate
+                            </h2>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style=3D"padding: 0 0 10px 0; text-align: lef=
+t;">
+                            <div style=3D"font-family:'Noto Sans',Arial,San=
+s-serif; font-size:14px; font-weight:400; line-height:1.2; color:#000;">
+                              <p style=3D"margin:0">HYATT LEVERAGE</p>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style=3D"padding: 10px 0 2px 0; text-align: l=
+eft;">
+                            <h2 style=3D"margin:0; color:#000; font-family:=
+'Noto Sans',Arial,Sans-serif; font-size:16px; font-weight:700; line-height:=
+1.2;">
+                              Rate information
+                            </h2>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style=3D"padding: 0 0 10px 0; text-align: lef=
+t;">
+                            <div style=3D"font-family:'Noto Sans',Arial,San=
+s-serif; font-size:14px; font-weight:400; line-height:1.2; color:#000;">
+                              <p style=3D"margin:0">Exclusive rate for Hyat=
+t Leverage travelers. flexible cancellation. Rate Purchased Rate is eligibl=
+e to earn points and tier credit.</p>
+                            </div>
+                          </td>
+                        </tr>
+                       =20
+                       =20
+                        <tr>
+                          <td style=3D"padding: 20px 0 5px 0; text-align: l=
+eft;">
+                            <h2 style=3D"margin:0; color:#000; font-family:=
+'Noto Sans',Arial,Sans-serif; font-size:16px; font-weight:700; line-height:=
+1.2;">
+                              Additional tax, fees and service charges
+                            </h2>
+                          </td>
+                        </tr>
+                       =20
+                        <tr>
+                          <td style=3D"padding: 5px 0; text-align: left;">
+                            <h3 style=3D"margin:0; color:#000; font-family:=
+'Noto Sans',Arial,Sans-serif; font-size:14px; font-weight:700; line-height:=
+1.2; text-transform: uppercase;">
+                              CITY TAX
+                            </h3>
+                            <div style=3D"font-family:'Noto Sans',Arial,San=
+s-serif; font-size:14px; font-weight:400; line-height:1.2; color:#000;">
+                              <p style=3D"margin:0">8.450%</p>
+                            </div>
+                          </td>
+                        </tr>
+                       =20
+                        <tr>
+                          <td style=3D"padding: 5px 0; text-align: left;">
+                            <h3 style=3D"margin:0; color:#000; font-family:=
+'Noto Sans',Arial,Sans-serif; font-size:14px; font-weight:700; line-height:=
+1.2; text-transform: uppercase;">
+                              STATE TAX
+                            </h3>
+                            <div style=3D"font-family:'Noto Sans',Arial,San=
+s-serif; font-size:14px; font-weight:400; line-height:1.2; color:#000;">
+                              <p style=3D"margin:0">7.070%</p>
+                            </div>
+                          </td>
+                        </tr>
+                       =20
+                        <tr>
+                          <td style=3D"padding: 5px 0; text-align: left;">
+                            <h3 style=3D"margin:0; color:#000; font-family:=
+'Noto Sans',Arial,Sans-serif; font-size:14px; font-weight:700; line-height:=
+1.2; text-transform: uppercase;">
+                              COUNTY FEE
+                            </h3>
+                            <div style=3D"font-family:'Noto Sans',Arial,San=
+s-serif; font-size:14px; font-weight:400; line-height:1.2; color:#000;">
+                              <p style=3D"margin:0">1.000%</p>
+                            </div>
+                          </td>
+                        </tr>
+                       =20
+                        <tr>
+                          <td style=3D"padding: 5px 0; text-align: left;">
+                            <h3 style=3D"margin:0; color:#000; font-family:=
+'Noto Sans',Arial,Sans-serif; font-size:14px; font-weight:700; line-height:=
+1.2; text-transform: uppercase;">
+                              SLCO ASSESSMENT
+                            </h3>
+                            <div style=3D"font-family:'Noto Sans',Arial,San=
+s-serif; font-size:14px; font-weight:400; line-height:1.2; color:#000;">
+                              <p style=3D"margin:0">2.000%</p>
+                            </div>
+                          </td>
+                        </tr>
+                       =20
+                       =20
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+               =20
+
+               =20
+
+                <tr>
+                  <td align=3D"center" style=3D"padding: 0px 15px;">
+                    <table class=3D"responsive-table" width=3D"100%" border=
+=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"w=
+idth:100%; max-width:450px; margin:0 auto;">
+                      <tr>
+                        <td style=3D"padding: 10px 0 15px 0; text-align: le=
+ft;">
+                          <h2 style=3D"margin:0; color:#000; font-family:'N=
+oto Sans',Arial,sans-serif; font-size:16px; font-weight:700; line-height:1.=
+2;">
+                            Contact
+                          </h2>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style=3D"padding-bottom: 20px;">
+                          <table width=3D"100%" border=3D"0" cellpadding=3D=
+"0" cellspacing=3D"0" role=3D"presentation">
+                           =20
+                            <tr>
+                              <td width=3D"30" valign=3D"top" style=3D"padd=
+ing: 5px 0;">
+                                <img src=3D"https://braze-images.com/appboy=
+/communication/assets/image_assets/images/68c3224475a11b0074a2dae6/original=
+.png?1757618756" width=3D"25" style=3D"display:block; border:0;" alt=3D"Add=
+ress">
+                              </td>
+                              <td style=3D"padding: 7px 0 10px 10px; font-f=
+amily:'Noto Sans',Arial,Sans-serif; font-size:14px; color:#000;">
+                                170 South West Temple, Salt Lake City, UT, =
+US 84101
+                              </td>
+                            </tr>
+                           =20
+                           =20
+                            <tr>
+                              <td width=3D"30" valign=3D"top" style=3D"padd=
+ing: 5px 0;">
+                                <img src=3D"https://braze-images.com/appboy=
+/communication/assets/image_assets/images/68c3224475a11b0064a2de20/original=
+.png?1757618756" width=3D"25" style=3D"display:block; border:0;" alt=3D"Pho=
+ne">
+                              </td>
+                              <td style=3D"padding: 7px 0 10px 10px; font-f=
+amily:'Noto Sans',Arial,Sans-serif; font-size:14px;">
+                                <a href=3D"tel:+1 801 596 1234" style=3D"co=
+lor:#0072ce; text-decoration:underline;">+1 801 596 1234</a>
+                              </td>
+                            </tr>
+                           =20
+                           =20
+                            <tr>
+                              <td width=3D"30" valign=3D"top" style=3D"padd=
+ing: 5px 0;">
+                                <img src=3D"https://braze-images.com/appboy=
+/communication/assets/image_assets/images/68c3224425182500740d246c/original=
+.png?1757618756" width=3D"25" style=3D"display:block; border:0;" alt=3D"Ema=
+il">
+                              </td>
+                              <td style=3D"padding: 7px 0 10px 10px; font-f=
+amily:'Noto Sans',Arial,Sans-serif; font-size:14px;">
+                                <a href=3D"mailto:slcrs-shared.mb-guest-ser=
+vices@hyatt.com" style=3D"color:#0072ce; text-decoration:underline; word-br=
+eak:break-all;">slcrs-shared.mb-guest-services@hyatt.com</a>
+                              </td>
+                            </tr>
+                           =20
+                           =20
+                            <tr>
+                              <td width=3D"30" valign=3D"top" style=3D"padd=
+ing: 5px 0;">
+                                <img src=3D"https://braze-images.com/appboy=
+/communication/assets/image_assets/images/68c3224407d9f300652e98f0/original=
+.png?1757618756" width=3D"25" style=3D"display:block; border:0;" alt=3D"Web=
+site">
+                              </td>
+                              <td style=3D"padding: 7px 0 10px 10px; font-f=
+amily:'Noto Sans',Arial,Sans-serif; font-size:14px;">
+                                <a href=3D"https://click.hyatt.com/f/a/yu1-=
+XonkKxYW78dbn5H-1w~~/AAQRxRA~/1X1NA0U0Tyg3podH6q3egYAcN_NGzu6VzneIDARW8wZhs=
+HUCbIX6gR0QunRwxaoMMoB7c42k_kO1FnzPXFSru00mojJkcNfskh_vqxUvdpLTQL3_S13xRHFe=
+D4KRmTZ7kB01EfckCE9cyj6HUmc0R11xSb0oejXwiGtrxVj3geDgnDoUy-aSW3AVT0j5FZEC" s=
+tyle=3D"color:#0072ce; text-decoration:underline; word-break:break-all;">Ho=
+tel Website</a>
+                              </td>
+                            </tr>
+                           =20
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+               =20
+
+               =20
+                <tr>
+                  <td style=3D"padding: 0; background-color: #ffffff; width=
+: 100%;">
+                    <table width=3D"100%" border=3D"0" cellpadding=3D"0" ce=
+llspacing=3D"0" role=3D"presentation">
+                      <tbody>
+                        <tr>
+                          <td class=3D"divider_inner" style=3D"font-size: 1=
+px; line-height: 1px; border-top: 1px solid #bbb; height: 1px;">
+                            <span style=3D"word-break: break-word;">&nbsp;<=
+/span>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td align=3D"center" style=3D"padding: 0px 15px 20px 15px=
+;">
+                    <table class=3D"responsive-table" width=3D"100%" border=
+=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"w=
+idth:100%; max-width:450px; margin:0 auto;">
+                      <tr>
+                        <td style=3D"padding: 15px 0; text-align: left;">
+                          <h2 style=3D"margin:0; color:#000; font-family:'N=
+oto Sans',Arial,sans-serif; font-size:16px; font-weight:700; line-height:1.=
+2;">
+                            Note from Hyatt Regency Salt Lake City
+                          </h2>
+                          <div style=3D"margin-top:10px; font-family:'Noto =
+Sans',Arial,sans-serif; font-size:14px; font-weight:400; line-height:1.5; c=
+olor:#000;">
+                            <p style=3D"margin:0;">THANK YOU FOR CHOOSING H=
+YATT REGENCY SALT LAKE CITY. CHECK-IN IS AT 4PM, WITH CHECK-OUT AT 11AM. JO=
+IN US IN ONE OF OUR 4 ON-SITE RESTAURANTS, INCLUDING OUR 6TH FLOOR ROOFTOP =
+SIGNATURE RESTAURANT, MAR MUNTANYA. WE LOOK FORWARD TO YOUR ARRIVAL!</p>
+                          </div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                                     =20
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td> =20
+      </tr>  =20
+    </tbody>
+  </table>
+</div>
+
+
+  <table class=3D"nl-container" width=3D"100%" border=3D"0" cellpadding=3D"=
+0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;mso-=
+table-rspace:0;background-color:#fff"><tbody><tr><td><table class=3D"row ro=
+w-1" align=3D"center" width=3D"100%" border=3D"0" cellpadding=3D"0" cellspa=
+cing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;mso-table-rspa=
+ce:0"><tbody><tr><td><table class=3D"row-content stack" align=3D"center" bo=
+rder=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentation" style=
+=3D"mso-table-lspace:0;mso-table-rspace:0;color:#000;width:600px;margin:0 a=
+uto" width=3D"600"><tbody><tr><td class=3D"column column-1" width=3D"100%" =
+style=3D"mso-table-lspace:0;mso-table-rspace:0;font-weight:400;text-align:l=
+eft;background-color:#fff;vertical-align:top">
+<table class=3D"html_block block-1" width=3D"100%" border=3D"0" cellpadding=
+=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;=
+mso-table-rspace:0"><tr><td class=3D"pad"><div style=3D"font-family:'Noto S=
+ans',Arial,Sans-serif;text-align:center" align=3D"center"></div></td></tr><=
+/table>
+<table class=3D"html_block block-2" width=3D"100%" border=3D"0" cellpadding=
+=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;=
+mso-table-rspace:0"><tr><td class=3D"pad"><div style=3D"font-family:'Noto S=
+ans',Arial,Sans-serif;text-align:center" align=3D"center"> <table bgcolor=
+=3D"#211551" class=3D"heading_block" width=3D"100%" border=3D"0" cellpaddin=
+g=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0=
+;mso-table-rspace:0; background_color: #211551;">
+   <tr>
+     <td class=3D"pad" style=3D"padding-bottom:10px;padding-left:30px;paddi=
+ng-right:30px;padding-top:30px;text-align:center;width:100%; background-col=
+or: #211551">
+       <h1 style=3D"margin:0;color:#FFFFFF;direction:ltr;font-family:'Noto =
+Sans',Arial,Sans-serif;font-size:22px;font-weight:700;letter-spacing:normal=
+;line-height:1.2;text-align:center;margin-top:0;margin-bottom:0;mso-line-he=
+ight-alt:26px"><span class=3D"tinyMce-placeholder" style=3D"word-break: bre=
+ak-word;">Need to make changes?</span></h1>
+     </td>
+   </tr>
+ </table>
+ <table bgcolor=3D"#211551" class=3D"paragraph_block" width=3D"100%" border=
+=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"m=
+so-table-lspace:0;mso-table-rspace:0;word-break:break-word; background-colo=
+r: #211551;">
+   <tr>
+     <td class=3D"pad" style=3D"padding-bottom:15px;padding-left:25px;paddi=
+ng-right:30px; background-color: #211551">
+       <div style=3D"color:#FFFFFF;direction:ltr;font-family:'Noto Sans',Ar=
+ial,Sans-serif;font-size:14px;font-weight:400;letter-spacing:0;line-height:=
+NaN;text-align:center;mso-line-height-alt:NaNpx">
+         <p style=3D"margin:0">
+           We look forward to welcoming you to our hotel. Please let us kno=
+w if there is anything we can do to help you make the most of your time awa=
+y.</p>
+       </div>
+     </td>
+   </tr>
+ </table>
+</div></td></tr></table>
+<table class=3D"html_block block-3 mobile_hide" width=3D"100%" border=3D"0"=
+ cellpadding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-tab=
+le-lspace:0;mso-table-rspace:0"><tr><td class=3D"pad"><div style=3D"font-fa=
+mily:'Noto Sans',Arial,Sans-serif;text-align:center" align=3D"center">  <di=
+v class=3D"our-class">
+    <table bgcolor=3D"#211551" border=3D"0" align=3D"center" cellpadding=3D=
+"0" width=3D"100%" cellspacing=3D"0" role=3D"presentation" style=3D"mso-tab=
+le-lspace:0;mso-table-rspace:0; background-color: #211551">
+      <tr>
+        <td align=3D"center" vertical-align=3D"middle" style=3D"padding:0px=
+ 24px 0px 24px; background-color: #211551">
+          <table bgcolor=3D"#211551" border=3D"0" align=3D"center" cellpadd=
+ing=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"line-height:100%=
+;mso-table-lspace:0;mso-table-rspace:0">
+            <tr>
+              <td align=3D"center" vertical-align=3D"middle" style=3D"paddi=
+ng:0px 24px 0px 0px;">
+                <table bgcolor=3D"#211551" border=3D"0" align=3D"center" ce=
+llpadding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"line-heigh=
+t:100%;mso-table-lspace:0;mso-table-rspace:0" width=3D"200">
+                  <tr>
+                    <td height=3D"42" align=3D"center" style=3D"background:=
+#CEC3AA;border:2px solid #CEC3AA;cursor:auto;font-family:Noto Sans, Arial, =
+sans-serif;letter-spacing:0.28px;" valign=3D"middle">
+                      <a href=3D"https://click.hyatt.com/f/a/MlZlmv2ts1kAPo=
+cKwK-rBA~~/AAQRxRA~/Jepo68Namb6hUK0CaEF5yVQomwyRIZ79lH4HLDMrFl9MrAO7AxSRdBL=
+iDIVYko20pYfnQ6zPZ9r28idzBNSfBVH-CFW9baeUvFOtWw5ROWQNY-zJTViy78qlRj1x1jy2k1=
+ICWvuVg7YppnjgXj3gd3FugyrNmXkm87vRej9xYPbwZQdDtRV6GmATPnIDKZk0GfEHlLibuqPXp=
+82888HxFZD0ej7RzJnxmBtO4r0Vbu0~" style=3D"background:#CEC3AA;display:block;=
+color:#211551;font-family:Noto Sans, Arial, sans-serif;font-size:14px;font-=
+weight:400;line-height:128%;margin:0;text-decoration:none;mso-padding-alt:0=
+px;text-transform: uppercase;letter-spacing:0.28px;padding :10px; text-alig=
+n: center;" target=3D"_blank" title=3D"MODIFY BOOKING">=E2=9C=8E MODIFY BOO=
+KING</a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td align=3D"center" vertical-align=3D"middle" style=3D"paddi=
+ng:0px; background-color: #211551">
+                <table bgcolor=3D"#211551" border=3D"0" align=3D"center" ce=
+llpadding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"line-heigh=
+t:100%;mso-table-lspace:0;mso-table-rspace:0; background-color: #211551" wi=
+dth=3D"200">
+                  <tr>
+                    <td height=3D"42" align=3D"center" style=3D"background:=
+#211551;border:2px solid #CEC3AA;cursor:auto;font-family:Noto Sans, Arial, =
+sans-serif;letter-spacing:0.28px;" valign=3D"middle">
+                      <a href=3D"https://click.hyatt.com/f/a/MlZlmv2ts1kAPo=
+cKwK-rBA~~/AAQRxRA~/Jepo68Namb6hUK0CaEF5yVQomwyRIZ79lH4HLDMrFl9MrAO7AxSRdBL=
+iDIVYko20pYfnQ6zPZ9r28idzBNSfBVH-CFW9baeUvFOtWw5ROWQNY-zJTViy78qlRj1x1jy2k1=
+ICWvuVg7YppnjgXj3gd3FugyrNmXkm87vRej9xYPbwZQdDtRV6GmATPnIDKZk0GfEHlLibuqPXp=
+82888HxFZD0ej7RzJnxmBtO4r0Vbu0~" style=3D"background:#211551;display:block;=
+color:#CEC3AA;font-family:Noto Sans, Arial, sans-serif;font-size:14px;font-=
+weight:400;line-height:128%;margin:0;text-decoration:none;mso-padding-alt:0=
+px;text-transform: uppercase;letter-spacing:0.28px;padding :10px; text-alig=
+n: center; text-decoration: none !important" target=3D"_blank" title=3D"CAN=
+CEL BOOKING">=E2=9C=95 CANCEL BOOKING</a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </div>
+</div></td></tr></table>
+<table class=3D"html_block block-4 desktop_hide" width=3D"100%" border=3D"0=
+" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-ta=
+ble-lspace:0;mso-table-rspace:0;mso-hide:all;display:none;max-height:0;over=
+flow:hidden"><tr><td class=3D"pad"><div style=3D"font-family:'Noto Sans',Ar=
+ial,Sans-serif;text-align:center" align=3D"center">
+<!--[if false]><!--><div class=3D"our-class">
+  <table bgcolor=3D"#211551" border=3D"0" align=3D"left" cellpadding=3D"0" =
+width=3D"100%" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-l=
+space:0;mso-table-rspace:0">
+    <tr>
+      <td align=3D"left" vertical-align=3D"middle" style=3D"padding:0px 24p=
+x 0px 24px; background-color: #211551">
+        <table bgcolor=3D"#211551" border=3D"0" align=3D"left" cellpadding=
+=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"line-height:100%;ms=
+o-table-lspace:0;mso-table-rspace:0" width=3D"100%">
+          <tr>
+            <td align=3D"left" vertical-align=3D"middle" style=3D"padding:0=
+px 0px 0px 0px; background-color: #211551">
+              <table bgcolor=3D"#211551" border=3D"0" align=3D"left" cellpa=
+dding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"line-height:10=
+0%;mso-table-lspace:0;mso-table-rspace:0" width=3D"100%">
+                <tr>
+                  <td height=3D"42" align=3D"center" style=3D"background:#C=
+EC3AA;border:2px solid #CEC3AA;cursor:auto;font-family:Noto Sans, Arial, sa=
+ns-serif;letter-spacing:0.28px;" valign=3D"middle">
+                    <a href=3D"https://click.hyatt.com/f/a/MlZlmv2ts1kAPocK=
+wK-rBA~~/AAQRxRA~/Jepo68Namb6hUK0CaEF5yVQomwyRIZ79lH4HLDMrFl9MrAO7AxSRdBLiD=
+IVYko20pYfnQ6zPZ9r28idzBNSfBVH-CFW9baeUvFOtWw5ROWQNY-zJTViy78qlRj1x1jy2k1IC=
+WvuVg7YppnjgXj3gd3FugyrNmXkm87vRej9xYPbwZQdDtRV6GmATPnIDKZk0GfEHlLibuqPXp82=
+888HxFZD0ej7RzJnxmBtO4r0Vbu0~" style=3D"background:#CEC3AA;display:block;co=
+lor:#211551;font-family:Noto Sans, Arial, sans-serif;font-size:18px;font-we=
+ight:400;line-height:128%;margin:0;text-decoration:none;mso-padding-alt:0px=
+;text-transform: uppercase;letter-spacing:0.28px;padding :10px; text-align:=
+ center;" target=3D"_blank" title=3D"MODIFY BOOKING">=E2=9C=8E MODIFY BOOKI=
+NG</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+
+          </tr>
+          <tr>
+            <td align=3D"left" vertical-align=3D"middle" style=3D"padding-t=
+op:20px; background-color: #211551">
+              <table border=3D"0" align=3D"left" cellpadding=3D"0" cellspac=
+ing=3D"0" role=3D"presentation" style=3D"line-height:100%;mso-table-lspace:=
+0;mso-table-rspace:0" width=3D"100%">
+                <tr>
+                  <td height=3D"42" align=3D"center" style=3D"background:#2=
+11551;border:2px solid #CEC3AA;cursor:auto;font-family:Noto Sans, Arial, sa=
+ns-serif;letter-spacing:0.28px;" valign=3D"middle">
+                    <a href=3D"https://click.hyatt.com/f/a/MlZlmv2ts1kAPocK=
+wK-rBA~~/AAQRxRA~/Jepo68Namb6hUK0CaEF5yVQomwyRIZ79lH4HLDMrFl9MrAO7AxSRdBLiD=
+IVYko20pYfnQ6zPZ9r28idzBNSfBVH-CFW9baeUvFOtWw5ROWQNY-zJTViy78qlRj1x1jy2k1IC=
+WvuVg7YppnjgXj3gd3FugyrNmXkm87vRej9xYPbwZQdDtRV6GmATPnIDKZk0GfEHlLibuqPXp82=
+888HxFZD0ej7RzJnxmBtO4r0Vbu0~" style=3D"background:#211551;display:block;co=
+lor:#CEC3AA;font-family:Noto Sans, Arial, sans-serif;font-size:18px;font-we=
+ight:400;line-height:128%;margin:0;text-decoration:none;mso-padding-alt:0px=
+;text-transform: uppercase;letter-spacing:0.28px;padding :10px; text-align:=
+ center; text-decoration: none !important;" target=3D"_blank" title=3D"CANC=
+EL BOOKING">=E2=9C=95 CANCEL BOOKING</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</div>
+<!--<![endif]-->
+</div></td></tr></table>
+<table class=3D"html_block block-5" width=3D"100%" border=3D"0" cellpadding=
+=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;=
+mso-table-rspace:0"><tr><td class=3D"pad"><div style=3D"font-family:'Noto S=
+ans',Arial,Sans-serif;text-align:center" align=3D"center">
+<table bgcolor=3D"#211551" class=3D"heading_block" width=3D"100%" border=3D=
+"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-=
+table-lspace:0;mso-table-rspace:0">
+  <tr>
+    <td class=3D"pad" style=3D"padding-left:30px;padding-right:30px;padding=
+-top:15px;text-align:center;width:100%; background-color: #211551;">
+      <h2 style=3D"margin:0;color:#FFFFFF;direction:ltr;font-family:'Noto S=
+ans',Arial,Sans-serif;font-size:14px;font-weight:700;letter-spacing:normal;=
+line-height:1.2;text-align:center;margin-top:0;margin-bottom:0;mso-line-hei=
+ght-alt:17px">
+<span class=3D"tinyMce-placeholder" style=3D"word-break: break-word;">CANCE=
+LLATION POLICY</span>
+      </h2>
+    </td>
+  </tr>
+</table>
+<table bgcolor=3D"#211551" class=3D"paragraph_block" width=3D"100%" border=
+=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"m=
+so-table-lspace:0;mso-table-rspace:0;word-break:break-word">
+  <tr>
+    <td class=3D"pad" style=3D"padding-bottom:20px;padding-left:30px;paddin=
+g-right:30px; bagckground-color: #211551">
+      <div style=3D"color:#FFFFFF;direction:ltr;font-family:'Noto Sans',Ari=
+al,Sans-serif;font-size:14px;font-weight:400;letter-spacing:0;line-height:N=
+aN;text-align:center;mso-line-height-alt:NaNpx">
+        <p style=3D"margin:0">
+          11:59PM HOTEL TIME 2 DAYS BFR ARRV OR PAY 1 NIGHT FEE /CCARD RQRD
+        </p>
+      </div>
+    </td>
+  </tr>
+</table>
+</div></td></tr></table>
+</td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></tab=
+le>
+<!-- End -->
+
+
+ =20
+  <table class=3D"nl-container" width=3D"100%" border=3D"0" cellpadding=3D"=
+0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;mso-=
+table-rspace:0;background-color:#fff"><tbody><tr><td><table class=3D"row ro=
+w-1" align=3D"center" width=3D"100%" border=3D"0" cellpadding=3D"0" cellspa=
+cing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;mso-table-rspa=
+ce:0"><tbody><tr><td><table class=3D"row-content stack" align=3D"center" bo=
+rder=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentation" style=
+=3D"mso-table-lspace:0;mso-table-rspace:0;border-radius:0;color:#000;width:=
+600px;margin:0 auto" width=3D"600"><tbody><tr><td class=3D"column column-1"=
+ width=3D"100%" style=3D"mso-table-lspace:0;mso-table-rspace:0;font-weight:=
+400;text-align:left;vertical-align:top"><table class=3D"html_block block-1"=
+ width=3D"100%" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"pr=
+esentation" style=3D"mso-table-lspace:0;mso-table-rspace:0"><tr><td class=
+=3D"pad"><div style=3D"font-family:'Noto Sans',Arial,Sans-serif;text-align:=
+center" align=3D"center">
+<div class=3D"our-class">
+
+ =20
+
+  <table bgcolor=3D"#211551" class=3D"paragraph_block block-6" width=3D"100=
+%" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentation" s=
+tyle=3D"mso-table-lspace:0;mso-table-rspace:0;word-break:break-word">
+    <tr>
+      <td class=3D"pad" style=3D"padding-left:30px;padding-right:30px">
+        <div style=3D"color: #FFFFFF;direction:ltr;font-family:Arial,Sans-s=
+erif;font-size:11px;font-weight:400;letter-spacing:0;line-height:1.5;text-a=
+lign:left;mso-line-height-alt:17px">
+          <p style=3D"margin:0;margin-bottom:0">
+            <em>*Reservations confirmed or changed by World of Hyatt Explor=
+ist or Globalist members can be cancelled until 1=E2=80=8C1:59 pm the day b=
+efore arrival, when the hotel=E2=80=99s cancellation period stated above is=
+ not more than 48 hours. This 24-hour cancellation period benefit is not va=
+lid for stays at Hyatt Vacation Club, Miraval resorts, or other non-partici=
+pating hotels. It also does not apply: (i) to prepaid or non-refundable rat=
+es; (ii) when the cancellation period stated above is more than 48 hours; o=
+r (iii) for reservations book at corporate negotiated or group contract rat=
+es. This benefit is based on a member=E2=80=99s tier status at the time of =
+cancellation. The cancellation windows are based on the hotel=E2=80=99s loc=
+al time.</em>
+          </p>
+          <p style=3D"margin:0">&nbsp;</p>
+        </div>
+      </td>
+    </tr>
+  </table>
+
+ =20
+ =20
+
+  <table bgcolor=3D"#211551" class=3D"paragraph_block block-8" width=3D"100=
+%" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentation" s=
+tyle=3D"mso-table-lspace:0;mso-table-rspace:0;word-break:break-word">
+    <tr>
+      <td class=3D"pad" style=3D"padding-left:30px;padding-right:30px; padd=
+ing-bottom: 5px">
+        <div style=3D"color: #FFFFFF;direction:ltr;font-family:Arial,Sans-s=
+erif;font-size:11px;font-weight:400;letter-spacing:0;line-height:1.5;text-a=
+lign:left;mso-line-height-alt:17px">
+          <p style=3D"margin:0;margin-bottom:0">
+            <em>Changes to the dates of stay, number of guests per room or =
+number of rooms confirmed will be subject to current pricing which may be d=
+ifferent than previously confirmed rates. Taxes and fees are subject to cha=
+nge based on dates of stay and local jurisdiction.</em>
+          </p>
+          <p style=3D"margin:0;margin-bottom:0"><br><em>Earning World of Hy=
+att points and tier credit is subject to World of Hyatt complete Terms and =
+Conditions.</em></p>
+          <p style=3D"margin:0">&nbsp;</p>
+        </div>
+      </td>
+    </tr>
+  </table>
+
+ =20
+ =20
+</div>
+</div></td></tr></table></td></tr></tbody></table></td></tr></tbody></table=
+></td></tr></tbody></table>
+<!-- End -->
+
+
+ =20
+
+  <table class=3D"nl-container" width=3D"100%" border=3D"0" cellpadding=3D"=
+0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;mso-=
+table-rspace:0;background-color:#fff"><tbody><tr><td><table class=3D"row ro=
+w-1" align=3D"center" width=3D"100%" border=3D"0" cellpadding=3D"0" cellspa=
+cing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;mso-table-rspa=
+ce:0"><tbody><tr><td><table class=3D"row-content stack" align=3D"center" bo=
+rder=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentation" style=
+=3D"mso-table-lspace:0;mso-table-rspace:0;background-color:#f8f8f8;color:#0=
+00;width:600px;margin:0 auto" width=3D"600"><tbody><tr><td class=3D"column =
+column-1" width=3D"100%" style=3D"mso-table-lspace:0;mso-table-rspace:0;fon=
+t-weight:400;text-align:left;vertical-align:top">
+<table class=3D"html_block block-1" width=3D"100%" border=3D"0" cellpadding=
+=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;=
+mso-table-rspace:0"><tr><td class=3D"pad"><div style=3D"font-family:'Noto S=
+ans',Arial,Sans-serif;text-align:center" align=3D"center"></div></td></tr><=
+/table>
+<table class=3D"html_block block-2" width=3D"100%" border=3D"0" cellpadding=
+=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;=
+mso-table-rspace:0"><tr><td class=3D"pad"><div style=3D"font-family:'Noto S=
+ans',Arial,Sans-serif;text-align:center" align=3D"center"><div class=3D"our=
+-class">
+  <table class=3D"image_block block-1" width=3D"100%" border=3D"0" cellpadd=
+ing=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace=
+:0;mso-table-rspace:0">
+    <tr>
+      <td class=3D"pad" valign=3D"middle" style=3D"padding-top:16px;padding=
+-right:32px;padding-left:32px; width:100%">
+        <div class=3D"alignment" align=3D"center">
+          <div style=3D"max-width:40px">
+            <img src=3D"https://braze-images.com/appboy/communication/asset=
+s/image_assets/images/68b9bd5e715a7e0093459afb/original.png?1757003102" sty=
+le=3D"display:block;height:auto;border:0;width:100%" width=3D"40" alt=3D"Mo=
+bile Device Icon" height=3D"auto">
+          </div>
+        </div>
+      </td>
+    </tr>
+  </table>
+</div></div></td></tr></table>
+<table class=3D"html_block block-3" width=3D"100%" border=3D"0" cellpadding=
+=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;=
+mso-table-rspace:0"><tr><td class=3D"pad"><div style=3D"font-family:'Noto S=
+ans',Arial,Sans-serif;text-align:center" align=3D"center">
+<div class=3D"our-class">
+  <table class=3D"image_block block-1" width=3D"100%" border=3D"0" cellpadd=
+ing=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace=
+:0;mso-table-rspace:0">
+    <tr>
+      <td class=3D"pad" valign=3D"middle" style=3D"padding-top:5px;padding-=
+right:32px;padding-left:32px; width:100%">
+        <div class=3D"alignment" align=3D"center">
+          <div style=3D"max-width:190px">
+            <img src=3D"https://braze-images.com/appboy/communication/asset=
+s/image_assets/images/68b9dd907aabcb00662b266c/original.png?1757011344" sty=
+le=3D"display:block;height:auto;border:0;width:100%" width=3D"190" alt=3D"W=
+OH LOGO" height=3D"auto">
+          </div>
+        </div>
+      </td>
+    </tr>
+  </table>
+</div>
+</div></td></tr></table>
+<table class=3D"html_block block-4" width=3D"100%" border=3D"0" cellpadding=
+=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;=
+mso-table-rspace:0"><tr><td class=3D"pad"><div style=3D"font-family:'Noto S=
+ans',Arial,Sans-serif;text-align:center" align=3D"center"></div></td>
+</tr></table>
+<table class=3D"heading_block block-10" width=3D"100%" border=3D"0" cellpad=
+ding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspac=
+e:0;mso-table-rspace:0"><tr><td class=3D"pad" style=3D"padding-bottom:5px;p=
+adding-left:32px;padding-right:32px;padding-top:10px;text-align:center;widt=
+h:100%"><h2 style=3D"margin:0;color:#000;direction:ltr;font-family:'Noto Sa=
+ns',Arial,Sans-serif;font-size:16px;font-weight:700;letter-spacing:normal;l=
+ine-height:1.2;text-align:center;margin-top:0;margin-bottom:0;mso-line-heig=
+ht-alt:19px"><span class=3D"tinyMce-placeholder" style=3D"word-break: break=
+-word;">Get the app to easily access your reservations</span></h2></td></tr=
+></table>
+<table class=3D"paragraph_block block-11" width=3D"100%" border=3D"0" cellp=
+adding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lsp=
+ace:0;mso-table-rspace:0;word-break:break-word"><tr><td class=3D"pad" style=
+=3D"padding-left:32px;padding-right:32px"><div style=3D"color:#000;directio=
+n:ltr;font-family:'Noto Sans',Arial,Sans-serif;font-size:14px;font-weight:4=
+00;letter-spacing:0;line-height:NaN;text-align:center;mso-line-height-alt:N=
+aNpx"><p align=3D"center" style=3D"margin:0">Modify or cancel your booking,=
+ submit special requests and so much more.</p></div></td></tr></table>
+<table class=3D"social_block block-12" width=3D"100%" border=3D"0" cellpadd=
+ing=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace=
+:0;mso-table-rspace:0"><tr><td class=3D"pad" style=3D"padding-bottom:40px;p=
+adding-top:15px;text-align:center;padding-right:0;padding-left:0"><div clas=
+s=3D"alignment" align=3D"center"><table class=3D"social-table" width=3D"256=
+.8px" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentation=
+" style=3D"mso-table-lspace:0;mso-table-rspace:0;display:inline-block"><tr>
+<td style=3D"padding:0 10px 0 10px">
+<a href=3D"https://click.hyatt.com/f/a/SJT-XIGkxYRX0JywOdW_jQ~~/AAQRxRA~/FM=
+_yOUlwq50uCauD1okAFUbHzDfVx-wxO7kOdFffEQG3zuwUkFpyLCkACJcSinKNzaKcMX5-y5Fn6=
+99YLL8iLq2xa_Wq-0fUfffQWyq3-4OKK1MdHJWqQ0gcV2YTWEBLKhc2Qo7iULiRY9Hanv594ynf=
+ehKFuXp3nbTE4AfK_XztiGF5c5s6bEUpLHRwNLGtPMvbkzgcjDdS1mmiSpMW2wxxJBcipI-a3EU=
+B9uFWNLRBt8xsgxTxKoy_MBFZZSsP" target=3D"_blank"><img src=3D"https://braze-=
+images.com/appboy/communication/assets/image_assets/images/68b9ad47305af500=
+9448b505/original.png?1756998982" width=3D"108.8" height=3D"auto" alt=3D"Do=
+wnload on the App Store" title=3D"App Store Icon" style=3D"display:block;he=
+ight:auto;border:0"></a>
+</td>
+<td style=3D"padding:0 10px 0 10px"><a href=3D"https://click.hyatt.com/f/a/=
+d9GyAhwYFtrWX6kfbse-zg~~/AAQRxRA~/rUEYBc85Gn7ur1gfChZfieJ0TAmfAvmssQEjDvFZ7=
+RIYyyPtFSur3o5xZa0mBFC1z-S3CEZ0iv-4NCN3Vi0VYhesfNLKlNoT35-06i0NNXTFsy1JcRRp=
+0HAAH2rOgI0V93JMjY7BXxOCscRKn-Itnc1nJADkJHPE7TASFmz9cAvJc6tm693V6vPT-pJunY0=
+ClO5sZ6waewgL4o82JKaVTpRFscnsGMZwvP7coTkXEMRm8HAZaz89blHz3yyKSgIe" target=
+=3D"_blank"><img src=3D"https://braze-images.com/appboy/communication/asset=
+s/image_assets/images/68b9ad514f0a660065cee83a/original.png?1756998993" wid=
+th=3D"108" height=3D"auto" alt=3D"Get it on Google Play" title=3D"Google Pl=
+ay Icon" style=3D"display:block;height:auto;border:0"></a></td>
+</tr></table></div></td></tr></table>
+<table class=3D"html_block block-13" width=3D"100%" border=3D"0" cellpaddin=
+g=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0=
+;mso-table-rspace:0"><tr><td class=3D"pad"><div style=3D"font-family:'Noto =
+Sans',Arial,Sans-serif;text-align:center" align=3D"center"></div></td></tr>=
+</table>
+</td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></tab=
+le>
+<!-- End -->
+
+
+  </div></td></tr></table>
+<table class=3D"heading_block block-2" width=3D"100%" border=3D"0" cellpadd=
+ing=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace=
+:0;mso-table-rspace:0"><tr><td class=3D"pad" style=3D"padding-bottom:25px;p=
+adding-left:30px;padding-right:30px;padding-top:30px;text-align:center;widt=
+h:100%"><h1 style=3D"margin:0;color:#000;direction:ltr;font-family:'Noto Sa=
+ns',Arial,Sans-serif;font-size:22px;font-weight:700;letter-spacing:normal;l=
+ine-height:1.2;text-align:center;margin-top:0;margin-bottom:0;mso-line-heig=
+ht-alt:26px">
+<span class=3D"tinyMce-placeholder" style=3D"word-break: break-word;">While=
+ you're here</span>
+</h1></td></tr></table>
+<table class=3D"html_block block-3" width=3D"100%" border=3D"0" cellpadding=
+=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;=
+mso-table-rspace:0"><tr><td class=3D"pad"><div style=3D"font-family:'Noto S=
+ans',Arial,Sans-serif;text-align:center" align=3D"center"></div></td></tr><=
+/table>
+</td></tr></tbody></table></td>
+</tr></tbody></table>
+<table class=3D"row row-6" align=3D"center" width=3D"100%" border=3D"0" cel=
+lpadding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-l=
+space:0;mso-table-rspace:0"><tbody><tr><td><table class=3D"row-content stac=
+k" align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=
+=3D"presentation" style=3D"mso-table-lspace:0;mso-table-rspace:0;background=
+-color:#fff;color:#000;border-radius:0;width:600px;margin:0 auto" width=3D"=
+600"><tbody><tr>
+<td class=3D"column column-1" width=3D"58.333333333333336%" style=3D"mso-ta=
+ble-lspace:0;mso-table-rspace:0;font-weight:400;text-align:left;padding-bot=
+tom:25px;vertical-align:top"><table class=3D"image_block block-1" width=3D"=
+100%" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentation=
+" style=3D"mso-table-lspace:0;mso-table-rspace:0"><tr><td class=3D"pad" sty=
+le=3D"width:100%"><div class=3D"alignment" align=3D"center"><div style=3D"m=
+ax-width:350px"><a href=3D"https://click.hyatt.com/f/a/IWTDTwiDnNQQJ76C0-jt=
+8Q~~/AAQRxRA~/NEAxKx2UT0K1UfTFHEyNximtxqYk4PQyYslcksv5B7JDWIpitLTprJu5HZRn8=
+8woQw1RTphRDmHFNP-C8iF-kovUrnCnrQDLxlNmexCjGYWqzoNl0loN4Je46J8jSr5hcIIhBjbA=
+Yt4RZTr_mpk7RoBcm5S9mkqWeaNaT5K7jsg~" target=3D"_blank"><img src=3D"https:/=
+/assets.hyatt.com/content/dam/hyatt/hyattdam/images/2022/09/23/1249/SLCRS-P=
+0039-Salt-Lake-City-Winter-Skyline.jpg/SLCRS-P0039-Salt-Lake-City-Winter-Sk=
+yline.16x9.jpg?imwidth=3D640" style=3D"display:block;height:auto;border:0;w=
+idth:100%" width=3D"350" alt=3D"" title=3D"" height=3D"auto"></a></div></di=
+v></td></tr></table></td>
+<td class=3D"column column-2" width=3D"41.666666666666664%" style=3D"mso-ta=
+ble-lspace:0;mso-table-rspace:0;font-weight:400;text-align:left;vertical-al=
+ign:top">
+<table class=3D"html_block block-1" width=3D"100%" border=3D"0" cellpadding=
+=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;=
+mso-table-rspace:0"><tr><td class=3D"pad"><div style=3D"font-family:'Noto S=
+ans',Arial,Sans-serif;text-align:center" align=3D"center"></div></td></tr><=
+/table>
+<table class=3D"heading_block block-4" width=3D"100%" border=3D"0" cellpadd=
+ing=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace=
+:0;mso-table-rspace:0"><tr><td class=3D"pad" style=3D"padding-bottom:10px;p=
+adding-left:25px;text-align:center;width:100%"><h2 style=3D"margin:0;color:=
+#000;direction:ltr;font-family:'Noto Sans',Arial,Sans-serif;font-size:16px;=
+font-weight:700;letter-spacing:normal;line-height:1.2;text-align:left;margi=
+n-top:0;margin-bottom:0;mso-line-height-alt:19px">
+<span class=3D"tinyMce-placeholder" style=3D"word-break: break-word;">Explo=
+re Salt Lake City<br></span>
+</h2></td></tr></table>
+<table class=3D"paragraph_block block-5" width=3D"100%" border=3D"0" cellpa=
+dding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspa=
+ce:0;mso-table-rspace:0;word-break:break-word"><tr><td class=3D"pad" style=
+=3D"padding-bottom:10px;padding-left:25px"><div style=3D"color:#000;directi=
+on:ltr;font-family:'Noto Sans',Arial,Sans-serif;font-size:14px;font-weight:=
+400;letter-spacing:0;line-height:NaN;text-align:left;mso-line-height-alt:Na=
+Npx"><p style=3D"margin:0">Stay at Hyatt Regency Salt Lake City and enjoy e=
+asy access to charming downtown Salt Lake City and the surrounding area, fe=
+aturing museums, theaters and thrilling seasonal outdoor activities.</p></d=
+iv></td></tr></table>
+<table class=3D"paragraph_block block-6" width=3D"100%" border=3D"0" cellpa=
+dding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspa=
+ce:0;mso-table-rspace:0;word-break:break-word"><tr><td class=3D"pad" style=
+=3D"padding-bottom:25px;padding-left:25px">
+<div style=3D"color:#000;direction:ltr;font-family:'Noto Sans',Arial,Sans-s=
+erif;font-size:14px;font-weight:400;letter-spacing:0;line-height:NaN;text-a=
+lign:left;mso-line-height-alt:NaNpx"><p style=3D"margin:0"><a href=3D"https=
+://click.hyatt.com/f/a/IWTDTwiDnNQQJ76C0-jt8Q~~/AAQRxRA~/NEAxKx2UT0K1UfTFHE=
+yNximtxqYk4PQyYslcksv5B7JDWIpitLTprJu5HZRn88woQw1RTphRDmHFNP-C8iF-kovUrnCnr=
+QDLxlNmexCjGYWqzoNl0loN4Je46J8jSr5hcIIhBjbAYt4RZTr_mpk7RoBcm5S9mkqWeaNaT5K7=
+jsg~" target=3D"_blank" style=3D"text-decoration: none; color: #0072CE;" re=
+l=3D"noopener">DISCOVER MORE =E2=9D=AF</a></p></div>
+</td></tr></table>
+</td>
+</tr></tbody></table></td></tr></tbody></table>
+<table class=3D"row row-7" align=3D"center" width=3D"100%" border=3D"0" cel=
+lpadding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-l=
+space:0;mso-table-rspace:0;background-size:auto"><tbody>
+<tr><td><table class=3D"row-content stack" align=3D"center" border=3D"0" ce=
+llpadding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-=
+lspace:0;mso-table-rspace:0;background-size:auto;background-color:#fff;colo=
+r:#000;border-radius:0;background-image:url('');background-repeat:no-repeat=
+;padding-bottom:25px;padding-left:30px;padding-right:30px;width:600px;margi=
+n:0 auto" width=3D"600"><tbody><tr><td class=3D"column column-1" width=3D"1=
+00%" style=3D"mso-table-lspace:0;mso-table-rspace:0;font-weight:400;text-al=
+ign:left;background-color:#f8f8f8;vertical-align:top;border-radius:0">
+<table class=3D"html_block block-1" width=3D"100%" border=3D"0" cellpadding=
+=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;=
+mso-table-rspace:0"><tr><td class=3D"pad"><div style=3D"font-family:'Noto S=
+ans',Arial,Sans-serif;text-align:center" align=3D"center">
+</div></td></tr></table>
+<table class=3D"image_block block-2" width=3D"100%" border=3D"0" cellpaddin=
+g=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0=
+;mso-table-rspace:0"><tr><td class=3D"pad" style=3D"width:100%"><div class=
+=3D"alignment" align=3D"center"><div style=3D"max-width:540px"><a href=3D"h=
+ttps://click.hyatt.com/f/a/twKp6aLk71UwDuG3I9VIPA~~/AAQRxRA~/NEAxKx2UT0K1Uf=
+TFHEyNximtxqYk4PQyYslcksv5B7K7y0x_wS8tu0mRiOceePcY3VRRIUX3oauwT_gRgaEeXW-V2=
+YAcprIA0L8olgbcRGyzs_kFVs01JZQNWtYbkBrB0brvpuX3ilR6z88wULz3oXN9Nv9sxjJgRaYK=
+QQILfLI~" target=3D"_blank"><img src=3D"https://assets.hyatt.com/content/da=
+m/hyatt/hyattdam/images/2023/09/18/1704/SLCRS-P0109-Contribution-Couple-Sit=
+ting-Drinks.jpg/SLCRS-P0109-Contribution-Couple-Sitting-Drinks.16x9.jpg?imw=
+idth=3D1280" style=3D"display:block;height:auto;border:0;width:100%" width=
+=3D"540" alt=3D"" title=3D"" height=3D"auto"></a></div></div></td></tr></ta=
+ble>
+<table class=3D"html_block block-3" width=3D"100%" border=3D"0" cellpadding=
+=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;=
+mso-table-rspace:0"><tr><td class=3D"pad"><div style=3D"font-family:'Noto S=
+ans',Arial,Sans-serif;text-align:center" align=3D"center"></div></td></tr><=
+/table>
+<table class=3D"heading_block block-4" width=3D"100%" border=3D"0" cellpadd=
+ing=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace=
+:0;mso-table-rspace:0"><tr><td class=3D"pad" style=3D"padding-left:25px;pad=
+ding-right:25px;padding-top:10px;text-align:center;width:100%"><h3 style=3D=
+"margin:0;color:#000;direction:ltr;font-family:'Noto Sans',Arial,Sans-serif=
+;font-size:13px;font-weight:700;letter-spacing:normal;line-height:1.2;text-=
+align:left;margin-top:0;margin-bottom:0;mso-line-height-alt:16px"><span cla=
+ss=3D"tinyMce-placeholder" style=3D"word-break: break-word;">Dining</span><=
+/h3></td></tr></table>
+<table class=3D"html_block block-5" width=3D"100%" border=3D"0" cellpadding=
+=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;=
+mso-table-rspace:0"><tr><td class=3D"pad"><div style=3D"font-family:'Noto S=
+ans',Arial,Sans-serif;text-align:center" align=3D"center"></div></td></tr><=
+/table>
+<table class=3D"heading_block block-6" width=3D"100%" border=3D"0" cellpadd=
+ing=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace=
+:0;mso-table-rspace:0">
+<tr><td class=3D"pad" style=3D"padding-bottom:10px;padding-left:25px;paddin=
+g-right:25px;padding-top:10px;text-align:center;width:100%"><h2 style=3D"ma=
+rgin:0;color:#000;direction:ltr;font-family:'Noto Sans',Arial,Sans-serif;fo=
+nt-size:16px;font-weight:700;letter-spacing:normal;line-height:1.2;text-ali=
+gn:left;margin-top:0;margin-bottom:0;mso-line-height-alt:19px"><span class=
+=3D"tinyMce-placeholder" style=3D"word-break: break-word;">Unwind at Contri=
+bution Cocktail Lounge</span></h2></td></tr>
+</table>
+<table class=3D"paragraph_block block-7" width=3D"100%" border=3D"0" cellpa=
+dding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspa=
+ce:0;mso-table-rspace:0;word-break:break-word"><tr><td class=3D"pad" style=
+=3D"padding-bottom:10px;padding-left:25px;padding-right:25px"><div style=3D=
+"color:#000;direction:ltr;font-family:'Noto Sans',Arial,Sans-serif;font-siz=
+e:14px;font-weight:400;letter-spacing:0;line-height:NaN;text-align:left;mso=
+-line-height-alt:NaNpx"><p style=3D"margin:0">
+At Hyatt Regency Salt Lake City, Contribution Cocktail Lounge is your downt=
+own hub to mix, mingle and connect. Enjoy batch crafted cocktails, curated =
+beers and wine on tap, whether gathering at the bar or settling in for an i=
+nspired happy hour.</p></div></td></tr></table>
+<table class=3D"paragraph_block block-8" width=3D"100%" border=3D"0" cellpa=
+dding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspa=
+ce:0;mso-table-rspace:0;word-break:break-word"><tr><td class=3D"pad" style=
+=3D"padding-bottom:25px;padding-left:25px;padding-right:25px"><div style=3D=
+"color:#000;direction:ltr;font-family:'Noto Sans',Arial,Sans-serif;font-siz=
+e:14px;font-weight:400;letter-spacing:0;line-height:NaN;text-align:left;mso=
+-line-height-alt:NaNpx"><p style=3D"margin:0"><a href=3D"https://click.hyat=
+t.com/f/a/twKp6aLk71UwDuG3I9VIPA~~/AAQRxRA~/NEAxKx2UT0K1UfTFHEyNximtxqYk4PQ=
+yYslcksv5B7K7y0x_wS8tu0mRiOceePcY3VRRIUX3oauwT_gRgaEeXW-V2YAcprIA0L8olgbcRG=
+yzs_kFVs01JZQNWtYbkBrB0brvpuX3ilR6z88wULz3oXN9Nv9sxjJgRaYKQQILfLI~" target=
+=3D"_blank" style=3D"text-decoration: none; color: #0072CE;" rel=3D"noopene=
+r">LEARN MORE&nbsp;=E2=9D=AF</a></p></div></td></tr></table>
+</td></tr></tbody></table></td></tr>
+</tbody></table>
+<table class=3D"row row-8" align=3D"center" width=3D"100%" border=3D"0" cel=
+lpadding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-l=
+space:0;mso-table-rspace:0"><tbody><tr><td><table class=3D"row-content stac=
+k" align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=
+=3D"presentation" style=3D"mso-table-lspace:0;mso-table-rspace:0;background=
+-color:#e0ecf3;color:#000;width:600px;margin:0 auto" width=3D"600"><tbody><=
+tr><td class=3D"column column-1" width=3D"100%" style=3D"mso-table-lspace:0=
+;mso-table-rspace:0;font-weight:400;text-align:left;vertical-align:top">
+<table class=3D"html_block block-1" width=3D"100%" border=3D"0" cellpadding=
+=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;=
+mso-table-rspace:0"><tr><td class=3D"pad"><div style=3D"font-family:'Noto S=
+ans',Arial,Sans-serif;text-align:center" align=3D"center"></div></td></tr><=
+/table>
+<table class=3D"image_block block-2" width=3D"100%" border=3D"0" cellpaddin=
+g=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0=
+;mso-table-rspace:0"><tr><td class=3D"pad" style=3D"padding-left:60px;paddi=
+ng-right:60px;padding-top:30px;width:100%"><div class=3D"alignment" align=
+=3D"center"><div style=3D"max-width:120px"><a href=3D"https://click.hyatt.c=
+om/f/a/oczXh6NAN85beoevBKcxZg~~/AAQRxRA~/NEAxKx2UT0K1UfTFHEyNximtxqYk4PQyYs=
+lcksv5B7Kc1VhwKtPzsXII1TPErMhfq0FCcpgKKppT542JlKhKbyiPupt1TEMTvr7rVA571bF-Y=
+-wakw-WSHjAP9XaatcZMKjjbZgB2V-oWxqiVfWoD5s94Bakqaelk2dBibEWBcA~" target=3D"=
+_blank"><img src=3D"https://braze-images.com/appboy/communication/assets/im=
+age_assets/images/68b210e9e3d0d90065f7e4f2/original.png?1756500201" style=
+=3D"display:block;height:auto;border:0;width:100%" width=3D"120" alt=3D"Vis=
+a" title=3D"Visa" height=3D"auto"></a></div></div></td></tr></table>
+<table class=3D"heading_block block-3" width=3D"100%" border=3D"0" cellpadd=
+ing=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace=
+:0;mso-table-rspace:0"><tr><td class=3D"pad" style=3D"padding-bottom:5px;pa=
+dding-left:30px;padding-right:30px;padding-top:10px;text-align:center;width=
+:100%"><h1 style=3D"margin:0;color:#000;direction:ltr;font-family:'Noto San=
+s',Arial,Sans-serif;font-size:22px;font-weight:700;letter-spacing:normal;li=
+ne-height:1.2;text-align:center;margin-top:0;margin-bottom:0;mso-line-heigh=
+t-alt:26px"><span class=3D"tinyMce-placeholder" style=3D"word-break: break-=
+word;">Earn up to 3X total Bonus Points with DoorDash</span></h1></td></tr>=
+</table>
+<table class=3D"heading_block block-4" width=3D"100%" border=3D"0" cellpadd=
+ing=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace=
+:0;mso-table-rspace:0"><tr><td class=3D"pad" style=3D"padding-bottom:10px;p=
+adding-left:30px;padding-right:30px;padding-top:10px;text-align:center;widt=
+h:100%"><h3 style=3D"margin:0;color:#000;direction:ltr;font-family:'Noto Sa=
+ns',Arial,Sans-serif;font-size:14px;font-weight:400;letter-spacing:normal;l=
+ine-height:1.2;text-align:center;margin-top:0;margin-bottom:0;mso-line-heig=
+ht-alt:17px">
+<span class=3D"tinyMce-placeholder" style=3D"word-break: break-word;">Cravi=
+ng comfort or a late-night bite? Now through April 22, 2026, earn 3X total =
+Bonus Points on DoorDash restaurant orders and 2X total Bonus Points on all=
+ other DoorDash orders with your World of Hyatt Credit Card. Plus, get 50% =
+off 1 order (max $10) delivered to an eligible Hyatt hotel in the U.S. thro=
+ugh April 22, 2026. Your promo code will be automatically applied at checko=
+ut. Terms apply.</span>
+</h3></td></tr></table>
+<table class=3D"button_block block-5" width=3D"100%" border=3D"0" cellpaddi=
+ng=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:=
+0;mso-table-rspace:0"><tr><td class=3D"pad" style=3D"padding-bottom:30px;pa=
+dding-left:30px;padding-right:30px;padding-top:10px;text-align:center"><div=
+ class=3D"alignment" align=3D"center">
+<a href=3D"https://click.hyatt.com/f/a/oczXh6NAN85beoevBKcxZg~~/AAQRxRA~/NE=
+AxKx2UT0K1UfTFHEyNximtxqYk4PQyYslcksv5B7Kc1VhwKtPzsXII1TPErMhfq0FCcpgKKppT5=
+42JlKhKbyiPupt1TEMTvr7rVA571bF-Y-wakw-WSHjAP9XaatcZMKjjbZgB2V-oWxqiVfWoD5s9=
+4Bakqaelk2dBibEWBcA~" target=3D"_blank" style=3D"color:#0072ce;text-decorat=
+ion:none;"><!--[if mso]>
+<v:roundrect xmlns:v=3D"urn:schemas-microsoft-com:vml" xmlns:w=3D"urn:schem=
+as-microsoft-com:office:word"  href=3D"https://click.hyatt.com/f/a/oczXh6NA=
+N85beoevBKcxZg~~/AAQRxRA~/NEAxKx2UT0K1UfTFHEyNximtxqYk4PQyYslcksv5B7Kc1VhwK=
+tPzsXII1TPErMhfq0FCcpgKKppT542JlKhKbyiPupt1TEMTvr7rVA571bF-Y-wakw-WSHjAP9Xa=
+atcZMKjjbZgB2V-oWxqiVfWoD5s94Bakqaelk2dBibEWBcA~"  style=3D"height:38px;wid=
+th:540px;v-text-anchor:middle;" arcsize=3D"0%" fill=3D"false">
+<v:stroke dashstyle=3D"Solid" weight=3D"0px" color=3D"#1871D8"/>
+<w:anchorlock/>
+<v:textbox inset=3D"0px,0px,0px,0px">
+<center dir=3D"false" style=3D"color:#0072ce;font-family:sans-serif;font-si=
+ze:16px">
+<![endif]-->
+<span class=3D"button" style=3D"background-color: transparent; mso-shading:=
+ transparent; border-bottom: 0px solid #1871D8; border-left: 0px solid #187=
+1D8; border-radius: 0px; border-right: 0px solid #1871D8; border-top: 0px s=
+olid #1871D8; color: #0072ce; display: inline-block; font-family: 'Noto San=
+s', 'Arial', Sans-serif; font-size: 16px; font-weight: 400; mso-border-alt:=
+ none; padding-bottom: 0px; padding-top: 0px; padding-left: 0px; padding-ri=
+ght: 0px; text-align: center; width: auto; word-break: keep-all; letter-spa=
+cing: normal;"><span style=3D"word-break: break-word; line-height: 19.2px;"=
+>LEARN MORE =E2=9D=AF</span></span>
+<!--[if mso]></center></v:textbox></v:roundrect><![endif]--></a>
+</div></td></tr></table>
+<table class=3D"html_block block-6" width=3D"100%" border=3D"0" cellpadding=
+=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;=
+mso-table-rspace:0"><tr><td class=3D"pad"><div style=3D"font-family:'Noto S=
+ans',Arial,Sans-serif;text-align:center" align=3D"center"></div></td></tr><=
+/table>
+</td></tr></tbody></table></td></tr></tbody></table>
+<table class=3D"row row-9" align=3D"center" width=3D"100%" border=3D"0" cel=
+lpadding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-l=
+space:0;mso-table-rspace:0"><tbody><tr><td><table class=3D"row-content stac=
+k" align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=
+=3D"presentation" style=3D"mso-table-lspace:0;mso-table-rspace:0;border-rad=
+ius:0;color:#000;width:600px;margin:0 auto" width=3D"600"><tbody><tr>
+<td class=3D"column column-1" width=3D"50%" style=3D"mso-table-lspace:0;mso=
+-table-rspace:0;font-weight:400;text-align:left;vertical-align:top"><table =
+class=3D"image_block block-1" width=3D"100%" border=3D"0" cellpadding=3D"0"=
+ cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;mso-ta=
+ble-rspace:0"><tr>
+<td class=3D"pad" style=3D"width:100%"><div class=3D"alignment" align=3D"ce=
+nter"><div class=3D"fullWidth" style=3D"max-width:300px"><a href=3D"https:/=
+/click.hyatt.com/f/a/uGEzAOBKQY8LgrTcCUoMDg~~/AAQRxRA~/NEAxKx2UT0K1UfTFHEyN=
+ximtxqYk4PQyYslcksv5B7LWyqV__je3w0K5BiOyDGjV0rfM8N0-qjVqVFmsRe7rZr2NZq635q7=
+UpRSMjqYeD8oeBaAeqw0MXEQusl-qX2w5Rolhh8J9jFtx3cjXG_MwPpDPqR83NK5RCNK8HJwxK3=
+o~" target=3D"_blank">
+<img src=3D"https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2023=
+/09/06/0906/PARHR-P1032-Regency-Club-Breakfast.jpg/PARHR-P1032-Regency-Club=
+-Breakfast.4x3.jpg?imwidth=3D640" style=3D"display: block; height: auto; bo=
+rder: 0; width: 100%;" width=3D"300" alt=3D"" title=3D"" height=3D"auto"></=
+a></div></div></td>
+</tr></table></td>
+<td class=3D"column column-2" width=3D"50%" style=3D"mso-table-lspace:0;mso=
+-table-rspace:0;font-weight:400;text-align:left;background-color:#0072ce;ve=
+rtical-align:top">
+<table class=3D"image_block block-1" width=3D"100%" border=3D"0" cellpaddin=
+g=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0=
+;mso-table-rspace:0"><tr><td class=3D"pad" style=3D"padding-bottom:10px;pad=
+ding-left:15px;padding-right:15px;padding-top:20px;width:100%"><div class=
+=3D"alignment" align=3D"left"><div style=3D"max-width:225px"><img src=3D"ht=
+tps://braze-images.com/appboy/communication/assets/image_assets/images/68bc=
+d54dc06c2c0066a9079d/original.png?1757205837" style=3D"display:block;height=
+:auto;border:0;width:100%" width=3D"225" alt title height=3D"auto"></div></=
+div></td></tr></table>
+<table class=3D"heading_block block-2" width=3D"100%" border=3D"0" cellpadd=
+ing=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace=
+:0;mso-table-rspace:0"><tr><td class=3D"pad" style=3D"padding-left:15px;pad=
+ding-right:15px;padding-top:5px;text-align:center;width:100%"><h1 style=3D"=
+margin:0;color:#fff;direction:ltr;font-family:'Noto Sans',Arial,Sans-serif;=
+font-size:20px;font-weight:700;letter-spacing:normal;line-height:1.2;text-a=
+lign:left;margin-top:0;margin-bottom:0;mso-line-height-alt:24px"><span clas=
+s=3D"tinyMce-placeholder" style=3D"word-break: break-word;">Welcome the day=
+ </span></h1></td></tr></table>
+<table class=3D"paragraph_block block-3" width=3D"100%" border=3D"0" cellpa=
+dding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspa=
+ce:0;mso-table-rspace:0;word-break:break-word"><tr><td class=3D"pad" style=
+=3D"padding-left:15px;padding-right:15px;padding-top:5px"><div style=3D"col=
+or:#fff;direction:ltr;font-family:'Noto Sans',Arial,Sans-serif;font-size:14=
+px;font-weight:400;letter-spacing:0;line-height:1.2;text-align:left;mso-lin=
+e-height-alt:17px"><p style=3D"margin:0">
+Remember that as a Globalist, you can enjoy continental breakfast and night=
+ly hors d=E2=80=99oeuvres in the Club lounge=E2=80=94or enjoy complimentary=
+ full breakfast daily at participating Hyatt hotels and resorts without a C=
+lub lounge.</p></div></td></tr></table>
+<table class=3D"paragraph_block block-4" width=3D"100%" border=3D"0" cellpa=
+dding=3D"15" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lsp=
+ace:0;mso-table-rspace:0;word-break:break-word"><tr><td class=3D"pad"><div =
+style=3D"color:#fff;direction:ltr;font-family:'Noto Sans',Arial,Sans-serif;=
+font-size:14px;font-weight:400;letter-spacing:0;line-height:NaN;text-align:=
+left;mso-line-height-alt:NaNpx"><p style=3D"margin:0"><a href=3D"https://cl=
+ick.hyatt.com/f/a/uGEzAOBKQY8LgrTcCUoMDg~~/AAQRxRA~/NEAxKx2UT0K1UfTFHEyNxim=
+txqYk4PQyYslcksv5B7LWyqV__je3w0K5BiOyDGjV0rfM8N0-qjVqVFmsRe7rZr2NZq635q7UpR=
+SMjqYeD8oeBaAeqw0MXEQusl-qX2w5Rolhh8J9jFtx3cjXG_MwPpDPqR83NK5RCNK8HJwxK3o~"=
+ target=3D"_blank" style=3D"text-decoration: none; color: #ffffff;" rel=3D"=
+noopener">EXPLORE BENEFITS&nbsp;=E2=9D=AF</a></p></div></td></tr></table>
+</td>
+</tr></tbody></table></td></tr></tbody></table>
+<table class=3D"row row-10" align=3D"center" width=3D"100%" border=3D"0" ce=
+llpadding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-=
+lspace:0;mso-table-rspace:0"><tbody>
+<tr><td><table class=3D"row-content stack" align=3D"center" border=3D"0" ce=
+llpadding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-=
+lspace:0;mso-table-rspace:0;background-color:#fff;color:#000;width:600px;ma=
+rgin:0 auto" width=3D"600"><tbody><tr><td class=3D"column column-1" width=
+=3D"100%" style=3D"mso-table-lspace:0;mso-table-rspace:0;font-weight:400;te=
+xt-align:left;vertical-align:top">
+<table class=3D"html_block block-1" width=3D"100%" border=3D"0" cellpadding=
+=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;=
+mso-table-rspace:0"><tr><td class=3D"pad"><div style=3D"font-family:'Noto S=
+ans',Arial,Sans-serif;text-align:center" align=3D"center">
+ =20
+    <table class=3D"nl-container" width=3D"100%" border=3D"0" cellpadding=
+=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;=
+mso-table-rspace:0;background-color:#fff"><tbody><tr><td><table class=3D"ro=
+w row-1" align=3D"center" width=3D"100%" border=3D"0" cellpadding=3D"0" cel=
+lspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;mso-table-=
+rspace:0"><tbody><tr><td><table class=3D"row-content stack" align=3D"center=
+" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentation" st=
+yle=3D"mso-table-lspace:0;mso-table-rspace:0;background-color:#ededed;color=
+:#000;width:600px;margin:0 auto" width=3D"600"><tbody><tr><td class=3D"colu=
+mn column-1" width=3D"100%" style=3D"mso-table-lspace:0;mso-table-rspace:0;=
+font-weight:400;text-align:left;padding-bottom:5px;padding-top:5px;vertical=
+-align:top">
+<table class=3D"paragraph_block block-1" width=3D"100%" border=3D"0" cellpa=
+dding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspa=
+ce:0;mso-table-rspace:0;word-break:break-word"><tr><td class=3D"pad" style=
+=3D"padding-bottom:10px;padding-left:20px;padding-right:20px;padding-top:30=
+px"><div style=3D"color:#12191a;direction:ltr;font-family:Arial,Arial,Sans-=
+serif;font-size:12px;font-weight:400;letter-spacing:4px;line-height:1.5;tex=
+t-align:center;mso-line-height-alt:18px"><p style=3D"margin:0">STAY IN TOUC=
+H</p></div></td></tr></table>
+<table class=3D"social_block block-2" width=3D"100%" border=3D"0" cellpaddi=
+ng=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:=
+0;mso-table-rspace:0"><tr><td class=3D"pad" style=3D"padding-bottom:30px;pa=
+dding-left:20px;padding-right:20px;padding-top:5px;text-align:center"><div =
+class=3D"alignment" align=3D"center"><table class=3D"social-table" width=3D=
+"260px" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentati=
+on" style=3D"mso-table-lspace:0;mso-table-rspace:0;display:inline-block"><t=
+r>
+<td style=3D"padding:0 10px 0 10px"><a href=3D"https://click.hyatt.com/f/a/=
+sY2LWSRycr7nUeUB8ikEtQ~~/AAQRxRA~/uStln-T4m7tWUHOvpO3sucPaSqf9TwX2NxjZccZpW=
+S7cctk4LEQFQ0SG22s5wfB7KZPnBKTocKabn2RRUI8HaSUhx6uz5ap7hOyJOMU7BCMCQTU5XF6_=
+iRRiH-VwF2vn8TTH6TWNKl7LhhEzckQI-m7DJAMz0CvOa2BeFUz3PD6g3suClhj08IVnwcX7Vc7=
+eredcks-uWWIQQCHYrtXjas2tQw_VXeOaXbT-9KDftSo~" target=3D"_blank"><img src=
+=3D"https://braze-images.com/appboy/communication/assets/image_assets/image=
+s/68658a1394098300677b9cc9/original.png?1751484946" width=3D"32" height=3D"=
+auto" alt=3D"Facebook" title=3D"Facebook" style=3D"display:block;height:aut=
+o;border:0"></a></td>
+<td style=3D"padding:0 10px 0 10px"><a href=3D"https://click.hyatt.com/f/a/=
+8maQlFsvbFRdJXvfgdRPoA~~/AAQRxRA~/plmhern7HxszVg5fGFVV-2-VCh546pWg4YTtP5DhP=
+zrKUfhJPPvvtJ2Er1akwAxVe-4ln7sKDJ62vMgjFxprl0ZXo2gF5eSlD0RN7UGIhvrhzTAnubUt=
+P1VGhY3mSdec27-mciD4yNSceG7bd_04C9M2IHOV4PXnfKS17aFqoKacPjmgU1nmBk7_AAagR0P=
+slEhBpHUh3d5vS7c69SpaLbFFxggA9WYbkNOd8PhuNITWdNgnXpLBQq_OIxdyIPtl" target=
+=3D"_blank"><img src=3D"https://braze-images.com/appboy/communication/asset=
+s/image_assets/images/68658b175dc8d50065700926/original.png?1751485207" wid=
+th=3D"32" height=3D"auto" alt=3D"Twitter" title=3D"Twitter" style=3D"displa=
+y:block;height:auto;border:0"></a></td>
+<td style=3D"padding:0 10px 0 10px"><a href=3D"https://click.hyatt.com/f/a/=
+Pmg_kCRE2wiqEZOlFhCvCw~~/AAQRxRA~/TyJDA9LsR_H2OFYWwlSdBCXpb4lXwyblZLD8ISxsj=
+tpW3MgcSkDsB7sShJf0ldzLu_eLFgsz4YNliFbBXWmzHSQ60bEKhfdVg8o8OeINIR6xWlJVWBVO=
+PGK4SZTNgybAZ_f62sNv5ztPaUg1-8ojddHIgok9BqRbIe9GbUbqxYTPGZ1M41FT5XjX21ra3wG=
+NcEjkRR_fqqlwpVecTsHa3NIvYCFkj7umY0BmD844dFU~" target=3D"_blank"><img src=
+=3D"https://braze-images.com/appboy/communication/assets/image_assets/image=
+s/68658b01d58475006509871b/original.png?1751485185" width=3D"32" height=3D"=
+auto" alt=3D"YoutubeCustom" title=3D"Youtube" style=3D"display:block;height=
+:auto;border:0"></a></td>
+<td style=3D"padding:0 10px 0 10px">
+<a href=3D"https://click.hyatt.com/f/a/mx7y7fDVvU20BB7cufq9hw~~/AAQRxRA~/Hm=
+idigaxlnwWnPwLoZQGuzycDETLt7EQB3Qo-YcJEnACWS3Y7E8QOMM7ha_aunaV3XlB9cIubTHVj=
+p7nHCC9HzyR2aJyx2gXX-4glRx03mvYpSWvLFlb__CWRqkgl4GyOw9ORlVU7ytMI6VeeR99V3L8=
+9NEG-CsdNjvoX4v7yfPKeC_Ktuuhv7phsXwJAYrrHokEOefU_Yrie8h1K1GP0FT9ROHxnUzyHx-=
+RvZBVrBFCkxVQnJcsUEitiFcbnTwW" target=3D"_blank"><img src=3D"https://braze-=
+images.com/appboy/communication/assets/image_assets/images/68658b0974f78c00=
+660f5f11/original.png?1751485192" width=3D"32" height=3D"auto" alt=3D"Pinte=
+rest" title=3D"Pinterest" style=3D"display:block;height:auto;border:0"></a>
+</td>
+<td style=3D"padding:0 10px 0 10px"><a href=3D"https://click.hyatt.com/f/a/=
+G9kec4UAteyHBGNXZvr5bg~~/AAQRxRA~/WLVR4-pAbHabY2YQWmlD5mv0dG1CXQnRyBnavnacv=
+Y--nFz4NpB5QJdDj548KgVLXWytK_gqdDIoWEQwF4EsSH3NJDRL3BVXpLTbChPc6EWMP8bwzIub=
+CI-sh3s5_ICxeyAZ5QfkXnG0zRJqLzgC-M7HLm9IDYjTXZ_zmYsLOzYt7U9BpTKDUE_XSCbj6ht=
+gZ8b97Vl9SOuq16_aKB0nIk0CJqNmNFErGeW2WH1WW94~" target=3D"_blank"><img src=
+=3D"https://braze-images.com/appboy/communication/assets/image_assets/image=
+s/68658a044bbfd400742240d7/original.png?1751484932" width=3D"32" height=3D"=
+auto" alt=3D"Instagram" title=3D"Instagram" style=3D"display:block;height:a=
+uto;border:0"></a></td>
+</tr></table></div></td></tr></table>
+</td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></tab=
+le>
+<!-- End -->
+
+ =20
+
+
+
+ =20
+    <table class=3D"nl-container" width=3D"100%" border=3D"0" cellpadding=
+=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;=
+mso-table-rspace:0;background-color:#fff"><tbody><tr><td><table class=3D"ro=
+w row-1" align=3D"center" width=3D"100%" border=3D"0" cellpadding=3D"0" cel=
+lspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;mso-table-=
+rspace:0"><tbody><tr><td><table class=3D"row-content stack" align=3D"center=
+" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentation" st=
+yle=3D"mso-table-lspace:0;mso-table-rspace:0;color:#000;width:600px;margin:=
+0 auto" width=3D"600"><tbody><tr><td class=3D"column column-1" width=3D"100=
+%" style=3D"mso-table-lspace:0;mso-table-rspace:0;font-weight:400;text-alig=
+n:left;padding-bottom:5px;padding-top:5px;vertical-align:top">
+<table class=3D"image_block block-1 mobile_hide" width=3D"100%" border=3D"0=
+" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-ta=
+ble-lspace:0;mso-table-rspace:0"><tr><td class=3D"pad" style=3D"width:100%"=
+><div class=3D"alignment" align=3D"center"><div style=3D"max-width:600px"><=
+a href=3D"https://click.hyatt.com/f/a/TE4o0F7uNNwAXSO-TFA2cA~~/AAQRxRA~/Dtl=
+CPjovWL8IAmnfpNNV6gBYTzh3GUwQ4sZ7DHoZYRf7WVC8b3lbLQWH6tpUY3eJQNUlHOBC4wLaBC=
+lrdDGCi0yLxbLRIB3AQ_UjpU8kcM2Rk_fPLq18UpGoGlNVtLhrxb8ek56-Gai6ZYfr4I2Q6e7zC=
+y2N6xeigUHRQlBRXgW8IYSZOTIZxeJTZvy5KQ1JNIYMDlmenstos2AvOHp1L_xcE9_vOntbWegU=
+NEmz0zLMbhVx9hkmfx2PntkndHa_U8lL4ob-NMiuy9NemSYpbUbD9Kg0prcWsqhk3X2BKmc~" t=
+arget=3D"_blank"><img src=3D"https://braze-images.com/appboy/communication/=
+assets/image_assets/images/69614b5bffed08006405d3d3/original.png?1767983963=
+" style=3D"display:block;height:auto;border:0;width:100%" width=3D"600" alt=
+=3D"*Learn which hotels are participating at hyatt.com/standard. **Coming s=
+oon to World of Hyatt." title=3D"*Learn which hotels are participating at h=
+yatt.com/standard. **Coming soon to World of Hyatt." height=3D"auto"></a></=
+div></div></td></tr></table>
+<table class=3D"image_block block-2 desktop_hide" width=3D"100%" border=3D"=
+0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-t=
+able-lspace:0;mso-table-rspace:0;mso-hide:all;display:none;max-height:0;ove=
+rflow:hidden"><tr><td class=3D"pad" style=3D"width:100%"><div class=3D"alig=
+nment" align=3D"center"><div style=3D"max-width:600px"><a href=3D"https://c=
+lick.hyatt.com/f/a/b2osCgsRxyfq1bhkIgZECA~~/AAQRxRA~/DtlCPjovWL8IAmnfpNNV6g=
+BYTzh3GUwQ4sZ7DHoZYRf7WVC8b3lbLQWH6tpUY3eJQNUlHOBC4wLaBClrdDGCi0yLxbLRIB3AQ=
+_UjpU8kcM1NBZ6Il548PG3U-NIbfRUJ1e3ZKEcbgaNh0H89kzcFjv2j1bJUIm9wIXZzWFNVd8Mz=
+_odw6Twu-enjugyndGVmANXw1LaTxmA3xSKZUscagm9Cm7cY37RPcGiv1xUOkAPCcr__Rk83PAa=
+V7wZY8r0n8gGvjYPvG-sX1vo7yt_4ZwCEcPqjRFn02v6MH7HlIpE~" target=3D"_blank"><i=
+mg src=3D"https://braze-images.com/appboy/communication/assets/image_assets=
+/images/69614c8b0c19660063328c56/original.png?1767984267" style=3D"display:=
+block;height:auto;border:0;width:100%" width=3D"600" alt=3D"*Learn which ho=
+tels are participating at hyatt.com/standard. **Coming soon to World of Hya=
+tt." title=3D"*Learn which hotels are participating at hyatt.com/standard. =
+**Coming soon to World of Hyatt." height=3D"auto"></a></div></div></td></tr=
+></table>
+</td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></tab=
+le>
+<!-- End -->
+
+ =20
+
+
+</div></td></tr></table>
+<table class=3D"html_block block-2" width=3D"100%" border=3D"0" cellpadding=
+=3D"0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;=
+mso-table-rspace:0"><tr><td class=3D"pad"><div style=3D"font-family:'Noto S=
+ans',Arial,Sans-serif;text-align:center" align=3D"center">
+  <table class=3D"nl-container" width=3D"100%" border=3D"0" cellpadding=3D"=
+0" cellspacing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;mso-=
+table-rspace:0;background-color:#fff"><tbody><tr><td><table class=3D"row ro=
+w-1" align=3D"center" width=3D"100%" border=3D"0" cellpadding=3D"0" cellspa=
+cing=3D"0" role=3D"presentation" style=3D"mso-table-lspace:0;mso-table-rspa=
+ce:0"><tbody><tr><td><table class=3D"row-content stack" align=3D"center" bo=
+rder=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentation" style=
+=3D"mso-table-lspace:0;mso-table-rspace:0;border-radius:0;color:#000;width:=
+600px;margin:0 auto" width=3D"600"><tbody><tr><td class=3D"column column-1"=
+ width=3D"100%" style=3D"mso-table-lspace:0;mso-table-rspace:0;font-weight:=
+400;text-align:left;vertical-align:top"><table class=3D"paragraph_block blo=
+ck-1" width=3D"100%" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=
+=3D"presentation" style=3D"mso-table-lspace:0;mso-table-rspace:0;word-break=
+:break-word"><tr><td class=3D"pad" style=3D"padding-bottom:20px;padding-lef=
+t:30px;padding-right:30px;padding-top:5px"><div style=3D"color:#727272;dire=
+ction:ltr;font-family:Arial,Sans-serif;font-size:11px;font-weight:400;lette=
+r-spacing:0;line-height:NaN;text-align:left;mso-line-height-alt:NaNpx"><p s=
+tyle=3D"margin:0">
+In the interests of your privacy and cybersecurity safety, we ask that you =
+do not send your credit card details in any written correspondence. Please =
+<a href=3D"https://click.hyatt.com/f/a/Bfs0NEH8T1Uu0gXsNDiR4A~~/AAQRxRA~/FM=
+_yOUlwq50uCauD1okAFUukeH4RvE-3HukynYp00Ekpng6st_JnKlXwdNuk5N0nAS2YIy8MAcmKd=
+2lO8MUYYenR7QAXVNuJao3mejk8ixV7syWqCY4lJFXvHQSKYl9hnF7kYCK-M4xDkwiAtUEMr3nk=
+R4lre8zrKlhN30UbpCUT7EwmnDCdOss_n1yqCyjcds79Q67umheU7-LwQ-GUyNLwaygTGEfb7fM=
+atjb8UOjN0turZ0gzvGu4I95VMpO8" target=3D"_blank" title=3D"contact us" style=
+=3D"text-decoration: underline; color: #727272;" data-mce-attribute-name-1 =
+data-mce-attribute-value-1 rel=3D"noopener">contact us</a> with those detai=
+ls.<br><br>
+You=E2=80=99re receiving this message because you have provided your email =
+to receive communications from Hyatt. For details on our privacy policies, =
+please visit <a href=3D"https://click.hyatt.com/f/a/UlX-TqRZbxcXqb2EvSaYWA~=
+~/AAQRxRA~/HgXKKVCiBQGmrx-HVC71wSyPzAK3O1SyeEwoxAVW8Mplfnea1wG4aCzTIuve-FY0=
+lWtnizCtd382agzD6ANMDbvARRXrMOuKynrI0DmZrn-dtx4jSbeOP-jf4CKO_zy3cqfTZFEdVJ1=
+uugEfqgQo7OAMr_qMKi0ZA1SXAU2VYE9xvwqqjn3P6u2e_bi4gir7c_3_wQIi2D2dchlSaagYmH=
+sN8i41_4dHmpmSFCLulj8~" target=3D"_blank" title=3D"privacy.hyatt.com" style=
+=3D"text-decoration: underline; color: #727272;" data-mce-attribute-name-1 =
+data-mce-attribute-value-1 rel=3D"noopener">privacy.hyatt.com</a>.<br><br>
+Please be aware that hotel stays are subject to the <a href=3D"https://clic=
+k.hyatt.com/f/a/Fsu2NEfdsU-xPMJHwZVmHw~~/AAQRxRA~/HmidigaxlnwWnPwLoZQGuzA9Q=
+D5Hq1pFqk91SJbiFSodRKRw3HWSLIWvDQkmraj07lq8kMsMOEBHCxHLtRCkboqHXQcnEvzFF9k8=
+7OAhBscYs8VObijvs_cKFOhZvCbkxXR4fVXMYH9YNNafKJ7L5R8HD40DHbVCATZD5-hfqZKKMF4=
+Nb4j8yjOM0CUzr0D0JTzOuO0cd0fSlx4sgVB72UsrO9zpb43NM075l7v-zhhC8LEhEx42bVSvIb=
+boKe2_" target=3D"_blank" title=3D"Hyatt.com terms" style=3D"text-decoratio=
+n: underline; color: #727272;" data-mce-attribute-name-1 data-mce-attribute=
+-value-1 rel=3D"noopener">Hyatt.com terms</a>.<br><br>
+If you have any questions or comments about this email, please <a href=3D"h=
+ttps://click.hyatt.com/f/a/PLZY7shB2Jg24i3Tf7fMKw~~/AAQRxRA~/FM_yOUlwq50uCa=
+uD1okAFUukeH4RvE-3HukynYp00Ekpng6st_JnKlXwdNuk5N0nMDbO9eKTJBPvjNeAOzJHQmUNi=
+ApdnjCHhM4ssX-kQwDGNZLVEq7d6MZwG82_XiwoiaexVcMNuDbRJoKCnQHeyqT2LZvXjxgvg00U=
+AOfhI-1tonYv4xDziB4jYrJXtzUSkSWUhIEmMlC5CYE8ng1dXWSTJwKUk1tQqYnXZO1k-3RUXMi=
+ifiV5tIEvmowmFadi" target=3D"_blank" title=3D"contact us" style=3D"text-dec=
+oration: underline; color: #727272;" data-mce-attribute-name-1 data-mce-att=
+ribute-value-1 rel=3D"noopener">contact us</a>. Please do not reply to this=
+ email.<br><br>
+As used in this email, the terms "we," "our," "Hyatt" and "Hyatt Hotels &am=
+p; Resorts" encompass hotels operated, managed, franchised, owned, leased, =
+developed, licensed or provided services by subsidiaries and affiliates of =
+Hyatt Hotels Corporation. The trademarks Hyatt, World of Hyatt, Park Hyatt,=
+ Alila, Miraval, Impression by Secrets, The Unbound Collection by Hyatt, An=
+daz, Thompson Hotels, The Standard, Dream, The StandardX, Breathless Resort=
+s &amp; Spas, JdV by Hyatt, Bunkhouse Hotels, Me and All Hotels, Zo=C3=ABtr=
+y, Hyatt Ziva, Hyatt Zilara, Secrets, Dreams, Hyatt Vivid, Sunscape, Alua H=
+otels &amp; Resorts, Grand Hyatt, Hyatt Regency, Destination by Hyatt, Hyat=
+t Centric, Hyatt Vacation Club, Caption by Hyatt, Unscripted by Hyatt, Hyat=
+t Place, Hyatt House, Hyatt Studios, Hyatt Select, and related marks are tr=
+ademarks of Hyatt Corporation or its affiliates.
+<br><br>=C2=A9 2026 Hyatt Corporation. All rights reserved.</p></div></td><=
+/tr></table></td></tr></tbody></table></td></tr></tbody></table></td></tr><=
+/tbody></table>
+<!-- End -->
+
+</div></td></tr></table>
+</td></tr></tbody></table></td></tr>
+</tbody></table>
+</td></tr></tbody></table>
+<!-- End -->
+
+<img border=3D"0" width=3D"1" height=3D"1" alt=3D"" src=3D"https://click.hy=
+att.com/q/5dcmkMBVfk06_B8aMIlvdQ~~/AAQRxRA~/6ZNeG8BOL8oTg42qsCoo4hFeShEIuJV=
+CWO6Ezibnqvgt8j087U5EkAfj_RfiAYcZ0_NTckhcQ6JUTN-wUDCBwQ~~">
+</body>
+</html>
+--_----QY8n6nFcZdshQnj4mdW71w===_5D/E4-15484-991B6B96--

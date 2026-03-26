@@ -1,0 +1,3210 @@
+Delivered-To: chris.catignani@gmail.com
+Received: by 2002:a05:7011:8906:b0:500:d9d8:62a0 with SMTP id ng6csp65325mdc;
+        Wed, 11 Feb 2026 01:54:08 -0800 (PST)
+X-Received: by 2002:a05:6830:6201:b0:7cf:cbee:6bd5 with SMTP id 46e09a7af769-7d46448594cmr7635131a34.19.1770803648281;
+        Wed, 11 Feb 2026 01:54:08 -0800 (PST)
+ARC-Seal: i=1; a=rsa-sha256; t=1770803648; cv=none;
+        d=google.com; s=arc-20240605;
+        b=bOLgGu6dMNfxZQT/3rg+48+usK8g2H0B39kG+HJ3YV5Yvh7oCVaOsnviUR6ZFGh5UZ
+         baH4so1K/1CzWR3fJauVTlzaSwvmGNYhVmtKZeVUE7ZcUFG7kKUwOssPgBTxebXi4ahl
+         xbZZYdkfps4t0UaawJ7/1qHuP8aqk8NJ030hW3vthA/+GIaAQDJirdLwngzVxSVolMiO
+         WkFVKfMu50ouRyephQrxlYkdaOEq9hrIKnp6xMGMaIYubpnCAZuqf8Pzar/fnHsgc45m
+         G4+FNZMQ1/xpfUbKfFFwiFkMR0ca1MkWB9+bqaQr/QPO4uwPm+Rue1nlBsH24B6AQ7ac
+         WRJA==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
+        h=date:to:from:subject:reply-to:feedback-id:mime-version:message-id
+         :list-unsubscribe-post:list-unsubscribe:dkim-signature;
+        bh=PZk6FFbLm1oNizwNAS8pJ/6C15uteucHz0dL59sx4hU=;
+        fh=f7GuxESQjwnxwLD1SAPk04143tnE8OcHo/hU2reyUjg=;
+        b=BM9tEowQq85kfNMBJY3OLE+S8fDY4J4Emb6iuSYvCRYWsaMy4zlHsHVD0SxmEsEC/C
+         GvmcbEYdsRC+JZ4KmRw0Ii90LDEUBTjIWy9bfGwV9aum0fGiQTPRfeT6FNOZOvUO5tSd
+         rJrj3YAiTMT2Sl3hp+hssRGz/M2EQJ+zXD8kVUWzc2bLtReGJho27vKYAUoDI3+jjUmz
+         fcQdcuWRl/VtL7MyZWVznV6Wpt9xV2PPefGY2PE/3Vn4FyNIXK6szrrhhg2uw7LoDj4A
+         PCBu/I2yN8n2SM/ifKrEKimPnqODvXu/aIQI1b5uLjr7qFY4GCho5Xi0aMo7CMHdwnqh
+         ZBAQ==;
+        dara=google.com
+ARC-Authentication-Results: i=1; mx.google.com;
+       dkim=pass header.i=@res-marriott.com header.s=ep1 header.b=gQKbOHJK;
+       spf=pass (google.com: domain of bounce@res-marriott.com designates 142.54.247.85 as permitted sender) smtp.mailfrom=bounce@res-marriott.com;
+       dmarc=pass (p=NONE sp=NONE dis=NONE) header.from=res-marriott.com
+Return-Path: <bounce@res-marriott.com>
+Received: from mta085c.pmx1.epsl1.com (mta085c.pmx1.epsl1.com. [142.54.247.85])
+        by mx.google.com with ESMTPS id 46e09a7af769-7d4a772fe4csi838121a34.99.2026.02.11.01.54.08
+        for <chris.catignani@gmail.com>
+        (version=TLS1_2 cipher=ECDHE-ECDSA-AES128-GCM-SHA256 bits=128/128);
+        Wed, 11 Feb 2026 01:54:08 -0800 (PST)
+Received-SPF: pass (google.com: domain of bounce@res-marriott.com designates 142.54.247.85 as permitted sender) client-ip=142.54.247.85;
+Authentication-Results: mx.google.com;
+       dkim=pass header.i=@res-marriott.com header.s=ep1 header.b=gQKbOHJK;
+       spf=pass (google.com: domain of bounce@res-marriott.com designates 142.54.247.85 as permitted sender) smtp.mailfrom=bounce@res-marriott.com;
+       dmarc=pass (p=NONE sp=NONE dis=NONE) header.from=res-marriott.com
+Return-Path: <bounce@res-marriott.com>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=res-marriott.com; s=ep1; t=1770803648; bh=PZk6FFbLm1oNizwNAS8pJ/6C15uteucHz0dL59sx4hU=; h=List-Unsubscribe:List-Unsubscribe-Post:MIME-Version:Subject:From:
+	 To:Date:Content-Type; b=gQKbOHJK7ryoHIAvMkHt1ctIPhi7UYEyqNrai64JKk8Jmv2gcUNz+Z+eEvxyDgB01
+	 BaU4MVA+fEafclqK6+iKnwu/BG5fZ2SQeUqdMmWOEpFvxQ3B5uhOapgHkYuEiaFtjd
+	 5dUJPZQdq8ejTLTCy/ZQLGEAuDj9iDY0i6sihcJc=
+Received: from [10.233.84.239] ([10.233.84.239:51958]) by pc1udsmtn1n17 (envelope-from <bounce@res-marriott.com>) (ecelerity 3.6.9.48312 r(Core:3.6.9.0)) with ECSTREAM id 80/63-14426-0C15C896; Wed, 11 Feb 2026 09:54:08 +0000
+List-Unsubscribe: <mailto:bounce-HP2v710000019c4c1f4ee8977821434b5c56d0123@res-marriott.com?subject=list-unsubscribe>,<https://res-marriott.com/U2/v710000019c4c1f4ee8977821434b5c56d0/19b293d495584a56000001c1c0b84425>
+List-Unsubscribe-Post: List-Unsubscribe=One-Click
+Message-ID: <HP2v710000019c4c1f4ee8977821434b5c56d0123@res-marriott.com>
+MIME-Version: 1.0
+Feedback-ID: 19b293d4-9558-4a56-938e-c04986a0323e:aedf04e0-1e87-4994-a7f0-c9e4720833b5:email:epslh1
+X-NSS: 19b293d4-9558-4a56-938e-c04986a0323e
+Reply-To: "reservations@res-marriott.com" <reservations@res-marriott.com>
+Subject: Reservation Confirmation #72023331 for The Serangoon House Little India, Singapore, a Tribute Portfolio Hotel
+From: Tribute Reservations <reservations@res-marriott.com>
+To: chris.catignani@gmail.com
+Date: Wed, 11 Feb 2026 09:54:08 +0000
+Content-Type: multipart/alternative; boundary="-=Part.38b6f.31ea980b254c0964.19c4c1f568e.48556c0efe8f4092=-"
+
+---=Part.38b6f.31ea980b254c0964.19c4c1f568e.48556c0efe8f4092=-
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/html; charset=UTF-8
+
+<!-- Font variation scripting start -->
+
+<!-- Font variation scripting end -->=20
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.=
+w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns=3D"http://www.w3.org/1999/xhtml" xmlns:v=3D"urn:schemas-microso=
+ft-com:vml" xmlns:o=3D"urn:schemas-microsoft-com:office:office">
+<head>
+  <title>Reservation Confirmation #72023331 for The Serangoon House Little =
+India, Singapore, a Tribute Portfolio Hotel</title>
+<meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3DUTF-8" />
+<meta name=3D"viewport" content=3D"width=3Ddevice-width" /> =20
+<meta name=3D"x-apple-disable-message-reformatting">
+<style type=3D"text/css">
+body {
+=09margin: 0px !important;
+=09padding: 0px !important;
+}
+a:link {
+=09border: none !important;
+=09outline: none !important;
+}
+.ExternalClass * {
+=09line-height: 112%;
+}
+.ExternalClass p, .ExternalClass span, .ExternalClass font, .ExternalClass =
+td {
+=09line-height: 112%;
+}
+strong {
+=09font-weight: bold !important;
+}
+em {
+=09font-style: italic !important;
+}
+a[href^=3Dtel], a[href^=3D"sms"], .nolinkcolor a{
+    color:inherit !important;
+    text-decoration:none !important;
+}
+table, td {
+=09border-collapse: collapse;
+=09mso-table-lspace: 0pt;
+=09mso-table-rspace: 0pt;
+=09-webkit-text-size-adjust: none;
+}
+.sup {
+=09-webkit-text-size-adjust: none;
+}
+a[x-apple-data-detectors] {
+=09color: inherit !important;
+=09text-decoration: none !important;
+=09font-size: inherit !important;
+=09font-family: inherit !important;
+=09font-weight: inherit !important;
+}
+th {
+=09font-weight: normal !important;
+}
+@media only screen and (max-width: 600px) {
+.full {
+=09width: 100% !important;
+}
+.fullgmail {
+=09width: 100% !important;
+=09min-width: 100% !important;
+}
+.displayBlock {
+  width:100% !important;=20
+  display:block !important;
+}
+.displayBlock2 {
+  width:95% !important;
+  display:block !important;
+}
+.style1 {
+=09vertical-align: bottom !important;
+}
+.style2 {
+=09padding:0px 0px 0px 0px !important;
+=09font-size:32px !important;
+}
+.style3 {
+=09padding:15px 0px 0px 0px !important;
+=09font-size:20px !important;
+}
+.style4 {
+=09padding:0px 0px 5px 0px !important;
+=09font-size:24px !important;
+}
+.style5 {
+=09font-size:20px !important;
+}
+.style6 {
+=09vertical-align:top !important;
+}
+.style7 {
+=09background-color: #FFFFFF !important;
+=09padding:20px 10px 20px 10px !important;
+}
+.style8 {
+    padding:10px 0px 0px 0px !important;
+    font-size:20px !important;
+}
+.pad1 {
+=09padding:10px 0px 0px 0px !important;
+}
+.pad2 {
+=09padding:10px 0px 0px 0px !important;
+}
+.pad3 {
+=09padding:0px 10px 0px 10px !important;
+}
+.pad4 {
+=09padding:0px 0px 20px 0px !important;
+}
+.pad5 {
+=09padding:20px 20px 20px 10px !important;
+}
+.pad6 {
+=09padding:12px 10px 12px 10px !important;
+}
+.pad7 {
+=09padding:12px 10px 12px 10px !important;
+}
+.pad8 {
+=09padding: 15px 0px 15px 0px !important;
+}
+.pad9 {
+=09padding: 0px 10px 0px 10px !important;
+}
+.pad10 {
+=09padding: 12px 10px 0px 10px !important;
+}
+.pad11 {
+=09padding:20px 0px 0px 0px !important;
+}
+.pad12 {
+=09padding:10px 25px 20px 25px !important;
+}
+.pad13 {
+=09padding:10px 0px 10px 0px !important;
+}
+.pad14 {
+=09padding:20px 0px 20px 0px !important;
+}
+.pad15 {
+=09padding:0px 0px 20px 0px !important;
+}
+.pad16 {
+=09padding:15px 0px 0px 0px !important;
+}
+.pad17 {
+=09padding:20px 0px 20px 0px !important;
+}
+.pad18 {
+=09padding:5px 0px 5px 0px !important;
+}
+.pad19 {
+=09padding:0px 20px 20px 20px !important;
+}
+.pad20 {
+=09padding:0px 10px 20px 10px !important;
+}
+.pad21 {
+=09padding:10px 0px 30px 0px !important;
+}
+.pad22 {
+=09padding:20px 0px 0px 0px !important;
+}
+.pad23 {
+=09padding:15px 0px 10px 0px !important;
+}
+.pad24 {
+=09padding:25px 0px 0px 0px !important;
+}
+.pad25 {
+=09padding:0px 10px 45px 10px !important;
+}
+.pad26 {
+=09padding:17px 0px 17px 0px !important;
+}
+.pad27 {
+=09padding:10px 20px 25px 20px !important;
+}
+.pad28 {
+=09padding:0px 0px 0px 10px !important;
+}
+.pad29 {
+=09padding:15px 0px 20px 0px !important;
+}
+.pad30 {
+=09padding:7px 0px 0px 0px !important;
+}
+.pad31 {
+=09padding:0px 12px 0px 12px !important;
+}
+.pad32 {
+=09padding:10px 0px 0px 0px !important;
+}
+.pad33 {
+=09padding:15px 0px 15px 0px !important;
+}
+.pad34 {
+=09padding:15px 10px 15px 10px !important;
+}
+.pad35 {
+    padding:0px 0px 10px 0px !important;
+}
+.pad36 {
+    padding:97px 0px 0px 0px !important;
+}
+.pad37 {
+    padding:0px 0px 10px 0px !important;
+}
+.pad38 {
+    padding:0px 0px 0px 0px !important;
+}
+.pad39 {
+    padding:20px 10px 20px 10px !important;
+}
+.pad40 {
+    padding:0px 0px 10px 0px !important;
+}
+.nopad {
+=09padding:0px 0px 0px 0px !important;
+}
+.fontsize1 {
+=09font-size:20px !important;
+}
+.fontsize2 {
+=09font-size:24px !important;
+}
+.fontsize3 {
+=09font-size:20px !important;
+}
+.fontsize4 {
+=09font-size:20px !important;
+}
+.textaligncenter {
+=09text-align:center !important;
+}
+.heightadj1 {
+=09height:20px !important;
+}
+.heightauto {
+    height: auto !important;              =20
+}
+.hide {
+=09display: none !important;
+}
+.mobile_show {
+=09display: block !important;
+=09width: auto !important;
+=09overflow: visible !important;
+=09float: none !important;
+=09max-height: none !important;
+=09line-height: normal !important;
+    height: auto !important;
+}
+.mobileshow {
+=09display: block !important;
+=09width: auto !important;
+=09overflow: visible !important;
+=09float: none !important;
+=09max-height: none !important;
+=09line-height: normal !important;
+    height: auto !important;
+}
+/* WRAP & RESIZE ON MOBILE */
+.wrap {
+ width: 100% !important;
+ height: auto !important;
+ min-width: 100% !important;
+}
+.imgfull {
+=09width: 100% !important;
+=09height: auto !important;
+}
+.imgresize1 {
+=09width: 85px !important;
+=09height: auto !important;
+}
+.imgresize2 {
+=09width: 85px !important;
+=09height: auto !important;
+}
+.imgresize3 {
+    width: 75% !important;
+    height: auto !important;
+}=20
+.wdth1 {
+=09width: 203px !important;
+}
+.wdth2 {
+=09width: 356px !important;
+}
+.widthadj {
+   width:auto !important;
+}
+=09.pT10{padding-top: 10px !important;}
+.pl10pr10 {
+padding-left: 10px !important;
+padding-right: 10px !important;
+} =20
+=09.pl0{padding-left: 0px!important;}
+=09.padT10{padding-top: 10px !important;}
+=09*[class=3Ddrop], .drop {
+float: inherit !important;
+width: 100% !important;
+display: block !important;
+padding: 0 !important;
+text-align: inherit !important;
+}
+}
+ =20
+
+@media screen and (max-width: 414px) {
+.bgswap1 {
+=09background-image:url("") !important;
+}
+}
+</style>
+
+<!--[if !mso]><!-->
+<style type=3D"text/css">
+@font-face {
+font-family: 'Proxima-Nova-Regular';
+src: url('http://cache.marriott.com/aka-fonts/MarriottDigital/proxima-nova-=
+regular.woff') format('woff'),
+url('http://cache.marriott.com/aka-fonts/MarriottDigital/proxima-nova-regul=
+ar.ttf') format('truetype'),
+url('http://cache.marriott.com/aka-fonts/MarriottDigital/proxima-nova-regul=
+ar.svg') format('svg');
+font-style: normal;
+}
+[style*=3D"Proxima-Nova-Regular"] {font-family:'Proxima-Nova-Regular', Aria=
+l, Helvetica, Verdana, sans-serif !important;
+}
+</style>
+<!--<![endif]-->
+<!--[if !mso]><!-->
+<style type=3D"text/css">
+@font-face {
+    font-family: 'AvenirLTStd-Heavy';
+    src: url('http://cache.marriott.com/aka-fonts/Tribute/AvenirLTStd-Heavy=
+.eot') format('embedded-opentype'),
+url('http://cache.marriott.com/aka-fonts/Tribute/AvenirLTStd-Heavy.woff') f=
+ormat('woff'),
+url('http://cache.marriott.com/aka-fonts/Tribute/AvenirLTStd-Heavy.ttf') fo=
+rmat('truetype'),
+url('http://cache.marriott.com/aka-fonts/Tribute/AvenirLTStd-Heavy.otf') fo=
+rmat('otf'),
+url('http://cache.marriott.com/aka-fonts/Tribute/AvenirLTStd-Heavy.woff2') =
+format('woff2'),
+url('http://cache.marriott.com/aka-fonts/Tribute/AvenirLTStd-Heavy.svg') fo=
+rmat('svg');
+font-style: normal;
+}
+  [style*=3D"AvenirLTStd-Heavy"] {font-family:'AvenirLTStd-Heavy', Arial, H=
+elvetica, Verdana, sans-serif !important;
+}
+</style>
+<!--<![endif]-->
+=09
+<!--[if (gte mso 9)|(IE)]>
+    <style type=3D"text/css">
+     .langbreak td {
+     word-break:break-all !important;
+    }
+    </style>
+<![endif]-->
+<!--[if gte mso 9]>
+<xml>
+  <o:OfficeDocumentSettings>
+    <o:AllowPNG/>
+    <o:PixelsPerInch>96</o:PixelsPerInch>
+ </o:OfficeDocumentSettings>
+</xml>
+<![endif]-->
+</head>
+
+<body leftmargin=3D"0" topmargin=3D"0" rightmargin=3D"0" style=3D"margin:0 =
+!important; padding:0 !important;">
+<div style=3D"display:none; !important;color:#ffffff;line-height:0px;font-f=
+amily:Arial,Helvetica,sans-serif;max-height:0px;max-width:0px;opacity:0;ove=
+rflow:hidden;mso-hide:all;">
+&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nb=
+sp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;=
+&zwnj;&nbsp;
+&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nb=
+sp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;=
+&zwnj;&nbsp;
+&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nb=
+sp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;=
+&zwnj;&nbsp;
+&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nb=
+sp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;=
+&zwnj;&nbsp;
+&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nb=
+sp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;=
+&zwnj;&nbsp;
+&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nb=
+sp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;=
+&zwnj;&nbsp;
+&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nb=
+sp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;=
+&zwnj;&nbsp;
+&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nb=
+sp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;=
+&zwnj;&nbsp;
+&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nb=
+sp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;=
+&zwnj;&nbsp;
+&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nb=
+sp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;=
+&zwnj;&nbsp;
+</div>=20
+<!--[if (!mso)&(ie)]><!-->
+<span style=3D"width:0; overflow:hidden; float:left; display:none; max-heig=
+ht:0; line-height:0;">
+ReplyCode: MC|CNF|en_US
+</span>=20
+<!--<![endif]--> =20
+<!-- AAM open pixel -->
+<img src=3D"http://marriottinternationa.demdex.net/event?d_cid=3D64650%0166=
+F7390038D52D1818F3F023077F00534.01%010&d_event=3Dimp&c_mailingname=3D2022-0=
+7-22_Prod_Confirmation_DYNAMIC_RTM" width=3D"1" height=3D"1" border=3D"0">
+<!-- AAM open pixel -->   =20
+ =20
+<!-- PCM tracking pixel -->
+<table cellpadding=3D"0" cellspacing=3D"0" border=3D"0" width=3D"100%"><tr>=
+<td align=3D"left" valign=3D"top" style=3D"font-size:0px; line-height: 0px;=
+"><img src=3D'https://res-marriott.com/O/v710000019c4c1f4ee8977821434b5c56d=
+0/19b293d495584a5600004c5a42963aa1' style=3D"display:none; max-height: 0px;=
+ font-size: 0px; overflow: hidden; mso-hide: all"/></td></tr></table>
+<!-- PCM tracking pixel --> =20
+ =20
+<!-- Color variation scripting start -->
+
+<!-- Color variation scripting end -->=20
+ =20
+<!--What to expect language variation scripting start -->
+
+
+
+
+<!-- What to expect language variation scripting end -->=20
+ =20
+<!--[if (!mso)&(ie)]><!-->
+<span style=3D"width:0; overflow:hidden; float:left; display:none; max-heig=
+ht:0; line-height:0;" class=3D"hide">
+Your reservation details and tips to make the most of your trip.
+</span>=20
+<!--<![endif]-->
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"center" bgcolor=3D"#f8f8f8" style=3D"vertical-align:top; p=
+adding:0px 0px 15px 0px;" class=3D"nopad">
+     <table width=3D"640" border=3D"0" align=3D"center" cellpadding=3D"0" c=
+ellspacing=3D"0" class=3D"fullgmail" style=3D"min-width:640px;">
+        <tr>
+          <td width=3D"640" align=3D"left" class=3D"fullgmail" style=3D"ver=
+tical-align:top; padding:0px 0px 0px 0px; min-width:640px;">
+
+<!-- Anchor links start -->
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"center" style=3D"vertical-align:top; padding:17px 0px 8px =
+0px;">
+    <table border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+<!-- Start collapse -->=20
+    <td align=3D"left" style=3D"vertical-align:middle; padding:0px 0px 0px =
+0px; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font=
+-size:10px; color:#1C1C1C; font-weight:bold;"><a href=3D"#enhanceyourstay" =
+style=3D"color:#1C1C1C; text-decoration:none;">ENHANCE YOUR STAY</a></td>
+    <td align=3D"left" style=3D"vertical-align:middle; padding:0px 10px 0px=
+ 10px; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; fo=
+nt-size:10px; color:#1C1C1C;">|</td>
+<!-- END collapse -->
+    <td align=3D"left" style=3D"vertical-align:middle; padding:0px 0px 0px =
+0px; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font=
+-size:10px; color:#1C1C1C; font-weight:bold;"><a href=3D"#summaryofcharges"=
+ style=3D"color:#1C1C1C; text-decoration:none;">SUMMARY OF CHARGES</a></td>
+    <td align=3D"left" style=3D"vertical-align:middle; padding:0px 10px 0px=
+ 10px; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; fo=
+nt-size:10px; color:#1C1C1C;">|</td>
+    <td align=3D"left" style=3D"vertical-align:middle; padding:0px 0px 0px =
+0px; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font=
+-size:10px; color:#1C1C1C; font-weight:bold;"><a href=3D"#contactus" style=
+=3D"color:#1C1C1C; text-decoration:none;">CONTACT US</a></td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+<!-- Anchor links end -->
+
+<!-- Covid start -->
+       =20
+<!-- Covid end -->           =20
+           =20
+<!-- Header start -->
+<!-- Header start -->
+<div class=3D"hide">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" bgcolor=3D"#565656" style=3D"vertical-align:top; pad=
+ding:30px 20px 30px 20px;" class=3D"pad5">
+<table border=3D"0" cellspacing=3D"0" cellpadding=3D"0" width=3D"100%">
+  <tr>
+    <th align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+;" class=3D"drop">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:5px 0px 0px 0px=
+;"><img style=3D"display:block; color:transparent;" src=3D"https://cache.ma=
+rriott.com/content/dam/marriott-digital/tx/global-property-shared/en_us/log=
+o/assets/tx-logo-econfo-10634.png?downsize=3D600px:*" alt=3D"Tribute" width=
+=3D"112" height=3D"auto" border=3D"0" class=3D"imgresize2 ctacntr"></td>
+  </tr>
+</table>
+</th>
+    <th align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 20p=
+x;" class=3D"pad28 drop pad0">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+; font-family: 'AvenirLTStd-Heavy', Arial, Helvetica, sans-serif; line-heig=
+ht: 33px; font-size:22px; color:#FFFFFF;" class=3D"centertext"><a href=3D"h=
+ttps://res-marriott.com/T/v710000019c4c1f4ee8977821434b5c56d0/19b293d495584=
+a560000021ef3a0bcc2/19b293d4-9558-4a56-938e-c04986a0323e?__dU__=3Dv0G4RBKTX=
+g2GvMkOJesaYIzG4U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=3D=3D&__F__=3Dv0fUYvjHMDjRP=
+MSh3tviDHXIoXcPxvDgUUCCPvXMWoX_3eaFHlkq5FQzV1VmcRlSVPKbPcg7e0YPJ9ZiWB3TA-EL=
+7hNh-blLPSWTcxeT74EiVEMdtcIZaTnvWRv2uz2xFQmZYoMTIMDXqOLNaPgBqKpbdiK7bxLCETS=
+tijhcF-kzCrGOu-cAQjVqXyYPvWOAwvFYUBBgYi3y2HfXpdEjIcwxo5W6MBu5JrXqxVx7vKKc4H=
+R7djWFiJj-YrenMZ_PB4EHJWkFum04nGX110maCFM35loKaUXsfUwnXB7Sm2WIorrZ6A8sOcsvw=
+rcu9c-sSw8SyGsEIixGh2NMREKT2Gu9RV0Tj2XKf9kfjgwXVjg9Pfp07yZU5SSRqQsz5aNPr7FQ=
+GK1UO87aEwi8fcYl93VieHjI7uy4Nlwyn6RQNUYiregRLMYZi6Pz6FRxQDKUlITSenmQKCiuvFL=
+ErzKfUj59HHLjSW5EmN_Qm6Y5lGH1sXKIbRgouC-2-R_X-3D-F-TuYnTC-1zsA=3D" style=3D=
+"color:#FFFFFF; font-weight:400; text-decoration:none;" target=3D"_blank" t=
+itle=3D"Opens in a new window">The Serangoon House Little India, Singapore,=
+ a Tribute Portfolio Hotel</a></td>
+  </tr>
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:15px 0px 0px 0p=
+x;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <th width=3D"311" align=3D"left" style=3D"vertical-align:top; padding:0=
+px 0px 0px 0px;" class=3D"drop">
+<table border=3D"0" cellspacing=3D"0" cellpadding=3D"0" class=3D"ctacntr">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 6px 0px 0px=
+; line-height:0px;"><img style=3D"display:block; color:transparent;" src=3D=
+"https://cache.marriott.com/marriottassets/eConfo/map_icon_white.png?downsi=
+ze=3D600px:*" alt=3D"Address" width=3D"10" height=3D"15" border=3D"0"></td>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+; font-family: 'Swiss721 BT', Arial, Helvetica, sans-serif; font-size:12px;=
+ font-weight: 300; color:#FFFFFF;"><span class=3D"nolinkcolor"><a href=3D"h=
+ttps://res-marriott.com/T/v710000019c4c1f4ee8977821434b5c56d0/19b293d495584=
+a560000021ef3a0bcc3/19b293d4-9558-4a56-938e-c04986a0323e?__dU__=3Dv0G4RBKTX=
+g2GvMkOJesaYIzG4U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=3D=3D&__F__=3Dv0fUYvjHMDjRP=
+MSh3tviDHXIoXcPxvDgUUCCPvXMWoX_3eaFHlkq5FQzV1VmcRlSVPKbPcg7e0YPJ9ZiWB3TA-EL=
+7hNh-blLPSWTcxeT74EiVEMdtcIZaTnvWRv2uz2xFQmZYoMTIMDXqOLNaPgBqKpbdiK7bxLCETS=
+tijhcF-kzCrGOu-cAQjVqXyYPvWOAwvFYUBBgYi3y2HfXpdEjIcwxo5W6MBu5JrXqxVx7vKKc4H=
+R7djWFiJj1zHNcOo9cBryGE2umzsZToDigVdvevp_rASDoAvxOWgo3Vsvv_9BoBOwBj3J-3fRZV=
+IJTXMEzJog7DdxPf6MOTvXH2jGg934R0usSKL82FpvNOLVJnnXlle0e2_dLD0KT6FRxQDKUlIxi=
+qvkTKJ2WvRAq1fqCVayoRRM2xFYK4HJO6fDa41XJIxRw3VZLM_Ip4t_sjpMUegT-0Uuybt7QOeC=
+KUz5ZVhovcOkDhG8MagKpaXD9XbMzPnguvJc0CmkNa1TUHsK5rk" style=3D"color:#FFFFFF=
+; text-decoration:none;" target=3D"_blank" title=3D"Opens in a new window">=
+301 Serangoon Singapore 218224 Singapore</a></span></td>
+  </tr>
+</table>
+    </th>
+    <th align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 16p=
+x;" class=3D"drop pad0l pad20t">
+<table border=3D"0" cellspacing=3D"0" cellpadding=3D"0" class=3D"wid150 cta=
+cntr">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 6px 0px 0px=
+; line-height:0px;"><img style=3D"display:block; color:transparent;" src=3D=
+"https://cache.marriott.com/marriottassets/eConfo/phone_icon_white.png?down=
+size=3D600px:*" alt=3D"Telefone" width=3D"10" height=3D"15" border=3D"0"></=
+td>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+; font-family: 'Swiss721 BT', Arial, Helvetica, sans-serif; font-size:12px;=
+ font-weight: 300; color:#FFFFFF;"><span style=3D"color:inherit !important;=
+" class=3D"nolinkcolor">6797-2850</span></td>
+  </tr>
+</table>
+    </th>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+    </th>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+</div>
+<!--[if !mso]><!-->
+<div class=3D"mobile_show" style=3D"display:none; overflow:hidden; width:0;=
+ max-height:0; line-height:0;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0" role=
+=3D"presentation" class=3D"wrap">
+  <tbody>
+    <tr>
+      <td align=3D"center" bgcolor=3D"#565656" valign=3D"top" style=3D"padd=
+ing: 20px 30px 20px 30px;"><table width=3D"100%" border=3D"0" cellspacing=
+=3D"0" cellpadding=3D"0" role=3D"presentation">
+          <tbody>
+            <tr>
+              <td align=3D"center" valign=3D"top"><table width=3D"100%" bor=
+der=3D"0" cellspacing=3D"0" cellpadding=3D"0" role=3D"presentation">
+                  <tbody>
+                    <tr>
+                      <td align=3D"center" valign=3D"top"><img src=3D"https=
+://cache.marriott.com/content/dam/marriott-digital/tx/global-property-share=
+d/en_us/logo/assets/tx-logo-econfo-10634.png?downsize=3D600px:*" alt=3D"Tri=
+bute" width=3D"100" height=3D"auto" border=3D"0" class=3D"img_width" style=
+=3D"display:block; color:transparent;"></td>
+                    </tr>
+                    <tr>
+                      <td align=3D"center" valign=3D"top" style=3D"padding:=
+ 23px 0px 0px 0px; font-family: 'AvenirLTStd-Heavy', Arial, Helvetica, sans=
+-serif; line-height: 33px; font-size:22px; color:#FFFFFF;" class=3D"centert=
+ext"><a href=3D"https://res-marriott.com/T/v710000019c4c1f4ee8977821434b5c5=
+6d0/19b293d495584a560000021ef3a0bcc4/19b293d4-9558-4a56-938e-c04986a0323e?_=
+_dU__=3Dv0G4RBKTXg2GvMkOJesaYIzG4U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=3D=3D&__F_=
+_=3Dv0fUYvjHMDjRPMSh3tviDHXIoXcPxvDgUUCCPvXMWoX_3eaFHlkq5FQzV1VmcRlSVPKbPcg=
+7e0YPJ9ZiWB3TA-EL7hNh-blLPSWTcxeT74EiVEMdtcIZaTnvWRv2uz2xFQmZYoMTIMDXqOLNaP=
+gBqKpbdiK7bxLCETStijhcF-kzCrGOu-cAQjVqXyYPvWOAwvFYUBBgYi3y2HfXpdEjIcwxo5W6M=
+Bu5JrXqxVx7vKKc4HR7djWFiJj-YrenMZ_PB4EHJWkFum04nGX110maCFM35loKaUXsfUwnXB7S=
+m2WIorrZ6A8sOcsvwrcu9c-sSw8SyGsEIixGh2NMREKT2Gu9RV0Tj2XKf9kfjgwXVjg9Pfp07yZ=
+U5SSRqQsz5aNPr7FQGK1UO87aEwi8fcYl93VieHjI7uy4Nlwyn6RQNUYiregRLMYZi6Pz6FRxQD=
+KUlILyRZ4ZJ9LSSfxOr5NtKBUCS3AnnjsJ9OxeF3ljqYJKnEAr0f_QMgzW-R_X-3D-F-TuYnTC-=
+1zsA=3D" style=3D"color:#FFFFFF; font-weight:400; text-decoration:none;" ta=
+rget=3D"_blank" title=3D"Opens in a new window">The Serangoon House Little =
+India, Singapore, a Tribute Portfolio Hotel</a></td>
+                    </tr>
+                    <tr>
+                      <td align=3D"center" valign=3D"top" style=3D"padding:=
+ 20px 0px 0px 0px;"><table border=3D"0" cellspacing=3D"0" cellpadding=3D"0"=
+ role=3D"presentation" align=3D"center">
+                          <tbody>
+                            <tr>
+                              <td align=3D"left" style=3D"vertical-align:to=
+p; padding:0px 6px 0px 0px; line-height:0px;"><img style=3D"display:block; =
+color:transparent;" src=3D"https://cache.marriott.com/marriottassets/eConfo=
+/map_icon_white.png?downsize=3D600px:*" alt=3D"Address" width=3D"10" height=
+=3D"15" border=3D"0"></td>
+                              <td align=3D"center" valign=3D"top" style=3D"=
+padding: 0px 0px 0px 2px; font-family: 'Swiss721 BT', Arial, Helvetica, san=
+s-serif; line-height: 18px; font-size:12px; color:#FFFFFF;"><span class=3D"=
+nolinkcolor"><a href=3D"https://res-marriott.com/T/v710000019c4c1f4ee897782=
+1434b5c56d0/19b293d495584a560000021ef3a0bcc5/19b293d4-9558-4a56-938e-c04986=
+a0323e?__dU__=3Dv0G4RBKTXg2GvMkOJesaYIzG4U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=3D=
+=3D&__F__=3Dv0fUYvjHMDjRPMSh3tviDHXIoXcPxvDgUUCCPvXMWoX_3eaFHlkq5FQzV1VmcRl=
+SVPKbPcg7e0YPJ9ZiWB3TA-EL7hNh-blLPSWTcxeT74EiVEMdtcIZaTnvWRv2uz2xFQmZYoMTIM=
+DXqOLNaPgBqKpbdiK7bxLCETStijhcF-kzCrGOu-cAQjVqXyYPvWOAwvFYUBBgYi3y2HfXpdEjI=
+cwxo5W6MBu5JrXqxVx7vKKc4HR7djWFiJj1zHNcOo9cBryGE2umzsZToDigVdvevp_rASDoAvxO=
+Wgo3Vsvv_9BoBOwBj3J-3fRZVIJTXMEzJog7DdxPf6MOTvXH2jGg934R0usSKL82FpvNOLVJnnX=
+lle0e2_dLD0KT6FRxQDKUlIxiqvkTKJ2WvRAq1fqCVayoRRM2xFYK4HJO6fDa41XJIxRw3VZLM_=
+Ip4t_sjpMUeg5G9LVOcNt5Ml7HlRo2GcnRtKZUYxbeDjTJeZWGOPTLNV0ApQBRJkJda1TUHsK5r=
+k" style=3D"color:#FFFFFF; text-decoration:none;" target=3D"_blank" title=
+=3D"Opens in a new window">301 Serangoon Singapore 218224 Singapore</a></sp=
+an></td>
+                            </tr>
+                          </tbody>
+                        </table></td>
+                    </tr>
+                    <tr>
+                      <td align=3D"center" valign=3D"top" style=3D"padding:=
+ 20px 0px 0px 0px;"><table border=3D"0" cellspacing=3D"0" cellpadding=3D"0"=
+ role=3D"presentation" align=3D"center">
+                          <tbody>
+                            <tr>
+                              <td style=3D"vertical-align:top; padding:0px =
+6px 0px 0px; line-height:0px;"><img style=3D"display:block; color:transpare=
+nt;" src=3D"https://cache.marriott.com/marriottassets/eConfo/phone_icon_whi=
+te.png?downsize=3D600px:*" alt=3D"Telefone" width=3D"10" height=3D"15" bord=
+er=3D"0"></td>
+                              <td align=3D"left" valign=3D"top" style=3D"pa=
+dding: 0px 0px 0px 2px;font-family: 'Swiss721 BT', Arial, Helvetica, sans-s=
+erif; line-height: 18px; font-weight: 500; font-size:12px; color:#FFFFFF;">=
+<span style=3D"color:inherit !important;" class=3D"nolinkcolor">6797-2850</=
+span></td>
+                            </tr>
+                          </tbody>
+                        </table></td>
+                    </tr>
+                  </tbody>
+                </table></td>
+            </tr>
+          </tbody>
+        </table></td>
+    </tr>
+  </tbody>
+</table>
+</div>
+<!--<![endif] -->
+
+<!-- Header end -->           =20
+<!-- Header end -->
+
+<!-- Simple details start -->
+<!-- Simple details start -->
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" bgcolor=3D"#FFFFFF" style=3D"vertical-align:top; pad=
+ding:28px 20px 20px 20px;" class=3D"pad29">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+;" class=3D"pad3">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-si=
+ze:24px; color:#1C1C1C;" class=3D"fontsize1">Thank you for your booking,  C=
+hristopher Catignani.</td>
+  </tr>
+</table>
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:20px 0px 0px 0p=
+x; font-family:'AvenirLTStd-Heavy', 'Proxima-Nova-Regular', Arial, Helvetic=
+a, sans-serif; font-size:32px; color:#1C1C1C;" class=3D"style2">Seek the un=
+conventional</td>
+  </tr>
+</table>
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:20px 0px 0px 0p=
+x; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-s=
+ize:24px; color:#1C1C1C;" class=3D"style3">Tue, Apr 14, 2026 &ndash; Wed, A=
+pr 15, 2026</td>
+  </tr>
+</table>
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-si=
+ze:20px; color:#1C1C1C;">Confirmation Number: 72023331</td>
+    <td align=3D"right" style=3D"vertical-align:top; padding:0px 0px 0px 0p=
+x;"><a href=3D"https://res-marriott.com/H/2/v710000019c4c1f4ee8977821434b5c=
+56d0/19b293d4-9558-4a56-938e-c04986a0323e/HTML" style=3D"color:#FFFFFF; tex=
+t-decoration:none;" target=3D"_blank" title=3D"Opens in a new window"><img =
+style=3D"display:block; color:transparent;" src=3D"https://cache.marriott.c=
+om/marriottassets/eConfo/Print-icon-black.png?downsize=3D600px:*" alt=3D"" =
+width=3D"30" height=3D"30" border=3D"0"></a></td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+<!-- Property image start -->
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:7px 0px 0px 0px=
+;"><a href=3D"https://res-marriott.com/T/v710000019c4c1f4ee8977821434b5c56d=
+0/19b293d495584a560000021ef3a0bcc6/19b293d4-9558-4a56-938e-c04986a0323e?__d=
+U__=3Dv0G4RBKTXg2GvMkOJesaYIzG4U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=3D=3D&__F__=
+=3Dv0fUYvjHMDjRPMSh3tviDHXIoXcPxvDgUUCCPvXMWoX_3eaFHlkq5FQzV1VmcRlSVPxZ5k2s=
+28Kwwr8r0tjk8dtHmSXuM_7evKLUuRsx7RHANUp5kBcNRcEDbKnyGuRpDXfVOdDa9WyQS8oOqMa=
+YZwAmpxlw2qkDkJhhjKXfrYI3smWsLdxWIaHH6pvPunn_SEXkWSOYNrK_JFutNFkEHyy4pLBFzr=
+MzbwHWXr-5KfnenwDRnkwaCVKfmt1QWzcza7iAygTeOUkdAYgp-fU2jmh8Yt_Kk6NXtKpRoZ-Eu=
+Wsjy-eQAZRsVpfCJOjgvzrfoIuzDWxdtpoifilCoBUTgaWjkhCUTGOdaPgi6iNUOdYwZy8Dr8L7=
+1jHv2CdX0PJ5mD8HlPEmB9q8LzHGUGAKsG9RoyImT4S32_" style=3D"color:#FFFFFF; tex=
+t-decoration:none;" target=3D"_blank" title=3D"Opens in a new window"><img =
+style=3D"display:block; color:transparent;" src=3D"https://cache.marriott.c=
+om/is/image/marriotts7prod/tx-sintg-walk-way-01-a-f2-27564:Pano-Hor?downsiz=
+e=3D600px:*" alt=3D"The Serangoon House Little India, Singapore, a Tribute =
+Portfolio Hotel" width=3D"600" height=3D"200" border=3D"0" class=3D"imgfull=
+"></a></td>
+  </tr>
+</table>
+<!-- Property image end -->
+
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+;" class=3D"pad3">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:23px 0px 15px 0=
+px;" class=3D"pad33">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <th width=3D"115" align=3D"left" style=3D"vertical-align:top; padding:0=
+px 0px 0px 0px; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-=
+serif; font-size:20px; color:#1C1C1C; font-weight:normal !important;" class=
+=3D"displayBlock">Check-In:</th>
+    <th align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-si=
+ze:20px; color:#1C1C1C; font-weight:normal !important;" class=3D"displayBlo=
+ck">Tuesday, April 14, 2026</th>
+    <td align=3D"right" style=3D"vertical-align:top; padding:0px 0px 0px 0p=
+x; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-s=
+ize:20px; color:#1C1C1C;" class=3D"style1">03:00 PM</td>
+  </tr>
+</table>
+    </td>
+  </tr>
+  <tr>
+    <td height=3D"1" align=3D"left" bgcolor=3D"#d1d1d1" style=3D"vertical-a=
+lign:top; padding:0px 0px 0px 0px; line-height:0px;"><img style=3D"display:=
+block; color:transparent;" src=3D"https://images.harmony.epsilon.com/Conten=
+tHandler/images?id=3Dd989b3a2-e1be-4bfa-bdc0-408454a1e747" alt=3D"" width=
+=3D"1" height=3D"1" border=3D"0"></td>
+  </tr>
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:15px 0px 0px 0p=
+x;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td width=3D"115" align=3D"left" style=3D"vertical-align:top; padding:0=
+px 0px 0px 0px; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-=
+serif; font-size:20px; color:#1C1C1C;" class=3D"displayBlock">Check-Out:</t=
+d>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-si=
+ze:20px; color:#1C1C1C;" class=3D"displayBlock">Wednesday, April 15, 2026</=
+td>
+    <td align=3D"right" style=3D"vertical-align:top; padding:0px 0px 0px 0p=
+x; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-s=
+ize:20px; color:#1C1C1C;" class=3D"style1">12:00 PM</td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+
+    </td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+<!-- Simple details end -->
+<!-- Simple details end -->
+
+<!-- Room Type start -->
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" bgcolor=3D"#FFFFFF" style=3D"vertical-align:top; pad=
+ding:0px 20px 20px 20px;" class=3D"pad2 pad4">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+;" class=3D"pad3">
+<table width=3D"100%" cellspacing=3D"0" cellpadding=3D"0" border=3D"0">
+<tr>
+  <td style=3D"vertical-align:top;padding:25px 20px 25px 20px" bgcolor=3D"#=
+CECECE" align=3D"left" class=3D"pad6">
+<table width=3D"100%" cellspacing=3D"0" cellpadding=3D"0" border=3D"0">
+
+<tr>
+  <td style=3D"vertical-align:top;padding:0px 0px 0px 0px" align=3D"left">
+=09  <table width=3D"100%" cellspacing=3D"0" cellpadding=3D"0" border=3D"0"=
+>
+      <tr>
+        <td style=3D"vertical-align:top;padding:0px 0px 0px 0px" align=3D"l=
+eft"><table width=3D"100%" cellspacing=3D"0" cellpadding=3D"0" border=3D"0"=
+>
+            <tr>
+              <td style=3D"vertical-align:top;padding:0px 0px 0px 0px;font-=
+family:'Proxima-Nova-Regular',Arial,Helvetica,sans-serif;font-size:20px;col=
+or:#1C1C1C" align=3D"left">Number of rooms</td>
+              <td style=3D"vertical-align:top;padding:0px 0px 0px 0px;font-=
+family:'Proxima-Nova-Regular',Arial,Helvetica,sans-serif;font-size:20px;col=
+or:#1C1C1C" align=3D"right">1 Room</td>
+            </tr>
+          </table></td>
+      </tr>
+    </table>
+    <table width=3D"100%" cellspacing=3D"0" cellpadding=3D"0" border=3D"0">
+      <tr>
+        <td style=3D"vertical-align:top;padding:15px 0px 0px 0px" align=3D"=
+left"><table width=3D"100%" cellspacing=3D"0" cellpadding=3D"0" border=3D"0=
+">
+            <tr>
+              <td style=3D"vertical-align:top;padding:0px 0px 0px 0px;font-=
+family:'Proxima-Nova-Regular',Arial,Helvetica,sans-serif;font-size:20px;col=
+or:#1C1C1C" align=3D"left">Guests per room</td>
+              <td style=3D"vertical-align:top;padding:0px 0px 0px 0px;font-=
+family:'Proxima-Nova-Regular',Arial,Helvetica,sans-serif;font-size:20px;col=
+or:#1C1C1C" align=3D"right">1 Adult</td>
+            </tr>
+          </table></td>
+      </tr>
+    </table>
+    <table width=3D"100%" cellspacing=3D"0" cellpadding=3D"0" border=3D"0">
+      <tr>
+        <td style=3D"vertical-align:top;padding:15px 0px 0px 0px" align=3D"=
+left"><table width=3D"100%" cellspacing=3D"0" cellpadding=3D"0" border=3D"0=
+">
+            <tr>
+              <td style=3D"vertical-align:top;padding:0px 0px 0px 0px;font-=
+family:'Proxima-Nova-Regular',Arial,Helvetica,sans-serif;font-size:20px;col=
+or:#1C1C1C" align=3D"left">Guarantee Method</td>
+              <td style=3D"vertical-align:top;padding:0px 0px 0px 0px;font-=
+family:'Proxima-Nova-Regular',Arial,Helvetica,sans-serif;font-size:20px;col=
+or:#1C1C1C" align=3D"right">Credit Card Guarantee, Visa</td>
+            </tr>
+          </table></td>
+      </tr>
+    </table></td>
+</tr>
+</table>
+<table width=3D"100%" cellspacing=3D"0" cellpadding=3D"0" border=3D"0">
+<tr>
+  <td style=3D"vertical-align:top;padding:0px 0px 0px 0px;line-height:0px" =
+height=3D"15" align=3D"left"><img style=3D"display:block;color:transparent"=
+ src=3D"https://images.harmony.epsilon.com/ContentHandler/images?id=3Dd989b=
+3a2-e1be-4bfa-bdc0-408454a1e747" alt=3D"" width=3D"1" height=3D"1" border=
+=3D"0"></td>
+</tr>
+<tr>
+  <td style=3D"vertical-align:top;padding:0px 0px 0px 0px;line-height:0px" =
+height=3D"1" bgcolor=3D"#1C1C1C" align=3D"left"><img style=3D"display:block=
+;color:transparent" src=3D"https://images.harmony.epsilon.com/ContentHandle=
+r/images?id=3Dd989b3a2-e1be-4bfa-bdc0-408454a1e747" alt=3D"" width=3D"1" he=
+ight=3D"1" border=3D"0"></td>
+</tr>
+<tr>
+  <td style=3D"vertical-align:top;padding:0px 0px 0px 0px" align=3D"left"><=
+table width=3D"100%" cellspacing=3D"0" cellpadding=3D"0" border=3D"0">
+      <tr>
+        <td style=3D"vertical-align:top;padding:15px 0px 0px 0px" align=3D"=
+left"><table width=3D"100%" cellspacing=3D"0" cellpadding=3D"0" border=3D"0=
+">
+            <tr>
+              <td style=3D"vertical-align:top;padding:0px 0px 0px 0px;font-=
+family:'Proxima-Nova-Regular',Arial,Helvetica,sans-serif;font-size:20px;col=
+or:#1C1C1C" align=3D"left">Total for Stay (all rooms)</td>
+              <td style=3D"vertical-align:top;padding:0px 0px 0px 0px;font-=
+family:'Proxima-Nova-Regular',Arial,Helvetica,sans-serif;font-size:24px;col=
+or:#1C1C1C" align=3D"right">281.77 SGD</td>
+            </tr>
+          </table></td>
+      </tr>
+    </table></td>
+</tr>
+</table></td>
+</tr>
+</table>
+<!-- Room 1 start -->
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:20px 0px 0px 0p=
+x;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" bgcolor=3D"#CECECE" style=3D"vertical-align:top; pad=
+ding:25px 20px 25px 20px;" class=3D"pad6">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td width=3D"197" align=3D"left" style=3D"vertical-align:top; padding:0=
+px 0px 0px 0px;">
+<table border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"right" style=3D"vertical-align:middle; padding:0px 0px 0px=
+ 0px; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; fon=
+t-size:20px; color:#1C1C1C; font-weight:normal !important;">Room 1</td>
+  </tr>
+</table>
+    </td>
+
+  </tr>
+</table>
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td height=3D"15" align=3D"left" style=3D"vertical-align:top; padding:0=
+px 0px 0px 0px; line-height:0px;"><img style=3D"display:block; color:transp=
+arent;" src=3D"https://images.harmony.epsilon.com/ContentHandler/images?id=
+=3Dd989b3a2-e1be-4bfa-bdc0-408454a1e747" alt=3D"" width=3D"1" height=3D"1" =
+border=3D"0"></td>
+  </tr>
+  <tr>
+    <td height=3D"1" align=3D"left" bgcolor=3D"#1C1C1C" style=3D"vertical-a=
+lign:top; padding:0px 0px 0px 0px; line-height:0px;"><img style=3D"display:=
+block; color:transparent;" src=3D"https://images.harmony.epsilon.com/Conten=
+tHandler/images?id=3Dd989b3a2-e1be-4bfa-bdc0-408454a1e747" alt=3D"" width=
+=3D"1" height=3D"1" border=3D"0"></td>
+  </tr>
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+ <tr>
+    <td width=3D"197" align=3D"left" style=3D"vertical-align:top; padding:0=
+px 0px 0px 0px;">
+<table border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:middle; padding:15px 0px 0px=
+ 0px; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; fon=
+t-size:20px; color:#ffffff; font-weight:normal !important;"><a href=3D"http=
+s://res-marriott.com/T/v710000019c4c1f4ee8977821434b5c56d0/19b293d495584a56=
+0000021ef3a0bcc7/19b293d4-9558-4a56-938e-c04986a0323e?__dU__=3Dv0G4RBKTXg2G=
+vMkOJesaYIzG4U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=3D=3D&__F__=3Dv0fUYvjHMDjRPMSh=
+3tviDHXIoXcPxvDgUUCCPvXMWoX_3eaFHlkq5FQzV1VmcRlSVPzc0SmOv7qRQGORW0_J123MlII=
+hmsFdiSzVEJwoBHaU1ynMBUsPCuIPE17wzwtHiykR8rbkp-DUGMG9dO7ue5dWd-lGiAh_L7xDb7=
+Ha3NF_qsZgwhPpYTakrjT49BCupZSZuEw_IY3ETFx1RzBhGTCQzsUg_PoeqtwiPRPcD9DiCLn8j=
+XB35BNIY2RS6zj-Tpc_iRMLs_-3PSCY74wP5xOvIa-N4mlyR3h316XRIyHMMaOVujAbuSa16sVc=
+e7yinOB0e3Y1hYiY-ghHfpoYZOMc2s_VW6tXQCA4oFXb3r6f6wEg6AL8TloKN1bL7__QaATsAY9=
+yft30WVSCU1zBMyaIOw3cT3-jDk71x9oxoPd-EdLrEii_NhabzTi1SZ515ZXtHtv3Sw9Ck-hUcU=
+AylJSMYqr5Eyidlr0QKtX6glWsqEUTNsRWCuByTunw2uNVySMUcN1WSzPyKeLf7I6TFHoKI0vvO=
+qee5xQYGeaJ1r5JlkTrc4_QRdKFUMeEV8cR2baeSYMuiJisPWtU1B7Cua5A=3D=3D" style=3D=
+"color:#1C1C1C; text-decoration: none;">Room Type</a></td>
+    <td align=3D"right" style=3D"vertical-align:middle; padding:15px 0px 0p=
+x 4px;">
+<table width=3D"100%" cellspacing=3D"0" cellpadding=3D"0" border=3D"0">
+            <tr>
+              <td style=3D"vertical-align:top;padding:4px 0px 0px 0px; line=
+-height:0px;" align=3D"left"><img style=3D"display:block;color:transparent"=
+ src=3D"https://images.harmony.epsilon.com/ContentHandler/images?id=3D311d9=
+5cc-b651-49d5-94b8-53cef764c3ea" alt=3D"" width=3D"7" height=3D"10" border=
+=3D"0"></td>
+            </tr>
+          </table>
+=09</td>
+  </tr>
+</table>
+    </td>
+    <td width=3D"362" align=3D"right" style=3D"vertical-align:top; padding:=
+0px 0px 0px 0px;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"right" style=3D"vertical-align:top; padding:15px 0px 0px 0=
+px; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-=
+size:20px; color:#1C1C1C; font-weight:normal !important;">Royal Classic Twi=
+n, Guest room, 2 Twin Super, City view</td>
+  </tr>
+</table>
+
+=09<table width=3D"100%" cellspacing=3D"0" cellpadding=3D"0" border=3D"0">
+      <tr>
+        <td style=3D"vertical-align:top;padding:18px 0px 0px 0px" align=3D"=
+right"><table cellspacing=3D"0" cellpadding=3D"0" border=3D"0">
+            <tr>
+
+            </tr>
+          </table></td>
+      </tr>
+    </table>
+=09</td>
+  </tr>
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:15px 0px 0px 0p=
+x;" colspan=3D"2">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-si=
+ze:20px; color:#1C1C1C;">Guaranteed Requests:</td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td width=3D"50%" align=3D"left" style=3D"vertical-align:top; padding:1=
+5px 10px 0px 0px; font-family:'Proxima-Nova-Regular', Arial, Helvetica, san=
+s-serif; font-size:16px; color:#1C1C1C;">None</td>=20
+
+<td></td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td height=3D"15" align=3D"left" style=3D"vertical-align:top; padding:0=
+px 0px 0px 0px; line-height:0px;"><img style=3D"display:block; color:transp=
+arent;" src=3D"https://images.harmony.epsilon.com/ContentHandler/images?id=
+=3Dd989b3a2-e1be-4bfa-bdc0-408454a1e747" alt=3D"" width=3D"1" height=3D"1" =
+border=3D"0"></td>
+  </tr>
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:15px 0px 0px 0p=
+x;">
+<table border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"right" style=3D"vertical-align:middle; padding:0px 0px 0px=
+ 0px; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; fon=
+t-size:12px; color:#FFFFFF; font-weight:bold;"><a href=3D"https://res-marri=
+ott.com/T/v710000019c4c1f4ee8977821434b5c56d0/19b293d495584a560000021ef3a0b=
+cc8/19b293d4-9558-4a56-938e-c04986a0323e?__dU__=3Dv0G4RBKTXg2GvMkOJesaYIzG4=
+U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=3D=3D&__F__=3Dv0fUYvjHMDjRPMSh3tviDHXIoXcPx=
+vDgUUCCPvXMWoX_0JoZLAZABQF8ooLJw0siTTjzzxQBUxrlLDPXJ7Cceka300hjtWUavwpRPZ0N=
+4Kznis9B2Kazh8bp5_cudM7YtkVswG3ta_apGZMxzIM--CUtPMHhRcpKVp9Hsshi6-RdU_KONM9=
+L42XVvq2vKcWp2SyDyE3doR3Luk016RCKrD9gW5wNyqRgOjc3rMKr-Sn5MJbxXIJJpHCiNjNYBK=
+RNPvGWb3BMGYdsJjfcbfKW6JBCgSCcwAQd-ICXpC8Vp6UD1FIdYqeNKNL6eDkGaA5224kqcM3vp=
+oSnNR2y6W2LsZZX5gPhxkuxb-UbE-nGPPisQ3TPvJB0JjpTgJaonX2WYwyvIdWenmna3DfvtY6c=
+HFTOXmk4Y6GmC_eRFYMqlQS_8YzDHEDTiCeCYcbP351uSnBRn-FU0Nnxp8FOIMYZHF2vL6dcRGd=
+oWNesr-Qc9jgP-ZxrauOfgBmZBxy5c7HVOZGaAkhQZMGLsexVoP2n7282W9urXPubpPB8iwLWuQ=
+rcwEGUMPnGDM2UxSTeTOO7UNMVP5jiHKy-vRJ-qEuZWHm0WnQHl0YpjL" style=3D"color:#1=
+C1C1C; text-decoration:none;" target=3D"_blank" title=3D"Opens in a new win=
+dow">ALL REQUESTS</a></td>
+    <td align=3D"right" style=3D"vertical-align:middle; padding:0px 0px 0px=
+ 0px;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 4px=
+; line-height:0px;"><img style=3D"display:block; color:transparent;" src=3D=
+"https://images.harmony.epsilon.com/ContentHandler/images?id=3D477f5505-5b4=
+1-44de-9913-efee67b41e1f" alt=3D"" width=3D"5" height=3D"8" border=3D"0"></=
+td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table></td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>   =20
+    </td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>   =20
+    </td>
+  </tr>
+</table>
+<!-- Room 1 end -->
+<!-- Room Type end -->
+
+<!-- Modify CTA start -->
+<!-- Modify CTA start -->
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" bgcolor=3D"#FFFFFF" style=3D"vertical-align:top; pad=
+ding: 15px 20px 20px 20px;" class=3D"pad7">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+;">
+<table border=3D"0" cellspacing=3D"0" cellpadding=3D"0" class=3D"full">
+  <tr>
+    <td align=3D"center" bgcolor=3D"#FFF426" style=3D"vertical-align:top; p=
+adding:12px 20px 12px 20px; font-family:'Proxima-Nova-Regular', Arial, Helv=
+etica, sans-serif; font-size:16px; color:#FFFFFF; font-weight:bold;"><a hre=
+f=3D"https://res-marriott.com/T/v710000019c4c1f4ee8977821434b5c56d0/19b293d=
+495584a560000021ef3a0bcc9/19b293d4-9558-4a56-938e-c04986a0323e?__dU__=3Dv0G=
+4RBKTXg2GvMkOJesaYIzG4U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=3D=3D&__F__=3Dv0fUYvj=
+HMDjRPMSh3tviDHXIoXcPxvDgUUCCPvXMWoX_0JoZLAZABQF8ooLJw0siTTjzzxQBUxrlLDPXJ7=
+Cceka300hjtWUavwpRPZ0N4Kznis9B2Kazh8bp5_cudM7YtkVswG3ta_apGZMxzIM--CUtPMHhR=
+cpKVpOI34dqf1rTvR2wnfjPlJz1ABVP4GgVKvXw8f9sDW9TqaqoYzuc70SgCcFheVM2g4HS7MMt=
+_Bhdd4opcLpV7XNc8OFLcn3WDW-q89pHa0e1QwLVpLQjOLYOtYXluo2I274hezU7MSL28147lu7=
+W0-faP2wOyQ0JQLXjK1w7eojlfmeVy05-AHHlG-616zI73QAO-FrnSAhnGcQl3-7ii4Vi6tJ0qe=
+IfMmac7C7l1fJ1Q5pzQJgU7-sIV0cG5BCiALeroZJ3lHzEeABIX8OoKCb1ilFDK1JSzzc55oxGK=
+hFK4uBS5LWWYTo9QnkjyQ6gC7OPxVtO23JCRsLpSPN-bSKhwXInhxWAv0MgNy9rOlNu5qxpSVpn=
+sgB__095NCKvRPpnTeqIxxY7GDB5rqVcXDeOlIiMi-WKq9jA80u-Dx5-qBJnchazxAaw=3D=3D"=
+ style=3D"display:inline-block; width:100%; color:#1C1C1C; text-decoration:=
+none;" target=3D"_blank" title=3D"Opens in a new window">Manage Stay</a></t=
+d>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+=09</td>
+  </tr>
+</table>
+<!-- Modify CTA end -->
+<!-- Modify CTA end -->
+           =20
+           =20
+<!-- About Your Stay start -->
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:20px 0px 0px 0p=
+x;"><table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+        <tr>
+          <td align=3D"left" bgcolor=3D"#FFFFFF" style=3D"vertical-align:to=
+p; padding:0px 0px 0px 0px;"><table width=3D"100%" border=3D"0" cellspacing=
+=3D"0" cellpadding=3D"0">
+              <tr>
+                <td align=3D"left" style=3D"vertical-align:top; padding:0px=
+ 20px 20px 20px;" class=3D"pad7"><table width=3D"100%" border=3D"0" cellspa=
+cing=3D"0" cellpadding=3D"0">
+                    <tr>
+                      <td align=3D"left" style=3D"vertical-align:top; paddi=
+ng:20px 0px 0px 0px;"><table width=3D"100%" border=3D"0" cellspacing=3D"0" =
+cellpadding=3D"0">
+                          <tr>
+                            <td align=3D"center" style=3D"vertical-align:to=
+p; padding:10px 0px 30px 0px; font-family:'AvenirLTStd-Heavy', 'Proxima-Nov=
+a-Regular', Arial, Helvetica, sans-serif; font-size:28px; color:#2a2a2a;" c=
+lass=3D"fontsize2"><a name=3D"iiays" id=3D"iiays"></a>Important Information=
+ About Your Stay</td>
+                          </tr>
+                          <tr>
+                            <td align=3D"left" style=3D"vertical-align:top;=
+ padding:0px 20px 25px 20px;" class=3D"pad7"><table width=3D"100%" border=
+=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+                                <tr>
+                                  <td align=3D"left" style=3D"vertical-alig=
+n:top; padding:0px 0px 0px 0px;" class=3D"pad3"><table width=3D"100%" borde=
+r=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+                                      <tr>
+                                        <td align=3D"left" style=3D"vertica=
+l-align:top; padding:0px 0px 0px 0px;"><table width=3D"100%" border=3D"0" c=
+ellspacing=3D"0" cellpadding=3D"0">
+                                            <tr>
+                                              <td align=3D"left" style=3D"v=
+ertical-align:top; padding:0px 0px 15px 0px;" class=3D"pad33"><table width=
+=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+                                                  <tr>
+                                                    <th width=3D"60" align=
+=3D"center" style=3D"vertical-align:middle; padding:0px 0px 15px 0px; font-=
+family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-size:20px=
+; color:#2a2a2a; font-weight:normal !important;" class=3D"displayBlock"><im=
+g style=3D"display:block; color:transparent; padding: 0px 42px 0px 0px;" sr=
+c=3D"https://images.harmony.epsilon.com/ContentHandler/images/aedf04e0-1e87=
+-4994-a7f0-c9e4720833b5/Content%20Blocks/20_11172017_confirmation-template-=
+final.jpg" alt=3D"What to Expect Alert" width=3D"18" height=3D"15" border=
+=3D"0" class=3D"nopad" /></th>
+                                                    <th align=3D"left" styl=
+e=3D"vertical-align:top; padding:0px 0px 0px 0px; font-family:'Proxima-Nova=
+-Regular', Arial, Helvetica, sans-serif; font-size:16px; color:#2a2a2a; fon=
+t-weight:normal !important;" class=3D"displayBlock textaligncenter">In orde=
+r to prepare for your upcoming stay, we invite you to  <a href=3D"https://r=
+es-marriott.com/T/v710000019c4c1f4ee8977821434b5c56d0/19b293d495584a5600000=
+21ef3a0bcca/19b293d4-9558-4a56-938e-c04986a0323e?__dU__=3Dv0G4RBKTXg2GvMkOJ=
+esaYIzG4U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=3D=3D&__F__=3Dv0fUYvjHMDjRPMSh3tviD=
+HXIoXcPxvDgUUCCPvXMWoX_0JoZLAZABQF8ooLJw0siTTjzzxQBUxrlIaw4ebIO0J0RJ_Ha08gH=
+nU1essB2V6YS0rrZ6A8sOcsvwrcu9c-sSw8SyGsEIixGh2NMREKT2Gu9RV0Tj2XKf9kfjgwXVjg=
+9Pfp07yZU5SSRqQsz5aNPr7FQGK1UO87aEwi8fcYl93VieHjI7uy4Nlwyn6RQNUYiregRLMYZi6=
+Pz6FRxQDKUlIOFZbHpBSJHVy0nB_G260RK85tcJdET2idm_ec8zjteucytTOMGGwX2-R_X-3D-F=
+-TuYnTC-1zsA=3D" style=3D"text-decoration: underline; color:#2a2a2a; font-w=
+eight: bold;">learn more</a>  about what to expect when you arrive and the =
+experiences that await you.</th>
+                                                  </tr>
+                                                </table></td>
+                                            </tr>
+                                          </table></td>
+                                      </tr>
+                                    </table></td>
+                                </tr>
+                              </table>
+                              <table width=3D"100%" border=3D"0" cellspacin=
+g=3D"0" cellpadding=3D"0">
+                                <tr>
+                                  <td align=3D"left" style=3D"vertical-alig=
+n:top; padding:0px 0px 0px 0px;" class=3D"pad3"><table width=3D"100%" borde=
+r=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+                                      <tr>
+                                        <td align=3D"left" style=3D"vertica=
+l-align:top; padding:0px 0px 0px 0px;"><table width=3D"100%" border=3D"0" c=
+ellspacing=3D"0" cellpadding=3D"0">
+                                            <tr>
+                                              <td align=3D"left" style=3D"v=
+ertical-align:top; padding:0px 0px 15px 0px;" class=3D"pad33"><table width=
+=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+                                                  <tr>
+                                                    <th width=3D"60" align=
+=3D"center" style=3D"vertical-align:middle; padding:0px 0px 15px 0px; font-=
+family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-size:20px=
+; color:#2a2a2a; font-weight:normal !important;" class=3D"displayBlock"><im=
+g style=3D"display:block; color:transparent; padding: 0px 42px 0px 0px;" sr=
+c=3D"https://images.harmony.epsilon.com/ContentHandler/images/aedf04e0-1e87=
+-4994-a7f0-c9e4720833b5/Content%20Blocks/20_11172017_confirmation-template-=
+final.jpg" alt=3D"Renovation Alert" width=3D"18" height=3D"15" border=3D"0"=
+ class=3D"nopad" /></th>
+                                                    <th align=3D"left" styl=
+e=3D"vertical-align:top; padding:0px 0px 0px 0px; font-family:'Proxima-Nova=
+-Regular', Arial, Helvetica, sans-serif; font-size:16px; color:#2a2a2a; fon=
+t-weight:normal !important;" class=3D"displayBlock textaligncenter">Guests =
+booking via Marriott.com/Bonvoy App are eligible for complimentary breakfas=
+t. This benefit applies to new bookings made after 3rd February. Kindly rea=
+ch out to us to avail.</th>
+                                                  </tr>
+                                                </table></td>
+                                            </tr>
+                                          </table></td>
+                                      </tr>
+                                    </table></td>
+                                </tr>
+                              </table>
+=09=09=09=09=09=09=09  </td>
+                          </tr>
+                        </table></td>
+                    </tr>
+                  </table></td>
+              </tr>
+            </table></td>
+        </tr>
+      </table></td>
+  </tr>
+</table>
+
+<!-- About Your Stay end -->
+
+<!-- Bonvoy App start -->
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+<tr>
+<td align=3D"left" style=3D"vertical-align:top; padding: 20px 0px 20px 0px;=
+" class=3D"pad7">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <th align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+;" class=3D"displayBlock"><a href=3D"https://res-marriott.com/T/v710000019c=
+4c1f4ee8977821434b5c56d0/19b293d495584a560000021ef3a0bccb/19b293d4-9558-4a5=
+6-938e-c04986a0323e?__dU__=3Dv0G4RBKTXg2GvMkOJesaYIzG4U7guhmTRE-pfbKSY7_EuY=
+ILBfkKy6fQ=3D=3D&__F__=3Dv0fUYvjHMDjRPMSh3tviDHXIoXcPxvDgUUCCPvXMWoX_0k4eFf=
+_MPpUVS3Ebpw9MzlR2ccnq69MQGXHNh_7kjR05tArp-VT3uFRbrTRZBB8suKSwRc6zM28B1l6_u=
+Sn53p8A0Z5MGglSn5rdUFs3M2u4gMoE3jlJHQGIKfn1No5ofGLfypOjV7SqUaGfhLlrI8vnkAGU=
+bFaXwiTo4L8636CLsw1sXbaaIn4pQqAVE4Glo5IQlExjnWj4Bs9lY8saWRB1yqH9Dk97FcBE2NV=
+nUOzFPAAa_5xG1dYRQ8FHLs43MaMiJk-Et9vw=3D=3D" target=3D"_blank" title=3D"Ope=
+ns in a new window"><img style=3D"display:block; color:transparent;" src=3D=
+"https://cache.marriott.com/content/dam/marriott-digital/bonvoy/global/en_u=
+s/artwork/unlimited/assets/bonvoy-app-pre-arrival-email-jpg-34525.jpg" alt=
+=3D"Opens in a new window" width=3D"245" height=3D"245" border=3D"0" class=
+=3D"hide"><!--[if !mso]><!--><img style=3D"display:none; color:transparent;=
+ mso-hide: all;" src=3D"https://cache.marriott.com/content/dam/marriott-dig=
+ital/bonvoy/global/en_us/artwork/unlimited/assets/bonvoy-app-pre-arrival-em=
+ail-jpg-34525.jpg" alt=3D"Opens in a new window" width=3D"100%" border=3D"0=
+" class=3D"mobileshow imgfull" align=3D"center"><!--<![endif]--></a></th>
+    <th align=3D"left" style=3D"vertical-align:middle; padding:0px 0px 0px =
+27px; font-weight:normal !important;" class=3D"displayBlock2 pad10">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 10px 15px 0=
+px; font-family: Arial, Helvetica, sans-serif; font-size:18px; color:#2a2a2=
+a;" class=3D"style5 textaligncenter"><a href=3D"https://res-marriott.com/T/=
+v710000019c4c1f4ee8977821434b5c56d0/19b293d495584a560000021ef3a0bccc/19b293=
+d4-9558-4a56-938e-c04986a0323e?__dU__=3Dv0G4RBKTXg2GvMkOJesaYIzG4U7guhmTRE-=
+pfbKSY7_EuYILBfkKy6fQ=3D=3D&__F__=3Dv0fUYvjHMDjRPMSh3tviDHXIoXcPxvDgUUCCPvX=
+MWoX_0k4eFf_MPpUVS3Ebpw9MzlR2ccnq69MQGXHNh_7kjR05tArp-VT3uFRbrTRZBB8suKSwRc=
+6zM28B1l6_uSn53p8A0Z5MGglSn5rdUFs3M2u4gMoE3jlJHQGIKfn1No5ofGLfypOjV7SqUaGfh=
+LlrI8vnkAGUbFaXwiTo4L8636CLsw1sXbaaIn4pQqAVE4Glo5IQlExjnWjz4S1nRk6bMGn6F6xw=
+9d_CBXTGtR7aSeLfdlGYyMLK4kb6GtcfiFTVAaMiJk-Et9vw=3D=3D" style=3D"color:#2a2=
+a2a; text-decoration:none;" target=3D"_blank" title=3D"Opens in a new windo=
+w">Unlock Extraordinary Travel with the Marriott Bonvoy=C2=AE App</a></td>
+  </tr>
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 10px 0px 0p=
+x; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-=
+size:16px; color:#2a2a2a;" class=3D"textaligncenter">Book thousands of hote=
+ls and experiences worldwide, check in, chat with your hotel, and more =E2=
+=80=93 all on the app.</td>
+  </tr>
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:20px 0px 0px 0p=
+x;">
+<table border=3D"0" cellspacing=3D"0" cellpadding=3D"0" class=3D"full">
+  <tr>
+    <td align=3D"center" bgcolor=3D"#FFF426" style=3D"vertical-align:top; p=
+adding:12px 20px 12px 20px; font-family:'Proxima-Nova-Regular', Arial, Helv=
+etica, sans-serif; font-size:16px; color:#1C1C1C; font-weight:bold;"><a hre=
+f=3D"https://res-marriott.com/T/v710000019c4c1f4ee8977821434b5c56d0/19b293d=
+495584a560000021ef3a0bccd/19b293d4-9558-4a56-938e-c04986a0323e?__dU__=3Dv0G=
+4RBKTXg2GvMkOJesaYIzG4U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=3D=3D&__F__=3Dv0fUYvj=
+HMDjRPMSh3tviDHXIoXcPxvDgUUCCPvXMWoX_0k4eFf_MPpUVS3Ebpw9MzlR2ccnq69MQGXHNh_=
+7kjR05tArp-VT3uFRbrTRZBB8suKSwRc6zM28B1l6_uSn53p8A0Z5MGglSn5rdUFs3M2u4gMoE3=
+jlJHQGIKfn1No5ofGLfypOjV7SqUaGfhLlrI8vnkAGUbFaXwiTo4L8636CLsw1sXbaaIn4pQqAV=
+E4Glo5IQlExjnWj3eHaSotYqhimTOe5-5yLTqKKW51sLtcusnEOERM1tX--xB5Jre3cwgaMiJk-=
+Et9vw=3D=3D" style=3D"display:inline-block; width:100%; color:#1C1C1C; text=
+-decoration:none;" target=3D"_blank" title=3D"Opens in a new window">Go Now=
+</a></td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+    </th>
+  </tr>
+</table>
+</td>
+</tr>
+</table>
+<!-- Bonvoy App end -->
+           =20
+<!-- Enhance your stay start -->
+<!-- Enhance your stay start -->
+<table width=3D"600" border=3D"0" cellspacing=3D"0" cellpadding=3D"0" class=
+=3D"full">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:20px 0px 0px 0p=
+x;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" bgcolor=3D"#FFFFFF" style=3D"vertical-align:top; pad=
+ding:25px 0px 0px 0px;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"center" style=3D"vertical-align:top; padding:0px 0px 15px =
+0px; font-family: 'AvenirLTStd-Heavy', 'Proxima-Nova-Regular', Arial, Helve=
+tica, sans-serif; font-size:32px; color:#1C1C1C;" class=3D"style4"><a name=
+=3D"enhanceyourstay" id=3D"enhanceyourstay"></a>Enhance your stay</td>
+  </tr>
+</table>
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+<tr>
+<td align=3D"left" bgcolor=3D"#FFFFFF" style=3D"vertical-align:top; padding=
+: 15px 20px 15px 20px;" class=3D"pad8">
+<!-- Hotel message headline start -->
+
+<!-- Hotel message headline end -->
+
+<!-- APM start (Credit Card) -->
+<!--  CreditCard module start -->
+
+ =20
+<!-- APM end (Credit Card) --> =20
+ =20
+<!-- APM start -->
+
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+<tr>
+<td align=3D"left" style=3D"vertical-align:top; padding:21px 0px 0px 0px;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <th width=3D"290" align=3D"left" style=3D"vertical-align:top; padding:0=
+px 0px 0px 0px;" class=3D"displayBlock ">
+=09=09<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0=
+">
+  <tbody>
+    <tr>
+      <td align=3D"left" valign=3D"top" class=3D"pl10pr10">
+=09=09  <a href=3D"https://res-marriott.com/T/v710000019c4c1f4ee8977821434b=
+5c56d0/19b293d495584a560000021ef3a0bcce/19b293d4-9558-4a56-938e-c04986a0323=
+e?__dU__=3Dv0G4RBKTXg2GvMkOJesaYIzG4U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=3D=3D&_=
+_F__=3Dv0fUYvjHMDjRPMSh3tviDHXIoXcPxvDgUUCCPvXMWoX_0JoZLAZABQF8ooLJw0siTTjz=
+zxQBUxrlImpRRxYRnXhG92ZFOS00u-fJ1XKGlUEuGi-VwTdygn6QnOF9bUpespeX65ZuQNj9Sny=
+_fC71uHagSRWb0b88BH2hWsSo3KRxO-ZVr93oHnx1uB5cwG5rGRLcT4B8ph44mhHmDwRupOfdMN=
+EzHYtacH_aaBXuRH5COHfXpdEjIcwxo5W6MBu5JrXPW4MtyWENYHR7djWFiJj5XEyB2m4kfzAR3=
+LbjQDuqQl0cg7SyrMmjAgV4T_O-P9yAPLfxrhzDbsnDtQbRWdy668mnO8WjEyYqnGoG4sAHh6p2=
+BXjfE0nCl47cx_oyOKepLDiWQCetAgYy5IuwIWZIKDavBtCdOtvJz1YIXf_nWb9lPj3lyqO-suJ=
+FYOtXAXDTvPZIhDH_zozjW6pgpl7yy4dpqOnHn6lELmwtC-_8qGRBjHTSkB39Bhc2ESwQNKgiz_=
+BoOBRRNTGuC_fVJ5cwbyRjtgx1rGeBMU-15vn-0=3D" target=3D"_blank" title=3D"Open=
+s in a new window"><img style=3D"display:block; color:transparent;" src=3D"=
+https://cache.marriott.com/is/image/marriotts7prod/tx-sintg-gupshup-05-f2-1=
+1815:Classic-Hor?downsize=3D414px:*" alt=3D"Opens in a new window" width=3D=
+"290" height=3D"193" border=3D"0" class=3D"imgfull"></a>
+=09=09</td>
+    </tr>
+  </tbody>
+</table>
+
+=09=09</th>
+    <th align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 20p=
+x; font-weight:normal !important;" class=3D"displayBlock pl0 padT10">
+=09=09<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0=
+">
+  <tbody>
+    <tr>
+      <td align=3D"left" valign=3D"top" class=3D"pl10pr10">
+=09=09<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0=
+">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 15px 0p=
+x; font-family: 'AvenirLTStd-Heavy', 'Proxima-Nova-Regular', Arial, Helveti=
+ca, sans-serif; font-size:24px; color:#1C1C1C;" class=3D"style5"><a href=3D=
+"https://res-marriott.com/T/v710000019c4c1f4ee8977821434b5c56d0/19b293d4955=
+84a560000021ef3a0bccf/19b293d4-9558-4a56-938e-c04986a0323e?__dU__=3Dv0G4RBK=
+TXg2GvMkOJesaYIzG4U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=3D=3D&__F__=3Dv0fUYvjHMDj=
+RPMSh3tviDHXIoXcPxvDgUUCCPvXMWoX_0JoZLAZABQF8ooLJw0siTTjzzxQBUxrlImpRRxYRnX=
+hG92ZFOS00u-fJ1XKGlUEuGi-VwTdygn6QnOF9bUpespeX65ZuQNj9Sny_fC71uHagSRWb0b88B=
+H2hWsSo3KRxO-ZVr93oHnx1uB5cwG5rGRLcT4B8ph44mhHmDwRupOfdMNEzHYtacH_aaBXuRH5C=
+OHfXpdEjIcwxo5W6MBu5JrXPW4MtyWENYHR7djWFiJj5XEyB2m4kfzAR3LbjQDuqQl0cg7SyrMm=
+jAgV4T_O-P9yAPLfxrhzDbsnDtQbRWdy668mnO8WjEyYqnGoG4sAHh6p2BXjfE0nCl47cx_oyOK=
+epLDiWQCetAgYy5IuwIWZIKDavBtCdOtvJz1YIXf_nWb9lPj3lyqO-suJFYOtXAXDTvPZIhDH_z=
+ozjW6pgpl7yy4dpqOnHn6lELmwtC-_8oApuRG62jVl6U2eEMKoV35mB4B0JmTssn55o_NuvI1GE=
+mIkt8c_OYueBMU-15vn-0=3D" style=3D"color:#1C1C1C; text-decoration:none;" ta=
+rget=3D"_blank" title=3D"Opens in a new window">1-for-1 Great Indian Feast<=
+/a></td>
+  </tr>
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-s=
+ize:16px; color:#1C1C1C;">An unlimited Indian feast by Chef Jolly</td>
+  </tr>
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:20px 0px 0px 0p=
+x;">
+<table border=3D"0" cellspacing=3D"0" cellpadding=3D"0" class=3D"full">
+  <tr>
+    <td align=3D"center" bgcolor=3D"#FFF426" style=3D"vertical-align:top; p=
+adding:12px 20px 12px 20px; font-family:'AvenirLTStd-Heavy','Proxima-Nova-R=
+egular', Arial, Helvetica, sans-serif; font-size:16px; color:#FFFFFF; font-=
+weight:bold;"><a href=3D"https://res-marriott.com/T/v710000019c4c1f4ee89778=
+21434b5c56d0/19b293d495584a560000021ef3a0bcd0/19b293d4-9558-4a56-938e-c0498=
+6a0323e?__dU__=3Dv0G4RBKTXg2GvMkOJesaYIzG4U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=
+=3D=3D&__F__=3Dv0fUYvjHMDjRPMSh3tviDHXIoXcPxvDgUUCCPvXMWoX_0JoZLAZABQF8ooLJ=
+w0siTTjzzxQBUxrlImpRRxYRnXhG92ZFOS00u-fJ1XKGlUEuGi-VwTdygn6QnOF9bUpespeX65Z=
+uQNj9Sny_fC71uHagSRWb0b88BH2hWsSo3KRxO-ZVr93oHnx1uB5cwG5rGRLcT4B8ph44mhHmDw=
+RupOfdMNEzHYtacH_aaBXuRH5COHfXpdEjIcwxo5W6MBu5JrXPW4MtyWENYHR7djWFiJj5XEyB2=
+m4kfzAR3LbjQDuqQl0cg7SyrMmjAgV4T_O-P9yAPLfxrhzDbsnDtQbRWdy668mnO8WjEyYqnGoG=
+4sAHh6p2BXjfE0nCl47cx_oyOKepLDiWQCetAgYy5IuwIWZIKDavBtCdOtvJz1YIXf_nWb9lPj3=
+lyqO-suJFYOtXAXDTvPZIhDH_zozjW6pgpl7yy4dpqOnHn6lELmwtC-_8r69c8rbGeAogZMdtWQ=
+Cx4jobMEYQsK4Ik2sf-dIzIp2scbyHyVm3WceBMU-15vn-0=3D" style=3D"display:inline=
+-block; width:100%; color:#1C1C1C; text-decoration:none;" target=3D"_blank"=
+ title=3D"Opens in a new window">More Details</a></td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+=09=09</td>
+    </tr>
+  </tbody>
+</table>
+
+
+    </th>
+  </tr>
+</table>
+</td>
+</tr>
+</table>
+
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+<tr>
+<td align=3D"left" style=3D"vertical-align:top; padding:21px 0px 0px 0px;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <th width=3D"290" align=3D"left" style=3D"vertical-align:top; padding:0=
+px 0px 0px 0px;" class=3D"displayBlock ">
+=09=09<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0=
+">
+  <tbody>
+    <tr>
+      <td align=3D"left" valign=3D"top" class=3D"pl10pr10">
+=09=09  <a href=3D"https://res-marriott.com/T/v710000019c4c1f4ee8977821434b=
+5c56d0/19b293d495584a560000021ef3a0bcd1/19b293d4-9558-4a56-938e-c04986a0323=
+e?__dU__=3Dv0G4RBKTXg2GvMkOJesaYIzG4U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=3D=3D&_=
+_F__=3Dv0fUYvjHMDjRPMSh3tviDHXIoXcPxvDgUUCCPvXMWoX_0JoZLAZABQF8ooLJw0siTTjz=
+zxQBUxrlLvMowbFkkVuL4V37QzXKG_NRlf78CsIwYJBQIDWNxOjkj0-3fVIkq0yfDrqRFi20P4X=
+z8vBNkG_TCjUYc6jJ5nxOcfmAFK15YwFotGfriIpFMYdAdlzR41rYMbGEC1hed2gbwny38y2ZOt=
+103bZOWGApcrl7455ZgrPBt2zjXhga5gD7A_uB43ShJzGBZEzZKJopmxzA9wQTsHzwmk_PMVW-r=
+a8pxanZLIPITd2hHcu6TTXpEIqsP2s2YDDf4q-H7HYRWOYXhNx8GJma-EROODamJuQD61aAeK3n=
+CPObHew3KPjBpwykhhijFWCYVA8RlROoFDBhrUUZr6O3emVySIrRR6OswBLLQLY7w7lp1QYgE8E=
+ZukRcxLI5uvfFzt1RBUfoijRegy6zzCEKk86tTz9TwwoZN6iEi6d2zDOWnDT_smCRGI_zX2l6LO=
+jYfa9TwefHtTAQf0YB9z_neZhd5H" target=3D"_blank" title=3D"Opens in a new win=
+dow"><img style=3D"display:block; color:transparent;" src=3D"https://cache.=
+marriott.com/is/image/marriotts7prod/tx-sintg-gupshup-02-38706:Classic-Hor?=
+downsize=3D414px:*" alt=3D"Opens in a new window" width=3D"290" height=3D"1=
+93" border=3D"0" class=3D"imgfull"></a>
+=09=09</td>
+    </tr>
+  </tbody>
+</table>
+
+=09=09</th>
+    <th align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 20p=
+x; font-weight:normal !important;" class=3D"displayBlock pl0 padT10">
+=09=09<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0=
+">
+  <tbody>
+    <tr>
+      <td align=3D"left" valign=3D"top" class=3D"pl10pr10">
+=09=09<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0=
+">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 15px 0p=
+x; font-family: 'AvenirLTStd-Heavy', 'Proxima-Nova-Regular', Arial, Helveti=
+ca, sans-serif; font-size:24px; color:#1C1C1C;" class=3D"style5"><a href=3D=
+"https://res-marriott.com/T/v710000019c4c1f4ee8977821434b5c56d0/19b293d4955=
+84a560000021ef3a0bcd2/19b293d4-9558-4a56-938e-c04986a0323e?__dU__=3Dv0G4RBK=
+TXg2GvMkOJesaYIzG4U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=3D=3D&__F__=3Dv0fUYvjHMDj=
+RPMSh3tviDHXIoXcPxvDgUUCCPvXMWoX_0JoZLAZABQF8ooLJw0siTTjzzxQBUxrlLvMowbFkkV=
+uL4V37QzXKG_NRlf78CsIwYJBQIDWNxOjkj0-3fVIkq0yfDrqRFi20P4Xz8vBNkG_TCjUYc6jJ5=
+nxOcfmAFK15YwFotGfriIpFMYdAdlzR41rYMbGEC1hed2gbwny38y2ZOt103bZOWGApcrl7455Z=
+grPBt2zjXhga5gD7A_uB43ShJzGBZEzZKJopmxzA9wQTsHzwmk_PMVW-ra8pxanZLIPITd2hHcu=
+6TTXpEIqsP2s2YDDf4q-H7HYRWOYXhNx8GJma-EROODamJuQD61aAeK3nCPObHew3KPjBpwykhh=
+ijFWCYVA8RlROoFDBhrUUZr6O3emVySIrRR6OswBLLQLY7w7lp1QYgE8EZukRcxLI5uvfFzt1RB=
+UfoijRegy6zzCEKk86tTzZqomYMwNtIVD8zk37TQQybK_qMCUJS2MTVKdtegQYNJc8doCaY8Vix=
+9z_neZhd5H" style=3D"color:#1C1C1C; text-decoration:none;" target=3D"_blank=
+" title=3D"Opens in a new window">50% off Dabbawala Tiffin For 2</a></td>
+  </tr>
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-s=
+ize:16px; color:#1C1C1C;">An elevated tribute to Mumbai=E2=80=99s iconic Da=
+bbawala tradition</td>
+  </tr>
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:20px 0px 0px 0p=
+x;">
+<table border=3D"0" cellspacing=3D"0" cellpadding=3D"0" class=3D"full">
+  <tr>
+    <td align=3D"center" bgcolor=3D"#FFF426" style=3D"vertical-align:top; p=
+adding:12px 20px 12px 20px; font-family:'AvenirLTStd-Heavy','Proxima-Nova-R=
+egular', Arial, Helvetica, sans-serif; font-size:16px; color:#FFFFFF; font-=
+weight:bold;"><a href=3D"https://res-marriott.com/T/v710000019c4c1f4ee89778=
+21434b5c56d0/19b293d495584a560000021ef3a0bcd3/19b293d4-9558-4a56-938e-c0498=
+6a0323e?__dU__=3Dv0G4RBKTXg2GvMkOJesaYIzG4U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=
+=3D=3D&__F__=3Dv0fUYvjHMDjRPMSh3tviDHXIoXcPxvDgUUCCPvXMWoX_0JoZLAZABQF8ooLJ=
+w0siTTjzzxQBUxrlLvMowbFkkVuL4V37QzXKG_NRlf78CsIwYJBQIDWNxOjkj0-3fVIkq0yfDrq=
+RFi20P4Xz8vBNkG_TCjUYc6jJ5nxOcfmAFK15YwFotGfriIpFMYdAdlzR41rYMbGEC1hed2gbwn=
+y38y2ZOt103bZOWGApcrl7455ZgrPBt2zjXhga5gD7A_uB43ShJzGBZEzZKJopmxzA9wQTsHzwm=
+k_PMVW-ra8pxanZLIPITd2hHcu6TTXpEIqsP2s2YDDf4q-H7HYRWOYXhNx8GJma-EROODamJuQD=
+61aAeK3nCPObHew3KPjBpwykhhijFWCYVA8RlROoFDBhrUUZr6O3emVySIrRR6OswBLLQLY7w7l=
+p1QYgE8EZukRcxLI5uvfFzt1RBUfoijRegy6zzCEKk86tTzkGdtEUX6aYjiAgaHMiAV42RY54jS=
+cG_ZT2QOyn1Fh2zvn8obmsHAXx9z_neZhd5H" style=3D"display:inline-block; width:=
+100%; color:#1C1C1C; text-decoration:none;" target=3D"_blank" title=3D"Open=
+s in a new window">More Details</a></td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+=09=09</td>
+    </tr>
+  </tbody>
+</table>
+
+
+    </th>
+  </tr>
+</table>
+</td>
+</tr>
+</table>
+
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+<tr>
+<td align=3D"left" style=3D"vertical-align:top; padding:21px 0px 0px 0px;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <th width=3D"290" align=3D"left" style=3D"vertical-align:top; padding:0=
+px 0px 0px 0px;" class=3D"displayBlock ">
+=09=09<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0=
+">
+  <tbody>
+    <tr>
+      <td align=3D"left" valign=3D"top" class=3D"pl10pr10">
+=09=09  <a href=3D"https://res-marriott.com/T/v710000019c4c1f4ee8977821434b=
+5c56d0/19b293d495584a560000021ef3a0bcd4/19b293d4-9558-4a56-938e-c04986a0323=
+e?__dU__=3Dv0G4RBKTXg2GvMkOJesaYIzG4U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=3D=3D&_=
+_F__=3Dv0fUYvjHMDjRPMSh3tviDHXIoXcPxvDgUUCCPvXMWoX_3A7MjJ5HpKcUG_T6IWSiU_0W=
+R4ck1MCOFzWaS5Qus1gEiXpCNUxS26vWfGN832_H7U-d8rHcWxhrCMEF7FYZ2Vgw4D8v3z2NM0K=
+lCdYCDoC8doBwOdq4r22bXQcy5JD3cFlGu6IjRr3Jx19wiBSqkTApcrl7455ZgrPBt2zjXhgfbx=
+FBB81wawShJzGBZEzZJNVCe4TYVsR3BfhBsbspd3JdHIO0sqzJowIFeE_zvj_cgDy38a4cw27Jw=
+7UG0VncuuvJpzvFoxMmKpxqBuLAB4eqdgV43xNJwpeO3Mf6MjinqSw4lkAnrQIGMuSLsCFmSCg2=
+rwbQnTrbyc9WCF3_51m_ZT495cqjvrLiRWDrVwFw07z2SIQx_86M41uqYKZe8suHaajpx5-pRC5=
+sLQvv_KhkQYx00pAd_QYXNhEsEDSoIs_waDgUUTUxrgv31SeXMG8kY7YMdaxngTFPteb5_t" ta=
+rget=3D"_blank" title=3D"Opens in a new window"><img style=3D"display:block=
+; color:transparent;" src=3D"https://cache.marriott.com/is/image/marriotts7=
+prod/bonvoy-dadson-surfing-37530:Classic-Hor?downsize=3D414px:*" alt=3D"Ope=
+ns in a new window" width=3D"290" height=3D"193" border=3D"0" class=3D"imgf=
+ull"></a>
+=09=09</td>
+    </tr>
+  </tbody>
+</table>
+
+=09=09</th>
+    <th align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 20p=
+x; font-weight:normal !important;" class=3D"displayBlock pl0 padT10">
+=09=09<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0=
+">
+  <tbody>
+    <tr>
+      <td align=3D"left" valign=3D"top" class=3D"pl10pr10">
+=09=09<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0=
+">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 15px 0p=
+x; font-family: 'AvenirLTStd-Heavy', 'Proxima-Nova-Regular', Arial, Helveti=
+ca, sans-serif; font-size:24px; color:#1C1C1C;" class=3D"style5"><a href=3D=
+"https://res-marriott.com/T/v710000019c4c1f4ee8977821434b5c56d0/19b293d4955=
+84a560000021ef3a0bcd5/19b293d4-9558-4a56-938e-c04986a0323e?__dU__=3Dv0G4RBK=
+TXg2GvMkOJesaYIzG4U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=3D=3D&__F__=3Dv0fUYvjHMDj=
+RPMSh3tviDHXIoXcPxvDgUUCCPvXMWoX_3A7MjJ5HpKcUG_T6IWSiU_0WR4ck1MCOFzWaS5Qus1=
+gEiXpCNUxS26vWfGN832_H7U-d8rHcWxhrCMEF7FYZ2Vgw4D8v3z2NM0KlCdYCDoC8doBwOdq4r=
+22bXQcy5JD3cFlGu6IjRr3Jx19wiBSqkTApcrl7455ZgrPBt2zjXhgfbxFBB81wawShJzGBZEzZ=
+JNVCe4TYVsR3BfhBsbspd3JdHIO0sqzJowIFeE_zvj_cgDy38a4cw27Jw7UG0VncuuvJpzvFoxM=
+mKpxqBuLAB4eqdgV43xNJwpeO3Mf6MjinqSw4lkAnrQIGMuSLsCFmSCg2rwbQnTrbyc9WCF3_51=
+m_ZT495cqjvrLiRWDrVwFw07z2SIQx_86M41uqYKZe8suHaajpx5-pRC5sLQvv_KAKbkRuto1Ze=
+lNnhDCqFd-ZgeAdCZk7LJ-eaPzbryNRhJiJLfHPzmLngTFPteb5_t" style=3D"color:#1C1C=
+1C; text-decoration:none;" target=3D"_blank" title=3D"Opens in a new window=
+">Protect Your Trip</a></td>
+  </tr>
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-s=
+ize:16px; color:#1C1C1C;">Travel with more peace of mind with Allianz Trave=
+l Insurance. Get protection for flight delays and more, for you and for eve=
+ryone in your room.<br></td>
+  </tr>
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:20px 0px 0px 0p=
+x;">
+<table border=3D"0" cellspacing=3D"0" cellpadding=3D"0" class=3D"full">
+  <tr>
+    <td align=3D"center" bgcolor=3D"#FFF426" style=3D"vertical-align:top; p=
+adding:12px 20px 12px 20px; font-family:'AvenirLTStd-Heavy','Proxima-Nova-R=
+egular', Arial, Helvetica, sans-serif; font-size:16px; color:#FFFFFF; font-=
+weight:bold;"><a href=3D"https://res-marriott.com/T/v710000019c4c1f4ee89778=
+21434b5c56d0/19b293d495584a560000021ef3a0bcd6/19b293d4-9558-4a56-938e-c0498=
+6a0323e?__dU__=3Dv0G4RBKTXg2GvMkOJesaYIzG4U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=
+=3D=3D&__F__=3Dv0fUYvjHMDjRPMSh3tviDHXIoXcPxvDgUUCCPvXMWoX_3A7MjJ5HpKcUG_T6=
+IWSiU_0WR4ck1MCOFzWaS5Qus1gEiXpCNUxS26vWfGN832_H7U-d8rHcWxhrCMEF7FYZ2Vgw4D8=
+v3z2NM0KlCdYCDoC8doBwOdq4r22bXQcy5JD3cFlGu6IjRr3Jx19wiBSqkTApcrl7455ZgrPBt2=
+zjXhgfbxFBB81wawShJzGBZEzZJNVCe4TYVsR3BfhBsbspd3JdHIO0sqzJowIFeE_zvj_cgDy38=
+a4cw27Jw7UG0VncuuvJpzvFoxMmKpxqBuLAB4eqdgV43xNJwpeO3Mf6MjinqSw4lkAnrQIGMuSL=
+sCFmSCg2rwbQnTrbyc9WCF3_51m_ZT495cqjvrLiRWDrVwFw07z2SIQx_86M41uqYKZe8suHaaj=
+px5-pRC5sLQvv_K-vXPK2xngKIGTHbVkAseI6GzBGELCuCJNrH_nSMyKdrHG8h8lZt1nHgTFPte=
+b5_t" style=3D"display:inline-block; width:100%; color:#1C1C1C; text-decora=
+tion:none;" target=3D"_blank" title=3D"Opens in a new window">Learn More</a=
+></td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+=09=09</td>
+    </tr>
+  </tbody>
+</table>
+
+
+    </th>
+  </tr>
+</table>
+</td>
+</tr>
+</table>
+
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+<tr>
+<td align=3D"left" style=3D"vertical-align:top; padding:21px 0px 0px 0px;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <th width=3D"290" align=3D"left" style=3D"vertical-align:top; padding:0=
+px 0px 0px 0px;" class=3D"displayBlock ">
+=09=09<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0=
+">
+  <tbody>
+    <tr>
+      <td align=3D"left" valign=3D"top" class=3D"pl10pr10">
+=09=09  <a href=3D"https://res-marriott.com/T/v710000019c4c1f4ee8977821434b=
+5c56d0/19b293d495584a560000021ef3a0bcd7/19b293d4-9558-4a56-938e-c04986a0323=
+e?__dU__=3Dv0G4RBKTXg2GvMkOJesaYIzG4U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=3D=3D&_=
+_F__=3Dv0fUYvjHMDjRPMSh3tviDHXIoXcPxvDgUUCCPvXMWoX_0IA9a7wNY25rKk-_HJm1AQTz=
+xqZ2c2TirNzRKY6_upFAY5FbT8nXbcA_j00fgcwmeXhnfmc_m0iJIFHo3EN3am915Vzfd9VufBD=
+_XZChGGFi--s1Pq3OjmRvWz7owB9d3zByW4WgyQPAKXK5e-OeWYKzwbds414YEMFK5KsrF2cYeC=
+TUmdCneX33XtHCkEX1nVtsNXtKnjsfRcbGfh2USgm8ZHf3jJ9qFJlYCrbPZfH2nOwu5dXydUOac=
+0CYFO_rCFdHBuQQogC3q6GSd5R8xHgASF_DqCgm9YpRQytSUs83OeaMRioRSuLgUuS1lmE6PUJ5=
+I8kOoAuzj8VbTttyQkbC6Ujzfm0iocFyJ4cVgL9DIDcvazpTbuasaUlaZ7IAdaxETfctbc_oHoV=
+FkI83i7v3Z85sjGD7SvmEQhzflEeRwjIHkXDHDMgSZ3IWs8QGs=3D" target=3D"_blank" ti=
+tle=3D"Opens in a new window"><img style=3D"display:block; color:transparen=
+t;" src=3D"https://cache.marriott.com/content/dam/marriott-renditions/Stock=
+/stock-bonvoy-tours-1075074-hor-clsc.jpg?downsize=3D414px:*" alt=3D"Opens i=
+n a new window" width=3D"290" height=3D"193" border=3D"0" class=3D"imgfull"=
+></a>
+=09=09</td>
+    </tr>
+  </tbody>
+</table>
+
+=09=09</th>
+    <th align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 20p=
+x; font-weight:normal !important;" class=3D"displayBlock pl0 padT10">
+=09=09<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0=
+">
+  <tbody>
+    <tr>
+      <td align=3D"left" valign=3D"top" class=3D"pl10pr10">
+=09=09<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0=
+">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 15px 0p=
+x; font-family: 'AvenirLTStd-Heavy', 'Proxima-Nova-Regular', Arial, Helveti=
+ca, sans-serif; font-size:24px; color:#1C1C1C;" class=3D"style5"><a href=3D=
+"https://res-marriott.com/T/v710000019c4c1f4ee8977821434b5c56d0/19b293d4955=
+84a560000021ef3a0bcd8/19b293d4-9558-4a56-938e-c04986a0323e?__dU__=3Dv0G4RBK=
+TXg2GvMkOJesaYIzG4U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=3D=3D&__F__=3Dv0fUYvjHMDj=
+RPMSh3tviDHXIoXcPxvDgUUCCPvXMWoX_0IA9a7wNY25rKk-_HJm1AQTzxqZ2c2TirNzRKY6_up=
+FAY5FbT8nXbcA_j00fgcwmeXhnfmc_m0iJIFHo3EN3am915Vzfd9VufBD_XZChGGFi--s1Pq3Oj=
+mRvWz7owB9d3zByW4WgyQPAKXK5e-OeWYKzwbds414YEMFK5KsrF2cYeCTUmdCneX33XtHCkEX1=
+nVtsNXtKnjsfRcbGfh2USgm8ZHf3jJ9qFJlYCrbPZfH2nOwu5dXydUOac0CYFO_rCFdHBuQQogC=
+3q6GSd5R8xHgASF_DqCgm9YpRQytSUs83OeaMRioRSuLgUuS1lmE6PUJ5I8kOoAuzj8VbTttyQk=
+bC6Ujzfm0iocFyJ4cVgL9DIDcvazpTbuasaUlaZ7IAcAXbHyzQD0l34xkN6pYVkx485pAT9lr0_=
+P3TTsL4IXa6wkRWDt38_ogSZ3IWs8QGs=3D" style=3D"color:#1C1C1C; text-decoratio=
+n:none;" target=3D"_blank" title=3D"Opens in a new window">Inspiring Experi=
+ences</a></td>
+  </tr>
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-s=
+ize:16px; color:#1C1C1C;">Find unique activities everyone will love, and ea=
+rn points too.<br></td>
+  </tr>
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:20px 0px 0px 0p=
+x;">
+<table border=3D"0" cellspacing=3D"0" cellpadding=3D"0" class=3D"full">
+  <tr>
+    <td align=3D"center" bgcolor=3D"#FFF426" style=3D"vertical-align:top; p=
+adding:12px 20px 12px 20px; font-family:'AvenirLTStd-Heavy','Proxima-Nova-R=
+egular', Arial, Helvetica, sans-serif; font-size:16px; color:#FFFFFF; font-=
+weight:bold;"><a href=3D"https://res-marriott.com/T/v710000019c4c1f4ee89778=
+21434b5c56d0/19b293d495584a560000021ef3a0bcd9/19b293d4-9558-4a56-938e-c0498=
+6a0323e?__dU__=3Dv0G4RBKTXg2GvMkOJesaYIzG4U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=
+=3D=3D&__F__=3Dv0fUYvjHMDjRPMSh3tviDHXIoXcPxvDgUUCCPvXMWoX_0IA9a7wNY25rKk-_=
+HJm1AQTzxqZ2c2TirNzRKY6_upFAY5FbT8nXbcA_j00fgcwmeXhnfmc_m0iJIFHo3EN3am915Vz=
+fd9VufBD_XZChGGFi--s1Pq3OjmRvWz7owB9d3zByW4WgyQPAKXK5e-OeWYKzwbds414YEMFK5K=
+srF2cYeCTUmdCneX33XtHCkEX1nVtsNXtKnjsfRcbGfh2USgm8ZHf3jJ9qFJlYCrbPZfH2nOwu5=
+dXydUOac0CYFO_rCFdHBuQQogC3q6GSd5R8xHgASF_DqCgm9YpRQytSUs83OeaMRioRSuLgUuS1=
+lmE6PUJ5I8kOoAuzj8VbTttyQkbC6Ujzfm0iocFyJ4cVgL9DIDcvazpTbuasaUlaZ7IAd944fYg=
+r2DWYWsdvutFtikynL7fZcmn8PRrp9yzwPcLav7B01GgSCjgSZ3IWs8QGs=3D" style=3D"dis=
+play:inline-block; width:100%; color:#1C1C1C; text-decoration:none;" target=
+=3D"_blank" title=3D"Opens in a new window">Book Activities</a></td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+=09=09</td>
+    </tr>
+  </tbody>
+</table>
+
+
+    </th>
+  </tr>
+</table>
+</td>
+</tr>
+</table>
+
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+<tr>
+<td align=3D"left" style=3D"vertical-align:top; padding:21px 0px 0px 0px;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <th width=3D"290" align=3D"left" style=3D"vertical-align:top; padding:0=
+px 0px 0px 0px;" class=3D"displayBlock ">
+=09=09<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0=
+">
+  <tbody>
+    <tr>
+      <td align=3D"left" valign=3D"top" class=3D"pl10pr10">
+=09=09  <a href=3D"https://res-marriott.com/T/v710000019c4c1f4ee8977821434b=
+5c56d0/19b293d495584a560000021ef3a0bcda/19b293d4-9558-4a56-938e-c04986a0323=
+e?__dU__=3Dv0G4RBKTXg2GvMkOJesaYIzG4U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=3D=3D&_=
+_F__=3Dv0fUYvjHMDjRPMSh3tviDHXIoXcPxvDgUUCCPvXMWoX_0JoZLAZABQF8ooLJw0siTTjz=
+zxQBUxrlIwL8mWfTa5t05F4uMATTsQp8v3wu9bh2oEkVm9G_PAR9oVrEqNykcTvmVa_d6B58dbg=
+eXMBuaxkS3E-AfKYeOJoR5g8EbqTn3TDRMx2LWnByFYvD3kXodfZyPuXSy-XsmztNvdy73bcBcs=
+4EqJmP1iP4VN76YG_k7EOnTiXe45UTijeDWumWVZaFO47p7mitBzygJO3XKJXk5hBC2SakDcxsv=
+j7yhJg_JQpRR2FX9apDsmJgJ_Cg-3YTQwEHMKWqwPoOTLuqYm_nVf_5SMTWf9Zq0jzy4WT_Ql0c=
+g7SyrMmjAgV4T_O-P9yAPLfxrhzDbsnDtQbRWdy668mnO8WjEyYqnGoG4sAHh6p2BXjfE0nCl47=
+cx_oyOKepLDiWQCetAgYy5IuwIWZIKDavBtCdOtvJz1YIXf_nWb9lPj3lyqO-suJFYOtXAXDTvP=
+ZIhDH_zozjW6pgpl7yy4dpqOnHn6lELmwtC-_8qGRBjHTSkB39Bhc2ESwQNKgiz_BoOBRRNTGuC=
+_fVJ5cwbyRjtgx1rGeBMU-15vn-0=3D" target=3D"_blank" title=3D"Opens in a new =
+window"><img style=3D"display:block; color:transparent;" src=3D"https://cac=
+he.marriott.com/content/dam/marriott-renditions/eConfo-Offers/TX_Dining.jpg=
+?downsize=3D414px:*" alt=3D"Opens in a new window" width=3D"290" height=3D"=
+193" border=3D"0" class=3D"imgfull"></a>
+=09=09</td>
+    </tr>
+  </tbody>
+</table>
+
+=09=09</th>
+    <th align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 20p=
+x; font-weight:normal !important;" class=3D"displayBlock pl0 padT10">
+=09=09<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0=
+">
+  <tbody>
+    <tr>
+      <td align=3D"left" valign=3D"top" class=3D"pl10pr10">
+=09=09<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0=
+">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 15px 0p=
+x; font-family: 'AvenirLTStd-Heavy', 'Proxima-Nova-Regular', Arial, Helveti=
+ca, sans-serif; font-size:24px; color:#1C1C1C;" class=3D"style5"><a href=3D=
+"https://res-marriott.com/T/v710000019c4c1f4ee8977821434b5c56d0/19b293d4955=
+84a560000021ef3a0bcdb/19b293d4-9558-4a56-938e-c04986a0323e?__dU__=3Dv0G4RBK=
+TXg2GvMkOJesaYIzG4U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=3D=3D&__F__=3Dv0fUYvjHMDj=
+RPMSh3tviDHXIoXcPxvDgUUCCPvXMWoX_0JoZLAZABQF8ooLJw0siTTjzzxQBUxrlIwL8mWfTa5=
+t05F4uMATTsQp8v3wu9bh2oEkVm9G_PAR9oVrEqNykcTvmVa_d6B58dbgeXMBuaxkS3E-AfKYeO=
+JoR5g8EbqTn3TDRMx2LWnByFYvD3kXodfZyPuXSy-XsmztNvdy73bcBcs4EqJmP1iP4VN76YG_k=
+7EOnTiXe45UTijeDWumWVZaFO47p7mitBzygJO3XKJXk5hBC2SakDcxsvj7yhJg_JQpRR2FX9ap=
+DsmJgJ_Cg-3YTQwEHMKWqwPoOTLuqYm_nVf_5SMTWf9Zq0jzy4WT_Ql0cg7SyrMmjAgV4T_O-P9=
+yAPLfxrhzDbsnDtQbRWdy668mnO8WjEyYqnGoG4sAHh6p2BXjfE0nCl47cx_oyOKepLDiWQCetA=
+gYy5IuwIWZIKDavBtCdOtvJz1YIXf_nWb9lPj3lyqO-suJFYOtXAXDTvPZIhDH_zozjW6pgpl7y=
+y4dpqOnHn6lELmwtC-_8oApuRG62jVl6U2eEMKoV35mB4B0JmTssn55o_NuvI1GEmIkt8c_OYue=
+BMU-15vn-0=3D" style=3D"color:#1C1C1C; text-decoration:none;" target=3D"_bl=
+ank" title=3D"Opens in a new window">Dig In To Delicious</a></td>
+  </tr>
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-s=
+ize:16px; color:#1C1C1C;">Experience our created and characterful culinary =
+offerings.<br></td>
+  </tr>
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:20px 0px 0px 0p=
+x;">
+<table border=3D"0" cellspacing=3D"0" cellpadding=3D"0" class=3D"full">
+  <tr>
+    <td align=3D"center" bgcolor=3D"#FFF426" style=3D"vertical-align:top; p=
+adding:12px 20px 12px 20px; font-family:'AvenirLTStd-Heavy','Proxima-Nova-R=
+egular', Arial, Helvetica, sans-serif; font-size:16px; color:#FFFFFF; font-=
+weight:bold;"><a href=3D"https://res-marriott.com/T/v710000019c4c1f4ee89778=
+21434b5c56d0/19b293d495584a560000021ef3a0bcdc/19b293d4-9558-4a56-938e-c0498=
+6a0323e?__dU__=3Dv0G4RBKTXg2GvMkOJesaYIzG4U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=
+=3D=3D&__F__=3Dv0fUYvjHMDjRPMSh3tviDHXIoXcPxvDgUUCCPvXMWoX_0JoZLAZABQF8ooLJ=
+w0siTTjzzxQBUxrlIwL8mWfTa5t05F4uMATTsQp8v3wu9bh2oEkVm9G_PAR9oVrEqNykcTvmVa_=
+d6B58dbgeXMBuaxkS3E-AfKYeOJoR5g8EbqTn3TDRMx2LWnByFYvD3kXodfZyPuXSy-XsmztNvd=
+y73bcBcs4EqJmP1iP4VN76YG_k7EOnTiXe45UTijeDWumWVZaFO47p7mitBzygJO3XKJXk5hBC2=
+SakDcxsvj7yhJg_JQpRR2FX9apDsmJgJ_Cg-3YTQwEHMKWqwPoOTLuqYm_nVf_5SMTWf9Zq0jzy=
+4WT_Ql0cg7SyrMmjAgV4T_O-P9yAPLfxrhzDbsnDtQbRWdy668mnO8WjEyYqnGoG4sAHh6p2BXj=
+fE0nCl47cx_oyOKepLDiWQCetAgYy5IuwIWZIKDavBtCdOtvJz1YIXf_nWb9lPj3lyqO-suJFYO=
+tXAXDTvPZIhDH_zozjW6pgpl7yy4dpqOnHn6lELmwtC-_8r69c8rbGeAogZMdtWQCx4jobMEYQs=
+K4Ik2sf-dIzIp2scbyHyVm3WceBMU-15vn-0=3D" style=3D"display:inline-block; wid=
+th:100%; color:#1C1C1C; text-decoration:none;" target=3D"_blank" title=3D"O=
+pens in a new window">Explore Options</a></td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+=09=09</td>
+    </tr>
+  </tbody>
+</table>
+
+
+    </th>
+  </tr>
+</table>
+</td>
+</tr>
+</table>
+<!-- APM end -->
+</td>
+</tr>
+</table>
+    </td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+<!-- Enhance your stay end -->
+            =20
+<!-- Enhance your stay end -->   =20
+
+<!-- Account start -->
+<!-- Account start -->
+
+
+
+
+
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:20px 0px 0px 0p=
+x;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" bgcolor=3D"#FFFFFF" style=3D"vertical-align:top; pad=
+ding:0px 0px 0px 0px;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td height=3D"10" align=3D"left" bgcolor=3D"#554749" style=3D"vertical-=
+align:top; padding:0px 0px 0px 0px; line-height:0px;"><img style=3D"display=
+:block; color:transparent;" src=3D"https://images.harmony.epsilon.com/Conte=
+ntHandler/images?id=3Dd989b3a2-e1be-4bfa-bdc0-408454a1e747" alt=3D"" width=
+=3D"1" height=3D"1" border=3D"0"></td>
+  </tr>
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 20px 0px 20=
+px;" class=3D"pad7">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"center" style=3D"vertical-align:top; padding:20px 0px 0px =
+0px;">
+<table border=3D"0" align=3D"center" cellpadding=3D"0" cellspacing=3D"0">
+  <tr>
+    <td align=3D"center" style=3D"vertical-align:top; padding:0px 0px 0px 0=
+px;"><img style=3D"display:block; color:transparent;" src=3D"https://cache.=
+marriott.com/marriottassets/eConfo/Bonvoy.png?downsize=3D600px:*" alt=3D"Ma=
+rriott Bonvoy logo" border=3D"0" class=3D"imgresize3"></td>
+  </tr>
+</table>
+</td>
+  </tr>
+  <tr>
+    <td align=3D"center" style=3D"vertical-align:top; padding:15px 0px 0px =
+0px; font-family: 'AvenirLTStd-Heavy', 'Proxima-Nova-Regular', Arial, Helve=
+tica, sans-serif; font-size:32px; color:#1C1C1C;" class=3D"fontsize2">My Ac=
+count</td>
+  </tr>
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:17px 0px 0px 0p=
+x; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-=
+size:24px; color:#554749;" class=3D"textaligncenter fontsize3 pad13"> Chris=
+topher Catignani</td>
+  </tr>
+  <tr>
+    <td align=3D"center" style=3D"vertical-align:top; padding:0px 0px 25px =
+0px; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; fon=
+t-size:20px; color:#1C1C1C;">
+
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <th align=3D"left" style=3D"vertical-align:bottom; padding:0px 0px 0px =
+0px; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; fon=
+t-size:20px; color:#1C1C1C; font-weight:normal !important;" class=3D"textal=
+igncenter displayBlock pad15">
+<table border=3D"0" cellspacing=3D"0" cellpadding=3D"0" class=3D"full">
+  <tr>
+    <td align=3D"center" style=3D"vertical-align:top; padding:0px 0px 0px 0=
+px; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font=
+-size:20px; color:#1C1C1C; font-weight:normal !important;">Your Stay: 1 Nig=
+ht</td>
+  </tr>
+</table>
+=09</th>
+    <th align=3D"right" style=3D"vertical-align:bottom; padding:0px 0px 0px=
+ 0px;" class=3D"textaligncenter displayBlock">
+<table border=3D"0" cellspacing=3D"0" cellpadding=3D"0" class=3D"full">
+  <tr>
+    <td align=3D"left" bgcolor=3D"#554749" style=3D"vertical-align:top; pad=
+ding:1px 1px 1px 1px;"><table border=3D"0" cellspacing=3D"0" cellpadding=3D=
+"0" class=3D"full">
+  <tr>
+    <td align=3D"center" bgcolor=3D"#FFFFFF" style=3D"vertical-align:top; p=
+adding:12px 20px 12px 20px; font-family:'Proxima-Nova-Regular', Arial, Helv=
+etica, sans-serif; font-size:16px; color:#677d98; font-weight:bold;"><a hre=
+f=3D"https://res-marriott.com/T/v710000019c4c1f4ee8977821434b5c56d0/19b293d=
+495584a560000021ef3a0bcdd/19b293d4-9558-4a56-938e-c04986a0323e?__dU__=3Dv0G=
+4RBKTXg2GvMkOJesaYIzG4U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=3D=3D&__F__=3Dv0fUYvj=
+HMDjRPMSh3tviDHXIoXcPxvDgUUCCPvXMWoX_3eaFHlkq5FQzV1VmcRlSVP0DCsG17L-9FdStP2=
+peb95cBZhqiCx5VhYrFFHopOqVJUlxYZTtYbR89qSDV3T5jSSB6SMxKVau6C2fMdiOK33RCuHs4=
+vZRWBvXn8bR13xR3GX110maCFM2lPxF7gaKfafqm8-6ef9IReRZI5g2sr8kW600WQQfLLiksEXO=
+szNvAdZev7kp-d6fANGeTBoJUp-a3VBbNzNruIDKBN45SR0BiCn59TaOaHxi38qTo1e0qlGhn4S=
+5ayPL55ABlGxWl8Ik6OC_Ot-gi7MNbF22miJ-KUKgFROBpaOSEJRMY51o-az8vZR-YKgFdt7RsZ=
+JKupxR84DdLFV8RKgZhdkxf5tvxTJu21S5gYGjIiZPhLfb8=3D" style=3D"display:inline=
+-block; width:100%; color:#554749; text-decoration:none;" target=3D"_blank"=
+ title=3D"Opens in a new window">View Account</a></td>
+  </tr>
+</table></td>
+  </tr>
+</table>
+    </th>
+  </tr>
+</table>
+</td>
+  </tr>
+</table>
+    </td>
+  </tr>
+  <tr>
+    <td height=3D"1" align=3D"left" bgcolor=3D"#d2d2d2" style=3D"vertical-a=
+lign:top; padding:0px 0px 0px 0px; line-height:0px;"><img style=3D"display:=
+block; color:transparent;" src=3D"https://images.harmony.epsilon.com/Conten=
+tHandler/images?id=3Dd989b3a2-e1be-4bfa-bdc0-408454a1e747" alt=3D"" width=
+=3D"1" height=3D"1" border=3D"0"></td>
+  </tr>
+    <tr>
+    <td align=3D"center" style=3D"vertical-align:top; padding:15px 0px 15px=
+ 0px;">
+<table border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <th align=3D"center" style=3D"vertical-align:top; padding:0px 0px 0px 0=
+px; font-weight:normal !important;" class=3D"displayBlock"><table width=3D"=
+100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"center" style=3D"vertical-align:top; padding:0px 0px 0px 0=
+px; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font=
+-size:20px; color:#554749;">XXXXX2430</td>
+  </tr>
+  <tr>
+    <td align=3D"center" style=3D"vertical-align:top; padding:0px 0px 0px 0=
+px; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font=
+-size:20px; color:#1C1C1C;">Account</td>
+  </tr>
+    </table></th>
+    <th align=3D"center" style=3D"vertical-align:top; padding:0px 50px 0px =
+50px; font-weight:normal !important;" class=3D"displayBlock pad14"><table w=
+idth=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"center" style=3D"vertical-align:top; padding:0px 0px 0px 0=
+px; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font=
+-size:20px; color:#554749;">132,300</td>
+  </tr>
+  <tr>
+    <td align=3D"center" style=3D"vertical-align:top; padding:0px 0px 0px 0=
+px; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font=
+-size:20px; color:#1C1C1C;">Points</td>
+  </tr>
+    </table></th>
+    <th align=3D"center" style=3D"vertical-align:top; padding:0px 0px 0px 0=
+px; font-weight:normal !important;" class=3D"displayBlock"><table width=3D"=
+100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"center" style=3D"vertical-align:top; padding:0px 0px 0px 0=
+px; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font=
+-size:20px; color:#554749;">Titanium Elite</td>
+  </tr>
+  <tr>
+    <td align=3D"center" style=3D"vertical-align:top; padding:0px 0px 0px 0=
+px; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font=
+-size:20px; color:#1C1C1C;">Status</td>
+  </tr>
+    </table></th>
+  </tr>
+</table>
+    </td>
+  </tr>
+    <tr>
+    <td height=3D"1" align=3D"left" bgcolor=3D"#d2d2d2" style=3D"vertical-a=
+lign:top; padding:0px 0px 0px 0px; line-height:0px;"><img style=3D"display:=
+block; color:transparent;" src=3D"https://images.harmony.epsilon.com/Conten=
+tHandler/images?id=3Dd989b3a2-e1be-4bfa-bdc0-408454a1e747" alt=3D"" width=
+=3D"1" height=3D"1" border=3D"0"></td>
+  </tr>
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:20px 0px 0px 0p=
+x;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+    </td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+    </td>
+  </tr>
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+; line-height:0px;"><img style=3D"display:block; color:transparent;" src=3D=
+"https://images.harmony.epsilon.com/ContentHandler/images?id=3Dd989b3a2-e1b=
+e-4bfa-bdc0-408454a1e747" alt=3D"" width=3D"1" height=3D"1" border=3D"0"></=
+td>
+  </tr>
+</table>
+
+    </td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td height=3D"10" align=3D"left" bgcolor=3D"#554749" style=3D"vertical-=
+align:top; padding:0px 0px 0px 0px; line-height:0px;"><img style=3D"display=
+:block; color:transparent;" src=3D"https://images.harmony.epsilon.com/Conte=
+ntHandler/images?id=3Dd989b3a2-e1be-4bfa-bdc0-408454a1e747" alt=3D"" width=
+=3D"1" height=3D"1" border=3D"0"></td>
+  </tr>
+</table>
+<!-- Account end -->
+<!-- Account end -->
+           =20
+<!-- Brand section start -->
+<!-- Brand section start -->
+<!-- Brand section end -->
+<!-- Brand section end -->
+       =20
+<!-- Summary of points start -->
+<!-- Summary of points start -->
+
+<!-- Summary of points end -->
+<!-- Summary of points end -->
+
+<!-- Summary of charges start -->
+<!-- Summary of charges start -->
+
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:20px 0px 0px 0p=
+x;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" bgcolor=3D"#FFFFFF" style=3D"vertical-align:top; pad=
+ding:0px 0px 0px 0px;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 20px 0px 20=
+px;" class=3D"pad7">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:20px 0px 0px 0p=
+x;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"center" style=3D"vertical-align:top; padding:10px 0px 0px =
+0px; font-family: AvenirLTStd-Heavy, 'Proxima-Nova-Regular', Arial, Helveti=
+ca, sans-serif; font-size:32px; color:#1C1C1C;" class=3D"fontsize2"><a name=
+=3D"summaryofcharges" id=3D"summaryofcharges"></a>Summary Of Charges</td>
+  </tr>
+<tr>
+  <td height=3D"20" align=3D"left" style=3D"vertical-align:top; padding:0px=
+ 0px 0px 0px; line-height:0px;"><img style=3D"display:block; color:transpar=
+ent;" src=3D"https://images.harmony.epsilon.com/ContentHandler/images?id=3D=
+d989b3a2-e1be-4bfa-bdc0-408454a1e747" alt=3D"" width=3D"1" height=3D"1" bor=
+der=3D"0"></td>
+</tr>
+  <tr>
+    <td align=3D"left" bgcolor=3D"#f3f3f3" style=3D"vertical-align:top; pad=
+ding:25px 20px 25px 20px;" class=3D"pad7">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-si=
+ze:20px; color:#1C1C1C; font-weight:normal !important;">Tuesday, April 14, =
+2026 &ndash; Wednesday, April 15, 2026</td>
+  </tr>
+</table>
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td height=3D"15" align=3D"left" style=3D"vertical-align:top; padding:0=
+px 0px 0px 0px; line-height:0px;"><img style=3D"display:block; color:transp=
+arent;" src=3D"https://images.harmony.epsilon.com/ContentHandler/images?id=
+=3Dd989b3a2-e1be-4bfa-bdc0-408454a1e747" alt=3D"" width=3D"1" height=3D"1" =
+border=3D"0"></td>
+  </tr>
+  <tr>
+    <td height=3D"1" align=3D"left" bgcolor=3D"#d1d1d1" style=3D"vertical-a=
+lign:top; padding:0px 0px 0px 0px; line-height:0px;"><img style=3D"display:=
+block; color:transparent;" src=3D"https://images.harmony.epsilon.com/Conten=
+tHandler/images?id=3Dd989b3a2-e1be-4bfa-bdc0-408454a1e747" alt=3D"" width=
+=3D"1" height=3D"1" border=3D"0"></td>
+  </tr>
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:15px 0px 0px 0p=
+x;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-si=
+ze:20px; color:#1C1C1C;">1 Night at 235.00 SGD=20
+per night per room</td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table></td>
+  </tr>
+</table>
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding: 20px 0px 0px 0=
+px;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+<tr>
+<td align=3D"left" bgcolor=3D"#343434" style=3D"vertical-align:top; padding=
+: 1px 1px 1px 1px;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+<tr>
+<td align=3D"left" bgcolor=3D"#f3f3f3" style=3D"vertical-align:top; padding=
+: 12px 20px 16px 20px; font-family: 'Proxima-Nova-Regular', Arial, Helvetic=
+a, sans-serif; font-size:16px; color:#1C1C1C;" class=3D"pad7">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:10px 0px 0px 0p=
+x; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-=
+size:14px; color:#1C1C1C;" class=3D"nopad">Flexible Rate with Breakfast and=
+ Dinner, includes breakfast for 2 guests daily, dinner for 2 guests per nig=
+ht at Gupshup, additional person charge applies per night, 3rd/4th Guest Di=
+nner Payable, see Rate details</td>
+  </tr>
+</table>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+    </td>
+  </tr>=20
+</table>
+    </td>
+  </tr>
+  <tr>
+    <td height=3D"20" align=3D"left" style=3D"vertical-align:top; padding:0=
+px 0px 0px 0px; line-height:0px;" class=3D"hide"><img style=3D"display:bloc=
+k; color:transparent;" src=3D"https://images.harmony.epsilon.com/ContentHan=
+dler/images?id=3Dd989b3a2-e1be-4bfa-bdc0-408454a1e747" alt=3D"" width=3D"1"=
+ height=3D"1" border=3D"0"></td>
+  </tr>
+</table>   =20
+    </td>
+  </tr>
+</table>
+    </td>
+  </tr>=20
+</table> =20
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 20px 20px 2=
+0px;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+<tr>
+<td align=3D"left" bgcolor=3D"#d0d0d0" style=3D"vertical-align:top; padding=
+: 1px 1px 1px 1px;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+<tr>
+<td align=3D"left" bgcolor=3D"#FFFFFF" style=3D"vertical-align:top; padding=
+: 0px 0px 0px 0px;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:25px 20px 25px =
+20px;" class=3D"pad7">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+ <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-si=
+ze:20px; color:#1C1C1C; font-weight:normal !important;">Taxes &#38; Fees (p=
+er night per room)</td>
+  </tr>
+</table>
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td height=3D"15" align=3D"left" style=3D"vertical-align:top; padding:0=
+px 0px 0px 0px; line-height:0px;"><img style=3D"display:block; color:transp=
+arent;" src=3D"https://images.harmony.epsilon.com/ContentHandler/images?id=
+=3Dd989b3a2-e1be-4bfa-bdc0-408454a1e747" alt=3D"" width=3D"1" height=3D"1" =
+border=3D"0"></td>
+  </tr>
+  <tr>
+    <td height=3D"1" align=3D"left" bgcolor=3D"#d2d2d2" style=3D"vertical-a=
+lign:top; padding:0px 0px 0px 0px; line-height:0px;"><img style=3D"display:=
+block; color:transparent;" src=3D"https://images.harmony.epsilon.com/Conten=
+tHandler/images?id=3Dd989b3a2-e1be-4bfa-bdc0-408454a1e747" alt=3D"" width=
+=3D"1" height=3D"1" border=3D"0"></td>
+  </tr>
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:15px 0px 0px 0p=
+x;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" width=3D"70%" style=3D"vertical-align:top; padding:0=
+px 0px 0px 0px; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-=
+serif; font-size:20px; color:#1C1C1C;">Estimated Government Taxes &#38; Fee=
+s</td>
+    <td align=3D"right" width=3D"40%" style=3D"vertical-align:top; padding:=
+0px 0px 0px 0px; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans=
+-serif; font-size:20px; color:#1C1C1C;">23.27 SGD</td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:15px 0px 0px 0p=
+x;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-si=
+ze:20px; color:#1C1C1C;">Service charge</td>
+    <td align=3D"right" style=3D"vertical-align:top; padding:0px 0px 0px 0p=
+x; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-s=
+ize:20px; color:#1C1C1C;">23.50 SGD</td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:30px 0px 0px 0p=
+x;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-si=
+ze:20px; color:#1C1C1C;">Totals</td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td height=3D"15" align=3D"left" style=3D"vertical-align:top; padding:0=
+px 0px 0px 0px; line-height:0px;"><img style=3D"display:block; color:transp=
+arent;" src=3D"https://images.harmony.epsilon.com/ContentHandler/images?id=
+=3Dd989b3a2-e1be-4bfa-bdc0-408454a1e747" alt=3D"" width=3D"1" height=3D"1" =
+border=3D"0"></td>
+  </tr>
+  <tr>
+    <td height=3D"1" align=3D"left" bgcolor=3D"#d2d2d2" style=3D"vertical-a=
+lign:top; padding:0px 0px 0px 0px; line-height:0px;"><img style=3D"display:=
+block; color:transparent;" src=3D"https://images.harmony.epsilon.com/Conten=
+tHandler/images?id=3Dd989b3a2-e1be-4bfa-bdc0-408454a1e747" alt=3D"" width=
+=3D"1" height=3D"1" border=3D"0"></td>
+  </tr>
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:15px 0px 0px 0p=
+x;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-si=
+ze:20px; color:#1C1C1C;">Total for Stay (all rooms)</td>
+    <td align=3D"right" style=3D"vertical-align:top; padding:0px 0px 0px 0p=
+x; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-s=
+ize:24px; color:#1C1C1C;" class=3D"fontsize4">281.77 SGD</td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+</td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+
+    </td>
+  </tr>
+</table>
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 20px 0px 20=
+px;" class=3D"pad7">
+    </td>
+  </tr>
+</table>
+
+    </td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+<!-- Summary of charges end -->
+<!-- Summary of charges end -->
+
+<!-- Rate details start -->
+<!-- Rate details start -->
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:20px 0px 0px 0p=
+x;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" bgcolor=3D"#FFFFFF" style=3D"vertical-align:top; pad=
+ding:0px 0px 0px 0px;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 20px 0px 20=
+px;" class=3D"pad7">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:30px 0px 20px 0=
+px;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"center" style=3D"vertical-align:top; padding:0px 0px 0px 0=
+px; font-family: 'AvenirLTStd-Heavy', 'Proxima-Nova-Regular', Arial, Helvet=
+ica, sans-serif; font-size:32px; color:#1C1C1C;" class=3D"fontsize2">Rate D=
+etails &#38; Cancellation Policy</td>
+  </tr>
+</table>
+    </td>
+  </tr>
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" bgcolor=3D"#f3f3f3" style=3D"vertical-align:top; pad=
+ding:0px 32px 20px 32px;" class=3D"pad19">
+      <table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0=
+">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:15px 0px 0px 0p=
+x;">
+<table border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+      <tr>
+        <td align=3D"left" style=3D"vertical-align:top; padding:0px 20px 0p=
+x 0px;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-s=
+ize:14px; color:#1C1C1C;">&bull;</td>
+  </tr>
+</table>
+        </td>
+        <td align=3D"left" style=3D"vertical-align:middle; padding:0px 0px =
+0px 0px; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif;=
+ font-size:14px; color:#1C1C1C;">You may cancel your reservation for no cha=
+rge before 11:59 PM local hotel time on Monday, April 13, 2026 (1 day[s] be=
+fore arrival).</td>
+      </tr>
+
+    </table>
+    </td>
+  </tr>
+</table>
+      <table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0=
+">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:15px 0px 0px 0p=
+x;">
+<table border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+      <tr>
+        <td align=3D"left" style=3D"vertical-align:top; padding:0px 20px 0p=
+x 0px;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-s=
+ize:14px; color:#1C1C1C;">&bull;</td>
+  </tr>
+</table>
+        </td>
+        <td align=3D"left" style=3D"vertical-align:middle; padding:0px 0px =
+0px 0px; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif;=
+ font-size:14px; color:#1C1C1C;">Please note that we will assess a fee of 2=
+56.15 SGD if you must cancel after this deadline.</td>
+      </tr>
+
+    </table>
+    </td>
+  </tr>
+</table>
+      <table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0=
+">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:15px 0px 0px 0p=
+x;">
+<table border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+      <tr>
+        <td align=3D"left" style=3D"vertical-align:top; padding:0px 20px 0p=
+x 0px;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-s=
+ize:14px; color:#1C1C1C;">&bull;</td>
+  </tr>
+</table>
+        </td>
+        <td align=3D"left" style=3D"vertical-align:middle; padding:0px 0px =
+0px 0px; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif;=
+ font-size:14px; color:#1C1C1C;">Travel agents: please note that this rate =
+is commissionable.</td>
+      </tr>
+
+    </table>
+    </td>
+  </tr>
+</table>
+      <table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0=
+">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:15px 0px 0px 0p=
+x;">
+<table border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+      <tr>
+        <td align=3D"left" style=3D"vertical-align:top; padding:0px 20px 0p=
+x 0px;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-s=
+ize:14px; color:#1C1C1C;">&bull;</td>
+  </tr>
+</table>
+        </td>
+        <td align=3D"left" style=3D"vertical-align:middle; padding:0px 0px =
+0px 0px; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif;=
+ font-size:14px; color:#1C1C1C;">Please note that a change in the length or=
+ dates of your reservation may result in a rate change.</td>
+      </tr>
+
+    </table>
+    </td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+    =20
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding: 20px 20px 20px=
+ 20px;" class=3D"pad7">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+<tr>
+<td align=3D"left" bgcolor=3D"#343434" style=3D"vertical-align:top; padding=
+: 1px 1px 1px 1px;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+<tr>
+<td align=3D"left" bgcolor=3D"#FFFFFF" style=3D"vertical-align:top; padding=
+: 0px 0px 16px 0px;" class=3D"nopad">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 20px 0px 20=
+px;" class=3D"pad20">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:15px 0px 0px 0p=
+x; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-=
+size:16px; color:#1C1C1C; font-weight:bold;">Rate Guarantee Limitation(s)</=
+td>
+  </tr>
+</table>
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:15px 0px 0px 10=
+px;">
+<table border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+      <tr>
+        <td align=3D"left" style=3D"vertical-align:top; padding:0px 20px 0p=
+x 0px;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-s=
+ize:14px; color:#1C1C1C;">&bull;</td>
+  </tr>
+</table>
+        </td>
+        <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px=
+ 0px; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; fo=
+nt-size:14px; color:#1C1C1C;">Changes in taxes or fees implemented after bo=
+oking will affect the total room price.</td>
+      </tr>
+    </table>
+    </td>
+  </tr>
+</table>
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:15px 0px 0px 0p=
+x; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-=
+size:16px; color:#1C1C1C; font-weight:bold;">Additional Information</td>
+  </tr>
+</table>
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:15px 0px 0px 10=
+px;">
+<table border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+      <tr>
+        <td align=3D"left" style=3D"vertical-align:top; padding:0px 20px 0p=
+x 0px;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-s=
+ize:14px; color:#1C1C1C;">&bull;</td>
+  </tr>
+</table>
+        </td>
+        <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px=
+ 0px; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; fo=
+nt-size:14px; color:#1C1C1C;">Unless otherwise stated in the =E2=80=9CRate =
+Details & Cancellation Policy=E2=80=9D section of this email: An authorizat=
+ion request may be placed on your credit or debit card (where accepted) soo=
+n before or at check-in. This authorization may be for an amount up to the =
+cost of the room, tax, and estimated incidental charges for the length of y=
+our stay (up to seven nights). For stays longer than seven nights, an addit=
+ional authorization may be requested for the full expected amount. At check=
+-out, your payment card will be charged for the actual amount incurred duri=
+ng your stay.</td>
+      </tr>
+    </table>
+    </td>
+  </tr>
+</table>
+</td>
+  </tr>
+</table>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+    </td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+<!-- Rate details end -->
+<!-- Rate details end -->
+
+<!-- Enjoy exclusive benefits start -->
+<!-- Enjoy exclusive benefits start -->
+<!-- Enjoy exclusive benefits end -->
+<!-- Enjoy exclusive benefits end -->
+
+<!-- Contact start -->
+<!-- Contact start -->
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:20px 0px 0px 0p=
+x;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" bgcolor=3D"#FFFFFF" style=3D"vertical-align:top; pad=
+ding:0px 0px 0px 0px;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 20px 20px 2=
+0px;" class=3D"pad7">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:25px 0px 0px 0p=
+x;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"center" style=3D"vertical-align:top; padding:0px 0px 0px 0=
+px; font-family: 'AvenirLTStd-Heavy', 'Proxima-Nova-Regular', Arial, Helvet=
+ica, sans-serif; font-size:32px; color:#1C1C1C;" class=3D"fontsize2"><a nam=
+e=3D"contactus" id=3D"contactus"></a>Contact Us</td>
+  </tr>
+  <tr>
+    <td align=3D"center" style=3D"vertical-align:top; padding:17px 0px 25px=
+ 0px;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:5px 0px 0px 0px=
+; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-si=
+ze:24px; color:#1C1C1C;">Phone Numbers</td>
+  </tr>
+</table>
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:5px 0px 0px 0px=
+; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-si=
+ze:20px; color:#1C1C1C;">Call 1-844-487-4288 in the US and Canada</td>
+  </tr>
+</table>
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:5px 0px 0px 0px=
+; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-si=
+ze:20px; color:#1C1C1C;"><a href=3D"https://res-marriott.com/T/v710000019c4=
+c1f4ee8977821434b5c56d0/19b293d495584a560000021ef3a0bcde/19b293d4-9558-4a56=
+-938e-c04986a0323e?__dU__=3Dv0G4RBKTXg2GvMkOJesaYIzG4U7guhmTRE-pfbKSY7_EuYI=
+LBfkKy6fQ=3D=3D&__F__=3Dv0fUYvjHMDjRPMSh3tviDHXIoXcPxvDgUUCCPvXMWoX_3eaFHlk=
+q5FQzV1VmcRlSVPxZ5k2s28KwwE_ytU6Di8v99sfMo4FnODGG8-jNx3iBFi3XewqybHHhtkhkz8=
+fderh316XRIyHMMaOVujAbuSa16sVce7yinOB0e3Y1hYiY_bJ408oZbRMVx-iwcgFNA0W-ra8px=
+anZLIPITd2hHcu6TTXpEIqsP2s2YDDf4q-H7HYRWOYXhNx8GJma-EROODamJuQD61aAeK3nCPOb=
+Hew3KPjBpwykhhijFWCYVA8RlROoFDBhrUUZr6O3emVySIrRR6OswBLLQLY7w7lp1QYgE8EZukR=
+cxLI5uvfFzt1RBUfoijRegy6zzCEKk86tTzpNp1Cd5orwkiQjEuFp2kU-uBO59s6XVVURL01YsO=
+177j6a5ctLVnzB9z_neZhd5H" style=3D"color:[Primary Blue]; text-decoration:no=
+ne;" target=3D"_blank" title=3D"Opens in a new window">For everywhere else,=
+ call our Worldwide Telephone Numbers</a></td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+    </td>
+  </tr>
+  <tr>
+    <td height=3D"1" align=3D"left" bgcolor=3D"#d2d2d2" style=3D"vertical-a=
+lign:top; padding:0px 0px 0px 0px; line-height:0px;"><img style=3D"display:=
+block; color:transparent;" src=3D"https://images.harmony.epsilon.com/Conten=
+tHandler/images?id=3Dd989b3a2-e1be-4bfa-bdc0-408454a1e747" alt=3D"" width=
+=3D"1" height=3D"1" border=3D"0"></td>
+  </tr>
+    <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:30px 0px 20px 0=
+px;" class=3D"pad23">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <th align=3D"left" style=3D"vertical-align:middle; padding:0px 0px 0px =
+0px; font-weight:normal !important" class=3D"displayBlock">
+<table border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"right" style=3D"vertical-align:middle; padding:0px 0px 0px=
+ 0px; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; fon=
+t-size:12px; color:#1C1C1C; font-weight:bold;"><a href=3D"https://res-marri=
+ott.com/T/v710000019c4c1f4ee8977821434b5c56d0/19b293d495584a560000021ef3a0b=
+cdf/19b293d4-9558-4a56-938e-c04986a0323e?__dU__=3Dv0G4RBKTXg2GvMkOJesaYIzG4=
+U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=3D=3D&__F__=3Dv0fUYvjHMDjRPMSh3tviDHXIoXcPx=
+vDgUUCCPvXMWoX_30tcPSLyBQEfKWBfbfCjpDbhTuC6GZNETh3n8pPnKbR2dSDTyKbfHFyDg-XN=
+w0EFQapCTND6eCtUYKqUYu-HPQ1bbDV7Sp47H0XGxn4dlEoJvGR394yfahSZWAq2z2Xx9pzsLuX=
+V8nVDmnNAmBTv6whXRwbkEKIAt6uhkneUfMR4AEhfw6goJvWKUUMrUlLPNznmjEYqEUri4FLktZ=
+ZhOj1CeSPJDqALs4_FW07bckJGwulI835tIqHBcieHFYC_QyA3L2s6U27mrGlJWmeyAHcy9Bu8Y=
+H7OB0Q8NGrfL6uLB8QsaihdzyqtVLD3BatS7Vom-zg9EaKYEmdyFrPEBr" style=3D"color:#=
+1C1C1C; text-decoration:none;" target=3D"_blank" title=3D"Opens in a new wi=
+ndow">FREQUENTLY ASKED QUESTIONS</a></td>
+    <td align=3D"right" style=3D"vertical-align:middle; padding:0px 0px 0px=
+ 0px;"><table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"=
+0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:middle; padding:0px 0px 0px =
+6px; line-height:0px;"><img style=3D"display:block; color:transparent;" src=
+=3D"https://images.harmony.epsilon.com/ContentHandler/images?id=3D3ced071d-=
+fa63-4781-be1a-72b6b144b8e2" alt=3D"" width=3D"5" height=3D"9" border=3D"0"=
+></td>
+  </tr>
+</table></td>
+  </tr>
+</table>
+    </th>
+    <th align=3D"right" style=3D"vertical-align:middle; padding:0px 0px 0px=
+ 0px;" class=3D"displayBlock pad24">
+ <table border=3D"0" cellspacing=3D"0" cellpadding=3D"0" class=3D"full">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
+;">
+<table border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+<!-- Social icon start -->
+<!-- Initialize the counter to 0 (outside of the loop) -->
+   =20
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 10px 0px 0p=
+x;"><a href=3D"https://res-marriott.com/T/v710000019c4c1f4ee8977821434b5c56=
+d0/19b293d495584a560000021ef3a0bce0/19b293d4-9558-4a56-938e-c04986a0323e?__=
+dU__=3Dv0G4RBKTXg2GvMkOJesaYIzG4U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=3D=3D&__F__=
+=3Dv0fUYvjHMDjRPMSh3tviDHXIoXcPxvDgUUCCPvXMWoX_0JoZLAZABQF9OJQbzKjWJqjvxdDS=
+aKpQbqoDOnaZDTKasY675wBCNWfQlpyOh4gEzDfvtY6cHFTOXmk4Y6GmC_eRFYMqlQS_8YzDHED=
+TiCeCYcbP351uSnBRn-FU0Nnxp8FOIMYZHF2vL6dcRGdoWNesr-Qc9jgP-ZxrauOfgBmZBxy5c7=
+HVOZGaAkhQZMGLsexVoP2n7282W9urXPubpPuad7Sj2SgyifvKJWxXMaZUrcFILVKTeo35cfbP5=
+gWNMAljDcS9vtHkWnQHl0YpjL" target=3D"_blank" title=3D"Opens in a new window=
+"><img style=3D"display:block; color:transparent;" src=3D"https://cache.mar=
+riott.com/marriottassets/eConfo/facebook_30x30_black.png?downsize=3D600px:*=
+" alt=3D"Facebook" width=3D"30" height=3D"30" border=3D"0"></a></td>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 10px 0px 0p=
+x;"><a href=3D"https://res-marriott.com/T/v710000019c4c1f4ee8977821434b5c56=
+d0/19b293d495584a560000021ef3a0bce1/19b293d4-9558-4a56-938e-c04986a0323e?__=
+dU__=3Dv0G4RBKTXg2GvMkOJesaYIzG4U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=3D=3D&__F__=
+=3Dv0fUYvjHMDjRPMSh3tviDHXIoXcPxvDgUUCCPvXMWoX_1P8SSwvgaM7Bj1wKVct32Ani6nIl=
+p5i6tPjpbhTiN7_QUuaPA1sO81AoDOrgm_O3nD6JvzhnB4e-bc2ePB5b96lcnxvsXclOlgvL6Zd=
+cht4Y-3awbreRjGlpP23WTJaFfLWztKdCLkt5EvfH6aFnY30dWPu-D-PS1j_1y53thEsH_YJAKl=
+Ua9YGpCzPlo0-vtvP6CM5LUqCJVjlHgamnWe-y3FNIKy9htrceyZlQ7kcANPDfY2U53EmdnJJLN=
+MVlm_YB8WxqopKg=3D=3D" target=3D"_blank" title=3D"Opens in a new window"><i=
+mg style=3D"display:block; color:transparent;" src=3D"https://cache.marriot=
+t.com/marriottassets/eConfo/twitter_30x30_black.png?downsize=3D600px:*" alt=
+=3D"Twitter" width=3D"30" height=3D"30" border=3D"0"></a></td>
+    <td align=3D"left" style=3D"vertical-align:top; padding:0px 10px 0px 0p=
+x;"><a href=3D"https://res-marriott.com/T/v710000019c4c1f4ee8977821434b5c56=
+d0/19b293d495584a560000021ef3a0bce2/19b293d4-9558-4a56-938e-c04986a0323e?__=
+dU__=3Dv0G4RBKTXg2GvMkOJesaYIzG4U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=3D=3D&__F__=
+=3Dv0fUYvjHMDjRPMSh3tviDHXIoXcPxvDgUUCCPvXMWoX_0JoZLAZABQF4zau-oFBc2TNlTq7z=
+8LKg0BeA9hDvpxKtMNEzHYtacHTGfdrSWh4ATHYRWOYXhNx8GJma-EROODamJuQD61aAeK3nCPO=
+bHew3KPjBpwykhhijFWCYVA8RlROoFDBhrUUZr6O3emVySIrRR6OswBLLQLY7w7lp1QYgE8EZuk=
+RcxLI5uvfFzt1RBUfoijRegy6zzCEKk86tTzYv5iHgOzHILqySpSvgnvRto_Y4i8mbO2DXsHac7=
+dHjvmdRUgjcqMgR9z_neZhd5H" target=3D"_blank" title=3D"Opens in a new window=
+"><img style=3D"display:block; color:transparent;" src=3D"https://cache.mar=
+riott.com/marriottassets/eConfo/instagram_30x30_black.png?downsize=3D600px:=
+*" alt=3D"Instagram" width=3D"30" height=3D"30" border=3D"0"></a></td>
+<!-- Social icon end -->
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+
+    </th>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+<!-- Contact end -->
+<!-- Contact end -->
+
+<!-- Footer start -->
+<!-- Footer start -->
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"left" style=3D"vertical-align:top; padding:20px 0px 0px 0p=
+x;">
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <td align=3D"center" bgcolor=3D"#f8f8f8" style=3D"vertical-align:middle=
+; padding:20px 20px 40px 20px;" class=3D"pad27">
+<table border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tr>
+    <th align=3D"center" style=3D"vertical-align:middle; padding:0px 0px 0p=
+x 0px; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; fo=
+nt-size:12px; color:#1C1C1C; font-weight:bold !important;" class=3D"display=
+Block"><a href=3D"https://res-marriott.com/T/v710000019c4c1f4ee8977821434b5=
+c56d0/19b293d495584a560000021ef3a0bce3/19b293d4-9558-4a56-938e-c04986a0323e=
+?__dU__=3Dv0G4RBKTXg2GvMkOJesaYIzG4U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=3D=3D&__=
+F__=3Dv0fUYvjHMDjRPMSh3tviDHXIoXcPxvDgUUCCPvXMWoX_3eaFHlkq5FQzV1VmcRlSVPXVp=
+X7pRPN5poVsQeLsb4bK7e-KGYZGZqTYvG-PJ0IruuvJpzvFoxMmKpxqBuLAB4eqdgV43xNJwpeO=
+3Mf6MjinqSw4lkAnrQIGMuSLsCFmSCg2rwbQnTrbyc9WCF3_51m_ZT495cqjvrLiRWDrVwFw07z=
+2SIQx_86M41uqYKZe8suHaajpx5-pRC5sLQvv_KjdA74kNCkfha3bOQHigBNgE37dh0d3CoWl8O=
+LqYTQNzrvRbTH6wPGngTFPteb5_t" style=3D"color:#1C1C1C; text-decoration:none;=
+" target=3D"_blank" title=3D"Opens in a new window">Terms of Use</a></th>
+    <th align=3D"center" style=3D"vertical-align:middle; padding:0px 45px 0=
+px 45px;" class=3D"displayBlock pad26">
+<!--[if (!mso)&(ie)]><!-->
+<span style=3D"width:0; overflow:hidden; float:left; display:none; max-heig=
+ht:0; line-height:0;" class=3D"mobileshow">
+<img style=3D"display:block; color:transparent;" src=3D"https://images.harm=
+ony.epsilon.com/ContentHandler/images?id=3Dc211c0cb-041f-4691-841e-caed4e3c=
+6348" alt=3D"" width=3D"21" height=3D"2" border=3D"0">
+</span>=20
+<!--<![endif]-->
+<img style=3D"display:block; color:transparent;" src=3D"https://images.harm=
+ony.epsilon.com/ContentHandler/images?id=3D90f27bd6-ec80-4735-83d5-d6862dd0=
+83dc" alt=3D"" width=3D"1" height=3D"20" border=3D"0" class=3D"hide"></th>
+    <th align=3D"center" style=3D"vertical-align:middle; padding:0px 0px 0p=
+x 0px; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; fo=
+nt-size:12px; color:#1C1C1C; font-weight:bold !important;" class=3D"display=
+Block"><a href=3D"https://res-marriott.com/T/v710000019c4c1f4ee8977821434b5=
+c56d0/19b293d495584a560000021ef3a0bce4/19b293d4-9558-4a56-938e-c04986a0323e=
+?__dU__=3Dv0G4RBKTXg2GvMkOJesaYIzG4U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=3D=3D&__=
+F__=3Dv0fUYvjHMDjRPMSh3tviDHXIoXcPxvDgUUCCPvXMWoX_3eaFHlkq5FQzV1VmcRlSVPXVp=
+X7pRPN5qGfvJMvuiXrFdBue7NuJhaK62egPLDnLL8K3LvXPrEsPEshrBCIsRodjTERCk9hrvUVd=
+E49lyn_ZH44MF1Y4PT36dO8mVOUkkakLM-WjT6-xUBitVDvO2hMIvH3GJfd1Ynh4yO7suDZcMp-=
+kUDVGIq3oESzGGYuj8-hUcUAylJSM_3Z0cI8ZpQszzPDL0PQrcJmuKjHu5t96ImE9bXNFj4LG_-=
+kkUwIalvkf1_tw_hfk7mJ0wvtc7A" style=3D"color:#1C1C1C; text-decoration:none;=
+" target=3D"_blank" title=3D"Opens in a new window">Privacy Policy</a></th>
+    <th align=3D"center" style=3D"vertical-align:middle; padding:0px 45px 0=
+px 45px;" class=3D"displayBlock pad26">
+<!--[if (!mso)&(ie)]><!-->
+<span style=3D"width:0; overflow:hidden; float:left; display:none; max-heig=
+ht:0; line-height:0;" class=3D"mobileshow">
+<img style=3D"display:block; color:transparent;" src=3D"https://images.harm=
+ony.epsilon.com/ContentHandler/images?id=3Dc211c0cb-041f-4691-841e-caed4e3c=
+6348" alt=3D"" width=3D"21" height=3D"2" border=3D"0">
+</span>=20
+<!--<![endif]-->
+<img style=3D"display:block; color:transparent;" src=3D"https://images.harm=
+ony.epsilon.com/ContentHandler/images?id=3D90f27bd6-ec80-4735-83d5-d6862dd0=
+83dc" alt=3D"" width=3D"1" height=3D"20" border=3D"0" class=3D"hide"></th>
+    <th align=3D"center" style=3D"vertical-align:middle; padding:0px 0px 0p=
+x 0px; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; fo=
+nt-size:12px; color:#1C1C1C; font-weight:bold !important;" class=3D"display=
+Block"><a href=3D"https://res-marriott.com/T/v710000019c4c1f4ee8977821434b5=
+c56d0/19b293d495584a560000021ef3a0bce5/19b293d4-9558-4a56-938e-c04986a0323e=
+?__dU__=3Dv0G4RBKTXg2GvMkOJesaYIzG4U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=3D=3D&__=
+F__=3Dv0fUYvjHMDjRPMSh3tviDHXIoXcPxvDgUUCCPvXMWoX_3eaFHlkq5FQzV1VmcRlSVPlhM=
+qyc9QIDn8jpvoNSK_K_hahmbDEMHLZVjZl1RMNw4FLmjwNbDvNQKAzq4Jvzt5w-ib84ZweHvm3N=
+njweW_epXJ8b7F3JTpYLy-mXXIbeGPt2sG63kYxpaT9t1kyWhXy1s7SnQi5LeRL3x-mhZ2N9HVj=
+7vg_j0tY_9cud7YRLB_2CQCpVGvWBqQsz5aNPr7bz-gjOS1KgiwkQGdHtCUMcYk2dxgm73Dd-Qq=
+3iiO_gjMTJ_y9buIKJnZySSzTFZZv2AfFsaqKSo=3D" style=3D"color:#1C1C1C; text-de=
+coration:none;" target=3D"_blank" title=3D"Opens in a new window">About Us<=
+/a></th>
+    <th align=3D"center" style=3D"vertical-align:middle; padding:0px 45px 0=
+px 45px;" class=3D"displayBlock pad26">
+<!--[if (!mso)&(ie)]><!-->
+<span style=3D"width:0; overflow:hidden; float:left; display:none; max-heig=
+ht:0; line-height:0;" class=3D"mobileshow">
+<img style=3D"display:block; color:transparent;" src=3D"https://images.harm=
+ony.epsilon.com/ContentHandler/images?id=3Dc211c0cb-041f-4691-841e-caed4e3c=
+6348" alt=3D"" width=3D"21" height=3D"2" border=3D"0">
+</span>=20
+<!--<![endif]-->
+<img style=3D"display:block; color:transparent;" src=3D"https://images.harm=
+ony.epsilon.com/ContentHandler/images?id=3D90f27bd6-ec80-4735-83d5-d6862dd0=
+83dc" alt=3D"" width=3D"1" height=3D"20" border=3D"0" class=3D"hide"></th>
+    <th align=3D"center" style=3D"vertical-align:middle; padding:0px 0px 0p=
+x 0px; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; fo=
+nt-size:12px; color:#1C1C1C; font-weight:bold !important;" class=3D"display=
+Block"><a href=3D"https://res-marriott.com/T/v710000019c4c1f4ee8977821434b5=
+c56d0/19b293d495584a560000021ef3a0bce6/19b293d4-9558-4a56-938e-c04986a0323e=
+?__dU__=3Dv0G4RBKTXg2GvMkOJesaYIzG4U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=3D=3D&__=
+F__=3Dv0fUYvjHMDjRPMSh3tviDHXIoXcPxvDgUUCCPvXMWoX_3eaFHlkq5FQzV1VmcRlSVPQyI=
+1TaX68b837UB-JeKSpqjS3Ui68VEjw377WOnBxUzl5pOGOhpgv3kRWDKpUEv_GMwxxA04gngmHG=
+z9-dbkpwUZ_hVNDZ8afBTiDGGRxdry-nXERnaFjXrK_kHPY4D_mca2rjn4AZmQccuXOx1TmRmgJ=
+IUGTBi7HsVaD9p-9vNlvbq1z7m6T_aWHiVdDui9ddvAfdGURzZET2BUZJmRYUPmyyy4uuHnkbaY=
+v0Zn5slFp0B5dGKYyw=3D=3D" style=3D"color:#1C1C1C; text-decoration:none;" ta=
+rget=3D"_blank" title=3D"Opens in a new window">Find a Hotel</a></th>
+   </tr>
+</table>
+    </td>
+  </tr>
+  <tr>
+   =20
+    <td align=3D"left" bgcolor=3D"#FFFFFF" class=3D"pad25" style=3D"vertica=
+l-align:top; padding:20px 20px 45px 20px;">
+
+      <table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0=
+">
+      <tr>
+        <td align=3D"left" style=3D"vertical-align:top; padding:20px 0px 0p=
+x 0px; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; f=
+ont-size:12px; color:#1C1C1C;">Contact Us</td>
+      </tr>
+      <tr>
+        <td align=3D"left" style=3D"vertical-align:top; padding:15px 0px 0p=
+x 0px; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; f=
+ont-size:12px; color:#1C1C1C;">This email confirmation is an auto-generated=
+ message. Replies to automated messages are not monitored. Our <a href=3D"h=
+ttps://res-marriott.com/T/v710000019c4c1f4ee8977821434b5c56d0/19b293d495584=
+a560000021ef3a0bce7/19b293d4-9558-4a56-938e-c04986a0323e?__dU__=3Dv0G4RBKTX=
+g2GvMkOJesaYIzG4U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=3D=3D&__F__=3Dv0fUYvjHMDjRP=
+MSh3tviDHXIoXcPxvDgUUCCPvXMWoX_30tcPSLyBQEfKWBfbfCjpDbhTuC6GZNEQn-HCUscVMnn=
+6b08sVN67my0CTdzwC0MMFLmjwNbDvNQKAzq4Jvzt5w-ib84ZweHvm3NnjweW_epXJ8b7F3JTpY=
+Ly-mXXIbeGPt2sG63kYxpaT9t1kyWhXy1s7SnQi5LeRL3x-mhZ2N9HVj7vg_j0tY_9cud7YRLB_=
+2CQCpVGvWBqQsz5aNPr7bz-gjOS1Kgg_kP-kHReQoCGOzXnnHFGjyN2vhsw-lztl-Xsec5KIAZn=
+ZySSzTFZZv2AfFsaqKSo=3D" style=3D"color:#1C1C1C; text-decoration:underline;=
+">Customer Care</a> team is available to assist you 24 hours per day, 7 day=
+s per week.</td>
+      </tr>
+    </table>
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+      <tr>
+        <td align=3D"left" style=3D"vertical-align:top; padding:20px 0px 0p=
+x 0px; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; f=
+ont-size:12px; color:#1C1C1C;">Confirmation Authenticity</td>
+      </tr>
+      <tr>
+        <td align=3D"left" style=3D"vertical-align:top; padding:15px 0px 0p=
+x 0px; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; f=
+ont-size:12px; color:#1C1C1C;">We're sending you this confirmation notice e=
+lectronically for your convenience. Marriott keeps an official record of al=
+l electronic reservations. We honor our official record only and will disre=
+gard any alterations to this confirmation that may have been made after we =
+sent it to you.</td>
+      </tr>
+    </table>
+    <table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+      <tr>
+        <td align=3D"left" style=3D"vertical-align:top; padding:20px 0px 0p=
+x 0px; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; f=
+ont-size:12px; color:#1C1C1C;">Email Unsubscribe</td>
+      </tr>
+      <tr>
+        <td align=3D"left" style=3D"vertical-align:top; padding:15px 0px 0p=
+x 0px; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; f=
+ont-size:12px; color:#1C1C1C;">You may opt out of promotional emails at any=
+ time <a href=3D"https://res-marriott.com/T/v710000019c4c1f4ee8977821434b5c=
+56d0/19b293d495584a560000021ef3a0bce8/19b293d4-9558-4a56-938e-c04986a0323e?=
+__dU__=3Dv0G4RBKTXg2GvMkOJesaYIzG4U7guhmTRE-pfbKSY7_EuYILBfkKy6fQ=3D=3D&__F=
+__=3Dv0fUYvjHMDjRPMSh3tviDHXIoXcPxvDgUUCCPvXMWoX_0JoZLAZABQF8ooLJw0siTTjzzx=
+QBUxrlLAypcSsXMJpjMatxA9kdXN7rU4Z-uO14jAlMd8tOkvpGjv3mVywKL9ac7C7l1fJ1Q5pzQ=
+JgU7-sIV0cG5BCiALeroZJ3lHzEeABIX8OoKCb1ilFDK1JSzzc55oxGKhFK4uBS5LWWYTo9Qnkj=
+yQ6gC7OPxVtO23JCRsLpSPN-bSKhwXInhxWAv0MgNy9rOlNu5qxpSVpnsgB07vMngiTg7V-sq88=
+uGDoRD7TZQeY5aQp_atlqE1PtK1YyO3BPQY9_CBJnchazxAaw=3D=3D" style=3D"color:#1C=
+1C1C; text-decoration:underline;">here</a>. Each email also includes a link=
+ to unsubscribe. Please note: should you unsubscribe, you will continue to =
+receive emails such as reservation confirmations, hotel stay receipts and c=
+hanges to program terms and conditions.</td>
+      </tr>
+    </table>
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+      <tr>
+        <td align=3D"left" style=3D"vertical-align:top; padding:15px 0px 0p=
+x 0px; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; f=
+ont-size:12px; color:#1C1C1C;">&copy; 2026 MARRIOTT INTERNATIONAL, INC. ALL=
+ RIGHTS RESERVED.<br />
+MARRIOTT PROPRIETARY INFORMATION</td>
+      </tr>
+    </table>
+    </td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table>
+<!-- Footer end -->
+<!-- Footer end -->
+
+          </td>
+        </tr>
+      </table>
+     =20
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
+
+---=Part.38b6f.31ea980b254c0964.19c4c1f568e.48556c0efe8f4092=---

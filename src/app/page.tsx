@@ -63,6 +63,7 @@ interface BookingWithRelations {
   notes: string | null;
   hotelChainId: string | null;
   accommodationType: string;
+  needsReview: boolean;
   otaAgencyId: string | null;
   bookingSource: string | null;
   hotelChain: {
@@ -431,6 +432,8 @@ export default function DashboardPage() {
     return sum + usdTotalCost + pointsRedeemedValue + certsValue;
   }, 0);
 
+  const needsReviewCount = safeBookings.filter((b) => b.needsReview).length;
+
   const today = new Date().toISOString().split("T")[0];
   const recentBookings = filteredBookings
     .filter((b) => b.checkOut.slice(0, 10) >= today)
@@ -442,6 +445,28 @@ export default function DashboardPage() {
         error={fetchError ? "Failed to load bookings. Please try again." : null}
         onDismiss={clearError}
       />
+      {needsReviewCount > 0 && (
+        <div
+          data-testid="needs-review-callout"
+          className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 flex items-center justify-between"
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-amber-600 font-medium text-sm">
+              {needsReviewCount} booking{needsReviewCount !== 1 ? "s" : ""} need
+              {needsReviewCount === 1 ? "s" : ""} review
+            </span>
+            <span className="text-amber-500 text-sm">
+              — created from forwarded emails. Add your credit card and other details.
+            </span>
+          </div>
+          <Link
+            href="/bookings?filter=needs-review"
+            className="text-amber-700 text-sm font-medium underline underline-offset-2"
+          >
+            View →
+          </Link>
+        </div>
+      )}
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">Dashboard</h1>

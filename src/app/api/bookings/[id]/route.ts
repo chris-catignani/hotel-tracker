@@ -220,6 +220,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       benefits,
       notes,
       hotelChainSubBrandId,
+      confirmationNumber,
     } = body;
 
     // Resolve propertyId: use provided id, or find/create from geo fields
@@ -241,7 +242,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       });
     }
 
-    const data: Record<string, unknown> = {};
+    const data: Record<string, unknown> = { needsReview: false };
+    if (confirmationNumber !== undefined) data.confirmationNumber = confirmationNumber ?? null;
     if (accommodationType !== undefined) data.accommodationType = accommodationType;
     if (hotelChainId !== undefined) data.hotelChainId = hotelChainId || null;
     if (hotelChainSubBrandId !== undefined)

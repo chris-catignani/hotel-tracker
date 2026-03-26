@@ -33,6 +33,7 @@
     "*.{ts,tsx,js,jsx}": "eslint --cache"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.80.0",
     "@auth/prisma-adapter": "^2.11.1",
     "@prisma/client": "^6.19.2",
     "@sentry/nextjs": "^10.43.0",
