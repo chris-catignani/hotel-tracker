@@ -195,8 +195,8 @@ test.describe("Booking Edit", () => {
 
     await testBooking.page.getByTestId("booking-form-submit").click();
 
-    // Should redirect to the detail page
-    await expect(testBooking.page).toHaveURL(`/bookings/${testBooking.id}`);
+    // Should redirect to the detail page (allow extra time under parallel load)
+    await expect(testBooking.page).toHaveURL(`/bookings/${testBooking.id}`, { timeout: 15000 });
     // Updated notes should be visible
     await expect(testBooking.page.getByText(uniqueNote)).toBeVisible();
   });

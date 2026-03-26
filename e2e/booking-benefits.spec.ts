@@ -291,6 +291,7 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
   test("benefit is applied when booking matches card and hotel chain", async ({
     adminRequest,
     isolatedUser,
+    testHotelChain,
   }) => {
     const uccRes = await isolatedUser.request.post("/api/user-credit-cards", {
       data: { creditCardId: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM },
@@ -303,7 +304,7 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
         description: "Test Hilton quarterly credit",
         value: 50,
         period: "quarterly",
-        hotelChainId: HOTEL_ID.HILTON,
+        hotelChainId: testHotelChain.id,
         isActive: true,
       },
     });
@@ -311,7 +312,7 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
 
     const bookingRes = await isolatedUser.request.post("/api/bookings", {
       data: {
-        hotelChainId: HOTEL_ID.HILTON,
+        hotelChainId: testHotelChain.id,
         propertyName: "Test Hilton for Card Benefits",
         checkIn: "2025-04-01",
         checkOut: "2025-04-03",
@@ -345,6 +346,7 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
   test("benefit is NOT applied when hotel chain does not match", async ({
     adminRequest,
     isolatedUser,
+    testHotelChain,
   }) => {
     const uccRes = await isolatedUser.request.post("/api/user-credit-cards", {
       data: { creditCardId: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM },
@@ -357,7 +359,7 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
         description: "Test Hilton only credit",
         value: 50,
         period: "quarterly",
-        hotelChainId: HOTEL_ID.HILTON, // Hilton only
+        hotelChainId: testHotelChain.id, // unique chain, not Marriott
         isActive: true,
       },
     });
@@ -399,6 +401,7 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
   test("quarterly cap is respected across two bookings in same quarter", async ({
     adminRequest,
     isolatedUser,
+    testHotelChain,
   }) => {
     const uccRes = await isolatedUser.request.post("/api/user-credit-cards", {
       data: { creditCardId: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM },
@@ -411,14 +414,14 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
         description: "Test quarterly cap credit",
         value: 50,
         period: "quarterly",
-        hotelChainId: HOTEL_ID.HILTON,
+        hotelChainId: testHotelChain.id,
         isActive: true,
       },
     });
     const { id: benefitId } = (await benefit.json()) as { id: string };
 
     const bookingData = {
-      hotelChainId: HOTEL_ID.HILTON,
+      hotelChainId: testHotelChain.id,
       checkIn: "2025-04-05",
       checkOut: "2025-04-07",
       numNights: 2,
@@ -463,7 +466,11 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
     }
   });
 
-  test("inactive benefit is NOT applied", async ({ adminRequest, isolatedUser }) => {
+  test("inactive benefit is NOT applied", async ({
+    adminRequest,
+    isolatedUser,
+    testHotelChain,
+  }) => {
     const uccRes = await isolatedUser.request.post("/api/user-credit-cards", {
       data: { creditCardId: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM },
     });
@@ -475,7 +482,7 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
         description: "Test inactive credit",
         value: 50,
         period: "quarterly",
-        hotelChainId: HOTEL_ID.HILTON,
+        hotelChainId: testHotelChain.id,
         isActive: false,
       },
     });
@@ -483,7 +490,7 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
 
     const bookingRes = await isolatedUser.request.post("/api/bookings", {
       data: {
-        hotelChainId: HOTEL_ID.HILTON,
+        hotelChainId: testHotelChain.id,
         propertyName: "Test Hilton inactive benefit",
         checkIn: "2025-04-01",
         checkOut: "2025-04-03",
@@ -516,20 +523,21 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
   test("earlier booking created after the fact claims the credit", async ({
     adminRequest,
     isolatedUser,
+    testHotelChain,
   }) => {
     const uccRes = await isolatedUser.request.post("/api/user-credit-cards", {
       data: { creditCardId: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM },
     });
     const { id: userCreditCardId } = (await uccRes.json()) as { id: string };
 
-    // $50 quarterly Hilton credit
+    // $50 quarterly credit for the isolated chain
     const benefit = await adminRequest.post("/api/card-benefits", {
       data: {
         creditCardId: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM,
         description: "Test re-eval on earlier booking",
         value: 50,
         period: "quarterly",
-        hotelChainId: HOTEL_ID.HILTON,
+        hotelChainId: testHotelChain.id,
         isActive: true,
       },
     });
@@ -538,7 +546,7 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
     // Create a later booking first — it claims the $50
     const laterRes = await isolatedUser.request.post("/api/bookings", {
       data: {
-        hotelChainId: HOTEL_ID.HILTON,
+        hotelChainId: testHotelChain.id,
         propertyName: "Test Hilton Later",
         checkIn: "2025-07-20",
         checkOut: "2025-07-22",
@@ -566,7 +574,7 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
     // Now create an earlier booking in the same quarter — it should claim the credit
     const earlierRes = await isolatedUser.request.post("/api/bookings", {
       data: {
-        hotelChainId: HOTEL_ID.HILTON,
+        hotelChainId: testHotelChain.id,
         propertyName: "Test Hilton Earlier",
         checkIn: "2025-07-05",
         checkOut: "2025-07-07",
@@ -615,6 +623,7 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
   test("deleting a booking releases its credit to the next eligible booking", async ({
     adminRequest,
     isolatedUser,
+    testHotelChain,
   }) => {
     const uccRes = await isolatedUser.request.post("/api/user-credit-cards", {
       data: { creditCardId: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM },
@@ -627,14 +636,14 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
         description: "Test re-eval on delete",
         value: 50,
         period: "quarterly",
-        hotelChainId: HOTEL_ID.HILTON,
+        hotelChainId: testHotelChain.id,
         isActive: true,
       },
     });
     const { id: benefitId } = (await benefit.json()) as { id: string };
 
     const bookingData = {
-      hotelChainId: HOTEL_ID.HILTON,
+      hotelChainId: testHotelChain.id,
       checkIn: "2025-07-10",
       checkOut: "2025-07-12",
       numNights: 2,
@@ -700,6 +709,7 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
   test("prepaid booking booked earlier claims credit over later postpaid booking in same period", async ({
     adminRequest,
     isolatedUser,
+    testHotelChain,
   }) => {
     const uccRes = await isolatedUser.request.post("/api/user-credit-cards", {
       data: { creditCardId: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM },
@@ -712,7 +722,7 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
         description: "Test prepaid priority",
         value: 50,
         period: "quarterly",
-        hotelChainId: HOTEL_ID.HILTON,
+        hotelChainId: testHotelChain.id,
         isActive: true,
       },
     });
@@ -721,7 +731,7 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
     // Postpaid booking: checkIn July 20 → chargeDate = July 20 (Q3)
     const postpaidRes = await isolatedUser.request.post("/api/bookings", {
       data: {
-        hotelChainId: HOTEL_ID.HILTON,
+        hotelChainId: testHotelChain.id,
         propertyName: "Test Hilton Postpaid",
         checkIn: "2025-07-20",
         checkOut: "2025-07-22",
@@ -751,7 +761,7 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
     // Prepaid booking: bookingDate July 5 (Q3), stay in August — chargeDate = July 5
     const prepaidRes = await isolatedUser.request.post("/api/bookings", {
       data: {
-        hotelChainId: HOTEL_ID.HILTON,
+        hotelChainId: testHotelChain.id,
         propertyName: "Test Hilton Prepaid",
         checkIn: "2025-08-10",
         checkOut: "2025-08-12",
@@ -802,6 +812,7 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
   test("benefit is applied on booking update when card instance is added", async ({
     adminRequest,
     isolatedUser,
+    testHotelChain,
   }) => {
     const uccRes = await isolatedUser.request.post("/api/user-credit-cards", {
       data: { creditCardId: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM },
@@ -815,7 +826,7 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
         description: "Test update apply credit",
         value: 50,
         period: "quarterly",
-        hotelChainId: HOTEL_ID.HILTON,
+        hotelChainId: testHotelChain.id,
         isActive: true,
       },
     });
@@ -824,7 +835,7 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
     // Start with no card instance — benefit should not apply
     const bookingRes = await isolatedUser.request.post("/api/bookings", {
       data: {
-        hotelChainId: HOTEL_ID.HILTON,
+        hotelChainId: testHotelChain.id,
         propertyName: "Test Hilton update card",
         checkIn: "2025-10-01",
         checkOut: "2025-10-03",
@@ -868,6 +879,7 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
   test("maxValuePerBooking caps applied value per booking", async ({
     adminRequest,
     isolatedUser,
+    testHotelChain,
   }) => {
     const uccRes = await isolatedUser.request.post("/api/user-credit-cards", {
       data: { creditCardId: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM },
@@ -882,7 +894,7 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
         value: 500,
         maxValuePerBooking: 250,
         period: "annual",
-        hotelChainId: HOTEL_ID.HILTON,
+        hotelChainId: testHotelChain.id,
         isActive: true,
       },
     });
@@ -891,7 +903,7 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
     // First booking: $300 total cost — should get $250 (capped), not $300
     const res1 = await isolatedUser.request.post("/api/bookings", {
       data: {
-        hotelChainId: HOTEL_ID.HILTON,
+        hotelChainId: testHotelChain.id,
         propertyName: "Test Max Cap A",
         checkIn: "2025-04-01",
         checkOut: "2025-04-03",
@@ -914,7 +926,7 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
     // Second booking: should get $250 (remaining $250 from the $500 annual pool)
     const res2 = await isolatedUser.request.post("/api/bookings", {
       data: {
-        hotelChainId: HOTEL_ID.HILTON,
+        hotelChainId: testHotelChain.id,
         propertyName: "Test Max Cap B",
         checkIn: "2025-05-01",
         checkOut: "2025-05-03",
@@ -951,6 +963,7 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
   test("benefit is NOT applied to bookings outside startDate/endDate range", async ({
     adminRequest,
     isolatedUser,
+    testHotelChain,
   }) => {
     const uccRes = await isolatedUser.request.post("/api/user-credit-cards", {
       data: { creditCardId: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM },
@@ -964,7 +977,7 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
         description: "Test date range filter",
         value: 50,
         period: "quarterly",
-        hotelChainId: HOTEL_ID.HILTON,
+        hotelChainId: testHotelChain.id,
         isActive: true,
         startDate: "2025-07-01",
         endDate: "2025-09-30",
@@ -975,7 +988,7 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
     // Booking BEFORE startDate (April → Q2) — should NOT apply
     const beforeRes = await isolatedUser.request.post("/api/bookings", {
       data: {
-        hotelChainId: HOTEL_ID.HILTON,
+        hotelChainId: testHotelChain.id,
         propertyName: "Test Hilton Before Start",
         checkIn: "2025-04-10",
         checkOut: "2025-04-12",
@@ -998,7 +1011,7 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
     // Booking WITHIN range (July → Q3) — should apply
     const withinRes = await isolatedUser.request.post("/api/bookings", {
       data: {
-        hotelChainId: HOTEL_ID.HILTON,
+        hotelChainId: testHotelChain.id,
         propertyName: "Test Hilton Within Range",
         checkIn: "2025-07-15",
         checkOut: "2025-07-17",
@@ -1021,7 +1034,7 @@ test.describe("Card Benefits — Auto-apply on booking", () => {
     // Booking AFTER endDate (October → Q4) — should NOT apply
     const afterRes = await isolatedUser.request.post("/api/bookings", {
       data: {
-        hotelChainId: HOTEL_ID.HILTON,
+        hotelChainId: testHotelChain.id,
         propertyName: "Test Hilton After End",
         checkIn: "2025-10-10",
         checkOut: "2025-10-12",
