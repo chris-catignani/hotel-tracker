@@ -205,4 +205,181 @@ test.describe("Promotion Cascading Re-evaluation", () => {
     await isolatedUser.request.delete(`/api/bookings/${b2.id}`);
     await isolatedUser.request.delete(`/api/promotions/${promo.id}`);
   });
+
+  test("should auto-apply a new promotion to an existing matching booking", async ({
+    isolatedUser,
+    testHotelChain,
+  }) => {
+    const bookingRes = await isolatedUser.request.post("/api/bookings", {
+      data: {
+        hotelChainId: testHotelChain.id,
+        propertyName: `Cascade Create ${crypto.randomUUID()}`,
+        checkIn: `${YEAR}-04-01`,
+        checkOut: `${YEAR}-04-03`,
+        numNights: 2,
+        pretaxCost: 200,
+        taxAmount: 20,
+        totalCost: 220,
+      },
+    });
+    expect(bookingRes.ok()).toBeTruthy();
+    const booking = await bookingRes.json();
+
+    const promoRes = await isolatedUser.request.post("/api/promotions", {
+      data: {
+        name: `Auto Apply ${crypto.randomUUID()}`,
+        type: "loyalty",
+        hotelChainId: testHotelChain.id,
+        benefits: [{ rewardType: "cashback", valueType: "fixed", value: 30, sortOrder: 0 }],
+      },
+    });
+    expect(promoRes.ok()).toBeTruthy();
+    const promo = await promoRes.json();
+
+    try {
+      const refreshRes = await isolatedUser.request.get(`/api/bookings/${booking.id}`);
+      expect(refreshRes.ok()).toBeTruthy();
+      const refreshed = await refreshRes.json();
+      const bp = (refreshed.bookingPromotions ?? []).find((p: any) => p.promotionId === promo.id);
+      expect(bp).toBeDefined();
+      expect(Number(bp.appliedValue)).toBe(30);
+    } finally {
+      await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
+      await isolatedUser.request.delete(`/api/promotions/${promo.id}`);
+    }
+  });
+
+  test("should remove a promotion from its booking when the promotion is deleted", async ({
+    isolatedUser,
+    testHotelChain,
+  }) => {
+    const bookingRes = await isolatedUser.request.post("/api/bookings", {
+      data: {
+        hotelChainId: testHotelChain.id,
+        propertyName: `Cascade Delete ${crypto.randomUUID()}`,
+        checkIn: `${YEAR}-05-01`,
+        checkOut: `${YEAR}-05-03`,
+        numNights: 2,
+        pretaxCost: 200,
+        taxAmount: 20,
+        totalCost: 220,
+      },
+    });
+    expect(bookingRes.ok()).toBeTruthy();
+    const booking = await bookingRes.json();
+
+    const promoRes = await isolatedUser.request.post("/api/promotions", {
+      data: {
+        name: `Delete Promo ${crypto.randomUUID()}`,
+        type: "loyalty",
+        hotelChainId: testHotelChain.id,
+        benefits: [{ rewardType: "cashback", valueType: "fixed", value: 40, sortOrder: 0 }],
+      },
+    });
+    expect(promoRes.ok()).toBeTruthy();
+    const promo = await promoRes.json();
+
+    // Confirm promo is applied
+    const beforeRes = await isolatedUser.request.get(`/api/bookings/${booking.id}`);
+    const before = await beforeRes.json();
+    expect(
+      (before.bookingPromotions ?? []).some((p: any) => p.promotionId === promo.id)
+    ).toBeTruthy();
+
+    try {
+      // Delete the promotion
+      const delRes = await isolatedUser.request.delete(`/api/promotions/${promo.id}`);
+      expect(delRes.ok()).toBeTruthy();
+
+      // Confirm promo is gone from booking
+      const afterRes = await isolatedUser.request.get(`/api/bookings/${booking.id}`);
+      const after = await afterRes.json();
+      expect(
+        (after.bookingPromotions ?? []).some((p: any) => p.promotionId === promo.id)
+      ).toBeFalsy();
+    } finally {
+      await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
+      // promo already deleted; ignore 404
+      await isolatedUser.request.delete(`/api/promotions/${promo.id}`).catch(() => {});
+    }
+  });
+
+  test("should apply/remove a promotion to a booking when criteria change", async ({
+    isolatedUser,
+    adminRequest,
+    testHotelChain,
+  }) => {
+    // Create a second chain to scope the promo to initially (no match)
+    const otherChainRes = await adminRequest.post("/api/hotel-chains", {
+      data: { name: `Other Chain ${crypto.randomUUID()}` },
+    });
+    expect(otherChainRes.ok()).toBeTruthy();
+    const otherChain = await otherChainRes.json();
+
+    const bookingRes = await isolatedUser.request.post("/api/bookings", {
+      data: {
+        hotelChainId: testHotelChain.id,
+        propertyName: `Cascade Update ${crypto.randomUUID()}`,
+        checkIn: `${YEAR}-06-01`,
+        checkOut: `${YEAR}-06-03`,
+        numNights: 2,
+        pretaxCost: 200,
+        taxAmount: 20,
+        totalCost: 220,
+      },
+    });
+    expect(bookingRes.ok()).toBeTruthy();
+    const booking = await bookingRes.json();
+
+    // Promo scoped to otherChain → no match with booking
+    const promoRes = await isolatedUser.request.post("/api/promotions", {
+      data: {
+        name: `Update Criteria ${crypto.randomUUID()}`,
+        type: "loyalty",
+        hotelChainId: otherChain.id,
+        benefits: [{ rewardType: "cashback", valueType: "fixed", value: 50, sortOrder: 0 }],
+      },
+    });
+    expect(promoRes.ok()).toBeTruthy();
+    const promo = await promoRes.json();
+
+    try {
+      // No match yet
+      const noMatchRes = await isolatedUser.request.get(`/api/bookings/${booking.id}`);
+      const noMatch = await noMatchRes.json();
+      expect(
+        (noMatch.bookingPromotions ?? []).some((p: any) => p.promotionId === promo.id)
+      ).toBeFalsy();
+
+      // Update promo to match testHotelChain → booking gains it
+      const gainRes = await isolatedUser.request.put(`/api/promotions/${promo.id}`, {
+        data: { hotelChainId: testHotelChain.id },
+      });
+      expect(gainRes.ok()).toBeTruthy();
+
+      const gainedRes = await isolatedUser.request.get(`/api/bookings/${booking.id}`);
+      const gained = await gainedRes.json();
+      const gainedBp = (gained.bookingPromotions ?? []).find(
+        (p: any) => p.promotionId === promo.id
+      );
+      expect(gainedBp).toBeDefined();
+      expect(Number(gainedBp.appliedValue)).toBe(50);
+
+      // Revert promo back to otherChain → booking loses it
+      const loseRes = await isolatedUser.request.put(`/api/promotions/${promo.id}`, {
+        data: { hotelChainId: otherChain.id },
+      });
+      expect(loseRes.ok()).toBeTruthy();
+
+      const lostRes = await isolatedUser.request.get(`/api/bookings/${booking.id}`);
+      const lost = await lostRes.json();
+      expect(
+        (lost.bookingPromotions ?? []).some((p: any) => p.promotionId === promo.id)
+      ).toBeFalsy();
+    } finally {
+      await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
+      await isolatedUser.request.delete(`/api/promotions/${promo.id}`);
+      await adminRequest.delete(`/api/hotel-chains/${otherChain.id}`);
+    }
+  });
 });
