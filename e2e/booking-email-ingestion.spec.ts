@@ -124,7 +124,7 @@ test.describe("Email Ingestion — needs-review UI", () => {
 
       // Clicking "View →" should navigate to /bookings?filter=needs-review
       await isolatedUser.page.getByTestId("needs-review-callout").getByRole("link").click();
-      await isolatedUser.page.waitForLoadState("networkidle");
+      await isolatedUser.page.waitForURL(/filter=needs-review/);
       expect(isolatedUser.page.url()).toContain("filter=needs-review");
     } finally {
       await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
