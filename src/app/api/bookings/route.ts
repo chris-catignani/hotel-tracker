@@ -159,6 +159,7 @@ export async function POST(request: NextRequest) {
       benefits,
       notes,
       hotelChainSubBrandId,
+      confirmationNumber,
     } = body;
 
     // Resolve propertyId: use provided id, or find/create from geo fields
@@ -284,6 +285,7 @@ export async function POST(request: NextRequest) {
         lockedExchangeRate: resolvedExchangeRate,
         lockedLoyaltyUsdCentsPerPoint,
         notes: notes || null,
+        confirmationNumber: confirmationNumber ?? null,
         bookingSource: bookingSource || null,
         otaAgencyId: bookingSource === "ota" && otaAgencyId ? otaAgencyId : null,
         certificates: certificates?.length

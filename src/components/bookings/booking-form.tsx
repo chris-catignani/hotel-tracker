@@ -114,6 +114,9 @@ export function BookingForm({
   // Form state
   const [state, dispatch] = useReducer(bookingFormReducer, INITIAL_STATE);
 
+  const [confirmationNumber, setConfirmationNumber] = useState<string>(
+    initialData?.confirmationNumber ?? ""
+  );
   const [manualGeoOpen, setManualGeoOpen] = useState(false);
 
   const {
@@ -391,6 +394,7 @@ export function BookingForm({
               : null,
         })),
       notes: notes || null,
+      confirmationNumber: confirmationNumber.trim() || null,
     };
 
     await onSubmit(body);
@@ -1189,6 +1193,17 @@ export function BookingForm({
               }
               placeholder="Any additional notes..."
               rows={3}
+            />
+          </div>
+
+          {/* Confirmation Number */}
+          <div className="space-y-2">
+            <Label htmlFor="confirmation-number">Confirmation Number</Label>
+            <Input
+              id="confirmation-number"
+              placeholder="Optional"
+              value={confirmationNumber}
+              onChange={(e) => setConfirmationNumber(e.target.value)}
             />
           </div>
 
