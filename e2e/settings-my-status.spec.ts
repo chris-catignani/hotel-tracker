@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { test, expect } from "./fixtures";
 import { HOTEL_ID } from "@/lib/constants";
 
@@ -63,6 +64,58 @@ test.describe("Settings — My Status", () => {
     await expect(page.getByTestId(`status-select-${HOTEL_ID.HYATT}`)).toContainText(
       "Base Member / No Status"
     );
+  });
+
+  test("recalculates loyalty points when elite status changes", async ({ isolatedUser }) => {
+    const { request } = isolatedUser;
+    const pastYear = new Date().getFullYear() - 1;
+
+    // Fetch Hyatt to get an Explorist eliteStatusId
+    const chainsRes = await request.get("/api/hotel-chains");
+    const chains = await chainsRes.json();
+    const hyatt = chains.find((c: { id: string }) => c.id === HOTEL_ID.HYATT);
+    const explorist = hyatt?.eliteStatuses?.find((s: { name: string }) => s.name === "Explorist");
+    if (!explorist) {
+      test.skip();
+      return;
+    }
+
+    // Create a past booking for Hyatt (no status set yet → base rate only)
+    const bookingRes = await request.post("/api/bookings", {
+      data: {
+        hotelChainId: HOTEL_ID.HYATT,
+        propertyName: `Status Cascade ${crypto.randomUUID()}`,
+        checkIn: `${pastYear}-08-01`,
+        checkOut: `${pastYear}-08-05`,
+        numNights: 4,
+        pretaxCost: 200,
+        taxAmount: 20,
+        totalCost: 220,
+      },
+    });
+    expect(bookingRes.ok()).toBeTruthy();
+    const booking = await bookingRes.json();
+    const initialPoints = Number(booking.loyaltyPointsEarned);
+
+    try {
+      // Set elite status to Explorist
+      const statusRes = await request.post("/api/user-statuses", {
+        data: { hotelChainId: HOTEL_ID.HYATT, eliteStatusId: explorist.id },
+      });
+      expect(statusRes.ok()).toBeTruthy();
+
+      // Loyalty points should have increased
+      const refreshRes = await request.get(`/api/bookings/${booking.id}`);
+      expect(refreshRes.ok()).toBeTruthy();
+      const refreshed = await refreshRes.json();
+      expect(Number(refreshed.loyaltyPointsEarned)).toBeGreaterThan(initialPoints);
+    } finally {
+      await request.delete(`/api/bookings/${booking.id}`);
+      // Restore base status
+      await request.post("/api/user-statuses", {
+        data: { hotelChainId: HOTEL_ID.HYATT, eliteStatusId: null },
+      });
+    }
   });
 
   test("enabling a partnership persists after reload", async ({ isolatedUser }) => {

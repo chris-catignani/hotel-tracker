@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { requireAdmin } from "@/lib/auth-utils";
+import { recalculateLoyaltyForHotelChain } from "@/lib/loyalty-recalculation";
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -12,15 +13,31 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const body = await request.json();
     const { name, basePointRate } = body;
 
+    // Fetch existing sub-brand to detect rate change and get hotelChainId
+    const existing = await prisma.hotelChainSubBrand.findUnique({
+      where: { id },
+      select: { hotelChainId: true, basePointRate: true },
+    });
+    if (!existing) {
+      return apiError("Sub-brand not found", null, 404, request, { subBrandId: id });
+    }
+
     const data: Record<string, unknown> = {};
     if (name !== undefined) data.name = name;
     if (basePointRate !== undefined)
       data.basePointRate = basePointRate != null ? Number(basePointRate) : null;
 
     const subBrand = await prisma.hotelChainSubBrand.update({
-      where: { id: id },
+      where: { id },
       data,
     });
+
+    // Recalculate loyalty for all users if basePointRate changed
+    const rateChanged =
+      basePointRate !== undefined && Number(existing.basePointRate) !== Number(basePointRate);
+    if (rateChanged) {
+      await recalculateLoyaltyForHotelChain(existing.hotelChainId);
+    }
 
     return NextResponse.json(subBrand);
   } catch (error) {
