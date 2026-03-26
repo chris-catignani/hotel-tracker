@@ -68,6 +68,42 @@ describe("POST /api/inbound-email", () => {
     );
   });
 
+  it("does not send confirmation email for duplicate booking", async () => {
+    mockUserFindFirst.mockResolvedValue({ id: "u1", email: "chris@gmail.com" });
+    const { parseConfirmationEmail } = await import("@/lib/email-ingestion/email-parser");
+    vi.mocked(parseConfirmationEmail).mockResolvedValue({
+      propertyName: "Hyatt Regency SLC",
+      checkIn: "2027-01-14",
+      checkOut: "2027-01-18",
+      numNights: 4,
+      bookingType: "cash",
+      confirmationNumber: "12345",
+      currency: "USD",
+      pretaxCost: 500,
+      taxAmount: 80,
+      totalCost: 580,
+      pointsRedeemed: null,
+    });
+    const { ingestBookingFromEmail } = await import("@/lib/email-ingestion/ingest-booking");
+    vi.mocked(ingestBookingFromEmail).mockResolvedValue({
+      bookingId: "bk-existing",
+      duplicate: true,
+    });
+    const { sendIngestionConfirmation } = await import("@/lib/email");
+
+    const res = await POST(
+      makeRequest({
+        from: "chris@gmail.com",
+        sender: "noreply@reservations.hyatt.com",
+        html: "<p>email</p>",
+      })
+    );
+    expect(res.status).toBe(200);
+    expect(sendIngestionConfirmation).not.toHaveBeenCalled();
+    const { sendIngestionError } = await import("@/lib/email");
+    expect(sendIngestionError).not.toHaveBeenCalled();
+  });
+
   it("creates booking and sends confirmation on success", async () => {
     mockUserFindFirst.mockResolvedValue({ id: "u1", email: "chris@gmail.com" });
     const { parseConfirmationEmail } = await import("@/lib/email-ingestion/email-parser");

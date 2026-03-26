@@ -96,4 +96,57 @@ describe("ingestBookingFromEmail", () => {
     expect(result.duplicate).toBe(false);
     expect(mockBookingCreate).toHaveBeenCalledOnce();
   });
+
+  it("creates a points booking with pointsRedeemed set and no loyalty points earned", async () => {
+    const result = await ingestBookingFromEmail(
+      {
+        ...baseParsed,
+        bookingType: "points",
+        pointsRedeemed: 25000,
+        pretaxCost: null,
+        taxAmount: null,
+        totalCost: null,
+        currency: null,
+      },
+      "user-1",
+      "Hyatt"
+    );
+    expect(result.duplicate).toBe(false);
+    expect(mockBookingCreate).toHaveBeenCalledOnce();
+    const data = mockBookingCreate.mock.calls[0][0].data;
+    expect(data.pointsRedeemed).toBe(25000);
+    expect(data.loyaltyPointsEarned).toBeNull();
+    // loyalty points NOT calculated for points bookings
+    const { calculatePoints } = await import("@/lib/loyalty-utils");
+    expect(vi.mocked(calculatePoints)).not.toHaveBeenCalled();
+  });
+
+  it("locks exchange rate for non-USD past check-in", async () => {
+    const { getOrFetchHistoricalRate } = await import("@/lib/exchange-rate");
+    vi.mocked(getOrFetchHistoricalRate).mockResolvedValueOnce(1.35);
+
+    const result = await ingestBookingFromEmail(
+      { ...baseParsed, currency: "SGD", checkIn: "2024-01-10", checkOut: "2024-01-14" },
+      "user-1",
+      "Hyatt"
+    );
+    expect(result.duplicate).toBe(false);
+    expect(getOrFetchHistoricalRate).toHaveBeenCalledWith("SGD", "2024-01-10");
+    const data = mockBookingCreate.mock.calls[0][0].data;
+    expect(data.lockedExchangeRate).toBe(1.35);
+  });
+
+  it("does not lock exchange rate for future non-USD check-in", async () => {
+    const { getOrFetchHistoricalRate } = await import("@/lib/exchange-rate");
+
+    const result = await ingestBookingFromEmail(
+      { ...baseParsed, currency: "EUR", checkIn: "2099-01-10", checkOut: "2099-01-14" },
+      "user-1",
+      "Hyatt"
+    );
+    expect(result.duplicate).toBe(false);
+    expect(getOrFetchHistoricalRate).not.toHaveBeenCalled();
+    const data = mockBookingCreate.mock.calls[0][0].data;
+    expect(data.lockedExchangeRate).toBeNull();
+  });
 });
