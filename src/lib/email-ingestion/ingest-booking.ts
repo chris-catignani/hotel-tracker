@@ -23,7 +23,14 @@ export async function ingestBookingFromEmail(
   // Duplicate check
   if (parsed.confirmationNumber) {
     const existing = await prisma.booking.findFirst({
-      where: { userId, confirmationNumber: parsed.confirmationNumber },
+      where: {
+        userId,
+        confirmationNumber: parsed.confirmationNumber,
+        checkIn: new Date(parsed.checkIn),
+        checkOut: new Date(parsed.checkOut),
+        totalCost: parsed.totalCost ?? 0,
+        pointsRedeemed: parsed.pointsRedeemed ?? null,
+      },
     });
     if (existing) return { bookingId: existing.id, duplicate: true };
   }

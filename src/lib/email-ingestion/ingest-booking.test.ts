@@ -80,11 +80,29 @@ describe("ingestBookingFromEmail", () => {
     expect(createArg.confirmationNumber).toBe("64167883");
   });
 
-  it("returns duplicate=true and skips creation when confirmationNumber already exists", async () => {
+  it("returns duplicate=true when same conf number AND same booking details", async () => {
     mockBookingFindFirst.mockResolvedValueOnce({ id: "existing-booking" });
     const result = await ingestBookingFromEmail(baseParsed, "user-1", "Hyatt");
     expect(result).toEqual({ bookingId: "existing-booking", duplicate: true });
     expect(mockBookingCreate).not.toHaveBeenCalled();
+    // Verify the where clause includes all 5 matching fields
+    const whereClause = mockBookingFindFirst.mock.calls[0][0].where;
+    expect(whereClause.confirmationNumber).toBe("64167883");
+    expect(whereClause.checkIn).toEqual(new Date("2027-01-14"));
+    expect(whereClause.checkOut).toEqual(new Date("2027-01-18"));
+    expect(whereClause.totalCost).toBe(689.54);
+  });
+
+  it("creates a new booking when conf number matches but dates differ (modification email)", async () => {
+    // findFirst returns null (no match with new dates) → should create
+    mockBookingFindFirst.mockResolvedValueOnce(null);
+    const result = await ingestBookingFromEmail(
+      { ...baseParsed, checkIn: "2027-02-01", checkOut: "2027-02-05" },
+      "user-1",
+      "Hyatt"
+    );
+    expect(result.duplicate).toBe(false);
+    expect(mockBookingCreate).toHaveBeenCalledOnce();
   });
 
   it("still creates booking if confirmationNumber is null (no duplicate check possible)", async () => {
