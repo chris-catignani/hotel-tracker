@@ -6,28 +6,23 @@ const {
   mockBookingCreate,
   mockBookingFindFirst,
   mockHotelChainFindFirst,
-  mockUserEliteStatusFindFirst,
+  mockUserStatusFindFirst,
 } = vi.hoisted(() => ({
   mockBookingCreate: vi.fn().mockResolvedValue({ id: "booking-abc" }),
   mockBookingFindFirst: vi.fn().mockResolvedValue(null),
   mockHotelChainFindFirst: vi.fn().mockResolvedValue({
     id: "chain-hyatt",
-    pointTypes: [
-      {
-        id: "pt-1",
-        programCurrency: null,
-        programCentsPerPoint: 0.7,
-        usdCentsPerPoint: 0.7,
-        basePointRate: 5,
-        bonusPercentage: 30,
-      },
-    ],
+    basePointRate: 5,
+    calculationCurrency: "USD",
+    pointType: null,
   }),
-  mockUserEliteStatusFindFirst: vi.fn().mockResolvedValue({
-    bonusPercentage: 30,
-    fixedRate: null,
-    isFixed: false,
-    pointsFloorTo: null,
+  mockUserStatusFindFirst: vi.fn().mockResolvedValue({
+    eliteStatus: {
+      bonusPercentage: 30,
+      fixedRate: null,
+      isFixed: false,
+      pointsFloorTo: null,
+    },
   }),
 }));
 
@@ -36,6 +31,7 @@ vi.mock("@/lib/property-utils", () => ({
 }));
 vi.mock("@/lib/loyalty-utils", () => ({
   calculatePoints: vi.fn().mockReturnValue(1200),
+  resolveBasePointRate: vi.fn().mockReturnValue(5),
 }));
 vi.mock("@/lib/exchange-rate", () => ({
   getOrFetchHistoricalRate: vi.fn().mockResolvedValue(1.0),
@@ -49,7 +45,7 @@ vi.mock("@/lib/prisma", () => ({
   default: {
     booking: { create: mockBookingCreate, findFirst: mockBookingFindFirst },
     hotelChain: { findFirst: mockHotelChainFindFirst },
-    userEliteStatus: { findFirst: mockUserEliteStatusFindFirst },
+    userStatus: { findFirst: mockUserStatusFindFirst },
   },
 }));
 

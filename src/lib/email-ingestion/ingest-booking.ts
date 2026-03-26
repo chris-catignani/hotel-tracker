@@ -1,6 +1,6 @@
 import prisma from "@/lib/prisma";
 import { findOrCreateProperty } from "@/lib/property-utils";
-import { calculatePoints } from "@/lib/loyalty-utils";
+import { calculatePoints, resolveBasePointRate } from "@/lib/loyalty-utils";
 import { getOrFetchHistoricalRate, getCurrentRate } from "@/lib/exchange-rate";
 import { matchPromotionsForBooking } from "@/lib/promotion-matching";
 import type { ParsedBookingData } from "./types";
@@ -32,7 +32,7 @@ export async function ingestBookingFromEmail(
   const hotelChain = chainName
     ? await prisma.hotelChain.findFirst({
         where: { name: { contains: chainName, mode: "insensitive" } },
-        include: { pointTypes: true },
+        include: { pointType: true },
       })
     : null;
 
@@ -57,28 +57,27 @@ export async function ingestBookingFromEmail(
   // Calculate loyalty points
   let loyaltyPointsEarned: number | null = null;
   if (hotelChain && parsed.bookingType === "cash" && parsed.pretaxCost !== null) {
-    const pointType = hotelChain.pointTypes[0];
-    if (pointType) {
-      const eliteStatus = await prisma.userEliteStatus.findFirst({
-        where: { userId, hotelChainId: hotelChain.id },
-      });
-      const calcCurrency = pointType.programCurrency ?? "USD";
-      const calcCurrencyToUsdRate = calcCurrency === "USD" ? 1 : await getCurrentRate(calcCurrency);
-      loyaltyPointsEarned = calculatePoints({
-        pretaxCost: parsed.pretaxCost,
-        basePointRate: Number(pointType.basePointRate ?? 0),
-        calculationCurrency: calcCurrency,
-        calcCurrencyToUsdRate,
-        eliteStatus: eliteStatus
-          ? {
-              bonusPercentage: eliteStatus.bonusPercentage ?? undefined,
-              fixedRate: eliteStatus.fixedRate ?? undefined,
-              isFixed: eliteStatus.isFixed,
-              pointsFloorTo: eliteStatus.pointsFloorTo ?? undefined,
-            }
-          : null,
-      });
-    }
+    const userStatus = await prisma.userStatus.findFirst({
+      where: { userId, hotelChainId: hotelChain.id },
+      include: { eliteStatus: true },
+    });
+    const basePointRate = resolveBasePointRate(hotelChain, null);
+    const calcCurrency = hotelChain.calculationCurrency ?? "USD";
+    const calcCurrencyToUsdRate = calcCurrency === "USD" ? 1 : await getCurrentRate(calcCurrency);
+    loyaltyPointsEarned = calculatePoints({
+      pretaxCost: parsed.pretaxCost,
+      basePointRate,
+      calculationCurrency: calcCurrency,
+      calcCurrencyToUsdRate,
+      eliteStatus: userStatus?.eliteStatus
+        ? {
+            bonusPercentage: userStatus.eliteStatus.bonusPercentage,
+            fixedRate: userStatus.eliteStatus.fixedRate,
+            isFixed: userStatus.eliteStatus.isFixed,
+            pointsFloorTo: userStatus.eliteStatus.pointsFloorTo,
+          }
+        : null,
+    });
   }
 
   const booking = await prisma.booking.create({
