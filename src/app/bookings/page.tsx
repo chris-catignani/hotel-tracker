@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -147,10 +148,19 @@ export default function BookingsPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [bookingToDelete, setBookingToDelete] = useState<string | null>(null);
 
+  const searchParams = useSearchParams();
+  const filterParam = searchParams.get("filter");
+
   const { yearFilter, setYearFilter, filterBookings: filterByYear } = useYearFilter();
 
   const yearOptions = useMemo(() => buildYearOptions(bookings), [bookings]);
-  const filteredBookings = useMemo(() => filterByYear(bookings), [bookings, filterByYear]);
+  const filteredBookings = useMemo(() => {
+    const yearFiltered = filterByYear(bookings);
+    if (filterParam === "needs-review") {
+      return yearFiltered.filter((b) => b.needsReview);
+    }
+    return yearFiltered;
+  }, [bookings, filterByYear, filterParam]);
 
   const handleDeleteClick = (id: string) => {
     setBookingToDelete(id);
