@@ -96,7 +96,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       resolvedCurrency !== undefined &&
       (existing?.calculationCurrency ?? "USD") !== resolvedCurrency;
     if (rateChanged || currencyChanged) {
-      await recalculateLoyaltyForHotelChain(id, userId);
+      await recalculateLoyaltyForHotelChain(id);
     }
 
     return NextResponse.json(normalizeUserStatuses(hotelChain));
