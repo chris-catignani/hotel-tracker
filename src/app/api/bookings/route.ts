@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma";
 import { matchPromotionsForBooking } from "@/lib/promotion-matching";
 import { reevaluateSubsequentBookings } from "@/lib/promotion-matching-helpers";
 import { apiError } from "@/lib/api-error";
-import { calculatePoints, resolveBasePointRate } from "@/lib/loyalty-utils";
+import { resolveBookingFinancials } from "@/lib/booking-financials";
 import {
   CertType,
   BenefitType,
@@ -13,12 +13,6 @@ import {
 } from "@prisma/client";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
-import {
-  fetchExchangeRate,
-  getOrFetchHistoricalRate,
-  getCurrentRate,
-  resolveCalcCurrencyRate,
-} from "@/lib/exchange-rate";
 import { enrichBookingWithRate } from "@/lib/booking-enrichment";
 import { findOrCreateProperty } from "@/lib/property-utils";
 import { reapplyCardBenefitsAffectedByBooking } from "@/lib/card-benefit-apply";
@@ -187,81 +181,23 @@ export async function POST(request: NextRequest) {
 
     const resolvedCurrency: string = currency || "USD";
     const checkInDate = new Date(checkIn);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const isPast = checkInDate <= today;
 
-    // Resolve exchange rate: 1 for USD; historical rate for past non-USD; null for future non-USD
-    let resolvedExchangeRate: number | null = null;
-    if (resolvedCurrency === "USD") {
-      resolvedExchangeRate = 1;
-    } else if (isPast) {
-      const checkInStr = checkInDate.toISOString().split("T")[0];
-      resolvedExchangeRate = await getOrFetchHistoricalRate(resolvedCurrency, checkInStr);
-    }
-    // future non-USD: resolvedExchangeRate stays null
+    const userProvidedPoints =
+      loyaltyPointsEarned != null ? Number(loyaltyPointsEarned) : undefined;
 
-    // For loyalty points, use resolved or current rate to compute USD pretax cost
-    const rateForLoyalty = resolvedExchangeRate ?? (await getCurrentRate(resolvedCurrency)) ?? 1;
+    const financials = await resolveBookingFinancials({
+      checkIn: checkIn,
+      currency: resolvedCurrency,
+      hotelChainId: hotelChainId || null,
+      hotelChainSubBrandId: hotelChainSubBrandId || null,
+      // Pass pretaxCost for loyalty calculation only when user hasn't provided a value
+      pretaxCost: userProvidedPoints == null && pretaxCost ? Number(pretaxCost) : null,
+      userId,
+    });
 
-    // Auto-calculate loyalty points from hotel/sub-brand rates if not explicitly provided
-    // Only compute and store loyalty points when exchange rate is locked (past/USD bookings)
-    let calculatedPoints: number | null =
-      loyaltyPointsEarned != null ? Number(loyaltyPointsEarned) : null;
-
-    const shouldComputeLoyalty = resolvedExchangeRate != null; // only for past/USD
-    if (calculatedPoints == null && shouldComputeLoyalty && hotelChainId && pretaxCost) {
-      // Fetch UserStatus and hotel chain in parallel
-      const [userStatus, hotelChain, subBrand] = await Promise.all([
-        prisma.userStatus.findUnique({
-          where: { userId_hotelChainId: { userId, hotelChainId } },
-          include: { eliteStatus: true },
-        }),
-        prisma.hotelChain.findUnique({ where: { id: hotelChainId } }),
-        hotelChainSubBrandId
-          ? prisma.hotelChainSubBrand.findUnique({ where: { id: hotelChainSubBrandId } })
-          : null,
-      ]);
-
-      const basePointRate = resolveBasePointRate(hotelChain, subBrand);
-
-      // Resolve calc currency rate if chain uses non-USD rates (e.g., EUR for Accor)
-      const calcCurrency = hotelChain?.calculationCurrency ?? "USD";
-      const calcCurrencyToUsdRate = await resolveCalcCurrencyRate(calcCurrency);
-
-      const usdPretaxCost = Number(pretaxCost) * rateForLoyalty;
-      calculatedPoints = calculatePoints({
-        pretaxCost: usdPretaxCost,
-        basePointRate,
-        calculationCurrency: calcCurrency,
-        calcCurrencyToUsdRate,
-        eliteStatus: userStatus?.eliteStatus
-          ? {
-              bonusPercentage: userStatus.eliteStatus.bonusPercentage,
-              fixedRate: userStatus.eliteStatus.fixedRate,
-              isFixed: userStatus.eliteStatus.isFixed,
-              pointsFloorTo: userStatus.eliteStatus.pointsFloorTo,
-            }
-          : null,
-      });
-    }
-
-    // Lock the loyalty point USD rate at check-in for foreign-currency point types (e.g. Accor/EUR).
-    // Uses the program currency rate (not the booking currency rate) since programCentsPerPoint
-    // is denominated in programCurrency regardless of what the guest paid in.
-    let lockedLoyaltyUsdCentsPerPoint: number | null = null;
-    if (isPast && hotelChainId) {
-      const hcWithPt = await prisma.hotelChain.findUnique({
-        where: { id: hotelChainId },
-        select: { pointType: { select: { programCurrency: true, programCentsPerPoint: true } } },
-      });
-      const pt = hcWithPt?.pointType;
-      if (pt?.programCurrency != null && pt?.programCentsPerPoint != null) {
-        const checkInStr = checkInDate.toISOString().split("T")[0];
-        const programRate = await fetchExchangeRate(pt.programCurrency, checkInStr);
-        lockedLoyaltyUsdCentsPerPoint = Number(pt.programCentsPerPoint) * programRate;
-      }
-    }
+    const resolvedExchangeRate = financials.lockedExchangeRate;
+    const calculatedPoints = userProvidedPoints ?? financials.loyaltyPointsEarned;
+    const lockedLoyaltyUsdCentsPerPoint = financials.lockedLoyaltyUsdCentsPerPoint;
 
     const benefitValidationError = await validateBenefits(benefits ?? [], hotelChainId);
     if (benefitValidationError) {

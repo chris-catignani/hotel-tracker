@@ -6,7 +6,8 @@ const {
   mockBookingCreate,
   mockBookingFindFirst,
   mockHotelChainFindFirst,
-  mockUserStatusFindFirst,
+  mockHotelChainFindUnique,
+  mockUserStatusFindUnique,
 } = vi.hoisted(() => ({
   mockBookingCreate: vi.fn().mockResolvedValue({ id: "booking-abc" }),
   mockBookingFindFirst: vi.fn().mockResolvedValue(null),
@@ -16,7 +17,13 @@ const {
     calculationCurrency: "USD",
     pointType: null,
   }),
-  mockUserStatusFindFirst: vi.fn().mockResolvedValue({
+  mockHotelChainFindUnique: vi.fn().mockResolvedValue({
+    id: "chain-hyatt",
+    basePointRate: 5,
+    calculationCurrency: "USD",
+    pointType: null,
+  }),
+  mockUserStatusFindUnique: vi.fn().mockResolvedValue({
     eliteStatus: {
       bonusPercentage: 30,
       fixedRate: null,
@@ -36,6 +43,8 @@ vi.mock("@/lib/loyalty-utils", () => ({
 vi.mock("@/lib/exchange-rate", () => ({
   getOrFetchHistoricalRate: vi.fn().mockResolvedValue(1.0),
   getCurrentRate: vi.fn().mockResolvedValue(1.0),
+  fetchExchangeRate: vi.fn().mockResolvedValue(1.0),
+  resolveCalcCurrencyRate: vi.fn().mockResolvedValue(null),
 }));
 vi.mock("@/lib/promotion-matching", () => ({
   matchPromotionsForBooking: vi.fn().mockResolvedValue([]),
@@ -44,8 +53,9 @@ vi.mock("@/lib/promotion-matching", () => ({
 vi.mock("@/lib/prisma", () => ({
   default: {
     booking: { create: mockBookingCreate, findFirst: mockBookingFindFirst },
-    hotelChain: { findFirst: mockHotelChainFindFirst },
-    userStatus: { findFirst: mockUserStatusFindFirst },
+    hotelChain: { findFirst: mockHotelChainFindFirst, findUnique: mockHotelChainFindUnique },
+    userStatus: { findUnique: mockUserStatusFindUnique },
+    hotelChainSubBrand: { findUnique: vi.fn().mockResolvedValue(null) },
   },
 }));
 
@@ -68,6 +78,20 @@ describe("ingestBookingFromEmail", () => {
     vi.clearAllMocks();
     mockBookingFindFirst.mockResolvedValue(null);
     mockBookingCreate.mockResolvedValue({ id: "booking-abc" });
+    mockHotelChainFindUnique.mockResolvedValue({
+      id: "chain-hyatt",
+      basePointRate: 5,
+      calculationCurrency: "USD",
+      pointType: null,
+    });
+    mockUserStatusFindUnique.mockResolvedValue({
+      eliteStatus: {
+        bonusPercentage: 30,
+        fixedRate: null,
+        isFixed: false,
+        pointsFloorTo: null,
+      },
+    });
   });
 
   it("creates a booking and returns its id", async () => {
@@ -166,5 +190,39 @@ describe("ingestBookingFromEmail", () => {
     expect(getOrFetchHistoricalRate).not.toHaveBeenCalled();
     const data = mockBookingCreate.mock.calls[0][0].data;
     expect(data.lockedExchangeRate).toBeNull();
+  });
+
+  it("locks lockedLoyaltyUsdCentsPerPoint for a past stay with a foreign-currency program", async () => {
+    // Simulate a chain with a EUR-denominated points program
+    mockHotelChainFindUnique.mockImplementation(
+      (args: { where?: { id?: string }; select?: unknown }) => {
+        if (args.select) {
+          // Called for lockedLoyaltyUsdCentsPerPoint lookup
+          return Promise.resolve({
+            pointType: { programCurrency: "EUR", programCentsPerPoint: 2.0 },
+          });
+        }
+        return Promise.resolve({
+          id: "chain-accor",
+          basePointRate: 10,
+          calculationCurrency: "EUR",
+          pointType: null,
+        });
+      }
+    );
+
+    const { fetchExchangeRate } = await import("@/lib/exchange-rate");
+    vi.mocked(fetchExchangeRate).mockResolvedValueOnce(1.1); // EUR/USD = 1.1
+
+    const result = await ingestBookingFromEmail(
+      { ...baseParsed, checkIn: "2024-01-10", checkOut: "2024-01-14" },
+      "user-1",
+      "Accor"
+    );
+
+    expect(result.duplicate).toBe(false);
+    expect(fetchExchangeRate).toHaveBeenCalledWith("EUR", "2024-01-10");
+    const data = mockBookingCreate.mock.calls[0][0].data;
+    expect(data.lockedLoyaltyUsdCentsPerPoint).toBeCloseTo(2.2); // 2.0 * 1.1
   });
 });
