@@ -140,6 +140,25 @@ describe("loyalty-recalculation", () => {
     );
   });
 
+  it("should fan out to all users with past bookings when userId is omitted", async () => {
+    // booking.findMany for distinct users returns two userIds
+    prismaMock.booking.findMany
+      .mockResolvedValueOnce([{ userId: "user-a" }, { userId: "user-b" }]) // distinct query
+      .mockResolvedValue([]); // per-user queries return no bookings → early exit
+
+    prismaMock.hotelChain.findUnique.mockResolvedValue({
+      id: "1",
+      basePointRate: 10,
+      hotelChainSubBrands: [],
+      userStatuses: [],
+    });
+
+    await recalculateLoyaltyForHotelChain("1"); // no userId
+
+    // findMany called 3 times: once for distinct users, once per user (2 users × 1 = 2)
+    expect(prismaMock.booking.findMany).toHaveBeenCalledTimes(3);
+  });
+
   it("should use sub-brand basePointRate when booking has a sub-brand override", async () => {
     // Chain rate: 10 pts/$, sub-brand rate: 5 pts/$
     const mockChain = {
