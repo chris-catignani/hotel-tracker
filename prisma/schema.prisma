@@ -84,6 +84,11 @@ enum SubBrandRestrictionMode {
   exclude
 }
 
+enum IngestionMethod {
+  manual
+  email
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -312,6 +317,9 @@ model Booking {
   otaAgencyId           String?              @map("ota_agency_id")
   otaAgency             OtaAgency?           @relation(fields: [otaAgencyId], references: [id])
   notes                 String?
+  confirmationNumber    String?
+  ingestionMethod       IngestionMethod      @default(manual)
+  needsReview           Boolean              @default(false)
   createdAt             DateTime             @default(now()) @map("created_at")
   bookingPromotions     BookingPromotion[]
   bookingCardBenefits   BookingCardBenefit[]
