@@ -19,17 +19,32 @@ Two PRs are planned:
 
 ## PR1: Server-Side Recalculation Cascades
 
-### API Fix: Sub-brand Base Rate Cascade
+### API Fix: `recalculateLoyaltyForHotelChain` — all-users support
 
-**File:** `src/app/api/hotel-chain-sub-brands/[id]/route.ts`
+**Files:** `src/lib/loyalty-recalculation.ts`, `src/app/api/hotel-chains/[id]/route.ts`, `src/app/api/hotel-chain-sub-brands/[id]/route.ts`
 
-The PUT handler currently updates `basePointRate` without triggering loyalty recalculation. Fix:
+**Root cause:** `recalculateLoyaltyForHotelChain(hotelChainId, userId)` recalculates only one user's bookings. This is correct when a _user_ changes their own elite status, but wrong when an _admin_ changes a shared field like `basePointRate` — those changes should recalculate bookings for all users.
 
-1. Add `getAuthenticatedUserId()` call alongside existing `requireAdmin()`
-2. Fetch the sub-brand's current `basePointRate` and `hotelChainId` before the update
-3. After the update, if `basePointRate` changed, call `recalculateLoyaltyForHotelChain(hotelChainId, userId)`
+**Callers and correct behavior:**
 
-This mirrors the identical pattern in the hotel chain PUT route.
+| Caller                            | Triggered by                                           | Correct scope                 |
+| --------------------------------- | ------------------------------------------------------ | ----------------------------- |
+| `hotel-chains/[id]` PUT           | Admin changes `basePointRate` or `calculationCurrency` | All users ❌ currently wrong  |
+| `hotel-chain-sub-brands/[id]` PUT | Admin changes `basePointRate`                          | All users ❌ missing entirely |
+| `user-statuses` POST              | User changes their own elite status                    | Single user ✅ correct        |
+| `prisma/seed.ts`                  | Seed script (admin data only)                          | Admin user only ✅ fine       |
+
+**POST endpoints need no change:** Hotel chain POST and sub-brand POST create new entities — no existing bookings reference them yet, so no recalculation is needed.
+
+**Changes:**
+
+1. **`src/lib/loyalty-recalculation.ts`** — make `userId` optional. When omitted, remove the `userId` filter from the `prisma.booking.findMany` query and the `userStatuses` include, so all users' past bookings for the chain are recalculated. When provided (user-status case), behaviour is unchanged.
+
+2. **`src/app/api/hotel-chains/[id]/route.ts`** — call `recalculateLoyaltyForHotelChain(id)` (no userId) when `basePointRate` or `calculationCurrency` changes.
+
+3. **`src/app/api/hotel-chain-sub-brands/[id]/route.ts`** — fetch the sub-brand's current `basePointRate` and `hotelChainId` before the update; after the update, if `basePointRate` changed, call `recalculateLoyaltyForHotelChain(hotelChainId)` (no userId).
+
+4. **`src/lib/loyalty-recalculation.test.ts`** — update unit tests for the new optional-userId signature.
 
 ### Promotion Cascade Tests
 
@@ -66,25 +81,25 @@ All new tests are API-only using `isolatedUser` + `testHotelChain` fixtures. `GE
 **Key constraints:**
 
 - These tests do **not** use the `testHotelChain` fixture (which creates a chain with no `basePointRate`). They create chains inline via `adminRequest` with an explicit `basePointRate: 10` so that `loyaltyPointsEarned` is non-zero and a rate doubling produces a meaningful assertion.
-- `recalculateLoyaltyForHotelChain` recalculates only for the requesting user's bookings. Since hotel chain PUT and sub-brand PUT are admin-only routes, `userId` in the recalculation call resolves to the admin user — so bookings must also belong to the admin user. Both tests create bookings via `adminRequest`. These tests intentionally verify the admin's own bookings are updated, consistent with the current per-user scoping of `recalculateLoyaltyForHotelChain` (the multi-user case is a known limitation, out of scope here).
+- After the all-users fix, `recalculateLoyaltyForHotelChain` (called without userId) recalculates bookings for all users. Bookings are created via `isolatedUser.request` so the tests exercise the cross-user scenario directly: admin changes the chain/sub-brand rate, isolated user's booking is recalculated.
 - **Loyalty is only recalculated for past bookings** (checkIn ≤ today). Both tests use a prior-year check-in date to ensure `lockedExchangeRate` is set and the booking is eligible for recalculation.
 
-**Test: Hotel chain base rate change recalculates past bookings**
+**Test: Hotel chain base rate change recalculates past bookings for all users**
 
 - Create a chain with `basePointRate: 10` via `adminRequest` (inline, not via fixture)
-- Create a past booking for that chain via `adminRequest`
+- Create a past booking for that chain via `isolatedUser.request`
 - Record initial `loyaltyPointsEarned`
 - `PUT /api/hotel-chains/:id` with `basePointRate: 20` via `adminRequest`
-- Assert `loyaltyPointsEarned` on the booking doubled
+- Assert `loyaltyPointsEarned` on the booking doubled (verifies cross-user recalculation)
 
-**Test: Sub-brand base rate change recalculates past bookings**
+**Test: Sub-brand base rate change recalculates past bookings for all users**
 
 - Create a chain + sub-brand (sub-brand with `basePointRate: 10`) via `adminRequest` (inline)
-- Create a past booking linked to that sub-brand via `adminRequest`
+- Create a past booking linked to that sub-brand via `isolatedUser.request`
 - Record initial `loyaltyPointsEarned`
 - `PUT /api/hotel-chain-sub-brands/:id` with `basePointRate: 20` via `adminRequest`
-- Assert `loyaltyPointsEarned` on the booking doubled
-- **Note:** This test is expected to fail on the current main branch until the sub-brand API fix (above) is applied in the same PR.
+- Assert `loyaltyPointsEarned` on the booking doubled (verifies cross-user recalculation)
+- **Note:** This test is expected to fail on the current main branch until both the sub-brand cascade fix and the all-users fix are applied in the same PR.
 
 **Cleanup order:** Delete booking first, then sub-brand (if any), then chain. The chain DELETE route returns 409 if bookings exist or if sub-brands exist (both conditions must be cleared). The sub-brand DELETE route returns 400 if bookings reference it — so always delete the booking before the sub-brand.
 
@@ -128,4 +143,4 @@ Credit card reward values are computed live at read-time — no recalculation is
 - Point Types value changes (issue #64 item 5: core logic needs refining first)
 - OTA Agencies (display-only, no numeric cascade)
 - Shopping portal cascade (no portal-level rate field; `portalCashbackRate` is per-booking)
-- Recalculation for all users when admin changes shared reference data (existing limitation of `recalculateLoyaltyForHotelChain`, separate concern)
+- Recalculation for all users when admin changes `pointTypeId` on a hotel chain — `pointTypeId` affects the monetary _value_ of points (via `usdCentsPerPoint`), not the `loyaltyPointsEarned` count; the cron handles value refreshes separately
