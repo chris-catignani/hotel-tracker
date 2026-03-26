@@ -1,18 +1,28 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { readFileSync } from "fs";
 import { resolve } from "path";
-import { parseConfirmationEmail, decodeEmailToText } from "@/lib/email-ingestion/email-parser";
 import { hyattGuide } from "@/lib/email-ingestion/chain-guides/hyatt";
 
-const mockCreate = vi.fn();
+// Store mock function in a way that's accessible before initialization
+const mocks = { mockCreate: vi.fn() };
 
-// Mock Anthropic SDK
+// Mock Anthropic SDK before importing the module that uses it
 vi.mock("@anthropic-ai/sdk", () => {
-  const MockAnthropic = vi.fn(function () {
-    return { messages: { create: mockCreate } };
-  });
-  return { default: MockAnthropic };
+  return {
+    default: class MockAnthropic {
+      messages = {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        create: (...args: any[]) => mocks.mockCreate(...args),
+      };
+    },
+  };
 });
+
+// Import after mocking
+import { parseConfirmationEmail, decodeEmailToText } from "@/lib/email-ingestion/email-parser";
+
+// Easier accessor
+const mockCreate = mocks.mockCreate;
 
 const fixture = (name: string) => readFileSync(resolve(__dirname, "./fixtures", name), "utf-8");
 

@@ -1,9 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { ChainGuide, ParsedBookingData } from "./types";
 
-function getClient() {
-  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-}
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const MODEL = process.env.ANTHROPIC_MODEL ?? "claude-haiku-4-5-20251001";
 
 /**
  * Decode quoted-printable encoding and strip HTML tags to produce readable text.
@@ -80,8 +79,8 @@ export async function parseConfirmationEmail(
 
   let responseText: string;
   try {
-    const response = await getClient().messages.create({
-      model: "claude-haiku-4-5-20251001",
+    const response = await anthropic.messages.create({
+      model: MODEL,
       max_tokens: 512,
       messages: [{ role: "user", content: prompt }],
     });
