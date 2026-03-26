@@ -123,6 +123,7 @@ test.describe("Desktop Layout (Verification)", () => {
 
   test("should display table view on desktop", async ({ testBooking }) => {
     await testBooking.page.goto("/bookings");
+    await testBooking.page.waitForLoadState("networkidle");
 
     await expect(testBooking.page.getByTestId("bookings-list-desktop")).toBeVisible();
     await expect(testBooking.page.getByTestId("bookings-list-mobile")).not.toBeVisible();
@@ -132,6 +133,7 @@ test.describe("Desktop Layout (Verification)", () => {
 
     // On Dashboard, should show table
     await testBooking.page.goto("/");
+    await testBooking.page.waitForLoadState("networkidle");
     await expect(testBooking.page.getByTestId("recent-bookings-desktop")).toBeVisible();
     await expect(testBooking.page.getByTestId("recent-bookings-mobile")).not.toBeVisible();
   });

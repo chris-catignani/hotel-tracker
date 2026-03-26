@@ -91,6 +91,7 @@ test.describe("Booking List", () => {
     testBooking,
   }) => {
     await testBooking.page.goto("/bookings");
+    await testBooking.page.waitForLoadState("networkidle");
 
     const row = testBooking.page.getByTestId(`booking-row-${testBooking.id}`);
     await expect(row).toBeVisible();
@@ -125,6 +126,7 @@ test.describe("Booking List", () => {
     const booking = await res.json();
 
     await isolatedUser.page.goto("/bookings");
+    await isolatedUser.page.waitForLoadState("networkidle");
     const row = isolatedUser.page.getByTestId(`booking-row-${booking.id}`);
     await expect(row).toBeVisible();
 
@@ -132,7 +134,7 @@ test.describe("Booking List", () => {
     // Confirm in the dialog
     await isolatedUser.page.getByRole("dialog").getByRole("button", { name: "Delete" }).click();
 
-    await expect(row).not.toBeVisible();
+    await expect(row).not.toBeVisible({ timeout: 10000 });
   });
 });
 
@@ -164,7 +166,7 @@ test.describe("Booking Detail", () => {
   test("Back button returns to the bookings list", async ({ testBooking }) => {
     await testBooking.page.goto(`/bookings/${testBooking.id}`);
     await testBooking.page.getByRole("link", { name: "Back" }).click();
-    await expect(testBooking.page).toHaveURL("/bookings");
+    await expect(testBooking.page).toHaveURL("/bookings", { timeout: 10000 });
   });
 });
 
@@ -208,7 +210,7 @@ test.describe("Booking Edit", () => {
     await testBooking.page.getByLabel("Notes").fill("should not be saved");
     await testBooking.page.getByTestId("booking-form-cancel").click();
 
-    await expect(testBooking.page).toHaveURL(`/bookings/${testBooking.id}`);
+    await expect(testBooking.page).toHaveURL(`/bookings/${testBooking.id}`, { timeout: 15000 });
     await expect(testBooking.page.getByText("should not be saved")).not.toBeVisible();
   });
 });

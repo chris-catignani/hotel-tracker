@@ -237,12 +237,18 @@ test.describe("Promotion Cascading Re-evaluation", () => {
     const promo = await promoRes.json();
 
     try {
-      const refreshRes = await isolatedUser.request.get(`/api/bookings/${booking.id}`);
-      expect(refreshRes.ok()).toBeTruthy();
-      const refreshed = await refreshRes.json();
-      const bp = (refreshed.bookingPromotions ?? []).find((p: any) => p.promotionId === promo.id);
-      expect(bp).toBeDefined();
-      expect(Number(bp.appliedValue)).toBe(30);
+      // The promotion POST triggers an async cascade to existing bookings — poll until it lands.
+      await expect
+        .poll(
+          async () => {
+            const res = await isolatedUser.request.get(`/api/bookings/${booking.id}`);
+            const data = await res.json();
+            const bp = (data.bookingPromotions ?? []).find((p: any) => p.promotionId === promo.id);
+            return bp ? Number(bp.appliedValue) : undefined;
+          },
+          { timeout: 10000 }
+        )
+        .toBe(30);
     } finally {
       await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
       await isolatedUser.request.delete(`/api/promotions/${promo.id}`);

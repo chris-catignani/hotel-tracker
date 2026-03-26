@@ -23,6 +23,7 @@ test.describe("Dashboard — empty state", () => {
     isolatedUser,
   }) => {
     await isolatedUser.page.goto("/");
+    await isolatedUser.page.waitForLoadState("networkidle");
 
     // Stat cards should show zero
     await expect(isolatedUser.page.getByTestId("stat-value-total-bookings")).toHaveText("0");
@@ -64,6 +65,7 @@ test.describe("Dashboard — stat cards", () => {
 
     try {
       await isolatedUser.page.goto("/");
+      await isolatedUser.page.waitForLoadState("networkidle");
 
       await expect(isolatedUser.page.getByTestId("stat-value-total-bookings")).toHaveText("1");
       await expect(isolatedUser.page.getByTestId("stat-value-total-nights")).toHaveText("4");
@@ -107,6 +109,7 @@ test.describe("Dashboard — stat cards", () => {
 
     try {
       await isolatedUser.page.goto("/");
+      await isolatedUser.page.waitForLoadState("networkidle");
 
       const pointsStat = isolatedUser.page.getByTestId("stat-value-points");
       await expect(pointsStat).toBeVisible();
@@ -147,6 +150,7 @@ test.describe("Dashboard — stat cards", () => {
 
     try {
       await isolatedUser.page.goto("/");
+      await isolatedUser.page.waitForLoadState("networkidle");
 
       const certsStat = isolatedUser.page.getByTestId("stat-value-certs");
       await expect(certsStat).toBeVisible();
@@ -193,6 +197,7 @@ test.describe("Dashboard — stat cards", () => {
 
     try {
       await isolatedUser.page.goto("/");
+      await isolatedUser.page.waitForLoadState("networkidle");
 
       // Total Savings stat should show a positive dollar value
       const totalSavingsStat = isolatedUser.page.getByTestId("stat-value-total-savings");
@@ -234,6 +239,7 @@ test.describe("Dashboard — upcoming bookings", () => {
 
     try {
       await isolatedUser.page.goto("/");
+      await isolatedUser.page.waitForLoadState("networkidle");
 
       // Booking row appears in the desktop upcoming bookings table
       const bookingRow = isolatedUser.page.getByTestId(`booking-row-${booking.id}`);
@@ -360,6 +366,7 @@ test.describe("Dashboard — PaymentTypeBreakdown widget", () => {
 
     try {
       await isolatedUser.page.goto("/");
+      await isolatedUser.page.waitForLoadState("networkidle");
 
       const legend = isolatedUser.page.getByTestId("payment-type-legend");
       await expect(legend).toBeVisible();
@@ -404,6 +411,7 @@ test.describe("Dashboard — SubBrandBreakdown widget", () => {
 
     try {
       await isolatedUser.page.goto("/");
+      await isolatedUser.page.waitForLoadState("networkidle");
 
       // Booking has no sub-brand — widget shows "Other" in the legend
       const legend = isolatedUser.page.getByTestId("sub-brand-breakdown-legend");
@@ -454,6 +462,7 @@ test.describe("Dashboard", () => {
 
     try {
       await isolatedUser.page.goto("/");
+      await isolatedUser.page.waitForLoadState("networkidle");
 
       // Portal cashback line item should be visible and show a positive dollar amount
       const portalEl = isolatedUser.page.getByTestId("savings-breakdown-portal");
@@ -496,6 +505,7 @@ test.describe("Dashboard", () => {
 
     try {
       await isolatedUser.page.goto("/");
+      await isolatedUser.page.waitForLoadState("networkidle");
 
       // Cash avg/night should show a dollar value (not "—")
       const cashAvg = isolatedUser.page.getByTestId("stat-value-avg-cash-net-per-night");
@@ -536,6 +546,7 @@ test.describe("Dashboard", () => {
 
     try {
       await isolatedUser.page.goto("/");
+      await isolatedUser.page.waitForLoadState("networkidle");
 
       // Points avg/night should show a "pts" value (not "—")
       const pointsAvg = isolatedUser.page.getByTestId("stat-value-avg-points-per-night");
@@ -579,6 +590,7 @@ test.describe("Dashboard", () => {
 
     try {
       await isolatedUser.page.goto("/");
+      await isolatedUser.page.waitForLoadState("networkidle");
 
       // Certs avg/night should show a "pts" value (not "—")
       const certsAvg = isolatedUser.page.getByTestId("stat-value-avg-certs-per-night");
@@ -640,6 +652,7 @@ test.describe("Dashboard — accommodation filter", () => {
 
     try {
       await isolatedUser.page.goto("/");
+      await isolatedUser.page.waitForLoadState("networkidle");
 
       const summaryTable = isolatedUser.page.getByTestId("hotel-chain-summary-desktop");
 
@@ -707,6 +720,7 @@ test.describe("Dashboard — savings breakdown card rewards", () => {
 
     try {
       await isolatedUser.page.goto("/");
+      await isolatedUser.page.waitForLoadState("networkidle");
 
       const cardRewardsEl = isolatedUser.page.getByTestId("savings-breakdown-card");
       await expect(cardRewardsEl).toBeVisible();
@@ -768,6 +782,7 @@ test.describe("Dashboard — accommodation summary sorting", () => {
 
     try {
       await isolatedUser.page.goto("/");
+      await isolatedUser.page.waitForLoadState("networkidle");
 
       const summaryTable = isolatedUser.page.getByTestId("hotel-chain-summary-desktop");
       await expect(summaryTable).toBeVisible();
@@ -821,6 +836,7 @@ test.describe("Dashboard — mixed payment warning", () => {
 
     try {
       await isolatedUser.page.goto("/");
+      await isolatedUser.page.waitForLoadState("networkidle");
 
       // Avg/Night skipped warning should be visible
       await expect(isolatedUser.page.getByTestId("avg-night-skipped-warning")).toBeVisible();

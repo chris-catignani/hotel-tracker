@@ -3,6 +3,33 @@ import crypto from "crypto";
 
 const YEAR = new Date().getFullYear();
 
+/**
+ * Fetch a fresh CSRF token and POST credentials, retrying on transient connection
+ * errors that can occur when multiple parallel workers hit the auth endpoint
+ * simultaneously during fixture setup.
+ */
+async function loginWithRetry(
+  request: APIRequestContext,
+  baseURL: string,
+  email: string,
+  password: string,
+  maxAttempts = 3
+): Promise<void> {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const csrfRes = await request.get("/api/auth/csrf");
+      const { csrfToken } = (await csrfRes.json()) as { csrfToken: string };
+      await request.post("/api/auth/callback/credentials", {
+        form: { csrfToken, email, password, callbackUrl: baseURL, redirect: "false" },
+      });
+      return;
+    } catch (err) {
+      if (attempt === maxAttempts) throw err;
+      await new Promise((r) => setTimeout(r, 300 * attempt));
+    }
+  }
+}
+
 type TestFixtures = {
   testBooking: {
     id: string;
@@ -55,12 +82,7 @@ export const test = base.extend<TestFixtures>({
 
     const adminReq = await playwright.request.newContext({ baseURL: resolvedBase });
 
-    const csrfRes = await adminReq.get("/api/auth/csrf");
-    const { csrfToken } = (await csrfRes.json()) as { csrfToken: string };
-
-    await adminReq.post("/api/auth/callback/credentials", {
-      form: { csrfToken, email, password, callbackUrl: resolvedBase, redirect: "false" },
-    });
+    await loginWithRetry(adminReq, resolvedBase, email, password);
 
     await use(adminReq);
     await adminReq.dispose();
@@ -73,12 +95,7 @@ export const test = base.extend<TestFixtures>({
 
     const adminReq = await playwright.request.newContext({ baseURL: resolvedBase });
 
-    const csrfRes = await adminReq.get("/api/auth/csrf");
-    const { csrfToken } = (await csrfRes.json()) as { csrfToken: string };
-
-    await adminReq.post("/api/auth/callback/credentials", {
-      form: { csrfToken, email, password, callbackUrl: resolvedBase, redirect: "false" },
-    });
+    await loginWithRetry(adminReq, resolvedBase, email, password);
 
     const storageState = await adminReq.storageState();
     const context = await browser.newContext({ baseURL: resolvedBase, storageState });
@@ -102,12 +119,7 @@ export const test = base.extend<TestFixtures>({
       data: { email, password, name: "Isolated Test User" },
     });
 
-    const csrfRes = await userRequest.get("/api/auth/csrf");
-    const { csrfToken } = (await csrfRes.json()) as { csrfToken: string };
-
-    await userRequest.post("/api/auth/callback/credentials", {
-      form: { csrfToken, email, password, callbackUrl: resolvedBase, redirect: "false" },
-    });
+    await loginWithRetry(userRequest, resolvedBase, email, password);
 
     const storageState = await userRequest.storageState();
     const context = await browser.newContext({ baseURL: resolvedBase, storageState });

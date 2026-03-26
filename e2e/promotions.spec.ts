@@ -916,6 +916,7 @@ test.describe("Promotions payment type restrictions", () => {
     isolatedUser,
   }) => {
     await isolatedUser.page.goto("/promotions/new");
+    await isolatedUser.page.waitForLoadState("networkidle");
 
     // 1. Initial Type: Loyalty
     await isolatedUser.page.getByTestId("restriction-picker-button").click();
