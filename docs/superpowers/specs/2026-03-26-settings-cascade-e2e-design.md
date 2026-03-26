@@ -38,7 +38,7 @@ Two PRs are planned:
 
 **Changes:**
 
-1. **`src/lib/loyalty-recalculation.ts`** — make `userId` optional. When omitted, remove the `userId` filter from the `prisma.booking.findMany` query and the `userStatuses` include, so all users' past bookings for the chain are recalculated. When provided (user-status case), behaviour is unchanged.
+1. **`src/lib/loyalty-recalculation.ts`** — make `userId` optional. When omitted, fan out to all distinct users who have past bookings for the chain: query `prisma.booking.findMany` with `distinct: ["userId"]` and `checkIn <= now`, then `Promise.all` recursive calls with each userId. This reuses all existing per-user logic (including the `userStatuses` include) without modification. When `userId` is provided (user-status case), behaviour is unchanged.
 
 2. **`src/app/api/hotel-chains/[id]/route.ts`** — call `recalculateLoyaltyForHotelChain(id)` (no userId) when `basePointRate` or `calculationCurrency` changes.
 
