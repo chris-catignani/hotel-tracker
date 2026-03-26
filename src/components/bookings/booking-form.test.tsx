@@ -213,6 +213,18 @@ describe("BookingForm", () => {
     });
     expect(screen.getByText("None / Not applicable")).toBeInTheDocument();
   });
+
+  it("renders the Confirmation Number field and accepts input", async () => {
+    const user = userEvent.setup();
+    render(<BookingForm {...defaultProps} />);
+
+    const confirmationInput = screen.getByTestId("confirmation-number-input") as HTMLInputElement;
+    expect(confirmationInput).toBeInTheDocument();
+    expect(confirmationInput.value).toBe("");
+
+    await user.type(confirmationInput, "ABC-123");
+    expect(confirmationInput.value).toBe("ABC-123");
+  });
 });
 
 describe("BookingForm benefit approximate value", () => {

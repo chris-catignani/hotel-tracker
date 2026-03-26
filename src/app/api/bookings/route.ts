@@ -4,7 +4,13 @@ import { matchPromotionsForBooking } from "@/lib/promotion-matching";
 import { reevaluateSubsequentBookings } from "@/lib/promotion-matching-helpers";
 import { apiError } from "@/lib/api-error";
 import { calculatePoints, resolveBasePointRate } from "@/lib/loyalty-utils";
-import { CertType, BenefitType, BenefitPointsEarnType, AccommodationType } from "@prisma/client";
+import {
+  CertType,
+  BenefitType,
+  BenefitPointsEarnType,
+  AccommodationType,
+  IngestionMethod,
+} from "@prisma/client";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
 import {
@@ -160,6 +166,8 @@ export async function POST(request: NextRequest) {
       notes,
       hotelChainSubBrandId,
       confirmationNumber,
+      needsReview,
+      ingestionMethod,
     } = body;
 
     // Resolve propertyId: use provided id, or find/create from geo fields
@@ -286,6 +294,8 @@ export async function POST(request: NextRequest) {
         lockedLoyaltyUsdCentsPerPoint,
         notes: notes || null,
         confirmationNumber: confirmationNumber ?? null,
+        needsReview: needsReview ?? false,
+        ingestionMethod: (ingestionMethod ?? "manual") as IngestionMethod,
         bookingSource: bookingSource || null,
         otaAgencyId: bookingSource === "ota" && otaAgencyId ? otaAgencyId : null,
         certificates: certificates?.length

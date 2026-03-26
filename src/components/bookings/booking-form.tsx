@@ -1201,6 +1201,7 @@ export function BookingForm({
             <Label htmlFor="confirmation-number">Confirmation Number</Label>
             <Input
               id="confirmation-number"
+              data-testid="confirmation-number-input"
               placeholder="Optional"
               value={confirmationNumber}
               onChange={(e) => setConfirmationNumber(e.target.value)}

@@ -446,7 +446,10 @@ export default function DashboardPage() {
         onDismiss={clearError}
       />
       {needsReviewCount > 0 && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 flex items-center justify-between">
+        <div
+          data-testid="needs-review-callout"
+          className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 flex items-center justify-between"
+        >
           <div className="flex items-center gap-2">
             <span className="text-amber-600 font-medium text-sm">
               {needsReviewCount} booking{needsReviewCount !== 1 ? "s" : ""} need

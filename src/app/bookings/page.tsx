@@ -305,6 +305,7 @@ function BookingsPageInner() {
                             </div>
                             {booking.needsReview && (
                               <Badge
+                                data-testid="needs-review-badge"
                                 variant="outline"
                                 className="border-amber-400 bg-amber-50 text-amber-700 text-xs shrink-0"
                               >
