@@ -14,8 +14,7 @@ vi.mock("@anthropic-ai/sdk", () => {
   return { default: MockAnthropic };
 });
 
-const fixture = (name: string) =>
-  readFileSync(resolve(__dirname, "../../__tests__/fixtures/emails", name), "utf-8");
+const fixture = (name: string) => readFileSync(resolve(__dirname, "./fixtures", name), "utf-8");
 
 describe("decodeEmailToText", () => {
   it("removes QP soft line breaks with CRLF (=\\r\\n)", () => {
