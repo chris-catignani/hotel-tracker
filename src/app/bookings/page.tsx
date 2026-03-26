@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
@@ -133,7 +133,7 @@ interface Booking {
 // Bookings Page
 // ---------------------------------------------------------------------------
 
-export default function BookingsPage() {
+function BookingsPageInner() {
   const {
     data: bookingsData,
     loading,
@@ -432,5 +432,13 @@ export default function BookingsPage() {
         </>
       )}
     </div>
+  );
+}
+
+export default function BookingsPage() {
+  return (
+    <Suspense>
+      <BookingsPageInner />
+    </Suspense>
   );
 }
