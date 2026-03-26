@@ -1,0 +1,2043 @@
+Delivered-To: chris.catignani@gmail.com
+Received: by 2002:a05:7010:306:b0:500:d9d8:62a0 with SMTP id f6csp2193814mdj;
+        Sat, 21 Feb 2026 04:51:35 -0800 (PST)
+X-Received: by 2002:a05:622a:155:b0:506:217e:b0e5 with SMTP id d75a77b69052e-5070ba7f96amr43980261cf.0.1771678295343;
+        Sat, 21 Feb 2026 04:51:35 -0800 (PST)
+ARC-Seal: i=1; a=rsa-sha256; t=1771678295; cv=none;
+        d=google.com; s=arc-20240605;
+        b=BJxAhp9grt5AVBkdX0PzJZuUJ07Qw2D3JgW/ciMHBbN3Fk7gebv9NUXXhFAJDterPc
+         tviXeylL6LFCJJIDtdQCd6hT5+zTonaW63tVRsTsaDQx4zY/gaFbxoi6kiFPL+wLjEw8
+         DPv38Sl6gd/6A6bEYuU+k3uBygAgK7/+Eh+5Bv/Cd4HiYNy6uT8ttR7mM5QrG0Wuv78M
+         xQX9kZAsqeUWRhFab4BclwV4KJY3OZubEAaJ5KxdrrPJPOP6B5392547bWoTI1wAKhgC
+         NfBmVTEQyWAdpATuAMf61y0xef9AO+/Pf5LQLcMShXyM7ezWs/z0yHZEfpiO9KuFxVXK
+         LHgw==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
+        h=feedback-id:message-id:reply-to:mime-version:list-help:date:subject
+         :to:from:dkim-signature:dkim-signature;
+        bh=8EZyFmWuFePMuQhZ8mjZAzAzHIO4pu8Z3mpPIW+Yj/c=;
+        fh=B98mAaXUdSmS2/zrT4c1e3AyUTMd63O969iqHIONsms=;
+        b=X7z5cBL3+ccM6QJoe61s/o1iP2unO8p991gw1kRVOOt8RlZx7J2kIJjKSGslYRE/9y
+         c5REbP7V8idhs+vE77POL9dWE4oelYbRTX9SAL2OxdLwfz4gJxbiZ84DBgfOhj0WrVAc
+         rGM4ATfKOVvxZfbVMn1o1FcGu+0E7XURlv6x2WYZE9Ef3KLDCG3UhxJ7mq7GQ8C71t4/
+         vspDdkcULBIj+oRuY6g3WjGURpQjpDf8/Y4KumKlaOLEV/iWRpLTI+ClkRLKhjaWGDb1
+         rGV1qNl6usmlBqxa6wcLJmc5/on1GvcaWEcVGCC58CWPS+hZ5D8p6sS28xxBuNf8kNqZ
+         FUnQ==;
+        dara=google.com
+ARC-Authentication-Results: i=1; mx.google.com;
+       dkim=pass header.i=@tx.ihg.com header.s=11dkim1 header.b=RbT5DSd+;
+       dkim=pass header.i=@s11.y.mc.salesforce.com header.s=fbldkim11 header.b=guiuHK4p;
+       spf=pass (google.com: domain of bounce-jrkyrlbu2obubna23li7rz5pyq.110050@bounce.tx.ihg.com designates 13.111.173.23 as permitted sender) smtp.mailfrom=bounce-JRKYRLBU2OBUBNA23LI7RZ5PYQ.110050@bounce.tx.ihg.com;
+       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=tx.ihg.com
+Return-Path: <bounce-JRKYRLBU2OBUBNA23LI7RZ5PYQ.110050@bounce.tx.ihg.com>
+Received: from mta2.tx.ihg.com (mta2.tx.ihg.com. [13.111.173.23])
+        by mx.google.com with ESMTPS id d75a77b69052e-5070d6fff44si19569751cf.143.2026.02.21.04.51.35
+        for <chris.catignani@gmail.com>
+        (version=TLS1_2 cipher=ECDHE-ECDSA-AES128-GCM-SHA256 bits=128/128);
+        Sat, 21 Feb 2026 04:51:35 -0800 (PST)
+Received-SPF: pass (google.com: domain of bounce-jrkyrlbu2obubna23li7rz5pyq.110050@bounce.tx.ihg.com designates 13.111.173.23 as permitted sender) client-ip=13.111.173.23;
+Authentication-Results: mx.google.com;
+       dkim=pass header.i=@tx.ihg.com header.s=11dkim1 header.b=RbT5DSd+;
+       dkim=pass header.i=@s11.y.mc.salesforce.com header.s=fbldkim11 header.b=guiuHK4p;
+       spf=pass (google.com: domain of bounce-jrkyrlbu2obubna23li7rz5pyq.110050@bounce.tx.ihg.com designates 13.111.173.23 as permitted sender) smtp.mailfrom=bounce-JRKYRLBU2OBUBNA23LI7RZ5PYQ.110050@bounce.tx.ihg.com;
+       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=tx.ihg.com
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; s=11dkim1; d=tx.ihg.com; h=From:To:Subject:Date:List-Help:MIME-Version:Reply-To:Message-ID:Content-Type; i=HolidayInnExpress@tx.ihg.com; bh=8EZyFmWuFePMuQhZ8mjZAzAzHIO4pu8Z3mpPIW+Yj/c=; b=RbT5DSd+O1i61h1+ujBGRtybNjW742/PPl8PpeLz30UqluQBKFwqor7XgZt7rQx6CRt4EPfkNp1y
+   6AoI0KIv8+x9inlbzRVzKK9eM5AmW3EVR4gQTnJ3p4yiaFaEujLgjGnNAB5JBxnJssSeTan3Szgu
+   tCpoMskZ6oE0Vc/3dLOjAv/wotMXnqyOQdf1d5mKY8TSwPRzUTMCM4AJHGeFt8wxZjDP+vj3nOuz
+   feF8w0oMlV39PLwW64myUuZQMcRsr6cEvWj0x7rQyRXojBqU+iNBJpFYvJH16l8W6XXKeFje5bvg
+   /SK1RnFKydLaR+88HIdOiUv5keMgh2E7ZTmXGw==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; s=fbldkim11; d=s11.y.mc.salesforce.com; h=From:To:Subject:Date:List-Help:MIME-Version:Reply-To:Message-ID:Content-Type; bh=8EZyFmWuFePMuQhZ8mjZAzAzHIO4pu8Z3mpPIW+Yj/c=; b=guiuHK4p7CjwNcCS5Ce2NiLdwZ+rh3d1dFZHD3IFpIrvn4zWQcXq77yAc9xalhQQBJ8NigDQxLGB
+   3hJiw9sJPgi8kw3gmN1lG7CtBrj71FwvUSlEstkqUk4XZ19hNTbxh+tNdxFUS1zAU0I6LhcBiG1z
+   TA6JeA3e31VL6FObmf8G7ksiuAVT4/8yR+zkMB8uvVWDhwZ1eZ6qIwRJfgq8NbiE1zuBpVtA1YZn
+   7UDHrXZ5jbERTHY/XYUiAunq6JJfeNDJvOLlc47cLjPJcfsX/zu51MR3L5YOqiHnFuQaOnGnT830
+   zGU+SoeVoq8uQoFL3+j68g9qqdEydPadW8NXKA==
+Received: by mta2.tx.ihg.com id hj6l5e2fmd48 for <chris.catignani@gmail.com>; Sat, 21 Feb 2026 12:51:35 +0000 (envelope-from <bounce-JRKYRLBU2OBUBNA23LI7RZ5PYQ.110050@bounce.tx.ihg.com>)
+From: Holiday Inn Express <HolidayInnExpress@tx.ihg.com>
+To: <chris.catignani@gmail.com>
+Subject: Your reservation at Holiday Inn Express Kuala Lumpur City Centre is confirmed. #61827637 - 6 Mar 2026
+Date: Sat, 21 Feb 2026 06:51:33 -0600
+List-Help: <https://click.tx.ihg.com/subscription_center.aspx?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtaWQiOiI1MTQwMDU1NzMiLCJzIjoiMTcyNTAyMjQ4IiwibGlkIjoiMTciLCJqIjoiNDQ5MjU0IiwiamIiOiIzNzIzNjEiLCJkIjoiMTEwMDUwIn0.CPzHyINOeuyhR7hNSxlW1xH7gM069OcYMzlVtFT7GRI>
+MIME-Version: 1.0
+x-messageKey: d4486e64-bfc4-471c-9b84-1a68747bf159
+X-Delivery: Transactional
+X-SFMC-Stack: 11
+x-job: 514005573_449254
+Reply-To: Holiday Inn Express <reply-TA342NHPQP3EPNDZPNRTA6KG3I.110050@tx.ihg.com>
+Message-ID: <c32b5c12-7202-494f-b59f-7397ac9e0a62@atl1s11mta431.xt.local>
+Feedback-ID: 514005573:449254:13.111.173.23:sfmktgcld
+Content-Type: multipart/alternative; boundary="C7LLqArToBs2=_?:"
+
+--C7LLqArToBs2=_?:
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+ 
+
+ 
+
+
+
+
+ 
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+IHG Hotels & Resorts
+ 
+
+  
+ 
+https://click.tx.ihg.com/?qs=eyJkZWtJZCI6IjZmMGRhNDZhLWE0YzEtNGRlOC05NGU2LWEzMTA3ZTNmYzM0ZiIsImRla1ZlcnNpb24iOjEsIml2IjoiY3JuUGs0TEk2TTVzVjc1SlRSRzVvdz09IiwiY2lwaGVyVGV4dCI6IjVWbFpKWGhTNHg4UUJDRE5NL2lFaFlqaEZ2d3ZXR3AzTE5nOUZUZ0FUYTd5S3p0SE8vcDFnRG9ZcmVwZmEwKzl0eFFiZUxuUHNVOEZxdUQxSE1qazFEWVRYN3FUS2RvTDE3b3Fjcm5QazRMSTZNNXNWNzVKVFJHNW93PT0iLCJhdXRoVGFnIjoiOVJ6STVOUTJFMSs2a3luYUM5ZTZLZz09In0%3D 
+ Web Version 
+  
+
+
+
+
+https://click.tx.ihg.com/?qs=eyJkZWtJZCI6ImI1M2JmM2ZjLTMxMzItNDFmZC1hYzZjLTljM2Q5MDhhYjQwYyIsImRla1ZlcnNpb24iOjEsIml2IjoiMW90Rm5kcDlMMGNJVWdTYXFibXBQUT09IiwiY2lwaGVyVGV4dCI6ImViOE1FUnJTV1piL1UxVksxVUtrTXhpU05TNGxPLzJ6dHM3UlBuV3o4M295enhXek9wa1ZWYzBjR2VFZE9Ec2kzNXByNzlOSENtT01uZ2RwYStFNkRJRzY5T1VOY21GNGFtaTkvQjB1Z05hTFJaM2FmUzlIQ0ZJRW1xbTVxVDA9IiwiYXV0aFRhZyI6IkRJRzY5T1VOY21GNGFtaTkvQjB1Z0E9PSJ9 
+
+https://click.tx.ihg.com/?qs=eyJkZWtJZCI6IjJiMDI3Mjg1LTUwM2ItNDIwYS05N2M5LTE5MjUzN2Y0ZDliZiIsImRla1ZlcnNpb24iOjEsIml2IjoiTTcrY1puNGNscDd3U2FRUWxGdTNUQT09IiwiY2lwaGVyVGV4dCI6InlVU25QY0dtY05VM0RrSkhMWmR0QkQyVldWS3RkaGluUFZxOU81Z1FmOUVRK1pMdjl2YlgwZEs0Z2ZQZy92ZkNMYXlONXJQK2ttVHFYZ1RSdlJvZk9jQTk2QzZNbFYvWEZRdGRRMDI4ZWpPL25HWitISmFlOEVta0VKUmJ0MHc9IiwiYXV0aFRhZyI6Ik9jQTk2QzZNbFYvWEZRdGRRMDI4ZWc9PSJ9 
+
+ 
+
+
+
+
+ 
+
+ 
+
+ 
+
+
+
+
+
+
+https://click.tx.ihg.com/?qs=eyJkZWtJZCI6IjIzNzdlNTYxLWYwNWEtNGNmZi1iZjllLTBmZGMxNzlmNjNiMiIsImRla1ZlcnNpb24iOjEsIml2IjoicTFCanZUZEIvOXlkWkl2YkdsKzZ5dz09IiwiY2lwaGVyVGV4dCI6ImNOMjRIVjV3YTJFcjNHZ0l6NGFKb3l1UmVPenJOUnVTd0JLZ2xTakozckdXYnVXU2p3S244Zlk1dmlWMCtYWGo1eDZVTmx0b2dWTnFZRmZiaUllU29kaHBFUGJsMFZNVXVyNUppT3BZcGF0UVk3MDNRZi9jbldTTDJ4cGZ1c3M9IiwiYXV0aFRhZyI6Im9kaHBFUGJsMFZNVXVyNUppT3BZcFE9PSJ9 
+SIGN IN 
+
+|
+
+https://click.tx.ihg.com/?qs=eyJkZWtJZCI6ImE2MDkxYTA5LWM4OGItNGUzMy05ZGMxLTk3YTg1NzdlNTBkMiIsImRla1ZlcnNpb24iOjEsIml2IjoiOGRqajZhckxJRUxlTVhwMVlBd3M3Zz09IiwiY2lwaGVyVGV4dCI6ImM4R1piU3hmcHVhNzlsK1o5T0hkcTNUZE14QlV5SmYybkQ0ZDBrcjlmWTFUT3ZTR3pTNklyMWlGUGVOKzN6aCtuZWdLOUlYVytLSTdHWVJGaS9Zb1BPbnlnYldMRDRzZzlPNklMMEFQNFBIWTQrbXF5eUJDM2pGNmRXQU1MTzQ9IiwiYXV0aFRhZyI6IlBPbnlnYldMRDRzZzlPNklMMEFQNEE9PSJ9 
+&zwnj;Diamond Elite&zwnj; 
+
+ 
+
+
+
+ 
+
+
+ 
+
+
+
+
+
+
+ Christopher, your reservation is confirmed!
+ 
+ 
+ 
+
+
+ Confirmation #61827637
+ 
+ 
+
+
+
+
+ https://click.tx.ihg.com/?qs=eyJkZWtJZCI6IjQ0ZTNkNjE1LTk5NzYtNDgyYi1hMTI1LTgyMDYzODFjZmE5ZiIsImRla1ZlcnNpb24iOjEsIml2IjoiY2Q1SUZDdjVxb3V2emtrTkRQZ1ZrUT09IiwiY2lwaGVyVGV4dCI6IlE3RlRkUk1FMGExN2F0bE5RcmJLNnNBRU8yUkcvT2JpME1tVUh4eXh1OTIvSjBhREd5b0xXK0RZY3VBS1pRK1lqMkRpV3NKWFhHWlA5NGJZdktzSWpoVlFxWjlUTExJYlJqaCtlQm9CYzNIZVNCUXIrYXFMcjg1SkRRejRGWkU9IiwiYXV0aFRhZyI6ImpoVlFxWjlUTExJYlJqaCtlQm9CY3c9PSJ9 
+
+
+ 
+ 
+
+ https://click.tx.ihg.com/?qs=eyJkZWtJZCI6IjY3OGFhNjk5LTZmNWEtNGE5Yy1hYzJiLTc5ODA4MjZkYWMwOSIsImRla1ZlcnNpb24iOjEsIml2IjoiSUZVM0hERGxVd1dBamFIMnN3dmFoQT09IiwiY2lwaGVyVGV4dCI6Ikp0VGxhZ3RsSEZWNTI1eS9FU2pJNWZGaCtSWi9wYjdVZVVmQjZBZUpiOWVIWGQ1QW1BYUxtS2JCbWYrVDVaUUhLUXhpbjY3UmFLVFNGdlg1NDJvb1V2MEVLUGk4Mm81WFlOWmtJRlUzSEREbFV3V0FqYUgyc3d2YWhBPT0iLCJhdXRoVGFnIjoiK2VOcUtGTDlCQ2o0dk5xT1YyRFdaQT09In0%3D 
+
+ 
+ Holiday Inn Express Kuala Lumpur City Centre
+ 
+
+ 
+ Address: 
+ 
+
+ 
+ 
+
+ &zwnj;84 Jalan Raja Chulan,&zwnj;
+ 
+&zwnj;Kuala Lumpur,&zwnj;&zwnj;50200 Malaysia
+ 
+
+
+ 
+ 
+ Front Desk: 
+ 
+
+tel:+60320288888 
+60320288888 
+
+
+ 
+ 
+ 
+ 
+ Email: 
+ 
+
+mailto:info.kulcc@ihg.com 
+info.kulcc@ihg.com 
+
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ Dates
+
+
+ 6 Mar 2026
+ -
+  7 Mar 2026
+ 
+
+
+ Check in &zwnj;2:00 pm&zwnj; / Check out
+ &zwnj;12:00 pm&zwnj;
+ 
+
+
+ 
+ 
+
+ Reservation
+
+
+ 1 Room,  
+  
+ 1 Adult
+ 
+
+
+ Christopher Catignani, Primary
+
+
+ 
+ 
+
+ 
+ 
+ Room details
+
+
+ 1 Queen Standard With Free Breakfast
+ 
+
+
+ 
+ 
+ Rate
+
+Chris Sells Stuff Edge
+
+
+ 
+ 
+ 
+
+ Summary of charges
+
+
+
+ 
+  
+ 
+  
+ 
+ 
+ 
+
+ 1 night stay
+
+ 
+ 221.45 MYR
+
+  
+ 
+
+
+ 
+ 
+  
+ 
+ 
+ 
+ 
+ 
+
+
+ Taxes
+ 
+
+ 41.63 MYR
+
+ 
+ 
+
+
+ 
+ 
+
+ 
+
+ *Total charges
+ 
+ 
+
+ 263.08 MYR
+ 
+
+ 
+
+ 
+
+
+
+
+
+ 
+ 
+ 
+
+
+ https://click.tx.ihg.com/?qs=eyJkZWtJZCI6ImE3MzA2N2JlLWU5NjMtNGQ1My1iOTFkLTlhYzY1OGJiZDA3NSIsImRla1ZlcnNpb24iOjEsIml2IjoiSSt1SEdSNWlWR2F4RVJpcVlGMi9HZz09IiwiY2lwaGVyVGV4dCI6Ikg2K1N5cWNHdDVEbWdWWVp4Z1ZWTGo4Q1V3WDZOTUY0NGpuRHQvbjQzblhsb0M5bWdOQWhaNGtISjh5L1RhRGpOY2Y2T1hGRWJJT2E3STNLNWFHL1c3ZVY3eVpPUjgvN01WaCtoVWdxd2lQcmh4a2VZbFJtc1JFWXFtQmR2eG89IiwiYXV0aFRhZyI6Ilc3ZVY3eVpPUjgvN01WaCtoVWdxd2c9PSJ9 
+
+ Modify or cancel reservation
+  
+ 
+  
+ 
+
+
+
+
+ 
+ 
+ 
+ 
+
+Cancellation Policy:
+ Canceling your reservation before 4:00 PM (local hotel time) on Thursday, 5 March, 2026 will result in no charge. Canceling your reservation after 4:00 PM (local hotel time) on 5 March, 2026, or failing to show, will result in a charge of 1 night per room to your credit card or other guaranteed payment method. Taxes may apply. Failing to call or show before check-out time after the first night of a reservation will result in cancellation of the remainder of your reservation. 
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+ 
+
+
+ Estimated points to be earned
+
+
+ 1,124
+ 
+
+
+ https://click.tx.ihg.com/?qs=eyJkZWtJZCI6ImQ0ZGQ0OWViLTFhY2YtNDFmMC1hYThiLTVjM2I0NWIzNTkzNCIsImRla1ZlcnNpb24iOjEsIml2IjoiSTBRZHM1Q3JGa29iNndOejBncmRjUT09IiwiY2lwaGVyVGV4dCI6IlFyWTI5Mmh6SXpOcDhvQm4zUUVYWnhQWEJ3OW9QUnkwekhhbys1YjB2K1JDUS9OenVkT2NHNExxTGtvQzhlZDJJeW5EMWRXUkQ2c0lsaFdJcGZ1aE9Iaks0UXdRaHZaNTkrVmpTSklQWmlORUhiT1FxeFpLRytzRGM5SUszWEU9IiwiYXV0aFRhZyI6Ik9Iaks0UXdRaHZaNTkrVmpTSklQWmc9PSJ9 
+View your account  
+
+
+ 
+ 
+
+
+ 
+
+Complete your trip
+
+
+Manage stay preferences
+
+
+Room on higher floor, extra pillows&#8230;
+
+https://click.tx.ihg.com/?qs=eyJkZWtJZCI6IjRmOTIzMWEwLWFiYTEtNDgzNy1iMWFkLWQxY2Q0MDQxY2EwNiIsImRla1ZlcnNpb24iOjEsIml2IjoibnlnZXg2YmZQaFdsUkd5Skp1ektlZz09IiwiY2lwaGVyVGV4dCI6Im5McUh6VDZlZmh3UWpZMzNPdXFVdVVKY2hXRk5BRGhRZmVrQU5EdHBjRE5mWGNxSjJUYmh3RDMvL2hyS1hXMmgwUEFycy9lTnZZNjd3eVBVRjcwMEYwZ1J2Z0VISzZ2bHg1ZG1OUnlIN3A4b0hzZW0zejRWcFVSc2lTYnN5bm89IiwiYXV0aFRhZyI6IkYwZ1J2Z0VISzZ2bHg1ZG1OUnlIN2c9PSJ9 
+Set preferences 
+
+
+
+
+Pet policy
+
+
+
+No pets allowed.
+
+      
+
+
+
+Valet parking
+
+
+Daily Valet Parking Fee: RM20.00 
+
+  
+
+
+Tours & Activities
+
+
+Book a tour, restaurant and more
+
+https://click.tx.ihg.com/?qs=eyJkZWtJZCI6IjdiMWFiYTBlLWNlMWQtNGQyNC1iNDJkLTQ0NmU5ZTk2YzdiYiIsImRla1ZlcnNpb24iOjEsIml2IjoiVnc4VDJvSVB4REI4YU1VYU80YlRhZz09IiwiY2lwaGVyVGV4dCI6InFkUis1L01VNkZLczdjOVYzdmExN2hEVVJKbWYzTkFnalhGdm1tM3BkbzZZSzlZTVgrc0lBT0d4VDJQUWI3cUlDL3dGZ3BTY0RyRjhNeFhGemN1WUJNaXkwWEhKZkZSQk16bmRqOGZJV0ZjUEU5cUNEOFF3ZkdqRkdqdUcwMm89IiwiYXV0aFRhZyI6IkJNaXkwWEhKZkZSQk16bmRqOGZJV0E9PSJ9 
+View activities 
+
+ 
+
+
+Restaurants
+
+
+Find places to eat during your stay
+
+https://click.tx.ihg.com/?qs=eyJkZWtJZCI6ImE0ZGRkZjAzLTI5ODItNDYxNS1hMjE5LTQ5NmY1ZTEyNTJhMyIsImRla1ZlcnNpb24iOjEsIml2IjoiSWluRUEzanlJdURHandGSnRiaVA3QT09IiwiY2lwaGVyVGV4dCI6Inl0VmkxbC9kUFEweEI0dVJ3bncrT3Q0SmI3YUdYUDAzQ3Y4eHp3UERlaXh4YTF6MloxWlc0bDRpNWpCQWg1OXR6SWIvb2lqdnlNTXB5eW5QUUlldHU5ZE95YW5jSmV0VzVYN3RQclVQR3lJcHhBTjQ4aUxneG84QlNiVzRqK3c9IiwiYXV0aFRhZyI6InU5ZE95YW5jSmV0VzVYN3RQclVQR3c9PSJ9 
+View hotel dining 
+
+https://click.tx.ihg.com/?qs=eyJkZWtJZCI6IjA0NTZiOWUxLWI4MDctNDAzZC1iNWQwLTFkNjFjYWMxYjQ1ZiIsImRla1ZlcnNpb24iOjEsIml2IjoiK0lDajBwQ3NNSlpyaTlxSzFQenpEdz09IiwiY2lwaGVyVGV4dCI6IjV3dlV5RnVnM1N4R3NwMkcyRC9LOXQ2eTNPM0hMRkcwcmJtSmNWd09xTzlLMTNXZFBSZlRMdXd5dmt5N1E1TjArVnR4WGJNR1pEajBlUDFyempJUnU0TngwWGp3Y0FtZ3dONHNQbHhRZFBpQW85S1FyRENXYTR2YWl0VDg4dzg9IiwiYXV0aFRhZyI6InU0TngwWGp3Y0FtZ3dONHNQbHhRZEE9PSJ9 
+View nearby restaurants 
+
+
+Transportation
+
+
+Book an airport shuttle or private transportation
+
+https://click.tx.ihg.com/?qs=eyJkZWtJZCI6IjljYmYzZDZiLTkzMzktNGQwMS1iMDg4LTgyYWM2OTA1OTk4YiIsImRla1ZlcnNpb24iOjEsIml2IjoicmJTSW43WStyclN5bktDdmpXNmlOZz09IiwiY2lwaGVyVGV4dCI6InluUjI0Z05WdDRyNTNBajAwSituS25zS1YxS1lXdy9DbGRhTXJlZWc4MXFwY3gzdzJBWXNmd0NQVUF5K3hHMXd4dnl5dE1ncEZyN2VLU3QwcUo2V29CaVhHZjdMeC9BQkZudWdEemxBcEsyMGlKKzJQcTYwc3B5Z3I0MXVvalk9IiwiYXV0aFRhZyI6Im9CaVhHZjdMeC9BQkZudWdEemxBcEE9PSJ9 
+View services 
+
+
+
+
+
+Car rental
+
+
+Rent a car for your trip
+
+https://click.tx.ihg.com/?qs=eyJkZWtJZCI6ImFlMTQwNDQ5LTE0NGYtNDlhZi05N2E2LWJmOWE0Yjg3NjM1YSIsImRla1ZlcnNpb24iOjEsIml2IjoiWW1mWDJmdllFck9IYlhUWDJMaUpSUT09IiwiY2lwaGVyVGV4dCI6InNMRFoxM0hSL3EzUzR6N2plOHEzenZXUUhuQmdBaWQ3OHhQa0syRnVSaDY3R2hpU1lyaFp4cmxCVDlmanhVMDJtOU5PM2MvVGxPTW5YOExPUlpyVWJycjJLQlRTK3J3Y2x2UWFYNFUxbEdKbjE5bjcyQkt6aDIxMDE5aTRpVVU9IiwiYXV0aFRhZyI6ImJycjJLQlRTK3J3Y2x2UWFYNFUxbEE9PSJ9 
+Reserve a car 
+
+  
+Need help?
+
+https://click.tx.ihg.com/?qs=eyJkZWtJZCI6IjA4MDQwMTQyLWNlOWItNGYzYS05MzhlLTc5MDkxNDY1YmI3YiIsImRla1ZlcnNpb24iOjEsIml2IjoiQk9PNmtMeFBDREpVRklSWStqbUhDZz09IiwiY2lwaGVyVGV4dCI6ImhXTjZLOWtrd282amhZdGptaktueXJtQjQ1dUZzNGY2aThqRk0zeGJtTitscFh3NWJaYUhMVDdMSm5UVzFyT2RhbXZNd2d2VDhVaUYrby94eFdhNHRqT1lBOWF3SG90NDAweWd0RzA0OXdUanVwQzhUd2d5VkJTRVdQbzVod289IiwiYXV0aFRhZyI6InRqT1lBOWF3SG90NDAweWd0RzA0OXc9PSJ9 
+Visit Customer Care 
+
+  
+
+
+https://click.tx.ihg.com/?qs=eyJkZWtJZCI6IjZjNGY1NGM0LTFlZjQtNGQzNi1iMjJiLWQ5OTI1MjRhNTY1NiIsImRla1ZlcnNpb24iOjEsIml2IjoiVUFibXhjZXYyTUZ1cm9YR1FvS21IQT09IiwiY2lwaGVyVGV4dCI6Im41M0huVklXVzJJR2J2ZXEvSURKWFVmZTcrRXZ0VnM0dkU4SXRwSDJENHZLWG02RHJBaUF1SzkzUTNIZ0tsSUZRaURPVVlDN0poeVVwNHRiR21qdFRyNytqTEZ2dTVUcnFYNVFVQWJteGNldjJNRnVyb1hHUW9LbUhBPT0iLCJhdXRoVGFnIjoiV3hwbzdVNisvb3l4Yjd1VTY2bCtVQT09In0%3D 
+
+
+
+
+
+
+
+
+
+
+  
+
+ Subscription Center: https://click.tx.ihg.com/subscription_center.aspx?qs=eyJkZWtJZCI6IjMwMDhjYTcyLTQ4NDktNGE2Yi04Yjg5LWM2NWZlYjRhNmRkOCIsImRla1ZlcnNpb24iOjEsIml2IjoiVVpUNTQ0cUUwWWhsSWtWc1AxUEN3Zz09IiwiY2lwaGVyVGV4dCI6IkRLeUFabHIyd3BRTGhZNW01MG11aUsyQVNMVUw1dTNuZDVNL1RkSGVUQlFUZU5PSGMxWStlWVhpdHZoUURPaFdIckRVNE1YSDFDVUpseEdmbGJUaWQ0YUk2alJrZ0ZobDNHaElvTDJpbk5uVUlWOWxVWlQ1NDRxRTBZaGxJa1ZzUDFQQ3dnPT0iLCJhdXRoVGFnIjoiWklCWVpkeG9TS0M5b3B6WjFDRmZaUT09In0%3D Profile Center: https://click.tx.ihg.com/profile_center.aspx?qs=eyJkZWtJZCI6IjNiMmYwZjUxLTRhZDUtNDIzYy04MDJjLTg1NWVkMWJkYWMxNSIsImRla1ZlcnNpb24iOjEsIml2IjoiNHRYQndTMEpob2FYT3p4bGZYQ2xLUT09IiwiY2lwaGVyVGV4dCI6IllSZHFHMHNpQXlwK3RpWGxKbnpXSlozeUhEMnh6WE93ZXF1NEIzTStDSHFzRC82QlgvVU5qNTlxOFIyVGdrWFZYVWRYMTRHTW9DZnpvNWpxSTVqTGdXSGRFTkhmNzlaWi9DSFMzRGd6VlVTOENJNGw0dFhCd1MwSmhvYVhPenhsZlhDbEtRPT0iLCJhdXRoVGFnIjoiMysvV1dmd2gwdHc0TTFWRXZBaU9KUT09In0%3D Sender address: Six Continents Hotels, Inc. Three Ravinia Dr. Suite 100
+ Atlanta GA 30346 US 
+
+
+  
+ 
+
+
+
+https://click.tx.ihg.com/?qs=eyJkZWtJZCI6IjdmZDkzZGYxLTFmMjktNGUzOS1iZjM4LTFhZTRhZDZiN2Y0YiIsImRla1ZlcnNpb24iOjEsIml2IjoiRlhSdEpQMmM4K05yMHg0dEhzT0t6dz09IiwiY2lwaGVyVGV4dCI6InlUR09NL1FXVHB1WWhSKzZ4eTluamhLeXVVVGpUL1Zwdnp3SFphN3FCYWpQVURyL1Z5Y01QY2NnMk8zaWZhSzgwdDBXdFV3TURIamJRRFF4dVZteEJzeER6RlpXUS8vK3lSQVR1Y0M4THhWMGJTVDluUFBqYTlNZUxSN0Rpczg9IiwiYXV0aFRhZyI6IkJzeER6RlpXUS8vK3lSQVR1Y0M4THc9PSJ9 
+
+  
+  
+ 
+https://click.tx.ihg.com/?qs=eyJkZWtJZCI6IjkxOGNjMDlhLWJlODctNDAzNy05OTVkLTRjYzczMTdjMWFmYSIsImRla1ZlcnNpb24iOjEsIml2IjoiMEM3bFY3Mk9mcFo3TjF5dTBjd0h5UT09IiwiY2lwaGVyVGV4dCI6InhkN3FEYkxVNnpONlp2bVlhT3JmMEZINEdwcm4zVW8yMlB0bFFoQnVkdS9NTnhURkRua3BXWkwyMEhjcFVqQ1haZmlvUTl2bkZsTlYwMXFTK1NLWVArb0szaHJTZzllYVp1WG5TeVUvMDlBdTVWZTlqbjZXZXpkY3J0SE1COGs9IiwiYXV0aFRhZyI6IlArb0szaHJTZzllYVp1WG5TeVUvMHc9PSJ9 
+
+  
+  
+ 
+https://click.tx.ihg.com/?qs=eyJkZWtJZCI6IjNmOWYwZjgzLWQ4N2QtNDkyYy1iY2E4LTZmNTliZWMxNTdiZCIsImRla1ZlcnNpb24iOjEsIml2IjoiUVF4TXo1WmlyQVZPNkovMW5JWGRFUT09IiwiY2lwaGVyVGV4dCI6Ink5ZVU4Rkd5WDZiYk9LZXl2ZUp1aWovV0YwbmJsdkFyNHplTTQra1pidWlCQ2drblR2QnYydVFFYWxyZmtXMkQ4VU1rMnNTeE5PalcrSk9PT3JtTzJ3ODJJWVZSVXFwN2piQzVZZnlSUkVFTVRNK1dZcXdGVHVpZjlaeUYzUkU9IiwiYXV0aFRhZyI6IjJ3ODJJWVZSVXFwN2piQzVZZnlSUkE9PSJ9 
+
+ 
+ 
+ 
+
+ 
+
+ 
+
+
+ 
+ https://click.tx.ihg.com/?qs=eyJkZWtJZCI6ImFmNWM0OTA2LTVhMWItNGU2Yy1iMTVhLWM1YWM3ZjgzM2RjMiIsImRla1ZlcnNpb24iOjEsIml2IjoiVUNIaTA0Rlo0V24zY3RwM09EeWsrQT09IiwiY2lwaGVyVGV4dCI6IlZROGJtQVV4QUNVdFkzWmRoTjZsVG1yekJUbmNrR0poSHo2dVRzakhEdDFYWUF2YW1idlNDS1RQUWhPOUpyUGpWanFvTVd6SnFmeTN1eldQYmp4NHIzT3lzWm0vQkRxTGpjUEJIRU5QRjFBaDR0T0JXZUZwOTNMYWR6ZzhwUGc9IiwiYXV0aFRhZyI6InIzT3lzWm0vQkRxTGpjUEJIRU5QRnc9PSJ9 
+
+
+ Download the IHG One Rewards App
+
+ 
+
+
+ 
+
+
+Additional Hotel Information
+
+
+ 
+ 
+ 
+ 
+ 
+ Any add-on selections will appear as a separate charge on your hotel invoice. Only room upgrade charges will be combined with the room rate. All other purchases will be invoiced separately at the hotel.
+
+
+ 
+ Description of taxes and additional charges:
+ 
+ 
+  18.8% per night not included in rate effective 6 March, 2026 through 7 March, 2026.<br><br>
+ 
+ 
+ 
+ 
+ 
+Early departure fee:
+ 280.00 MYR 
+
+ 
+ 
+
+ *Additional taxes and charges may apply. Other hotel-specific service charges may also&nbsp;apply.
+ 
+ 
+ 
+ 
+
+
+ 
+
+https://click.tx.ihg.com/?qs=eyJkZWtJZCI6ImEzZGU1ODIxLTUwOTAtNDE0ZS04ZTBjLTEwOTc4NGEyMGU0ZiIsImRla1ZlcnNpb24iOjEsIml2IjoiNU5zcEJtSGZJK1VZeUZuR3lTQWluQT09IiwiY2lwaGVyVGV4dCI6ImVYNmxENytNL0dOWkF3YzNCdDFWWlV4b203d2JMclNmZ2I1MWRPQXVHSEZIWVhlaVJRcVhHMTdhcmNZM0NvaVlwVWZHVUo1bUVvWkZHZXE2eEx3cFBkVFZNckJUMDBVUWFoQjBLZTFiMGVUYktRWmgzeVBsR01oWnhza2dJcHc9IiwiYXV0aFRhZyI6IlBkVFZNckJUMDBVUWFoQjBLZTFiMFE9PSJ9 
+
+https://click.tx.ihg.com/?qs=eyJkZWtJZCI6Ijc2OWIwNGUzLWM5MGMtNGQ3Ny05ZDk2LWEzZDAyMzJjN2M4YSIsImRla1ZlcnNpb24iOjEsIml2IjoiVzU5UjFYTHVzNUx4VmhyT1JxdWw0Zz09IiwiY2lwaGVyVGV4dCI6InUyOVBqQ2VjRXV2Z094aTl5YjMyTzJBdlNOd0VtVVIyRUlKT01wOHp3cW9wbWp6ZXJ6R1RqaXZxWXliTFlGK0tJamljRUt0bFdmS0R6Unl6TUZEQ1ZTSmN1UkFFSERrT3dVNmRVNmZBczF1ZlVkVnk3ck9TOFZZYXprYXJwZUk9IiwiYXV0aFRhZyI6IlZTSmN1UkFFSERrT3dVNmRVNmZBc3c9PSJ9 
+
+ 
+
+ 
+
+
+ 
+
+ 
+
+ 
+ 
+ 
+
+ 
+
+ 
+This email was sent to chris.catignani@gmail.com
+
+You have received this email as a result of your recent transaction with Holiday Inn Express<span style="font-size: 70%; line-height: 0px; vertical-align: 3px; -webkit-text-size-adjust: none; mso-line-height-rule:exactly;">®</span> Hotels & Resorts. 
+
+This email is for posting only. Please do not reply. 
+
+Only the reservation as entered into and confirmed by our system will be honored. Any written or printed confirmation that has been altered may be rejected by the hotel. 
+
+As exchange rates may fluctuate from the time a reservation is made until the time of arrival, the confirmed rate is guaranteed in the hotel's base currency. Your privacy is extremely important to us. Read our 
+
+https://click.tx.ihg.com/?qs=eyJkZWtJZCI6IjExNGEwNGRkLTNhNDItNDVlYS1iYjUwLWEwNDhlNDA1ODQ1MSIsImRla1ZlcnNpb24iOjEsIml2IjoiTm9PbGRRaTdUbFY4bjhzWkdnVUpvUT09IiwiY2lwaGVyVGV4dCI6IktNRkt1dUhrejBZODc3NEJ1eVc1RTdkems3c3FoRTVuRTVDVWp6QmN1dENiME1RV2xFOXZSUXBVamtUbFBObmpLWUhpeVFpd0xIUUdEaTdhdFFHcW5Wem1BY3YxeTFlMWJLMW1nWk1YWWphRHBYVUl1MDVWZkovTEdSb0ZDYUU9IiwiYXV0aFRhZyI6Im5Wem1BY3YxeTFlMWJLMW1nWk1YWWc9PSJ9 
+Privacy Statement . 
+
+(c) 2026 IHG, Three Ravinia Drive, Suite 100, Atlanta, Georgia, 30346-2149 USA.
+
+All rights reserved. Most hotels are independently owned and/or operated.
+ 
+
+ 
+ 
+
+
+
+--C7LLqArToBs2=_?:
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!--inventoryTypeName_new-->
+
+
+
+
+
+<!--pipe symbol-->
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ <!--CHECK IN Check out Format-->
+
+
+ <!--ssjs-->
+
+<!--ignore_mailbrand--> 
+
+
+
+<div style="display:none;">
+  
+  
+
+</div><!--Colorcodes-->
+
+
+
+
+
+
+
+
+
+<!--Campaign_confg-->
+
+
+
+
+<!--forlinks amp-->
+ 
+<!--Phone_number-->
+
+
+<!--Total Charge for Cancellation Emails-->
+
+
+<!--Full Hotel Name for LX SubjectLine and PreHeader-->
+
+
+<!--Logic for Ruby Primary Image from Static DE-->
+
+
+
+<div style="display:none;">
+
+</div>
+
+
+
+
+
+
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+  <head>
+<meta name="robots" content="noindex, nofollow"/>
+<meta name="referrer" content="no-referrer"/>
+<title>IHG Hotels & Resorts</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta content="telephone=no" name="format-detection">
+ <link rel="shortcut icon" type="image/x-icon" href="https://digital.ihg.com/is/image/ihg/app-web-chiclet-ihg?fmt=png-alpha"/>
+   
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+    @import url("https://use.typekit.net/phz3wfy.css");
+</style>
+   
+    <style type="text/css">
+      ReadMsgBody{ width: 100%;}
+      .ExternalClass {width: 100%;}
+      .ExternalClass, .ExternalClass p, .ExternalClass span, .ExternalClass font, .ExternalClass td, .ExternalClass div {line-height: 100%;}
+      body {-webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;margin:0 !important;}
+      p { margin:0px; padding:0px;}
+      table td { border-collapse: collapse;}
+      img {outline:0;}
+      a img {border:none;}
+      @-ms-viewport{ width: device-width;}
+       @font-face {
+    font-family:'Trebuchet MS', Arial, Helvetica, sans-serif;
+    font-style: normal;
+    font-weight: 400;
+    src: url(https://galeinternal-emailcreatives.s3.us-west-2.amazonaws.com/IHG_Fonts/TrebuchetMS.woff) format('woff');
+    }  
+    </style>
+    <style type="text/css">
+
+      @media only screen and (max-width: 480px) {
+        .imght{height: auto important;}
+        .hide{display:none !important;}
+        .block{display:block !important;}
+        .pad0{padding:0px !important;}
+        .padb10{padding-bottom:10px !important;}
+        .vtop{vertical-align:top !important;}
+    .aleft{text-align: left !important;}
+        .wb100{display:block !important;width: 100% !important;}
+        .w10{width: 10% !important;}
+        .w90{width: 90% !important;}
+        .container {width: 100% !important;}
+        .footer { width:auto !important; margin-left:0; }
+        .mobile-hidden { display:none !important; }
+        *.show {
+          display: block !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow: visible !important;
+          width: auto !important;
+          max-height: inherit !important;
+        }
+        .logo { display:block !important; padding:0 !important; }
+        img { max-width:100% !important; height:auto !important; max-height:auto !important;}
+        .header img{max-width:100% !important;height:auto !important; max-height:auto !important;}
+        .photo img { width:100% !important; max-width:100% !important; height:auto !important;}
+        .drop { display:block !important; width: 100% !important; float:left; clear:both;}
+        .footerlogo { display:block !important; width: 100% !important; padding-top:15px; float:left; clear:both;}
+        .nav4, .nav5, .nav6 { display: none !important; }
+        .tableBlock {width:100% !important;}
+        .responsive-td {width:100% !important; display:block !important; padding:0 !important; }
+        .responsive-td-new {width:100% !important; display:block !important;}
+        .fluid, .fluid-centered {
+          width: 100% !important;
+          max-width: 100% !important;
+          height: auto !important;
+          margin-left: auto !important;
+          margin-right: auto !important;
+        }
+        .fluid-centered {
+          margin-left: auto !important;
+          margin-right: auto !important;
+        }
+        /* MOBILE GLOBAL STYLES - DO NOT CHANGE */
+        body { padding: 0px !important; font-size: 16px !important; line-height: 150% !important;}
+        .buttonstyles {
+          font-size: 16px !important;
+        }
+        /* END OF MOBILE GLOBAL STYLES - DO NOT CHANGE */
+      }
+      
+      @media only screen and (max-width: 640px) {
+        .container { width:100% !important; }
+        .mobile-hidden { display:none !important; }
+        *.show {
+          display: block !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow: visible !important;
+          width: auto !important;
+          max-height: inherit !important;
+        }
+        .logo { display:block !important; padding:0 !important; }
+        .photo img { width:100% !important; height:auto !important;}
+        .nav5, .nav6 { display: none !important;}
+        .fluid, .fluid-centered {
+          width: 100% !important;
+          max-width: 100% !important;
+          height: auto !important;
+          margin-left: auto !important;
+          margin-right: auto !important;
+        }
+        .fluid-centered {
+          margin-left: auto !important;
+          margin-right: auto !important;
+        }
+      }
+    </style>
+    <!--[if mso]>     <noscript>     <xml>     <o:OfficeDocumentSettings>       <o:AllowPNG/>       <o:PixelsPerInch>96</o:PixelsPerInch>     </o:OfficeDocumentSettings>     </xml>     </noscript>     <![endif]-->
+    <!--[if mso]>       <style type="text/css">           /* Begin Outlook Font Fix */ body,td,th,div,h1,h2,h3,h4,h5,h6,.socialshare-innertable a,a,p {                  font-family : Arial, helvetica, sans-serif !important;               }           /* End Outlook Font Fix */        </style>     <![endif]-->
+  </head>
+  
+
+  
+  <body bgcolor="#ffffff" text="#000000" style="background-color: #ffffff; color: #000000; padding: 0px; -webkit-text-size-adjust:none; font-size: 16px; font-family:arial,helvetica,sans-serif;"><style type="text/css">
+div.preheader 
+{ display: none !important; } 
+</style>
+<div class="preheader" style="font-size: 1px; display: none !important;">Thank you for booking with Holiday Inn Express Kuala Lumpur City Centre.</div>
+    <div style="font-size:0; line-height:0;"><img src="https://click.tx.ihg.com/open.aspx?BZYLT6BT7GJU5BH4C7T3KLLXYI.110050&d=110050&bmt=0" width="1" height="1" alt=""></div>
+    <table width="100%" border="0" cellpadding="0" cellspacing="0" align="center">
+     
+      <tr>
+        <td align="center">
+          <table cellspacing="0" cellpadding="0" border="0" width="600" class="container" align="center">
+            <tr>
+              <td>
+                <table class="tb_properties border_style" style="background-color:#FFFFFF;" cellspacing="0" cellpadding="0" bgcolor="#ffffff" width="100%">
+                  <tr>
+                    <td align="center" valign="top">
+                      <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%">
+                        <tr>
+                          <!-- added padding here -->
+                          <td class="content_padding" style="">
+                            <!-- end of comment -->
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                              <tr> <!-- top slot -->
+                                <td align="center" class="header" valign="top">
+                                  <table align="left" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                    <tbody>
+                                        <tr>
+                                          <td align="left" valign="top">
+                                            <table cellspacing="0" cellpadding="0" style="width:100%">
+                                              <tbody>
+<tr>
+        <td align="right" valign="top" style="font-family: 'Inter', Arial, Helvetica, sans-serif; font-size:12px; line-height:15px;padding:0px 5px 5px 0px;">
+      <a href="https://click.tx.ihg.com/?qs=eyJkZWtJZCI6IjQ0ZDlmOWE1LTc4Y2QtNDBlNC1hMjViLTI2ZjJhOGRkN2Y2NyIsImRla1ZlcnNpb24iOjEsIml2IjoiSmxGZS9NNDVtb2FoY1Z2dnFYUkhBZz09IiwiY2lwaGVyVGV4dCI6ImtIQnNBQllRT1ZKYmxYdklXSlJHZmcvS1F6M3FvM01ONTh2K3QxVVNQSUNqR3JzZVNmeDVCcmlXY3FTRFd0TmRxVi9BazdhWXFLV3hqRjAxUzF2akdrc3lYZWNCQnNzOVJHSGlKbEZlL000NW1vYWhjVnZ2cVhSSEFnPT0iLCJhdXRoVGFnIjoiTlV0YjR4cExNbDNuQVFiTFBVUmg0Zz09In0%3D"  target="_blank" style="color:#555555;text-decoration:underline;"> Web Version</a>
+        </td>
+      </tr>   
+
+
+<tr><td align="left" valign="top">
+<table cellpadding="0" cellspacing="0" width="100%" role="presentation" style="min-width: 100%; " class="stylingblock-content-wrapper"><tr><td class="stylingblock-content-wrapper camarker-inner">
+<table cellpadding="0" cellspacing="0" width="100%" role="presentation" style="min-width: 100%; " class="stylingblock-content-wrapper"><tr><td class="stylingblock-content-wrapper camarker-inner"><table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+ 
+  <tr style="background-color:#002D72">
+   <td align="right">
+    <a   data-linkto="other" href="https://click.tx.ihg.com/?qs=eyJkZWtJZCI6IjYxODBkMzEwLTcxMDQtNDdiOS05NWEzLTIxNGMxYjQyYzg4YSIsImRla1ZlcnNpb24iOjEsIml2IjoiS0pYRVFWVDdnVUQ5d0FzNXEybFNkdz09IiwiY2lwaGVyVGV4dCI6Ild5UXFKVExqSTRHNXhWdVkvZC9ZL1B1V2xwMWl3VUxuLzZEaUJSV3FhcVBRTlQxb1pSZnhKWjVWL0R2NjUzeTlEdEhOTy9uMXBIcVJZdE1SQ0pzc1l6VGp2Tnp3MFRlTVhEYTkwb21tRGtUd1hyRnpLSlhFUVZUN2dVRDl3QXM1cTJsU2R3PT0iLCJhdXRoVGFnIjoiOE5FM2pGdzJ2ZEtKcGc1RThGNnhjdz09In0%3D" target="_blank" title="Holiday Inn Express"><img alt="Holiday Inn Express" data-assetid="29949" height="71" src="https://image.tx.ihg.com/lib/fe31117171640478701373/m/1/6f81dd64-787a-4e19-a0fd-8ac03c3bc76a.png" style="width: 100%; padding: 0px; text-align: center; display: block; height: 71px;" width="263"></a></td><td align="left">
+    <a   data-linkto="other" href="https://click.tx.ihg.com/?qs=eyJkZWtJZCI6IjI5MGE4NjMwLWJiMzEtNDg1Yi04OWI3LTkxNTRjMDYwODhmNSIsImRla1ZlcnNpb24iOjEsIml2IjoiTmNIUjlRWFl0ZUs3SlNCWTJ5OENtdz09IiwiY2lwaGVyVGV4dCI6IkFuaDA1bm9lbE5kWktEUkQwNTVubC9iZVA5aEg3UEloOWVEaVI2dHRuUnZmZU4xbDJ6WjZtSkZZaDJLeWFtVzhMKzRlakU3czY1OU1mc2xiVk5mKzJBSHpFSTNMYmVzR3dkanZXUGs5THo5MjF6M1VOY0hSOVFYWXRlSzdKU0JZMnk4Q213PT0iLCJhdXRoVGFnIjoieTIzckJzSFk3MWo1UFM4L2R0YzkxQT09In0%3D" target="_blank" title="IHG One Rewards"><img alt="IHG One Rewards" data-assetid="29945" height="71" src="https://image.tx.ihg.com/lib/fe31117171640478701373/m/1/470e6557-803f-4d75-8a75-410a48bc7e1d.png" style="width: 100%; padding: 0px; text-align: center; display: block; height: 71px;" width="337"></a></td></tr></table> </td></tr></table>
+
+</td></tr></table>
+ 
+
+  </td></tr>
+
+<tr><td align="left" valign="top">
+                                              
+
+
+
+
+
+
+<table dir="ltr" align="center" bgcolor="#ffffff" cellpadding="0" cellspacing="0" role="presentation" width="100%" style="border-bottom:1px solid #C2C7CA;">
+ 
+  <tr>
+   <td align="center" style="padding:15px 4%;font-family:'Inter', Arial, Helvetica, sans-serif;" valign="top" width="100%">
+    <table align="center" bgcolor="#ffffff" cellpadding="0" cellspacing="0" role="presentation" >
+   <tr>  
+       <td align="right" style="padding-right:5px;" valign="middle">
+        <img alt="Login Icon" height="13" src="https://image.mc.ihg.com/lib/fe32117171640478701372/m/1/99912926-482c-44f5-bc4a-3011524e234b.png" style="display: block; padding: 0px; text-align: right; height: 13px; width: 13px; border: 0px;" width="13"></td>
+        <td align="right" class="padr10" style="padding-right:18px;" valign="middle">
+        <p role="contentinfo" style="text-align:right;line-height: normal;font-size:14px;font-family: 'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;">
+         <span style="color:#555555;"><a   data-linkto="https://" href="https://click.tx.ihg.com/?qs=eyJkZWtJZCI6ImMzM2Q2OTc4LWUyYjItNDVlMy1iNzM2LWFlZmE1Njc1NWJiNSIsImRla1ZlcnNpb24iOjEsIml2IjoicGdiSHI4Qk5rRXNrNHYwT0p1cUtTdz09IiwiY2lwaGVyVGV4dCI6IlE5YWFjckhub0ZPRkpyVFFBUUJ5ZFo5UnBEVThzb2R2QmJyVGw1ZlVTSW5Vbysxc2hrUzd3bUNkZlBnMForRlZzbDJMUGRSU09jMFh2c214UnozV1RvUjdpQVdNUUFMNElXNXFaU0lsdktZR3g2L0FUWkJMSk9MOURpYnFpa3M9IiwiYXV0aFRhZyI6IlRvUjdpQVdNUUFMNElXNXFaU0lsdkE9PSJ9" style="color:#555555; text-decoration: none" target="_blank" title="SIGN IN">SIGN IN</a></span></p></td>
+     <td align="right" style="padding-right:0px;" valign="middle">
+        <p role="contentinfo" style="text-align:right;font-size:14px;font-family: 'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;">
+         <span style="color:#555555;">|</span></p></td>
+<td align="left" class="pad10" style="padding-left:18px;color:#555555;" valign="middle">
+        <p role="contentinfo" style="text-align:left;font-size:14px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;line-height:18px;padding:0px;color:#555555;"><a   data-linkto="https://" href="https://click.tx.ihg.com/?qs=eyJkZWtJZCI6ImIwZWE5MzFkLTU4NDQtNGVlMi04Mzk3LWJjODg5OTI4ZTQzNSIsImRla1ZlcnNpb24iOjEsIml2IjoicDhEemg0SEd5RkhKNHRlMi9YNDVzUT09IiwiY2lwaGVyVGV4dCI6IjZZR2p1YTY2aDVZTHI1a0ROOElWMmV1ekc2UmxaQlZrR2dIUktNRU5XYlBpTy9jbVFMWDNkMFhJOGt5WlcwT3AwRloxZTZMRlNTVGsxOVlrbi9hcHk5bGE4WnRDaC9GRFBLVm92SENib2FmQTg0ZUJ4c2hSeWVMWHR2MStPYkU9IiwiYXV0aFRhZyI6Ink5bGE4WnRDaC9GRFBLVm92SENib1E9PSJ9" style="color:#555555;text-decoration: none" target="_blank" title="Diamond Elite">&zwnj;Diamond Elite&zwnj;</a></p></td></tr></table></td></tr></table> 
+
+
+
+ <!--tierstatus-->
+  
+ 
+</td></tr>
+  
+  <tr>
+<td class="responsive-td" valign="top" style="width: 100%;">
+<div style="display:none;">
+  
+</div>
+
+
+
+<!--  
+
+
+
+
+
+
+  -->
+<table  cellpadding="0" cellspacing="0" role="presentation" width="100%">
+    <tr>
+      <td style="padding:30px 16px 0px 16px;">
+        <table dir="ltr" align="center" cellpadding="0" cellspacing="0" role="presentation" width="100%">
+          <tr>
+            <td align="left" style="mso-line-height-rule:exactly;padding:0px 0px 10px 0px;font-family:'Inter', Arial, Helvetica, sans-serif;" valign="top">
+              <h1 role="heading" style="text-align:left;font-family:'Inter', Arial, Helvetica, sans-serif;line-height:34px;font-weight:400;font-size:30px;margin:0px;padding:0px;color:#000000;">
+    Christopher, your reservation is confirmed!
+     
+    
+              </h1>
+            </td>
+          </tr>
+          <tr>
+            <td align="left" style="mso-line-height-rule:exactly;padding-bottom:0px;" valign="top">
+              <p role="contentinfo" style="text-align:left;margin:0px;padding:0px;color:#555555;font-size:24px;line-height:28px;font-family:'Inter', Arial, Helvetica, sans-serif;font-weight:400;">
+                Confirmation #61827637
+                
+              </p>
+            </td>
+          </tr></table></td></tr></table>
+
+<table dir="ltr" cellpadding="0" cellspacing="0" role="presentation" width="100%">
+  <tr>
+    <td style="padding:15px 16px 0px 16px;">
+      <table   align="center" cellpadding="0" cellspacing="0" role="presentation" width="100%">
+        <!-- HCM Photo Begins -->
+        <tr>
+          <td>
+            <table cellpadding="0" cellspacing="0" role="presentation" width="100%">          
+              <tr>
+                <td style="padding:0px 0px 15px 0px;">
+                  <table align="center" cellpadding="0" cellspacing="0" role="presentation" width="100%">
+                    <tr>
+                      <td align="center" valign="top">
+                        <a   data-linkto="http://" href="https://click.tx.ihg.com/?qs=eyJkZWtJZCI6IjhiM2I1ZWY0LWZjZDQtNGJmNi04Y2EzLTc1NWRmN2E2MGI4OCIsImRla1ZlcnNpb24iOjEsIml2IjoidHdPRlZnSkp1N0pYRUhxY1VQaWdzUT09IiwiY2lwaGVyVGV4dCI6ImhyamdjUVd0dFZzMFQ3am1rd3hubmFIZHVGV1hHeENjNkNYcHE4QjNhTlp5L25VTHZNRUk4MWxIMnh3bEE3NHVrUzRqQTg3blM3S1cySGZRaHhmSC9tckRLSDdCcjlnek12RUtHT2dtR2J4NFNDSEN0d09GVmdKSnU3SlhFSHFjVVBpZ3NRPT0iLCJhdXRoVGFnIjoid2EvWU16THhDaGpvSmhtOGVFZ2h3Zz09In0%3D" target="_blank" title="Holiday Inn Express Kuala Lumpur City Centre"><img alt="Holiday Inn Express Kuala Lumpur City Centre" data-assetid="24267" src="https://digital.ihg.com/is/image/ihg/holiday-inn-express-kuala-lumpur-9159404245-original" style="display: block; height: auto; width: 100%; padding: 0px; border-radius: 0px;" width="570"></a>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        
+        <!-- HCM Photo Ends -->
+        <!-- Hotel Name - All Brands Begins -->
+        <tr>
+          <td align="left" style="mso-line-height-rule:exactly;padding:0px 0px 15px 0px;font-family:'Inter', Arial, Helvetica, sans-serif;" valign="top">
+            <p role="contentinfo" style="text-align:left;font-size:24px;line-height:28px;font-family:'Inter', Arial, Helvetica, sans-serif ;font-weight:400;margin:0px;padding:0px;color:#002D72;">
+              <span style="text-decoration:none;">
+                <a href="https://click.tx.ihg.com/?qs=eyJkZWtJZCI6ImZkZWIxYzAyLTQ2NTAtNDg1OC04OGJlLWQxYmMyZDVmNzUwYiIsImRla1ZlcnNpb24iOjEsIml2IjoiZWliZUhYTXZ0eUJzMXBwS2hlNUR1QT09IiwiY2lwaGVyVGV4dCI6IjhMOXpmYTVyRXZMZy9kVE1HN1hOSlNzNVM0dUJ2SVV4ckVtMlVwSkI2dkk4Z0k2RjlDNlA3QU9xVElOZFpoMnFuRHRkcFoyUWZCU29DWGxRM0xqSSswNkJ1dkE1T00yTHFQZjVlaWJlSFhNdnR5QnMxcHBLaGU1RHVBPT0iLCJhdXRoVGFnIjoiVU55NHlQdE9nYnJ3T1RqTmk2ajMrUT09In0%3D" style="text-decoration:underline;color:#002D72;" target="_blank" title="Holiday Inn Express Kuala Lumpur City Centre">
+                    
+                    Holiday Inn Express Kuala Lumpur City Centre
+                    </a>
+                  </span>
+                </p>
+          </td>
+        </tr>
+        <!-- Hotel Name - All Brands Ends -->
+        <!-- Hotel Address - All Brands Begins --> 
+        <tr>
+          <td align="left" style="mso-line-height-rule:exactly;padding:0px 0px 10px 0px;">
+            <table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+              <tr>
+                <th align="left" class="" style="font-family:'Inter', Arial, Helvetica, sans-serif;font-weight: normal;" valign="top" width="30%">
+                  <p role="contentinfo" style="text-align:left;font-size:16px;line-height:24px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;color:#555555;font-weight:400;">
+                    Address:&nbsp;
+                  </p>
+                </th>
+                <th align="left" class="" style="font-family:'Inter', Arial, Helvetica, sans-serif;font-weight: normal;" valign="top" width="70%">
+                  
+                  <p role="contentinfo" style="text-align:left;font-size:16px;line-height:24px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;color:#555555;font-weight:400;direction:ltr;">
+                    <span style="color:#555555;text-decoration:none;font-weight:600;">
+                      &zwnj;84 Jalan Raja Chulan,&zwnj;
+                      <br>&zwnj;Kuala Lumpur,&zwnj;&zwnj;&nbsp;50200 Malaysia
+                    </span>
+                  </p>
+                </th>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        
+        <!-- Hotel Address - All Brands Ends -->
+        <!-- Hotel Front Desk - All Brands Begins -->
+        <tr>
+          <td>
+            <table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+              <tr>
+                <td style="mso-line-height-rule:exactly;padding:0px 0px 10px 0px;font-family:'Inter', Arial, Helvetica, sans-serif;" valign="top" width="30%">
+                  <p role="contentinfo" style="text-align:left;font-size:16px;line-height:24px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;color:#555555;font-weight:400;">
+                    Front Desk:&nbsp;
+                  </p>
+                </td>
+                <td style="padding:0px 0px 10px 0px;font-family:'Inter', Arial, Helvetica, sans-serif" valign="top" width="70%">
+                  <p role="contentinfo" style="text-align:left;font-size:16px;line-height:24px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;color:#555555;font-weight:400;">
+                    <span style="text-decoration:underline;font-weight:600;color:#555555;"><a href="tel:+60320288888" style="color:#555555;text-decoration:underline;" title="60320288888">60320288888</a>
+                    </span>
+                  </p>
+                </td>
+              </tr>  
+            </table>
+          </td>
+        </tr>
+        <!-- Additional Guest Service for Kimpton Santa Monica Begins -->
+        
+        <!-- Additional Guest Service for Kimpton Santa Monica Ends -->
+        
+        <!-- Hotel Front Desk - All Brands Ends -->
+        <!-- Hotel Email Address - All Brands Begins -->
+        <tr>
+          <td  style="padding:0px 0px 15px 0px;">
+            <table dir="ltr" cellpadding="0" cellspacing="0" role="presentation" width="100%">
+              <tr>
+                <th align="left" class="" style="font-family:'Inter', Arial, Helvetica, sans-serif;" valign="top" width="30%">
+                  <p  role="contentinfo" style="text-align:left;font-size:16px;line-height:24px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;color:#555555;font-weight:400;">
+                    Email:&nbsp;
+                  </p>
+                </th>
+                <th align="left" class="" style="font-family:'Inter', Arial, Helvetica, sans-serif;" valign="top" width="70%">
+                  <p role="contentinfo" style="text-align:left;font-size:16px;line-height:24px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;color:#555555;font-weight:400;">
+                    <span                           style="color:#555555;text-decoration:underline;font-weight:600;"><a href="mailto:info.kulcc@ihg.com" target="_blank"  style="color:#555555;text-decoration:underline;">info.kulcc@ihg.com</a></span>
+                  </p>
+                </th>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        
+        <!-- Hotel Email Address - All Brands Ends -->
+        <!-- UK Properties Phone Disclaimer Begins -->
+        
+        <!-- UK Properties Phone Disclaimer Ends -->
+        <!-- Ibersotar - Reservation Details Begins -->
+        
+        <!-- Ibersotar - Reservation Details Ends -->
+      </table>
+    </td>
+  </tr>
+  <!-- Iberostar - Reservation Full Description Begins --> 
+  
+  
+  <!-- Iberostar - Reservation Full Description Ends -->
+  <tr>
+    <td style="padding:30px 16px 0px 16px;">
+      <table  align="center" cellpadding="0" cellspacing="0" role="presentation" width="100%">
+        <!-- Reservation Dates Begins -->
+        <tr>
+          <td style="border-bottom:2px solid #DDDDDD;padding:0px 0px 20px 0px;">
+            <table cellpadding="0" cellspacing="0" role="presentation" width="100%" >
+              <tr>
+                <td align="left" style="font-family:'Inter', Arial, Helvetica, sans-serif;" valign="top" width="25%">
+                  <p role="contentinfo" style=" font-size:16px;line-height:20px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;color:#000000;font-weight:600;text-align:left;">
+                    Dates</p>
+                </td>
+                <td align="right" style="font-family:'Inter', Arial, Helvetica, sans-serif;" valign="top" width="75%">
+                  <p role="contentinfo"                      style="font-size:16px;line-height:24px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;color:#555555;font-weight:400;text-align:right;">
+                    6 Mar 2026
+                    <b>-
+                    </b> 7 Mar 2026
+                  </p>
+                </td>
+              </tr>
+              <tr>
+                <td align="right" style="font-family:'Inter', Arial, Helvetica, sans-serif;" valign="top" colspan="2">
+                  <p role="contentinfo"                      style="font-size:14px;line-height:24px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;color:#555555;font-weight:400;text-align:right;">
+                    Check in &zwnj;2:00 pm&zwnj; / Check out
+                    &zwnj;12:00 pm&zwnj;
+                    <br>
+                  </p>
+                </td>
+              </tr>
+              
+            </table>
+          </td>
+        </tr>
+        <!-- Reservation Dates Ends -->
+        <!-- Reservation Rooms and Guests Begins -->
+        <tr>
+          <td style="border-bottom:2px solid #DDDDDD;padding:15px 0px 20px 0px;">
+            <table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+              <tr>
+                <td align="left" style="font-family:'Inter', Arial, Helvetica, sans-serif;" valign="top" width="25%">
+                  <p role="contentinfo" style="text-align:left; font-size:16px;line-height:20px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;color:#000000;font-weight:600;">
+                    Reservation</p>
+                </td>
+                <td align="right" style="font-family:'Inter', Arial, Helvetica, sans-serif;" valign="top" width="75%">
+                  <p role="contentinfo" style="text-align:right;font-size:16px;line-height:24px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;color:#555555;font-weight:400;">
+                    1 Room,                        
+                                          
+                    1 Adult
+                  </p>
+                </td>
+              </tr>
+              <tr>
+                <td align="right" style="font-family:'Inter', Arial, Helvetica, sans-serif;" valign="top" colspan="2" width="100%">
+                  <p role="contentinfo" style="text-align:right;font-size:14px;line-height:24px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;color:#555555;font-weight:400;">
+                    Christopher Catignani, Primary</p>
+                </td>
+              </tr>
+              
+            </table>
+          </td>
+        </tr>
+        
+        <!-- Reservation Rooms and Guests Ends -->
+        <!-- Room Details Begins -->
+        <tr>
+          <td style="border-bottom:2px solid #DDDDDD;padding:15px 0px 20px 0px;">
+            <table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+              <tr>
+                <td  style="font-family:'Inter', Arial, Helvetica, sans-serif;" valign="top" align="left" width="50%">
+                  <p role="contentinfo" style="font-size:16px;line-height:20px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;color:#000000;font-weight:600;text-align:left;">
+                    Room details</p>
+                </td>
+                <td  style="font-family:'Inter', Arial, Helvetica, sans-serif;" valign="top" align="right" width="50%">
+                  <p role="contentinfo" style="font-size:16px;line-height:24px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;color:#555555;font-weight:400;text-align:right;">
+                    1 Queen Standard With Free Breakfast
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        
+        <!-- Room Details Ends -->
+        <!-- Reservation Rate Begins -->
+        <tr>
+          <td style="border-bottom:2px solid #DDDDDD;padding:15px 0px 20px 0px;">
+            <table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+              <tr>
+                <td  style="font-family:'Inter', Arial, Helvetica, sans-serif;" valign="top" align="left" width="25%">
+                  <p role="contentinfo" style=" font-size:16px;line-height:20px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;color:#000000;font-weight:600;text-align:left;">
+                    Rate</p>
+                </td>
+                <td  style="font-family:'Inter', Arial, Helvetica, sans-serif;" valign="top" align="right" width="75%">
+                  <p role="contentinfo" style="font-size:16px;line-height:24px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;color:#555555;font-weight:400;text-align:right;">Chris Sells Stuff Edge</p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        
+        
+        <!-- Reservation Rate Ends -->
+        <!-- Summary Of Charges Headline Begins -->
+        <tr>
+          <td align="left" style="padding:15px 0px 20px 0px;font-family:'Inter', Arial, Helvetica, sans-serif;" valign="top">
+            <p role="contentinfo" style="text-align:left; font-size:16px;line-height:20px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;color:#000000;font-weight:600;">
+              Summary of charges</p>
+          </td>
+        </tr>
+        <!-- Summary Of Charges Headline Ends -->
+      </table>
+    </td>
+  </tr>
+</table>
+<table dir="ltr" cellpadding="0" cellspacing="0" role="presentation" width="100%" bgcolor="">
+  <tr>
+    <td style="padding:0px 16px 0px 16px;">
+      <table align="center" cellpadding="0" cellspacing="0" role="presentation" width="100%">
+        <tr>
+          <td style="border-bottom:2px solid #393939;">
+            <table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+              <div style="display:none;">
+              </div>
+              <div style="display:none;">
+                    
+                </div>
+                <div style="display:none;">
+                    
+                </div>
+                <div style="display:none;">
+                
+              </div>
+              <!-- Night Stay --> 
+              <tr>
+                <td style="padding-bottom:5px;">
+                  <table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+                    <tr>
+                      <td align="left" style="font-family:'Inter', Arial, Helvetica, sans-serif;" valign="top" width="50%">
+                        <p role="contentinfo" style="text-align:left;font-size:16px;line-height:24px;font-family:'Inter', Arial, Helvetica, sans-serif ;margin:0px;padding:0px;font-weight:400;color:#000000;">
+                          1 night  stay</p>
+                      </td>
+       
+                      <td align="right" style="font-family:'Inter', Arial, Helvetica, sans-serif;" valign="top" width="50%">
+                        <p role="contentinfo" style="text-align:right;font-size:16px;line-height:24px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;font-weight:400;color:#555555;">
+      221.45 MYR</p>
+        
+                      </td></tr>
+                  </table>
+                </td>
+              </tr>
+              <!-- END Night Stay -->
+              <!-- Extras -->
+              <div style="display:none;">
+              
+              
+                  
+              </div>
+              <!-- END Extras -->
+              <!-- Additional Charges -->
+              <div style="display:none;">
+              
+              <!-- END Additional Charges -->
+              <!-- Taxes -->
+              <div style="display:none;">
+                
+                
+</div>
+              <tr>
+                <td align="left" style="padding-bottom: 5px;">
+                  <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                    <tr>
+                      <td align="left" style="font-family:'Inter', Arial, Helvetica, sans-serif;" valign="top" width="50%">
+                        <p role="contentinfo" style="text-align: left;font-size:16px;line-height:24px;font-family:'Inter', Arial, Helvetica, sans-serif ;margin:0px;padding:0px;font-weight:400;color:#000000;">
+                          Taxes
+                        </p>
+                      </td>
+                      <td align="right" style="font-family:'Inter', Arial, Helvetica, sans-serif;" valign="top" width="50%">
+                        <p role="contentinfo" style="text-align: right;font-size:16px;line-height:24px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;font-weight:400;color:#555555;">41.63&nbsp;MYR</p>
+                      </td>
+                      
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              
+              <!-- END Taxes -->
+            </table>
+          </td>
+        </tr>
+              <!-- Total charges -->
+              <div style="display:none;">
+                </div> 
+        <tr>
+          <td style="padding:15px 0px 5px 0px;">
+            <table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+              <tr>
+                <td align="left" style="font-family:'Inter', Arial, Helvetica, sans-serif;" valign="top" width="50%">
+                  <p role="contentinfo" style="text-align: left;font-size:18px ;line-height:21px;font-family:'Inter', Arial, Helvetica, sans-serif ;margin:0px;padding:0px;font-weight:600;color:#000000;">
+                    *Total charges
+                    
+                  </p>
+                </td>
+                <td align="right" style="font-family:'Inter', Arial, Helvetica, sans-serif;" valign="top" width="50%">
+                  <p role="contentinfo" style="text-align: right;font-size:18px;line-height:21px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;font-weight:600;color:#000000;">
+                    263.08&nbsp;MYR
+                  </p>
+                  </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <!-- END Total charges -->
+        <div style="display:none;">   </div>
+      </table>
+    </td>
+  </tr>
+</table>
+
+<!-- BEGIN CSU Script for reservationSubType -->
+
+<!-- END CSU Script for reservationSubType -->
+<table dir="ltr" cellpadding="0" cellspacing="0" role="presentation" width="100%">
+  <tr>
+    <td style="padding:30px 16px 20px 16px;">
+      <table align="center" cellpadding="0" cellspacing="0" role="presentation" width="100%">
+        
+        <!-- CTAs Blocks -->
+        <!-- SX Add Extras and Enhancements -->
+
+<!-- END SX View More Reservation Details -->
+<!-- Modify/Cancel Reservation -->
+<tr>
+  <td align="center" valign="top" style="padding-top:20px;">
+    <table border="0" cellpadding="0" cellspacing="0" role="presentation" width="100%">
+      <tr>
+        <td align="center" bgcolor="#002D72 " class="innertd buttonblock" style="border-radius: 0px; -moz-border-radius: 0px; -webkit-border-radius: 0px; mso-padding-alt: 10px 40px; font-weight: 500; background-color:#002D72 ;font-family:'Inter', Arial, Helvetica, sans-serif;" valign="top" width="100%">
+          <a  class="buttonstyles"  data-linkto="https://" href="https://click.tx.ihg.com/?qs=eyJkZWtJZCI6Ijk4YWQ3OTM1LWRhYmYtNGI5Zi1hY2Q5LTRkNzZhZDI2MWQwZCIsImRla1ZlcnNpb24iOjEsIml2Ijoidm54aWIzaUIySnJCbmdUUXdRL1dSQT09IiwiY2lwaGVyVGV4dCI6IkFxWVJmQmVTU25CUnNrODFFa01GVDdYeVo0R0IzR0hTNGgzYWNnU0FsT2xBaGtPQWJhVS9LVkJxY3VQN0l6UE9OQ3BabnVORm8vRXl6THBXUWV3cHhBc3hGcldrTGdWZllsWHQ5MUhvTlErMVlvdXF2bnhpYjNpQjJKckJuZ1RRd1EvV1JBPT0iLCJhdXRoVGFnIjoicEM0RlgySlY3ZmRSNkRVUHRXS0xxZz09In0%3D" role="button" style="font-size: 16px; font-family:'Inter', Arial, Helvetica, sans-serif; color: #FFFFFF ; text-align: center; text-decoration: none; display: block; font-weight: 500; background-color: #002D72 ; border: 0px; padding: 10px 40px; border-radius: 0px; -moz-border-radius: 0px; -webkit-border-radius: 0px;" target="_blank" title="Modify or cancel reservation">
+            Modify or cancel reservation
+          </a>
+          
+                  
+        </td>
+      </tr>            
+    </table>
+  </td>
+</tr>
+<!-- END Modify/Cancel Reservation -->
+<!-- LX View More Resevation Details -->
+
+<!-- END LX View More Resevation Details -->
+        <!-- END CTAs Blocks -->
+        <!-- Additional_Charges -->
+        
+        <!-- END Additional_Charges -->
+        <!-- TC Policies -->
+        
+<tr>
+  <td align="left" style="font-family:'Inter', Arial, Helvetica, sans-serif;padding-top:21px;" valign="top">
+    <p role="contentinfo" style="text-align:left;font-size:14px;line-height:20px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;font-weight:400;color:#555555;">
+      <span style="font-weight:600;color:#000000;">Cancellation Policy:</span>
+      Canceling your reservation before 4:00 PM (local hotel time) on Thursday, 5 March, 2026 will result in no charge. Canceling your reservation after 4:00 PM (local hotel time) on 5 March, 2026, or failing to show, will result in a charge of 1 night per room to your credit card or other guaranteed payment method. Taxes may apply. Failing to call or show before check-out time after the first night of a reservation will result in cancellation of the remainder of your reservation. 
+      
+</p>
+</td>
+</tr>
+
+
+
+<!--Deposit policy change on 08-13-2025 US415548-->
+
+
+
+
+
+        <!-- END TC Policies -->
+      </table>
+    </td>
+  </tr>
+</table>
+<div style="display:none;">
+  
+</div>
+<table dir="ltr" cellpadding="0" cellspacing="0" align="center" role="presentation" width="100%"   style="padding:0px 16px 0px 16px;">
+  <tr>
+    <td style="padding:10px 0px 30px 0px;">
+      <table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+        <tr>
+          <td style="background-color:#F0EEED;padding:20px;">
+            <table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+              <tr>
+                <td align="center" style="padding-bottom:15px;" width="100%">
+                  <table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+                    <tr>
+                      <td align="left" valign="top" width="40%">
+                        <table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+                          <tr>
+                            <td align="left" class="w10" valign="top" width="10%">
+                              <img alt="Estimated points to be earned" data-assetid="21092" height="30"                                 src="https://image.mc.ihg.com/lib/fe32117171640478701372/m/1/b40afaee-731e-469f-8c3d-a879ebb620d6.png"                                 style="display: block; padding: 0px; height: 40.32px; width: 40.32px; margin: 0px; border: 0px; text-align: center;"                                 title="Estimated points to be earned" width="30">
+                            </td>
+                            <td align="left" class="vtop"                               style="font-family:'Inter', Arial, Helvetica, sans-serif;color:#1F4456;mso-padding-left-alt:10px !important;padding:0px 12px 0px 12px;text-align:left;"                               valign="middle" width="90%">
+                              <p role="contentinfo"                                 style="font-size:14px;line-height:18px;font-family:'Inter', Arial, Helvetica, sans-serif;font-weight:500;margin:0px;">
+                                Estimated points to be earned</p>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                      <td align="right" style="font-family:'Inter', Arial, Helvetica, sans-serif;color:#1F4456;" valign="middle"                         width="40%">
+                        <p role="contentinfo"                           style="font-size:24px;line-height:28px;font-family:'Inter', Arial, Helvetica, sans-serif;font-weight:600;margin:0px;padding:0px;text-align:right;">
+                          1,124
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+            <table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+              <tr>
+                <td align="right" style="padding-top:15px;border-top:2px solid #D9D9D9" width="100%">
+                  <table align="right" cellpadding="0" cellspacing="0" role="presentation" width="100%">
+                    <tr>
+                      <td align="right" style="font-family:'Inter', Arial, Helvetica, sans-serif;color:#1F4456;" valign="middle">
+                        <p role="contentinfo"                           style="font-size:16px;line-height:20px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;font-weight:600;">
+                          <a href="https://click.tx.ihg.com/?qs=eyJkZWtJZCI6IjlkMjdlODkyLWVlZjAtNDA4OS05N2UwLWM2NzMyMmI5NTMzMyIsImRla1ZlcnNpb24iOjEsIml2IjoiaU91U08rUCtaMmRaZk5VK1ErcGltUT09IiwiY2lwaGVyVGV4dCI6Inc0MXRpOWtFMFNrVHJ1ZU5nWGlQN0Q5Z2FwcFdsUGYvSm16UlB5eVdFRmozL1RSU3dBUXgzY0hLNTZtdlJBSkFEYWJoeEc4ZFRBd0FFUkU3Z2hBOTBDMnlLM1I1ZEhJVmQyTndJN0FvQTRqcmtqdmovbWRuV1h6VlBrUHFZcGs9IiwiYXV0aFRhZyI6IjBDMnlLM1I1ZEhJVmQyTndJN0FvQXc9PSJ9" style="text-decoration:underline;color:#1F4456;"                             target="_blank" title="View your account">View your account </a>
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+                
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<div style="display:none;">
+  
+</div><table cellpadding="0" cellspacing="0" width="100%" role="presentation" style="min-width: 100%; " class="stylingblock-content-wrapper"><tr><td class="stylingblock-content-wrapper camarker-inner"><table cellpadding="0" cellspacing="0" dir="ltr" role="presentation" width="100%">
+	
+		<tr>
+			<td style="padding:0px 16px 20px 16px;">
+				<table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+					
+						<tr>
+							<td align="left" style="font-family:'Inter', Arial, Helvetica, sans-serif;color:#000000;text-align:left;" valign="middle">
+								<h2 role="contentinfo" style="font-size:24px;line-height:28px;font-family:'Inter', Arial, Helvetica, sans-serif;font-weight:400;margin:0px;padding:0px;">
+									Complete your trip</h2></td></tr></table></td></tr></table><!-- Manage Stay Preferences Begins --><table cellpadding="0" cellspacing="0" dir="ltr" role="presentation" width="100%">
+	
+		<tr>
+			<td style="padding:0px 16px 20px 16px;">
+				<table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+					
+						<tr>
+							<td style="border-bottom:2px solid #DDDDDD;">
+								<table align="center" border="0" cellpadding="0" cellspacing="0" style="width:100%;">
+									
+										<tr>
+											<td style="padding-bottom:20px">
+												<table align="center" border="0" cellpadding="0" cellspacing="0" style="width:100%;">
+													
+														<tr>
+															<th align="left" valign="top" width="50">
+																<table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+																	
+																		<tr>
+																			<td align="left" valign="top">
+																				<img alt="Manage stay preferences" data-assetid="21092" height="30" src="https://image.mc.ihg.com/lib/fe32117171640478701372/m/1/9f7c60da-6d28-4cd4-8149-a96e00b17000.png" style="display: block; padding: 0px; height: 30px; width: 30px; margin: 0px; border: 0px; text-align: center;" title="Manage stay preferences" width="30"></td></tr></table></th><th class="wb100">
+																<table align="center" border="0" cellpadding="0" cellspacing="0" style="width:100%;">
+																	
+																		<tr>
+																			<td align="left" class="container" valign="middle" width="550">
+																				<table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+																					
+																						<tr>
+																							<td align="left" style="font-family:'Inter', Arial, Helvetica, sans-serif;text-align:left;" valign="middle">
+																								<p role="contentinfo" style="font-size:16px;line-height:20px;font-family:'Inter', Arial, Helvetica, sans-serif;font-weight:600;margin:0px;padding:0px;">
+																									Manage stay preferences</p></td></tr><tr>
+																							<td align="left" style="font-family:'Inter', Arial, Helvetica, sans-serif;color:#555;text-align:left;" valign="middle">
+																								<p role="contentinfo" style="font-size:14px;line-height:21px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;font-weight:400;">
+																									Room on higher floor, extra pillows&#8230;</p></td></tr><tr>
+																							<td align="left" style="font-family:'Inter', Arial, Helvetica, sans-serif;text-align:left;" valign="middle">
+																								<p class="aleft" role="contentinfo" style="color:#002D72; font-weight: 600; font-size:16px;line-height:24px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;">
+																									<a href="https://click.tx.ihg.com/?qs=eyJkZWtJZCI6IjI2NWZjZDExLTFkYmQtNDZjOC04NmQ2LTYwMjgyZmY5MmZjNyIsImRla1ZlcnNpb24iOjEsIml2IjoiMGRqL0NWNWpsYkV1OHJSc2Vnb2xxQT09IiwiY2lwaGVyVGV4dCI6IlBLbjloa3NmMEI3YituRU05TzZMSEFpVzRMYlg4WFJDY2xlKy9kRVIrQXRzSjZocTdlcURYV1dBQnpCOUxhMVJwK3l6cWs1cjJLUVNFcDEvcXpocmRVd0VyV0FIcGsvcUFjSEMyemVrT2RIWS93bGVZNVd4THZLMGJIb0tKYWc9IiwiYXV0aFRhZyI6ImRVd0VyV0FIcGsvcUFjSEMyemVrT1E9PSJ9" style="text-decoration:underline;color:#002D72 ;" target="_blank" title="Set preferences">Set preferences</a></p></td></tr></table></td></tr></table></th></tr></table></td></tr></table></td></tr></table></td></tr></table><!-- Manage Stay Preferences Ends --><!-- Pet Policy Begins --><table cellpadding="0" cellspacing="0" dir="ltr" role="presentation" width="100%">
+	
+		<tr>
+			<td style="padding:0px 16px 20px 16px;" width="100%">
+				<table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+					
+						<tr>
+							<td style="border-bottom:2px solid #DDDDDD;">
+								<table align="center" border="0" cellpadding="0" cellspacing="0" style="width:100%;">
+									
+										<tr>
+											<td style="padding-bottom:20px;">
+												<table align="center" border="0" cellpadding="0" cellspacing="0" style="width:100%;">
+													
+														<tr>
+															<th align="left" valign="top" width="50">
+																<table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+																	
+																		<tr>
+																			<td align="left" valign="top">
+																				<img alt="Pet Policy" data-assetid="21092" height="30" src="https://image.mc.ihg.com/lib/fe32117171640478701372/m/1/75511bd0-7648-4c41-b245-7f69e8f1639a.png" style="display: block; padding: 0px; height: 30px; width: 30px; margin: 0px; border: 0px; text-align: center;" title="Pet policy" width="30"></td></tr></table></th><th class="wb100">
+																<table align="center" border="0" cellpadding="0" cellspacing="0" style="width:100%">
+																	
+																		<tr>
+																			<td align="left" class="container" valign="middle" width="550">
+																				<table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+																					
+																						<tr>
+																							<td align="left" style="font-family:'Inter', Arial, Helvetica, sans-serif;text-align:left;" valign="middle">
+																								<p role="contentinfo" style="font-size:16px;line-height:20px;font-family:'Inter', Arial, Helvetica, sans-serif;font-weight:600;margin:0px;padding:0px;">
+																									Pet policy</p></td></tr><tr>
+																							<td align="left" style="font-family:'Inter', Arial, Helvetica, sans-serif;color:#555;text-align:left;" valign="middle">
+																								<p role="contentinfo" style="font-size:14px;line-height:21px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;font-weight:400;direction:ltr;">
+																									No pets allowed.</p></td></tr></table></td></tr></table></th></tr></table></td></tr></table></td></tr></table></td></tr></table> <!-- Pet Policy Ends --> <!-- Weapon Policy Begins -->   <!-- Weapon Policy Ends --> <!-- Hotel Parking Begins -->  <!-- Hotel Parking Ends --> <!-- Hotel Valet Parking Begins --> <table cellpadding="0" cellspacing="0" dir="ltr" role="presentation" width="100%">
+	
+		<tr>
+			<td style="padding:0px 16px 20px 16px;">
+				<table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+					
+						<tr>
+							<td style="border-bottom:2px solid #DDDDDD;">
+								<table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+									
+										<tr>
+											<td style="padding:0px 0px 20px 0px;">
+												<table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+													
+														<tr>
+															<th align="left" valign="top" width="50">
+																<table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+																	
+																		<tr>
+																			<td align="left" valign="top">
+																				<img alt="Valet parking" data-assetid="21092" height="30" src="https://image.tx.ihg.com/lib/fe30117171640478701374/m/1/7539dce6-592b-4afc-a2d9-ff2f5f52ccc1.png" style="display: block; padding: 0px; height: 30px; width: 30px; margin: 0px; border: 0px; text-align: center;" title="Valet parking" width="30"></td></tr></table></th><th class="wb100">
+																<table align="center" border="0" cellpadding="0" cellspacing="0" style="width:100%;">
+																	
+																		<tr>
+																			<td align="left" class="container" valign="middle" width="550">
+																				<table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+																					
+																						<tr>
+																							<td align="left" style="font-family:'Inter', Arial, Helvetica, sans-serif;text-align:left;" valign="middle">
+																								<p role="contentinfo" style="font-size:16px;line-height:20px;font-family:'Inter', Arial, Helvetica, sans-serif;font-weight:600;margin:0px;padding:0px;">
+																									Valet parking</p></td></tr><tr>
+																							<td align="left" style="font-family:'Inter', Arial, Helvetica, sans-serif;color:#555;text-align:left;" valign="middle">
+																								<p role="contentinfo" style="font-size:14px;line-height:21px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;font-weight:400;">
+																									Daily Valet Parking Fee: RM20.00 </p></td></tr></table></td></tr></table></th></tr></table></td></tr></table></td></tr></table></td></tr></table>  <!-- Hotel Valet Parking Ends --> <!-- Tours & Activities Begins --><table cellpadding="0" cellspacing="0" dir="ltr" role="presentation" width="100%">
+	
+		<tr>
+			<td style="padding:0px 16px 20px 16px;">
+				<table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+					
+						<tr>
+							<td style="border-bottom:2px solid #DDDDDD;">
+								<table align="center" border="0" cellpadding="0" cellspacing="0" style="width:100%;">
+									
+										<tr>
+											<td style="padding-bottom:20px">
+												<table align="center" border="0" cellpadding="0" cellspacing="0" style="width:100%;">
+													
+														<tr>
+															<th align="left" valign="top" width="50">
+																<table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+																	
+																		<tr>
+																			<td align="left" valign="top">
+																				<img alt="Tours &amp; activities" data-assetid="21092" height="30" src="https://image.mc.ihg.com/lib/fe32117171640478701372/m/1/21fb934e-7fc9-4cbf-9bb4-492543e069f1.png" style="display: block; padding: 0px; height: 30px; width: 30px; margin: 0px; border: 0px; text-align: center;" title="Tours & Activities" width="30"></td></tr></table></th><th class="wb100">
+																<table align="center" border="0" cellpadding="0" cellspacing="0" style="width:100%;">
+																	
+																		<tr>
+																			<td align="left" class="container" valign="middle" width="550">
+																				<table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+																					
+																						<tr>
+																							<td align="left" style="font-family:'Inter', Arial, Helvetica, sans-serif;text-align:left;" valign="middle">
+																								<p role="contentinfo" style="font-size:16px;line-height:20px;font-family:'Inter', Arial, Helvetica, sans-serif;font-weight:600;margin:0px;padding:0px;">
+																									Tours & Activities</p></td></tr><tr>
+																							<td align="left" style="font-family:'Inter', Arial, Helvetica, sans-serif;color:#555;text-align:left;" valign="middle">
+																								<p role="contentinfo" style="font-size:14px;line-height:21px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;font-weight:400;">
+																									Book a tour, restaurant and more</p></td></tr><tr>
+																							<td align="left" style="font-family:'Inter', Arial, Helvetica, sans-serif;text-align:left;" valign="middle">
+																								<p class="aleft" role="contentinfo" style="color:#002D72;font-weight: 600; font-size:16px;line-height:24px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;">
+																									<a href="https://click.tx.ihg.com/?qs=eyJkZWtJZCI6IjgyMDM3NjIyLTc4ZTgtNDk0OC04N2VkLTU1MTdmODMyYjA2YiIsImRla1ZlcnNpb24iOjEsIml2IjoiSGJSaXlNZ3RkcmtNV24xellhZDFlQT09IiwiY2lwaGVyVGV4dCI6IjRtak4yVm9JdG96U0gvRnkyTFc3bG8xUUMvd3Y1WlYrTkltRklHbHlJOWhKYWsrYkZvbUVIZjFsRHd5dm5WeE52VVdPVE4yRk1naWJRTlRFd0pja3g5VCtDaVZyMGRvM1NEWWM4Mk5lTHgyMFlzaklMWGE1REZwOWMyR25kWGc9IiwiYXV0aFRhZyI6Ing5VCtDaVZyMGRvM1NEWWM4Mk5lTHc9PSJ9" style="text-decoration:underline;color:#002D72 ;" target="_blank" title="View activities">View activities</a></p></td></tr></table></td></tr></table></th></tr></table></td></tr></table></td></tr></table></td></tr></table> <!-- Tours & Activities Ends --> <!-- Restaurants Begins --> <!----><table cellpadding="0" cellspacing="0" dir="ltr" role="presentation" width="100%">
+	
+		<tr>
+			<td style="padding:0px 16px 20px 16px;">
+				<table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+					
+						<tr>
+							<td style="border-bottom:2px solid #DDDDDD;">
+								<table align="center" border="0" cellpadding="0" cellspacing="0" style="width:100%;">
+									
+										<tr>
+											<td style="padding-bottom:20px">
+												<table align="center" border="0" cellpadding="0" cellspacing="0" style="width:100%;">
+													
+														<tr>
+															<th align="left" valign="top" width="50">
+																<table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+																	
+																		<tr>
+																			<td align="left" valign="top">
+																				<img alt="Restaurants" data-assetid="21092" height="30" src="https://image.mc.ihg.com/lib/fe32117171640478701372/m/1/8c453351-7d11-43db-a4ee-67469e23f2d3.png" style="display: block; padding: 0px; height: 30px; width: 30px; margin: 0px; border: 0px; text-align: center;" title="Restaurants" width="30"></td></tr></table></th><th class="wb100">
+																<table align="center" border="0" cellpadding="0" cellspacing="0" style="width:100%;">
+																	
+																		<tr>
+																			<td align="left" class="container" valign="middle" width="550">
+																				<table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+																					
+																						<tr>
+																							<td align="left" style="font-family:'Inter', Arial, Helvetica, sans-serif;text-align:left;" valign="middle">
+																								<p role="contentinfo" style="font-size:16px;line-height:20px;font-family:'Inter', Arial, Helvetica, sans-serif;font-weight:600;margin:0px;padding:0px;">
+																									Restaurants</p></td></tr><tr>
+																							<td align="left" style="font-family:'Inter', Arial, Helvetica, sans-serif;color:#555;text-align:left;" valign="middle">
+																								<p role="contentinfo" style="font-size:14px;line-height:21px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;font-weight:400;">
+																									Find places to eat during your stay</p></td></tr><tr>
+																							<td align="left" style="font-family:'Inter', Arial, Helvetica, sans-serif;text-align:left;" valign="middle">
+																								<p class="aleft" role="contentinfo" style="color:#002D72; font-weight: 600;font-size:16px;line-height:24px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;">
+																									<a href="https://click.tx.ihg.com/?qs=eyJkZWtJZCI6ImJhNDM3OTIxLTRmMDYtNDA0ZS05YWY4LWIyNTlhYzYxMTAzMyIsImRla1ZlcnNpb24iOjEsIml2IjoiNm5LVDc4b2NMSUt1VnJIY2VmRFVVZz09IiwiY2lwaGVyVGV4dCI6InU5TG0za0ZvVVk4L3hZUnNGbFpDUWx1dzRRM0tsYk1MQXFnei9XUWFzbFRaL3JqRXZ2WU5TTHk1MEFsUWxZVG5qWHY5M0ZvN1VFSkZWSTZzd0lUaE0xRWg3MFgycHJjZ3p3MEFlQzNDemVweWsrL0tIQ3lDcmxheDNIbncxRkk9IiwiYXV0aFRhZyI6Ik0xRWg3MFgycHJjZ3p3MEFlQzNDelE9PSJ9" style="text-decoration:underline;color:#002D72 ;" target="_blank" title="View hotel dining">View hotel dining</a></p></td></tr><tr>
+																							<td align="left" style="font-family:'Inter', Arial, Helvetica, sans-serif;text-align:left;" valign="middle">
+																								<p class="aleft" role="contentinfo" style="color:#002D72; font-weight: 600;font-size:16px;line-height:24px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;">
+																									<a href="https://click.tx.ihg.com/?qs=eyJkZWtJZCI6IjI4ZGI4MGY1LWQ2ZGEtNDA3ZC1hNTAzLWZiNjRiYTFkZmRkYiIsImRla1ZlcnNpb24iOjEsIml2IjoiSmVLamMveXRtcERxTzFicFlLSENjZz09IiwiY2lwaGVyVGV4dCI6Im1HVS85WCtaY0pGQzV5RTc4YjNrTGdNT2toVGlBNENtbE5JcTl3bG5sbHpEUWd5ajlXWkFhQ0NCRllNQzdBdUdMSGUzcmQ2ano5aXYxY2dJN1lSM2dlSzN3WG1KeXdpc1orYU9RZm5OeVNYaW8zUDhyWnFRNmp0VzZXQ2h3bkk9IiwiYXV0aFRhZyI6ImdlSzN3WG1KeXdpc1orYU9RZm5OeVE9PSJ9" style="text-decoration:underline;color:#002D72 ;" target="_blank" title="View nearby restaurants">View nearby restaurants</a></p></td></tr></table></td></tr></table></th></tr></table></td></tr></table></td></tr></table></td></tr></table> <!-- Restaurants Ends --> <!-- Transportation Begins --><table cellpadding="0" cellspacing="0" dir="ltr" role="presentation" width="100%">
+	
+		<tr>
+			<td style="padding:0px 16px 20px 16px;">
+				<table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+					
+						<tr>
+							<td style="border-bottom:2px solid #DDDDDD;">
+								<table align="center" border="0" cellpadding="0" cellspacing="0" style="width:100%;">
+									
+										<tr>
+											<td style="padding-bottom:20px">
+												<table align="center" border="0" cellpadding="0" cellspacing="0" style="width:100%;">
+													
+														<tr>
+															<th align="left" valign="top" width="50">
+																<table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+																	
+																		<tr>
+																			<td align="left" valign="top">
+																				<img alt="Transportation" data-assetid="21092" height="30" src="https://image.mc.ihg.com/lib/fe32117171640478701372/m/1/80aad49c-0320-4451-8021-35cf5b715371.png" style="display: block; padding: 0px; height: 30px; width: 30px; margin: 0px; border: 0px; text-align: center;" title="Transportation" width="30"></td></tr></table></th><th class="wb100">
+																<table align="center" border="0" cellpadding="0" cellspacing="0" style="width:100%;">
+																	
+																		<tr>
+																			<td align="left" class="container" valign="middle" width="550">
+																				<table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+																					
+																						<tr>
+																							<td align="left" style="font-family:'Inter', Arial, Helvetica, sans-serif;text-align:left;" valign="middle">
+																								<p role="contentinfo" style="font-size:16px;line-height:20px;font-family:'Inter', Arial, Helvetica, sans-serif;font-weight:600;margin:0px;padding:0px;">
+																									Transportation</p></td></tr><tr>
+																							<td align="left" style="font-family:'Inter', Arial, Helvetica, sans-serif;color:#555;text-align:left;" valign="middle">
+																								<p role="contentinfo" style="font-size:14px;line-height:21px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;font-weight:400;">
+																									Book an airport shuttle or private transportation</p></td></tr><tr>
+																							<td align="left" style="font-family:'Inter', Arial, Helvetica, sans-serif;text-align:left;" valign="middle">
+																								<p class="aleft" role="contentinfo" style="color:#002D72; font-size:16px;line-height:24px;font-family:'Inter', Arial, Helvetica, sans-serif;font-weight: 600;margin:0px;padding:0px;">
+																									<a href="https://click.tx.ihg.com/?qs=eyJkZWtJZCI6ImU0YTFjMjY1LWE4OGMtNDNlYy04MzdkLWUxZDcwY2Q2YzliZiIsImRla1ZlcnNpb24iOjEsIml2IjoiMnBPUEhIUTlPYjhZWUxOaGVCaVlMUT09IiwiY2lwaGVyVGV4dCI6InZmVFBHS29PQnVVWktqeHhoZEwvVDRwT1UzQlRad2NQN3VQbC9HVWlGcjBxK2ZhK0R3WWJud2VWSm1zZzRQLzJsK09heGQyOW5FbXJwTTdibEF3Z1JHMUo3elZvRzdzN1UrV09ROTZwZXRxVGp4eDBQVG0vR0dDellYZ1ltQzA9IiwiYXV0aFRhZyI6IlJHMUo3elZvRzdzN1UrV09ROTZwZWc9PSJ9" style="text-decoration:underline;color:#002D72 ;" target="_blank" title="View services">View services</a></p></td></tr></table></td></tr></table></th></tr></table></td></tr></table></td></tr></table></td></tr></table> <!-- Transportation Ends --> <!-- Car Rental Begins --><table cellpadding="0" cellspacing="0" dir="ltr" role="presentation" width="100%">
+	
+		<tr>
+			<td style="padding:0px 16px 30px 16px;">
+				<table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+					
+						<tr>
+							<td style="border-bottom:2px solid #DDDDDD;">
+								<table align="center" border="0" cellpadding="0" cellspacing="0" style="width:100%;">
+									
+										<tr>
+											<td style="padding-bottom:20px">
+												<table align="center" border="0" cellpadding="0" cellspacing="0" style="width:100%;">
+													
+														<tr>
+															<th align="left" valign="top" width="50">
+																<table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+																	
+																		<tr>
+																			<td align="left" valign="top">
+																				<img alt="Car rental" data-assetid="21092" height="30" src="https://image.mc.ihg.com/lib/fe32117171640478701372/m/1/e3b369c8-48b7-4c6a-974f-d6c564d8b658.png" style="display: block; padding: 0px; height: 30px; width: 30px; margin: 0px; border: 0px; text-align: center;" title="Car rental" width="30"></td></tr></table></th><th class="wb100">
+																<table align="center" border="0" cellpadding="0" cellspacing="0" style="width:100%;">
+																	
+																		<tr>
+																			<td align="left" class="container" valign="middle" width="550">
+																				<table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+																					
+																						<tr>
+																							<td align="left" style="font-family:'Inter', Arial, Helvetica, sans-serif;text-align:left;" valign="middle">
+																								<p role="contentinfo" style="font-size:16px;line-height:20px;font-family:'Inter', Arial, Helvetica, sans-serif;font-weight:600;margin:0px;padding:0px;">
+																									Car rental</p></td></tr><tr>
+																							<td align="left" style="font-family:'Inter', Arial, Helvetica, sans-serif;color:#555;text-align:left;" valign="middle">
+																								<p role="contentinfo" style="font-size:14px;line-height:21px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;font-weight:400;">
+																									Rent a car for your trip</p></td></tr><tr>
+																							<td align="left" style="font-family:'Inter', Arial, Helvetica, sans-serif;text-align:left;" valign="middle">
+																								<p class="aleft" role="contentinfo" style="color:#428227;font-weight: 600; font-size:16px;line-height:24px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;">
+																									<a href="https://click.tx.ihg.com/?qs=eyJkZWtJZCI6IjA5ZWRmYjY4LTIwM2UtNGMzMS1iNmU2LTZjODc5OGQ1OTVjZiIsImRla1ZlcnNpb24iOjEsIml2IjoibXRPRWtEZjJ3cWdKbWRGdHBvdjIyZz09IiwiY2lwaGVyVGV4dCI6InZ1SHl2WTFUSlJrWFBFaUJoUk9vRnNScmRGRHZ0eDA2MHh0QTNFNHFaVmpoVzVJRXpnRFUxc2x0ZXQrcEgvK0VYQlF3OWozN2FtelRLcGtyMlpMRnRpc0RpL01aUHFueDhTNzZFd20rc3ByVGhKQTM5c0tvQ1puUmJhYUw5dG89IiwiYXV0aFRhZyI6InRpc0RpL01aUHFueDhTNzZFd20rc2c9PSJ9" style="text-decoration:underline;color:#002D72 ;" target="_blank" title="Reserve a car">Reserve a car</a></p></td></tr></table></td></tr></table></th></tr></table></td></tr></table></td></tr></table></td></tr></table>  <!-- Car Rental Ends --> <!-- Customer Care Begins --><table cellpadding="0" cellspacing="0" dir="ltr" role="presentation" width="100%">
+	
+		<tr>
+			<td style="padding:0px 16px 30px 16px;" width="100%">
+				<table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+					
+						<tr>
+							<td align="left" style="font-family:'Inter', Arial, Helvetica, sans-serif;text-align:left;" valign="middle" width="300">
+								<h2 role="contentinfo" style="color:#000000; font-weight: normal;font-size:24px;line-height:28px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;">
+									Need help?</h2></td><td align="right" style="font-family:'Inter', Arial, Helvetica, sans-serif;" valign="middle" width="300">
+								<p role="contentinfo" style="color:#002D72;font-weight: 600;text-align:right;font-size:16px;line-height:24px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;">
+									<a href="https://click.tx.ihg.com/?qs=eyJkZWtJZCI6IjgwMGI1NjhmLThhMDctNDQ0OC1hNGZlLTU0OTQ1NDcyYjhmNiIsImRla1ZlcnNpb24iOjEsIml2IjoidGlxQXcrN1hZZUF4L0h2TnQ3Mkl6UT09IiwiY2lwaGVyVGV4dCI6IjBmd0lrTEZwb1d5amROUzJsejZhNEdDZ3NYZjg5UU5YWkwrcDNsZjQzalc3U01mOUtYSTVkRmNERUFXS2w2NW5DdkVNS2JUeVBremRhWXBvT3M1bWtHNFdHbnROSDQwZUExd2FCVGhQQmJZcWdNUHUxMkhnTWZ4N3piZTlpTTA9IiwiYXV0aFRhZyI6ImtHNFdHbnROSDQwZUExd2FCVGhQQlE9PSJ9" style="text-decoration:underline;color:#002D72 ;" target="_blank" title="Visit Customer Care">Visit Customer Care</a></p></td></tr></table></td></tr></table> <!-- Customer Care Ends --> <!-- IRIS Rate Service Begins -->  <!-- IRIS Rate Service Ends --></td></tr></table>
+<!--
+
+
+
+
+<!-- Level 1 Image - Pos: 40-->
+
+<div style="display:none;">
+
+</div> 
+
+
+
+
+<div style="display:none;">
+
+</div>
+<div style="display:none;">
+
+</div>
+<table class="show" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="" align="center">
+  <tr>
+    <td width="100%" align="center" style="padding: 10px;">
+        
+
+            <table
+                border="0"
+                cellpadding="0"
+                cellspacing="0"
+                role="presentation"
+                width="100%"
+            >
+                <tr>
+                    <!-- LEFT COLUMN -->
+                    <td align="left" style="padding: 0;" valign="top" width="40%">
+                        <!-- Replace with your image --><a
+                            
+                            
+                            data-linkto="https://"
+                            href="https://click.tx.ihg.com/?qs=eyJkZWtJZCI6ImIyMjFkNDBlLWVkYTYtNGQ3Yi1hNDczLTMyYWI2NTlhYmEyNyIsImRla1ZlcnNpb24iOjEsIml2IjoiL3ovUWhXRTJvWFBHaEgyT3UvV2oxQT09IiwiY2lwaGVyVGV4dCI6IlMveFh4aXZFK3RmeG1veUNNMDk1K3hVVU14TUUzVHVUdzQ5WW5uTDYzaTBkR1haT3lIZ3QrdmhYUUZDNHkzVVlTeHpjd3ZoMlBUTzF6Zzh1WnNYcUlPL0RMZDFlaU1CVVFKbjFLNDN5YnA2K2hWMzkvei9RaFdFMm9YUEdoSDJPdS9XajFBPT0iLCJhdXRoVGFnIjoiWG9qQVZFQ1o5U3VOOG02ZXZvVmQvUT09In0%3D"
+                            target="_blank"
+                            title="LEARN MORE"
+                            ><img
+                                alt="2X over a view of the mountains from the rooftop pool deck at Hotel Indigo Alishan in Taiwan."
+                                border="0"
+                                src="https://image.tx.ihg.com/lib/fe31117171640478701373/m/1/590bcc83-54bd-415b-8d63-f503248af488.png"
+                                width="100%"
+                        /></a>
+                    </td>
+                    <!-- RIGHT COLUMN -->
+                    <td
+                        align="left"
+                        style="vertical-align: middle; padding: 20px;background-color:#F0EEED;"
+                        valign="middle"
+                        width="60%"
+                    >
+                        <p
+                            role="heading"
+                            style="color:#000000;font-size: 20px;line-height:24px;font-weight: 400; text-align: left;font-family:'Montserrat',Arial,Helvetica,sans-serif;margin:0px;padding:0px;"
+                        >
+                            UNLIMITED<br />
+                            DOUBLE POINTS
+                        </p>
+                        
+                                        <table
+                                            align="left"
+                                            border="0"
+                                            cellpadding="0"
+                                            cellspacing="0"
+                                            width="100%"
+                                        >
+                                            <tr>
+                                                <td
+                                                    align="left"
+                                                    style="padding:0px;font-family:'Montserrat',Arial,Helvetica,sans-serif;"
+                                                    valign="middle"
+                                                >
+                                                    <p
+                                                        role="contentinfo"
+                                                        style="font-family:'Montserrat',Arial,Helvetica,sans-serif;color:#C7370F;margin:0;padding:0px;font-size: 16px;line-height:24px;font-weight: 500;"
+                                                    >
+                                                        <a
+                                                            
+                                                            
+                                                            data-linkto="https://"
+                                                            href="https://click.tx.ihg.com/?qs=eyJkZWtJZCI6IjZlZDhkMzQ4LTJjMTAtNDMzMy1iZDE4LWVkZGYzNWE4YzFiNiIsImRla1ZlcnNpb24iOjEsIml2IjoicVZLekEzdklhRDdRV3RldnplQVlDdz09IiwiY2lwaGVyVGV4dCI6ImFqbi92ZzdpbVdyMFVxZGtaL1NsZ1UwM1AzOGpvcFRIQUlHNitUeGQrdGxpWHVUZGtyTy9aQ1hOd0JzUVdYakEyWlc4eXBSK1VUNCtZTStpN2xZb1Zzd3diT0tTNlhQaGh1YmlmNjhQUkt4cnhhUHJxVkt6QTN2SWFEN1FXdGV2emVBWUN3PT0iLCJhdXRoVGFnIjoia3VsejRZYm00bit2RDBTc2E4V2o2dz09In0%3D"
+                                                            style="color:#C7370F;text-decoration:none;"
+                                                            target="_blank"
+                                                            title="LEARN MORE"
+                                                            >LEARN MORE&nbsp; ❯</a
+                                                        >
+                                                    </p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                    </td>
+                </tr>
+            </table>
+</td>
+    </tr>
+</table>
+ 
+
+<div style="display:none;">
+
+</div>
+<div style="display:none;">
+
+</div>  
+<div style="display:none;">
+ Subscription Center: https://click.tx.ihg.com/subscription_center.aspx?qs=eyJkZWtJZCI6ImVmMjk4YzAzLTZhZjgtNDBlOS05Njk2LTIwZmFkMDM3MzBiMyIsImRla1ZlcnNpb24iOjEsIml2IjoibmlsaVdTME9pM2FXTmV1S2NEZTdPZz09IiwiY2lwaGVyVGV4dCI6ImpaZXo3TEtaSUR0dGpEMm8zMElmaCtEd3EybVBzWE1Bc0U5TzNLVDhLcjVuUHN6blBJYnhGblIwS0VNdGNXaDhQQ25Wdk9NZjZnZmNsRnBMMThrVGNLS2VLV0paTFE2TGRwWTE2NHB3TjdzNiIsImF1dGhUYWciOiJLZFc4NHgvcUI5eVVXa3ZYeVJOd29nPT0ifQ%3D%3D Profile Center: https://click.tx.ihg.com/profile_center.aspx?qs=eyJkZWtJZCI6Ijk2Zjg0YTQ1LWQzOWMtNGM3Yy1iOWY5LWQ3NWE0M2FiMzMxOSIsImRla1ZlcnNpb24iOjEsIml2IjoiTzN6VGJ0cmJsUWxnbXJFRVBYYkFPZz09IiwiY2lwaGVyVGV4dCI6IlVoVGtEOEpYbzZSZnpNb0Zxa3JGRnoySkJRTFdMdlZBbDc1TzdEaXlyVHlpK3A1MEYyRDVMVVl6Q3NDWXVaSHRmY01zaEwxeExnL3lsL1IxWDFoVHZxczdmTk51MnR1VkNXQ2FzUVE5ZHNBNiIsImF1dGhUYWciOiJ3eXlFdlhFdUQvS1g5SFZmV0ZPK3F3PT0ifQ%3D%3D Sender address: Six Continents Hotels, Inc. Three Ravinia Dr. Suite 100 Atlanta GA 30346 US 
+</div></td></tr>
+<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="left" valign="top">
+<table cellpadding="0" cellspacing="0" width="100%" role="presentation" style="min-width: 100%; " class="stylingblock-content-wrapper"><tr><td class="stylingblock-content-wrapper camarker-inner">  <table cellpadding="0" cellspacing="0" role="contentinfo" width="100%" border="0" aria-label="">
+  <tr>
+    <td align="center">
+ 
+
+<!-- BEGIN AMJP specific social bar -->
+
+<table align="center"
+       bgcolor="#002D72 "
+       cellpadding="0" cellspacing="0" class="container" role="presentation" style=";" width="100%">
+  <tr>
+    <td align="center"
+        style="background-color:#002D72 ; padding-top:22px;padding-bottom:22px"
+        valign="top" width="100%">
+      <table cellpadding="0" cellspacing="0" role="presentation" width="105">
+        <tr>
+          <td align="center">
+            <a   data-linkto="https://" href="https://click.tx.ihg.com/?qs=eyJkZWtJZCI6ImE0YjdlMDRhLTdhYmEtNDI0Ni1iYzlkLWVkNDUzOTliZTM0MyIsImRla1ZlcnNpb24iOjEsIml2IjoieFdSRVJaZTZpVXFyaGVNMUFMVDZmQT09IiwiY2lwaGVyVGV4dCI6InFKdHNhOWZUWUJWekpzZ1VGY0JFdVkyRGZ0bTdHUGpPWmNmK1lvekRtTFNNTXFNSFZ6SDBNSDd3M1NYdkZ1Z0pUWitmeEFvZWdNcHZoMEZUZkhVYThjVGR5NGJqSzg5QnRhU1hoY1N2Qk1Wa1JFV1h1b2xLcTRYak5RQzArbnc9IiwiYXV0aFRhZyI6IjhjVGR5NGJqSzg5QnRhU1hoY1N2QkE9PSJ9"
+               target="_blank" title="Facebook"><img alt="Facebook" data-assetid="18921" height="30"
+                                                     src="https://image.tx.ihg.com/lib/fe30117171640478701374/m/1/20d07d72-f65d-415b-8778-95f57870237b.png"
+                                                     style="display: block; padding: 0px; text-align: right; height: 30px; width: 30px; border: 0px;"
+                                                     width="30"> </a>
+          </td>
+           
+           
+          <td align="center" style="padding:0px 15px">
+            <a   data-linkto="other" href="https://click.tx.ihg.com/?qs=eyJkZWtJZCI6ImE4NmE3MWM1LWVmMGUtNDE5Zi05NWUyLTE5NzNmZGFhZGM2YSIsImRla1ZlcnNpb24iOjEsIml2IjoibmZINXNzK2tWUk8rbVhYSm4yN2xwUT09IiwiY2lwaGVyVGV4dCI6Ijc2cGdPOTJraEpMNG9ObkZJcW1yNU9EcWNLcjNQQU91QnFyT2l6alNBaVZVRHI4bHpZclFock85RWpTY0tzUlRaYjRZWE4yVXRCVEV5MEkvVGpuUGYrYWVjWVliSDR4OWNOSHVzTVVpTlozeCtiTFBwRlVUdnBsMXlaOXU1YVU9IiwiYXV0aFRhZyI6ImYrYWVjWVliSDR4OWNOSHVzTVVpTlE9PSJ9"
+               target="_blank" title="X"><img alt="X" data-assetid="26519" height="30" src="https://image.tx.ihg.com/lib/fe30117171640478701374/m/1/5a8fe989-2d7b-4f01-9920-78d04f40fe82.png"
+                                              style="display: block; padding: 0px; text-align: center; height: 30px; width: 29px; border: 0px;"
+                                              width="29"> </a>
+          </td>
+           
+           
+          <td align="center">
+            <a   data-linkto="https://" href="https://click.tx.ihg.com/?qs=eyJkZWtJZCI6IjAyZWZiNzYwLWI1YmEtNDMzMi1hNTE3LTYyZjdhNjEzNmJlMyIsImRla1ZlcnNpb24iOjEsIml2Ijoid3lRck1XbUs5eTdGVzQ1MU1lQVNWdz09IiwiY2lwaGVyVGV4dCI6IkZYR3VMZm55YXExU2xRa1JPZFU1b0ZzdDA0Q0Iyck56NWRYWVQ2RjIzNHEwU0NFUTVIc3JCajIvcktLamYyYVpuMVNpUWVaYkdXL3JkU01IbDdzQU9Zd2VBZExILzA2UGd0NjZyMnBVenNNa0t6RnBpdmN1eFZ1T2RUSGdFbGM9IiwiYXV0aFRhZyI6Ik9Zd2VBZExILzA2UGd0NjZyMnBVemc9PSJ9"
+               target="_blank" title="Instagram"><img alt="Instagram" data-assetid="18922" height="30"
+                                                      src="https://image.tx.ihg.com/lib/fe30117171640478701374/m/1/c0b688ed-c7ad-4070-916c-d9147324ff14.png"
+                                                      style="display: block; padding: 0px; text-align: left; height: 30px; width: 30px; border: 0px;"
+                                                      width="30"> </a>
+          </td>
+          
+          
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table> 
+
+ 
+
+</td></tr></table> <table align="center" cellpadding="0" cellspacing="0" class="container" dir="ltr" role="presentation" width="600">
+ 
+  <tr>
+   <td style="padding-top:10px;">
+    <table cellpadding="0" cellspacing="0" role="presentation" style="background-color:#F0EEED;" width="100%">
+     
+      <tr>
+       <td align="center" style="padding:37px 0px 20px 0px;">
+        <a   data-linkto="other" href="https://click.tx.ihg.com/?qs=eyJkZWtJZCI6IjhiNWQ0NDI5LWNmZGMtNDYxMS04MWIzLWNmMzBkZWY0ZDU5MiIsImRla1ZlcnNpb24iOjEsIml2IjoiUGN3SFFGS3V2Sm1nMHhWc0YyRVFhdz09IiwiY2lwaGVyVGV4dCI6IlFkRGlBVTBVdFZhd1krMUlCRkJQcVFyeE45MTRma2FQdFdsUHRtVVVTRlU2YzBUS0V0RjVlMCsxa203ZkQxeWd4Sys0VzJqUjM0aTZ0ODhvVktHaGErbU5lMHkxbWNHeS81MlpCOGlZQXozTUIwQlNycnlab05NVmJCZGhFR3M9IiwiYXV0aFRhZyI6ImErbU5lMHkxbWNHeS81MlpCOGlZQXc9PSJ9" target="_blank" title="Download the IHG One Rewards App"><img alt="Download the IHG One Rewards app" height="60" src="https://image.mc.ihg.com/lib/fe32117171640478701372/m/10/97b56831-b7c9-42ab-9843-b4cea74f193b.png" style="display: inline-block; height: 60px; width: 60px; padding: 0px; border: 0px;" width="60"> </a></td></tr><tr>
+       <td align="center" style="padding:0px 0px 37px 0px;" width="100%">
+        <table cellpadding="0" cellspacing="0" role="presentation" width="100%">
+         
+          <tr>
+           <td align="center" style="text-align: center;font-weight:400;font-size:16px;font-family:'Inter', Arial, Helvetica, sans-serif;">
+            Download the IHG One Rewards App</td></tr></table></td></tr></table> </td></tr></table></td></tr></table>
+  </td></tr>
+<tr><td align="left" valign="top">
+<table dir="ltr" cellpadding="0" cellspacing="0" role="presentation" width="600" class="container" align="center">
+  <tr>
+    <td align="left" style="font-family:'Inter', Arial, Helvetica, sans-serif;padding:30px 10px 0px 10px;text-align:left;" valign="top">
+      <p role="contentinfo" style="line-height:21px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;font-weight:400;font-size:14px;;color:#555555;">
+        <span style="font-weight:600;color:#000000;">Additional Hotel Information</span>
+        <br>
+        <br>
+        
+        
+      
+      
+      <!-- Begin Legal requirement to support add extras and payments in reservation series -->
+      Any add-on selections will appear as a separate charge on your hotel invoice. Only room upgrade charges will be combined with the room rate. All other purchases will be invoiced separately at the hotel.<br><br>
+      
+      <!-- End Legal requirement to support add extras and payments in reservation series -->
+      
+      <span style="font-weight:600;color:#555555;">Description of taxes and additional charges:</span>
+      
+      
+      <span style="color:#555555;"> 18.8% per night not included in rate effective 6 March, 2026 through 7 March, 2026.<br><br></span>
+      
+      
+      <!-- Begin Early Departure Fee -->
+      
+      <br>
+      <span style="font-weight:600;color:#555555;">Early departure fee:</span>
+      <span style="color:#555555;">&nbsp;280.00 MYR </span>
+      <br>
+      
+      <br>
+      <!-- End Early Departure Fee -->
+      <span style="color:#555555;">*Additional taxes and charges may apply. Other hotel-specific service charges may also&nbsp;apply.</span>
+      <br> 
+      
+      
+  </p>
+  </td>
+</tr>
+</table>
+  </td></tr>
+<tr><td align="left" valign="top">
+<table cellpadding="0" cellspacing="0" width="100%" role="presentation" style="min-width: 100%; " class="stylingblock-content-wrapper"><tr><td class="stylingblock-content-wrapper camarker-inner"><table align="center" cellpadding="0" cellspacing="0" class="container" role="presentation" style="border:0px;" width="600">
+ 
+  <tr>
+   <td align="center" style=" padding-top :10px;padding-bottom :10px;">
+    <a   data-linkto="other" href="https://click.tx.ihg.com/?qs=eyJkZWtJZCI6IjY5N2FjNTk1LWFjZmQtNDliMy1hMmJmLWFiNmNjYmZlNDk5OSIsImRla1ZlcnNpb24iOjEsIml2IjoiMERjSy9iV3l3S2Y1bTlCUmVPMmpkdz09IiwiY2lwaGVyVGV4dCI6IjBxVjhDYkp1OW80MDhRdER5cmZzVHlQNW1lUnB2U3VFZEFMZUdHdjNKQ2F6a1VGd0pmNVJxdGJ6M0dVdXY0NkowSmJsRzBCanRkcGZBSWpLcHhFQ1MyNnJHa3BCc29nRWliMzJlRTlIQzlBM0N2MjFzc0NuK1p2UVVYanRvM2M9IiwiYXV0aFRhZyI6IlMyNnJHa3BCc29nRWliMzJlRTlIQ3c9PSJ9" target="_blank" title="IHG Hotels &amp; Resorts"><img alt="IHG Hotels &amp; Resorts" data-assetid="21122" src="https://image.tx.ihg.com/lib/fe31117171640478701373/m/1/c5b8713e-b752-4bb6-8c06-ce5937a98f22.jpg" style="display: block; text-align: center; height: auto; width: 100%; border: 0px; padding: 0px;" width="600"></a>
+<a   data-linkto="https://" href="https://click.tx.ihg.com/?qs=eyJkZWtJZCI6IjI5ZjA4ZGFkLTE5ODAtNDFjZi1iZTg0LTVlYjY4MjJmN2IzMCIsImRla1ZlcnNpb24iOjEsIml2IjoiNnlMdkJsOFg2YjhFODJXb3NSZUtvZz09IiwiY2lwaGVyVGV4dCI6InpaQnlPb3dMUnN3ZFRJWjJNVVJpMGo3WFpkTFprRy9tNkpCSHN6QkM2S2dKeGc5UGNmVjM3a280T0VGNi9aUmhsUEttcVcyNk1UUXRVMkVBMkJkNjlCRUtVRjdYWHJDWHlONlhUdmtYeE9zaTd3WmZGK20vQlBObHFMRVhpcUk9IiwiYXV0aFRhZyI6IjlCRUtVRjdYWHJDWHlONlhUdmtYeEE9PSJ9" target="_blank" title="IHG Hotels &amp; Resorts"> </a></td></tr></table> </td></tr></table>
+  </td></tr>
+<tr><td align="left" valign="top">
+
+  </td></tr>
+<tr><td align="left" valign="top">
+ 
+
+ 
+ 
+ <table dir="ltr"  align="center" border="0" cellpadding="0" cellspacing="0" width="600" class="container">
+   <!--  -->
+   
+    <!-- BEGIN - HICV Terms -->
+
+   <!-- END - HICV Terms -->
+   <tr>
+   <td align="left" valign="top" style="padding-left:10px; padding-right:10px;padding-top:20px;text-align:left;">
+     <p style="font-family: 'Inter', Arial, Helvetica, sans-serif; font-size:14px; line-height:21px;">
+       
+This email was sent to chris.catignani@gmail.com
+<br/>
+<br/>
+You have received this email as a result of your recent transaction with Holiday Inn Express<span style="font-size: 70%; line-height: 0px; vertical-align: 3px; -webkit-text-size-adjust: none; mso-line-height-rule:exactly;">®</span> Hotels & Resorts. 
+<br/>
+<br/>
+This email is for posting only. Please do not reply. 
+<br/>
+<br/>
+Only the reservation as entered into and confirmed by our system will be honored. Any written or printed confirmation that has been altered may be rejected by the hotel. 
+<br/>
+<br/>
+As exchange rates may fluctuate from the time a reservation is made until the time of arrival, the confirmed rate is guaranteed in the hotel's base currency. Your privacy is extremely important to us. Read our 
+<a href="https://click.tx.ihg.com/?qs=eyJkZWtJZCI6Ijc4NGE2Mzc1LWM4ZWYtNDU4NC1hNzY0LTY2MzQ2MTU1NWE4YiIsImRla1ZlcnNpb24iOjEsIml2IjoiaTlMcXhNeDVzNWZnUjI0NXlGRmR5QT09IiwiY2lwaGVyVGV4dCI6InNRLzRQcjM4Uit2VlZ3Mng1S2VHcmdxZ2lZb0IxRWZ5c3RtT0JTWHZ2Rzd3d0RVTHN2VjAyM3I0UE9NUmovNUhSVjNUVlhMeEx0bXZWV1VzbS9kbDF1STNHK1QzTlNYVCs5cUlIbENhNjR2UzZzVE1lYk9YNEVkdU9jaFJYY2c9IiwiYXV0aFRhZyI6IjF1STNHK1QzTlNYVCs5cUlIbENhNnc9PSJ9"  style="color:#000000; text-decoration:underline;">Privacy Statement</a>. 
+<br/>
+<br/>
+&copy; 2026 IHG, Three Ravinia Drive, Suite 100, Atlanta, Georgia, 30346-2149 USA.
+<br/>
+<br/>
+All rights reserved. Most hotels are independently owned and/or operated.
+     </p>
+
+   
+</td>
+   </tr>
+</table>  
+  </td></tr>
+</table>
+ </tbody>
+ 
+                                            </table>
+                                          </td>
+                                        </tr>
+                                    </tbody>
+                                  </table>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+
+    </table>
+  </body>
+</html>
+
+--C7LLqArToBs2=_?:--
