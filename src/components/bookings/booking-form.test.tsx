@@ -280,6 +280,9 @@ describe("BookingForm benefit approximate value", () => {
         },
       ],
       bookingCardBenefits: [],
+      confirmationNumber: null,
+      ingestionMethod: "manual",
+      needsReview: false,
     }) as Booking;
 
   beforeEach(() => {
