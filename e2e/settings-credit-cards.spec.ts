@@ -81,34 +81,37 @@ test.describe("Settings — Credit Cards", () => {
     const originalRate = Number(card.rewardRate);
     const newRate = originalRate + 0.01; // bump by 1 percentage point
 
-    // Create a UserCreditCard linking the isolated user to the seeded card
-    const ucRes = await isolatedUser.request.post("/api/user-credit-cards", {
-      data: { creditCardId: card.id },
-    });
-    expect(ucRes.ok()).toBeTruthy();
-    const uc = await ucRes.json();
-
-    const bookingRes = await isolatedUser.request.post("/api/bookings", {
-      data: {
-        userCreditCardId: uc.id,
-        hotelChainId: testHotelChain.id,
-        propertyName: `Card Reward Reflection ${crypto.randomUUID()}`,
-        checkIn: `${new Date().getFullYear()}-09-01`,
-        checkOut: `${new Date().getFullYear()}-09-03`,
-        numNights: 2,
-        pretaxCost: 200,
-        taxAmount: 20,
-        totalCost: 220,
-      },
-    });
-    expect(bookingRes.ok()).toBeTruthy();
-    const booking = await bookingRes.json();
-
-    const { page } = isolatedUser;
+    let uc: { id: string } | undefined;
+    let booking: { id: string } | undefined;
 
     try {
+      // Create a UserCreditCard linking the isolated user to the seeded card
+      const ucRes = await isolatedUser.request.post("/api/user-credit-cards", {
+        data: { creditCardId: card.id },
+      });
+      expect(ucRes.ok()).toBeTruthy();
+      uc = await ucRes.json();
+
+      const bookingRes = await isolatedUser.request.post("/api/bookings", {
+        data: {
+          userCreditCardId: uc!.id,
+          hotelChainId: testHotelChain.id,
+          propertyName: `Card Reward Reflection ${crypto.randomUUID()}`,
+          checkIn: `${new Date().getFullYear()}-09-01`,
+          checkOut: `${new Date().getFullYear()}-09-03`,
+          numNights: 2,
+          pretaxCost: 200,
+          taxAmount: 20,
+          totalCost: 220,
+        },
+      });
+      expect(bookingRes.ok()).toBeTruthy();
+      booking = await bookingRes.json();
+
+      const { page } = isolatedUser;
+
       // View booking detail and note initial card reward text
-      await page.goto(`/bookings/${booking.id}`);
+      await page.goto(`/bookings/${booking!.id}`);
       const cardRewardEl = page.getByTestId("breakdown-card-reward");
       await expect(cardRewardEl).toBeVisible();
       const initialText = await cardRewardEl.textContent();
@@ -122,7 +125,7 @@ test.describe("Settings — Credit Cards", () => {
       // Reload and wait for booking data to re-fetch before asserting
       await Promise.all([
         page.waitForResponse(
-          (r) => r.url().includes(`/api/bookings/${booking.id}`) && r.status() === 200
+          (r) => r.url().includes(`/api/bookings/${booking!.id}`) && r.status() === 200
         ),
         page.reload(),
       ]);
@@ -130,8 +133,8 @@ test.describe("Settings — Credit Cards", () => {
       const updatedText = await cardRewardEl.textContent();
       expect(updatedText).not.toBe(initialText);
     } finally {
-      await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
-      await isolatedUser.request.delete(`/api/user-credit-cards/${uc.id}`);
+      if (booking) await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
+      if (uc) await isolatedUser.request.delete(`/api/user-credit-cards/${uc.id}`);
       // Restore original rate
       await adminRequest.put(`/api/credit-cards/${card.id}`, {
         data: { rewardRate: originalRate },
