@@ -21,6 +21,7 @@ test.describe("Booking List - Additional", () => {
     // pastYearBooking checks out in a past year; the default filter is the current year,
     // so no bookings match and the year-filter empty state should show.
     await pastYearBooking.page.goto("/bookings");
+    await pastYearBooking.page.waitForLoadState("networkidle");
     await expect(pastYearBooking.page.getByTestId("bookings-empty-year-filter")).toBeVisible();
   });
 

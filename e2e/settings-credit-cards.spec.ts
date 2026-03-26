@@ -73,10 +73,7 @@ test.describe("Settings — Credit Cards", () => {
     const card = cards.find(
       (c: { rewardRate: number | null }) => c.rewardRate != null && Number(c.rewardRate) > 0
     );
-    if (!card) {
-      test.skip();
-      return;
-    }
+    expect(card, "No seeded credit card with rewardRate > 0 found").toBeDefined();
 
     const originalRate = Number(card.rewardRate);
     const newRate = originalRate + 0.01; // bump by 1 percentage point
