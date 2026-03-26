@@ -33,6 +33,7 @@ test.describe("Dashboard — widget smoke tests", () => {
 
     try {
       await isolatedUser.page.goto("/");
+      await isolatedUser.page.waitForLoadState("networkidle");
 
       // Price Distribution — card visible and shows at least one bucket label
       const priceCard = isolatedUser.page.getByTestId("price-distribution-card");
@@ -84,6 +85,7 @@ test.describe("Dashboard — widget mode toggles", () => {
 
     try {
       await isolatedUser.page.goto("/");
+      await isolatedUser.page.waitForLoadState("networkidle");
 
       const geoCard = isolatedUser.page.getByTestId("geo-distribution-card");
       // Default: Country view shows US row
@@ -125,6 +127,7 @@ test.describe("Dashboard — widget mode toggles", () => {
 
     try {
       await isolatedUser.page.goto("/");
+      await isolatedUser.page.waitForLoadState("networkidle");
 
       const priceCard = isolatedUser.page.getByTestId("price-distribution-card");
       // Default: Net/Night — $300 / 3 nights = $100/night → $100–150 bucket
@@ -164,6 +167,7 @@ test.describe("Dashboard — widget mode toggles", () => {
 
     try {
       await isolatedUser.page.goto("/");
+      await isolatedUser.page.waitForLoadState("networkidle");
 
       // Default: Stays mode — legend visible
       const legend = isolatedUser.page.getByTestId("payment-type-legend");
@@ -207,6 +211,7 @@ test.describe("Dashboard — widget mode toggles", () => {
 
     try {
       await isolatedUser.page.goto("/");
+      await isolatedUser.page.waitForLoadState("networkidle");
 
       const monthlyCard = isolatedUser.page.getByTestId("monthly-travel-pattern-card");
       // Default: Stays mode shows month labels
@@ -246,6 +251,7 @@ test.describe("Dashboard — widget mode toggles", () => {
 
     try {
       await isolatedUser.page.goto("/");
+      await isolatedUser.page.waitForLoadState("networkidle");
 
       // Default: Stays mode — legend shows "No Sub-brand" for a hotel booking without a sub-brand
       const legend = isolatedUser.page.getByTestId("sub-brand-breakdown-legend");
