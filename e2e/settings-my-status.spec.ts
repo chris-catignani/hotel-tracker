@@ -29,7 +29,7 @@ test.describe("Settings — My Status", () => {
     ]);
 
     await page.reload();
-    await expect(page.getByTestId("user-status-table")).toBeVisible();
+    await page.waitForLoadState("networkidle");
     await expect(page.getByTestId(`status-select-${HOTEL_ID.HYATT}`)).toContainText("Explorist");
   });
 
@@ -60,7 +60,7 @@ test.describe("Settings — My Status", () => {
     ]);
 
     await page.reload();
-    await expect(page.getByTestId("user-status-table")).toBeVisible();
+    await page.waitForLoadState("networkidle");
     await expect(page.getByTestId(`status-select-${HOTEL_ID.HYATT}`)).toContainText(
       "Base Member / No Status"
     );
@@ -75,10 +75,7 @@ test.describe("Settings — My Status", () => {
     const chains = await chainsRes.json();
     const hyatt = chains.find((c: { id: string }) => c.id === HOTEL_ID.HYATT);
     const explorist = hyatt?.eliteStatuses?.find((s: { name: string }) => s.name === "Explorist");
-    if (!explorist) {
-      test.skip();
-      return;
-    }
+    expect(explorist, "Explorist elite status not found in seeded Hyatt data").toBeDefined();
 
     // Create a past booking for Hyatt (no status set yet → base rate only)
     const bookingRes = await request.post("/api/bookings", {
@@ -104,11 +101,17 @@ test.describe("Settings — My Status", () => {
       });
       expect(statusRes.ok()).toBeTruthy();
 
-      // Loyalty points should have increased
-      const refreshRes = await request.get(`/api/bookings/${booking.id}`);
-      expect(refreshRes.ok()).toBeTruthy();
-      const refreshed = await refreshRes.json();
-      expect(Number(refreshed.loyaltyPointsEarned)).toBeGreaterThan(initialPoints);
+      // Loyalty points should have increased — poll to allow cascade to propagate under load
+      await expect
+        .poll(
+          async () => {
+            const res = await request.get(`/api/bookings/${booking.id}`);
+            const data = await res.json();
+            return Number(data.loyaltyPointsEarned);
+          },
+          { timeout: 8000 }
+        )
+        .toBeGreaterThan(initialPoints);
     } finally {
       await request.delete(`/api/bookings/${booking.id}`);
       // Restore base status
@@ -124,23 +127,24 @@ test.describe("Settings — My Status", () => {
     await page.goto("/settings");
     await expect(page.getByTestId("tab-my-status")).toBeVisible();
 
-    // Find all partnership checkboxes and pick the first one
-    const checkboxes = page.locator('[data-testid^="partnership-checkbox-"]');
-    const checkboxCount = await checkboxes.count();
-    if (checkboxCount === 0) {
-      test.skip();
-      return;
-    }
-
-    // Extract the stable testid of the first checkbox so we can re-query it after reload
-    const firstCheckbox = checkboxes.first();
+    // Wait for partnership checkboxes to render (data fetched async after page load)
+    const firstCheckbox = page.locator('[data-testid^="partnership-checkbox-"]').first();
+    await expect(
+      firstCheckbox,
+      "No partnership checkboxes — partnershipEarn seed data missing or not rendered"
+    ).toBeVisible();
     const testId = await firstCheckbox.getAttribute("data-testid");
     if (!testId) throw new Error("Could not read partnership checkbox testid");
 
-    // Ensure it ends up enabled: enable if currently disabled
+    // Ensure it ends up enabled: enable if currently disabled, and wait for the API save
     const isChecked = await firstCheckbox.isChecked();
     if (!isChecked) {
-      await firstCheckbox.click();
+      await Promise.all([
+        page.waitForResponse(
+          (r) => r.url().includes("/api/user-partnership-earns") && r.status() < 400
+        ),
+        firstCheckbox.click(),
+      ]);
     }
 
     // Verify it persists after reload using the stable testid

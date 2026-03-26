@@ -1053,6 +1053,8 @@ export function calculateMatchedPromotions(
 
 /**
  * Persists matched promotions to a booking, replacing existing auto-applied ones.
+ * The delete-and-recreate is wrapped in a transaction so no concurrent reader can
+ * observe the booking in a zero-BP state between the two operations.
  */
 async function applyMatchedPromotions(
   bookingId: string,
@@ -1069,56 +1071,55 @@ async function applyMatchedPromotions(
     return [];
   }
 
-  // Delete existing auto-applied BookingPromotions for this booking
-  await prisma.bookingPromotion.deleteMany({
-    where: {
-      bookingId,
-      autoApplied: true,
-    },
-  });
-
-  // Create new BookingPromotion records with benefit applications
-  const createdRecords: BookingPromotion[] = [];
-  for (const match of matched) {
-    try {
-      const record = await prisma.bookingPromotion.create({
-        data: {
+  try {
+    return await prisma.$transaction(async (tx) => {
+      // Delete existing auto-applied BookingPromotions for this booking
+      await tx.bookingPromotion.deleteMany({
+        where: {
           bookingId,
-          promotionId: match.promotionId,
-          appliedValue: match.appliedValue,
-          bonusPointsApplied: match.bonusPointsApplied > 0 ? match.bonusPointsApplied : null,
           autoApplied: true,
-          eligibleNightsAtBooking: match.eligibleNightsAtBooking,
-          isOrphaned: match.isOrphaned ?? false,
-          isPreQualifying: match.isPreQualifying ?? false,
-          benefitApplications: {
-            create: match.benefitApplications.map((ba) => ({
-              promotionBenefitId: ba.promotionBenefitId,
-              appliedValue: ba.appliedValue,
-              bonusPointsApplied: ba.bonusPointsApplied > 0 ? ba.bonusPointsApplied : null,
-              eligibleNightsAtBooking: ba.eligibleNightsAtBooking,
-              isOrphaned: ba.isOrphaned ?? false,
-              isPreQualifying: ba.isPreQualifying ?? false,
-            })),
-          },
         },
       });
-      createdRecords.push(record);
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        (error.code === "P2003" || error.code === "P2025")
-      ) {
-        console.warn(
-          `applyMatchedPromotions: Booking ${bookingId} was likely deleted concurrently.`
-        );
-        return createdRecords;
-      }
-      throw error;
-    }
-  }
 
-  return createdRecords;
+      // Create new BookingPromotion records with benefit applications
+      const createdRecords: BookingPromotion[] = [];
+      for (const match of matched) {
+        const record = await tx.bookingPromotion.create({
+          data: {
+            bookingId,
+            promotionId: match.promotionId,
+            appliedValue: match.appliedValue,
+            bonusPointsApplied: match.bonusPointsApplied > 0 ? match.bonusPointsApplied : null,
+            autoApplied: true,
+            eligibleNightsAtBooking: match.eligibleNightsAtBooking,
+            isOrphaned: match.isOrphaned ?? false,
+            isPreQualifying: match.isPreQualifying ?? false,
+            benefitApplications: {
+              create: match.benefitApplications.map((ba) => ({
+                promotionBenefitId: ba.promotionBenefitId,
+                appliedValue: ba.appliedValue,
+                bonusPointsApplied: ba.bonusPointsApplied > 0 ? ba.bonusPointsApplied : null,
+                eligibleNightsAtBooking: ba.eligibleNightsAtBooking,
+                isOrphaned: ba.isOrphaned ?? false,
+                isPreQualifying: ba.isPreQualifying ?? false,
+              })),
+            },
+          },
+        });
+        createdRecords.push(record);
+      }
+      return createdRecords;
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      (error.code === "P2003" || error.code === "P2025")
+    ) {
+      console.warn(`applyMatchedPromotions: Booking ${bookingId} was likely deleted concurrently.`);
+      return [];
+    }
+    throw error;
+  }
 }
 
 /**

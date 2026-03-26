@@ -278,9 +278,9 @@ test.describe("Dashboard — accommodation summary", () => {
 
     try {
       await isolatedUser.page.goto("/");
+      await isolatedUser.page.waitForLoadState("networkidle");
 
       const summaryTable = isolatedUser.page.getByTestId("hotel-chain-summary-desktop");
-      await expect(summaryTable).toBeVisible();
       await expect(summaryTable).toContainText(chain.name);
     } finally {
       await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
