@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { CalendarDays, Eye, EyeOff } from "lucide-react";
@@ -124,6 +125,7 @@ interface Booking {
   certificates: BookingCertificate[];
   priceWatchBooking: { priceWatch: { isEnabled: boolean } } | null;
   accommodationType: string;
+  needsReview: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -291,6 +293,14 @@ export default function BookingsPage() {
                                 </div>
                               )}
                             </div>
+                            {booking.needsReview && (
+                              <Badge
+                                variant="outline"
+                                className="border-amber-400 bg-amber-50 text-amber-700 text-xs shrink-0"
+                              >
+                                Review
+                              </Badge>
+                            )}
                             {booking.accommodationType !== "apartment" && (
                               <Tooltip>
                                 <TooltipTrigger asChild>
