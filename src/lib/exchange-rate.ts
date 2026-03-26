@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 
@@ -119,21 +120,43 @@ export async function getOrFetchHistoricalRate(
     });
     return null;
   }
-  await prisma.exchangeRateHistory.upsert({
-    where: {
-      fromCurrency_toCurrency_date: {
+  try {
+    await prisma.exchangeRateHistory.upsert({
+      where: {
+        fromCurrency_toCurrency_date: {
+          fromCurrency,
+          toCurrency: "USD",
+          date: new Date(date),
+        },
+      },
+      update: {},
+      create: {
         fromCurrency,
         toCurrency: "USD",
         date: new Date(date),
+        rate,
       },
-    },
-    update: {},
-    create: {
-      fromCurrency,
-      toCurrency: "USD",
-      date: new Date(date),
-      rate,
-    },
-  });
+    });
+  } catch (upsertErr) {
+    // P2002: two concurrent requests raced past the findUnique cache-miss check and
+    // both tried to insert the same row. The winner already wrote it — re-fetch.
+    if (
+      !(upsertErr instanceof Prisma.PrismaClientKnownRequestError && upsertErr.code === "P2002")
+    ) {
+      throw upsertErr;
+    }
+    const existing = await prisma.exchangeRateHistory.findUnique({
+      where: {
+        fromCurrency_toCurrency_date: {
+          fromCurrency,
+          toCurrency: "USD",
+          date: new Date(date),
+        },
+      },
+    });
+    if (existing) return Number(existing.rate);
+    // Winning request deleted the row before we could re-fetch (pathological).
+    // Fall through and return the rate we fetched from the API above.
+  }
   return rate;
 }
