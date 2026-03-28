@@ -108,7 +108,7 @@ describe("parseConfirmationEmail", () => {
             checkOut: "2027-01-18",
             numNights: 4,
             bookingType: "cash",
-            confirmationNumber: "64167883",
+            confirmationNumber: "73829461",
             currency: "USD",
             pretaxCost: 591.04,
             taxAmount: 98.5,
@@ -132,7 +132,7 @@ describe("parseConfirmationEmail", () => {
       checkOut: "2027-01-18",
       numNights: 4,
       bookingType: "cash",
-      confirmationNumber: "64167883",
+      confirmationNumber: "73829461",
     });
   });
 
@@ -263,7 +263,7 @@ describe("parseConfirmationEmail", () => {
             checkOut: "2027-01-18",
             numNights: 4,
             bookingType: "cash",
-            confirmationNumber: "64167883",
+            confirmationNumber: "73829461",
             hotelChain: "Hyatt",
             subBrand: "Hyatt Regency",
             currency: "USD",

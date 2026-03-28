@@ -1,4 +1,4 @@
-Delivered-To: chris.catignani@gmail.com
+Delivered-To: user@example.com
 Received: by 2002:a05:7011:8906:b0:500:d9d8:62a0 with SMTP id ng6csp65325mdc;
         Wed, 11 Feb 2026 01:54:08 -0800 (PST)
 X-Received: by 2002:a05:6830:6201:b0:7cf:cbee:6bd5 with SMTP id 46e09a7af769-7d46448594cmr7635131a34.19.1770803648281;
@@ -30,7 +30,7 @@ ARC-Authentication-Results: i=1; mx.google.com;
 Return-Path: <bounce@res-marriott.com>
 Received: from mta085c.pmx1.epsl1.com (mta085c.pmx1.epsl1.com. [142.54.247.85])
         by mx.google.com with ESMTPS id 46e09a7af769-7d4a772fe4csi838121a34.99.2026.02.11.01.54.08
-        for <chris.catignani@gmail.com>
+        for <user@example.com>
         (version=TLS1_2 cipher=ECDHE-ECDSA-AES128-GCM-SHA256 bits=128/128);
         Wed, 11 Feb 2026 01:54:08 -0800 (PST)
 Received-SPF: pass (google.com: domain of bounce@res-marriott.com designates 142.54.247.85 as permitted sender) client-ip=142.54.247.85;
@@ -51,9 +51,9 @@ MIME-Version: 1.0
 Feedback-ID: 19b293d4-9558-4a56-938e-c04986a0323e:aedf04e0-1e87-4994-a7f0-c9e4720833b5:email:epslh1
 X-NSS: 19b293d4-9558-4a56-938e-c04986a0323e
 Reply-To: "reservations@res-marriott.com" <reservations@res-marriott.com>
-Subject: Reservation Confirmation #72023331 for The Serangoon House Little India, Singapore, a Tribute Portfolio Hotel
+Subject: Reservation Confirmation #48293615 for The Serangoon House Little India, Singapore, a Tribute Portfolio Hotel
 From: Tribute Reservations <reservations@res-marriott.com>
-To: chris.catignani@gmail.com
+To: user@example.com
 Date: Wed, 11 Feb 2026 09:54:08 +0000
 Content-Type: multipart/alternative; boundary="-=Part.38b6f.31ea980b254c0964.19c4c1f568e.48556c0efe8f4092=-"
 
@@ -69,7 +69,7 @@ w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns=3D"http://www.w3.org/1999/xhtml" xmlns:v=3D"urn:schemas-microso=
 ft-com:vml" xmlns:o=3D"urn:schemas-microsoft-com:office:office">
 <head>
-  <title>Reservation Confirmation #72023331 for The Serangoon House Little =
+  <title>Reservation Confirmation #48293615 for The Serangoon House Little =
 India, Singapore, a Tribute Portfolio Hotel</title>
 <meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3DUTF-8" />
 <meta name=3D"viewport" content=3D"width=3Ddevice-width" /> =20
@@ -784,8 +784,7 @@ ding:28px 20px 20px 20px;" class=3D"pad29">
   <tr>
     <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
 ; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-si=
-ze:24px; color:#1C1C1C;" class=3D"fontsize1">Thank you for your booking,  C=
-hristopher Catignani.</td>
+ze:24px; color:#1C1C1C;" class=3D"fontsize1">Thank you for your booking,  Alex Smith.</td>
   </tr>
 </table>
 <table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
@@ -808,7 +807,7 @@ pr 15, 2026</td>
   <tr>
     <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
 ; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-si=
-ze:20px; color:#1C1C1C;">Confirmation Number: 72023331</td>
+ze:20px; color:#1C1C1C;">Confirmation Number: 48293615</td>
     <td align=3D"right" style=3D"vertical-align:top; padding:0px 0px 0px 0p=
 x;"><a href=3D"https://res-marriott.com/H/2/v710000019c4c1f4ee8977821434b5c=
 56d0/19b293d4-9558-4a56-938e-c04986a0323e/HTML" style=3D"color:#FFFFFF; tex=
@@ -2090,8 +2089,7 @@ count</td>
   <tr>
     <td align=3D"left" style=3D"vertical-align:top; padding:17px 0px 0px 0p=
 x; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-=
-size:24px; color:#554749;" class=3D"textaligncenter fontsize3 pad13"> Chris=
-topher Catignani</td>
+size:24px; color:#554749;" class=3D"textaligncenter fontsize3 pad13"> Alex Smith</td>
   </tr>
   <tr>
     <td align=3D"center" style=3D"vertical-align:top; padding:0px 0px 25px =

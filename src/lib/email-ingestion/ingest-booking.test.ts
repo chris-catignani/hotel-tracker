@@ -69,7 +69,7 @@ const baseParsed: ParsedBookingData = {
   checkOut: "2027-01-18",
   numNights: 4,
   bookingType: "cash",
-  confirmationNumber: "64167883",
+  confirmationNumber: "73829461",
   hotelChain: null,
   subBrand: null,
   currency: "USD",
@@ -108,7 +108,7 @@ describe("ingestBookingFromEmail", () => {
     const createArg = mockBookingCreate.mock.calls[0][0].data;
     expect(createArg.ingestionMethod).toBe("email");
     expect(createArg.needsReview).toBe(true);
-    expect(createArg.confirmationNumber).toBe("64167883");
+    expect(createArg.confirmationNumber).toBe("73829461");
   });
 
   it("returns duplicate=true when same conf number AND same booking details", async () => {
@@ -118,7 +118,7 @@ describe("ingestBookingFromEmail", () => {
     expect(mockBookingCreate).not.toHaveBeenCalled();
     // Verify the where clause includes all 5 matching fields
     const whereClause = mockBookingFindFirst.mock.calls[0][0].where;
-    expect(whereClause.confirmationNumber).toBe("64167883");
+    expect(whereClause.confirmationNumber).toBe("73829461");
     expect(whereClause.checkIn).toEqual(new Date("2027-01-14"));
     expect(whereClause.checkOut).toEqual(new Date("2027-01-18"));
     expect(whereClause.totalCost).toBe(689.54);

@@ -464,7 +464,7 @@ describe("parseConfirmationEmail", () => {
             checkOut: "2027-01-18",
             numNights: 4,
             bookingType: "cash",
-            confirmationNumber: "64167883",
+            confirmationNumber: "73829461",
             currency: "USD",
             pretaxCost: 591.04,
             taxAmount: 98.5,
@@ -488,7 +488,7 @@ describe("parseConfirmationEmail", () => {
       checkOut: "2027-01-18",
       numNights: 4,
       bookingType: "cash",
-      confirmationNumber: "64167883",
+      confirmationNumber: "73829461",
     });
   });
 
@@ -815,7 +815,7 @@ const baseParsed: ParsedBookingData = {
   checkOut: "2027-01-18",
   numNights: 4,
   bookingType: "cash",
-  confirmationNumber: "64167883",
+  confirmationNumber: "73829461",
   currency: "USD",
   pretaxCost: 591.04,
   taxAmount: 98.5,
@@ -837,7 +837,7 @@ describe("ingestBookingFromEmail", () => {
     const createArg = mockBookingCreate.mock.calls[0][0].data;
     expect(createArg.ingestionMethod).toBe("email");
     expect(createArg.needsReview).toBe(true);
-    expect(createArg.confirmationNumber).toBe("64167883");
+    expect(createArg.confirmationNumber).toBe("73829461");
   });
 
   it("returns duplicate=true and skips creation when confirmationNumber already exists", async () => {

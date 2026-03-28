@@ -1,4 +1,4 @@
-Delivered-To: chris.catignani@gmail.com
+Delivered-To: user@example.com
 Received: by 2002:a05:6675:449:10b0:5e0:9976:9672 with SMTP id ir9-n1csp610429pxb;
         Thu, 13 Feb 2025 17:38:45 -0800 (PST)
 X-Google-Smtp-Source: AGHT+IFeOiz6G6yuJQ/bz2By2usEtCv47drHiSQgalcYMkvYfJQclviE0OkKsEu98BZNu13opOlr
@@ -31,7 +31,7 @@ ARC-Authentication-Results: i=1; mx.google.com;
 Return-Path: <bounce@res-marriott.com>
 Received: from mta039a.pmx12.epsl1.com (mta039a.pmx12.epsl1.com. [142.54.38.39])
         by mx.google.com with ESMTPS id ffacd0b85a97d-38f25a103d7si3038250f8f.606.2025.02.13.17.38.44
-        for <chris.catignani@gmail.com>
+        for <user@example.com>
         (version=TLS1_2 cipher=ECDHE-ECDSA-AES128-GCM-SHA256 bits=128/128);
         Thu, 13 Feb 2025 17:38:45 -0800 (PST)
 Received-SPF: pass (google.com: domain of bounce@res-marriott.com designates 142.54.38.39 as permitted sender) client-ip=142.54.38.39;
@@ -52,10 +52,10 @@ MIME-Version: 1.0
 Feedback-ID: c3f46255-f41d-4956-99b4-dbbae26b643c:aedf04e0-1e87-4994-a7f0-c9e4720833b5:email:epslh1
 X-NSS: c3f46255-f41d-4956-99b4-dbbae26b643c
 Reply-To: "reservations@res-marriott.com" <reservations@res-marriott.com>
-Subject: Reservation Confirmation #83415379 for Moxy Munich Ostbahnhof
+Subject: Reservation Confirmation #61748392 for Moxy Munich Ostbahnhof
 From: Marriott Bonvoy
   Reservations <reservations@res-marriott.com>
-To: chris.catignani@gmail.com
+To: user@example.com
 Date: Fri, 14 Feb 2025 01:38:42 +0000
 Content-Type: multipart/alternative; boundary="-=Part.2b0c5a.a914b09060377d07.195021baaf2.b1908d3ff3b89683=-"
 
@@ -71,7 +71,7 @@ w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns=3D"http://www.w3.org/1999/xhtml" xmlns:v=3D"urn:schemas-microso=
 ft-com:vml" xmlns:o=3D"urn:schemas-microsoft-com:office:office">
 <head>
-  <title>Reservation Confirmation #83415379 for Moxy Munich Ostbahnhof</tit=
+  <title>Reservation Confirmation #61748392 for Moxy Munich Ostbahnhof</tit=
 le>
 <meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3DUTF-8" />
 <meta name=3D"viewport" content=3D"width=3Ddevice-width" /> =20
@@ -661,8 +661,7 @@ ding:28px 20px 20px 20px;" class=3D"pad29">
   <tr>
     <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
 ; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-si=
-ze:24px; color:#FFFFFF;" class=3D"fontsize1">Thank you for your booking,  C=
-hristopher Catignani.</td>
+ze:24px; color:#FFFFFF;" class=3D"fontsize1">Thank you for your booking,  Alex Smith.</td>
   </tr>
 </table>
 <table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
@@ -685,7 +684,7 @@ ep 16, 2025</td>
   <tr>
     <td align=3D"left" style=3D"vertical-align:top; padding:0px 0px 0px 0px=
 ; font-family:'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-si=
-ze:20px; color:#FFFFFF;">Confirmation Number: 83415379</td>
+ze:20px; color:#FFFFFF;">Confirmation Number: 61748392</td>
     <td align=3D"right" style=3D"vertical-align:top; padding:0px 0px 0px 0p=
 x;"><a href=3D"https://res-marriott.com/H/2/v7100000195021ba0a6829cf1434b5c=
 5940/c3f46255-f41d-4956-99b4-dbbae26b643c/HTML" style=3D"color:#FFFFFF; tex=
@@ -1911,8 +1910,7 @@ ccount</td>
   <tr>
     <td align=3D"left" style=3D"vertical-align:top; padding:17px 0px 0px 0p=
 x; font-family: 'Proxima-Nova-Regular', Arial, Helvetica, sans-serif; font-=
-size:24px; color:#554749;" class=3D"textaligncenter fontsize3 pad13"> Chris=
-topher Catignani</td>
+size:24px; color:#554749;" class=3D"textaligncenter fontsize3 pad13"> Alex Smith</td>
   </tr>
   <tr>
     <td align=3D"center" style=3D"vertical-align:top; padding:0px 0px 25px =

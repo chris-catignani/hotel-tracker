@@ -1,4 +1,4 @@
-Delivered-To: chris.catignani@gmail.com
+Delivered-To: user@example.com
 Received: by 2002:a05:7010:306:b0:500:d9d8:62a0 with SMTP id f6csp2193814mdj;
         Sat, 21 Feb 2026 04:51:35 -0800 (PST)
 X-Received: by 2002:a05:622a:155:b0:506:217e:b0e5 with SMTP id d75a77b69052e-5070ba7f96amr43980261cf.0.1771678295343;
@@ -31,7 +31,7 @@ ARC-Authentication-Results: i=1; mx.google.com;
 Return-Path: <bounce-JRKYRLBU2OBUBNA23LI7RZ5PYQ.110050@bounce.tx.ihg.com>
 Received: from mta2.tx.ihg.com (mta2.tx.ihg.com. [13.111.173.23])
         by mx.google.com with ESMTPS id d75a77b69052e-5070d6fff44si19569751cf.143.2026.02.21.04.51.35
-        for <chris.catignani@gmail.com>
+        for <user@example.com>
         (version=TLS1_2 cipher=ECDHE-ECDSA-AES128-GCM-SHA256 bits=128/128);
         Sat, 21 Feb 2026 04:51:35 -0800 (PST)
 Received-SPF: pass (google.com: domain of bounce-jrkyrlbu2obubna23li7rz5pyq.110050@bounce.tx.ihg.com designates 13.111.173.23 as permitted sender) client-ip=13.111.173.23;
@@ -50,10 +50,10 @@ DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; s=fbldkim11; d=s11.y.mc.sa
    TA6JeA3e31VL6FObmf8G7ksiuAVT4/8yR+zkMB8uvVWDhwZ1eZ6qIwRJfgq8NbiE1zuBpVtA1YZn
    7UDHrXZ5jbERTHY/XYUiAunq6JJfeNDJvOLlc47cLjPJcfsX/zu51MR3L5YOqiHnFuQaOnGnT830
    zGU+SoeVoq8uQoFL3+j68g9qqdEydPadW8NXKA==
-Received: by mta2.tx.ihg.com id hj6l5e2fmd48 for <chris.catignani@gmail.com>; Sat, 21 Feb 2026 12:51:35 +0000 (envelope-from <bounce-JRKYRLBU2OBUBNA23LI7RZ5PYQ.110050@bounce.tx.ihg.com>)
+Received: by mta2.tx.ihg.com id hj6l5e2fmd48 for <user@example.com>; Sat, 21 Feb 2026 12:51:35 +0000 (envelope-from <bounce-JRKYRLBU2OBUBNA23LI7RZ5PYQ.110050@bounce.tx.ihg.com>)
 From: Holiday Inn Express <HolidayInnExpress@tx.ihg.com>
-To: <chris.catignani@gmail.com>
-Subject: Your reservation at Holiday Inn Express Kuala Lumpur City Centre is confirmed. #61827637 - 6 Mar 2026
+To: <user@example.com>
+Subject: Your reservation at Holiday Inn Express Kuala Lumpur City Centre is confirmed. #92047183 - 6 Mar 2026
 Date: Sat, 21 Feb 2026 06:51:33 -0600
 List-Help: <https://click.tx.ihg.com/subscription_center.aspx?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtaWQiOiI1MTQwMDU1NzMiLCJzIjoiMTcyNTAyMjQ4IiwibGlkIjoiMTciLCJqIjoiNDQ5MjU0IiwiamIiOiIzNzIzNjEiLCJkIjoiMTEwMDUwIn0.CPzHyINOeuyhR7hNSxlW1xH7gM069OcYMzlVtFT7GRI>
 MIME-Version: 1.0
@@ -215,13 +215,13 @@ https://click.tx.ihg.com/?qs=eyJkZWtJZCI6ImE2MDkxYTA5LWM4OGItNGUzMy05ZGMxLTk3YTg
 
 
 
- Christopher, your reservation is confirmed!
+ Alex, your reservation is confirmed!
  
  
  
 
 
- Confirmation #61827637
+ Confirmation #92047183
  
  
 
@@ -310,7 +310,7 @@ info.kulcc@ihg.com
  
 
 
- Christopher Catignani, Primary
+ Alex Smith, Primary
 
 
  
@@ -329,7 +329,7 @@ info.kulcc@ihg.com
  
  Rate
 
-Chris Sells Stuff Edge
+Alex Sells Stuff Edge
 
 
  
@@ -650,7 +650,7 @@ https://click.tx.ihg.com/?qs=eyJkZWtJZCI6Ijc2OWIwNGUzLWM5MGMtNGQ3Ny05ZDk2LWEzZDA
  
 
  
-This email was sent to chris.catignani@gmail.com
+This email was sent to user@example.com
 
 You have received this email as a result of your recent transaction with Holiday Inn Express<span style="font-size: 70%; line-height: 0px; vertical-align: 3px; -webkit-text-size-adjust: none; mso-line-height-rule:exactly;">®</span> Hotels & Resorts. 
 
@@ -993,7 +993,7 @@ div.preheader
           <tr>
             <td align="left" style="mso-line-height-rule:exactly;padding:0px 0px 10px 0px;font-family:'Inter', Arial, Helvetica, sans-serif;" valign="top">
               <h1 role="heading" style="text-align:left;font-family:'Inter', Arial, Helvetica, sans-serif;line-height:34px;font-weight:400;font-size:30px;margin:0px;padding:0px;color:#000000;">
-    Christopher, your reservation is confirmed!
+    Alex, your reservation is confirmed!
      
     
               </h1>
@@ -1002,7 +1002,7 @@ div.preheader
           <tr>
             <td align="left" style="mso-line-height-rule:exactly;padding-bottom:0px;" valign="top">
               <p role="contentinfo" style="text-align:left;margin:0px;padding:0px;color:#555555;font-size:24px;line-height:28px;font-family:'Inter', Arial, Helvetica, sans-serif;font-weight:400;">
-                Confirmation #61827637
+                Confirmation #92047183
                 
               </p>
             </td>
@@ -1184,7 +1184,7 @@ div.preheader
               <tr>
                 <td align="right" style="font-family:'Inter', Arial, Helvetica, sans-serif;" valign="top" colspan="2" width="100%">
                   <p role="contentinfo" style="text-align:right;font-size:14px;line-height:24px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;color:#555555;font-weight:400;">
-                    Christopher Catignani, Primary</p>
+                    Alex Smith, Primary</p>
                 </td>
               </tr>
               
@@ -1223,7 +1223,7 @@ div.preheader
                     Rate</p>
                 </td>
                 <td  style="font-family:'Inter', Arial, Helvetica, sans-serif;" valign="top" align="right" width="75%">
-                  <p role="contentinfo" style="font-size:16px;line-height:24px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;color:#555555;font-weight:400;text-align:right;">Chris Sells Stuff Edge</p>
+                  <p role="contentinfo" style="font-size:16px;line-height:24px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;color:#555555;font-weight:400;text-align:right;">Alex Sells Stuff Edge</p>
                 </td>
               </tr>
             </table>
@@ -1986,7 +1986,7 @@ div.preheader
    <td align="left" valign="top" style="padding-left:10px; padding-right:10px;padding-top:20px;text-align:left;">
      <p style="font-family: 'Inter', Arial, Helvetica, sans-serif; font-size:14px; line-height:21px;">
        
-This email was sent to chris.catignani@gmail.com
+This email was sent to user@example.com
 <br/>
 <br/>
 You have received this email as a result of your recent transaction with Holiday Inn Express<span style="font-size: 70%; line-height: 0px; vertical-align: 3px; -webkit-text-size-adjust: none; mso-line-height-rule:exactly;">®</span> Hotels & Resorts. 

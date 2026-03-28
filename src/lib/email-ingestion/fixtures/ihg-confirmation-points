@@ -1,4 +1,4 @@
-Delivered-To: chris.catignani@gmail.com
+Delivered-To: user@example.com
 Received: by 2002:a05:7010:df93:b0:500:d9d8:62a0 with SMTP id ok19csp2481021mdb;
         Mon, 16 Feb 2026 22:56:06 -0800 (PST)
 X-Received: by 2002:a05:622a:15c3:b0:502:984a:ff19 with SMTP id d75a77b69052e-506b400036dmr148133291cf.43.1771311366078;
@@ -31,7 +31,7 @@ ARC-Authentication-Results: i=1; mx.google.com;
 Return-Path: <bounce-HPLFF5KH2JVUVJAAZNQS7HU7C4.110049@bounce.tx.ihg.com>
 Received: from mta.tx.ihg.com (mta.tx.ihg.com. [13.111.173.1])
         by mx.google.com with ESMTPS id d75a77b69052e-506b1837a5bsi105537851cf.414.2026.02.16.22.56.05
-        for <chris.catignani@gmail.com>
+        for <user@example.com>
         (version=TLS1_2 cipher=ECDHE-ECDSA-AES128-GCM-SHA256 bits=128/128);
         Mon, 16 Feb 2026 22:56:06 -0800 (PST)
 Received-SPF: pass (google.com: domain of bounce-hplff5kh2jvuvjaaznqs7hu7c4.110049@bounce.tx.ihg.com designates 13.111.173.1 as permitted sender) client-ip=13.111.173.1;
@@ -50,10 +50,10 @@ DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; s=fbldkim11; d=s11.y.mc.sa
    aaLBi+It1WdqCCwIj4BBlKfl6s9oEklVjeSyTf5kkXcjqHKPapg+Dysyx6MhHIybfDBoONLwb/Fn
    5Wev5J+NM7VsxXa5jB0+FKZpxaf5fcIz6h6qdk9yC/pgQHQo765z4cqBPmOW13UF4Ql9ltLEVlMW
    tlelDv66hf1+ekh63AMFCBIdKUOxYUJCS9DBKA==
-Received: by mta.tx.ihg.com id hig8ga2fmd4j for <chris.catignani@gmail.com>; Tue, 17 Feb 2026 06:56:05 +0000 (envelope-from <bounce-HPLFF5KH2JVUVJAAZNQS7HU7C4.110049@bounce.tx.ihg.com>)
+Received: by mta.tx.ihg.com id hig8ga2fmd4j for <user@example.com>; Tue, 17 Feb 2026 06:56:05 +0000 (envelope-from <bounce-HPLFF5KH2JVUVJAAZNQS7HU7C4.110049@bounce.tx.ihg.com>)
 From: "Crowne Plaza Hotels & Resorts" <CrownePlaza@tx.ihg.com>
-To: <chris.catignani@gmail.com>
-Subject: Your reservation at Crowne Plaza Changi Airport is confirmed. #64540631 – 17 Jun 2026
+To: <user@example.com>
+Subject: Your reservation at Crowne Plaza Changi Airport is confirmed. #37615824 – 17 Jun 2026
 Date: Tue, 17 Feb 2026 00:56:05 -0600
 List-Help: <https://click.tx.ihg.com/subscription_center.aspx?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtaWQiOiI1MTQwMDU1NzMiLCJzIjoiMTcyNTAyMjQ4IiwibGlkIjoiMTciLCJqIjoiNDQ5MjU0IiwiamIiOiIxODE5NzEiLCJkIjoiMTEwMDQ5In0.LGpCZE8sqnKBe1W07zWasCR6GmQUQStbQvigaFZtv1Q>
 MIME-Version: 1.0
@@ -221,7 +221,7 @@ https://click.tx.ihg.com/?qs=eyJkZWtJZCI6Ijg3NThiODllLTFiMmEtNGRlMy05OWZjLWYyNDV
  
 
 
- Confirmation #64540631
+ Confirmation #37615824
  
  
 
@@ -310,7 +310,7 @@ sincp@ihg.com
  
 
 
- Christopher Catignani, Primary
+ Alex Smith, Primary
 
 
  
@@ -598,7 +598,7 @@ https://click.tx.ihg.com/?qs=eyJkZWtJZCI6ImFlN2ZmOTU5LThhYjctNDZhMi1hMjI0LTI4YWV
 
  
 
-This email was sent to chris.catignani@gmail.com
+This email was sent to user@example.com
 
 You have received this email as a result of your recent transaction with Crowne Plaza<span style="font-size: 70%; line-height: 0px; vertical-align: 3px; -webkit-text-size-adjust: none; mso-line-height-rule:exactly;">®</span> Hotels & Resorts. 
 
@@ -949,7 +949,7 @@ div.preheader
           <tr>
             <td align="left" style="mso-line-height-rule:exactly;padding-bottom:0px;" valign="top">
               <p role="contentinfo" style="text-align:left;margin:0px;padding:0px;color:#555555;font-size:24px;line-height:28px;font-family:'Inter', Arial, Helvetica, sans-serif;font-weight:400;">
-                Confirmation #64540631
+                Confirmation #37615824
                 
               </p>
             </td>
@@ -1131,7 +1131,7 @@ div.preheader
               <tr>
                 <td align="right" style="font-family:'Inter', Arial, Helvetica, sans-serif;" valign="top" colspan="2" width="100%">
                   <p role="contentinfo" style="text-align:right;font-size:14px;line-height:24px;font-family:'Inter', Arial, Helvetica, sans-serif;margin:0px;padding:0px;color:#555555;font-weight:400;">
-                    Christopher Catignani, Primary</p>
+                    Alex Smith, Primary</p>
                 </td>
               </tr>
               
@@ -1800,7 +1800,7 @@ div.preheader
      <p style="font-family: 'Inter', Arial, Helvetica, sans-serif; font-size:14px; line-height:21px;">
        
 
-This email was sent to chris.catignani@gmail.com
+This email was sent to user@example.com
 <br/><br/>
 You have received this email as a result of your recent transaction with Crowne Plaza<span style="font-size: 70%; line-height: 0px; vertical-align: 3px; -webkit-text-size-adjust: none; mso-line-height-rule:exactly;">®</span> Hotels & Resorts. 
 <br/><br/>
