@@ -1,9 +1,25 @@
 import { hyattGuide } from "./hyatt";
 import { marriottGuide } from "./marriott";
 import { ihgGuide } from "./ihg";
+import { accorGuide } from "./accor";
+import { ghaGuide } from "./gha";
+import { airbnbGuide } from "./airbnb";
+import { amexGuide } from "./amex";
+import { bookingcomGuide } from "./bookingcom";
+import { chaseGuide } from "./chase";
 import type { ChainGuide } from "../types";
 
-const ALL_GUIDES: ChainGuide[] = [hyattGuide, marriottGuide, ihgGuide];
+const ALL_GUIDES: ChainGuide[] = [
+  hyattGuide,
+  marriottGuide,
+  ihgGuide,
+  accorGuide,
+  ghaGuide,
+  airbnbGuide,
+  amexGuide,
+  bookingcomGuide,
+  chaseGuide,
+];
 
 const DOMAIN_TO_GUIDE = new Map<string, ChainGuide>(
   ALL_GUIDES.flatMap((guide) => guide.senderDomains.map((domain) => [domain, guide]))

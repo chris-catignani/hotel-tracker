@@ -26,6 +26,8 @@ export interface ParsedBookingData {
   confirmationNumber: string | null;
   hotelChain: string | null; // e.g. "Hyatt", "Marriott"
   subBrand: string | null; // e.g. "Hyatt Place", "Courtyard"
+  accommodationType?: "hotel" | "apartment";
+  otaAgencyName?: string | null; // e.g. "AMEX FHR", "AMEX THC", "Chase The Edit", "Airbnb", "Booking.com"
   // Cash bookings
   currency: string | null;
   nightlyRates: { amount: number }[] | null; // per-night breakdown when pretax total isn't shown

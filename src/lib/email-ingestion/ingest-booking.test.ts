@@ -8,6 +8,7 @@ const {
   mockHotelChainFindFirst,
   mockHotelChainFindUnique,
   mockUserStatusFindUnique,
+  mockOtaAgencyFindFirst,
 } = vi.hoisted(() => ({
   mockBookingCreate: vi.fn().mockResolvedValue({ id: "booking-abc" }),
   mockBookingFindFirst: vi.fn().mockResolvedValue(null),
@@ -31,10 +32,14 @@ const {
       pointsFloorTo: null,
     },
   }),
+  mockOtaAgencyFindFirst: vi.fn().mockResolvedValue(null),
 }));
 
 vi.mock("@/lib/property-utils", () => ({
   findOrCreateProperty: vi.fn().mockResolvedValue("prop-123"),
+}));
+vi.mock("@/lib/geo-lookup", () => ({
+  searchProperties: vi.fn().mockResolvedValue([]),
 }));
 vi.mock("@/lib/loyalty-utils", () => ({
   calculatePoints: vi.fn().mockReturnValue(1200),
@@ -56,6 +61,7 @@ vi.mock("@/lib/prisma", () => ({
     hotelChain: { findFirst: mockHotelChainFindFirst, findUnique: mockHotelChainFindUnique },
     userStatus: { findUnique: mockUserStatusFindUnique },
     hotelChainSubBrand: { findMany: vi.fn().mockResolvedValue([]) },
+    otaAgency: { findFirst: mockOtaAgencyFindFirst },
   },
 }));
 
@@ -253,6 +259,93 @@ describe("ingestBookingFromEmail", () => {
     expect(result.duplicate).toBe(false);
     const data = mockBookingCreate.mock.calls[0][0].data;
     expect(data.pretaxCost).toBe(591.04);
+  });
+
+  it("defaults accommodationType to hotel when not provided in parsed data", async () => {
+    await ingestBookingFromEmail(baseParsed, "user-1", null);
+    const data = mockBookingCreate.mock.calls[0][0].data;
+    expect(data.accommodationType).toBe("hotel");
+  });
+
+  it("uses accommodationType from parsed data when provided", async () => {
+    await ingestBookingFromEmail({ ...baseParsed, accommodationType: "apartment" }, "user-1", null);
+    const data = mockBookingCreate.mock.calls[0][0].data;
+    expect(data.accommodationType).toBe("apartment");
+  });
+
+  it("geo-enriches the property using searchProperties and passes geo fields to findOrCreateProperty", async () => {
+    const { searchProperties } = await import("@/lib/geo-lookup");
+    const { findOrCreateProperty } = await import("@/lib/property-utils");
+    vi.mocked(searchProperties).mockResolvedValueOnce([
+      {
+        placeId: "gplace-123",
+        displayName: "Kimpton Margot Sydney",
+        city: "Sydney",
+        countryCode: "AU",
+        address: "339 Pitt Street, Sydney NSW 2000, Australia",
+        latitude: -33.8734,
+        longitude: 151.2059,
+      },
+    ]);
+
+    await ingestBookingFromEmail(baseParsed, "user-1", null);
+
+    expect(searchProperties).toHaveBeenCalledWith(baseParsed.propertyName, true);
+    expect(findOrCreateProperty).toHaveBeenCalledWith(
+      expect.objectContaining({
+        propertyName: "Kimpton Margot Sydney",
+        placeId: "gplace-123",
+        city: "Sydney",
+        countryCode: "AU",
+        address: "339 Pitt Street, Sydney NSW 2000, Australia",
+        latitude: -33.8734,
+        longitude: 151.2059,
+      })
+    );
+  });
+
+  it("falls back to parsed propertyName when geo lookup returns no results", async () => {
+    const { findOrCreateProperty } = await import("@/lib/property-utils");
+    await ingestBookingFromEmail(baseParsed, "user-1", null);
+    expect(findOrCreateProperty).toHaveBeenCalledWith(
+      expect.objectContaining({ propertyName: baseParsed.propertyName })
+    );
+  });
+
+  it("uses isHotel=false for apartment geo lookup", async () => {
+    const { searchProperties } = await import("@/lib/geo-lookup");
+    await ingestBookingFromEmail({ ...baseParsed, accommodationType: "apartment" }, "user-1", null);
+    expect(searchProperties).toHaveBeenCalledWith(baseParsed.propertyName, false);
+  });
+
+  it("sets bookingSource to ota and resolves otaAgencyId when otaAgencyName is provided", async () => {
+    mockOtaAgencyFindFirst.mockResolvedValueOnce({ id: "ota-amex-thc" });
+    await ingestBookingFromEmail({ ...baseParsed, otaAgencyName: "AMEX THC" }, "user-1", null);
+    const data = mockBookingCreate.mock.calls[0][0].data;
+    expect(data.bookingSource).toBe("ota");
+    expect(data.otaAgencyId).toBe("ota-amex-thc");
+    expect(mockOtaAgencyFindFirst).toHaveBeenCalledWith({
+      where: { name: { equals: "AMEX THC", mode: "insensitive" } },
+    });
+  });
+
+  it("leaves bookingSource null when no otaAgencyName", async () => {
+    await ingestBookingFromEmail(baseParsed, "user-1", null);
+    const data = mockBookingCreate.mock.calls[0][0].data;
+    expect(data.bookingSource).toBeNull();
+    expect(data.otaAgencyId).toBeNull();
+  });
+
+  it("derives pretaxCost from totalCost - taxAmount when Claude returns pretaxCost null (Airbnb discounts)", async () => {
+    await ingestBookingFromEmail(
+      { ...baseParsed, pretaxCost: null, taxAmount: 69.17, totalCost: 1038.78 },
+      "user-1",
+      null
+    );
+    const data = mockBookingCreate.mock.calls[0][0].data;
+    expect(data.pretaxCost).toBe(969.61);
+    expect(data.taxAmount).toBe(69.17);
+    expect(data.totalCost).toBe(1038.78);
   });
 
   it("derives taxAmount from totalCost - pretaxCost when nightlyRates is present", async () => {

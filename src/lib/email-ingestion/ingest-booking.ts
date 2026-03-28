@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { findOrCreateProperty } from "@/lib/property-utils";
+import { searchProperties } from "@/lib/geo-lookup";
 import { resolveBookingFinancials } from "@/lib/booking-financials";
 import { matchPromotionsForBooking } from "@/lib/promotion-matching";
 import { matchSubBrand } from "./email-parser";
@@ -66,25 +67,58 @@ export async function ingestBookingFromEmail(
     resolved: subBrand?.name ?? null,
   });
 
+  // Resolve OTA agency
+  const otaAgency = parsed.otaAgencyName
+    ? await prisma.otaAgency.findFirst({
+        where: { name: { equals: parsed.otaAgencyName, mode: "insensitive" } },
+      })
+    : null;
+
+  // Geo-enrich the property via Google Places, mirroring the manual booking flow
+  const isHotel = (parsed.accommodationType ?? "hotel") !== "apartment";
+  const geoResults = await searchProperties(parsed.propertyName, isHotel);
+  const geo = geoResults[0] ?? null;
+
   // Resolve property
   const propertyId = await findOrCreateProperty({
-    propertyName: parsed.propertyName,
+    propertyName: geo?.displayName ?? parsed.propertyName,
+    placeId: geo?.placeId ?? null,
     hotelChainId: hotelChain?.id ?? null,
+    countryCode: geo?.countryCode ?? null,
+    city: geo?.city ?? null,
+    address: geo?.address ?? null,
+    latitude: geo?.latitude ?? null,
+    longitude: geo?.longitude ?? null,
   });
 
-  const pretaxCost =
-    parsed.bookingType === "cash"
-      ? parsed.nightlyRates
-        ? Math.round(parsed.nightlyRates.reduce((sum, r) => sum + r.amount, 0) * 100) / 100
-        : parsed.pretaxCost
-      : null;
+  let pretaxCost: number | null;
+  let taxAmount: number | null;
 
-  const taxAmount =
-    parsed.bookingType === "cash"
-      ? parsed.nightlyRates && pretaxCost !== null && parsed.totalCost !== null
-        ? Math.round((parsed.totalCost - pretaxCost) * 100) / 100
-        : parsed.taxAmount
-      : null;
+  if (parsed.bookingType === "cash") {
+    if (parsed.nightlyRates) {
+      // Nightly rates provided — sum them for pretaxCost, derive taxAmount
+      pretaxCost =
+        Math.round(parsed.nightlyRates.reduce((sum, r) => sum + r.amount, 0) * 100) / 100;
+      taxAmount =
+        parsed.totalCost !== null
+          ? Math.round((parsed.totalCost - pretaxCost) * 100) / 100
+          : parsed.taxAmount;
+    } else if (parsed.pretaxCost !== null) {
+      // pretaxCost shown directly (most hotel emails)
+      pretaxCost = parsed.pretaxCost;
+      taxAmount = parsed.taxAmount;
+    } else if (parsed.totalCost !== null && parsed.taxAmount !== null) {
+      // pretaxCost null (e.g. Airbnb with discount line items) — derive from totalCost - taxAmount
+      taxAmount = parsed.taxAmount;
+      pretaxCost = Math.round((parsed.totalCost - taxAmount) * 100) / 100;
+    } else {
+      pretaxCost = null;
+      taxAmount = null;
+    }
+  } else {
+    pretaxCost = null;
+    taxAmount = null;
+  }
 
   const financials = await resolveBookingFinancials({
     checkIn: parsed.checkIn,
@@ -99,7 +133,7 @@ export async function ingestBookingFromEmail(
       userId,
       hotelChainId: hotelChain?.id ?? null,
       hotelChainSubBrandId: subBrand?.id ?? null,
-      accommodationType: "hotel",
+      accommodationType: parsed.accommodationType ?? "hotel",
       propertyId,
       checkIn: new Date(parsed.checkIn),
       checkOut: new Date(parsed.checkOut),
@@ -113,6 +147,8 @@ export async function ingestBookingFromEmail(
       loyaltyPointsEarned: financials.loyaltyPointsEarned,
       lockedLoyaltyUsdCentsPerPoint: financials.lockedLoyaltyUsdCentsPerPoint,
       confirmationNumber: parsed.confirmationNumber ?? null,
+      bookingSource: otaAgency ? "ota" : null,
+      otaAgencyId: otaAgency?.id ?? null,
       ingestionMethod: "email",
       needsReview: true,
       paymentTiming: "postpaid",

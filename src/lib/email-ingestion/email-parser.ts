@@ -34,14 +34,16 @@ function buildPrompt(emailText: string, guide: ChainGuide | null): string {
 
 ${chainSection}Return ONLY valid JSON with these fields (no explanation, no markdown):
 {
-  "propertyName": string,        // required — the hotel/property name
+  "propertyName": string,        // required — for apartments/rentals use the full address if available (e.g. "135 Hallenstein Street 26A, Queenstown, 9300, New Zealand"); otherwise the property name
   "checkIn": string,             // required — YYYY-MM-DD
   "checkOut": string,            // required — YYYY-MM-DD
   "numNights": number,           // required
   "bookingType": "cash" | "points" | "cert",  // required — use "points" if the stay was paid with loyalty points even if the count is unknown
   "confirmationNumber": string | null,
-  "hotelChain": string | null,   // e.g. "Hyatt", "Marriott", "Hilton"
-  "subBrand": string | null,     // e.g. "Hyatt Place", "Courtyard by Marriott", "Hampton Inn"
+  "hotelChain": string | null,   // parent chain e.g. "Hyatt", "Marriott", "Hilton", "IHG", "Accor"; NOT the sub-brand name
+  "subBrand": string | null,     // specific brand e.g. "Kimpton", "Sofitel", "Grand Hyatt"
+  "accommodationType": "hotel" | "apartment",  // "apartment" for Airbnb, short-term rentals, serviced apartments; "hotel" otherwise
+  "otaAgencyName": string | null,  // OTA agency if booked through one: "AMEX FHR" (Amex Fine Hotels + Resorts), "AMEX THC" (Amex The Hotel Collection), "Chase The Edit", "Airbnb", "Booking.com"; null for direct hotel bookings
   "currency": string | null,     // 3-letter code e.g. "USD", "SGD"
   "nightlyRates": [{ "amount": number }] | null,  // per-night amounts when no pretax total is shown
   "pretaxCost": number | null,   // pretax total if shown directly; null if returning nightlyRates
@@ -53,6 +55,12 @@ ${chainSection}Return ONLY valid JSON with these fields (no explanation, no mark
 Rules:
 - If the email shows per-night rates but no pretax subtotal: populate "nightlyRates", leave "pretaxCost" and "taxAmount" null
 - Never compute sums yourself — return the raw line items and leave the derived fields null
+- If the price breakdown includes any discount line items (special offers, savings, promotions), return pretaxCost: null — do not attempt to compute it; the system will derive it automatically. Always return taxAmount if it is explicitly shown, even when discounts are present
+- Chase The Edit and American Express Travel (AMEX FHR/THC) always charge guests in USD — set currency to "USD" for these regardless of hotel location
+- For hotelChain, always use the parent group, not the sub-brand. Less obvious parent chains:
+  IHG: Kimpton, Six Senses, Regent, voco, Vignette Collection, InterContinental, Crowne Plaza, Hotel Indigo, HUALUXE, Iberostar, avid, Staybridge Suites, Candlewood Suites
+  Accor: Sofitel, Fairmont, Raffles, Swissôtel, Pullman, Novotel, Mercure, ibis, MGallery, Mövenpick, Mondrian, Delano, SLS, Mantra, 25hours, Banyan Tree, Angsana
+  GHA Discovery: PARKROYAL, Pan Pacific, Anantara, Kempinski, Corinthia, Capella, Tivoli, NH Hotels, NH Collection, Viceroy, Outrigger, Oaks, Minor
 
 Email:
 ${emailText.slice(0, 8000)}`;

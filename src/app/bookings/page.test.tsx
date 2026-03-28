@@ -207,4 +207,120 @@ describe("BookingsPage", () => {
       ).toBeInTheDocument();
     });
   });
+
+  it("shows dash for hotel booking with no matched chain", async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => [
+        {
+          id: "bk-no-chain",
+          currency: "USD",
+          lockedExchangeRate: "1",
+          pretaxCost: "100",
+          taxAmount: "10",
+          totalCost: "110",
+          checkIn: "2026-06-14",
+          checkOut: "2026-06-16",
+          numNights: 2,
+          isFutureEstimate: false,
+          exchangeRateEstimated: false,
+          hotelChainId: null,
+          hotelChain: null,
+          hotelChainSubBrand: null,
+          shoppingPortal: null,
+          portalCashbackRate: null,
+          portalCashbackOnTotal: false,
+          userCreditCard: null,
+          loyaltyPointsEarned: null,
+          pointsRedeemed: null,
+          loyaltyPointsEstimated: false,
+          certificates: [],
+          bookingPromotions: [],
+          benefits: [],
+          propertyId: "prop1",
+          property: {
+            name: "Kimpton Margot Sydney",
+            countryCode: "AU",
+            city: "Sydney",
+            address: null,
+            latitude: null,
+            longitude: null,
+          },
+          partnershipEarns: [],
+          accommodationType: "hotel",
+          needsReview: false,
+          ingestionMethod: "email",
+          confirmationNumber: "ABC123",
+          priceWatchBooking: null,
+        },
+      ],
+    });
+
+    render(<BookingsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("booking-row-bk-no-chain")).toBeInTheDocument();
+    });
+
+    expect(screen.getByTestId("chain-cell-bk-no-chain")).toHaveTextContent("—");
+  });
+
+  it("shows Apartment / Rental for apartment booking with no chain", async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => [
+        {
+          id: "bk-apt",
+          currency: "USD",
+          lockedExchangeRate: "1",
+          pretaxCost: "100",
+          taxAmount: "10",
+          totalCost: "110",
+          checkIn: "2026-06-14",
+          checkOut: "2026-06-16",
+          numNights: 2,
+          isFutureEstimate: false,
+          exchangeRateEstimated: false,
+          hotelChainId: null,
+          hotelChain: null,
+          hotelChainSubBrand: null,
+          shoppingPortal: null,
+          portalCashbackRate: null,
+          portalCashbackOnTotal: false,
+          userCreditCard: null,
+          loyaltyPointsEarned: null,
+          pointsRedeemed: null,
+          loyaltyPointsEstimated: false,
+          certificates: [],
+          bookingPromotions: [],
+          benefits: [],
+          propertyId: "prop1",
+          property: {
+            name: "The Top Floor Apartment",
+            countryCode: "NZ",
+            city: "Queenstown",
+            address: null,
+            latitude: null,
+            longitude: null,
+          },
+          partnershipEarns: [],
+          accommodationType: "apartment",
+          needsReview: false,
+          ingestionMethod: "email",
+          confirmationNumber: "ABC456",
+          priceWatchBooking: null,
+        },
+      ],
+    });
+
+    render(<BookingsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("booking-row-bk-apt")).toBeInTheDocument();
+    });
+
+    expect(screen.getByTestId("chain-cell-bk-apt")).toHaveTextContent("Apartment / Rental");
+  });
 });

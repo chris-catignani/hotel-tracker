@@ -335,7 +335,10 @@ function BookingsPageInner() {
                           </div>
                         </TooltipProvider>
                       </TableCell>
-                      <TableCell>{booking.hotelChain?.name ?? "Apartment / Rental"}</TableCell>
+                      <TableCell data-testid={`chain-cell-${booking.id}`}>
+                        {booking.hotelChain?.name ??
+                          (booking.accommodationType === "apartment" ? "Apartment / Rental" : "—")}
+                      </TableCell>
                       <TableCell>{formatDate(booking.checkIn)}</TableCell>
                       <TableCell>{formatDate(booking.checkOut)}</TableCell>
                       <TableCell>{booking.numNights}</TableCell>

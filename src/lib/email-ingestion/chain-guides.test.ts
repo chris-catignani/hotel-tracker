@@ -58,4 +58,46 @@ describe("getChainGuide", () => {
   it("returns null for an unknown sender domain", () => {
     expect(getChainGuide("noreply@unknown.com")).toBeNull();
   });
+
+  it("returns Accor guide for an Accor/ALL sender domain", () => {
+    const guide = getChainGuide("all@confirmation.all.com");
+    expect(guide).not.toBeNull();
+    expect(guide?.chainName).toBe("Accor");
+  });
+
+  it("returns GHA guide for a GHA Discovery sender domain", () => {
+    const guide = getChainGuide("explore@email.ghadiscovery.com");
+    expect(guide).not.toBeNull();
+    expect(guide?.chainName).toBe("GHA");
+  });
+
+  it("returns Airbnb guide for an Airbnb sender domain", () => {
+    const guide = getChainGuide("automated@airbnb.com");
+    expect(guide).not.toBeNull();
+    expect(guide?.chainName).toBe("Airbnb");
+  });
+
+  it("returns Amex guide for an American Express sender domain", () => {
+    const guide = getChainGuide("AmericanExpress@welcome.americanexpress.com");
+    expect(guide).not.toBeNull();
+    expect(guide?.chainName).toBe("Amex Travel");
+  });
+
+  it("returns Booking.com guide for a Booking.com sender domain", () => {
+    const guide = getChainGuide("noreply@booking.com");
+    expect(guide).not.toBeNull();
+    expect(guide?.chainName).toBe("Booking.com");
+  });
+
+  it("returns Booking.com guide for mailer.booking.com domain", () => {
+    const guide = getChainGuide("noreply@mailer.booking.com");
+    expect(guide).not.toBeNull();
+    expect(guide?.chainName).toBe("Booking.com");
+  });
+
+  it("returns Chase guide for a Chase Travel sender domain", () => {
+    const guide = getChainGuide("donotreply@chasetravel.com");
+    expect(guide).not.toBeNull();
+    expect(guide?.chainName).toBe("Chase Travel");
+  });
 });

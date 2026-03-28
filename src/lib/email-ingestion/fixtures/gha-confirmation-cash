@@ -1,0 +1,3884 @@
+Delivered-To: user@example.com
+Received: by 2002:a05:7010:df93:b0:500:d9d8:62a0 with SMTP id ok19csp1233503mdb;
+        Sun, 15 Feb 2026 01:51:51 -0800 (PST)
+X-Received: by 2002:a05:6000:2001:b0:430:f5dc:d34a with SMTP id ffacd0b85a97d-4379791c10cmr12977176f8f.29.1771149110955;
+        Sun, 15 Feb 2026 01:51:50 -0800 (PST)
+ARC-Seal: i=1; a=rsa-sha256; t=1771149110; cv=none;
+        d=google.com; s=arc-20240605;
+        b=c16DYzVRylz2u6AmUZpRZbJo4SDUFIUpushc9W+r3b8ltnKlNbXXwD2/I52zpkcRH2
+         8W46Mtcx/sVCKoMjF6mLP9iuEy2/Utal2peX1h8PMZ2dGvRY57eJRCSWi6xzpKPu4DPM
+         pXX+O4OZhlwA8YNoDZ9k+3zjaAF5uvMMQGFGXF3lkEvSWJSghp+3dCPjX0h09j71qpMw
+         RMX/g1CqPVgSr19svM3SSXt0xWvbaYulfcSxDrvyeSDqMf0HLvZ07J7DRBquL0XeCaYb
+         /yCAgFB5cZLVrPknW16RHtY2zOlWSMm+xaLFaQG8NnakYcl5QT0dXjM1VoAfhnar1jtm
+         x2LA==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
+        h=message-id:feedback-id:subject:reply-to:from:to:date
+         :content-transfer-encoding:mime-version:dkim-signature;
+        bh=AcOYqKbBhmlcrkxgMe2dCXlRpRnFVm3+sbnKmSWpfes=;
+        fh=f7GuxESQjwnxwLD1SAPk04143tnE8OcHo/hU2reyUjg=;
+        b=PqoN9ySB55BQAa/BL+YlouqmDOPW+bbTUaMlatJaFw1na7aNUd24h4DCY7epjPMzLt
+         LkXIxjv9sMa/celU1392hZG0imLxHOEXzOPEoGnsGxsUnTD3fWyaeNa6s/wyGmh8IR2r
+         A/Q+7Q5s6+B8L0wss8DKIcBEL37MVMg9kPj4gh9CJJgFS582P9ib5XqLoMP/pEYXwM6A
+         mzn0gOmf+TFmuhkFjYbbRt/YQWyYF/J4jEeT9O/Ys8JAEd9QDY4nA0Vke3WKJn+PcYV7
+         jQDYm/gm9lJirrONqJ2QdRYsXg5Q9dlLCoxNPGrR53q6W0gyXOiawgruKKPxT1AkIBiR
+         PN+A==;
+        dara=google.com
+ARC-Authentication-Results: i=1; mx.google.com;
+       dkim=pass header.i=@email.ghadiscovery.com header.s=ghaloyalt-20240104 header.b=pDSf03P9;
+       spf=pass (google.com: domain of explore@email.ghadiscovery.com designates 140.86.232.31 as permitted sender) smtp.mailfrom=explore@email.ghadiscovery.com;
+       dmarc=pass (p=NONE sp=NONE dis=NONE) header.from=email.ghadiscovery.com
+Return-Path: <explore@email.ghadiscovery.com>
+Received: from omptrans.email.ghadiscovery.com (omptrans.email.ghadiscovery.com. [140.86.232.31])
+        by mx.google.com with ESMTPS id ffacd0b85a97d-43796a608cdsi14608639f8f.14.2026.02.15.01.51.50
+        for <user@example.com>
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sun, 15 Feb 2026 01:51:50 -0800 (PST)
+Received-SPF: pass (google.com: domain of explore@email.ghadiscovery.com designates 140.86.232.31 as permitted sender) client-ip=140.86.232.31;
+Authentication-Results: mx.google.com;
+       dkim=pass header.i=@email.ghadiscovery.com header.s=ghaloyalt-20240104 header.b=pDSf03P9;
+       spf=pass (google.com: domain of explore@email.ghadiscovery.com designates 140.86.232.31 as permitted sender) smtp.mailfrom=explore@email.ghadiscovery.com;
+       dmarc=pass (p=NONE sp=NONE dis=NONE) header.from=email.ghadiscovery.com
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; s=ghaloyalt-20240104; d=email.ghadiscovery.com; h=MIME-Version:Content-Type:Content-Transfer-Encoding:Date:To:From:Reply-To: Subject:Feedback-ID:Message-ID; i=explore@email.ghadiscovery.com; bh=AcOYqKbBhmlcrkxgMe2dCXlRpRnFVm3+sbnKmSWpfes=; b=pDSf03P92ZsWC5zwllR4NJMoUfqiDPSTYvAX8oLBdSXjr012/G1Bo7nnZkpkmcOlbaOZOphuvYJH
+   OShATppR9vjpsRmLp1WVDrH5Yv/4yzjpSHNh0akj1qmTGbEI7fqzIFP65YwoBfl+wkPg+C5M5C/7
+   j/1nrTZNJyw5Xpk9FkpG4tDg21nEyxArP1xQyawhBsKJY197eehJPg/i4F9Bc/Mq0/NDqAIa3SLc
+   Y7zSAGrHeINwS4H77H0WnlwOAwOaW8WtwpSirEtGf3Fruy/CSIOJEhm7chM6/X/bmdmm1LXPr8eV
+   YJPd2izCF418dQl0KuEw+a4bOuQ1eWBTO2rkLg==
+MIME-Version: 1.0
+Content-Type: text/html; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+Date: Sun, 15 Feb 2026 09:51:50 +0000
+To: user@example.com
+From: GHA DISCOVERY <explore@email.ghadiscovery.com>
+Reply-To: GHA DISCOVERY <reply@email.ghadiscovery.com>
+Subject: Your booking at PARKROYAL COLLECTION Kuala Lumpur is confirmed – Confirmation #8294SG047183
+Feedback-ID: 80730:566388:oraclersys
+X-sgxh1: JojpkQJHlpngHgpxnuHptQJhu
+X-rext: 7.rsys111.EMPMwvYpX6HIepOUeHefph2AnVsTpoImA4pD83A9YIfF4LRgYOBD
+X-cid: ghaloyalt.1141028
+X-ei: EQrOLhOjpBA6ShKf9P4kIZxwwqCNVrKz
+Message-ID: <0.3.F.3.1DC9E60B51D4B00.0@omptrans.email.ghadiscovery.com>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.=
+w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+   <title></title>
+</head>
+<body data-gr-ext-installed=3D"" data-new-gr-c-s-check-loaded=3D"14.1014.0"=
+><br />
+
+
+
+   =20
+           =20
+
+=09
+
+   =20
+               =20
+
+
+=09
+
+   =20
+               =20
+                                =20
+
+             =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+              =20
+
+=09
+
+   =20
+               =20
+
+=09
+
+   =20
+               =20
+
+=09
+
+   =20
+                =20
+
+=09
+
+   =20
+                =20
+            =20
+=09=09=09
+   =20
+
+=20
+
+
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+
+
+
+=09
+
+   =20
+
+
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+
+
+
+
+=09
+
+   =20
+
+
+
+
+=09
+
+   =20
+
+
+
+
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+=09
+
+   =20
+  =20
+   =20
+
+
+=09
+
+   =20
+
+
+
+
+
+
+=20
+   =20
+
+
+
+=09
+
+   =20
+
+      =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+   =20
+
+=20
+
+
+
+=09
+
+   =20
+
+
+ =20
+
+=09
+
+   =20
+
+
+
+=09
+
+   =20
+     =20
+         =20
+
+=09
+
+   =20
+       =20
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+
+=09
+
+   =20
+       =20
+
+=09
+
+   =20
+     =20
+
+=09
+
+   =20
+       =20
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+       =20
+
+ =20
+   =20
+
+
+
+=20
+   =20
+=09=09
+               =20
+
+=09
+
+   =20
+               =20
+
+=09
+
+   =20
+               =20
+               =20
+
+=09
+
+   =20
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+=09=09=09=09
+   =20
+
+=20
+
+
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+    =09
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+       =20
+
+=09
+
+   =20
+       =20
+
+=09
+
+   =20
+       =20
+
+=09
+
+   =20
+              =20
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+       =20
+
+=09
+
+   =20
+
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+       =20
+
+=09
+
+   =20
+                                            =20
+
+=09
+
+   =20
+ =20
+
+=09
+
+   =20
+       =20
+
+=09
+
+   =20
+               =20
+
+=09
+
+   =20
+       =20
+        =09                                                           =20
+      =20
+   =20
+   =20
+
+  =20
+
+=20
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+    =09
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+                 =20
+      =20
+   =20
+   =20
+
+  =20
+
+=20
+   =20
+            =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+               =20
+            =20
+
+=09
+
+   =20
+            =20
+
+=09
+
+   =20
+            =20
+
+=09
+
+   =20
+            =20
+          =20
+            =20
+   =20
+
+=20
+
+
+   =20
+=09=09
+               =20
+               =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+           =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+           =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+   =09=09=20
+           =09=09
+                        =20
+
+=20
+           =20
+
+=09
+
+   =20
+           =20
+ =09
+           =20
+
+=09
+
+   =20
+=09=09=09=09
+           =20
+   =20
+
+=20
+
+
+
+<!doctype html>
+<html>
+<head>
+<meta charset=3D"utf-8">
+<meta name=3D"viewport" content=3D"width=3Ddevice-width, initial-scale=3D1.=
+0">
+<meta name=3D"color-scheme" content=3D"light dark">
+<meta name=3D"supported-color-schemes" content=3D"light dark">
+<title></title>
+
+
+
+
+
+
+
+
+
+=09
+<!--[if gte mso 9]><xml>
+ <o:OfficeDocumentSettings>
+  <o:AllowPNG/>
+  <o:PixelsPerInch>96</o:PixelsPerInch>
+ </o:OfficeDocumentSettings>
+</xml><![endif]-->
+=09
+<link rel=3D"preconnect" href=3D"https://fonts.googleapis.com">
+<link rel=3D"preconnect" href=3D"https://fonts.gstatic.com" crossorigin>
+<link href=3D"https://fonts.googleapis.com/css2?family=3DJost:wght@400;500;=
+600&display=3Dswap" rel=3D"stylesheet">
+<style type=3D"text/css">
+  @import url('https://fonts.googleapis.com/css2?family=3DJost:wght@400;500=
+;600&display=3Dswap');
+  [style*=3D'Jost'] {
+    font-family: Jost, Arial, sans-serif !important;
+  }
+</style> =20
+
+
+<style type=3D"text/css">
+  a, a:link, a:visited {text-decoration:none; color:inherit;}
+  a, a:link, a:visited img {border:none}
+  a:hover, a:active img {border:none}
+  p {margin: 1em 0;}
+  a img {border:none;}=20
+  img {outline:none; text-decoration:none; -ms-interpolation-mode: bicubic;=
+}
+  .ReadMsgBody { width: 100%;}
+  .ExternalClass {width: 100%;}
+  .ExternalClass, .ExternalClass p, .ExternalClass span, .ExternalClass fon=
+t, .ExternalClass td, .ExternalClass div {line-height:100%;}
+  body {width:100% !important; -webkit-text-size-adjust:100%; -ms-text-size=
+-adjust:100%; margin:0; padding:0;}=20
+  table {border-spacing:0;mso-table-lspace:0pt; mso-table-rspace:0pt;}
+  table td {border-collapse: collapse;}
+  table { border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:=
+0pt; }
+  .yshortcuts a {border-bottom: none !important;}
+  #outlook a {padding:0;}=20
+  a[href^=3D"tel"], a[href^=3D"sms"] {text-decoration: none;color:inherit;p=
+ointer-events: none;cursor: default;}
+  td, p, div{overflow-wrap:normal;word-wrap:normal;-webkit-hyphens:manual;-=
+ms-hyphens: manual;-moz-hyphens: manual;hyphens: manual;box-sizing: border-=
+box;}
+
+  .ghaButton {box-sizing: border-box;}
+  .ghaButton a {box-sizing: border-box;}
+  .ghaButtonSecondary:hover td,
+  .ghaButtonSecondary:hover td a {background-color:#300B5C !important; colo=
+r: #ffffff !important}
+  .ghaButtonPrimary:hover td,
+  .ghaButtonPrimary:hover td a {background-color:#ffffff !important; color:=
+ #300B5C !important}
+ =20
+  @media screen and (max-width: 620px) {
+
+    .ghaMobileHalfWidth {display: block !important;width: 50% !important;fl=
+oat: left !important}
+    .ghaMobileThreeFourthWidth {display: block !important;width: 75% !impor=
+tant;}
+    .ghaMobileAlignLeft {text-align: left !important;}
+    .ghaMobileTwoColumnCentered td {text-align: center !important;padding: =
+5px 0 !important;}
+    .ghaMobileTwoColumnCentered td.arrow_button_center, .arrow_button_cente=
+r {background-position: center bottom !important;padding: 5px 0 50px 0 !imp=
+ortant;background-size: inherit !important;float: none !important;}
+    .ghaMobileTwoColumnCentered td.arrow_button_right, .arrow_button_right =
+{background-position: center right !important;padding: 5px 45px 15px 0 !imp=
+ortant;background-size: inherit !important;float: none !important;}
+    .ghaMobileTwoColumnCentered td img {margin: auto;}
+    .ghaMobileFourColumn td.column {width: 50% !important;display: block !i=
+mportant;float: left !important;}
+    .ghaMobileLogo img {width: 160px !important;}
+
+  /* -------- Template Styles -------- */
+    #ghaEmailWrapper {min-width: 0px !important}
+
+    img {max-width:100% !important; height:auto !important;}
+    .ghaFullWidth {width:100% !important; padding-left:0px !important; padd=
+ing-right:0px !important; height:auto !important;float:none !important;}
+    img.ghaFullWidth {width:100% !important; max-width:100% !important;}
+    .ghaDisplayBlock {display:block !important;padding-bottom:30px !importa=
+nt; width:100% !important; padding-left:0px !important; padding-right:0px !=
+important; border-left:none !important; border-right:none !important; }
+    .ghaDisplayBlock.ghaRemoveBottomPadding {padding-bottom:0px !important;=
+}
+    .ghaDisplayBlock10 {padding-bottom:10px !important;}
+    .ghaDisplayBlock15 {padding-bottom:15px !important;}
+    .ghaDisplayBlock25 {padding-bottom:25px !important;}
+    .ghaDisplayBlock:last-of-type {padding-bottom:0px !important;}
+    .ghaMobileDisplayButton {display: block !important;}
+   =20
+    .ghaAlignCenter {text-align:center !important;}
+    .ghaRemoveOnMobile {display:none !important}
+    .ghaCenterTable, .ghaCenterElement {margin-left: auto !important;margin=
+-right: auto !important}
+   =20
+    .ghaButton {width:100% !important;box-sizing: border-box;}
+    .ghaButton a {box-sizing: border-box;}
+    .ghaButton td {text-align: center;padding: 0px !important}
+    .ghaButton td a {text-align: center; display:block; width: 100%;padding=
+: 10px 25px !important}
+    .ghaButton.ghaButtonCircle td a {padding: 0 !important;}
+    .ghaButton.inheritWidth {width: inherit !important;}
+    .ghaButton .arrow_button_right a {padding-left: 0 !important;text-align=
+-last: left !important;}
+
+    .ghaBodyMobilePadding,
+    .ghaBodyPadding40,
+    .ghaBodyPadding20,
+    .ghaBodyPadding80,
+    .ghaBodyPadding0 {padding-left:20px !important;padding-right:20px !impo=
+rtant;}
+
+    .ghaRemoveBottomPadding {padding-bottom:0px !important;}
+    .ghaRemoveTopPadding {padding-top:0px !important;}
+    .ghaRemoveLeftPadding {padding-left:0px !important;}
+    .ghaRemoveRightPadding {padding-right:0px !important;}
+    .ghaRemoveSidePadding {padding-left:0px !important;padding-right:0px !i=
+mportant;}
+   =20
+    .ghaMobilePaddingTop10 {padding-top: 10px !important;}
+    .ghaMobilePaddingTop30 {padding-top: 30px !important;}
+    .ghaMobilePaddingBottom10 {padding-bottom: 10px !important;}
+    .ghaMobilePaddingBottom30 {padding-bottom: 30px !important;}
+    .ghaMobilePaddingRight10 {padding-right: 10px !important;}
+    .ghaMobilePaddingRight30 {padding-right: 30px !important;}
+    .ghaMobilePaddingLeft10 {padding-left: 10px !important;}
+    .ghaMobilePaddingLeft30 {padding-left: 30px !important;}
+   =20
+    .ghaSpacer20 {height:15px !important;font-size:15px !important;line-hei=
+ght:15px !important;height:15px !important;}
+    .ghaSpacer30 {height:20px !important;font-size:20px !important;line-hei=
+ght:20px !important;height:20px !important;}
+    .ghaSpacer40 {height:25px !important;font-size:25px !important;line-hei=
+ght:25px !important;height:25px !important;}
+    .ghaSpacer60 {height:35px !important;font-size:35px !important;line-hei=
+ght:35px !important;height:35px !important;}
+    .ghaSpacer80 {height:50px !important;font-size:50px !important;line-hei=
+ght:50px !important;height:50px !important;}
+
+    .ghaGraphColumnTable .ghaGraphColumn {width: 100% !important;display: b=
+lock !important;padding-bottom: 15px !important;}
+    .ghaGraphColumnTable .ghaGraphColumn tr {float: left !important;display=
+: block !important;padding-left: 15px !important;}
+    .ghaTravelPreferenceColumn .ghaTravelPreferenceColumnTable1 {width: 60%=
+ !important;float: left !important;}
+    .ghaTravelPreferenceColumn .ghaTravelPreferenceColumnTable1 td {text-al=
+ign: left !important;padding-left: 20px !important;padding-right: 10px !imp=
+ortant;}
+    .ghaTravelPreferenceColumn .ghaTravelPreferenceColumnTable2 {width: 40%=
+ !important;float: left !important;}
+    .ghaTravelPreferenceColumn .ghaTravelPreferenceColumnTable2 td {padding=
+-top: 20px !important;}
+  }
+  @media (prefers-color-scheme: dark ) {
+    /* Shows Dark Mode-Only Content, Like Images */
+    .ghaDarkImg { display:block !important; width: auto !important; overflo=
+w: visible !important; float: none !important; max-height:inherit !importan=
+t; max-width:inherit !important; line-height: auto !important; margin-top:0=
+px !important; visibility:inherit !important; }
+    .ghaDarkImg img {height:auto !important}
+    .ghaDarkImgInlineBlock { display:inline-block !important; width: auto !=
+important; overflow: visible !important; float: none !important; max-height=
+:inherit !important; max-width:inherit !important; line-height: auto !impor=
+tant; margin-top:0px !important; visibility:inherit !important; }
+    .ghaDarkImgInlineBlock img {height:auto !important}
+    /* Hides Light Mode-Only Content, Like Images */
+    .ghaLightImg { display:none; display:none !important; }
+    /* Custom Dark Mode Font Colors */
+    h1, h2, p, span, a, b, td { color: #ffffff !important; }
+    .ghaButton.ghaButtonSecondary td {border-color: #ffffff !important;}
+    .ghaBorderSmall {border-color: #eeeeee !important;}
+  }
+=09
+  .ghaVideoButton {position: relative;}
+  .ghaVideoButton a {text-align: center;}
+  .ghaVideoButton a img {display: inline-block !important;}
+  .ghaVideoButton a:after {content: ""; width: 0; height: 0; border-top: 25=
+px solid transparent; border-bottom: 25px solid transparent; border-left: 4=
+0px solid #ffffff; position: absolute; left: 50%; top: 50%; margin-top: -25=
+px; margin-left: -17px; opacity: .85;}
+  .ghaVideoButton a:before {content: ""; width: 101px; height: 101px; borde=
+r: none; position: absolute; left: 50%; top: 50%; margin-top: -50px; margin=
+-left: -52px; -webkit-border-radius: 55px; -moz-border-radius: 55px; border=
+-radius: 55px; opacity: .85; background:rgba(0,0,0,.85);box-sizing: border-=
+box;}
+
+</style>
+<!--[if gte mso 9]>
+<style>
+ul.ghaFlushList li {
+    text-indent: -1em !important;
+    Margin: 0 0 0 25px !important;
+}
+</style>
+<![endif]-->
+
+</head>
+<body>
+    <div style=3D"display: none; font-size: 1px; color: #fefefe; line-heigh=
+t: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
+        =20
+
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+
+
+
+
+
+=09
+
+   =20
+
+
+
+
+
+
+
+=09
+
+   =20
+     =20
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+
+
+=09
+
+
+
+=09
+
+
+
+=09
+
+
+
+=09
+
+
+
+=09
+
+
+
+=09
+
+
+
+=09
+                   =20
+Please take a moment to review your stay details. We look forward to welcom=
+ing you soon!
+            =20
+         =20
+
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+
+=20
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&n=
+bsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbs=
+p;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&n=
+bsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nb=
+sp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp=
+;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&=
+nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nb=
+sp;&nbsp;
+</div>
+
+
+
+<monitor object=3D"header" launch_id=3D"566388" launch_type=3D"standard" ri=
+id=3D"52222170808" marketingprogram=3D"TRANSACTIONAL" marketingstrategy=3D"=
+API" render_ts=3D"1771149110466" campaign=3D"APIBOOKINGCONFIRMATION" langua=
+ge=3D"EN"></monitor>
+
+
+<table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+  <tbody>
+    <tr>
+      <td>
+
+
+
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+
+
+=09
+
+
+
+=09
+
+
+
+
+
+
+=09
+
+   =20
+
+
+
+
+
+
+
+=09
+
+   =20
+     =20
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+
+
+
+
+                   =20
+
+                     <!-- padding wrapper start -->
+             =09=09<table border=3D"0" cellpadding=3D"0" cellspacing=3D"0" =
+class=3D"w420" width=3D"640" style=3D"width: 640px">
+                    =09<tr>
+                         =09<td align=3D"center" valign=3D"top" bgcolor=3D"=
+">
+                             =09<!-- width wrapper start -->=20
+                             <table border=3D"0" cellpadding=3D"0" cellspac=
+ing=3D"0" class=3D"w420" width=3D"580" style=3D"width: 580px">
+                 =09=09=09=09<tr>
+                         =09=09=09<td align=3D"center" valign=3D"top" bgcol=
+or=3D"">   =20
+                                            =20
+                                            <!-- Editor mode: N -->
+
+=09
+
+   =20
+
+
+
+
+    =20
+
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+
+
+
+=20
+
+
+<!--=20
+***********************************
+******** START: Header ************
+-->  =20
+=09=09 =20
+        <table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D=
+"0" class=3D"ghaHeaderTable">
+          <tbody>
+            <tr>
+              <td align=3D"center"><table class=3D"ghaFullWidth" width=3D"6=
+00" align=3D"center" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+                  <tbody>
+                    <tr>
+                      <td class=3D"gsContentWrapper gsBodyPadding20" style=
+=3D"padding:25px 20px 15px 15px;"><table width=3D"100%" border=3D"0" cellsp=
+acing=3D"0" cellpadding=3D"0">
+                          <tbody>
+                            <tr>
+                              <td align=3D"left" valign=3D"top" class=3D"gh=
+aHeaderLogo" style=3D"width:75%;">
+
+<!--=20
+****************************************=20
+******** START: Header Logo ************
+-->=09=09=09=09=09=09
+=09=09=09=09=09=09=09=09<a href=3D"https://email.ghadiscovery.com/pub/cc?_r=
+i_=3DX0Gzc2X%3DBQjkPkSSSQGfyfON5izcAabLiw3LaLMioT6gzek2ihbu6Wi9CU6D5bMzgWe0=
+n5w79VXtpKX%3DAUUWAC&_ei_=3DEW2tf9zs59idfPO1Sc_9BbkhGNifGMlvewmEObk2EXbPRFr=
+42R1DRV38Z9dHeQ2Kw-6MMTuSqXev0Q1zuyHllwmObpAUb1UBqZRid7bsAbEuwW5Ntp0RSiRNs2=
+MlQE4DukaZ7UYxdGjYj-xqMMaQiHQWK7ILUKpMUE_7qEXtyLiIjZLKN7bCN023dLDZq7eYGzj5n=
+HkbcioHbZ5ZdyYsoB9l9Kjabg0UzlduqrZO8TmZ_w.&_di_=3Dfutr1ab2qb582mvrfb94a257h=
+88j24hvbsa99kk80050penf1640" target=3D"_blank">
+=09=09=09=09=09=09=09=09<img class=3D"ghaLightImg" src=3D"https://email.gha=
+discovery.com/assets/responsysimages/content/ghaloyalt/GHA_DISC_LOYALTY_DAR=
+K_482x88.png" width=3D"231" alt=3D"GHA Discovery" style=3D"width:231px;bord=
+er:none; font-family: Arial, 'sans-serif', 'Jost';font-size: 20px;color:#00=
+0000;font-weight: normal;" />
+=09=09=09=09=09=09=09=09=09<!--[if !mso]><! -->
+=09=09=09=09=09=09=09=09=09<div class=3D"ghaDarkImg" style=3D"display:none;=
+ overflow:hidden; float:left; width:0px; max-height:0px; max-width:0px; lin=
+e-height:0px; visibility:hidden;">
+=09=09=09=09=09=09=09=09=09=09  <img src=3D"https://email.ghadiscovery.com/=
+assets/responsysimages/content/ghaloyalt/GHA_DISC_LOYALTY_LOGO_LIGHT_231x34=
+.png" width=3D"231" height=3D"0" alt=3D"GHA Discovery" style=3D"width:231px=
+; font-family: Arial, 'sans-serif', 'Jost';font-size: 20px;color:#ffffff;fo=
+nt-weight: normal; margin: 0 auto; padding: 0; height: 0px;" border=3D"0" /=
+>
+=09=09=09=09=09=09=09=09=09</div>
+=09=09=09=09=09=09=09=09=09<!--<![endif]-->
+=09=09=09=09=09=09=09=09</a> =20
+<!--
+******** END: Header Logo ************=20
+**************************************
+-->=09=09=09=09=09=09=09=09
+
+=09=09=09=09=09=09=09  </td>
+                              <td align=3D"right" valign=3D"top" style=3D"w=
+idth: 25%;" class=3D"ghaRemoveOnMobile">
+
+=09=09=09=09=09=09=09=09 =20
+=09=09=09=09=09=09=09  </td>
+                            </tr>
+<!--=20
+****************************************=20
+******** START: Header Menu ************
+-->=20
+                            <tr>
+                              <td align=3D"left" style=3D"font-family: Aria=
+l, 'sans-serif', 'Jost';font-size: 10px;color: #000000;font-weight: normal;=
+text-transform: uppercase;padding-top: 10px;padding-left: 5px;" class=3D"ed=
+itable_html_block">
+=09=09=09=09=09=09=09=09  <a href=3D"https://email.ghadiscovery.com/pub/cc?=
+_ri_=3DX0Gzc2X%3DBQjkPkSSSQGfyfON5izcAabLiw3LaLMioT6gzek2ihbu6Wi9CU6D5bMzgW=
+e0n5w79VXtpKX%3DAUUWCC&_ei_=3DEW2tf9zs59idfPO1Sc_9BbkhGNifGMlvewmEObk2EXbPR=
+Fr42R1DRV38Z9dHeQ2Kw-6MMTuSqXev0Q1zuyHllwmObpAUb1UBqZRid7bsAbEuwW5Ntp0RSiRN=
+s2MlQE4DuodKCu-t9Vaodho0u-l5cjRu8q9bpEoh8v68sLFpmyG4Sa5ybEY6KLvd-5fNLQkqsic=
+PKEAqgSf9fsTONyA63MXK4LQHnK8CxtmGemzdbOxFBtf-2yMgP72MR1WMh0.&_di_=3Ds7sgjc7=
+qd0rkqajajtm22e2vufcu0m9tfrdn3jvr0o10aubsbcog" target=3D"_blank" style=3D"c=
+olor:#000000;text-decoration: none;">FIND A HOTEL</a> &nbsp;&nbsp;&nbsp;&nb=
+sp;&nbsp;
+=09=09=09=09=09=09=09=09  <a href=3D"https://email.ghadiscovery.com/pub/cc?=
+_ri_=3DX0Gzc2X%3DBQjkPkSSSQGfyfON5izcAabLiw3LaLMioT6gzek2ihbu6Wi9CU6D5bMzgW=
+e0n5w79VXtpKX%3DAUUYRC&_ei_=3DEW2tf9zs59idfPO1Sc_9BbkhGNifGMlvewmEObk2EXbPR=
+Fr42R1DRV38Z9dHeQ2Kw-6MMTuSqXev0Q1zuyHllwmObpAUb1UBqZRid7bsAbEuwW5Ntp0RSiRN=
+s2MlQE4DupC2mXlhcku0NtHI9btj2WkLEb5N2k0Hn0IVXz6zEbLNljgpkTtSYiDCOxwRyLo9bgg=
+5pIeAaJuNq5KVCSBw2Et_SNepOw3SCVnxOdcEsKNa1OALK8nA_Wy4.&_di_=3D3im85naegk9b8=
+kl2mfvq49jgkagqeekm4nsjv15lc56u4ri3e9dg" target=3D"_blank" style=3D"color:#=
+000000;text-decoration: none;">EXPLORE</a> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+=09=09=09=09=09=09=09=09  <a href=3D"https://email.ghadiscovery.com/pub/cc?=
+_ri_=3DX0Gzc2X%3DBQjkPkSSSQGfyfON5izcAabLiw3LaLMioT6gzek2ihbu6Wi9CU6D5bMzgW=
+e0n5w79VXtpKX%3DAUUYTC&_ei_=3DEW2tf9zs59idfPO1Sc_9BbkhGNifGMlvewmEObk2EXbPR=
+Fr42R1DRV38Z9dHeQ2Kw-6MMTuSqXev0Q1zuyHllwmObpAUb1UBqZRid7bsAbEuwW5Ntp0RSiRN=
+s2MlQE4Dujb0TQuyHvrNNdDCm4Ht8_A51mG5BL_Q4VlBleLEAAUD-TBc8ouSOV0w4GhY1wsw9OI=
+bDcUHQYXouhZC6ZuLSSfSZDV5SqBMDAWpAXjfsUnTNF7Lu8VDTwEBIoRa.&_di_=3Dkq0b27jti=
+l9f3illj41u0br402mdmdchikgn0m98oe6e7nu8anag" target=3D"_blank" style=3D"col=
+or:#000000;text-decoration: none;">OUR PROGRAMME</a>
+=09=09=09=09=09=09=09  </td>
+                            </tr>
+<!--
+******** END: Header Menu ************=20
+**************************************
+-->=20
+                          </tbody>
+                        </table></td>
+                    </tr>
+                  </tbody>
+                </table></td>
+            </tr>
+          </tbody>
+        </table>
+       =20
+<!--=20
+******** END: Header ************=20
+*********************************
+--> =20
+=09=09  =09 =20
+=09=09 =20
+<!--=20
+******************************************
+******** START: Divider  ************
+-->=20
+
+        <table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D=
+"0" class=3D"ghaDividerTable">
+          <tbody>
+            <tr>
+              <td align=3D"center">
+=09=09=09=09<table class=3D"ghaFullWidth" width=3D"600" align=3D"center" bo=
+rder=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+                  <tbody>
+                    <tr>
+                      <td class=3D"ghaContentWrapper ghaRemoveSidePadding" =
+style=3D"padding:0 20px;font-size:0px;line-height:0px;"><div style=3D"borde=
+r-bottom: 1px solid #e6e6e6;padding:0px;margin:0px;height:0px;font-size:0px=
+;line-height:0px;width:100%;font-size:0px;line-height:0px;">&nbsp;</div></t=
+d>
+                    </tr>
+                  </tbody>
+                </table>
+=09=09=09  </td>
+            </tr>
+          </tbody>
+        </table>
+
+<!--=20
+******** END: Divider ************=20
+*********************************
+-->
+=09=09 =20
+=09=09 =20
+
+<!--=20
+******************************************
+******** START: Spacer - 20 Pixels  ************
+-->=20
+        <table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D=
+"0" class=3D"ghaSpacerTable">
+          <tbody>
+            <tr>
+              <td align=3D"center" class=3D"ghaSpacer20" style=3D"height:20=
+px;font-size:20px;line-height:20px;height:20px;" height=3D"20">&nbsp;</td>
+            </tr>
+          </tbody>
+        </table>
+=09=09 =20
+<!--
+******** End: Spacer - 20 Pixels ************=20
+************************************
+-->=20
+<!-- header_transactional module end -->
+
+                          =09=09=09</td>
+                 =09=09=09=09</tr>
+             =09=09=09=09</table>
+             =09=09=09=09<!-- width wrapper end -->
+   =09=09=09=09=09=09</td>
+                 =09</tr>
+             =09</table>
+             =09<!-- padding wrapper end -->
+<monitor object=3D"module" module=3D"header_transactional" result=3D"OK" re=
+nder_ts=3D"1771149110500" priority=3D"5"></monitor>
+            =20
+         =20
+
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+
+
+
+
+
+
+=09
+
+   =20
+     =20
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+
+
+
+
+                   =20
+
+                     <!-- padding wrapper start -->
+             =09=09<table border=3D"0" cellpadding=3D"0" cellspacing=3D"0" =
+class=3D"w420" width=3D"640" style=3D"width: 640px">
+                    =09<tr>
+                         =09<td align=3D"center" valign=3D"top" bgcolor=3D"=
+">
+                             =09<!-- width wrapper start -->=20
+                             <table border=3D"0" cellpadding=3D"0" cellspac=
+ing=3D"0" class=3D"w420" width=3D"580" style=3D"width: 580px">
+                 =09=09=09=09<tr>
+                         =09=09=09<td align=3D"center" valign=3D"top" bgcol=
+or=3D"">   =20
+                                            =20
+                                            <!-- Editor mode: N -->
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+
+
+
+
+
+
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+
+
+=20
+
+
+<!--=20
+**************************************
+******** START: Header Description  ************
+-->=20
+       =20
+        <table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D=
+"0" class=3D"ghaHeadlineTable">
+          <tbody>
+            <tr>
+              <td align=3D"center"><table class=3D"ghaFullWidth" width=3D"6=
+00" align=3D"center" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+                  <tbody>
+                    <tr>
+                      <td class=3D"ghaContentWrapper ghaBodyPadding20" styl=
+e=3D"padding:0px 20px;">
+            <table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpaddin=
+g=3D"0">
+                          <tbody>
+                            <tr>
+                              <td class=3D"editable_priority_text ghaHeadli=
+ne30" align=3D"left" style=3D"font-family:Georgia, 'Times New Roman', 'seri=
+f'; font-size: 30px; font-weight: normal; color:#000000;">Your booking is c=
+onfirmed</td>
+                            </tr>
+                          </tbody>
+                        </table>
+            </td>
+                    </tr>
+                  </tbody>
+                </table></td>
+            </tr>
+          </tbody>
+        </table>
+     =20
+<!--
+******** END: Headline  ************=20
+************************************
+-->=20
+       =20
+     =20
+<!--=20
+******************************************
+******** START: Spacer - 30 Pixels ************
+-->=20
+
+        <table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D=
+"0" class=3D"ghaSpacerTable">
+          <tbody>
+            <tr>
+              <td align=3D"center" class=3D"ghaSpacer30" style=3D"height:30=
+px;font-size:30px;line-height:30px;height:30px;" height=3D"30">&nbsp;</td>
+            </tr>
+          </tbody>
+        </table>
+     =20
+<!--
+******** END: Spacer - 30 Pixels ************=20
+************************************
+-->  =20
+     =20
+     =20
+<!--=20
+***********************************
+******** START: Hero Image  ************=20
+-->=20
+       =20
+        <table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D=
+"0" class=3D"ghaImageTable">
+          <tbody>
+            <tr>
+              <td><table class=3D"ghaFullWidth" width=3D"600" align=3D"cent=
+er" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+                  <tbody>
+                    <tr>
+                      <td class=3D"ghaContentWrapper editable_image_wrapper=
+ ghaImageWapper ghaRemoveSidePadding" style=3D"padding:0 20px;"><img src=3D=
+"https://www.ghadiscovery.com/var/site/storage/images/6/6/9/3/413966-3-eng-=
+GB/9dd138d706d0-Untitled-design.jpg" style=3D"border:none;display:block;wid=
+th:560px;height: auto;" width=3D"560" height=3D"auto" class=3D"ghaFullWidth=
+" /></td>
+                    </tr>
+                  </tbody>
+                </table></td>
+            </tr>
+          </tbody>
+        </table>
+
+<!--
+******** END: Image  ************=20
+*********************************
+-->=20
+        =20
+<!--=20
+**********************************************
+******** START: Main Reservation Info Module  ************
+-->=20
+       =20
+        <table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D=
+"0" class=3D"ghaReservationInfoTable">
+          <tbody>
+            <tr>
+              <td><table class=3D"ghaFullWidth" width=3D"600" align=3D"cent=
+er" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+                  <tbody>
+                    <tr>
+                      <td><table width=3D"100%" border=3D"0" cellspacing=3D=
+"0" cellpadding=3D"0">
+                          <tbody>
+                            <tr>
+                              <td class=3D"ghaContentWrapper ghaBodyPadding=
+40" style=3D"padding:30px 40px 30px 40px;"><table width=3D"100%" border=3D"=
+0" cellspacing=3D"0" cellpadding=3D"0">
+                                  <tbody>
+<!--=20
+*******************************************************
+******** START: Reservation Info Header  ************
+-->                                   =20
+                                    <tr>
+                                      <td align=3D"left" class=3D"editable_=
+priority_text ghaBodyCopy10" style=3D"font-family: Arial, 'sans-serif', 'Jo=
+st';font-size: 12px;color: #000000;font-weight: normal;text-transform: uppe=
+rcase;padding-bottom: 10px;">PARKROYAL COLLECTION</td>
+                                    </tr>
+                                    <tr>
+                                      <td align=3D"left" class=3D"editable_=
+priority_text ghaHeadline35" style=3D"font-family:Georgia, 'Times New Roman=
+', 'serif'; font-size: 35px; font-weight: bold; color:#000000; padding-bott=
+om:6px;">PARKROYAL COLLECTION Kuala Lumpur</td>
+                                    </tr>
+                                    <tr>
+                                      <td>
+                                        <table width=3D"60%" border=3D"0" c=
+ellspacing=3D"0" cellpadding=3D"0">
+                                          <tbody>
+
+                                             <tr>
+                                              <td valign=3D"top" style=3D"w=
+idth: 25px;">
+<a href=3D"https://email.ghadiscovery.com/pub/cc?_ri_=3DX0Gzc2X%3DBQjkPkSSS=
+QGfyfON5izcAabLiw3LaLMioT6gzek2ihbu6Wi9CU6D5bMzgWe0n5w79VXtpKX%3DCTBDWC&_ei=
+_=3DEW2tf9zs59idfPO1Sc_9BbkhGNifGMlvewmEObk2EXbPRFr42R1DRV38Z9dHeQ2Kw-6MMTu=
+SqXev0Q1zuyHllwk1f-42k6-xUREaX6BWkkxWwdkzHwFnj_Dpwe-NtbiZd-ssuPuTH9Qc5Qhzmd=
+Kdsm6CxSQzQBq0uGJRv216HDbs5OTWCFQGXQtEcaU1UmNJN94LSG5uNnepHoyXN68A.&_di_=3D=
+38gs09sa966rempmj44gvs4feng86vt5ml4a638o0e6snuhvhgl0" style=3D"color:#300B5=
+C;text-decoration:none;">
+                                                <img src=3D"https://email.g=
+hadiscovery.com/assets/responsysimages/content/ghaloyalt/location_pin.png" =
+alt=3D"Location pin" style=3D"width:19px;height:auto;" width=3D"19" height=
+=3D"auto" /></a>
+                                              </td>
+                                              <td align=3D"left" valign=3D"=
+middle" class=3D"editable_priority_text ghaBodyCopy12" style=3D"font-family=
+: Arial, 'sans-serif', 'Jost';font-size: 12px;color: #757C83;font-weight: n=
+ormal;">
+<a href=3D"https://email.ghadiscovery.com/pub/cc?_ri_=3DX0Gzc2X%3DBQjkPkSSS=
+QGfyfON5izcAabLiw3LaLMioT6gzek2ihbu6Wi9CU6D5bMzgWe0n5w79VXtpKX%3DCTBDWC&_ei=
+_=3DEW2tf9zs59idfPO1Sc_9BbkhGNifGMlvewmEObk2EXbPRFr42R1DRV38Z9dHeQ2Kw-6MMTu=
+SqXev0Q1zuyHllwk1f-42k6-xUREaX6BWkkxWwdkzHwFnj_Dpwe-NtbiZd-ssuPuTH9Qc5Qhzmd=
+Kdsm6CxSQzQBq0uGJRv216HDbs5OTWCFQGXQtEcaU1UmNJN94LSG5uNnepHoyXN68A.&_di_=3D=
+38gs09sa966rempmj44gvs4feng86vt5ml4a638o0e6snuhvhgl0" style=3D"color:#300B5=
+C;text-decoration:none;">Jalan Sultan Ismail, Kuala Lumpur, 50250 Malaysia<=
+/a>
+                                              </td>
+                                            </tr>
+
+                                          </tbody>
+                                        </table>
+                                       </td>
+                                    </tr>
+                                    <tr>
+                                      <td style=3D"padding-top: 20px;paddin=
+g-bottom: 20px;"><table width=3D"50" border=3D"0" cellspacing=3D"0" cellpad=
+ding=3D"0">
+                                          <tbody>
+                                            <tr>
+                                              <td class=3D"ghaBorderSmall" =
+style=3D"border-bottom: 2px solid #300B5C;padding:0px;margin:0px;height:0px=
+;font-size:0px;line-height:0px;" height=3D"0"></td>
+                                            </tr>
+                                          </tbody>
+                                        </table></td>
+                                    </tr>
+<!--
+******** END: Reservation Info Headline  ************=20
+*****************************************************
+-->=20
+
+<!--=20
+******************************************************
+******** START: Reservation Details  ************
+-->=20
+                                    <tr>
+                                      <td>
+                                        <table width=3D"100%" border=3D"0" =
+cellspacing=3D"0" cellpadding=3D"0">
+                                          <tbody>
+                                            <tr>
+                                              <td valign=3D"top" class=3D"g=
+haDisplayBlock ghaDisplayBlock10" width=3D"55%">
+                                              <table width=3D"100%" border=
+=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+                                                  <tbody>
+                                                    <tr>
+                                                      <td valign=3D"top" cl=
+ass=3D"editable_html_block ghaBodyCopy12" style=3D"color: #000000;font-weig=
+ht: normal;font-family: Arial, 'sans-serif', 'Jost';font-size: 12px; line-h=
+eight: 2em;">
+                                    Check-in Date<br/>
+                                                        <span style=3D"font=
+-family:Georgia, 'Times New Roman', 'serif'; font-size: 20px; font-weight: =
+bold;">24 Mar 2026&nbsp;&nbsp;</span>
+                                                        <br/>
+
+
+                                                      </td>
+                                                      <td valign=3D"top" cl=
+ass=3D"editable_html_block ghaBodyCopy12" style=3D"font-family: Arial, 'san=
+s-serif', 'Jost';font-size: 12px;color: #000000;font-weight: normal; line-h=
+eight: 2em;">
+                            Check-out Date<br>
+                                                        <span class=3D"ghaB=
+odyCopy20" style=3D"font-family:Georgia, 'Times New Roman', 'serif'; font-s=
+ize: 20px; font-weight: bold;">26 Mar 2026</span>
+                                                      </td>
+                                                    </tr>
+                                                  </tbody>
+                                                </table>
+                                               </td>
+                                              <td valign=3D"top" class=3D"g=
+haDisplayBlock ghaDisplayBlock10" width=3D"45%" style=3D"font-family: Arial=
+, 'sans-serif', 'Jost';font-size: 12px;color: #000000;font-weight: normal; =
+line-height: 2em;">
+                        Confirmation Number<br>
+                                                <span class=3D"ghaBodyCopy2=
+0" style=3D"font-family:Georgia, 'Times New Roman', 'serif'; font-size: 20p=
+x; font-weight: bold;">8294SG047183</span>
+                                              </td>
+                                            </tr>
+                                          </tbody>
+                                        </table>
+                                      </td>
+                                    </tr>
+
+
+                                    <tr>
+                                      <td class=3D"ghaMobilePaddingBottom10=
+"><table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+                                          <tbody>
+                                            <tr>
+                                              <td width=3D"" align=3D"left"=
+ class=3D"editable_html_block ghaDisplayBlock ghaDisplayBlock10" style=3D"f=
+ont-family: Arial, 'sans-serif', 'Jost';padding-top: 15px;font-size: 12px;c=
+olor: #000000;font-weight: normal; line-height: 1.6em">
+                                                Subtotal:<strong>&nbsp;MYR&=
+nbsp;1170.00  </strong><br>
+                                                Taxes & Fees:<strong>&nbsp;=
+MYR&nbsp;93.60</strong><br>
+
+
+                                              Total:<span style=3D"font-wei=
+ght: bold; font-size: 19px; font-family:Georgia, 'Times New Roman', 'serif'=
+;">&nbsp;MYR&nbsp;1263.60 </span>
+
+                                              =20
+                                              </td>
+                                              <td width=3D"" align=3D"left"=
+ valign=3D"top" class=3D"editable_html_block ghaDisplayBlock ghaDisplayBloc=
+k10" style=3D"font-family: Arial, 'sans-serif', 'Jost';padding-top: 15px;fo=
+nt-size: 11px;color: #000000;font-weight: normal;"> =20
+                                              </td>
+                                            </tr>                          =
+                    =20
+                                          </tbody>
+                                        </table>
+                                        </td>
+                                    </tr>
+
+
+<!--
+******** END: Reservation Details  ************=20
+****************************************************
+-->=20
+
+<!--=20
+*****************************************************
+******** START: CTA Button White  ************
+-->=20
+                                    <tr>=20
+                                      <!-- Button 1 -->
+                                      <td align=3D"left" style=3D"padding-t=
+op:20px;">
+                                        <table class=3D"ghaButton ghaButton=
+Secondary" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+                                          <tbody>
+                                            <tr>
+                                              <td align=3D"center" class=3D=
+"editable_custom_button ghaButtonWrapper" style=3D"font-family: Arial, 'san=
+s-serif', 'Jost';font-size: 12px; color:#300B5C; padding:10px 25px; border:=
+2px solid #300B5C;text-transform: uppercase;font-weight: bold;"><a href=3D"=
+https://email.ghadiscovery.com/pub/cc?_ri_=3DX0Gzc2X%3DBQjkPkSSSQGfyfON5izc=
+AabLiw3LaLMioT6gzek2ihbu6Wi9CU6D5bMzgWe0n5w79VXtpKX%3DAUUYWC&_ei_=3DEW2tf9z=
+s59idfPO1Sc_9BbkhGNifGMlvewmEObk2EXbPRFr42R1DRV38Z9dHeQ2Kw-6MMTuSqXev0Q1zuy=
+HllwmObpAUb1UBqZRid7bsAbEuwW5Ntp0RSiRNs2MlQE4DukGSObB7r9t5BqQxiCNKxMqVB5AoM=
+B7wyB-2ZQWEb9ADNP5rBkqmbbkg6MGRdECuNJS1XlJWX_cH2k5yXIh4TegpVTZzX4Nnq0OdLL9u=
+bcsJe744z1t4JxgvVtjzBLsd.&_di_=3Dhvn33g2hj1t4q1fmeujp90o9ul8v67f7lkm958d66a=
+ffe3ovi7t0" style=3D"color:#300B5C;text-decoration:none;">VIEW YOUR RESERVA=
+TION </a></td>
+                                            </tr>
+                                          </tbody>
+                                        </table>
+                                      </td>
+                                    </tr>
+<!--
+******** END: CTA Button White  ************=20
+***************************************************
+-->=20
+                                  </tbody>
+                                </table></td>
+                            </tr>
+                          </tbody>
+                        </table></td>
+                    </tr>
+                  </tbody>
+                </table></td>
+            </tr>
+          </tbody>
+        </table>
+       =20
+<!--
+******** END: Main Reservation Info Module ************=20
+********************************************
+-->
+       =20
+<!--=20
+******************************************
+******** START: Spacer - 30 Pixel   ************
+-->=20
+
+        <table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D=
+"0" class=3D"ghaSpacerTable">
+          <tbody>
+            <tr>
+              <td align=3D"center" class=3D"ghaSpacer30" style=3D"height:30=
+px;font-size:30px;line-height:30px;height:30px;" height=3D"30">&nbsp;</td>
+            </tr>
+          </tbody>
+        </table>
+       =20
+<!--
+******** END: Spacer - 30 Pixel  ************=20
+************************************
+-->              =20
+
+       =20
+<!-- booking_res_info module end -->
+
+                          =09=09=09</td>
+                 =09=09=09=09</tr>
+             =09=09=09=09</table>
+             =09=09=09=09<!-- width wrapper end -->
+   =09=09=09=09=09=09</td>
+                 =09</tr>
+             =09</table>
+             =09<!-- padding wrapper end -->
+<monitor object=3D"module" module=3D"booking_res_info" result=3D"OK" render=
+_ts=3D"1771149110544" priority=3D"30"></monitor>
+            =20
+         =20
+
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+
+
+
+
+
+
+=09
+
+   =20
+     =20
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+
+
+
+
+                   =20
+
+                     <!-- padding wrapper start -->
+             =09=09<table border=3D"0" cellpadding=3D"0" cellspacing=3D"0" =
+class=3D"w420" width=3D"640" style=3D"width: 640px">
+                    =09<tr>
+                         =09<td align=3D"center" valign=3D"top" bgcolor=3D"=
+">
+                             =09<!-- width wrapper start -->=20
+                             <table border=3D"0" cellpadding=3D"0" cellspac=
+ing=3D"0" class=3D"w420" width=3D"580" style=3D"width: 580px">
+                 =09=09=09=09<tr>
+                         =09=09=09<td align=3D"center" valign=3D"top" bgcol=
+or=3D"">   =20
+                                            =20
+                                            <!-- Editor mode: N -->
+
+=09
+
+   =20
+
+
+
+
+
+
+
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+
+
+
+=20
+
+
+<!--=20
+******************************************
+******** START: Divider  ************
+-->    =20
+
+      <table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0=
+" class=3D"ghaDividerTable">
+          <tbody>
+            <tr>
+              <td align=3D"center">
+                <table class=3D"ghaFullWidth" width=3D"600" align=3D"center=
+" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+                  <tbody>
+                    <tr>
+                      <td class=3D"ghaContentWrapper ghaRemoveSidePadding" =
+style=3D"padding:0 20px;font-size:0px;line-height:0px;">
+                     <div style=3D"border-bottom: 1px solid #e6e6e6;padding=
+:0px;margin:0px;height:0px;font-size:0px;line-height:0px;width:100%"></div>
+                     </td>
+                    </tr>
+                  </tbody>
+                </table>
+             </td>
+            </tr>
+          </tbody>
+       </table>
+       =20
+<!--
+******** END: Divider  ************=20
+************************************
+-->       =20
+       =20
+<!--=20
+******************************************
+******** START: Spacer - 30 Pixel ************
+-->=20
+       =20
+        <table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D=
+"0" class=3D"ghaSpacerTable">
+          <tbody>
+            <tr>
+              <td align=3D"center" class=3D"ghaSpacer30" style=3D"height:30=
+px;font-size:30px;line-height:30px;height:30px;" height=3D"30">&nbsp;</td>
+            </tr>
+          </tbody>
+        </table>
+     =20
+<!--
+******** END: Spacer - 30  ************=20
+************************************
+-->
+     =20
+       =20
+<!--=20
+*************************************************
+******** START: Reservation Room Details  ************
+-->=20
+       =20
+        <table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D=
+"0" class=3D"ghaReservationDetailsTable">
+          <tbody>
+            <tr>
+              <td>
+                <table class=3D"ghaFullWidth" width=3D"600" align=3D"center=
+" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+                  <tbody>
+                    <tr>
+                      <td class=3D"ghaContentWrapper ghaBodyPadding40" styl=
+e=3D"padding:0px 40px;"><table width=3D"100%" border=3D"0" cellspacing=3D"0=
+" cellpadding=3D"0">
+                          <tbody>
+<!--=20
+**********************************************************
+******** START: Sub-Section Headline  ************
+-->=20
+                            <tr>
+                              <td class=3D"editable_priority_text ghaHeadli=
+ne35" align=3D"left" style=3D"font-family:Georgia, 'Times New Roman', 'seri=
+f'; font-size: 35px; font-weight: bold; color:#000000;padding-bottom: 20px;=
+">Details of your stay
+                              </td>
+                            </tr>
+<!--
+******** END: Sub-Section Headline  ************=20
+********************************************************
+-->
+
+<!--=20
+******************************************************
+******** START: Member Details Copy Block  ************
+-->=20
+
+                            <tr>
+                              <td class=3D"ghaMobilePaddingBottom10">
+                                 <table width=3D"100%" border=3D"0" cellspa=
+cing=3D"0" cellpadding=3D"0">
+                                  <tbody>
+
+                           =20
+                                    <tr>
+                                      <td width=3D"50%" align=3D"left" clas=
+s=3D"editable_html_block ghaDisplayBlock ghaDisplayBlock10" style=3D"font-f=
+amily: Arial, 'sans-serif', 'Jost';font-size: 11px;color: #000000;font-weig=
+ht: normal; line-height: 1.6em">
+                    <strong>Guest Name:=C2=A0</strong> Alex Smit=
+i<br>=20
+                   <strong>Membership Number:</strong> 8576757590<br>
+                                        <strong>Arrival:</strong> 24-Mar-20=
+26<br>
+                                        <strong>Departure:</strong> 26-Mar-=
+2026<br>
+                                     </td>
+                                      <td width=3D"50%" align=3D"left" vali=
+gn=3D"top" class=3D"editable_html_block ghaDisplayBlock ghaDisplayBlock10" =
+style=3D"font-family: Arial, 'sans-serif', 'Jost';font-size: 11px;color: #0=
+00000;font-weight: normal;">  <strong>Total Nights:</strong> 2  |  Rooms: 1=
+<br>
+                                        <strong>Booking Total:</strong> MYR=
+ 1263.60<br>Card Type: Visa Card<br>
+                                        Card number: **** **** **** 0000
+                                    </td>
+                                  </tr>
+
+
+                                   </tbody>
+                                </table>
+                               </td>
+                            </tr>
+
+
+<!--
+******** END: Member Details Copy Block  ************=20
+****************************************************
+-->=20
+
+<!--=20
+**********************************************
+******** START: api marketing message Content Module  ************
+-->=20
+       =20
+       =20
+<!--
+******** END: api marketing message Module ************=20
+********************************************
+-->
+
+
+<!--=20
+**********************************************
+******** START: special request Content Module  ************
+-->=20
+       =20
+       =20
+<!--
+******** END: special request Module ************=20
+********************************************
+-->
+                          </tbody>
+                        </table>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+       =20
+<!--
+******** END: Reservation Room Details  ************=20
+****************************************************
+-->=20
+     =20
+     =20
+<!--=20
+************************************************=20
+******** START: Spacer - 30 Pixels  ***********
+-->=20
+     =20
+        <table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D=
+"0" class=3D"ghaSpacerTable">
+          <tbody>
+            <tr>
+              <td align=3D"center" class=3D"ghaSpacer30" style=3D"height:30=
+px;font-size:30px;line-height:30px;height:30px;" height=3D"30">&nbsp;</td>
+            </tr>
+          </tbody>
+        </table>
+     =20
+<!--=20
+******** END: Spacer - 30  ************=20
+****************************************
+-->=20
+     =20
+     =20
+<!--=20
+******************************************=20
+******** START: Booked Room Details Module ************
+-->=20
+       =20
+
+
+
+
+        <table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D=
+"0" class=3D"ghaRoomDetailsTable">
+          <tbody>
+            <tr>
+              <td><table class=3D"ghaFullWidth" width=3D"600" align=3D"cent=
+er" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+                  <tbody>
+                    <tr>
+                      <td class=3D"ghaContentWrapper ghaRemoveSidePadding" =
+style=3D"padding:0px 40px 0px 40px;"><table width=3D"100%" border=3D"0" cel=
+lspacing=3D"0" cellpadding=3D"0">
+                          <tbody>
+                            <tr>
+<!--=20
+************************************************
+******** START: Room Image  ************
+-->=20
+                              <th width=3D"50%" valign=3D"top" class=3D"gha=
+ContentWrapper editable_image_wrapper ghaImageWapper ghaDisplayBlock ghaDis=
+playBlock10" style=3D"font-weight: normal; text-align:left;"><a href=3D"" t=
+arget=3D"_blank"><img src=3D"" class=3D"ghaFullWidth" style=3D"border:none;=
+display:block;width:185px; height: auto;" width=3D"185" height=3D"auto" /><=
+/a></th>
+<!--=20
+******** END: Room Image  ************=20
+**********************************************
+-->
+
+<!--=20
+***********************************************
+******** START: Room and Rate Info  ************
+-->
+                              <th width=3D"50%" valign=3D"top" class=3D"gha=
+DisplayBlock ghaDisplayBlock10" style=3D"font-weight: normal; text-align:le=
+ft;">
+                <div class=3D"ghaBodyMobilePadding">
+                  <table width=3D"100%" border=3D"0" cellspacing=3D"0" cell=
+padding=3D"0">
+                    <tbody>
+                    <tr>
+                      <td align=3D"left" class=3D"editable_html_block ghaMo=
+bilePaddingBottom10" style=3D"font-family: Arial, 'sans-serif', 'Jost';font=
+-size: 12px;color: #000000;font-weight: normal;padding-bottom: 25px;">
+                      <span style=3D"font-size: 10px;text-transform: upperc=
+ase;">
+                      COLLECTION Club King<br>
+                      DISCOVERY Workweek Unwind<br>
+ 1 ADULT + 0 CHILD</span>
+                      </td>
+                      <td align=3D"right" valign=3D"top" width=3D"30">
+                      <a href=3D"https://email.ghadiscovery.com/pub/cc?_ri_=
+=3DX0Gzc2X%3DBQjkPkSSSQGfyfON5izcAabLiw3LaLMioT6gzek2ihbu6Wi9CU6D5bMzgWe0n5=
+w79VXtpKX%3DAUUYAC&_ei_=3DEW2tf9zs59idfPO1Sc_9BbkhGNifGMlvewmEObk2EXbPRFr42=
+R1DRV38Z9dHeQ2Kw-6MMTuSqXev0Q1zuyHllwmObpAUb1UBqZRid7bsAbEuwW5Ntp0RSiRNs2Ml=
+QE4DukGSObB7r9t5BqQxiCNKxMqVB5AoMB7wyB-2ZQWEb9ADyJIYNy4mvvctYikSQzII3eltGBV=
+vGEYgslx-Ha8rGX7gcZ7zbOPzlvasuLp2aQxpOBkxbmhbP0KEOdrrTcJd.&_di_=3Ds41ahuhas=
+j4c903o1je58v0cu3ka1al1a7e5kccjdmtnmqgve0k0" target=3D"_blank">
+                        <img src=3D"https://email.ghadiscovery.com/assets/r=
+esponsysimages/content/ghaloyalt/modify.png" style=3D"width:28px;height:28p=
+x;" width=3D"28" height=3D"28" />
+                      </a>
+                      </td>
+                    </tr>
+                    </tbody>
+                  </table>
+                  <table width=3D"100%" border=3D"0" cellspacing=3D"0" cell=
+padding=3D"0">
+                    <tbody>
+                    <tr>
+                      <td width=3D"120" align=3D"left" class=3D"editable_ht=
+ml_block" style=3D"font-family: Arial, 'sans-serif', 'Jost';font-size: 10px=
+;color: #000000;font-weight: normal;text-transform: uppercase;padding-botto=
+m: 3px;"> SUBTOTAL:<br>
+                      TAXES & FEES:</td>
+                      <td align=3D"right" class=3D"editable_html_block" sty=
+le=3D"font-family: Arial, 'sans-serif', 'Jost';font-size: 10px;color: #0000=
+00;font-weight: normal;text-transform: uppercase;padding-bottom: 3px;"> MYR=
+ 1170.00<br>
+                      MYR 93.60 </td>
+                    </tr>
+                    <tr>
+                      <td width=3D"120" align=3D"left" class=3D"editable_pr=
+iority_text" valign=3D"bottom" style=3D"font-family: Arial, 'sans-serif', '=
+Jost';font-size: 10px;color: #000000;font-weight: normal;text-transform: up=
+percase;"> ROOM TOTAL=C2=A0</td>
+                      <td align=3D"right" class=3D"editable_priority_text" =
+valign=3D"bottom" style=3D"font-family:Georgia, 'Times New Roman', 'serif';=
+font-size: 19px;color: #000000;font-weight: bold;text-transform: uppercase;=
+"> MYR 1263.60 </td>
+                    </tr>
+                    </tbody>
+                  </table>
+                </div>
+                </th>
+<!--
+******** END: Room and Rate Info  ************=20
+*********************************************
+-->
+                            </tr>
+                          </tbody>
+                        </table></td>
+                    </tr>
+                  </tbody>
+                </table></td>
+            </tr>
+          </tbody>
+        </table>
+       =20
+<!--
+******** END: Booked Room Details Module  ************=20
+****************************************
+-->=20
+       =20
+<!--=20
+************************************************=20
+******** START: Spacer - 60 Pixels ***********
+-->=20
+     =20
+        <table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D=
+"0" class=3D"ghaSpacerTable">
+          <tbody>
+            <tr>
+              <td align=3D"center" class=3D"ghaSpacer60" style=3D"height:60=
+px;font-size:60px;line-height:60px;height:60px;" height=3D"60">&nbsp;</td>
+            </tr>
+          </tbody>
+        </table>
+     =20
+<!--=20
+******** END: Spacer - 60 Pixels ************=20
+****************************************
+-->=20
+
+   =20
+     =20
+<!--=20
+************************************************=20
+******** START: Spacer - 60 Pixels ***********
+-->=20
+  <!-- removed spacer 60-->
+
+  <!--=20
+******** END: Spacer - 60 Pixles ************=20
+****************************************
+-->=20
+     =20
+     =20
+<!--=20
+************************************************=20
+******** START: Dual CTA Buttons  ***********
+-->=20
+       =20
+        <table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D=
+"0" class=3D"ghaReservationBtnsTable">
+          <tbody>
+            <tr>
+              <td align=3D"center"><table class=3D"ghaFullWidth" width=3D"6=
+00" align=3D"center" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+                  <tbody>
+                    <tr>
+                      <td class=3D"ghaContentWrapper ghaBodyPadding40" styl=
+e=3D"padding:0px 40px 0px 40px;">
+            <table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpaddin=
+g=3D"0">
+                          <tbody>
+                            <tr>=20
+<!--=20
+***********************************
+******** START: Purple CTA Button  ***********
+-->=20
+                              <td width=3D"245" align=3D"center" class=3D"g=
+haDisplayBlock ghaDisplayBlock10">
+                <table width=3D"100%" class=3D"ghaButton ghaButtonSecondary=
+" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+                                  <tbody>
+                                    <tr>
+                                      <td align=3D"center" class=3D"editabl=
+e_custom_button ghaButtonWrapper" style=3D"font-family: Arial, sans-serif, =
+Jost;font-size: 12px; color:#300B5C; border:2px solid #300B5C; padding:10px=
+ 25px;text-transform: uppercase;font-weight: bold;"><a href=3D"https://emai=
+l.ghadiscovery.com/pub/cc?_ri_=3DX0Gzc2X%3DBQjkPkSSSQGfyfON5izcAabLiw3LaLMi=
+oT6gzek2ihbu6Wi9CU6D5bMzgWe0n5w79VXtpKX%3DAUUYCC&_ei_=3DEW2tf9zs59idfPO1Sc_=
+9BbkhGNifGMlvewmEObk2EXbPRFr42R1DRV38Z9dHeQ2Kw-6MMTuSqXev0Q1zuyHllwmObpAUb1=
+UBqZRid7bsAbEuwW5Ntp0RSiRNs2MlQE4DuvuXTxeLbAhjGnHXvRhg1NMEtOMwiYF_ZKsULpsX6=
+c3bAVwo8tHaAtEe3--swpmvuFDTdB4hyKMBJvZ9_T61SNqULNQs4vOd6FRidRyCNudsqBvVTAjy=
+IXinrw7xYlbvhYXTMHwrV7c5gAZ8UnReZrcPUs-5pFc4CX28VaePk6xrWHPiVPaiobhramUlUQ3=
+me0.&_di_=3D9j2n3us2v81651bd240ei88msin0ckvlcv62n8au8r8g5up8fffg" style=3D"=
+color:#300B5C;text-decoration:none;">Contact Hotel</a></td>
+                                    </tr>
+                                  </tbody>
+                                </table>
+                </td>
+<!--=20
+******** END: Purple CTA Button  ***********
+*********************************
+-->=20
+                <td class=3D"ghaRemoveOnMobile" width=3D"30" style=3D"width=
+:30px">&nbsp;</td>
+<!--=20
+***********************************
+******** START: Purple CTA Button  ***********
+-->=20
+                              <td width=3D"245" align=3D"center" class=3D"g=
+haDisplayBlock ghaDisplayBlock10">
+                <table width=3D"100%" class=3D"ghaButton ghaButtonSecondary=
+" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+                                  <tbody>
+                                    <tr>
+                                      <td align=3D"center" class=3D"editabl=
+e_custom_button ghaButtonWrapper" style=3D"font-family: Arial, sans-serif, =
+Jost;font-size: 12px; color:#300B5C; border:2px solid #300B5C; padding:10px=
+ 25px;text-transform: uppercase;font-weight: bold;"><a href=3D"https://emai=
+l.ghadiscovery.com/pub/cc?_ri_=3DX0Gzc2X%3DBQjkPkSSSQGfyfON5izcAabLiw3LaLMi=
+oT6gzek2ihbu6Wi9CU6D5bMzgWe0n5w79VXtpKX%3DAUUYAC&_ei_=3DEW2tf9zs59idfPO1Sc_=
+9BbkhGNifGMlvewmEObk2EXbPRFr42R1DRV38Z9dHeQ2Kw-6MMTuSqXev0Q1zuyHllwmObpAUb1=
+UBqZRid7bsAbEuwW5Ntp0RSiRNs2MlQE4DukGSObB7r9t5BqQxiCNKxMqVB5AoMB7wyB-2ZQWEb=
+9ADyJIYNy4mvvctYikSQzII3eltGBVvGEYgslx-Ha8rGX7gcZ7zbOPzlvasuLp2aQxpOBkxbmhb=
+P0KEOdrrTcJd.&_di_=3Ds41ahuhasj4c903o1je58v0cu3ka1al1a7e5kccjdmtnmqgve0k0" =
+style=3D"color:#300B5C;text-decoration:none;">CHANGE YOUR RESERVATION</a></=
+td>
+                                    </tr>
+                                  </tbody>
+                                </table>
+                </td>
+<!--=20
+******** END: Purple CTA Button  ***********
+*********************************
+-->=20
+                            </tr>
+                          </tbody>
+                        </table>
+            </td>
+                    </tr>
+                  </tbody>
+                </table></td>
+            </tr>
+          </tbody>
+        </table>
+<!--
+******** END: Dual CTA Buttons  ***********
+**********************************************
+-->=20
+       =20
+<!--=20
+*********************************************
+******** START: Download Reservation Icon ***********
+-->
+       =20
+        <table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D=
+"0" class=3D"ghaDownloadReservationTable">
+          <tbody>
+            <tr>
+              <td align=3D"center"><table class=3D"ghaFullWidth" width=3D"6=
+00" align=3D"center" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+                  <tbody>
+                    <tr>
+                      <td class=3D"ghaContentWrapper ghaBodyPadding40" styl=
+e=3D"padding:10px 40px 0px 40px;"><table width=3D"100%" border=3D"0" cellsp=
+acing=3D"0" cellpadding=3D"0">
+                          <tbody>
+                            <tr>
+                              <td align=3D"right" valign=3D"middle" class=
+=3D"editable_priority_text ghaMobileAlignLeft" style=3D"font-family: Arial,=
+ 'sans-serif', 'Jost';font-size: 13px;color: #757C83;font-weight: normal;wi=
+dth: 100%; vertical-align: middle">
+
+
+                </td>
+                            </tr>
+                          </tbody>
+                        </table></td>
+                    </tr>
+                  </tbody>
+                </table></td>
+            </tr>
+          </tbody>
+        </table>
+       =20
+<!--
+******** END: Download Reservation Icon ***********
+*******************************************
+-->
+       =20
+<!--=20
+******************************************
+******** START: Spacer - 30 Pixels ************
+-->=20
+
+        <table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D=
+"0" class=3D"ghaSpacerTable">
+          <tbody>
+            <tr>
+              <td align=3D"center" class=3D"ghaSpacer50" style=3D"height:50=
+px;font-size:50px;line-height:50px;height:50px;" height=3D"50">&nbsp;</td>
+            </tr>
+          </tbody>
+        </table>
+     =20
+<!--
+******** END: Spacer - 30 Pixels ************=20
+************************************
+-->=20
+     =20
+     =20
+
+
+<!-- booking_room_details module end -->
+
+                          =09=09=09</td>
+                 =09=09=09=09</tr>
+             =09=09=09=09</table>
+             =09=09=09=09<!-- width wrapper end -->
+   =09=09=09=09=09=09</td>
+                 =09</tr>
+             =09</table>
+             =09<!-- padding wrapper end -->
+<monitor object=3D"module" module=3D"booking_room_details" result=3D"OK" re=
+nder_ts=3D"1771149110597" priority=3D"40"></monitor>
+            =20
+         =20
+
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+
+
+
+
+
+
+=09
+
+   =20
+     =20
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+
+
+
+
+                   =20
+
+                     <!-- padding wrapper start -->
+             =09=09<table border=3D"0" cellpadding=3D"0" cellspacing=3D"0" =
+class=3D"w420" width=3D"640" style=3D"width: 640px">
+                    =09<tr>
+                         =09<td align=3D"center" valign=3D"top" bgcolor=3D"=
+">
+                             =09<!-- width wrapper start -->=20
+                             <table border=3D"0" cellpadding=3D"0" cellspac=
+ing=3D"0" class=3D"w420" width=3D"580" style=3D"width: 580px">
+                 =09=09=09=09<tr>
+                         =09=09=09<td align=3D"center" valign=3D"top" bgcol=
+or=3D"">   =20
+                                            =20
+                                            <!-- Editor mode: N -->
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+
+
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+
+
+=20
+
+<!--=20
+************************************************
+******** START: Footer Headline with Link  ************
+-->=20
+       =20
+        <table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D=
+"0" class=3D"ghaHeadlineLinkTable">
+          <tbody>
+            <tr>
+              <td align=3D"center"><table class=3D"ghaFullWidth" width=3D"6=
+00" align=3D"center" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+                  <tbody>
+                    <tr>
+                      <td class=3D"ghaContentWrapper ghaBodyPadding40" styl=
+e=3D"padding:0px 40px">
+            <table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpaddin=
+g=3D"0">
+                          <tbody>
+                            <tr>
+                              <td align=3D"center" class=3D"editable_priori=
+ty_text ghaHeadline30" style=3D"font-family:Georgia, 'Times New Roman', 'se=
+rif'; font-size: 30px; font-weight: bold; color:#000000;">Need to Correct S=
+omething?</td>
+                            </tr>
+                            <tr>
+                              <td align=3D"center" class=3D"editable_priori=
+ty_text" style=3D"font-family: Arial, 'sans-serif', 'Jost';font-size: 10px;=
+color: #757C83;font-weight: normal;font-weight: 500;"><a href=3D"https://em=
+ail.ghadiscovery.com/pub/cc?_ri_=3DX0Gzc2X%3DBQjkPkSSSQGfyfON5izcAabLiw3LaL=
+MioT6gzek2ihbu6Wi9CU6D5bMzgWe0n5w79VXtpKX%3DAUUARC&_ei_=3DEW2tf9zs59idfPO1S=
+c_9BbkhGNifGMlvewmEObk2EXbPRFr42R1DRV38Z9dHeQ2Kw-6MMTuSqXev0Q1zuyHllwmObpAU=
+b1UBqZRid7bsAbEuwW5Ntp0RSiRNs2MlQE4DuuyCXurSGYoZZfob_xeuSuq69GrhAZMHNWoQQu2=
+qTkvfZUdwhOwu7UPa5yFdWEHvqvExmS4oBBdwpDj-8L-0Z528E1RJ3gHHKWvOXobplArTJ1WtUw=
+M35OwO.&_di_=3Dmq9ej7i8b2r4h229ss9uun98d6df7aq6ik9bip9frh9d5rtpmcq0" target=
+=3D"_blank" style=3D"color: #757C83;font-style: italic;text-decoration: und=
+erline;">Let us know</a></td>
+                            </tr>
+                          </tbody>
+                        </table></td>
+                    </tr>
+                  </tbody>
+                </table></td>
+            </tr>
+          </tbody>
+        </table>
+       =20
+<!--
+******** END: Secondary Headline with Link  ************=20
+**********************************************
+-->=20
+       =20
+<!--=20
+******************************************
+******** START: Spacer - 60 Pixels ************
+-->=20
+
+        <table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D=
+"0" class=3D"ghaSpacerTable">
+          <tbody>
+            <tr>
+              <td align=3D"center" class=3D"ghaSpacer60" style=3D"height:60=
+px;font-size:60px;line-height:60px;height:60px;" height=3D"60">&nbsp;</td>
+            </tr>
+          </tbody>
+        </table>
+     =20
+<!--
+******** END: Spacer - 60 Pixels ************=20
+************************************
+<!-- headline_link module end -->
+
+                          =09=09=09</td>
+                 =09=09=09=09</tr>
+             =09=09=09=09</table>
+             =09=09=09=09<!-- width wrapper end -->
+   =09=09=09=09=09=09</td>
+                 =09</tr>
+             =09</table>
+             =09<!-- padding wrapper end -->
+<monitor object=3D"module" module=3D"headline_link" result=3D"OK" render_ts=
+=3D"1771149110614" priority=3D"50"></monitor>
+            =20
+         =20
+
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+
+
+
+
+
+
+=09
+
+   =20
+     =20
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+
+
+
+
+
+                   =20
+
+                     <!-- padding wrapper start -->
+             =09=09<table border=3D"0" cellpadding=3D"0" cellspacing=3D"0" =
+class=3D"w420" width=3D"640" style=3D"width: 640px">
+                    =09<tr>
+                         =09<td align=3D"center" valign=3D"top" bgcolor=3D"=
+">
+                             =09<!-- width wrapper start -->=20
+                             <table border=3D"0" cellpadding=3D"0" cellspac=
+ing=3D"0" class=3D"w420" width=3D"580" style=3D"width: 580px">
+                 =09=09=09=09<tr>
+                         =09=09=09<td align=3D"center" valign=3D"top" bgcol=
+or=3D"">   =20
+                                            =20
+                                            <!-- Editor mode: N -->
+
+=09
+
+   =20
+
+
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+
+
+=20
+
+=09=09 =20
+<!--=20
+******************************************
+******** START: Download App Footer Module  ************
+-->=20
+       =20
+        <table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D=
+"0" class=3D"ghaDownloadAppTable">
+          <tbody>
+            <tr>
+              <td align=3D"center"><table class=3D"ghaFullWidth" width=3D"6=
+00" align=3D"center" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+                  <tbody>
+                    <tr>
+                      <td class=3D"ghaContentWrapper ghaBodyPadding40" styl=
+e=3D"padding:0 40px;"><table width=3D"100%" border=3D"0" cellspacing=3D"0" =
+cellpadding=3D"0">
+                          <tbody>
+                            <tr>
+                              <td align=3D"center" class=3D"editable_priori=
+ty_text" style=3D"font-family: Arial, 'sans-serif', 'Jost';font-size: 12px;=
+color: #000000;font-weight: bold;text-transform: uppercase;padding-bottom: =
+10px;">DOWNLOAD OUR APP TODAY!</td>
+                            </tr>
+                            <tr>
+                              <td align=3D"center">
+=09=09=09=09=09=09=09=09  <a href=3D"https://email.ghadiscovery.com/pub/cc?=
+_ri_=3DX0Gzc2X%3DBQjkPkSSSQGfyfON5izcAabLiw3LaLMioT6gzek2ihbu6Wi9CU6D5bMzgW=
+e0n5w79VXtpKX%3DAUUATC&_ei_=3DEW2tf9zs59idfPO1Sc_9BbkhGNifGMlvewmEObk2EXbPR=
+Fr42R1DRV38Z9dHeQ2Kw-6MMTuSqXev0Q1zuyHllwngOhbUJGdhvzIB5jkJVtDpT0u11guBbERV=
+oQzms37fl4IDq3KN3GoaLciAmCmCpAeKyNZV45TZqIk9QH1Vji7DGcDqqt0tifJETXhUdXNUJ1E=
+tEov69GbWDsXm0PcXOrSCS6gjW5FLYFfXEQQsW6IgYO_utEXyRGauieN7TghxJOrVfhlw7Tcn-F=
+XXzXtA5N0Q8sgDpcgLJvhkC0.&_di_=3Die5lt5rl7g31q6uhm8ii7a9tnkm00keabf4pm04qkm=
+36efdpfum0" target=3D"_blank"><img src=3D"https://email.ghadiscovery.com/as=
+sets/responsysimages/content/ghaloyalt/00_googleplay_en.png" style=3D"width=
+:138px;height:auto;" width=3D"138" height=3D"auto" /></a>=20
+=09=09=09=09=09=09=09=09  &nbsp;&nbsp;
+=09=09=09=09=09=09=09=09  <a href=3D"https://email.ghadiscovery.com/pub/cc?=
+_ri_=3DX0Gzc2X%3DBQjkPkSSSQGfyfON5izcAabLiw3LaLMioT6gzek2ihbu6Wi9CU6D5bMzgW=
+e0n5w79VXtpKX%3DAUUAWC&_ei_=3DEW2tf9zs59idfPO1Sc_9BbkhGNifGMlvewmEObk2EXbPR=
+Fr42R1DRV38Z9dHeQ2Kw-6MMTuSqXev0Q1zuyHllwmv5iDN60bztlPx7KZ_KjSSHbIxFOnEtwJs=
+VqEsbMAv1roGGFC55sq-RNDvcwmiBtgnKOm2pYEy8VwKagc_EpL9EX-i-S3NvsxIkGG8vYSgsyL=
+g8IgipesgUgpWkRvtSBbnIJPno28Lx8gJodpS4qcXWlzRsQwqNcaLPUl-Mn_IGCCBbCglc_w.&_=
+di_=3D496q5holf2viqomj3jma8gg5cesvlikev4q81ljrksbs0l1k1jtg" target=3D"_blan=
+k"><img src=3D"https://email.ghadiscovery.com/assets/responsysimages/conten=
+t/ghaloyalt/00_appstore_en.png" style=3D"width:138px;height:auto;" width=3D=
+"138" height=3D"auto" /></a>
+=09=09=09=09=09=09=09  </td>
+                            </tr>
+                          </tbody>
+                        </table></td>
+                    </tr>
+                  </tbody>
+                </table></td>
+            </tr>
+          </tbody>
+        </table>
+<!--=20
+******** END: Download App Footer Module  ************=20
+****************************************
+-->=20
+       =20
+
+         =20
+         =20
+          <!--=20
+************************************
+******** START: Core Footer Module  ************
+-->=20
+       =20
+<!--=20
+******************************************
+******** START: Spacer - 80 Pixels ************
+-->=20
+=09=09 =20
+        <table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D=
+"0" class=3D"ghaSpacerTable">
+          <tbody>
+            <tr>
+              <td align=3D"center" class=3D"ghaSpacer80" style=3D"height:80=
+px;font-size:80px;line-height:80px;height:80px;" height=3D"80">&nbsp;</td>
+            </tr>
+          </tbody>
+        </table>
+=09=09 =20
+<!--=20
+******** END: Spacer - 80 Pixels ************=20
+****************************************
+-->=20
+<!-- download_app module end -->
+
+                          =09=09=09</td>
+                 =09=09=09=09</tr>
+             =09=09=09=09</table>
+             =09=09=09=09<!-- width wrapper end -->
+   =09=09=09=09=09=09</td>
+                 =09</tr>
+             =09</table>
+             =09<!-- padding wrapper end -->
+<monitor object=3D"module" module=3D"download_app" result=3D"OK" render_ts=
+=3D"1771149110636" priority=3D"60"></monitor>
+            =20
+         =20
+
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+
+
+
+
+
+
+=09
+
+   =20
+     =20
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+
+=09
+                   =20
+
+                     <!-- padding wrapper start -->
+             =09=09<table border=3D"0" cellpadding=3D"0" cellspacing=3D"0" =
+class=3D"w420" width=3D"640" style=3D"width: 640px">
+                    =09<tr>
+                         =09<td align=3D"center" valign=3D"top" bgcolor=3D"=
+">
+                             =09<!-- width wrapper start -->=20
+                             <table border=3D"0" cellpadding=3D"0" cellspac=
+ing=3D"0" class=3D"w420" width=3D"580" style=3D"width: 580px">
+                 =09=09=09=09<tr>
+                         =09=09=09<td align=3D"center" valign=3D"top" bgcol=
+or=3D"">   =20
+                                            =20
+                                            <!-- Editor mode: N -->
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+
+
+
+
+
+
+
+
+
+
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+
+
+=20
+
+
+<!--=20
+******************************************
+******** START: Divider ************
+-->=20
+
+        <table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D=
+"0" class=3D"ghaDividerTable">
+          <tbody>
+            <tr>
+              <td align=3D"center"><table class=3D"ghaFullWidth" width=3D"6=
+00" align=3D"center" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+                  <tbody>
+                    <tr>
+                      <td class=3D"ghaContentWrapper ghaBodyPadding20" styl=
+e=3D"padding:0 20px;"><table width=3D"100%" border=3D"0" cellspacing=3D"0" =
+cellpadding=3D"0">
+                          <tbody>
+                            <tr>
+                              <td style=3D"border-bottom: 1px solid #e6e6e6=
+;padding:0px;margin:0px;height:0px;font-size:0px;line-height:0px;" height=
+=3D"0"></td>
+                            </tr>
+                          </tbody>
+                        </table></td>
+                    </tr>
+                  </tbody>
+                </table></td>
+            </tr>
+          </tbody>
+        </table>
+     =20
+<!--
+******** END: Divider  ************=20
+************************************
+-->        =20
+
+
+<!--=20
+************************************
+******** START: Footer Contact  ************
+-->=20
+       =20
+        <table class=3D"ghaFooterBrand" width=3D"100%" border=3D"0" cellspa=
+cing=3D"0" cellpadding=3D"0">
+          <tbody>
+            <tr>
+              <td>
+        <table class=3D"ghaFullWidth" width=3D"600" align=3D"center" border=
+=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+                  <tbody>
+                    <tr>
+<!--=20
+******************************************
+******** START: Footer Links  ************
+-->=20
+                        <td class=3D"ghaContentWrapper ghaBodyPadding20" st=
+yle=3D"padding:30px 20px;"><table width=3D"100%" border=3D"0" cellspacing=
+=3D"0" cellpadding=3D"0" style=3D"direction:rtl;">
+                          <tbody>
+                            <tr>
+                              <td align=3D"right" valign=3D"top" class=3D"e=
+ditable_html_block ghaDisplayBlock ghaDisplayBlock10 ghaAlignCenter" style=
+=3D"font-family: Arial, 'sans-serif', 'Jost';font-size: 11px;color: #000000=
+;font-weight: normal;direction:ltr;line-height:2em">
+                <a href=3D"https://email.ghadiscovery.com/pub/cc?_ri_=3DX0G=
+zc2X%3DBQjkPkSSSQGfyfON5izcAabLiw3LaLMioT6gzek2ihbu6Wi9CU6D5bMzgWe0n5w79VXt=
+pKX%3DAUUAAC&_ei_=3DEW2tf9zs59idfPO1Sc_9BbkhGNifGMlvewmEObk2EXbPRFr42R1DRV3=
+8Z9dHeQ2Kw-6MMTuSqXev0Q1zuyHllwmObpAUb1UBqZRid7bsAbEuwW5Ntp0RSiRNs2MlQE4Duk=
+aZ7UYxdGjYj-xqMMaQiHQiRieD3nrmBLO7Mmrl7KGEACVG35ON6F8M2isrJ1XOI34U3gNlt8pmz=
+V1fWKSO_3hW6xWaKQQ84lajbHKFC7xY4g.&_di_=3D39sbrlu8rnnv9u2ilh8crsh9s4h0jev63=
+cplgsmjurodqck09mt0" target=3D"_blank">
+                  <img class=3D"ghaLightImg" src=3D"https://email.ghadiscov=
+ery.com/assets/responsysimages/content/ghaloyalt/GHA_DISC_LOYALTY_LOGO_DARK=
+_280x51.png" style=3D"width: 140px;height: auto;margin-bottom: 10px" width=
+=3D"140">
+                </a>
+                <!--[if !mso]><! -->
+                <div class=3D"ghaDarkImg" style=3D"display:none; overflow:h=
+idden; float:left; width:0px; max-height:0px; max-width:0px; line-height:0p=
+x; visibility:hidden;">
+                  <img src=3D"https://email.ghadiscovery.com/assets/respons=
+ysimages/content/ghaloyalt/GHA_DISC_LOYALTY_LIGHT_280X41.png" width=3D"140"=
+ height=3D"0" alt=3D"GHA Discovery" style=3D"width:140px; font-family: Aria=
+l, 'sans-serif', 'Jost';font-size: 20px;color:#ffffff;font-weight: normal; =
+margin: 0 auto; padding: 0; height: 0px;" border=3D"0" />
+                </div>
+                <!--<![endif]-->=20
+                <br>
+                <a href=3D"https://email.ghadiscovery.com/pub/cc?_ri_=3DX0G=
+zc2X%3DBQjkPkSSSQGfyfON5izcAabLiw3LaLMioT6gzek2ihbu6Wi9CU6D5bMzgWe0n5w79VXt=
+pKX%3DAUUACC&_ei_=3DEW2tf9zs59idfPO1Sc_9BbkhGNifGMlvewmEObk2EXbPRFr42R1DRV3=
+8Z9dHeQ2Kw-6MMTuSqXev0Q1zuyHllwmObpAUb1UBqZRid7bsAbEuwW5Ntp0RSiRNs2MlQE4Dun=
+oDEdgsBfpY5XbFnxua-qB1q4f4ds3tJTe4J4mHxf9RoOS-qDaDwG7R0uAlwuxe02St16TWjaKDU=
+rvznnb2T_dY0GxVePA3DsyQakqVTo9xy8VYLeEnU_EAsRiO43hqslWSlzf3.&_di_=3Ds0frr4i=
+jd48q7v3f2cr0gigujqvpp09ckko5medb199bc9ld9qmg" target=3D"_blank" style=3D"f=
+ont-weight: bold;text-decoration: none;color: #000000;">PRIVACY POLICY</a> =
+&nbsp;&nbsp;&nbsp;
+                <a href=3D"https://email.ghadiscovery.com/pub/cc?_ri_=3DX0G=
+zc2X%3DBQjkPkSSSQGfyfON5izcAabLiw3LaLMioT6gzek2ihbu6Wi9CU6D5bMzgWe0n5w79VXt=
+pKX%3DAUUBRC&_ei_=3DEW2tf9zs59idfPO1Sc_9BbkhGNifGMlvewmEObk2EXbPRFr42R1DRV3=
+8Z9dHeQ2Kw-6MMTuSqXev0Q1zuyHllwmObpAUb1UBqZRid7bsAbEuwW5Ntp0RSiRNs2MlQE4Duu=
+yCXurSGYoZZfob_xeuSuq1_2X_Jgrc87_NazKJEvKh_MUhsJLFaSDoR_lpAU8_GCfh7EY9tRdiy=
+mu60BC2fYahwi6dwFxOS8qfUPTY9gsum331F81AODxNk5uRFN6YXguH.&_di_=3Dkg756uc99e4=
+c4k378j6pfml0q3lc3mqotoqrilm0h3euq1rod8g0" target=3D"_blank" style=3D"font-=
+weight: bold;text-decoration: none;color: #000000;">CONTACT US</a> <br>
+                &copy; 2026 Global Hotel Alliance. All Rights Reserved.
+                </td>
+<!--
+******** END: Footer Links  ************=20
+****************************************
+-->=20
+
+<!--=20
+******************************************************
+******** START: Footer Socials & Address  ************
+-->=20
+                              <td align=3D"left" class=3D"editable_html_blo=
+ck ghaDisplayBlock ghaDisplayBlock10 ghaAlignCenter ghaMobilePaddingTop30" =
+style=3D"font-family: Arial, 'sans-serif', 'Jost';font-size: 11px;color: #0=
+00000;font-weight: normal;direction:ltr; line-height: 1.5em;">
+<a href=3D"https://email.ghadiscovery.com/pub/cc?_ri_=3DX0Gzc2X%3DBQjkPkSSS=
+QGfyfON5izcAabLiw3LaLMioT6gzek2ihbu6Wi9CU6D5bMzgWe0n5w79VXtpKX%3DAUUBTC&_ei=
+_=3DEW2tf9zs59idfPO1Sc_9BbkhGNifGMlvewmEObk2EXbPRFr42R1DRV38Z9dHeQ2Kw-6MMTu=
+SqXev0Q1zuyHllwmObpAUb1UBqZRid7bsAbEuFnKqgS9jMunSJd74z2WIL6xxSbI8RcKRnZBns-=
+iWhEXL1e-gMyIF6OJx5vksXvf4zbUPMsgtYP16-5chDzrP0BHsgL4wOQJfsADkwcpbyjD7Rsufm=
+PNuAYE-2gcoT7PktiXXjwGSdjHMYaU.&_di_=3D9d0j1jhle50jdsoguegv4vll8jnfaij0cjde=
+daq6dtck50g764s0" target=3D"_blank">
+                <img src=3D"https://email.ghadiscovery.com/assets/responsys=
+images/content/ghaloyalt/GHA_FACEBOOK.png" style=3D"width:43px;height:auto;=
+" width=3D"43" height=3D"auto" /></a>
+<a href=3D"https://email.ghadiscovery.com/pub/cc?_ri_=3DX0Gzc2X%3DBQjkPkSSS=
+QGfyfON5izcAabLiw3LaLMioT6gzek2ihbu6Wi9CU6D5bMzgWe0n5w79VXtpKX%3DAUUBWC&_ei=
+_=3DEW2tf9zs59idfPO1Sc_9BbkhGNifGMlvewmEObk2EXbPRFr42R1DRV38Z9dHeQ2Kw-6MMTu=
+SqXev0Q1zuyHllwmObpAUb1UBqZRid7bsAbEup9_U07wfWuw4Po-YF943BqjZQaq-_09aLsLOG7=
+30ttk9q_5wg_tvkLRdZDvhav4hdTihA49qS12eKawgMZh6nO9UEMWnE3gC8JP3b0S1PoG6fL8LD=
+pLgrvJ--PD2cRhcczkJFxqTfEOnM_pxHM.&_di_=3Djtu07t83fev45eip81brdce1ubr7pr2k5=
+penk0r7csun7fkv5ae0" target=3D"_blank">
+ <img src=3D"https://email.ghadiscovery.com/assets/responsysimages/content/=
+ghaloyalt/GHA_INSTAGRAM.png" style=3D"width:43px;height:auto;" width=3D"43"=
+ height=3D"auto" /></a> <br>
+                                <span style=3D"font-weight: bold;">GHA Loya=
+lty DMCC</span><br>
+                                 21st Floor Jumeirah Business Center 5 Towe=
+r<br>
+                                 Jumeirah Lake Towers<br>
+                                PO Box 487771, Dubai, UAE</td>
+                            </tr>
+                          </tbody>
+                        </table>
+             </td>
+<!--
+******** END: Footer Socials & Address  ************=20
+****************************************************
+-->=20
+                    </tr>
+                  </tbody>
+                </table>
+        </td>
+            </tr>
+      </tbody>
+    </table>
+     =20
+<!--
+******** END: Footer Contact  ************=20
+****************************************************
+-->=20
+         =20
+<!--=20
+******** END: Core Footer Module  ************=20
+****************************************
+-->      =20
+     =20
+<!--=20
+*******************************************
+******** START: Footer Terms  ************
+-->=20
+
+
+        <table class=3D"ghaFooterTerms" width=3D"100%" border=3D"0" cellspa=
+cing=3D"0" cellpadding=3D"0">
+          <tbody>
+            <tr>
+              <td>
+        <table class=3D"ghaFullWidth" width=3D"600" align=3D"center" border=
+=3D"0" cellspacing=3D"0" cellpadding=3D"0">
+                  <tbody>
+                    <tr>
+                      <td class=3D"ghaContentWrapper ghaBodyPadding20" styl=
+e=3D"padding:0px 20px 35px 20px;">
+            <table width=3D"100%" border=3D"0" cellspacing=3D"0" cellpaddin=
+g=3D"0">
+                          <tbody>
+                            <tr>
+                              <td style=3D"padding-bottom: 20px;">
+                <table width=3D"50" border=3D"0" cellspacing=3D"0" cellpadd=
+ing=3D"0" class=3D"ghaCenterTable">
+                                  <tbody>
+                                    <tr>
+                                      <td class=3D"ghaBorderSmall" style=3D=
+"border-bottom: 2px solid #300B5C;padding:0px;margin:0px;height:0px;font-si=
+ze:0px;line-height:0px;" height=3D"0"></td>
+                                    </tr>
+                                  </tbody>
+                                </table>
+                              </td>
+                            </tr>
+
+        <!-- *** footer general terms -->
+
+                         <tr>
+                            <td align=3D"left" class=3D"editable_html_block=
+ ghaFullWidth ghaAlignCenter" style=3D"font-family: Arial, 'sans-serif', 'J=
+ost';font-size: 11px;color: #000000;font-weight: normal;">Terms and conditi=
+ons<br>This email was sent as a notification related to your account activi=
+ty or membership. You may choose to opt out of promotional emails at any ti=
+me by adjusting your communication preferences <a href=3D"https://email.gha=
+discovery.com/pub/cc?_ri_=3DX0Gzc2X%3DBQjkPkSSSQGfyfON5izcAabLiw3LaLMioT6gz=
+ek2ihbu6Wi9CU6D5bMzgWe0n5w79VXtpKX%3DSRSSCRC&_ei_=3DEW2tf9zs59idfPO1Sc_9Bbk=
+hGNifGMlvewmEObk2EXbPRFr42R1DRV38Z9dHeQ2KwNXvl1_x4C91rEk_2JsLxkArS2vAOZ2Jhv=
+ivrYbS1HZQssSj9NCnXze8SeDCznWso-td821AkeKXrl4jqQkn.&_di_=3De6fmlk0nevdo3ohg=
+ee40o7nq2fns87m47tn56oioh4afv2qgs35g" style=3D"font-weight: normal;text-dec=
+oration: underline;color: #000000;" target=3D"_blank">here</a>. Please note=
+ that even if you choose to unsubscribe from marketing or promotional commu=
+nications, you will continue to receive essential emails such as reservatio=
+n confirmations, account access messages, or updates to program terms and c=
+onditions.
+                                  <br> <br>
+                           </td>
+                         </tr>
+
+                         <tr>
+                              <td align=3D"left" class=3D"editable_html_blo=
+ck ghaFullWidth ghaAlignCenter" style=3D"font-family: Arial, 'sans-serif', =
+'Jost';font-size: 11px;color: #000000;font-weight: normal;">DISCOVERY Dolla=
+r (D$) earning and spending is available on eligible purchases at participa=
+ting hotels and outlets. Exclusions may apply.
+                                  <br> <br>
+                           </td>
+                         </tr>
+
+<!-- *** footer Member Region =3D CN/HK  terms -->
+
+
+
+
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+                            <tr>
+                              <td align=3D"left" class=3D"editable_html_blo=
+ck ghaFullWidth ghaAlignCenter" style=3D"font-family: Arial, 'sans-serif', =
+'Jost';font-size: 11px;color: #000000;font-weight: normal;"> COLLECTION Clu=
+b King -  DISCOVERY Workweek Unwind  =20
+                                <br>
+                                Cancel Penalty 1 Night Room Rate plus Tax i=
+f not cancelled by 16:00hrs 2 days prior to arrival  =20
+                                <br>
+                                 Deposit Policy - Guaranteed Credit Card   =
+=20
+                                <br> <br>
+                              </td>
+                            </tr>
+
+
+
+
+
+
+                          </tbody>
+                        </table>
+       </td>
+                    </tr>
+                  </tbody>
+                </table>
+    </td>
+            </tr>
+          </tbody>
+        </table>
+
+
+<!--=20
+******** END: Footer Terms  ************=20
+****************************************
+-->=20
+
+<!-- master_footer module end -->
+
+                          =09=09=09</td>
+                 =09=09=09=09</tr>
+             =09=09=09=09</table>
+             =09=09=09=09<!-- width wrapper end -->
+   =09=09=09=09=09=09</td>
+                 =09</tr>
+             =09</table>
+             =09<!-- padding wrapper end -->
+<monitor object=3D"module" module=3D"master_footer" result=3D"OK" render_ts=
+=3D"1771149110684" priority=3D"100"></monitor>
+            =20
+         =20
+
+
+=09
+
+   =20
+
+=09
+
+   =20
+
+
+=20
+         =20
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<monitor object=3D"footer" render_ts=3D"1771149110684"></monitor>
+  =20
+
+
+
+   <!--
+            riid_: 52222170808
+      -->
+   =20
+<archiver version=3D"Framework 3.0"  security_group=3D"default" campaign=3D=
+"APIBOOKINGCONFIRMATION" campaign_id=3D"ghaloyalt.1141028" launch_id=3D"566=
+388" launch_type=3D"standard" riid=3D"52222170808" marketingprogram=3D"TRAN=
+SACTIONAL" marketingstrategy=3D"API" render_ts=3D"1771149110684" resort=3D"=
+PRCKUL"/></archiver>
+<!--
+Web1: https://email.ghadiscovery.com/pub/sf/FormLink?_ri_=3DX0Gzc2X%3DBQjkP=
+kSSSQGfyfON5izcAabLiw3LaLMioT6gzek2ihbu6Wi9CU6D5bMzgWe0n5w79VXMtX%3DBQjkPkS=
+SSQGfyfON5izcAabLiw3LaLMioRIGLJFeizfHlYTq8zeAHkDL0LEmtEupze&_ei_=3DERZ_GFvg=
+7FxyaXEQR3bXCnIR7BR0P3CkuNv4HhW1iwUPM7pCk7DjEttR8gnl.&_di_=3D9s01a15ffjeqn8=
+d4ndu70n772770gqbgt9joe6fr7qmkmpnjfnq0
+Web2: https://email.ghadiscovery.com/pub/sf/FormLink?_ri_=3DX0Gzc2X%3DBQjkP=
+kSSSQGfyfON5izcAabLiw3LaLMioT6gzek2ihbu6Wi9CU6D5bMzgWe0n5w79VXMtX%3DBQjkPkS=
+SSQGfyfON5izcAabLiw3LaLMioRIGLJFeizfHlYTq8zeAHkDL0LEmtEupze&_ei_=3DERZ_GFvg=
+7FxyaXEQR3bXCnIR7BR0P3CkuNv4HhW1iwUPM7pCk7DjEttR8gnl.&_di_=3D9s01a15ffjeqn8=
+d4ndu70n772770gqbgt9joe6fr7qmkmpnjfnq0
+--><table cellpadding=3D"0" cellspacing=3D"0" style=3D"border: 0px; padding=
+: 0px; margin: 0px; position: absolute; display: none; float: left">
+<tr>
+<td height=3D"1" style=3D"font-size: 1px; line-height: 1px; padding: 0px;">
+<br><img src=3D"https://email.ghadiscovery.com/pub/as?_ri_=3DX0Gzc2X%3DBQjk=
+PkSSSQGfyfON5izcAabLiw3LaLMioT6gzek2ihbu6Wi9CU6D5bMzgWe0n5w79VXHkMX%3Dw&_ei=
+_=3DEUlaGGF4SNMvxFF7KucKuWNq-xYxeKyShHCz7eIWvo-BX6ZOtphcAKIajBz0waFfW2SVLYm=
+l7XjbhPjLGdMbLu5RZS4-e7_Smc4zds-J7Zdoh81c8tc.&_di_=3Dg2ifes8icb4odk8ctor965=
+20clf0g4c5fa2ceb0c0l1g1dtdfceg"></img>
+</td>
+</tr>
+</table>
+</body>
+</html></body>
+</html>
+
