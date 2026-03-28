@@ -11,7 +11,7 @@ import { getChainGuide, extractDomain } from "../src/lib/email-ingestion/chain-g
 /** Parse the raw MIME email and return html ?? text body, just like Resend does in production. */
 async function extractEmailBody(raw: string): Promise<string> {
   const parsed = await simpleParser(raw);
-  return parsed.html || parsed.text || raw;
+  return parsed.html || parsed.text || "";
 }
 
 const FIXTURES: { file: string; senderEmail: string }[] = [

@@ -91,26 +91,34 @@ export async function ingestBookingFromEmail(
     longitude: geo?.longitude ?? null,
   });
 
-  const pretaxCostFromRates = parsed.nightlyRates
-    ? Math.round(parsed.nightlyRates.reduce((sum, r) => sum + r.amount, 0) * 100) / 100
-    : null;
+  let pretaxCost: number | null;
+  let taxAmount: number | null;
 
-  const taxAmount =
-    parsed.bookingType === "cash"
-      ? pretaxCostFromRates !== null && parsed.totalCost !== null
-        ? Math.round((parsed.totalCost - pretaxCostFromRates) * 100) / 100
-        : parsed.taxAmount
-      : null;
-
-  // When Claude returns pretaxCost: null (e.g. Airbnb with discounts), derive it from totalCost - taxAmount
-  const pretaxCost =
-    parsed.bookingType === "cash"
-      ? (pretaxCostFromRates ??
-        parsed.pretaxCost ??
-        (parsed.totalCost !== null && taxAmount !== null
-          ? Math.round((parsed.totalCost - taxAmount) * 100) / 100
-          : null))
-      : null;
+  if (parsed.bookingType === "cash") {
+    if (parsed.nightlyRates) {
+      // Nightly rates provided — sum them for pretaxCost, derive taxAmount
+      pretaxCost =
+        Math.round(parsed.nightlyRates.reduce((sum, r) => sum + r.amount, 0) * 100) / 100;
+      taxAmount =
+        parsed.totalCost !== null
+          ? Math.round((parsed.totalCost - pretaxCost) * 100) / 100
+          : parsed.taxAmount;
+    } else if (parsed.pretaxCost !== null) {
+      // pretaxCost shown directly (most hotel emails)
+      pretaxCost = parsed.pretaxCost;
+      taxAmount = parsed.taxAmount;
+    } else if (parsed.totalCost !== null && parsed.taxAmount !== null) {
+      // pretaxCost null (e.g. Airbnb with discount line items) — derive from totalCost - taxAmount
+      taxAmount = parsed.taxAmount;
+      pretaxCost = Math.round((parsed.totalCost - taxAmount) * 100) / 100;
+    } else {
+      pretaxCost = null;
+      taxAmount = null;
+    }
+  } else {
+    pretaxCost = null;
+    taxAmount = null;
+  }
 
   const financials = await resolveBookingFinancials({
     checkIn: parsed.checkIn,
