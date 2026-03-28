@@ -242,7 +242,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       });
     }
 
-    const data: Record<string, unknown> = { needsReview: false };
+    const data: Record<string, unknown> = {};
     if (confirmationNumber !== undefined) data.confirmationNumber = confirmationNumber ?? null;
     if (accommodationType !== undefined) data.accommodationType = accommodationType;
     if (hotelChainId !== undefined) data.hotelChainId = hotelChainId || null;
