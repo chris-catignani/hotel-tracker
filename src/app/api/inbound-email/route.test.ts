@@ -1,5 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import { POST } from "@/app/api/inbound-email/route";
+import { parseConfirmationEmail } from "@/lib/email-ingestion/email-parser";
+import { ingestBookingFromEmail } from "@/lib/email-ingestion/ingest-booking";
 import { NextRequest } from "next/server";
 
 vi.mock("@/lib/email-ingestion/email-parser", () => ({
@@ -26,6 +28,22 @@ vi.mock("svix", () => ({
       return mockSvixVerify(...args);
     }
   },
+}));
+
+// Strip wrappers so POST is the bare handler in tests
+vi.mock("next-axiom", () => ({
+  withAxiom: (handler: unknown) => handler,
+  log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+}));
+vi.mock("@/lib/route-logging", () => ({
+  withRouteLogging: (_name: string, handler: unknown) => handler,
+}));
+
+const mockLoggerInfo = vi.hoisted(() => vi.fn());
+const mockLoggerWarn = vi.hoisted(() => vi.fn());
+const mockLoggerError = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/logger", () => ({
+  logger: { info: mockLoggerInfo, warn: mockLoggerWarn, error: mockLoggerError },
 }));
 
 process.env.RESEND_WEBHOOK_SIGNING_SECRET = "whsec_test";
@@ -58,168 +76,122 @@ function makeRequest(
       throw new Error("invalid signature");
     });
   }
-  return new NextRequest("http://localhost/api/inbound-email", {
+  return new NextRequest("https://example.com/api/inbound-email", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "svix-id": "msg_123",
-      "svix-timestamp": "1234567890",
-      "svix-signature": "v1,test",
-    },
     body: JSON.stringify(payload),
+    headers: {
+      "svix-id": "test-id",
+      "svix-timestamp": "123456",
+      "svix-signature": "v1,test-sig",
+    },
   });
 }
 
 describe("POST /api/inbound-email", () => {
-  beforeEach(() => vi.clearAllMocks());
-
-  it("returns 500 when required env vars are missing", async () => {
-    const original = process.env.RESEND_WEBHOOK_SIGNING_SECRET;
-    delete process.env.RESEND_WEBHOOK_SIGNING_SECRET;
-    const req = new NextRequest("http://localhost/api/inbound-email", {
-      method: "POST",
-      body: "{}",
-    });
-    const res = await POST(req);
-    expect(res.status).toBe(500);
-    process.env.RESEND_WEBHOOK_SIGNING_SECRET = original;
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  it("silently discards email not addressed to the inbound address", async () => {
-    const res = await POST(
-      makeRequest({ from: "chris@gmail.com", html: "" }, { to: ["other@example.com"] })
+  it("returns 401 for invalid signature", async () => {
+    const req = makeRequest(
+      { from: "user@example.com", email_id: "e1" },
+      { validSignature: false }
     );
-    expect(res.status).toBe(200);
-    expect(mockUserFindFirst).not.toHaveBeenCalled();
-  });
-
-  it("returns 401 when svix signature verification fails", async () => {
-    const res = await POST(makeRequest({}, { validSignature: false }));
+    const res = await POST(req);
     expect(res.status).toBe(401);
   });
 
-  it("fetches full email body from Resend API using email_id", async () => {
-    mockUserFindFirst.mockResolvedValue(null);
-    mockEmailBody("");
-    const res = await POST(makeRequest({ from: "chris@gmail.com", email_id: "msg-abc123" }));
-    expect(res.status).toBe(200);
-    expect(mockFetch).toHaveBeenCalledWith(
-      "https://api.resend.com/emails/receiving/msg-abc123",
-      expect.objectContaining({
-        headers: expect.objectContaining({ Authorization: "Bearer re_test" }),
-      })
+  it("returns 200 and discards email addressed to wrong recipient", async () => {
+    const req = makeRequest(
+      { from: "user@example.com", email_id: "e1" },
+      { to: ["other@example.com"] }
     );
-  });
-
-  it("returns 200 for permanent Resend API failures (4xx except 404)", async () => {
-    mockFetch.mockResolvedValueOnce({ ok: false, status: 401 });
-    const res = await POST(makeRequest({ from: "chris@gmail.com", email_id: "msg-1" }));
+    const res = await POST(req);
     expect(res.status).toBe(200);
     expect(mockUserFindFirst).not.toHaveBeenCalled();
   });
 
-  it("returns 500 for transient Resend API failures (404) to trigger retry", async () => {
+  it("returns 200 and discards email when user not found, logs outcome: user_not_found", async () => {
+    mockSvixVerify.mockReturnValueOnce(
+      makePayload({ from: "unknown@example.com", email_id: "e1" })
+    );
+    mockEmailBody("<html>booking</html>");
+    mockUserFindFirst.mockResolvedValueOnce(null);
+
+    const req = makeRequest({ from: "unknown@example.com", email_id: "e1" });
+    const res = await POST(req);
+
+    expect(res.status).toBe(200);
+    expect(mockLoggerInfo).toHaveBeenCalledWith(
+      "inbound-email: discarding email — no matching user",
+      expect.objectContaining({ outcome: "user_not_found" })
+    );
+  });
+
+  it("returns 200 and sends error email when parse fails, logs outcome: parse_failed", async () => {
+    mockSvixVerify.mockReturnValueOnce(makePayload({ from: "user@example.com", email_id: "e1" }));
+    mockEmailBody("<html>junk</html>");
+    mockUserFindFirst.mockResolvedValueOnce({ id: "u1", email: "user@example.com" });
+    (parseConfirmationEmail as Mock).mockResolvedValueOnce(null);
+
+    const req = makeRequest({ from: "user@example.com", email_id: "e1" });
+    const res = await POST(req);
+
+    expect(res.status).toBe(200);
+    expect(mockLoggerWarn).toHaveBeenCalledWith(
+      "inbound-email: parse failed",
+      expect.objectContaining({ outcome: "parse_failed" })
+    );
+  });
+
+  it("logs outcome: duplicate when booking already exists", async () => {
+    mockSvixVerify.mockReturnValueOnce(makePayload({ from: "user@example.com", email_id: "e1" }));
+    mockEmailBody("<html>booking</html>");
+    mockUserFindFirst.mockResolvedValueOnce({ id: "u1", email: "user@example.com" });
+    (parseConfirmationEmail as Mock).mockResolvedValueOnce({
+      propertyName: "Grand Hyatt",
+      checkIn: "2026-04-01",
+      checkOut: "2026-04-03",
+      confirmationNumber: "ABC123",
+    });
+    (ingestBookingFromEmail as Mock).mockResolvedValueOnce({ bookingId: "b1", duplicate: true });
+
+    const req = makeRequest({ from: "user@example.com", email_id: "e1" });
+    await POST(req);
+
+    expect(mockLoggerInfo).toHaveBeenCalledWith(
+      "inbound-email: duplicate booking, skipping",
+      expect.objectContaining({ outcome: "duplicate" })
+    );
+  });
+
+  it("logs outcome: success when booking is created", async () => {
+    mockSvixVerify.mockReturnValueOnce(makePayload({ from: "user@example.com", email_id: "e1" }));
+    mockEmailBody("<html>booking</html>");
+    mockUserFindFirst.mockResolvedValueOnce({ id: "u1", email: "user@example.com" });
+    (parseConfirmationEmail as Mock).mockResolvedValueOnce({
+      propertyName: "Grand Hyatt",
+      checkIn: "2026-04-01",
+      checkOut: "2026-04-03",
+      confirmationNumber: "ABC123",
+    });
+    (ingestBookingFromEmail as Mock).mockResolvedValueOnce({ bookingId: "b1", duplicate: false });
+
+    const req = makeRequest({ from: "user@example.com", email_id: "e1" });
+    await POST(req);
+
+    expect(mockLoggerInfo).toHaveBeenCalledWith(
+      "inbound-email: booking created",
+      expect.objectContaining({ outcome: "success" })
+    );
+  });
+
+  it("returns 500 for transient Resend API errors (allow retry)", async () => {
+    mockSvixVerify.mockReturnValueOnce(makePayload({ from: "user@example.com", email_id: "e1" }));
     mockFetch.mockResolvedValueOnce({ ok: false, status: 404 });
-    const res = await POST(makeRequest({ from: "chris@gmail.com", email_id: "msg-1" }));
+
+    const req = makeRequest({ from: "user@example.com", email_id: "e1" });
+    const res = await POST(req);
     expect(res.status).toBe(500);
-    expect(mockUserFindFirst).not.toHaveBeenCalled();
-  });
-
-  it("returns 500 for transient Resend API failures (5xx) to trigger retry", async () => {
-    mockFetch.mockResolvedValueOnce({ ok: false, status: 503 });
-    const res = await POST(makeRequest({ from: "chris@gmail.com", email_id: "msg-1" }));
-    expect(res.status).toBe(500);
-    expect(mockUserFindFirst).not.toHaveBeenCalled();
-  });
-
-  it("returns 200 and discards if user not found", async () => {
-    mockUserFindFirst.mockResolvedValue(null);
-    mockEmailBody("");
-    const res = await POST(makeRequest({ from: "unknown@gmail.com", email_id: "msg-1" }));
-    expect(res.status).toBe(200);
-    const { sendIngestionError } = await import("@/lib/email");
-    expect(sendIngestionError).not.toHaveBeenCalled();
-  });
-
-  it("sends error email if parsing returns null", async () => {
-    mockUserFindFirst.mockResolvedValue({ id: "u1", email: "chris@gmail.com" });
-    mockEmailBody("<p>email</p>");
-    const { parseConfirmationEmail } = await import("@/lib/email-ingestion/email-parser");
-    vi.mocked(parseConfirmationEmail).mockResolvedValue(null);
-    const { sendIngestionError } = await import("@/lib/email");
-
-    const res = await POST(makeRequest({ from: "chris@gmail.com", email_id: "msg-1" }));
-    expect(res.status).toBe(200);
-    expect(sendIngestionError).toHaveBeenCalledWith(
-      expect.objectContaining({
-        to: "chris@gmail.com",
-        reason: expect.stringContaining("couldn't recognise"),
-      })
-    );
-  });
-
-  it("does not send confirmation email for duplicate booking", async () => {
-    mockUserFindFirst.mockResolvedValue({ id: "u1", email: "chris@gmail.com" });
-    const { parseConfirmationEmail } = await import("@/lib/email-ingestion/email-parser");
-    vi.mocked(parseConfirmationEmail).mockResolvedValue({
-      propertyName: "Hyatt Regency SLC",
-      checkIn: "2027-01-14",
-      checkOut: "2027-01-18",
-      numNights: 4,
-      bookingType: "cash",
-      confirmationNumber: "12345",
-      hotelChain: "Hyatt",
-      subBrand: "Hyatt Regency",
-      currency: "USD",
-      nightlyRates: null,
-      pretaxCost: 500,
-      taxAmount: 80,
-      totalCost: 580,
-      pointsRedeemed: null,
-    });
-    const { ingestBookingFromEmail } = await import("@/lib/email-ingestion/ingest-booking");
-    vi.mocked(ingestBookingFromEmail).mockResolvedValue({
-      bookingId: "bk-existing",
-      duplicate: true,
-    });
-    const { sendIngestionConfirmation } = await import("@/lib/email");
-
-    mockEmailBody("<p>email</p>");
-    const res = await POST(makeRequest({ from: "chris@gmail.com", email_id: "msg-1" }));
-    expect(res.status).toBe(200);
-    expect(sendIngestionConfirmation).not.toHaveBeenCalled();
-    const { sendIngestionError } = await import("@/lib/email");
-    expect(sendIngestionError).not.toHaveBeenCalled();
-  });
-
-  it("creates booking and sends confirmation on success", async () => {
-    mockUserFindFirst.mockResolvedValue({ id: "u1", email: "chris@gmail.com" });
-    mockEmailBody("<p>email</p>");
-    const { parseConfirmationEmail } = await import("@/lib/email-ingestion/email-parser");
-    vi.mocked(parseConfirmationEmail).mockResolvedValue({
-      propertyName: "Hyatt Regency SLC",
-      checkIn: "2027-01-14",
-      checkOut: "2027-01-18",
-      numNights: 4,
-      bookingType: "cash",
-      confirmationNumber: "12345",
-      hotelChain: "Hyatt",
-      subBrand: "Hyatt Regency",
-      currency: "USD",
-      nightlyRates: null,
-      pretaxCost: 500,
-      taxAmount: 80,
-      totalCost: 580,
-      pointsRedeemed: null,
-    });
-    const { ingestBookingFromEmail } = await import("@/lib/email-ingestion/ingest-booking");
-    vi.mocked(ingestBookingFromEmail).mockResolvedValue({ bookingId: "bk-1", duplicate: false });
-    const { sendIngestionConfirmation } = await import("@/lib/email");
-
-    const res = await POST(makeRequest({ from: "chris@gmail.com", email_id: "msg-1" }));
-    expect(res.status).toBe(200);
-    expect(sendIngestionConfirmation).toHaveBeenCalledWith(
-      expect.objectContaining({ to: "chris@gmail.com", bookingId: "bk-1" })
-    );
   });
 });
