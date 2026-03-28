@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import * as SentryNext from "@sentry/nextjs";
 import * as SentryNode from "@sentry/node";
+import { log as axiomLog } from "next-axiom";
 import { logger } from "./logger";
 
-// Mock Sentry SDKs
 vi.mock("@sentry/nextjs", () => ({
   captureMessage: vi.fn(),
   captureException: vi.fn(),
@@ -14,11 +14,20 @@ vi.mock("@sentry/node", () => ({
   captureException: vi.fn(),
 }));
 
+vi.mock("next-axiom", () => ({
+  log: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
 describe("logger", () => {
   beforeEach(() => {
     vi.spyOn(console, "log").mockImplementation(() => {});
     vi.spyOn(console, "warn").mockImplementation(() => {});
     vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.clearAllMocks();
   });
 
   it("info() should log to console and NOT to Sentry", () => {
@@ -35,8 +44,6 @@ describe("logger", () => {
     expect(console.warn).toHaveBeenCalledWith(
       expect.stringContaining('[WARN] test warn {"foo":"bar"}')
     );
-
-    // In vitest environment, it might pick either Next or Node depending on implementation
     const sentry =
       (SentryNext.captureMessage as Mock).mock.calls.length > 0 ? SentryNext : SentryNode;
     expect(sentry.captureMessage).toHaveBeenCalledWith("test warn", {
@@ -52,7 +59,6 @@ describe("logger", () => {
       expect.stringContaining('[ERROR] test error {"foo":"bar"}'),
       err
     );
-
     const sentry =
       (SentryNext.captureException as Mock).mock.calls.length > 0 ? SentryNext : SentryNode;
     expect(sentry.captureException).toHaveBeenCalledWith(err, {
@@ -65,11 +71,46 @@ describe("logger", () => {
 
   it("error() should convert string errors to Error objects for Sentry", () => {
     logger.error("test error string", "not an error object");
-
     const sentry =
       (SentryNext.captureException as Mock).mock.calls.length > 0 ? SentryNext : SentryNode;
     expect(sentry.captureException).toHaveBeenCalledWith(expect.any(Error), expect.anything());
     const captured = (sentry.captureException as Mock).mock.calls[0][0];
     expect(captured.message).toBe("not an error object");
+  });
+
+  it("info() should send structured fields to Axiom", () => {
+    logger.info("test info", { foo: "bar" });
+    expect(axiomLog.info).toHaveBeenCalledWith("test info", { foo: "bar" });
+  });
+
+  it("warn() should send structured fields to Axiom", () => {
+    logger.warn("test warn", { foo: "bar" });
+    expect(axiomLog.warn).toHaveBeenCalledWith("test warn", { foo: "bar" });
+  });
+
+  it("error() should send structured fields to Axiom with error details", () => {
+    const err = new Error("boom");
+    logger.error("test error", err, { foo: "bar" });
+    expect(axiomLog.error).toHaveBeenCalledWith("test error", {
+      foo: "bar",
+      errorMessage: "boom",
+      errorStack: expect.any(String),
+    });
+  });
+
+  it("error() with string error should include errorMessage in Axiom fields", () => {
+    logger.error("test error string", "not an error object");
+    expect(axiomLog.error).toHaveBeenCalledWith("test error string", {
+      errorMessage: "not an error object",
+      errorStack: undefined,
+    });
+  });
+
+  it("error() with null error should not produce 'null' as errorMessage in Axiom fields", () => {
+    logger.error("test error null", null);
+    expect(axiomLog.error).toHaveBeenCalledWith("test error null", {
+      errorMessage: undefined,
+      errorStack: undefined,
+    });
   });
 });

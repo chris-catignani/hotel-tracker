@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withAxiom } from "next-axiom";
 import { Webhook } from "svix";
 import prisma from "@/lib/prisma";
 import { parseConfirmationEmail } from "@/lib/email-ingestion/email-parser";
 import { ingestBookingFromEmail } from "@/lib/email-ingestion/ingest-booking";
 import { sendIngestionConfirmation, sendIngestionError } from "@/lib/email";
 import { logger } from "@/lib/logger";
+import { withRouteLogging } from "@/lib/route-logging";
 
 /**
  * Resend Inbound email webhook.
@@ -32,7 +34,7 @@ interface ResendInboundPayload {
   };
 }
 
-export async function POST(req: NextRequest): Promise<NextResponse> {
+async function handler(req: NextRequest): Promise<NextResponse> {
   const signingSecret = process.env.RESEND_WEBHOOK_SIGNING_SECRET;
   const inboundEmail = process.env.RESEND_INBOUND_EMAIL;
   if (!signingSecret || !inboundEmail) {
@@ -78,6 +80,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     logger.error("inbound-email: failed to fetch email body from Resend API", {
       status: emailRes.status,
       emailId: data.email_id,
+      outcome: "fetch_failed",
     });
     // 404 may be timing (email not yet available) and 5xx are transient — let Resend retry
     // Other 4xx are permanent failures (e.g. bad API key) — ack to prevent pointless retries
@@ -92,7 +95,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     where: { email: forwarderEmail },
   });
   if (!user) {
-    logger.info("inbound-email: discarding email — no matching user", { from: forwarderEmail });
+    logger.info("inbound-email: discarding email — no matching user", {
+      from: forwarderEmail,
+      outcome: "user_not_found",
+    });
     return NextResponse.json({ ok: true });
   }
 
@@ -101,7 +107,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const parsed = await parseConfirmationEmail(rawEmail, null);
   logger.info("inbound-email: claude parsed", { parsed });
   if (!parsed) {
-    logger.warn("inbound-email: parse failed", { from: forwarderEmail });
+    logger.warn("inbound-email: parse failed", { from: forwarderEmail, outcome: "parse_failed" });
     await sendIngestionError({
       to: user.email!,
       reason: "We couldn't recognise the booking details in this email.",
@@ -116,12 +122,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     logger.info("inbound-email: duplicate booking, skipping", {
       bookingId,
       confirmationNumber: parsed.confirmationNumber,
+      outcome: "duplicate",
     });
   } else {
     logger.info("inbound-email: booking created", {
       bookingId,
       property: parsed.propertyName,
       checkIn: parsed.checkIn,
+      outcome: "success",
     });
     await sendIngestionConfirmation({
       to: user.email!,
@@ -134,3 +142,5 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   return NextResponse.json({ ok: true });
 }
+
+export const POST = withAxiom(withRouteLogging("inbound-email", handler));
