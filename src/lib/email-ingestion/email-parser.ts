@@ -34,7 +34,7 @@ function buildPrompt(emailText: string, guide: ChainGuide | null): string {
 
 ${chainSection}Return ONLY valid JSON with these fields (no explanation, no markdown):
 {
-  "propertyName": string,        // required — the hotel/property name
+  "propertyName": string,        // required — for apartments/rentals use the full address if available (e.g. "135 Hallenstein Street 26A, Queenstown, 9300, New Zealand"); otherwise the property name
   "checkIn": string,             // required — YYYY-MM-DD
   "checkOut": string,            // required — YYYY-MM-DD
   "numNights": number,           // required
@@ -55,6 +55,8 @@ ${chainSection}Return ONLY valid JSON with these fields (no explanation, no mark
 Rules:
 - If the email shows per-night rates but no pretax subtotal: populate "nightlyRates", leave "pretaxCost" and "taxAmount" null
 - Never compute sums yourself — return the raw line items and leave the derived fields null
+- pretaxCost is the post-discount pre-tax total (totalCost minus taxAmount), NOT the pre-discount nightly subtotal — if discounts are applied before tax, do not use the nightly subtotal as pretaxCost; instead leave pretaxCost null and let it be derived from totalCost minus taxAmount
+- Chase The Edit and American Express Travel (AMEX FHR/THC) always charge guests in USD — set currency to "USD" for these regardless of hotel location
 - For hotelChain, always use the parent group, not the sub-brand. Less obvious parent chains:
   IHG: Kimpton, Six Senses, Regent, voco, Vignette Collection, InterContinental, Crowne Plaza, Hotel Indigo, HUALUXE, Iberostar, avid, Staybridge Suites, Candlewood Suites
   Accor: Sofitel, Fairmont, Raffles, Swissôtel, Pullman, Novotel, Mercure, ibis, MGallery, Mövenpick, Mondrian, Delano, SLS, Mantra, 25hours, Banyan Tree, Angsana

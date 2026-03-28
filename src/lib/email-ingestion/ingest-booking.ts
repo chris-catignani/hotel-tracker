@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { findOrCreateProperty } from "@/lib/property-utils";
+import { searchProperties } from "@/lib/geo-lookup";
 import { resolveBookingFinancials } from "@/lib/booking-financials";
 import { matchPromotionsForBooking } from "@/lib/promotion-matching";
 import { matchSubBrand } from "./email-parser";
@@ -73,10 +74,21 @@ export async function ingestBookingFromEmail(
       })
     : null;
 
+  // Geo-enrich the property via Google Places, mirroring the manual booking flow
+  const isHotel = (parsed.accommodationType ?? "hotel") !== "apartment";
+  const geoResults = await searchProperties(parsed.propertyName, isHotel);
+  const geo = geoResults[0] ?? null;
+
   // Resolve property
   const propertyId = await findOrCreateProperty({
-    propertyName: parsed.propertyName,
+    propertyName: geo?.displayName ?? parsed.propertyName,
+    placeId: geo?.placeId ?? null,
     hotelChainId: hotelChain?.id ?? null,
+    countryCode: geo?.countryCode ?? null,
+    city: geo?.city ?? null,
+    address: geo?.address ?? null,
+    latitude: geo?.latitude ?? null,
+    longitude: geo?.longitude ?? null,
   });
 
   const pretaxCost =

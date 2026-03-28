@@ -38,6 +38,9 @@ const {
 vi.mock("@/lib/property-utils", () => ({
   findOrCreateProperty: vi.fn().mockResolvedValue("prop-123"),
 }));
+vi.mock("@/lib/geo-lookup", () => ({
+  searchProperties: vi.fn().mockResolvedValue([]),
+}));
 vi.mock("@/lib/loyalty-utils", () => ({
   calculatePoints: vi.fn().mockReturnValue(1200),
   resolveBasePointRate: vi.fn().mockReturnValue(5),
@@ -268,6 +271,51 @@ describe("ingestBookingFromEmail", () => {
     await ingestBookingFromEmail({ ...baseParsed, accommodationType: "apartment" }, "user-1", null);
     const data = mockBookingCreate.mock.calls[0][0].data;
     expect(data.accommodationType).toBe("apartment");
+  });
+
+  it("geo-enriches the property using searchProperties and passes geo fields to findOrCreateProperty", async () => {
+    const { searchProperties } = await import("@/lib/geo-lookup");
+    const { findOrCreateProperty } = await import("@/lib/property-utils");
+    vi.mocked(searchProperties).mockResolvedValueOnce([
+      {
+        placeId: "gplace-123",
+        displayName: "Kimpton Margot Sydney",
+        city: "Sydney",
+        countryCode: "AU",
+        address: "339 Pitt Street, Sydney NSW 2000, Australia",
+        latitude: -33.8734,
+        longitude: 151.2059,
+      },
+    ]);
+
+    await ingestBookingFromEmail(baseParsed, "user-1", null);
+
+    expect(searchProperties).toHaveBeenCalledWith(baseParsed.propertyName, true);
+    expect(findOrCreateProperty).toHaveBeenCalledWith(
+      expect.objectContaining({
+        propertyName: "Kimpton Margot Sydney",
+        placeId: "gplace-123",
+        city: "Sydney",
+        countryCode: "AU",
+        address: "339 Pitt Street, Sydney NSW 2000, Australia",
+        latitude: -33.8734,
+        longitude: 151.2059,
+      })
+    );
+  });
+
+  it("falls back to parsed propertyName when geo lookup returns no results", async () => {
+    const { findOrCreateProperty } = await import("@/lib/property-utils");
+    await ingestBookingFromEmail(baseParsed, "user-1", null);
+    expect(findOrCreateProperty).toHaveBeenCalledWith(
+      expect.objectContaining({ propertyName: baseParsed.propertyName })
+    );
+  });
+
+  it("uses isHotel=false for apartment geo lookup", async () => {
+    const { searchProperties } = await import("@/lib/geo-lookup");
+    await ingestBookingFromEmail({ ...baseParsed, accommodationType: "apartment" }, "user-1", null);
+    expect(searchProperties).toHaveBeenCalledWith(baseParsed.propertyName, false);
   });
 
   it("sets bookingSource to ota and resolves otaAgencyId when otaAgencyName is provided", async () => {
