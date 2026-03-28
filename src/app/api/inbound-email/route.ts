@@ -79,7 +79,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       status: emailRes.status,
       emailId: data.email_id,
     });
-    return NextResponse.json({ ok: true });
+    // 404 may be timing (email not yet available) and 5xx are transient — let Resend retry
+    // Other 4xx are permanent failures (e.g. bad API key) — ack to prevent pointless retries
+    const isTransient = emailRes.status === 404 || emailRes.status >= 500;
+    return NextResponse.json({ ok: true }, { status: isTransient ? 500 : 200 });
   }
   const emailData = (await emailRes.json()) as { html?: string | null; text?: string | null };
   const rawEmail = emailData.html ?? emailData.text ?? "";

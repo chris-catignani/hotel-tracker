@@ -111,10 +111,24 @@ describe("POST /api/inbound-email", () => {
     );
   });
 
-  it("returns 200 and skips processing if Resend API returns non-200", async () => {
+  it("returns 200 for permanent Resend API failures (4xx except 404)", async () => {
     mockFetch.mockResolvedValueOnce({ ok: false, status: 401 });
     const res = await POST(makeRequest({ from: "chris@gmail.com", email_id: "msg-1" }));
     expect(res.status).toBe(200);
+    expect(mockUserFindFirst).not.toHaveBeenCalled();
+  });
+
+  it("returns 500 for transient Resend API failures (404) to trigger retry", async () => {
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 404 });
+    const res = await POST(makeRequest({ from: "chris@gmail.com", email_id: "msg-1" }));
+    expect(res.status).toBe(500);
+    expect(mockUserFindFirst).not.toHaveBeenCalled();
+  });
+
+  it("returns 500 for transient Resend API failures (5xx) to trigger retry", async () => {
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 503 });
+    const res = await POST(makeRequest({ from: "chris@gmail.com", email_id: "msg-1" }));
+    expect(res.status).toBe(500);
     expect(mockUserFindFirst).not.toHaveBeenCalled();
   });
 
