@@ -2,6 +2,8 @@ import prisma from "@/lib/prisma";
 import { findOrCreateProperty } from "@/lib/property-utils";
 import { resolveBookingFinancials } from "@/lib/booking-financials";
 import { matchPromotionsForBooking } from "@/lib/promotion-matching";
+import { matchSubBrand } from "./email-parser";
+import { logger } from "@/lib/logger";
 import type { ParsedBookingData } from "./types";
 
 export interface IngestResult {
@@ -34,13 +36,35 @@ export async function ingestBookingFromEmail(
     if (existing) return { bookingId: existing.id, duplicate: true };
   }
 
-  // Resolve hotel chain
-  const hotelChain = chainName
+  // Resolve hotel chain — prefer parsed chain from email content, fall back to caller-supplied name
+  const resolvedChainName = parsed.hotelChain ?? chainName;
+  const hotelChain = resolvedChainName
     ? await prisma.hotelChain.findFirst({
-        where: { name: { contains: chainName, mode: "insensitive" } },
+        where: { name: { contains: resolvedChainName, mode: "insensitive" } },
         include: { pointType: true },
       })
     : null;
+  logger.info("ingest-booking: chain resolved", {
+    parsed: parsed.hotelChain,
+    resolved: hotelChain?.name ?? null,
+  });
+
+  // Resolve sub-brand — ask Claude to pick the best match from the DB list
+  let subBrand = null;
+  if (hotelChain && parsed.subBrand) {
+    const allSubBrands = await prisma.hotelChainSubBrand.findMany({
+      where: { hotelChainId: hotelChain.id },
+    });
+    const matchedName = await matchSubBrand(
+      parsed.subBrand,
+      allSubBrands.map((sb) => sb.name)
+    );
+    subBrand = allSubBrands.find((sb) => sb.name === matchedName) ?? null;
+  }
+  logger.info("ingest-booking: sub-brand resolved", {
+    parsed: parsed.subBrand,
+    resolved: subBrand?.name ?? null,
+  });
 
   // Resolve property
   const propertyId = await findOrCreateProperty({
@@ -48,11 +72,25 @@ export async function ingestBookingFromEmail(
     hotelChainId: hotelChain?.id ?? null,
   });
 
+  const pretaxCost =
+    parsed.bookingType === "cash"
+      ? parsed.nightlyRates
+        ? Math.round(parsed.nightlyRates.reduce((sum, r) => sum + r.amount, 0) * 100) / 100
+        : parsed.pretaxCost
+      : null;
+
+  const taxAmount =
+    parsed.bookingType === "cash"
+      ? parsed.nightlyRates && pretaxCost !== null && parsed.totalCost !== null
+        ? Math.round((parsed.totalCost - pretaxCost) * 100) / 100
+        : parsed.taxAmount
+      : null;
+
   const financials = await resolveBookingFinancials({
     checkIn: parsed.checkIn,
     currency: parsed.currency ?? "USD",
     hotelChainId: hotelChain?.id ?? null,
-    pretaxCost: parsed.bookingType === "cash" ? parsed.pretaxCost : null,
+    pretaxCost,
     userId,
   });
 
@@ -60,13 +98,14 @@ export async function ingestBookingFromEmail(
     data: {
       userId,
       hotelChainId: hotelChain?.id ?? null,
+      hotelChainSubBrandId: subBrand?.id ?? null,
       accommodationType: "hotel",
       propertyId,
       checkIn: new Date(parsed.checkIn),
       checkOut: new Date(parsed.checkOut),
       numNights: parsed.numNights,
-      pretaxCost: parsed.pretaxCost ?? 0,
-      taxAmount: parsed.taxAmount ?? 0,
+      pretaxCost: pretaxCost ?? 0,
+      taxAmount: taxAmount ?? 0,
       totalCost: parsed.totalCost ?? 0,
       currency: parsed.currency ?? "USD",
       lockedExchangeRate: financials.lockedExchangeRate,

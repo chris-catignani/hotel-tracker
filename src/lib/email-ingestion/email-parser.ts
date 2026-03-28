@@ -38,14 +38,21 @@ ${chainSection}Return ONLY valid JSON with these fields (no explanation, no mark
   "checkIn": string,             // required — YYYY-MM-DD
   "checkOut": string,            // required — YYYY-MM-DD
   "numNights": number,           // required
-  "bookingType": "cash" | "points" | "cert",  // required
+  "bookingType": "cash" | "points" | "cert",  // required — use "points" if the stay was paid with loyalty points even if the count is unknown
   "confirmationNumber": string | null,
+  "hotelChain": string | null,   // e.g. "Hyatt", "Marriott", "Hilton"
+  "subBrand": string | null,     // e.g. "Hyatt Place", "Courtyard by Marriott", "Hampton Inn"
   "currency": string | null,     // 3-letter code e.g. "USD", "SGD"
-  "pretaxCost": number | null,   // cash bookings only, before taxes
-  "taxAmount": number | null,    // cash bookings only
+  "nightlyRates": [{ "amount": number }] | null,  // per-night amounts when no pretax total is shown
+  "pretaxCost": number | null,   // pretax total if shown directly; null if returning nightlyRates
+  "taxAmount": number | null,    // tax total for the entire stay if shown directly; null if nightlyRates is populated
   "totalCost": number | null,    // cash bookings only
-  "pointsRedeemed": number | null  // award bookings only
+  "pointsRedeemed": number | null  // award bookings only, null if count not stated
 }
+
+Rules:
+- If the email shows per-night rates but no pretax subtotal: populate "nightlyRates", leave "pretaxCost" and "taxAmount" null
+- Never compute sums yourself — return the raw line items and leave the derived fields null
 
 Email:
 ${emailText.slice(0, 8000)}`;
@@ -61,6 +68,41 @@ function isValidParsed(data: unknown): data is ParsedBookingData {
     typeof d.numNights === "number" &&
     ["cash", "points", "cert"].includes(d.bookingType as string)
   );
+}
+
+/**
+ * Given a rough sub-brand string extracted from an email and a list of known
+ * sub-brand names from the DB, ask Claude to pick the best match.
+ * Returns the exact DB name, or null if nothing is a reasonable match.
+ */
+export async function matchSubBrand(
+  parsedSubBrand: string,
+  candidates: string[]
+): Promise<string | null> {
+  if (candidates.length === 0) return null;
+  const prompt = `You are matching a hotel sub-brand name to a known list.
+
+Parsed from email: "${parsedSubBrand}"
+Known sub-brands: ${JSON.stringify(candidates)}
+
+Return ONLY the exact string from the list that best matches, or null if none is a reasonable match. No explanation, no markdown.`;
+
+  try {
+    const response = await anthropic.messages.create({
+      model: MODEL,
+      max_tokens: 64,
+      messages: [{ role: "user", content: prompt }],
+    });
+    const text = response.content
+      .filter((b) => b.type === "text")
+      .map((b) => (b as { type: "text"; text: string }).text)
+      .join("")
+      .trim()
+      .replace(/^"(.*)"$/, "$1"); // strip surrounding quotes if present
+    return candidates.includes(text) ? text : null;
+  } catch {
+    return null;
+  }
 }
 
 /**

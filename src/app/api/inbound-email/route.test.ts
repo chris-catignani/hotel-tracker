@@ -30,11 +30,29 @@ vi.mock("svix", () => ({
 
 process.env.RESEND_WEBHOOK_SIGNING_SECRET = "whsec_test";
 process.env.RESEND_INBOUND_EMAIL = "bookings@example.com";
+process.env.RESEND_API_KEY = "re_test";
 
-function makeRequest(body: Record<string, string>, { validSignature = true } = {}) {
-  const fullBody = { to: "bookings@example.com", ...body };
+const mockFetch = vi.fn();
+vi.stubGlobal("fetch", mockFetch);
+
+function mockEmailBody(html: string) {
+  mockFetch.mockResolvedValueOnce({
+    ok: true,
+    json: async () => ({ html, text: null }),
+  });
+}
+
+function makePayload(data: Record<string, unknown>, { to = ["bookings@example.com"] } = {}) {
+  return { type: "email.received", data: { to, ...data } };
+}
+
+function makeRequest(
+  data: Record<string, unknown>,
+  { validSignature = true, to = ["bookings@example.com"] } = {}
+) {
+  const payload = makePayload(data, { to });
   if (validSignature) {
-    mockSvixVerify.mockReturnValueOnce(fullBody);
+    mockSvixVerify.mockReturnValueOnce(payload);
   } else {
     mockSvixVerify.mockImplementationOnce(() => {
       throw new Error("invalid signature");
@@ -48,7 +66,7 @@ function makeRequest(body: Record<string, string>, { validSignature = true } = {
       "svix-timestamp": "1234567890",
       "svix-signature": "v1,test",
     },
-    body: JSON.stringify(fullBody),
+    body: JSON.stringify(payload),
   });
 }
 
@@ -69,7 +87,7 @@ describe("POST /api/inbound-email", () => {
 
   it("silently discards email not addressed to the inbound address", async () => {
     const res = await POST(
-      makeRequest({ to: "other@example.com", from: "chris@gmail.com", html: "" })
+      makeRequest({ from: "chris@gmail.com", html: "" }, { to: ["other@example.com"] })
     );
     expect(res.status).toBe(200);
     expect(mockUserFindFirst).not.toHaveBeenCalled();
@@ -80,9 +98,23 @@ describe("POST /api/inbound-email", () => {
     expect(res.status).toBe(401);
   });
 
+  it("fetches full email body from Resend API using email_id", async () => {
+    mockUserFindFirst.mockResolvedValue(null);
+    mockEmailBody("");
+    const res = await POST(makeRequest({ from: "chris@gmail.com", email_id: "msg-abc123" }));
+    expect(res.status).toBe(200);
+    expect(mockFetch).toHaveBeenCalledWith(
+      "https://api.resend.com/emails/receiving/msg-abc123",
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: "Bearer re_test" }),
+      })
+    );
+  });
+
   it("returns 200 and discards if user not found", async () => {
     mockUserFindFirst.mockResolvedValue(null);
-    const res = await POST(makeRequest({ from: "unknown@gmail.com", html: "" }));
+    mockEmailBody("");
+    const res = await POST(makeRequest({ from: "unknown@gmail.com", email_id: "msg-1" }));
     expect(res.status).toBe(200);
     const { sendIngestionError } = await import("@/lib/email");
     expect(sendIngestionError).not.toHaveBeenCalled();
@@ -90,21 +122,18 @@ describe("POST /api/inbound-email", () => {
 
   it("sends error email if parsing returns null", async () => {
     mockUserFindFirst.mockResolvedValue({ id: "u1", email: "chris@gmail.com" });
+    mockEmailBody("<p>email</p>");
     const { parseConfirmationEmail } = await import("@/lib/email-ingestion/email-parser");
     vi.mocked(parseConfirmationEmail).mockResolvedValue(null);
     const { sendIngestionError } = await import("@/lib/email");
 
-    // sender domain matches Hyatt guide — guide will be found, parse still fails
-    const res = await POST(
-      makeRequest({
-        from: "chris@gmail.com",
-        sender: "noreply@reservations.hyatt.com",
-        html: "<p>email</p>",
-      })
-    );
+    const res = await POST(makeRequest({ from: "chris@gmail.com", email_id: "msg-1" }));
     expect(res.status).toBe(200);
     expect(sendIngestionError).toHaveBeenCalledWith(
-      expect.objectContaining({ to: "chris@gmail.com", reason: expect.stringContaining("Hyatt") })
+      expect.objectContaining({
+        to: "chris@gmail.com",
+        reason: expect.stringContaining("couldn't recognise"),
+      })
     );
   });
 
@@ -118,7 +147,10 @@ describe("POST /api/inbound-email", () => {
       numNights: 4,
       bookingType: "cash",
       confirmationNumber: "12345",
+      hotelChain: "Hyatt",
+      subBrand: "Hyatt Regency",
       currency: "USD",
+      nightlyRates: null,
       pretaxCost: 500,
       taxAmount: 80,
       totalCost: 580,
@@ -131,13 +163,8 @@ describe("POST /api/inbound-email", () => {
     });
     const { sendIngestionConfirmation } = await import("@/lib/email");
 
-    const res = await POST(
-      makeRequest({
-        from: "chris@gmail.com",
-        sender: "noreply@reservations.hyatt.com",
-        html: "<p>email</p>",
-      })
-    );
+    mockEmailBody("<p>email</p>");
+    const res = await POST(makeRequest({ from: "chris@gmail.com", email_id: "msg-1" }));
     expect(res.status).toBe(200);
     expect(sendIngestionConfirmation).not.toHaveBeenCalled();
     const { sendIngestionError } = await import("@/lib/email");
@@ -146,6 +173,7 @@ describe("POST /api/inbound-email", () => {
 
   it("creates booking and sends confirmation on success", async () => {
     mockUserFindFirst.mockResolvedValue({ id: "u1", email: "chris@gmail.com" });
+    mockEmailBody("<p>email</p>");
     const { parseConfirmationEmail } = await import("@/lib/email-ingestion/email-parser");
     vi.mocked(parseConfirmationEmail).mockResolvedValue({
       propertyName: "Hyatt Regency SLC",
@@ -154,7 +182,10 @@ describe("POST /api/inbound-email", () => {
       numNights: 4,
       bookingType: "cash",
       confirmationNumber: "12345",
+      hotelChain: "Hyatt",
+      subBrand: "Hyatt Regency",
       currency: "USD",
+      nightlyRates: null,
       pretaxCost: 500,
       taxAmount: 80,
       totalCost: 580,
@@ -164,13 +195,7 @@ describe("POST /api/inbound-email", () => {
     vi.mocked(ingestBookingFromEmail).mockResolvedValue({ bookingId: "bk-1", duplicate: false });
     const { sendIngestionConfirmation } = await import("@/lib/email");
 
-    const res = await POST(
-      makeRequest({
-        from: "chris@gmail.com",
-        sender: "noreply@reservations.hyatt.com",
-        html: "<p>email</p>",
-      })
-    );
+    const res = await POST(makeRequest({ from: "chris@gmail.com", email_id: "msg-1" }));
     expect(res.status).toBe(200);
     expect(sendIngestionConfirmation).toHaveBeenCalledWith(
       expect.objectContaining({ to: "chris@gmail.com", bookingId: "bk-1" })

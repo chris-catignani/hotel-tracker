@@ -55,8 +55,12 @@ vi.mock("@/lib/prisma", () => ({
     booking: { create: mockBookingCreate, findFirst: mockBookingFindFirst },
     hotelChain: { findFirst: mockHotelChainFindFirst, findUnique: mockHotelChainFindUnique },
     userStatus: { findUnique: mockUserStatusFindUnique },
-    hotelChainSubBrand: { findUnique: vi.fn().mockResolvedValue(null) },
+    hotelChainSubBrand: { findMany: vi.fn().mockResolvedValue([]) },
   },
+}));
+
+vi.mock("@/lib/email-ingestion/email-parser", () => ({
+  matchSubBrand: vi.fn().mockResolvedValue(null),
 }));
 
 const baseParsed: ParsedBookingData = {
@@ -66,7 +70,10 @@ const baseParsed: ParsedBookingData = {
   numNights: 4,
   bookingType: "cash",
   confirmationNumber: "64167883",
+  hotelChain: null,
+  subBrand: null,
   currency: "USD",
+  nightlyRates: null,
   pretaxCost: 591.04,
   taxAmount: 98.5,
   totalCost: 689.54,
@@ -224,5 +231,51 @@ describe("ingestBookingFromEmail", () => {
     expect(fetchExchangeRate).toHaveBeenCalledWith("EUR", "2024-01-10");
     const data = mockBookingCreate.mock.calls[0][0].data;
     expect(data.lockedLoyaltyUsdCentsPerPoint).toBeCloseTo(2.2); // 2.0 * 1.1
+  });
+
+  it("sums nightlyRates in code for pretaxCost when provided", async () => {
+    const result = await ingestBookingFromEmail(
+      {
+        ...baseParsed,
+        nightlyRates: [{ amount: 160.72 }, { amount: 142.1 }, { amount: 142.1 }, { amount: 142.1 }],
+        pretaxCost: null,
+      },
+      "user-1",
+      null
+    );
+    expect(result.duplicate).toBe(false);
+    const data = mockBookingCreate.mock.calls[0][0].data;
+    expect(data.pretaxCost).toBe(587.02);
+  });
+
+  it("falls back to pretaxCost when nightlyRates is null", async () => {
+    const result = await ingestBookingFromEmail(baseParsed, "user-1", null);
+    expect(result.duplicate).toBe(false);
+    const data = mockBookingCreate.mock.calls[0][0].data;
+    expect(data.pretaxCost).toBe(591.04);
+  });
+
+  it("derives taxAmount from totalCost - pretaxCost when nightlyRates is present", async () => {
+    const result = await ingestBookingFromEmail(
+      {
+        ...baseParsed,
+        nightlyRates: [
+          { amount: 294.98 },
+          { amount: 319.2 },
+          { amount: 270.75 },
+          { amount: 270.75 },
+          { amount: 270.75 },
+        ],
+        pretaxCost: null,
+        taxAmount: null,
+        totalCost: 1683.19,
+      },
+      "user-1",
+      null
+    );
+    expect(result.duplicate).toBe(false);
+    const data = mockBookingCreate.mock.calls[0][0].data;
+    expect(data.pretaxCost).toBe(1426.43);
+    expect(data.taxAmount).toBe(256.76);
   });
 });

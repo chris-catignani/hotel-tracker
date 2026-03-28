@@ -312,17 +312,17 @@ export default function BookingDetailPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {booking.hotelChain ? (
-              <div>
-                <p className="text-sm text-muted-foreground">Hotel Chain</p>
-                <p className="font-medium">{booking.hotelChain.name}</p>
-              </div>
-            ) : (
+            {booking.accommodationType === "apartment" ? (
               <div>
                 <p className="text-sm text-muted-foreground">Accommodation Type</p>
                 <p className="font-medium">Apartment / Short-term Rental</p>
               </div>
-            )}
+            ) : booking.hotelChain ? (
+              <div>
+                <p className="text-sm text-muted-foreground">Hotel Chain</p>
+                <p className="font-medium">{booking.hotelChain.name}</p>
+              </div>
+            ) : null}
             {booking.hotelChainSubBrand && (
               <div>
                 <p className="text-sm text-muted-foreground">Sub-brand</p>
