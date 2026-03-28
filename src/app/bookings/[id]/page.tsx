@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -132,6 +133,7 @@ interface Booking extends Omit<NetCostBooking, "bookingPromotions" | "userCredit
   isFutureEstimate?: boolean;
   exchangeRateEstimated?: boolean;
   loyaltyPointsEstimated?: boolean;
+  needsReview: boolean;
   userCreditCardId: string | null;
   userCreditCard: {
     nickname: string | null;
@@ -231,6 +233,26 @@ export default function BookingDetailPage() {
       logger.error("Failed to fetch booking", err.error, { bookingId: id, status: err.status }),
   });
 
+  const [dismissingReview, setDismissingReview] = useState(false);
+
+  const dismissReview = async () => {
+    setDismissingReview(true);
+    const result = await apiFetch(`/api/bookings/${id}`, {
+      method: "PATCH",
+      body: { needsReview: false },
+    });
+    setDismissingReview(false);
+    if (!result.ok) {
+      logger.error("Failed to dismiss review flag", result.error, {
+        bookingId: id,
+        status: result.status,
+      });
+      toast.error("Failed to update. Please try again.");
+      return;
+    }
+    refetchBooking();
+  };
+
   const toggleVerified = async (bp: BookingPromotion) => {
     const result = await apiFetch(`/api/booking-promotions/${bp.id}`, {
       method: "PATCH",
@@ -297,6 +319,27 @@ export default function BookingDetailPage() {
           </Link>
         </div>
       </div>
+
+      {booking.needsReview && (
+        <div
+          className="flex items-center justify-between rounded-md border border-amber-400 bg-amber-50 px-4 py-3 text-amber-800"
+          data-testid="needs-review-banner"
+        >
+          <p className="text-sm">
+            This booking was auto-imported from email — please verify the details are correct.
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="ml-4 shrink-0 border-amber-400 text-amber-800 hover:bg-amber-100"
+            onClick={dismissReview}
+            disabled={dismissingReview}
+            data-testid="dismiss-review-button"
+          >
+            {dismissingReview ? "Saving…" : "Mark as reviewed"}
+          </Button>
+        </div>
+      )}
 
       {/* Booking Info Card */}
       <Card>
