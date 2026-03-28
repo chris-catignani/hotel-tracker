@@ -336,6 +336,18 @@ describe("ingestBookingFromEmail", () => {
     expect(data.otaAgencyId).toBeNull();
   });
 
+  it("derives pretaxCost from totalCost - taxAmount when Claude returns pretaxCost null (Airbnb discounts)", async () => {
+    await ingestBookingFromEmail(
+      { ...baseParsed, pretaxCost: null, taxAmount: 69.17, totalCost: 1038.78 },
+      "user-1",
+      null
+    );
+    const data = mockBookingCreate.mock.calls[0][0].data;
+    expect(data.pretaxCost).toBe(969.61);
+    expect(data.taxAmount).toBe(69.17);
+    expect(data.totalCost).toBe(1038.78);
+  });
+
   it("derives taxAmount from totalCost - pretaxCost when nightlyRates is present", async () => {
     const result = await ingestBookingFromEmail(
       {

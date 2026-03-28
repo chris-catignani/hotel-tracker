@@ -91,18 +91,25 @@ export async function ingestBookingFromEmail(
     longitude: geo?.longitude ?? null,
   });
 
-  const pretaxCost =
-    parsed.bookingType === "cash"
-      ? parsed.nightlyRates
-        ? Math.round(parsed.nightlyRates.reduce((sum, r) => sum + r.amount, 0) * 100) / 100
-        : parsed.pretaxCost
-      : null;
+  const pretaxCostFromRates = parsed.nightlyRates
+    ? Math.round(parsed.nightlyRates.reduce((sum, r) => sum + r.amount, 0) * 100) / 100
+    : null;
 
   const taxAmount =
     parsed.bookingType === "cash"
-      ? parsed.nightlyRates && pretaxCost !== null && parsed.totalCost !== null
-        ? Math.round((parsed.totalCost - pretaxCost) * 100) / 100
+      ? pretaxCostFromRates !== null && parsed.totalCost !== null
+        ? Math.round((parsed.totalCost - pretaxCostFromRates) * 100) / 100
         : parsed.taxAmount
+      : null;
+
+  // When Claude returns pretaxCost: null (e.g. Airbnb with discounts), derive it from totalCost - taxAmount
+  const pretaxCost =
+    parsed.bookingType === "cash"
+      ? (pretaxCostFromRates ??
+        parsed.pretaxCost ??
+        (parsed.totalCost !== null && taxAmount !== null
+          ? Math.round((parsed.totalCost - taxAmount) * 100) / 100
+          : null))
       : null;
 
   const financials = await resolveBookingFinancials({

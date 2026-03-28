@@ -55,7 +55,7 @@ ${chainSection}Return ONLY valid JSON with these fields (no explanation, no mark
 Rules:
 - If the email shows per-night rates but no pretax subtotal: populate "nightlyRates", leave "pretaxCost" and "taxAmount" null
 - Never compute sums yourself — return the raw line items and leave the derived fields null
-- pretaxCost is the post-discount pre-tax total (totalCost minus taxAmount), NOT the pre-discount nightly subtotal — if discounts are applied before tax, do not use the nightly subtotal as pretaxCost; instead leave pretaxCost null and let it be derived from totalCost minus taxAmount
+- If the price breakdown includes any discount line items (special offers, savings, promotions), return pretaxCost: null — do not attempt to compute it; the system will derive it automatically. Always return taxAmount if it is explicitly shown, even when discounts are present
 - Chase The Edit and American Express Travel (AMEX FHR/THC) always charge guests in USD — set currency to "USD" for these regardless of hotel location
 - For hotelChain, always use the parent group, not the sub-brand. Less obvious parent chains:
   IHG: Kimpton, Six Senses, Regent, voco, Vignette Collection, InterContinental, Crowne Plaza, Hotel Indigo, HUALUXE, Iberostar, avid, Staybridge Suites, Candlewood Suites
