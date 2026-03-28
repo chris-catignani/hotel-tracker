@@ -57,6 +57,10 @@ export default defineConfig({
       // the production Sentry project.
       SENTRY_DSN: "",
       NEXT_PUBLIC_SENTRY_DSN: "",
+      // Disable Axiom in the E2E test server so test traffic doesn't pollute
+      // the production Axiom dataset.
+      AXIOM_TOKEN: "",
+      NEXT_PUBLIC_AXIOM_DATASET: "",
     },
   },
 });
