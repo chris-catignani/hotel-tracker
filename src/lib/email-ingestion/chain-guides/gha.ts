@@ -5,8 +5,8 @@ export const ghaGuide: ChainGuide = {
   senderDomains: ["email.ghadiscovery.com"],
   terminologyMappings: [],
   promptNotes:
-    "GHA DISCOVERY is a loyalty program for independent hotels, not a single hotel brand. " +
-    'Set hotelChain to the individual hotel brand (e.g. "PARKROYAL", "Pan Pacific", "Anantara", "Kempinski"), not "GHA". ' +
-    "These are standard cash hotel bookings. " +
+    'Set hotelChain to "GHA Discovery". ' +
+    'Set subBrand to the individual hotel brand shown in the email (e.g. "PARKROYAL", "PARKROYAL COLLECTION", "Pan Pacific", "Anantara", "Kempinski"). ' +
+    'bookingType is always "cash". accommodationType is always "hotel". ' +
     'The confirmation number appears as "Confirmation #" in the subject and email body.',
 };
