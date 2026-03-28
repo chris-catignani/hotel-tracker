@@ -24,10 +24,13 @@ export interface ParsedBookingData {
   numNights: number;
   bookingType: BookingType;
   confirmationNumber: string | null;
+  hotelChain: string | null; // e.g. "Hyatt", "Marriott"
+  subBrand: string | null; // e.g. "Hyatt Place", "Courtyard"
   // Cash bookings
   currency: string | null;
-  pretaxCost: number | null;
-  taxAmount: number | null;
+  nightlyRates: { amount: number }[] | null; // per-night breakdown when pretax total isn't shown
+  pretaxCost: number | null; // direct pretax total; derived from nightlyRates when null
+  taxAmount: number | null; // direct tax total; derived from totalCost - pretaxCost when nightlyRates present
   totalCost: number | null;
   // Award bookings
   pointsRedeemed: number | null;

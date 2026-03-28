@@ -1,72 +1,128 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Webhook } from "svix";
 import prisma from "@/lib/prisma";
-import { getChainGuide } from "@/lib/email-ingestion/chain-guides";
 import { parseConfirmationEmail } from "@/lib/email-ingestion/email-parser";
 import { ingestBookingFromEmail } from "@/lib/email-ingestion/ingest-booking";
 import { sendIngestionConfirmation, sendIngestionError } from "@/lib/email";
+import { logger } from "@/lib/logger";
 
 /**
  * Resend Inbound email webhook.
  *
- * Expected payload from Resend Inbound:
+ * Resend wraps the email in an envelope:
  * {
- *   from: string,      // forwarding user's email address
- *   sender: string,    // original sender (the hotel)
- *   subject: string,
- *   html: string,      // full raw email HTML
- *   text: string,
+ *   type: "email.received",
+ *   created_at: string,
+ *   data: {
+ *     to: string[],      // recipient addresses
+ *     from: string,      // forwarding user's email address
+ *     subject: string,
+ *     html: string,      // full raw email HTML
+ *     text: string,
+ *   }
  * }
  */
+interface ResendInboundPayload {
+  type: string;
+  data: {
+    email_id: string;
+    to: string[];
+    from: string;
+    subject?: string;
+  };
+}
+
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  // Auth check
-  const secret = req.headers.get("x-webhook-secret");
-  if (!secret || secret !== process.env.INBOUND_EMAIL_WEBHOOK_SECRET) {
+  const signingSecret = process.env.RESEND_WEBHOOK_SIGNING_SECRET;
+  const inboundEmail = process.env.RESEND_INBOUND_EMAIL;
+  if (!signingSecret || !inboundEmail) {
+    logger.error(
+      "inbound-email: missing RESEND_WEBHOOK_SIGNING_SECRET or RESEND_INBOUND_EMAIL env var"
+    );
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+
+  const rawBody = await req.text();
+
+  // Verify Resend webhook signature via svix
+  const wh = new Webhook(signingSecret);
+  let payload: ResendInboundPayload;
+  try {
+    payload = wh.verify(rawBody, {
+      "svix-id": req.headers.get("svix-id") ?? "",
+      "svix-timestamp": req.headers.get("svix-timestamp") ?? "",
+      "svix-signature": req.headers.get("svix-signature") ?? "",
+    }) as ResendInboundPayload;
+  } catch (err) {
+    logger.warn("inbound-email: svix signature verification failed", { error: err });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let body: Record<string, string>;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  const { data } = payload;
+
+  // Filter to only process emails addressed to the designated inbound address
+  if (!data.to.includes(inboundEmail)) {
+    logger.info("inbound-email: discarding email — wrong recipient", { to: data.to });
+    return NextResponse.json({ ok: true });
   }
 
-  const forwarderEmail = body.from ?? "";
-  const senderEmail = body.sender ?? body.from ?? "";
-  const rawEmail = body.html ?? body.text ?? "";
+  const forwarderEmail = data.from ?? "";
+
+  logger.info("inbound-email: received", { from: forwarderEmail, subject: data.subject });
+
+  // Fetch full email body from Resend — webhook payload only contains metadata
+  const emailRes = await fetch(`https://api.resend.com/emails/receiving/${data.email_id}`, {
+    headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` },
+  });
+  if (!emailRes.ok) {
+    logger.error("inbound-email: failed to fetch email body from Resend API", {
+      status: emailRes.status,
+      emailId: data.email_id,
+    });
+    // 404 may be timing (email not yet available) and 5xx are transient — let Resend retry
+    // Other 4xx are permanent failures (e.g. bad API key) — ack to prevent pointless retries
+    const isTransient = emailRes.status === 404 || emailRes.status >= 500;
+    return NextResponse.json({ ok: true }, { status: isTransient ? 500 : 200 });
+  }
+  const emailData = (await emailRes.json()) as { html?: string | null; text?: string | null };
+  const rawEmail = emailData.html ?? emailData.text ?? "";
 
   // Identify user
   const user = await prisma.user.findFirst({
     where: { email: forwarderEmail },
   });
   if (!user) {
-    // Silently discard — do not leak account existence
+    logger.info("inbound-email: discarding email — no matching user", { from: forwarderEmail });
     return NextResponse.json({ ok: true });
   }
 
-  // Identify chain
-  const guide = getChainGuide(senderEmail);
-
-  // Parse email
-  const parsed = await parseConfirmationEmail(rawEmail, guide);
+  // Resend doesn't expose the original sender domain for forwarded emails,
+  // so we can't identify the chain — pass null and let Claude parse without chain hints
+  const parsed = await parseConfirmationEmail(rawEmail, null);
+  logger.info("inbound-email: claude parsed", { parsed });
   if (!parsed) {
+    logger.warn("inbound-email: parse failed", { from: forwarderEmail });
     await sendIngestionError({
       to: user.email!,
-      reason: guide
-        ? `We couldn't extract the required fields from your ${guide.chainName} confirmation.`
-        : "We couldn't recognise the booking details in this email.",
+      reason: "We couldn't recognise the booking details in this email.",
     });
     return NextResponse.json({ ok: true });
   }
 
   // Create booking
-  const { bookingId, duplicate } = await ingestBookingFromEmail(
-    parsed,
-    user.id,
-    guide?.chainName ?? null
-  );
+  const { bookingId, duplicate } = await ingestBookingFromEmail(parsed, user.id, null);
 
-  if (!duplicate) {
+  if (duplicate) {
+    logger.info("inbound-email: duplicate booking, skipping", {
+      bookingId,
+      confirmationNumber: parsed.confirmationNumber,
+    });
+  } else {
+    logger.info("inbound-email: booking created", {
+      bookingId,
+      property: parsed.propertyName,
+      checkIn: parsed.checkIn,
+    });
     await sendIngestionConfirmation({
       to: user.email!,
       propertyName: parsed.propertyName,

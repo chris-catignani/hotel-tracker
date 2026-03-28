@@ -1,7 +1,5 @@
 ## Commands
 
-**Required env vars** (copy from `.env.example` or set manually): `DATABASE_URL`, `AUTH_SECRET`, `GOOGLE_PLACES_API_KEY`, `RESEND_API_KEY`, `CRON_SECRET`. For E2E tests: also `DATABASE_URL_TEST`.
-
 ```bash
 npm run db:migrate   # Create + apply a new migration (dev only) + clear .next cache
                      # To skip interactive name prompt: npx prisma migrate dev --name <migration_name>
@@ -72,6 +70,11 @@ Three tiers evaluated in order:
 
 - `Booking.accommodationType = apartment` hides hotel chain, sub-brand, loyalty, cert payment, and Price Watch. Geo search omits `includedType: "lodging"` so addresses resolve correctly.
 - Dashboard filter toggle (All / Hotels / Apartments) persisted in localStorage. Apartment bookings pinned to bottom of accommodation summary table; excluded from Sub-brand breakdown widget.
+
+### Email Ingestion
+
+- Chain-specific parsing guides live in `src/lib/email-ingestion/chain-guides.ts` — add a new entry here when adding support for a new hotel chain
+- The `from` address identifies the user; hotel chain is extracted by Claude from the email content
 
 ### Authentication & Authorization
 

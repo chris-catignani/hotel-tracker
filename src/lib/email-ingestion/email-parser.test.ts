@@ -19,7 +19,11 @@ vi.mock("@anthropic-ai/sdk", () => {
 });
 
 // Import after mocking
-import { parseConfirmationEmail, decodeEmailToText } from "@/lib/email-ingestion/email-parser";
+import {
+  parseConfirmationEmail,
+  decodeEmailToText,
+  matchSubBrand,
+} from "@/lib/email-ingestion/email-parser";
 
 // Easier accessor
 const mockCreate = mocks.mockCreate;
@@ -216,5 +220,140 @@ describe("parseConfirmationEmail", () => {
     const result = await parseConfirmationEmail("raw email text", null);
     expect(result).not.toBeNull();
     expect(mockCreate.mock.calls[0][0].messages[0].content).not.toContain("Chain-specific notes");
+  });
+
+  it("passes through hotelChain and subBrand from Claude response", async () => {
+    mockCreate.mockResolvedValueOnce({
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({
+            propertyName: "Hyatt Place Salt Lake City",
+            checkIn: "2027-01-19",
+            checkOut: "2027-01-22",
+            numNights: 3,
+            bookingType: "points",
+            confirmationNumber: "12345",
+            hotelChain: "Hyatt",
+            subBrand: "Hyatt Place",
+            currency: null,
+            nightlyRates: null,
+            pretaxCost: null,
+            taxAmount: null,
+            totalCost: null,
+            pointsRedeemed: 25000,
+          }),
+        },
+      ],
+    });
+
+    const result = await parseConfirmationEmail("raw email text", null);
+    expect(result?.hotelChain).toBe("Hyatt");
+    expect(result?.subBrand).toBe("Hyatt Place");
+  });
+
+  it("passes through nightlyRates from Claude response", async () => {
+    mockCreate.mockResolvedValueOnce({
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({
+            propertyName: "Hyatt Regency Salt Lake City",
+            checkIn: "2027-01-14",
+            checkOut: "2027-01-18",
+            numNights: 4,
+            bookingType: "cash",
+            confirmationNumber: "64167883",
+            hotelChain: "Hyatt",
+            subBrand: "Hyatt Regency",
+            currency: "USD",
+            nightlyRates: [
+              { amount: 160.72 },
+              { amount: 142.1 },
+              { amount: 142.1 },
+              { amount: 142.1 },
+            ],
+            pretaxCost: null,
+            taxAmount: null,
+            totalCost: 687.02,
+            pointsRedeemed: null,
+          }),
+        },
+      ],
+    });
+
+    const result = await parseConfirmationEmail("raw email text", null);
+    expect(result?.nightlyRates).toEqual([
+      { amount: 160.72 },
+      { amount: 142.1 },
+      { amount: 142.1 },
+      { amount: 142.1 },
+    ]);
+    expect(result?.pretaxCost).toBeNull();
+  });
+
+  it("prompt instructs Claude to use nightlyRates instead of computing pretaxCost", async () => {
+    mockCreate.mockResolvedValueOnce({
+      content: [{ type: "text", text: "{}" }],
+    });
+    await parseConfirmationEmail("raw email text", null);
+    const prompt = mockCreate.mock.calls[0][0].messages[0].content;
+    expect(prompt).toContain("nightlyRates");
+    expect(prompt).toContain("Never compute sums yourself");
+  });
+});
+
+describe("matchSubBrand", () => {
+  beforeEach(() => mockCreate.mockReset());
+
+  it("returns the exact candidate when Claude picks a match", async () => {
+    mockCreate.mockResolvedValueOnce({
+      content: [{ type: "text", text: "Hyatt Place" }],
+    });
+    const result = await matchSubBrand("Hyatt Place Hotels and Resorts", [
+      "Park Hyatt",
+      "Hyatt Place",
+      "Hyatt Regency",
+    ]);
+    expect(result).toBe("Hyatt Place");
+  });
+
+  it("returns the exact candidate when Claude returns a quoted string", async () => {
+    mockCreate.mockResolvedValueOnce({
+      content: [{ type: "text", text: '"Hyatt Place"' }],
+    });
+    const result = await matchSubBrand("Hyatt Place Hotels and Resorts", [
+      "Park Hyatt",
+      "Hyatt Place",
+    ]);
+    expect(result).toBe("Hyatt Place");
+  });
+
+  it("returns null when Claude returns a value not in the candidate list", async () => {
+    mockCreate.mockResolvedValueOnce({
+      content: [{ type: "text", text: "Unknown Brand" }],
+    });
+    const result = await matchSubBrand("some hotel", ["Park Hyatt", "Hyatt Place"]);
+    expect(result).toBeNull();
+  });
+
+  it("returns null when Claude returns null", async () => {
+    mockCreate.mockResolvedValueOnce({
+      content: [{ type: "text", text: "null" }],
+    });
+    const result = await matchSubBrand("Best Western", ["Park Hyatt", "Hyatt Place"]);
+    expect(result).toBeNull();
+  });
+
+  it("returns null when candidates list is empty", async () => {
+    const result = await matchSubBrand("Hyatt Place", []);
+    expect(mockCreate).not.toHaveBeenCalled();
+    expect(result).toBeNull();
+  });
+
+  it("returns null when Claude API throws", async () => {
+    mockCreate.mockRejectedValueOnce(new Error("network error"));
+    const result = await matchSubBrand("Hyatt Place", ["Park Hyatt", "Hyatt Place"]);
+    expect(result).toBeNull();
   });
 });
