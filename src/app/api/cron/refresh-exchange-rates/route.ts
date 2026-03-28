@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withAxiom } from "next-axiom";
 import prisma from "@/lib/prisma";
 import { getCurrentRate } from "@/lib/exchange-rate";
 import { finalizeCheckedInBookings } from "@/lib/booking-enrichment";
@@ -6,12 +7,13 @@ import { apiError } from "@/lib/api-error";
 import { CURRENCIES } from "@/lib/constants";
 import { reevaluateBookings } from "@/lib/promotion-matching";
 import { logger } from "@/lib/logger";
+import { withRouteLogging } from "@/lib/route-logging";
 
 const RATES_CDN =
   "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json";
 const RATES_FALLBACK = "https://latest.currency-api.pages.dev/v1/currencies/usd.json";
 
-export async function GET(request: NextRequest) {
+async function handler(request: NextRequest) {
   try {
     // Validate cron secret
     const authHeader = request.headers.get("Authorization");
@@ -108,6 +110,18 @@ export async function GET(request: NextRequest) {
       pointTypesUpdated.push(`POINT_TYPE_REFRESH=>ERROR`);
     }
 
+    logger.info("cron:exchange-rates: stats", {
+      currenciesUpdated: upsertResults.filter(
+        (r) => !r.includes("ERROR") && !r.includes("NOT_FOUND")
+      ).length,
+      currenciesNotFound: upsertResults.filter((r) => r.includes("NOT_FOUND")).length,
+      bookingsLocked: lockedBookingIds.length,
+      pointTypesRefreshed: pointTypesUpdated.filter(
+        (r) => !r.includes("ERROR") && !r.includes("NO_RATE")
+      ).length,
+      bookingsReevaluated: pointTypeBookingIds.size,
+    });
+
     return NextResponse.json({
       success: true,
       ratesUpdated: upsertResults,
@@ -120,3 +134,5 @@ export async function GET(request: NextRequest) {
     return apiError("Failed to refresh exchange rates", error, 500, request);
   }
 }
+
+export const GET = withAxiom(withRouteLogging("cron:exchange-rates", handler));
