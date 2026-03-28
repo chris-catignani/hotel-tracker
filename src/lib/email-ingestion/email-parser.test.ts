@@ -101,7 +101,7 @@ describe("parseConfirmationEmail", () => {
     mockCreate.mockResolvedValueOnce({ content: [{ type: "text", text: "{}" }] });
     await parseConfirmationEmail("raw email text", hyattGuide);
     const prompt = mockCreate.mock.calls[0][0].messages[0].content;
-    expect(prompt).toContain("expand it into one nightlyRates entry per night");
+    expect(prompt).toContain("The end date of the range is exclusive");
   });
 
   it("calls Claude with decoded email text and chain guide notes", async () => {

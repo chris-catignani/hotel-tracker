@@ -21,6 +21,6 @@ export const hyattGuide: ChainGuide = {
     'Points redeemed may appear in a "Rate information" section. ' +
     'Nightly rates are listed under a "Nightly rate per room" section. ' +
     'When a rate entry spans a date range (e.g. "January 15 - January 17 - 142.10 US DOLLARS"), ' +
-    "expand it into one nightlyRates entry per night — the end date is check-out and is not itself a night " +
+    "expand it into one nightlyRates entry per night. The end date of the range is exclusive " +
     '(e.g. "January 15 - January 17" = 2 nights: Jan 15 and Jan 16, each at 142.10).',
 };
