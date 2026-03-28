@@ -105,4 +105,12 @@ describe("logger", () => {
       errorStack: undefined,
     });
   });
+
+  it("error() with null error should not produce 'null' as errorMessage in Axiom fields", () => {
+    logger.error("test error null", null);
+    expect(axiomLog.error).toHaveBeenCalledWith("test error null", {
+      errorMessage: undefined,
+      errorStack: undefined,
+    });
+  });
 });

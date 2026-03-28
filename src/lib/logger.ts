@@ -51,7 +51,7 @@ export const logger = {
     axiomLog.error(message, {
       ...extra,
       errorMessage:
-        error instanceof Error ? error.message : error !== undefined ? String(error) : undefined,
+        error instanceof Error ? error.message : error != null ? String(error) : undefined,
       errorStack: error instanceof Error ? error.stack : undefined,
     });
   },
