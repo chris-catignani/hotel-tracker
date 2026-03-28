@@ -527,6 +527,29 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  try {
+    const userIdOrResponse = await getAuthenticatedUserId();
+    if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
+    const userId = userIdOrResponse;
+
+    const { needsReview } = await request.json();
+
+    const exists = await prisma.booking.findFirst({ where: { id, userId }, select: { id: true } });
+    if (!exists) return apiError("Booking not found", null, 404, request, { bookingId: id });
+
+    const booking = await prisma.booking.update({
+      where: { id },
+      data: { needsReview },
+    });
+
+    return NextResponse.json(booking);
+  } catch (error) {
+    return apiError("Failed to update booking", error, 500, request, { bookingId: id });
+  }
+}
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
