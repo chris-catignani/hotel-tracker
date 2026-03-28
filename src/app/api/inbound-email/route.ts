@@ -21,10 +21,19 @@ import { logger } from "@/lib/logger";
  * }
  */
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  const signingSecret = process.env.RESEND_WEBHOOK_SIGNING_SECRET;
+  const inboundEmail = process.env.RESEND_INBOUND_EMAIL;
+  if (!signingSecret || !inboundEmail) {
+    logger.error(
+      "inbound-email: missing RESEND_WEBHOOK_SIGNING_SECRET or RESEND_INBOUND_EMAIL env var"
+    );
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+
   const rawBody = await req.text();
 
   // Verify Resend webhook signature via svix
-  const wh = new Webhook(process.env.RESEND_WEBHOOK_SIGNING_SECRET!);
+  const wh = new Webhook(signingSecret);
   let body: Record<string, string>;
   try {
     body = wh.verify(rawBody, {
@@ -32,13 +41,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       "svix-timestamp": req.headers.get("svix-timestamp") ?? "",
       "svix-signature": req.headers.get("svix-signature") ?? "",
     }) as Record<string, string>;
-  } catch {
-    logger.warn("inbound-email: svix signature verification failed");
+  } catch (err) {
+    logger.warn("inbound-email: svix signature verification failed", { error: String(err) });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   // Filter to only process emails addressed to the designated inbound address
-  if (body.to !== process.env.RESEND_INBOUND_EMAIL) {
+  if (body.to !== inboundEmail) {
     logger.info("inbound-email: discarding email — wrong recipient", { to: body.to });
     return NextResponse.json({ ok: true });
   }

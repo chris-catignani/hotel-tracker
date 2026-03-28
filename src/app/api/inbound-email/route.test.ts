@@ -55,6 +55,18 @@ function makeRequest(body: Record<string, string>, { validSignature = true } = {
 describe("POST /api/inbound-email", () => {
   beforeEach(() => vi.clearAllMocks());
 
+  it("returns 500 when required env vars are missing", async () => {
+    const original = process.env.RESEND_WEBHOOK_SIGNING_SECRET;
+    delete process.env.RESEND_WEBHOOK_SIGNING_SECRET;
+    const req = new NextRequest("http://localhost/api/inbound-email", {
+      method: "POST",
+      body: "{}",
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(500);
+    process.env.RESEND_WEBHOOK_SIGNING_SECRET = original;
+  });
+
   it("silently discards email not addressed to the inbound address", async () => {
     const res = await POST(
       makeRequest({ to: "other@example.com", from: "chris@gmail.com", html: "" })
