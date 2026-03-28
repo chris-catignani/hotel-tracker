@@ -74,6 +74,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const emailRes = await fetch(`https://api.resend.com/emails/receiving/${data.email_id}`, {
     headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` },
   });
+  if (!emailRes.ok) {
+    logger.error("inbound-email: failed to fetch email body from Resend API", {
+      status: emailRes.status,
+      emailId: data.email_id,
+    });
+    return NextResponse.json({ ok: true });
+  }
   const emailData = (await emailRes.json()) as { html?: string | null; text?: string | null };
   const rawEmail = emailData.html ?? emailData.text ?? "";
 

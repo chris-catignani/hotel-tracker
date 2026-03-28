@@ -111,6 +111,13 @@ describe("POST /api/inbound-email", () => {
     );
   });
 
+  it("returns 200 and skips processing if Resend API returns non-200", async () => {
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 401 });
+    const res = await POST(makeRequest({ from: "chris@gmail.com", email_id: "msg-1" }));
+    expect(res.status).toBe(200);
+    expect(mockUserFindFirst).not.toHaveBeenCalled();
+  });
+
   it("returns 200 and discards if user not found", async () => {
     mockUserFindFirst.mockResolvedValue(null);
     mockEmailBody("");
