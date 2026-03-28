@@ -94,6 +94,46 @@ test.describe("Email Ingestion — needs-review UI", () => {
     }
   });
 
+  test("detail page shows needs-review banner and dismisses it", async ({ isolatedUser }) => {
+    const propertyName = `Review Detail Hotel ${crypto.randomUUID()}`;
+    const res = await isolatedUser.request.post("/api/bookings", {
+      data: {
+        propertyName,
+        checkIn: `${YEAR}-07-01`,
+        checkOut: `${YEAR}-07-04`,
+        numNights: 3,
+        pretaxCost: 300,
+        taxAmount: 30,
+        totalCost: 330,
+        currency: "USD",
+        bookingSource: "direct_web",
+        countryCode: "US",
+        city: "Salt Lake City",
+        needsReview: true,
+        ingestionMethod: "email",
+      },
+    });
+    const booking = await res.json();
+
+    try {
+      // Banner is visible on the detail page
+      await isolatedUser.page.goto(`/bookings/${booking.id}`);
+      await isolatedUser.page.waitForLoadState("networkidle");
+      await expect(isolatedUser.page.getByTestId("needs-review-banner")).toBeVisible();
+
+      // Dismiss the banner
+      await isolatedUser.page.getByTestId("dismiss-review-button").click();
+      await expect(isolatedUser.page.getByTestId("needs-review-banner")).not.toBeVisible();
+
+      // Reload — banner stays gone
+      await isolatedUser.page.reload();
+      await isolatedUser.page.waitForLoadState("networkidle");
+      await expect(isolatedUser.page.getByTestId("needs-review-banner")).not.toBeVisible();
+    } finally {
+      await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
+    }
+  });
+
   test("dashboard callout appears and links to filtered bookings", async ({ isolatedUser }) => {
     const propertyName = `Callout Test Hotel ${crypto.randomUUID()}`;
     const res = await isolatedUser.request.post("/api/bookings", {
