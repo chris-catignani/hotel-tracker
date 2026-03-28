@@ -42,7 +42,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       "svix-signature": req.headers.get("svix-signature") ?? "",
     }) as Record<string, string>;
   } catch (err) {
-    logger.warn("inbound-email: svix signature verification failed", { error: String(err) });
+    logger.warn("inbound-email: svix signature verification failed", { error: err });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
