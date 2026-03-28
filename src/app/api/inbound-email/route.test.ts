@@ -18,25 +18,53 @@ vi.mock("@/lib/prisma", () => ({
   default: { user: { findFirst: mockUserFindFirst } },
 }));
 
-const SECRET = "test-secret";
-process.env.INBOUND_EMAIL_WEBHOOK_SECRET = SECRET;
+const mockSvixVerify = vi.hoisted(() => vi.fn());
+vi.mock("svix", () => ({
+  Webhook: class {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    verify(...args: any[]) {
+      return mockSvixVerify(...args);
+    }
+  },
+}));
 
-function makeRequest(body: object, secret = SECRET) {
+process.env.RESEND_WEBHOOK_SIGNING_SECRET = "whsec_test";
+process.env.RESEND_INBOUND_EMAIL = "bookings@example.com";
+
+function makeRequest(body: Record<string, string>, { validSignature = true } = {}) {
+  const fullBody = { to: "bookings@example.com", ...body };
+  if (validSignature) {
+    mockSvixVerify.mockReturnValueOnce(fullBody);
+  } else {
+    mockSvixVerify.mockImplementationOnce(() => {
+      throw new Error("invalid signature");
+    });
+  }
   return new NextRequest("http://localhost/api/inbound-email", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-webhook-secret": secret,
+      "svix-id": "msg_123",
+      "svix-timestamp": "1234567890",
+      "svix-signature": "v1,test",
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify(fullBody),
   });
 }
 
 describe("POST /api/inbound-email", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("returns 401 for invalid webhook secret", async () => {
-    const res = await POST(makeRequest({}, "wrong-secret"));
+  it("silently discards email not addressed to the inbound address", async () => {
+    const res = await POST(
+      makeRequest({ to: "other@example.com", from: "chris@gmail.com", html: "" })
+    );
+    expect(res.status).toBe(200);
+    expect(mockUserFindFirst).not.toHaveBeenCalled();
+  });
+
+  it("returns 401 when svix signature verification fails", async () => {
+    const res = await POST(makeRequest({}, { validSignature: false }));
     expect(res.status).toBe(401);
   });
 

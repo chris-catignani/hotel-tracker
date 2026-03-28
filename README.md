@@ -121,6 +121,44 @@ npm run prices:refresh
 ./scripts/trigger-price-refresh.sh
 ```
 
+## Email Ingestion
+
+Users can forward hotel confirmation emails to a designated address and have bookings created automatically. Parsing is handled by the Claude API (Anthropic).
+
+### Setup
+
+1. Create an account at [resend.com](https://resend.com) and verify your domain
+2. In Resend, configure an **Inbound** domain (under Email → Inbound) pointing to your webhook URL:
+   ```
+   https://yourdomain.com/api/inbound-email
+   ```
+3. Copy the **Signing Secret** from the Resend inbound settings
+4. Add the following environment variables (Vercel + local `.env`):
+   ```
+   ANTHROPIC_API_KEY=        # From console.anthropic.com
+   RESEND_WEBHOOK_SIGNING_SECRET=  # Signing secret from Resend inbound settings
+   RESEND_INBOUND_EMAIL=     # The address users forward confirmations to (e.g. bookings@yourdomain.com)
+   ```
+
+Users forward confirmation emails to `RESEND_INBOUND_EMAIL`. The app looks up the user by their `From` address, parses the email with Claude, and creates the booking automatically.
+
+### Testing Locally
+
+Resend needs a public HTTPS URL to deliver webhooks, so you need to expose your local dev server using [ngrok](https://ngrok.com):
+
+```bash
+# Install ngrok (once): https://ngrok.com/download
+ngrok http 3000
+```
+
+ngrok prints a public URL like `https://abc123.ngrok-free.app`. In Resend, temporarily set your inbound webhook URL to:
+
+```
+https://abc123.ngrok-free.app/api/inbound-email
+```
+
+Make sure your local `.env` has `RESEND_WEBHOOK_SIGNING_SECRET` set to the real signing secret from Resend (not a placeholder), then forward a real confirmation email and watch your dev server logs.
+
 ## Troubleshooting
 
 **PostgreSQL not running (WSL2):**
