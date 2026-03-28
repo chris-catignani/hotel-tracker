@@ -255,6 +255,18 @@ describe("ingestBookingFromEmail", () => {
     expect(data.pretaxCost).toBe(591.04);
   });
 
+  it("defaults accommodationType to hotel when not provided in parsed data", async () => {
+    await ingestBookingFromEmail(baseParsed, "user-1", null);
+    const data = mockBookingCreate.mock.calls[0][0].data;
+    expect(data.accommodationType).toBe("hotel");
+  });
+
+  it("uses accommodationType from parsed data when provided", async () => {
+    await ingestBookingFromEmail({ ...baseParsed, accommodationType: "apartment" }, "user-1", null);
+    const data = mockBookingCreate.mock.calls[0][0].data;
+    expect(data.accommodationType).toBe("apartment");
+  });
+
   it("derives taxAmount from totalCost - pretaxCost when nightlyRates is present", async () => {
     const result = await ingestBookingFromEmail(
       {

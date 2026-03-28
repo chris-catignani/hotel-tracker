@@ -99,7 +99,7 @@ export async function ingestBookingFromEmail(
       userId,
       hotelChainId: hotelChain?.id ?? null,
       hotelChainSubBrandId: subBrand?.id ?? null,
-      accommodationType: "hotel",
+      accommodationType: parsed.accommodationType ?? "hotel",
       propertyId,
       checkIn: new Date(parsed.checkIn),
       checkOut: new Date(parsed.checkOut),

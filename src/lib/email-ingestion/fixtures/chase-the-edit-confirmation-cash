@@ -1,0 +1,1129 @@
+Delivered-To: user@example.com
+Received: by 2002:a05:6a11:8e0f:b0:631:ce55:5a59 with SMTP id gp15csp50255pxc;
+        Fri, 15 Aug 2025 11:12:29 -0700 (PDT)
+X-Google-Smtp-Source: AGHT+IHq2JOI+Evo3844mfvv/83mB63V5N9PEZTWOjWgWBBzXgf3EXkCOFS4hKTKwaRRL+kfTPfr
+X-Received: by 2002:a05:620a:28d2:b0:7e6:9a11:f0c8 with SMTP id af79cd13be357-7e87dffa305mr341997285a.21.1755281549242;
+        Fri, 15 Aug 2025 11:12:29 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1755281549; cv=none;
+        d=google.com; s=arc-20240605;
+        b=HbA3GM4aBNsDL7TudoAMA30nJlEP2Oi3s33TcEZXjSXrIe4ckNBhOq7jQJlYWpDqVt
+         Xx+XlJXAnsJxsROxiiDNsNefIoYDfDAViCx5cdvS6Lw1aTP7KGCUEtLEA5iM2Vr0wfAz
+         x9Br6jnPrJiM4/Jy9Z4HFYgFRgjGeqDTR1H7xh2eQUZ6AiW0doqOlJkPrQUVmbl4BNAl
+         lyocZxsdnU2ea6JDa57d/+ei508LIwITjLUHcZor7mQRLIwiW+J+a1vkOSzN6k/EDkMW
+         mxWj1oEVKp8m0oSw/DntISU6YsLKdGD3Yin8bXe5Kzk/YLzH/v/9y3gnwkJTzQzo5XmN
+         BgPQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
+        h=feedback-id:date:message-id:content-transfer-encoding:mime-version
+         :subject:to:reply-to:from:dkim-signature:dkim-signature;
+        bh=lRNeYSKRngBbDb/7e8uf37zcahahR6S/jaQTpk99zHo=;
+        fh=f7GuxESQjwnxwLD1SAPk04143tnE8OcHo/hU2reyUjg=;
+        b=Fd+TNuIqay4SqlpRcO9k6/qlHgoH14Gsux1ppp4zvNypZiogMJXXcwX5LMSKu3RHPv
+         oSi88hZ4qU3qcA6IG7kIkGTrSWNp3J/IEvG9vXwZf248JHzEqYYCkYJvGXYfgrJ/J4N6
+         mnsUmhpbZaBAaOOVQeXBJJ2SMDx3ti96OMLGzMo5/ocbCCSszcb8BbemExZSLrrRaw8x
+         sYpJ4fe5nsk9ILjEfoXlH6yJGh31rFE06Bz94MNuUUxn9AY+FraiRGCB2989Mb459cZ+
+         NOaIDYoyuRZX1l/G/u2w9Qo7OUFNqXL8Us/wbk1dhKpNOtL8SugZF11x+sZ6RqSHHBvM
+         s9IQ==;
+        dara=google.com
+ARC-Authentication-Results: i=1; mx.google.com;
+       dkim=pass header.i=@chasetravel.com header.s=apowcqiaqohjtbgrksuzw7lhxourguze header.b=Yc1y90GM;
+       dkim=pass header.i=@amazonses.com header.s=6gbrjpgwjskckoa6a5zn6fwqkn67xbtw header.b=OaVc3MlL;
+       spf=pass (google.com: domain of 02000000094cmk8s-8agrdfb6-teal-f901-s867-2qaamjombco0-000000@amazonses.com designates 54.240.124.193 as permitted sender) smtp.mailfrom=02000000094cmk8s-8agrdfb6-teal-f901-s867-2qaamjombco0-000000@amazonses.com;
+       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=chasetravel.com
+Return-Path: <02000000094cmk8s-8agrdfb6-teal-f901-s867-2qaamjombco0-000000@amazonses.com>
+Received: from a124-193.smtp-out.amazonses.com (a124-193.smtp-out.amazonses.com. [54.240.124.193])
+        by mx.google.com with ESMTPS id af79cd13be357-7e87e1faeecsi74271985a.914.2025.08.15.11.12.29
+        for <user@example.com>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 15 Aug 2025 11:12:29 -0700 (PDT)
+Received-SPF: pass (google.com: domain of 02000000094cmk8s-8agrdfb6-teal-f901-s867-2qaamjombco0-000000@amazonses.com designates 54.240.124.193 as permitted sender) client-ip=54.240.124.193;
+Authentication-Results: mx.google.com;
+       dkim=pass header.i=@chasetravel.com header.s=apowcqiaqohjtbgrksuzw7lhxourguze header.b=Yc1y90GM;
+       dkim=pass header.i=@amazonses.com header.s=6gbrjpgwjskckoa6a5zn6fwqkn67xbtw header.b=OaVc3MlL;
+       spf=pass (google.com: domain of 02000000094cmk8s-8agrdfb6-teal-f901-s867-2qaamjombco0-000000@amazonses.com designates 54.240.124.193 as permitted sender) smtp.mailfrom=02000000094cmk8s-8agrdfb6-teal-f901-s867-2qaamjombco0-000000@amazonses.com;
+       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=chasetravel.com
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/simple; s=apowcqiaqohjtbgrksuzw7lhxourguze; d=chasetravel.com; t=1755281548; h=From:Reply-To:To:Subject:MIME-Version:Content-Type:Content-Transfer-Encoding:Message-ID:Date; bh=ot1/TVzq+zInaBGlfXXSxno8Iy7t2wtn0+6AVsSWGyM=; b=Yc1y90GMry60GzaO3pudNYKJnZRMsS2lx5lEy+G4pATz+K0XW0CmSEvXwSMMbjEp FZR2bxm4DpuyM6UDVqkZz0nCiNwV4gcsDP1kSTlGUODLRNV9mt5KAC6Tmyi5NROVruN KPQTmGAxITFOmsRAk1fD/HfyFB2DpAJo/ogl/pj6rgGMm3lssCEJEWdQNI4Z6xFnLzv v96CapQHFV6nigFMmIRCEweC1Opo1e+/M3KQvlrkjkVKGCfOsZFF5GgxVAq74YeMD+5 UAVRm+4bLqlQgrm2hiPNxcStzitWHvxrXKEVTVYC1q2eTuGIwokM4WtMq8oMUWd2NyR y2yR5u+AJg==
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/simple; s=6gbrjpgwjskckoa6a5zn6fwqkn67xbtw; d=amazonses.com; t=1755281548; h=From:Reply-To:To:Subject:MIME-Version:Content-Type:Content-Transfer-Encoding:Message-ID:Date:Feedback-ID; bh=ot1/TVzq+zInaBGlfXXSxno8Iy7t2wtn0+6AVsSWGyM=; b=OaVc3MlLu/12432vLlbYZ8MD5wbg//+cRa6pFmTbcQu15joIeAP6i8UlPJQtTmcL l10LNws8H5Md0jJgYy0fVQk23asd6Rtd+EhwjB1a5rSQFAseLa85DTzHsghOz9BjskE LcujGA7kDCi9v6cZvSMfxpdkcgnqVpEQuVuBixHY=
+From: Chase Travel <donotreply@chasetravel.com>
+Reply-To: Donotreply <donotreply@rewardsengage.com>
+To: user@example.com
+Subject: Travel Reservation Center Trip ID # 1005768411
+MIME-Version: 1.0
+Content-Type: text/html; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+Message-ID: <02000000094cmk8s-8agrdfb6-teal-f901-s867-2qaamjombco0-000000@email.amazonses.com>
+Date: Fri, 15 Aug 2025 18:12:28 +0000
+Feedback-ID: ::1.us-east-1.sN5OszwEhUALn26ZNzacC2LHvLURRIxzxAW7AOrzKoc=:AmazonSES
+X-SES-Outgoing: 2025.08.15-54.240.124.193
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.=
+w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns=3D"http://www.w3.=
+org/1999/xhtml" xmlns:o=3D"urn:schemas-microsoft-com:office:office" lang=3D=
+"und" style=3D"padding:0;Margin:0"><head><meta charset=3D"UTF-8"><meta cont=
+ent=3D"width=3Ddevice-width, initial-scale=3D1" name=3D"viewport"><meta nam=
+e=3D"x-apple-disable-message-reformatting"><meta http-equiv=3D"X-UA-Compati=
+ble" content=3D"IE=3Dedge"><meta content=3D"telephone=3Dno" name=3D"format-=
+detection"><title></title>
+ <!--[if (mso 16)]><style type=3D"text/css"> a { text-decoration: none; }=
+=20
+</style><![endif]--><!--[if gte mso 9 ]><style> sup { font-size: 100% !impo=
+rtant; } </style><![endif]--><!--[if gte mso 9 ]><xml><o:OfficeDocumentSett=
+ings><o:AllowPNG></o:AllowPNG><o:PixelsPerInch>96</o:PixelsPerInch></o:Offi=
+ceDocumentSettings></xml ><![endif]--><!--[if gte mso 9]><style>sup { font-=
+size: 100% !important; }</style><![endif]--><!--[if !mso]><!-- --><!--<![en=
+dif]--><style type=3D"text/css">/* ROOT DESCRIPTION font-family - applied t=
+o whole body font-family-bold - applied to all bold words card-header-font-=
+family:applied to card header font template-widh - main template width card=
+-container-width - card section width border-radius - for card border radiu=
+s link-color - for url text primary-font-color - for all main text secondar=
+y-font-color - for text like arrival time and stops primary-color - for par=
+ent background color of template secondary-color - card background color te=
+rtiary-color - for background color of real id req,hotel resort fee blocks =
+tertiary-border-color - for border color of real id req,hotel resort fee bl=
+ocks card-header-background-color - for card header background color card-h=
+eader-font-color - for card header font color card-border-color - for card =
+border color positive-green-text - for text like confirmed negative-red-tex=
+t - for text like cancelled and next day arrival c quaternary-color - for b=
+ackground colr of insurance block quaternary-border-color - for border colo=
+r of insurance block quinary-color:#f8fffc - for background color of trip r=
+efund block quinary-border-color - for border color of trip refund block se=
+ptenary-color - for background color of suppress flight message block=09sep=
+tenary-border-color - for border color of suppress flight message block sen=
+ary-color - for itinerary inner block background color spacer-line-color - =
+for mytrip details spacer between trips promo-header-color - for promo head=
+er bg color promo-eb-bg-color - for promo email body bg color promo-eb-txt-=
+color - for promo email body text color promo-btn-bg-color - for promo butt=
+on bg color promo-btn-txt-color - for promo button text color*/:root {=09--=
+font-family:Open Sans, 'Trebuchet MS';=09--font-family-bold:Open Sans Semib=
+old, 'Trebuchet MS';=09--card-header-font-family:Queens, 'Times New Roman';=
+=09--template-width:640px;=09--card-container-width:520px;=09--border-radiu=
+s:8px;=09--link-color:#0060f0;=09--primary-font-color:#101820;=09--secondar=
+y-font-color:#565A5D;=09--primary-color:#ffffff;=09--secondary-color:#fffff=
+f;=09--tertiary-color:#f5f7f8;=09--tertiary-border-color:#f5f7f8;=09--card-=
+header-background-color:#ECEFF1;=09--card-header-font-color:#1A222B;=09--ca=
+rd-border-color:#E2E4E5;=09--positive-green-text:#4ea000;=09--negative-red-=
+text:#b80009;=09--quaternary-color:#f0f3fa;=09--quaternary-border-color:#2e=
+5aac;=09--quinary-color:#f8fffc;=09--quinary-border-color:#4ea000;=09--sept=
+enary-color:#fff4f4;=09--septenary-border-color:#d9222a;=09--senary-color:#=
+f5f7f8;=09--spacer-line-color:#8c8e90;=09--promo-header-color:#002854;=09--=
+promo-eb-bg-color:#FAF4EE;=09--promo-eb-txt-color:#002855;=09--promo-btn-bg=
+-color:#002854;=09--promo-btn-txt-color:#ffffff;}#outlook a {=09padding:0;}=
+.ExternalClass {=09width:100%;}.ExternalClass,.ExternalClass p,.ExternalCla=
+ss span,.ExternalClass font,.ExternalClass td,.ExternalClass div {=09line-h=
+eight:100%;}.es-button {=09mso-style-priority:100!important;=09text-decorat=
+ion:none!important;}a[x-apple-data-detectors] {=09color:inherit!important;=
+=09text-decoration:none!important;=09font-size:inherit!important;=09font-fa=
+mily:inherit!important;=09font-weight:inherit!important;=09line-height:inhe=
+rit!important;}.es-desk-hidden {=09display:none;=09float:left;=09overflow:h=
+idden;=09width:0;=09max-height:0;=09line-height:0;=09mso-hide:all;}s {=09te=
+xt-decoration:line-through;}td > img + div {=09display:none;}a:link {=09col=
+or:#0060f0;}a:visited {=09color:#0060f0;}a:hover {=09color:#0060f0;}a:activ=
+e {=09color:#0060f0;}@media only screen and (max-width:600px) {p, ul li, ol=
+ li, a { line-height:150%!important } h1, h2, h3, h1 a, h2 a, h3 a { line-h=
+eight:120%!important } h1 { font-size:30px!important; text-align:center } h=
+2 { font-size:26px!important; text-align:center } h3 { font-size:20px!impor=
+tant; text-align:center } .es-header-body h1 a, .es-content-body h1 a, .es-=
+footer-body h1 a { font-size:30px!important } .es-header-body h2 a, .es-con=
+tent-body h2 a, .es-footer-body h2 a { font-size:26px!important } .es-heade=
+r-body h3 a, .es-content-body h3 a, .es-footer-body h3 a { font-size:20px!i=
+mportant } .es-menu td a { font-size:13px!important } .es-header-body p, .e=
+s-header-body ul li, .es-header-body ol li, .es-header-body a { font-size:1=
+6px!important } .es-footer-body p, .es-footer-body ul li, .es-footer-body o=
+l li, .es-footer-body a { font-size:16px!important } .es-infoblock p, .es-i=
+nfoblock ul li, .es-infoblock ol li, .es-infoblock a { font-size:12px!impor=
+tant } *[class=3D"gmail-fix"] { display:none!important } .es-m-txt-c, .es-m=
+-txt-c h1, .es-m-txt-c h2, .es-m-txt-c h3 { text-align:center!important } .=
+es-m-txt-r, .es-m-txt-r h1, .es-m-txt-r h2, .es-m-txt-r h3 { text-align:rig=
+ht!important } .es-m-txt-l, .es-m-txt-l h1, .es-m-txt-l h2, .es-m-txt-l h3 =
+{ text-align:left!important } .es-m-txt-r img, .es-m-txt-c img, .es-m-txt-l=
+ img { display:inline!important } .es-btn-fw { border-width:10px 0px!import=
+ant; text-align:center!important } .es-adaptive table, .es-btn-fw, .es-btn-=
+fw-brdr, .es-left, .es-right { width:100%!important } .es-content table, .e=
+s-header table, .es-footer table, .es-content, .es-footer, .es-header { wid=
+th:100%!important; max-width:600px!important } .es-adapt-td { display:block=
+!important; width:100%!important } .adapt-img { width:100%!important; heigh=
+t:auto!important } .es-m-p0 { padding:0px!important } .es-m-p0r { padding-r=
+ight:0px!important } .es-m-p0l { padding-left:0px!important } .es-m-p0t { p=
+adding-top:0px!important } .es-m-p0b { padding-bottom:0!important } .es-m-p=
+20b { padding-bottom:20px!important } .es-m-p20t { padding-top:20px } .es-m=
+-p25r { padding-right:25px } .es-mobile-hidden, .es-hidden { display:none!i=
+mportant } .m-btn-hidden { display:none!important } tr.es-desk-hidden, td.e=
+s-desk-hidden, table.es-desk-hidden { display:table-row!important; width:au=
+to!important; overflow:visible!important; float:none!important; max-height:=
+inherit!important; line-height:inherit!important } .es-desk-menu-hidden { d=
+isplay:table-cell!important } table.es-table-not-adapt, .esd-block-html tab=
+le { width:auto!important } table.es-social { display:inline-block!importan=
+t } table.es-social td { display:inline-block!important } .es-desk-hidden {=
+ display:table-row!important; width:auto!important; overflow:visible!import=
+ant; max-height:inherit!important } .allocate-full-width { display:block!im=
+portant; width:100%!important } .custom-block-m-p10l { padding-left:10px!im=
+portant } .custom-icon-width { width:20%!important } .custom-block-m-displa=
+y-block { display:block } .pad-m-lr-10 { padding-left:10px!important; paddi=
+ng-right:10px!important } .trip-overview-product-width { width:30%!importan=
+t } .m-es-p5r { padding-right:5px!important } .m-align-left { text-align:le=
+ft!important } .m-unset-width { width:unset!important } .es-content .m-unse=
+t-width { width:unset!important } .trip-itinerary-left-half { width:25%!imp=
+ortant } .trip-itinerary-right-half { width:75%!important } .m-es-p8b { pad=
+ding-bottom:8px!important } .m-es-p16 { padding:16px!important } .m-es-p24 =
+{ padding:24px!important } .m-d-block { display:block } .m-display-block { =
+display:block!important } .img-m-w-140 { width:140px!important } .m-es-p6b =
+{ padding-bottom:6px!important } .m-es-p8t { padding-top:8px!important } .m=
+-es-p10r { padding-right:10px!important } .m-es-p10l { padding-left:10px!im=
+portant } .m-es-p10b { padding-bottom:10px!important } .m-es-p11b { padding=
+-bottom:11px!important } .m-es-p12t { padding-top:12px!important } .m-es-14=
+t { padding-top:14px!important } .m-es-p14 { padding:14px!important } .m-es=
+-14b { padding-bottom:14px!important } .m-es-p14t { padding-top:14px!import=
+ant } .m-es-p15r { padding-right:15px!important } .m-es-p15l { padding-left=
+:15px!important } .m-es-p15b { padding-bottom:15px!important } .m-es-p16l {=
+ padding-left:16px!important } .m-es-p16r { padding-right:16px!important } =
+.m-es-p16t { padding-top:16px!important } .m-es-p19t { padding-top:19px!imp=
+ortant } .m-es-p16b { padding-bottom:16px!important } .m-es-p21b { padding-=
+bottom:21px!important } .m-es-p27b { padding-bottom:27px!important } .m-w-8=
+5p { width:85%!important } .m-w-100p { width:100%!important } .m-w-max-cont=
+ent { width:max-content!important } .m-es-p5t { padding-top:5px!important }=
+ .m-img-arrow { display:block!important; width:30px!important } .m-block-d-=
+inline { display:block!important } .m-v-align-top { vertical-align:top!impo=
+rtant } }@media screen and (max-width:384px) {.mail-message-content { width=
+:414px!important } }</style>
+ </head>
+ <body style=3D"font-family:'Open Sans', 'Trebuchet MS';color:#101820;width=
+:100%;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;padding:0;Mar=
+gin:0"><div class=3D"es-wrapper-color" style=3D"background-color:#f8f9fd" l=
+ang=3D"und"><!--[if gte mso 9]>
+=09=09=09<v:background xmlns:v=3D"urn:schemas-microsoft-com:vml" fill=3D"t"=
+>
+=09=09=09=09<v:fill type=3D"tile" color=3D"#f6f6f6"></v:fill>
+=09=09=09</v:background>
+=09=09<![endif]--><table class=3D"es-wrapper" width=3D"100%" cellspacing=3D=
+"0" cellpadding=3D"0" role=3D"none" style=3D"padding:0;Margin:0;width:100%;=
+height:100%;background-image:&quot;&quot;;background-repeat:repeat;backgrou=
+nd-position:center top;background-color:#F6F6F6"><tr><td valign=3D"top"><ta=
+ble class=3D"es-content" cellspacing=3D"0" cellpadding=3D"0" align=3D"cente=
+r" role=3D"none" style=3D"width:100%"><tr><td align=3D"center"><table class=
+=3D"es-content-body" style=3D"background-color:#ffffff;width:600px" cellspa=
+cing=3D"0" cellpadding=3D"0" bgcolor=3D"#ffffff" align=3D"center" role=3D"n=
+one"><table class=3D"es-content-body theme-template-width" style=3D"width:6=
+40px;background-color:#ffffff" cellspacing=3D"0" cellpadding=3D"0" bgcolor=
+=3D"#ffffff" align=3D"center" role=3D"none"><tr><td align=3D"left"><table c=
+ellpadding=3D"0" cellspacing=3D"0" width=3D"100%" role=3D"none"><tr><td cla=
+ss=3D"m-es-p14t m-es-p14b" align=3D"center" valign=3D"top" style=3D"padding=
+-bottom:19px;padding-top:21px;width:640px"><table cellpadding=3D"0" cellspa=
+cing=3D"0" width=3D"100%" role=3D"presentation"><tr><td align=3D"center" st=
+yle=3D"font-size:0"><img class=3D"adapt-img img-w-180 img-m-w-140" src=3D"h=
+ttps://images.contentstack.io/v3/assets/blta34031bed370a6d3/bltb62a9b14df84=
+3aa4/663b21c5aea329eb0e60e07d/travel.png" alt=3D"Chase Travel Brand Logo" l=
+oading=3D"lazy" width=3D"180" style=3D"width:180px !important"></td></tr></=
+table></td></tr></table></td></tr></table><table class=3D"es-content-body t=
+heme-template-width" cellspacing=3D"0" cellpadding=3D"0" align=3D"center" b=
+gcolor=3D"#041A58" style=3D"width:640px;background-color:#041a58" role=3D"n=
+one"><tr><!----></tr></table><table class=3D"es-content-body theme-primary-=
+color" cellspacing=3D"0" cellpadding=3D"0" align=3D"center" style=3D"backgr=
+ound-color:#FFFFFF;width:640px" role=3D"none"><tr><td align=3D"left"><table=
+ cellpadding=3D"0" cellspacing=3D"0" width=3D"100%" role=3D"presentation"><=
+!--[if mso]>
+              =09=09=09=09=09=09=09=09=09=09=09=09=09<tr>
+                                                                    <td cla=
+ss=3D"esd-container-frame es-p32t es-p32b" style=3D"padding-top: 32px; padd=
+ing-bottom: 32px" align=3D"center" valign=3D"top">
+                                                                        <ta=
+ble cellpadding=3D"0" cellspacing=3D"0" class=3D"unset-width" role=3D"prese=
+ntation" style=3D"width:unset !important">
+                                                                           =
+     <tr>
+                                                                           =
+         <td align=3D"left" class=3D"es-p5r" style=3D"padding-right: 5px">
+                                                                           =
+             <p style=3D"Margin:0;line-height:36px;color:#565a5d;font-size:=
+24px">Trip ID:</p>
+                                                                           =
+         </td>
+                                                                           =
+         <td align=3D"left" class=3D"es-p15r" style=3D"padding-right: 15px"=
+>
+                                                                           =
+             <p style=3D"Margin:0;line-height:36px;font-size:24px;color:#56=
+5a5d;">1005768411</p>
+                                                                           =
+         </td>
+                                                                           =
+         <td align=3D"left">
+                                                                           =
+             <span class=3D"es-button-border theme-primary-color" style=3D"=
+border-style:solid;border-color:#0060f0;border-width:1px;display:inline-blo=
+ck;width:auto;mso-border-alt:2px;padding:8px 25px;background-color:#FFFFFF;=
+"><a href=3D"https://b11rb8mj.r.us-east-1.awstrack.me/L0/https:%2F%2Fsecure=
+.chase.com%2Fweb%2Fauth%2Fdashboard%23%2Fdashboard%2Ftravel%2Frouter%2FTRIP=
+_DETAILS%2FaccountId:-%2Fspnr:/1/02000000094cmk8s-8agrdfb6-teal-f901-s867-2=
+qaamjombco0-000000/6SFGK1nuu48v9B_uYkXIJAWCB_U=3D439" class=3D"es-button th=
+eme-font-family" target=3D"_blank" style=3D"mso-style-priority:100 !importa=
+nt;text-decoration:none;color:#0060f0;font-size:14px;font-family:OpenSans-R=
+egular, 'Trebuchet MS';font-weight:bold;display:inline-block;">See trip</a>=
+</span>
+                                                                           =
+         </td>
+                                                                           =
+     </tr>
+                                                                        </t=
+able>
+                                                                    </td>
+                                                                </tr>
+            =09=09=09=09=09=09=09=09=09=09=09=09=09<![endif]--><!--[if !mso=
+]>--><tr><td class=3D"m-es-p10b es-m-p20t" align=3D"center" valign=3D"top" =
+style=3D"padding-top:32px;padding-bottom:32px"><table cellpadding=3D"0" cel=
+lspacing=3D"0" class=3D"unset-width" role=3D"presentation" style=3D"width:u=
+nset !important"><tr><td align=3D"left" style=3D"padding-right:5px"><p styl=
+e=3D"Margin:0;font-family:'Open Sans', 'Trebuchet MS';line-height:36px;colo=
+r:#565a5d;font-size:24px">Trip ID:</p>
+</td><td align=3D"left" style=3D"padding-right:15px"><p style=3D"Margin:0;f=
+ont-family:'Open Sans', 'Trebuchet MS';line-height:36px;font-size:24px;colo=
+r:#565a5d">1005768411</p></td><td align=3D"left" class=3D"m-btn-hidden"><sp=
+an class=3D"es-button-border theme-primary-color" style=3D"border-style:sol=
+id;border-color:#0060f0;background:#F0F0F0;border-width:1px;display:inline-=
+block;border-radius:4px;width:auto;background-color:#FFFFFF;mso-border-alt:=
+10px;padding:8px 25px"><a href=3D"https://b11rb8mj.r.us-east-1.awstrack.me/=
+L0/https:%2F%2Fsecure.chase.com%2Fweb%2Fauth%2Fdashboard%23%2Fdashboard%2Ft=
+ravel%2Frouter%2FTRIP_DETAILS%2FaccountId:-%2Fspnr:/2/02000000094cmk8s-8agr=
+dfb6-teal-f901-s867-2qaamjombco0-000000/gQ5pxbuzEG0MX7GiOFBjbsCpTGo=3D439" =
+class=3D"es-button es-button-1663412564671 theme-font-family" target=3D"_bl=
+ank" style=3D"mso-style-priority:100 !important;text-decoration:underline;f=
+ont-family:'Open Sans', 'Trebuchet MS';color:#0060f0;border-radius:4px;font=
+-size:14px;font-weight:bold;display:inline-block;mso-border-alt:10px solid =
+#f5f8fb">See trip</a></span></td></tr></table></td></tr>
+ <tr><td align=3D"center" class=3D"m-display-block es-desktop-hidden" style=
+=3D"display:none"><table cellspacing=3D"0" cellpadding=3D"0" class=3D"unset=
+-width" role=3D"presentation" style=3D"width:unset !important"><tr><td alig=
+n=3D"center" class=3D"m-es-p15b es-m-p25r"><span class=3D"es-button-border =
+theme-primary-color" style=3D"border-style:solid;border-color:#0060f0;backg=
+round:#F0F0F0;border-width:1px;display:inline-block;border-radius:4px;width=
+:auto;background-color:#FFFFFF;mso-border-alt:10px;padding:8px 25px"><a hre=
+f=3D"https://b11rb8mj.r.us-east-1.awstrack.me/L0/https:%2F%2Fsecure.chase.c=
+om%2Fweb%2Fauth%2Fdashboard%23%2Fdashboard%2Ftravel%2Frouter%2FTRIP_DETAILS=
+%2FaccountId:-%2Fspnr:/3/02000000094cmk8s-8agrdfb6-teal-f901-s867-2qaamjomb=
+co0-000000/KQfate_GEgJUEgfvfPuR0fYDbpY=3D439" class=3D"es-button es-button-=
+1663412564671 theme-font-family" target=3D"_blank" style=3D"mso-style-prior=
+ity:100 !important;text-decoration:underline;font-family:'Open Sans', 'Treb=
+uchet MS';color:#0060f0;border-radius:4px;font-size:14px;font-weight:bold;d=
+isplay:inline-block;mso-border-alt:10px solid #f5f8fb">See trip</a></span><=
+/td></tr></table></td></tr>
+ <!--<![endif]--><tr><td align=3D"center" valign=3D"top"><table cellpadding=
+=3D"0" cellspacing=3D"0" class=3D"theme-secondary-color theme-border-color =
+theme-border-radius" style=3D"background-color:#FFFFFF;border-color:#E2E4E5=
+;border-bottom:1px solid #E2E4E5;border-radius:8px;width:520px;border-width=
+:1px;border-style:solid;border-collapse:separate" role=3D"presentation"><tr=
+><td align=3D"left" class=3D"m-es-p16l m-es-p16r" style=3D"padding-bottom:5=
+px;padding-left:24px;padding-top:25px"><p style=3D"Margin:0;font-family:'Op=
+en Sans', 'Trebuchet MS';line-height:21px;font-size:14px">Hi ALEX,</p></td=
+></tr>
+ <tr><td align=3D"left" class=3D"m-es-p16l m-es-p16r" style=3D"padding-top:=
+5px;padding-bottom:5px;padding-left:25px;padding-right:25px"><p style=3D"Ma=
+rgin:0;font-family:'Open Sans', 'Trebuchet MS';line-height:21px;font-size:1=
+4px">Thank you for choosing Chase Travel. Please carefully review your itin=
+erary below to verify all information is correct.</p></td></tr><tr><td alig=
+n=3D"center" class=3D"m-es-p16l m-es-p16r" style=3D"padding-top:10px;paddin=
+g-bottom:10px;padding-left:24px;padding-right:22px;font-size:0"><table bord=
+er=3D"0" width=3D"100%" height=3D"100%" cellpadding=3D"0" cellspacing=3D"0"=
+ role=3D"presentation"><tr><td class=3D"theme-border-color" style=3D"border=
+-color:#E2E4E5;border-bottom:1px solid #E2E4E5;background:unset;height:1px;=
+width:100%;margin:0px"></td></tr></table></td></tr>
+ <tr><td align=3D"left" class=3D"m-es-p16l m-es-p16r" style=3D"padding-top:=
+5px;padding-bottom:5px;padding-left:24px"><p style=3D"Margin:0;font-family:=
+'Open Sans', 'Trebuchet MS';line-height:24px;font-size:16px;font-weight:bol=
+d"><strong>Manage your trip online</strong></p></td></tr><tr><td align=3D"l=
+eft" class=3D"m-es-p16l m-es-p16r" style=3D"padding-top:5px;padding-left:24=
+px;padding-bottom:25px"><p style=3D"Margin:0;font-family:'Open Sans', 'Treb=
+uchet MS';line-height:21px;font-size:14px">Simply sign in and navigate to t=
+he "My Trips" page. From there, you can view your upcoming trips and make c=
+hanges online.</p></td></tr></table></td></tr></table></td></tr></table><ta=
+ble class=3D"es-content-body theme-primary-color theme-template-width" styl=
+e=3D"background-color:#FFFFFF;width:640px;word-break:break-word" cellspacin=
+g=3D"0" cellpadding=3D"0" align=3D"center" role=3D"none"><!----><tr><td ali=
+gn=3D"center" style=3D"padding-top:24px"><table cellpadding=3D"0" cellspaci=
+ng=3D"0" class=3D"theme-card-header-bg-color theme-border-color theme-top-b=
+order-radius theme-card-container-width" style=3D"background-color:#ECEFF1;=
+border-color:#E2E4E5;border-bottom:1px solid #E2E4E5;border-top-left-radius=
+:8px;border-top-right-radius:8px;border-bottom-left-radius:0;border-bottom-=
+right-radius:0;width:520px;border-width:1px;border-style:solid;border-colla=
+pse:separate" role=3D"presentation"><tr><td align=3D"left" class=3D"m-es-p1=
+6l m-es-p16r m-es-16t m-es-p11b" style=3D"padding-left:24px;padding-top:24p=
+x;padding-bottom:19px;padding-right:22px"><table cellpadding=3D"0" cellspac=
+ing=3D"0" width=3D"100%" class=3D"theme-card-header-font-color" role=3D"pre=
+sentation" style=3D"padding-bottom:16px;color:#1A222B"><tr><td align=3D"lef=
+t"><p class=3D"theme-card-header-font-family" style=3D"Margin:0;font-family=
+:Queens, 'Times New Roman' !important;line-height:40px;font-weight:400;font=
+-size:32px">Hotel</p>
+</td><td align=3D"right"><p style=3D"Margin:0;font-family:'Open Sans', 'Tre=
+buchet MS';line-height:27px;font-size:18px"> $318.77  </p></td></tr></table=
+><table cellpadding=3D"0" cellspacing=3D"0" width=3D"100%" class=3D"theme-c=
+ard-header-font-color" role=3D"presentation" style=3D"color:#1A222B"><tr><t=
+d align=3D"left"><p class=3D"theme-font-family-bold" style=3D"Margin:0;font=
+-family:'Open Sans', 'Trebuchet MS';line-height:27px;font-weight:600;font-s=
+ize:18px"> Mon, Jan 12, 2026 - Wed, Jan 14, 2026 </p></td>
+ </tr><tr><td align=3D"left"><p class=3D"theme-font-family-bold" style=3D"M=
+argin:0;font-family:'Open Sans', 'Trebuchet MS';line-height:27px;font-weigh=
+t:600;font-size:18px">  1 guest, 2 nights </p></td></tr></table></td></tr><=
+/table>
+ <table cellpadding=3D"0" cellspacing=3D"0" class=3D"theme-secondary-color =
+theme-border-color theme-bottom-border-radius theme-card-container-width" s=
+tyle=3D"background-color:#FFFFFF;border-color:#E2E4E5;border-bottom:1px sol=
+id #E2E4E5;border-top-left-radius:0;border-top-right-radius:0;border-bottom=
+-left-radius:8px;border-bottom-right-radius:8px;width:520px;border-width:0p=
+x 1px 1px 1px;border-style:solid;border-collapse:separate" role=3D"presenta=
+tion"><tr><td align=3D"left" class=3D"m-es-p16l m-es-p16r m-es-p16b" style=
+=3D"padding-bottom:24px;padding-left:24px;padding-right:22px"><table cellpa=
+dding=3D"0" cellspacing=3D"0" width=3D"100%" role=3D"presentation"><tr><td =
+align=3D"left" class=3D"m-es-p12t" style=3D"padding-top:16px !important"><t=
+able cellpadding=3D"0" cellspacing=3D"0" width=3D"100%" role=3D"presentatio=
+n"><tr><td align=3D"left"><p class=3D"theme-font-family" style=3D"Margin:0;=
+font-family:'Open Sans', 'Trebuchet MS';line-height:20px;font-size:16px;fon=
+t-style:normal;font-weight:700">Hotel confirmation: A842BCB9317-</p>
+</td><td align=3D"right"><p class=3D"theme-font-family-bold" style=3D"Margi=
+n:0;font-family:'Open Sans', 'Trebuchet MS';line-height:21px;font-weight:60=
+0;font-size:14px"></p></td></tr></table></td></tr><tr><td align=3D"center" =
+style=3D"padding-top:16px !important;padding-bottom:16px;font-size:0"><tabl=
+e border=3D"0" width=3D"100%" height=3D"100%" cellpadding=3D"0" cellspacing=
+=3D"0" role=3D"presentation"><tr><td class=3D"theme-border-color" style=3D"=
+border-color:#E2E4E5;border-bottom:1px solid #E2E4E5;background:unset;heigh=
+t:1px;width:100%;margin:0px"></td></tr></table></td></tr><tr><!----><td ali=
+gn=3D"left" style=3D"padding-bottom:8px"><img src=3D"https://images.content=
+stack.io/v3/assets/blta34031bed370a6d3/bltc7e4b86767107213/theedit.png" alt=
+=3D"The Edit logo" style=3D"width:88px;height:32px"></td>
+ <!----><!----></tr><tr><td align=3D"left"><p class=3D"theme-font-family-bo=
+ld" style=3D"Margin:0;font-family:'Open Sans', 'Trebuchet MS';line-height:2=
+7px;font-weight:600;font-size:18px">Mondrian Seoul Itaewon</p></td></tr>
+ <tr><!----><!----><td align=3D"left"><p style=3D"Margin:0;font-family:'Ope=
+n Sans', 'Trebuchet MS';line-height:21px;font-size:14px">Itaewon King, 1 1 =
+King bed</p></td><!----></tr>
+ <tr><td align=3D"left" class=3D"m-es-p16t" style=3D"padding-bottom:16px;pa=
+dding-top:18px"><table cellpadding=3D"0" cellspacing=3D"0" class=3D"unset-w=
+idth" role=3D"presentation" style=3D"width:unset !important"><tr>  <td alig=
+n=3D"left" valign=3D"top" style=3D"padding-right:22px;font-size:0px"><img c=
+lass=3D"adapt-img" src=3D"https://hotel-content-graphics.cnxloyalty.com/fi/=
+FRS/4207008/3c16b838dc2ed96fccd5a69a9383d3c0.jpeg" alt=3D"hotel image " loa=
+ding=3D"lazy" style=3D"display:block;height:89px !important;width:126px !im=
+portant" width=3D"126"></td>
+  <td align=3D"left" valign=3D"top" class=3D"custom-block-m-p10l"><table ce=
+llpadding=3D"0" cellspacing=3D"0" width=3D"100%" role=3D"presentation"><tr>=
+<td align=3D"left"><table cellpadding=3D"0" cellspacing=3D"0" role=3D"prese=
+ntation"><tr><td align=3D"left" class=3D"allocate-full-width" style=3D"padd=
+ing-right:5px"><p class=3D"theme-font-family-bold" style=3D"Margin:0;font-f=
+amily:'Open Sans', 'Trebuchet MS';line-height:21px;font-weight:600;font-siz=
+e:14px">Check-in:</p></td><td align=3D"left" class=3D"allocate-full-width">=
+<p style=3D"Margin:0;font-family:'Open Sans', 'Trebuchet MS';line-height:21=
+px;font-size:14px">Mon, Jan 12, 2026, 03:00 pm</p></td></tr></table></td></=
+tr>
+ <tr><td align=3D"left" style=3D"padding-top:10px"><table cellpadding=3D"0"=
+ cellspacing=3D"0" role=3D"presentation"><tr><td align=3D"left" class=3D"al=
+locate-full-width" style=3D"padding-right:5px"><p class=3D"theme-font-famil=
+y-bold" style=3D"Margin:0;font-family:'Open Sans', 'Trebuchet MS';line-heig=
+ht:21px;font-weight:600;font-size:14px">Check-out:</p></td><td align=3D"lef=
+t" class=3D"allocate-full-width"><p style=3D"Margin:0;font-family:'Open San=
+s', 'Trebuchet MS';line-height:21px;font-size:14px">Wed, Jan 14, 2026, 11:0=
+0 am</p></td></tr></table></td></tr>
+ <tr><td align=3D"left" style=3D"padding-top:10px"><table cellpadding=3D"0"=
+ cellspacing=3D"0" role=3D"presentation"><!----></table></td></tr></table><=
+/td></tr></table></td></tr>
+ <tr><td align=3D"left"><table cellpadding=3D"0" cellspacing=3D"0" class=3D=
+"unset-width" role=3D"presentation" style=3D"width:unset !important"><tr><t=
+d align=3D"left" class=3D"m-es-p21b" style=3D"padding-bottom:16px"><table c=
+ellpadding=3D"0" cellspacing=3D"0" class=3D"unset-width" role=3D"presentati=
+on" style=3D"width:unset !important"><tr><td align=3D"left" valign=3D"middl=
+e" style=3D"padding-right:5px"><img class=3D"adapt-img" src=3D"https://imag=
+es.contentstack.io/v3/assets/blt5da605fde2f7e5ba/blt749a908b18ec5144/63a56d=
+adff40844ffb2c04d8/map.png" alt=3D"location icon" loading=3D"lazy" style=3D=
+"display:block;width:16px !important" width=3D"16"></td>
+ <!----><!----><td align=3D"left"><p class=3D"theme-font-family-bold" style=
+=3D"Margin:0;font-family:'Open Sans', 'Trebuchet MS';line-height:21px;font-=
+weight:600"><a href=3D"https://b11rb8mj.r.us-east-1.awstrack.me/L0/https:%2=
+F%2Fwww.google.com%2Fmaps%2Fsearch%2F%3Fapi=3D1%26query=3D23%252c%2BJangmun=
+-ro%2BYongsan-gu%252c%2BSeoul%2B%2B04392%2BKR/1/02000000094cmk8s-8agrdfb6-t=
+eal-f901-s867-2qaamjombco0-000000/rECRzs0YMTOK_p_SdOGc_imbmWc=3D439" style=
+=3D"text-decoration:underline;color:#0060F0;font-size:14px" class=3D"theme-=
+link-color">23, Jangmun-ro Yongsan-gu, Seoul  04392 KR</a></p></td>
+ <!----></tr></table></td></tr><!-- --><tr><td align=3D"left" style=3D"padd=
+ing-bottom:16px"><table cellpadding=3D"0" cellspacing=3D"0" width=3D"100%" =
+role=3D"presentation"><tr><td align=3D"left"><!----><p style=3D"Margin:0;fo=
+nt-family:'Open Sans', 'Trebuchet MS';line-height:21px;font-size:14px"><spa=
+n class=3D"theme-font-family-bold" style=3D"font-family:'Open Sans', 'Trebu=
+chet MS';font-weight:600">Free cancellation</span> until Sun, Jan 11, 2026 =
+12:00 am (property local time)</p><!----></td></tr></table></td></tr><!----=
+></table></td></tr>
+ <!----><tr><td align=3D"center" style=3D"padding-bottom:14px;font-size:0">=
+<table border=3D"0" width=3D"100%" height=3D"100%" cellpadding=3D"0" cellsp=
+acing=3D"0" role=3D"presentation"><tr><td class=3D"theme-border-color" styl=
+e=3D"border-color:#E2E4E5;border-bottom:1px solid #E2E4E5;background:unset;=
+height:1px;width:100%;margin:0px"></td></tr></table></td></tr>
+ <!----><tr><td align=3D"left"><!----><!----><table cellpadding=3D"0" cells=
+pacing=3D"0" role=3D"presentation"><tr><td align=3D"left" class=3D"allocate=
+-full-width"><p class=3D"theme-font-family-bold" style=3D"Margin:0;font-fam=
+ily:'Open Sans', 'Trebuchet MS';line-height:21px;font-weight:600;font-size:=
+14px">Cardmember Benefits</p></td></tr></table><!----><!----><!----><!---->=
+<!----><!----><!----><!----><!----><!----><!----><!----><table cellpadding=
+=3D"0" cellspacing=3D"0" role=3D"presentation"><!----><tr><!----><td align=
+=3D"left" style=3D"padding-right:10px;padding-top:12px"><img src=3D"https:/=
+/images.contentstack.io/v3/assets/blta34031bed370a6d3/bltd21fe1cf1ecfb25e/b=
+reakfast.png" width=3D"16" alt=3D"cardmember benefit image"></td>
+ <!----><!----><!----><!----><!----><!----><!----><!----><!----><!----><td =
+align=3D"left" style=3D"padding-top:12px"><p style=3D"Margin:0;font-family:=
+'Open Sans', 'Trebuchet MS';line-height:21px;font-size:14px">Daily breakfas=
+t for 2</p></td><!----></tr><!----><tr><!----><!----><td align=3D"left" sty=
+le=3D"padding-right:10px;padding-top:12px"><img src=3D"https://images.conte=
+ntstack.io/v3/assets/blta34031bed370a6d3/blt56ba17ae5294484f/credit.png" wi=
+dth=3D"16" alt=3D"cardmember benefit image"></td><!----><!----><!----><!---=
+-><!----><!----><!----><!----><!----><td align=3D"left" style=3D"padding-to=
+p:12px"><p style=3D"Margin:0;font-family:'Open Sans', 'Trebuchet MS';line-h=
+eight:21px;font-size:14px">$100 property credit; applied once during stay, =
+not valid on room rate, taxes, fees or gratuities</p></td><!----></tr><!---=
+-><tr><!----><!----><!----><!----><!----><!----><!----><!----><td align=3D"=
+left" style=3D"padding-right:10px;padding-top:12px"><img src=3D"https://ima=
+ges.contentstack.io/v3/assets/blta34031bed370a6d3/blt3605ad466d50521a/gift.=
+png" width=3D"16" alt=3D"cardmember benefit image"></td><!----><!----><!---=
+-><td align=3D"left" style=3D"padding-top:12px"><p style=3D"Margin:0;font-f=
+amily:'Open Sans', 'Trebuchet MS';line-height:21px;font-size:14px">Welcome =
+amenity</p></td><!----></tr><!----><tr><!----><!----><!----><td align=3D"le=
+ft" style=3D"padding-right:10px;padding-top:12px"><img src=3D"https://image=
+s.contentstack.io/v3/assets/blta34031bed370a6d3/blt6706da8b9288609b/wifi.pn=
+g" width=3D"16" alt=3D"cardmember benefit image"></td><!----><!----><!---->=
+<!----><!----><!----><!----><!----><td align=3D"left" style=3D"padding-top:=
+12px"><p style=3D"Margin:0;font-family:'Open Sans', 'Trebuchet MS';line-hei=
+ght:21px;font-size:14px">Wi-Fi</p></td><!----></tr><!----><tr><!----><!----=
+><!----><!----><td align=3D"left" style=3D"padding-right:10px;padding-top:1=
+2px"><img src=3D"https://images.contentstack.io/v3/assets/blta34031bed370a6=
+d3/blt6fb7303896ba75f5/upgrade.png" width=3D"16" alt=3D"cardmember benefit =
+image"></td>
+ <!----><!----><!----><!----><!----><!----><!----><td align=3D"left" style=
+=3D"padding-top:12px"><p style=3D"Margin:0;font-family:'Open Sans', 'Trebuc=
+het MS';line-height:21px;font-size:14px">Room upgrade at check-in</p></td><=
+!----></tr><!----><tr><!----><!----><!----><!----><!----><!----><td align=
+=3D"left" style=3D"padding-right:10px;padding-top:12px"><img src=3D"https:/=
+/images.contentstack.io/v3/assets/blta34031bed370a6d3/blt308a361949f4408a/c=
+heckinout.png" width=3D"16" alt=3D"cardmember benefit image"></td><!----><!=
+----><!----><!----><!----><td align=3D"left" style=3D"padding-top:12px"><p =
+style=3D"Margin:0;font-family:'Open Sans', 'Trebuchet MS';line-height:21px;=
+font-size:14px">Early check-in/late check-out</p></td><!----></tr><!----></=
+table></td></tr>
+ <!----><!----><tr><td align=3D"center" style=3D"padding-top:16px !importan=
+t;padding-bottom:16px;font-size:0"><table border=3D"0" width=3D"100%" heigh=
+t=3D"100%" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentation"><tr><t=
+d class=3D"theme-border-color" style=3D"border-color:#E2E4E5;border-bottom:=
+1px solid #E2E4E5;background:unset;height:1px;width:100%;margin:0px"></td><=
+/tr></table></td></tr><!----><!----><!----><!----><!----><!----><!----><!--=
+--><!----><!----><!----><!----><!----><!----><tr><td align=3D"left"><table =
+cellpadding=3D"0" cellspacing=3D"0" class=3D"unset-width" role=3D"presentat=
+ion" style=3D"width:unset !important"><tr><td align=3D"left" style=3D"paddi=
+ng-right:5px"><p class=3D"theme-font-family-bold" style=3D"Margin:0;font-fa=
+mily:'Open Sans', 'Trebuchet MS';line-height:21px;font-weight:600;font-size=
+:14px">Primary guest:</p></td><td align=3D"left"><p style=3D"Margin:0;font-=
+family:'Open Sans', 'Trebuchet MS';line-height:21px;font-size:14px">Christo=
+pher  Smith </p></td></tr></table></td></tr>
+ <tr><td align=3D"center" style=3D"padding-top:14px;padding-bottom:16px;fon=
+t-size:0"><table border=3D"0" width=3D"100%" height=3D"100%" cellpadding=3D=
+"0" cellspacing=3D"0" role=3D"presentation"><tr><td class=3D"theme-border-c=
+olor" style=3D"border-color:#E2E4E5;border-bottom:1px solid #E2E4E5;backgro=
+und:unset;height:1px;width:100%;margin:0px"></td></tr></table></td></tr><tr=
+><!----><!----><!----><td align=3D"left"><table cellpadding=3D"0" cellspaci=
+ng=3D"0" width=3D"100%" role=3D"presentation"><tr><td align=3D"left"><p cla=
+ss=3D"theme-font-family-bold" style=3D"Margin:0;font-family:'Open Sans', 'T=
+rebuchet MS';line-height:21px;font-weight:600;font-size:14px">Important Hot=
+el information</p></td></tr><tr><td align=3D"left" style=3D"padding-top:16p=
+x !important"><ul class=3D"list-section-main-card" style=3D"margin-top:0px;=
+margin-bottom:0px;padding-left:10px;line-height:21px;font-family:'Open Sans=
+', 'Trebuchet MS';font-size:14px;color:#1A2228"> <!---->=20
+<li style=3D"margin-left:0;margin-bottom:14px">Your hotel reservation has b=
+een confirmed and paid for by Chase Travel for the room and tax portion of =
+your stay. You will be required to present your personal credit card upon c=
+heck-in for any incidentals you may incur (parking, room service, etc.).</l=
+i> <!----> <li style=3D"margin-left:0;margin-bottom:14px">For special reque=
+sts (room type, roll away beds, late check out etc.), contact the hotel dir=
+ectly. Please note, that your room is reserved, but your name may not be pr=
+ovided to the hotel until 48 hours prior to your check-in date.</li>=20
+<li style=3D"margin-left:0">Contact Chase Travel immediately should you nee=
+d assistance with your hotel reservation.</li> </ul></td></tr></table></td>=
+<!----></tr></table></td></tr></table></td></tr><!----></table><table class=
+=3D"es-content-body theme-primary-color theme-template-width" style=3D"back=
+ground-color:#FFFFFF;width:640px;word-break:break-word" cellspacing=3D"0" c=
+ellpadding=3D"0" align=3D"center" role=3D"none"><tr><td align=3D"left" styl=
+e=3D"padding-top:24px"><table cellpadding=3D"0" cellspacing=3D"0" width=3D"=
+100%" role=3D"none"><tr><td align=3D"center" valign=3D"top"><table cellpadd=
+ing=3D"0" cellspacing=3D"0" class=3D"theme-card-header-bg-color theme-borde=
+r-color theme-card-header-font-color theme-top-border-radius theme-card-con=
+tainer-width" style=3D"padding:24px;background-color:#ECEFF1;color:#1A222B;=
+border-color:#E2E4E5;border-bottom:1px solid #E2E4E5;border-top-left-radius=
+:8px;border-top-right-radius:8px;border-bottom-left-radius:0;border-bottom-=
+right-radius:0;width:520px;border-width:1px;border-style:solid;border-colla=
+pse:separate" role=3D"presentation"><tr><td align=3D"left"><p class=3D"them=
+e-card-header-font-family" style=3D"Margin:0;font-family:Queens, 'Times New=
+ Roman' !important;line-height:40px;font-weight:400;font-size:32px">Payment=
+ summary </p>
+</td>  </tr></table>
+ <!----><table cellpadding=3D"0" cellspacing=3D"0" class=3D"m-es-p16l m-es-=
+p16r theme-secondary-color theme-border-color theme-card-container-width" s=
+tyle=3D"padding-left:24px;padding-top:16px !important;padding-bottom:16px;p=
+adding-right:22px;background-color:#FFFFFF;border-color:#E2E4E5;border-bott=
+om:1px solid #E2E4E5;width:520px;border-width:0px 1px 1px 1px;border-style:=
+solid;border-collapse:separate;border-radius:0px" role=3D"presentation"><tr=
+><td><!-- --><!-- --><!--       --><!--  --><table cellpadding=3D"0" cellsp=
+acing=3D"0" width=3D"100%" role=3D"presentation"><tr><td align=3D"left" wid=
+th=3D"50%" style=3D"padding-top:5px;padding-bottom:5px"><p style=3D"Margin:=
+0;font-family:'Open Sans', 'Trebuchet MS';line-height:21px;font-size:14px">=
+Mondrian Seoul Itaewon</p></td>
+ <td align=3D"right" style=3D"padding-top:5px;padding-bottom:5px"><p style=
+=3D"Margin:0;font-family:'Open Sans', 'Trebuchet MS';line-height:21px;font-=
+size:14px">     $318.77  </p></td></tr></table>
+ <table cellpadding=3D"0" cellspacing=3D"0" width=3D"100%" role=3D"presenta=
+tion"><tr><td align=3D"center" style=3D"padding-top:5px;padding-bottom:5px;=
+font-size:0"><table border=3D"0" width=3D"100%" height=3D"100%" cellpadding=
+=3D"0" cellspacing=3D"0" role=3D"presentation"><tr><td class=3D"theme-borde=
+r-color" style=3D"border-color:#E2E4E5;border-bottom:1px solid #E2E4E5;back=
+ground:unset;height:1px;width:100%;margin:0px"></td></tr></table></td></tr>=
+</table><!----><!-- --><!--       --><!--  --><!----><!----><!----><!----><=
+!----><!----><!----><table cellpadding=3D"0" cellspacing=3D"0" width=3D"100=
+%" role=3D"presentation"><tr><td align=3D"left" style=3D"padding-top:5px"><=
+p class=3D"theme-font-family-bold" style=3D"Margin:0;font-family:'Open Sans=
+', 'Trebuchet MS';line-height:21px;font-weight:600;font-size:14px">Trip tot=
+al</p></td>
+ <td align=3D"right" style=3D"padding-top:5px"><p class=3D"theme-font-famil=
+y-bold" style=3D"Margin:0;font-family:'Open Sans', 'Trebuchet MS';line-heig=
+ht:21px;font-weight:600;font-size:14px">  $318.77   </p></td></tr><!----></=
+table></td></tr></table>
+ <table cellpadding=3D"0" cellspacing=3D"0" class=3D"m-es-p16l m-es-p16r th=
+eme-border-color theme-secondary-color theme-bottom-border-radius theme-car=
+d-container-width" style=3D"padding-top:10px;padding-bottom:24px;padding-le=
+ft:24px;padding-right:22px;background-color:#FFFFFF;border-color:#E2E4E5;bo=
+rder-bottom:1px solid #E2E4E5;border-top-left-radius:0;border-top-right-rad=
+ius:0;border-bottom-left-radius:8px;border-bottom-right-radius:8px;width:52=
+0px;border-width:0px 1px 1px 1px;border-style:solid;border-collapse:separat=
+e" role=3D"presentation"><tr><td><!----><table cellpadding=3D"0" cellspacin=
+g=3D"0" width=3D"100%" role=3D"presentation"><!----><!--  --><!--  --><!-- =
+ --><!--  --><!-- --><!-- --><!----><!----><!--  --><tr><td align=3D"left" =
+style=3D"padding-top:13px"><table cellpadding=3D"0" cellspacing=3D"0" width=
+=3D"100%" role=3D"presentation"><tr><td align=3D"left"><p class=3D"theme-fo=
+nt-family-bold" style=3D"Margin:0;font-family:'Open Sans', 'Trebuchet MS';l=
+ine-height:21px;font-weight:600;font-size:14px">Billed to card</p></td><td =
+align=3D"right"><p class=3D"theme-font-family-bold" style=3D"Margin:0;font-=
+family:'Open Sans', 'Trebuchet MS';line-height:21px;font-weight:600;font-si=
+ze:14px">$318.77</p></td></tr></table></td></tr>
+ <tr><td align=3D"left"><table cellpadding=3D"0" cellspacing=3D"0" width=3D=
+"100%" role=3D"presentation"><tr><td align=3D"left"><p style=3D"Margin:0;fo=
+nt-family:'Open Sans', 'Trebuchet MS';line-height:18px;font-size:12px">Visa=
+ ending in 6373</p></td></tr></table></td></tr><!--  --><!--  --><!-- --><!=
+-- --><!----><!--  --><!--  --><!-- --><!-- --><!-- --><!-- --></table><!--=
+--><!----><!----><!--  --><table cellpadding=3D"0" cellspacing=3D"0" width=
+=3D"100%" role=3D"presentation"><tr><td align=3D"left" style=3D"padding-top=
+:8px;padding-bottom:8px"><p style=3D"Margin:0;font-family:'Open Sans', 'Tre=
+buchet MS';line-height:18px;font-size:12px;color:#505660">Please note that =
+you will see CL * Chase Travel on your card billing statement for any amoun=
+t of your transaction that is charged to your credit card.</p></td></tr></t=
+able>
+ <!--  --><!--  --><!-- --><!-- --><!----><!----><table cellpadding=3D"0" c=
+ellspacing=3D"0" width=3D"100%" role=3D"presentation"><tr><td align=3D"left=
+" style=3D"padding-top:8px;padding-bottom:8px"><p style=3D"Margin:0;font-fa=
+mily:'Open Sans', 'Trebuchet MS';line-height:18px;font-size:12px;color:#505=
+660">Charges may show the merchant name including the airline, hotel chain,=
+ car rental company and/or travel insurance agency each as (&quot;Travel Su=
+pplier&quot;) on your card billing statement. Remaining balance not charged=
+ by the Travel Supplier will appear on your card billing statement as TRIP =
+CHARGES. If applicable, any fees or redemption-associated charges will also=
+ appear on your card billing statement as TRIP CHARGES.</p></td></tr></tabl=
+e>
+ <!----><!--Code commented for cruise--><!----><!----><!----><!----><!---->=
+<!----></td></tr></table>
+ <!----></td></tr></table></td></tr></table><table class=3D"es-content-body=
+ theme-primary-color theme-template-width" cellspacing=3D"0" cellpadding=3D=
+"0" align=3D"center" role=3D"none" style=3D"background-color:#FFFFFF;width:=
+640px"><tr><td align=3D"center" style=3D"padding-top:24px"><table cellpaddi=
+ng=3D"0" cellspacing=3D"0" class=3D"theme-card-header-bg-color theme-border=
+-color theme-top-border-radius theme-card-container-width" style=3D"backgro=
+und-color:#ECEFF1;border-color:#E2E4E5;border-bottom:1px solid #E2E4E5;bord=
+er-top-left-radius:8px;border-top-right-radius:8px;border-bottom-left-radiu=
+s:0;border-bottom-right-radius:0;width:520px;border-width:1px;border-style:=
+solid;border-collapse:separate" role=3D"none"><tr><td align=3D"left" class=
+=3D"m-es-p16l m-es-p16r m-es-16t m-es-p11b" style=3D"padding-left:24px;padd=
+ing-top:16px !important;padding-right:22px"><table cellpadding=3D"0" cellsp=
+acing=3D"0" width=3D"100%" class=3D"theme-card-header-font-color" role=3D"p=
+resentation" style=3D"padding-bottom:16px;color:#1A222B"><tr><td align=3D"l=
+eft"><p class=3D"theme-card-header-font-family" style=3D"Margin:0;font-fami=
+ly:Queens, 'Times New Roman' !important;line-height:40px;font-weight:400;fo=
+nt-size:32px">Add to your trip</p>
+</td></tr></table></td></tr></table>
+ <table class=3D"theme-secondary-color theme-border-radius theme-card-conta=
+iner-width theme-border-color theme-bottom-border-radius" cellpadding=3D"0"=
+ cellspacing=3D"0" style=3D"padding-bottom:24px;padding-left:24px;padding-r=
+ight:22px;background-color:#FFFFFF;border-color:#E2E4E5;border-bottom:1px s=
+olid #E2E4E5;border-radius:8px;border-top-left-radius:0;border-top-right-ra=
+dius:0;border-bottom-left-radius:8px;border-bottom-right-radius:8px;width:5=
+20px;border-width:1px;border-style:solid;border-collapse:separate" role=3D"=
+none"><tr><td align=3D"left"><table cellpadding=3D"0" cellspacing=3D"0" wid=
+th=3D"100%" role=3D"presentation"><!--  --><!--  --><!--  --><tr><td class=
+=3D"theme-border-color" align=3D"left" style=3D"padding-top:16px !important=
+;padding-bottom:16px;border-color:#E2E4E5;border-bottom:1px solid #E2E4E5">=
+<a href=3D"https://b11rb8mj.r.us-east-1.awstrack.me/L0/https:%2F%2Fsecure.c=
+hase.com%2Fweb%2Fauth%2Fdashboard%23%2Fdashboard%2Ftravel%2Frouter%2FFLIGHT=
+_LANDING%2F/1/02000000094cmk8s-8agrdfb6-teal-f901-s867-2qaamjombco0-000000/=
+cjUhLRoT9E-kxbj2HOVS202cC4Y=3D439" target=3D"_blank" style=3D"text-decorati=
+on:none"><table cellpadding=3D"0" cellspacing=3D"0" role=3D"presentation"><=
+tr><td align=3D"left" class=3D"allocate-full-width" width=3D"25%"><table ce=
+llpadding=3D"0" cellspacing=3D"0" role=3D"presentation"><tr><td align=3D"ce=
+nter" style=3D"font-size:0"><img class=3D"adapt-img" src=3D"https://images.=
+contentstack.io/v3/assets/blta34031bed370a6d3/blt46691f788438cc7a/aircrosss=
+ell.png" alt=3D"Flight" loading=3D"lazy" style=3D"display:block;height:117p=
+x;width:208px;object-fit:cover" height=3D"117"></td></tr></table></td>
+ <td align=3D"left" class=3D"custom-block-m-display-block es-m-p0l m-w-85p =
+m-es-p16t" width=3D"70%" style=3D"padding-left:16px"><table cellpadding=3D"=
+0" cellspacing=3D"0" width=3D"100%" role=3D"presentation"><tr><td align=3D"=
+left"><table role=3D"presentation"><tr><td align=3D"left"><!--[if mso]><p c=
+lass=3D"theme-font-family-bold" style=3D"Margin:0;line-height:20px"><a href=
+=3D"https://b11rb8mj.r.us-east-1.awstrack.me/L0/https:%2F%2Fsecure.chase.co=
+m%2Fweb%2Fauth%2Fdashboard%23%2Fdashboard%2Ftravel%2Frouter%2FFLIGHT_LANDIN=
+G%2F/2/02000000094cmk8s-8agrdfb6-teal-f901-s867-2qaamjombco0-000000/uVgRIVD=
+xPQfZ1It1GajN6PWsaSw=3D439" target=3D"_blank" class=3D"theme-font-family-bo=
+ld theme-font-color" style=3D"font-size:14px;color:#101820;font-weight:600;=
+text-decoration:none;font-family:Open Sans Regular,'Trebuchet MS'">Book a f=
+light</a></p><![endif]--><!--[if !mso]>--><p class=3D"theme-font-family-bol=
+d theme-font-color" style=3D"Margin:0;font-family:'Open Sans', 'Trebuchet M=
+S';line-height:20px;font-weight:600;color:#101820;font-size:14px">Book a fl=
+ight</p><!--
+=09=09=09=09=09=09=09=09=09=09=09=09=09=09=09=09=09=09=09=09=09=09=09=09=09=
+=09<![endif]--></td></tr>
+ <tr><td align=3D"left"><p style=3D"Margin:0;font-family:'Open Sans', 'Treb=
+uchet MS';line-height:14px;color:#101820;font-size:12px" class=3D"theme-fon=
+t-color">Fly anywhere or any time with hundreds of airlines worldwide</p></=
+td></tr></table></td></tr></table></td><td align=3D"left" width=3D"5%" styl=
+e=3D"padding-left:16px"><img src=3D"https://images.contentstack.io/v3/asset=
+s/blta34031bed370a6d3/bltebc788d47bfd33c4/651bae6e2d4fba5daac7f428/right_ch=
+evron.png" width=3D"16" alt=3D"arrow right icon" loading=3D"lazy" style=3D"=
+display:block;width:16px"></td></tr></table></a></td></tr>
+ <!--  --><!--  --><tr><td class=3D"theme-border-color" align=3D"left" styl=
+e=3D"padding-top:16px !important;padding-bottom:16px;border-color:#E2E4E5;b=
+order-bottom:1px solid #E2E4E5"><a href=3D"https://b11rb8mj.r.us-east-1.aws=
+track.me/L0/https:%2F%2Fsecure.chase.com%2Fweb%2Fauth%2Fdashboard%23%2Fdash=
+board%2Ftravel%2Frouter%2FCAR_LANDING%2F/1/02000000094cmk8s-8agrdfb6-teal-f=
+901-s867-2qaamjombco0-000000/tPPZjzSQdw5Mbf6IybjNNbndAdQ=3D439" target=3D"_=
+blank" style=3D"text-decoration:none"><table cellpadding=3D"0" cellspacing=
+=3D"0" width=3D"100%" role=3D"presentation"><tr><td align=3D"left" class=3D=
+"allocate-full-width" width=3D"25%"><table cellpadding=3D"0" cellspacing=3D=
+"0" role=3D"presentation"><tr><td align=3D"center" style=3D"font-size:0"><i=
+mg class=3D"adapt-img" src=3D"https://images.contentstack.io/v3/assets/blta=
+34031bed370a6d3/bltbc79a8dc58b6d90a/carcrosssell.png" alt=3D"Car" loading=
+=3D"lazy" style=3D"display:block;height:117px;width:208px;object-fit:cover"=
+ height=3D"117"></td></tr></table></td>
+ <td align=3D"left" class=3D"custom-block-m-display-block es-m-p0l m-w-85p =
+m-es-p16t" width=3D"75%" style=3D"padding-left:16px"><table cellpadding=3D"=
+0" cellspacing=3D"0" width=3D"100%" role=3D"presentation"><tr><td align=3D"=
+left"><table role=3D"presentation"><tr><td align=3D"left"><!--[if mso]><p c=
+lass=3D"theme-font-family-bold" style=3D"Margin:0;line-height:20px"><a href=
+=3D"https://b11rb8mj.r.us-east-1.awstrack.me/L0/https:%2F%2Fsecure.chase.co=
+m%2Fweb%2Fauth%2Fdashboard%23%2Fdashboard%2Ftravel%2Frouter%2FCAR_LANDING%2=
+F/2/02000000094cmk8s-8agrdfb6-teal-f901-s867-2qaamjombco0-000000/1RKl30AuH6=
+xxgyXgMsKs4gT5_kM=3D439" target=3D"_blank" class=3D"theme-font-family-bold =
+theme-font-color" style=3D"font-size:14px;color:#101820;font-weight:600;tex=
+t-decoration:none;font-family:Open Sans Regular,'Trebuchet MS'">Book a car<=
+/a></p><![endif]--><!--[if !mso]>--><p class=3D"theme-font-family-bold them=
+e-font-color" style=3D"Margin:0;font-family:'Open Sans', 'Trebuchet MS';lin=
+e-height:20px;font-weight:600;color:#101820;font-size:14px">Book a car</p><=
+!--
+=09=09=09=09=09=09=09=09=09=09=09=09=09=09=09=09=09=09=09=09=09=09=09=09=09=
+=09=09=09=09=09<![endif]--></td></tr>
+ <tr><td align=3D"left"><p class=3D"theme-font-color" style=3D"Margin:0;fon=
+t-family:'Open Sans', 'Trebuchet MS';line-height:14px;color:#101820;font-si=
+ze:12px">Compare options from major car rental companies</p></td></tr></tab=
+le></td></tr></table></td><td align=3D"left" width=3D"5%" style=3D"padding-=
+left:16px"><img src=3D"https://images.contentstack.io/v3/assets/blta34031be=
+d370a6d3/bltebc788d47bfd33c4/651bae6e2d4fba5daac7f428/right_chevron.png" wi=
+dth=3D"16" alt=3D"arrow right icon" loading=3D"lazy" style=3D"display:block=
+;width:16px"></td></tr></table></a></td></tr>
+ <!--  --><!--  --><tr><td align=3D"left" style=3D"padding-top:16px !import=
+ant"><a href=3D"https://b11rb8mj.r.us-east-1.awstrack.me/L0/https:%2F%2Fsec=
+ure.chase.com%2Fweb%2Fauth%2Fdashboard%23%2Fdashboard%2Ftravel%2Frouter%2FA=
+CTIVITY_LANDING%2F/1/02000000094cmk8s-8agrdfb6-teal-f901-s867-2qaamjombco0-=
+000000/S6rAHbZZuVmACR23bdW-w7Y_b1Y=3D439" target=3D"_blank" style=3D"text-d=
+ecoration:none"><table cellpadding=3D"0" cellspacing=3D"0" width=3D"100%" r=
+ole=3D"presentation"><tr><td align=3D"left" class=3D"allocate-full-width" w=
+idth=3D"25%"><table cellpadding=3D"0" cellspacing=3D"0" role=3D"presentatio=
+n"><tr><td align=3D"center" style=3D"font-size:0"><img class=3D"adapt-img" =
+src=3D"https://images.contentstack.io/v3/assets/blta34031bed370a6d3/blt8101=
+07b1c1288c8e/activitycrosssell.png" alt=3D"Activity" loading=3D"lazy" style=
+=3D"display:block;height:117px;width:208px;object-fit:cover" height=3D"117"=
+></td></tr></table></td>
+ <td align=3D"left" class=3D"custom-block-m-display-block es-m-p0l m-w-85p =
+m-es-p16t" width=3D"75%" style=3D"padding-left:16px"><table cellpadding=3D"=
+0" cellspacing=3D"0" width=3D"100%" role=3D"presentation"><tr><td align=3D"=
+left"><table role=3D"presentation"><tr><td align=3D"left"><!--[if mso]><p c=
+lass=3D"theme-font-family-bold" style=3D"Margin:0;line-height:20px"><a href=
+=3D"https://b11rb8mj.r.us-east-1.awstrack.me/L0/https:%2F%2Fsecure.chase.co=
+m%2Fweb%2Fauth%2Fdashboard%23%2Fdashboard%2Ftravel%2Frouter%2FACTIVITY_LAND=
+ING%2F/2/02000000094cmk8s-8agrdfb6-teal-f901-s867-2qaamjombco0-000000/3Qj9d=
+hdtM0BU4B56NZGH_2FTzZI=3D439" target=3D"_blank" class=3D"theme-font-family-=
+bold theme-font-color" style=3D"font-size:14px;color:#101820;font-weight:60=
+0;text-decoration:none;font-family:Open Sans Regular,'Trebuchet MS'">Book a=
+n activity</a></p><![endif]--><!--[if !mso]>--><p class=3D"theme-font-famil=
+y-bold theme-font-color" style=3D"Margin:0;font-family:'Open Sans', 'Trebuc=
+het MS';line-height:20px;font-weight:600;color:#101820;font-size:14px">Book=
+ an activity</p>
+ <!--
+=09=09=09=09=09=09=09=09=09=09=09=09=09=09=09=09=09=09=09=09=09=09=09=09=09=
+=09=09=09=09=09=09=09<![endif]--></td></tr><tr><td align=3D"left"><p class=
+=3D"theme-font-color" style=3D"Margin:0;font-family:'Open Sans', 'Trebuchet=
+ MS';line-height:14px;color:#101820;font-size:12px">Find activities, attrac=
+tions or tours to enhance your stay</p></td></tr></table></td></tr></table>=
+</td><td align=3D"left" width=3D"5%" style=3D"padding-left:16px"><img src=
+=3D"https://images.contentstack.io/v3/assets/blta34031bed370a6d3/bltebc788d=
+47bfd33c4/651bae6e2d4fba5daac7f428/right_chevron.png" width=3D"16" alt=3D"a=
+rrow right icon" loading=3D"lazy" style=3D"display:block;width:16px"></td><=
+/tr></table></a></td></tr><!--  --></table></td></tr></table></td></tr></ta=
+ble><table class=3D"es-content-body theme-primary-color theme-template-widt=
+h" style=3D"background-color:#FFFFFF;width:640px;word-break:break-word" cel=
+lspacing=3D"0" cellpadding=3D"0" align=3D"center" role=3D"none"><tr><td ali=
+gn=3D"center" valign=3D"top" style=3D"padding-top:24px"><table cellpadding=
+=3D"0" cellspacing=3D"0" class=3D"theme-secondary-color theme-border-color =
+theme-border-radius theme-card-container-width" style=3D"background-color:#=
+FFFFFF;border-color:#E2E4E5;border-bottom:1px solid #E2E4E5;border-radius:8=
+px;width:520px;border-width:1px;border-style:solid;border-collapse:separate=
+" role=3D"presentation"><tr><td align=3D"left"><table cellpadding=3D"0" cel=
+lspacing=3D"0" width=3D"100%" role=3D"presentation"><tr><!--[if mso]><td al=
+ign=3D"left" style=3D"padding: 18px 24px 15px 24px" class=3D"esd-container-=
+frame"><![endif]--><!--[if !mso]>--><td align=3D"left" style=3D"padding-bot=
+tom:24px;padding-left:24px;padding-top:18px;padding-right:22px"><!--<![endi=
+f]--><table cellpadding=3D"0" cellspacing=3D"0" width=3D"100%" role=3D"pres=
+entation"><tr><td align=3D"left"><p class=3D"theme-font-family-bold" style=
+=3D"Margin:0;font-family:'Open Sans', 'Trebuchet MS';line-height:27px;font-=
+weight:600;font-size:18px">Rules, policies, and cancellations</p>
+</td></tr></table>
+ <!--         --><table cellpadding=3D"0" cellspacing=3D"0" width=3D"100%" =
+role=3D"presentation"><tr><td align=3D"left" style=3D"padding-top:16px !imp=
+ortant"><table cellpadding=3D"0" cellspacing=3D"0" width=3D"100%" role=3D"p=
+resentation"><tr><td align=3D"left"><p class=3D"theme-font-family-bold" sty=
+le=3D"Margin:0;font-family:'Open Sans', 'Trebuchet MS';line-height:24px;fon=
+t-weight:600;font-size:16px">Mondrian Seoul Itaewon</p></td></tr><tr><td al=
+ign=3D"left"><p style=3D"Margin:0;font-family:'Open Sans', 'Trebuchet MS';l=
+ine-height:21px;font-size:14px">Mon, Jan 12, 2026 - Wed, Jan 14, 2026</p></=
+td></tr>
+ <tr><td align=3D"left" style=3D"padding-top:8px"><ol class=3D"list-section=
+-rpc" style=3D"padding-left:10px;font-family:'Open Sans', 'Trebuchet MS';li=
+ne-height:18px;font-size:12px;color:#505660;margin-bottom:0;margin-top:0;pa=
+dding-bottom:0"> <!----> <li class=3D"customized-serial-points" style=3D"ma=
+rgin-left:0"> <!---->NO CANCELLATION CHARGE APPLIES PRIOR TO 18:00  LOCAL T=
+IME, UP,TO 1 DAY PRIOR TO ARRIVAL. BEYOND THAT TIME, THE FIRST NIGHT,WILL B=
+E CHARGED.</li> <!----> <li class=3D"customized-serial-points" style=3D"mar=
+gin-left:0"> <!---->
+Year Built - 2020           Year Remodeled - 2020
+
+Additional Property Description -
+  Mondrian Seoul Itaewon is an immersive lifestyle destination,
+  fueled by bold, captivating design and an expressive, playful
+  mindset.
+</li> <!----> <li class=3D"customized-serial-points" style=3D"margin-left:0=
+"> <!---->
+Restaurants -
+
+  Restaurant - CLEO
+  Type - All purpose
+  Cuisine - Mediterranean
+  Restaurant Description =E2=80=93
+    Inspired by the diverse cultures of the Mediterranean, Cleo
+    restaurant offers a warm, social setting to enjoy the very
+    best of international cuisine in the 5-star Mondrian Seoul
+    Itaewon Hotel.
+
+  Bar - PRIVILEGE BAR
+  Type - All purpose
+  Cuisine - International
+  Restaurant Description =E2=80=93
+    Privilege bar is well-stocked with a selection of some of
+    the finest single malt whiskeys, as well as a wide variety
+    of international wines by the glass.
+
+  Bar - BLIND SPOT
+  Type - All purpose
+  Cuisine - International
+  Restaurant Description =E2=80=93
+    Blind Spot is a great place to relax and enjoy your
+    favorite drink in Itaewon, whether it is a classic
+    cocktail, an afternoon tea, or anything in between.
+
+  Bar - AlTITUDE POOL & LOUNGE
+  Type - All purpose
+  Cuisine - International
+  Restaurant Description =E2=80=93
+    Altitude pool & lounge is the perfect place to relax and
+    spend the day simply chilling out. Grab a cocktail and
+    listen to chill-out tracks while watching the sun set over
+    Seoul.
+
+  Bar - RUMPUS ROOM
+  Type - All purpose
+  Cuisine - International
+  Restaurant Description =E2=80=93
+    Rumpus Room specializes in wines, ranging from the classics
+    that everyone knows to the premiums.
+</li> <!----> <li class=3D"customized-serial-points" style=3D"margin-left:0=
+"> <!---->
+On-Site Facilities Description -
+  Parking
+
+On-Site Facilities -
+  ATM/Cash machine              Accessible facilities
+  Adjoining rooms               Ballroom
+  Elevators                     Heated pool
+  Indoor parking                Indoor pool
+  Jacuzzi                       Meeting rooms
+  Outdoor pool                  Parking
+  Photocopy center              Pool
+  Restaurant                    Sauna
+  Valet parking                 Wireless internet connection i
+
+Meeting and Convention Facilities -
+
+  Total Nbr of Meeting Rooms - 10
+  Maximum Seating Capacity of Largest Room  - 800
+  Maximum Seating Capacity of Smallest Room - 12
+  Area of Largest Room  - 723=20
+  Area of Smallest Room - 18=20
+
+  Meeting Room Size and Seating Format Options -
+   Meeting Room Name - GRAND BALLROOM 1
+    Area: 533.00 M    Banquet - 350                Classroom - 237
+    Open square - 600            Reception - 600
+
+   Meeting Room Name - GRAND BALLROOM 1+2
+    Area: 723.00 M    Banquet - 440                Classroom - 309
+
+   Meeting Room Name - BOARD ROOM
+    Area: 18.00 M    Boardroom - 10               Conference  - 12
+
+   Meeting Room Name - STUDIO 1
+    Area: 43.00 M    Banquet - 20                 Boardroom - 18
+    Classroom - 24               Conference  - 50
+    U Shape - 15                =20
+
+   Meeting Room Name - STUDIO 1+2
+    Area: 86.00 M    Banquet - 40                 Boardroom - 36
+    Classroom - 54               Conference  - 110
+    U Shape - 39                =20
+
+   Meeting Room Name - STUDIO 2
+    Area: 43.00 M    Banquet - 20                 Boardroom - 18
+    Classroom - 24               Conference  - 50
+    U Shape - 15                =20
+</li> <!----> <li class=3D"customized-serial-points" style=3D"margin-left:0=
+"> <!---->
+On-Site Recreation -
+  Golf                          Health club
+
+</li> <!----> <li class=3D"customized-serial-points" style=3D"margin-left:0=
+"> <!---->
+On-Site Services -
+  24-hour front desk            Bell staff/porter
+  Concierge desk                Dry cleaning
+  Multilingual staff            Room service
+
+Business Services -
+  Audio visual equipment        Business center
+  Copier                        Meeting facilities
+  Meeting/board rooms           Overhead projector
+
+</li> <!----> <li class=3D"customized-serial-points" style=3D"margin-left:0=
+"> <!---->
+        Attractions -=20
+  YONGSAN STATION              4.00 KM N
+  NOKSAPYUNG STATION           3.00 KM NW
+  ITAEWON STATION              1.00 KM N
+  SETEC                        10.00 KM NW
+  MND CONVENTION               1.00 KM E
+  KOCONEX                      8.00 KM N
+  KINTEX                       29.00 KM E
+  JANGCHUNG ARENA              4.00 KM S
+  DDP                          5.00 KM SW
+  COEX                         10.00 KM NW
+  CHUNGMU ARTS CENTER          5.00 KM SW
+  SEOUL                        0.00 KM NW
+  Other                        0.00 KM
+  Other                        0.00 KM
+</li> <!----> <li class=3D"customized-serial-points" style=3D"margin-left:0=
+"> <!---->
+Primary Airport -=20
+  ICN - ICN - 63.00 KM W
+
+</li> <!----> <li class=3D"customized-serial-points" style=3D"margin-left:0=
+"> <!---->Children Stay Free
+   Accommodation is free for 2 children under 12 years sharing
+   parents room, extra charge for breakfast.
+Property Offers Commission for Some Rates
+Property Participates in Centralized Commission Processing
+   WPS
+Additional Commission Information
+   Not all rates commissionable. Check rate plan details for
+   rate commission information.
+</li> <!----> <li class=3D"customized-serial-points" style=3D"margin-left:0=
+"> <!---->
+Safety and Security Features =E2=80=93
+  Sprinklers in guest rooms
+</li> <!----> <li class=3D"customized-serial-points" style=3D"margin-left:0=
+"> <!---->
+Transportation from Primary Airport ICN -
+  Shuttle
+</li> <!----> </ol></td></tr></table></td></tr></table>
+ <!--              --></td></tr></table></td></tr></table></td></tr></table=
+><table cellpadding=3D"0" cellspacing=3D"0" class=3D"es-content-body theme-=
+primary-color theme-template-width" style=3D"background-color:#FFFFFF;width=
+:640px;word-break:break-word" align=3D"center" role=3D"none"><tr><td align=
+=3D"left"><table cellpadding=3D"0" cellspacing=3D"0" width=3D"100%" role=3D=
+"none"><tr><td align=3D"center" valign=3D"top" style=3D"padding-bottom:24px=
+;padding-top:24px"><table cellpadding=3D"0" cellspacing=3D"0" class=3D"them=
+e-border-color theme-border-radius theme-card-container-width theme-seconda=
+ry-color" style=3D"background-color:#31373d;border-color:#E2E4E5;border-bot=
+tom:1px solid #E2E4E5;border-radius:8px;width:520px;border-width:1px;border=
+-style:solid;border-collapse:separate" bgcolor=3D"#31373d" role=3D"presenta=
+tion"><tr><td align=3D"center" valign=3D"top" style=3D"padding:24px"><table=
+ cellpadding=3D"0" cellspacing=3D"0" width=3D"100%" role=3D"presentation"><=
+tr><td align=3D"center" contenteditable=3D"true" style=3D"font-size:0"><img=
+ alt=3D""></td>
+ </tr><tr><td align=3D"left" style=3D"font-size:0"><img alt=3D"Chase Travel=
+ logo" class=3D"adapt-img img-m-w-140 img-w-180" loading=3D"lazy" src=3D"ht=
+tps://images.contentstack.io/v3/assets/blta34031bed370a6d3/bltd692f8e7b72d7=
+905/661cc1215ca8d2829fcc6eca/Chase-Travel-Logo-White-Questions.png" style=
+=3D"width:180px !important;display:block;font-size:12px" title=3D"Chase Tra=
+vel logo" width=3D"180"></td></tr><tr><td align=3D"left" style=3D"padding-t=
+op:20px"><p style=3D"Margin:0;font-family:'Open Sans', 'Trebuchet MS';line-=
+height:24px;font-weight:600;font-size:16px;color:#fff" class=3D"theme-font-=
+family-bold">Questions?</p></td></tr>
+ <tr><td align=3D"left" style=3D"padding-top:8px"><p style=3D"Margin:0;font=
+-family:'Open Sans', 'Trebuchet MS';line-height:21px;font-size:14px;color:#=
+fff">If you need more immediate assistance, call a Chase Travel Specialist =
+at <a target=3D"_blank" style=3D"text-decoration:underline;font-size:14px;c=
+olor:#fff" href=3D"http://b11rb8mj.r.us-east-1.awstrack.me/L0/tel:1-855-234=
+-2542/1/02000000094cmk8s-8agrdfb6-teal-f901-s867-2qaamjombco0-000000/iOGG5g=
+T9WJ3G96PvVkRWVsa788U=3D439">1-855-234-2542</a> or<a target=3D"_blank" styl=
+e=3D"text-decoration:underline;font-size:14px;color:#fff" href=3D"http://b1=
+1rb8mj.r.us-east-1.awstrack.me/L0/tel:%2B1-504-324-2345/1/02000000094cmk8s-=
+8agrdfb6-teal-f901-s867-2qaamjombco0-000000/25TYi01TzitoqqdRJKcBfiUNYow=3D4=
+39">&nbsp;+1-504-324-2345</a> (international number, charges may apply) and=
+ have your <strong>Trip ID 1005768411</strong> ready.</p></td></tr>
+ <tr><td align=3D"left" style=3D"padding-top:16px !important"><p style=3D"M=
+argin:0;font-family:'Open Sans', 'Trebuchet MS';line-height:20px;font-size:=
+14px;color:#fff">Si tiene alguna pregunta o necesita ayuda para traducirla,=
+ comun=C3=ADquese con nosotros llamando al <a target=3D"_blank" style=3D"te=
+xt-decoration:underline;font-size:14px;line-height:20px;color:#fff" href=3D=
+"http://b11rb8mj.r.us-east-1.awstrack.me/L0/tel:1-855-234-2542/2/0200000009=
+4cmk8s-8agrdfb6-teal-f901-s867-2qaamjombco0-000000/SoMHV1kzvM6JzFa_trmUG7Xu=
+7xw=3D439">1-855-234-2542</a>.</p></td></tr><tr><td align=3D"left" style=3D=
+"padding-top:20px"><p style=3D"Margin:0;font-family:'Open Sans', 'Trebuchet=
+ MS';line-height:24px;font-weight:600;font-size:16px;color:#fff" class=3D"t=
+heme-font-family-bold">Email security information</p></td></tr><tr><td alig=
+n=3D"left" style=3D"padding-top:16px !important"><p style=3D"Margin:0;font-=
+family:'Open Sans', 'Trebuchet MS';line-height:20px;font-size:14px;color:#f=
+ff">Email intended for: ALEX SMITH</p>
+<p style=3D"Margin:0;font-family:'Open Sans', 'Trebuchet MS';line-height:20=
+px;font-size:14px;color:#fff"><br></p><p style=3D"Margin:0;font-family:'Ope=
+n Sans', 'Trebuchet MS';line-height:20px;font-size:14px;color:#fff">If you =
+have concerns about the authenticity of this message, please visit <a targe=
+t=3D"_blank" style=3D"text-decoration:underline;font-size:14px;line-height:=
+20px;color:#fff" href=3D"https://b11rb8mj.r.us-east-1.awstrack.me/L0/https:=
+%2F%2Fchase.com%2Fcustomerservice/1/02000000094cmk8s-8agrdfb6-teal-f901-s86=
+7-2qaamjombco0-000000/yTiXQf1qDePSobMp6VSjRIYK9SQ=3D439">chase.com/Customer=
+Service</a> for options on how to contact us.</p></td></tr><tr><td align=3D=
+"left" style=3D"padding-top:20px"><p style=3D"Margin:0;font-family:'Open Sa=
+ns', 'Trebuchet MS';line-height:24px;font-weight:600;font-size:16px;color:#=
+fff" class=3D"theme-font-family-bold">Terms &amp; conditions</p></td></tr>
+ <!----><tr><td align=3D"left" style=3D"padding-top:16px !important"><p sty=
+le=3D"Margin:0;font-family:'Open Sans', 'Trebuchet MS';line-height:20px;fon=
+t-size:14px;color:#fff">The Edit program benefits are available exclusively=
+ on select Chase credit cards. To receive benefits, reservations must be ma=
+de for =E2=80=9CThe Edit=E2=80=9D properties through Chase Travel. Benefits=
+ are per room and based on double occupancy. Benefits may be subject to ava=
+ilability at check-in and are not redeemable for cash. Benefits may not be =
+combined with other offers, including tour operator or wholesaler rates and=
+ packages. Complimentary Wi-Fi benefit provided, with the exception of loca=
+tions where Wi-Fi is already complimentary or not available. Program benefi=
+ts and participating properties may change without notice. Visit <a target=
+=3D"_blank" href=3D"http://b11rb8mj.r.us-east-1.awstrack.me/L0/http:%2F%2Fw=
+ww.theeditbychase.com/1/02000000094cmk8s-8agrdfb6-teal-f901-s867-2qaamjombc=
+o0-000000/H9ZrU9yv59urUry9ppoIxW5Cys4=3D439" style=3D"text-decoration:none;=
+font-size:14px;line-height:20px;color:#ffffff">www.theeditbychase.com</a> t=
+o learn more, other terms may apply.</p>
+</td></tr><!----><tr><td align=3D"left" style=3D"padding-top:16px !importan=
+t"><p style=3D"Margin:0;font-family:'Open Sans', 'Trebuchet MS';line-height=
+:20px;font-size:14px;color:#fff">Third-party merchants: The listed merchant=
+(s) are in no way affiliated with Chase, nor are the listed merchant(s) con=
+sidered sponsors or co-sponsors of this program. All trademarks are the pro=
+perty of their respective owner(s).</p></td></tr><tr><td align=3D"left" sty=
+le=3D"padding-top:20px"><p style=3D"Margin:0;font-family:'Open Sans', 'Treb=
+uchet MS';line-height:24px;font-weight:600;font-size:16px;color:#fff" class=
+=3D"theme-font-family-bold">Seller of travel</p></td></tr>
+ <tr><td align=3D"left" style=3D"padding-top:16px !important"><p style=3D"M=
+argin:0;font-family:'Open Sans', 'Trebuchet MS';line-height:20px;font-size:=
+14px;color:#fff">Loyalty Travel Agency LLC (=E2=80=9CLTA=E2=80=9D) is an af=
+filiate of cxLoyalty, Inc., acting only as agent for travel service supplie=
+rs, makes the travel arrangements for you on behalf of Chase Travel and com=
+plies with the laws in the states that require registration in order for an=
+ agency to sell Chase Travel.</p></td></tr><tr><td align=3D"left" style=3D"=
+padding-top:16px !important"><p style=3D"Margin:0;font-family:'Open Sans', =
+'Trebuchet MS';line-height:20px;font-size:14px;color:#fff">These states and=
+ LTA=E2=80=99s registration number in such states are:</p><ul class=3D"them=
+e-font-family" style=3D"font-family:'Open Sans', 'Trebuchet MS';Margin:0;pa=
+dding-left:22px"> <li style=3D"margin-left:0;font-size:14px;line-height:20p=
+x;color:#fff;Margin:0">California* 2146860-50</li>=20
+<li style=3D"margin-left:0;font-size:14px;line-height:20px;color:#fff;Margi=
+n:0">Florida ST38239</li> <li style=3D"margin-left:0;font-size:14px;line-he=
+ight:20px;color:#fff;Margin:0">Hawaii TAR-6750</li> <li style=3D"margin-lef=
+t:0;font-size:14px;line-height:20px;color:#fff;Margin:0">Iowa 987</li> <li =
+style=3D"margin-left:0;font-size:14px;line-height:20px;color:#fff;Margin:0"=
+>Washington 602 868 200</li> </ul></td></tr><tr><td align=3D"left" style=3D=
+"padding-top:16px !important"><p style=3D"Margin:0;font-family:'Open Sans',=
+ 'Trebuchet MS';line-height:20px;font-size:14px;color:#fff">cxLoyalty</p><p=
+ style=3D"Margin:0;font-family:'Open Sans', 'Trebuchet MS';line-height:20px=
+;font-size:14px;color:#fff">77 N. Water Street</p><p style=3D"Margin:0;font=
+-family:'Open Sans', 'Trebuchet MS';line-height:20px;font-size:14px;color:#=
+fff">Norwalk, CT 06853</p></td></tr>
+ <tr><td align=3D"left" style=3D"padding-top:16px !important"><p style=3D"M=
+argin:0;font-family:'Open Sans', 'Trebuchet MS';line-height:20px;font-size:=
+14px;color:#fff">Registration as a seller of travel does not constitute app=
+roval by the State of California. LTA is not a participant in the Californi=
+a Travel Consumer Restitution Fund.</p></td></tr>
+ <tr><td align=3D"left" style=3D"padding-top:16px !important"><p style=3D"M=
+argin:0;font-family:'Open Sans', 'Trebuchet MS';line-height:20px;font-size:=
+14px;color:#fff">For residents in Washington (state): Upon cancellation of =
+the transportation through no fault of the passenger, all sums paid to the =
+seller of travel for services not performed in accordance with the contract=
+ between the seller of travel and the passenger will be, unless the passeng=
+er otherwise advises the travel promoter in writing, promptly refunded by t=
+he seller of travel to the passenger or the party who contracted on behalf =
+of the passenger. Cancellation and change penalties apply to these arrangem=
+ents. Details will be provided upon request.</p></td></tr><tr><td align=3D"=
+left" style=3D"padding-top:20px"><p style=3D"Margin:0;font-family:'Open San=
+s', 'Trebuchet MS';line-height:24px;font-weight:600;font-size:16px;color:#f=
+ff" class=3D"theme-font-family-bold">About this message</p>
+</td></tr><tr><td align=3D"left" style=3D"padding-top:16px !important"><p s=
+tyle=3D"Margin:0;font-family:'Open Sans', 'Trebuchet MS';line-height:20px;f=
+ont-size:14px;color:#fff">You received this email to give you updates and i=
+nformation about your Chase relationship.</p></td></tr><tr><td align=3D"lef=
+t" style=3D"padding-top:16px !important"><p style=3D"Margin:0;font-family:'=
+Open Sans', 'Trebuchet MS';line-height:20px;font-size:14px;color:#fff">This=
+ email was sent from an unmonitored mailbox. Go to <a class=3D"theme-link-c=
+olor" href=3D"https://b11rb8mj.r.us-east-1.awstrack.me/L0/https:%2F%2Fchase=
+.com%2Fcustomerservice/2/02000000094cmk8s-8agrdfb6-teal-f901-s867-2qaamjomb=
+co0-000000/Cu0-cn3VXU3Aj6ISgvckgShLwqY=3D439" style=3D"text-decoration:unde=
+rline;color:#fff" target=3D"_blank">chase.com/CustomerService</a> for optio=
+ns about how to contact us.</p></td></tr>
+ <tr><td align=3D"left" style=3D"padding-top:16px !important"><p style=3D"M=
+argin:0;font-family:'Open Sans', 'Trebuchet MS';line-height:20px;font-size:=
+14px;color:#fff">Your privacy is important to us. See our online <a class=
+=3D"theme-link-color" href=3D"https://b11rb8mj.r.us-east-1.awstrack.me/L0/h=
+ttps:%2F%2Fwww.chase.com%2Fdigital%2Fresources%2Fprivacy-security/1/0200000=
+0094cmk8s-8agrdfb6-teal-f901-s867-2qaamjombco0-000000/MvKa_qNVIwhhLTji4rQVy=
+i3x8ds=3D439" style=3D"text-decoration:underline;color:#fff" target=3D"_bla=
+nk">Security Center</a> to learn how to protect your information.</p></td><=
+/tr><tr><td align=3D"left" style=3D"padding-bottom:24px;padding-top:16px !i=
+mportant"><p style=3D"Margin:0;font-family:'Open Sans', 'Trebuchet MS';line=
+-height:20px;font-size:14px;color:#fff">Chase Privacy Operations, P.O. Box =
+734007, Dallas, TX 75373-4007.</p><p style=3D"Margin:0;font-family:'Open Sa=
+ns', 'Trebuchet MS';line-height:20px;font-size:14px;color:#fff"><br></p><p =
+style=3D"Margin:0;font-family:'Open Sans', 'Trebuchet MS';line-height:20px;=
+font-size:14px;color:#fff">JPMorgan Chase Bank, N.A. Member FDIC</p>
+<p style=3D"Margin:0;font-family:'Open Sans', 'Trebuchet MS';line-height:20=
+px;font-size:14px;color:#fff"><br></p><p style=3D"Margin:0;font-family:'Ope=
+n Sans', 'Trebuchet MS';line-height:20px;font-size:14px;color:#fff">=C2=A9 =
+2025 JPMorgan Chase &amp; Co.</p></td></tr></table></td></tr></table></td><=
+/tr></table></td></tr></table></table></td></tr></table></td></tr></table><=
+/div><img alt=3D"" src=3D"https://b11rb8mj.r.us-east-1.awstrack.me/I0/02000=
+000094cmk8s-8agrdfb6-teal-f901-s867-2qaamjombco0-000000/E4Ay7X51QzYaw_MpzUk=
+G5NSQFT4=3D439" style=3D"display: none; width: 1px; height: 1px;">
+</body></html>
