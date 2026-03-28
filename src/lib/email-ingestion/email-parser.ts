@@ -43,6 +43,7 @@ ${chainSection}Return ONLY valid JSON with these fields (no explanation, no mark
   "hotelChain": string | null,   // e.g. "Hyatt", "Marriott", "Hilton"
   "subBrand": string | null,     // e.g. "Hyatt Place", "Courtyard by Marriott", "Hampton Inn"
   "accommodationType": "hotel" | "apartment",  // "apartment" for Airbnb, short-term rentals, serviced apartments; "hotel" otherwise
+  "otaAgencyName": string | null,  // OTA agency if booked through one: "AMEX FHR" (Amex Fine Hotels + Resorts), "AMEX THC" (Amex The Hotel Collection), "Chase The Edit", "Airbnb", "Booking.com"; null for direct hotel bookings
   "currency": string | null,     // 3-letter code e.g. "USD", "SGD"
   "nightlyRates": [{ "amount": number }] | null,  // per-night amounts when no pretax total is shown
   "pretaxCost": number | null,   // pretax total if shown directly; null if returning nightlyRates

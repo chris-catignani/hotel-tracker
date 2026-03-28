@@ -66,6 +66,13 @@ export async function ingestBookingFromEmail(
     resolved: subBrand?.name ?? null,
   });
 
+  // Resolve OTA agency
+  const otaAgency = parsed.otaAgencyName
+    ? await prisma.otaAgency.findFirst({
+        where: { name: { equals: parsed.otaAgencyName, mode: "insensitive" } },
+      })
+    : null;
+
   // Resolve property
   const propertyId = await findOrCreateProperty({
     propertyName: parsed.propertyName,
@@ -113,6 +120,8 @@ export async function ingestBookingFromEmail(
       loyaltyPointsEarned: financials.loyaltyPointsEarned,
       lockedLoyaltyUsdCentsPerPoint: financials.lockedLoyaltyUsdCentsPerPoint,
       confirmationNumber: parsed.confirmationNumber ?? null,
+      bookingSource: otaAgency ? "ota" : null,
+      otaAgencyId: otaAgency?.id ?? null,
       ingestionMethod: "email",
       needsReview: true,
       paymentTiming: "postpaid",

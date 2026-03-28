@@ -8,6 +8,7 @@ const {
   mockHotelChainFindFirst,
   mockHotelChainFindUnique,
   mockUserStatusFindUnique,
+  mockOtaAgencyFindFirst,
 } = vi.hoisted(() => ({
   mockBookingCreate: vi.fn().mockResolvedValue({ id: "booking-abc" }),
   mockBookingFindFirst: vi.fn().mockResolvedValue(null),
@@ -31,6 +32,7 @@ const {
       pointsFloorTo: null,
     },
   }),
+  mockOtaAgencyFindFirst: vi.fn().mockResolvedValue(null),
 }));
 
 vi.mock("@/lib/property-utils", () => ({
@@ -56,6 +58,7 @@ vi.mock("@/lib/prisma", () => ({
     hotelChain: { findFirst: mockHotelChainFindFirst, findUnique: mockHotelChainFindUnique },
     userStatus: { findUnique: mockUserStatusFindUnique },
     hotelChainSubBrand: { findMany: vi.fn().mockResolvedValue([]) },
+    otaAgency: { findFirst: mockOtaAgencyFindFirst },
   },
 }));
 
@@ -265,6 +268,24 @@ describe("ingestBookingFromEmail", () => {
     await ingestBookingFromEmail({ ...baseParsed, accommodationType: "apartment" }, "user-1", null);
     const data = mockBookingCreate.mock.calls[0][0].data;
     expect(data.accommodationType).toBe("apartment");
+  });
+
+  it("sets bookingSource to ota and resolves otaAgencyId when otaAgencyName is provided", async () => {
+    mockOtaAgencyFindFirst.mockResolvedValueOnce({ id: "ota-amex-thc" });
+    await ingestBookingFromEmail({ ...baseParsed, otaAgencyName: "AMEX THC" }, "user-1", null);
+    const data = mockBookingCreate.mock.calls[0][0].data;
+    expect(data.bookingSource).toBe("ota");
+    expect(data.otaAgencyId).toBe("ota-amex-thc");
+    expect(mockOtaAgencyFindFirst).toHaveBeenCalledWith({
+      where: { name: { equals: "AMEX THC", mode: "insensitive" } },
+    });
+  });
+
+  it("leaves bookingSource null when no otaAgencyName", async () => {
+    await ingestBookingFromEmail(baseParsed, "user-1", null);
+    const data = mockBookingCreate.mock.calls[0][0].data;
+    expect(data.bookingSource).toBeNull();
+    expect(data.otaAgencyId).toBeNull();
   });
 
   it("derives taxAmount from totalCost - pretaxCost when nightlyRates is present", async () => {

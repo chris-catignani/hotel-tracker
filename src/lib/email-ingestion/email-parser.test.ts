@@ -259,6 +259,44 @@ describe("parseConfirmationEmail", () => {
     expect(prompt).toContain("accommodationType");
   });
 
+  it("passes through otaAgencyName from Claude response", async () => {
+    mockCreate.mockResolvedValueOnce({
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({
+            propertyName: "Kimpton Margot Sydney",
+            checkIn: "2026-10-25",
+            checkOut: "2026-10-27",
+            numNights: 2,
+            bookingType: "cash",
+            confirmationNumber: "ABC123",
+            hotelChain: "Kimpton",
+            subBrand: "Kimpton",
+            accommodationType: "hotel",
+            otaAgencyName: "AMEX THC",
+            currency: "USD",
+            nightlyRates: null,
+            pretaxCost: 520.34,
+            taxAmount: 52.03,
+            totalCost: 572.37,
+            pointsRedeemed: null,
+          }),
+        },
+      ],
+    });
+
+    const result = await parseConfirmationEmail("raw email text", null);
+    expect(result?.otaAgencyName).toBe("AMEX THC");
+  });
+
+  it("prompt instructs Claude to extract otaAgencyName", async () => {
+    mockCreate.mockResolvedValueOnce({ content: [{ type: "text", text: "{}" }] });
+    await parseConfirmationEmail("raw email text", null);
+    const prompt = mockCreate.mock.calls[0][0].messages[0].content;
+    expect(prompt).toContain("otaAgencyName");
+  });
+
   it("passes through hotelChain and subBrand from Claude response", async () => {
     mockCreate.mockResolvedValueOnce({
       content: [
