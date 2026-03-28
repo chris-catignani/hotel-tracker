@@ -9,7 +9,7 @@ Bookings created via email ingestion are saved with `needsReview: true`, but thi
 **New handler:** `PATCH /api/bookings/[id]`
 
 - Accepts `{ needsReview: boolean }`
-- Performs `prisma.booking.update({ where: { id, userId }, data: { needsReview } })`
+- Performs an ownership check via `findFirst({ where: { id, userId } })` then updates with `prisma.booking.update({ where: { id }, data: { needsReview } })`
 - Scoped to `userId` via `getAuthenticatedUserId()` (IDOR protection)
 - Returns the updated booking (or just 200 — detail page refetches anyway)
 - No other fields accepted; this is intentionally narrow
