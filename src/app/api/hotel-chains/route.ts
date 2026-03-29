@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withAxiom } from "next-axiom";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { getAuthenticatedUserId, requireAdmin } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
 import { getCurrentRate } from "@/lib/exchange-rate";
 
-export async function GET(request: NextRequest) {
+export const GET = withAxiom(async (request: NextRequest) => {
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
@@ -64,7 +65,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     return apiError("Failed to fetch hotel chains", error, 500, request);
   }
-}
+});
 
 /** Normalises and validates a raw calculationCurrency value from a request body.
  *  Returns the resolved 3-letter code, or null if the value is invalid. */
@@ -73,7 +74,7 @@ export function parseCalculationCurrency(raw: unknown): string | null {
   return /^[A-Z]{3}$/.test(value) ? value : null;
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withAxiom(async (request: NextRequest) => {
   try {
     const adminError = await requireAdmin();
     if (adminError instanceof NextResponse) return adminError;
@@ -112,4 +113,4 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return apiError("Failed to create hotel chain", error, 500, request);
   }
-}
+});

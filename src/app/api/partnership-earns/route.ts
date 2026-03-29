@@ -1,9 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { withAxiom } from "next-axiom";
 import prisma from "@/lib/prisma";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { apiError } from "@/lib/api-error";
 
-export async function GET() {
+export const GET = withAxiom(async (_request: NextRequest) => {
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
@@ -36,4 +37,4 @@ export async function GET() {
   } catch (error) {
     return apiError("Failed to fetch partnership earns", error, 500);
   }
-}
+});

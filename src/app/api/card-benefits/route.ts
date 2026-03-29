@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withAxiom } from "next-axiom";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { requireAdmin } from "@/lib/auth-utils";
@@ -10,7 +11,7 @@ const INCLUDE = {
   otaAgencies: { include: { otaAgency: { select: { id: true, name: true } } } },
 };
 
-export async function GET() {
+export const GET = withAxiom(async (_request: NextRequest) => {
   try {
     const cardBenefits = await prisma.cardBenefit.findMany({
       include: INCLUDE,
@@ -20,9 +21,9 @@ export async function GET() {
   } catch (error) {
     return apiError("Failed to fetch card benefits", error, 500);
   }
-}
+});
 
-export async function POST(request: NextRequest) {
+export const POST = withAxiom(async (request: NextRequest) => {
   try {
     const adminOrResponse = await requireAdmin();
     if (adminOrResponse instanceof NextResponse) return adminOrResponse;
@@ -71,4 +72,4 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return apiError("Failed to create card benefit", error, 500, request);
   }
-}
+});

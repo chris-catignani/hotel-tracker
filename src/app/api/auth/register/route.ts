@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withAxiom } from "next-axiom";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
+import { logger } from "@/lib/logger";
 
-export async function POST(request: NextRequest) {
+export const POST = withAxiom(async (request: NextRequest) => {
   try {
     const { email, password, name } = await request.json();
 
@@ -13,6 +15,7 @@ export async function POST(request: NextRequest) {
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
+      logger.info("auth:registered", { outcome: "duplicate" });
       return NextResponse.json({ error: "Email already in use" }, { status: 409 });
     }
 
@@ -22,8 +25,9 @@ export async function POST(request: NextRequest) {
       select: { id: true, email: true, name: true, role: true },
     });
 
+    logger.info("auth:registered", { outcome: "success", userId: user.id });
     return NextResponse.json(user, { status: 201 });
   } catch (error) {
     return apiError("Failed to register user", error, 500, request);
   }
-}
+});

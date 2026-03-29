@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withAxiom } from "next-axiom";
 import prisma from "@/lib/prisma";
 import { matchPromotionsForBooking } from "@/lib/promotion-matching";
 import { reevaluateSubsequentBookings } from "@/lib/promotion-matching-helpers";
@@ -18,6 +19,7 @@ import { findOrCreateProperty } from "@/lib/property-utils";
 import { reapplyCardBenefitsAffectedByBooking } from "@/lib/card-benefit-apply";
 import { resolvePartnershipEarns } from "@/lib/partnership-earns";
 import { validateBenefits } from "@/lib/booking-benefit-validation";
+import { logger } from "@/lib/logger";
 
 const BOOKING_INCLUDE = (userId: string) =>
   ({
@@ -68,7 +70,7 @@ const BOOKING_INCLUDE = (userId: string) =>
     bookingCardBenefits: { include: { cardBenefit: true } },
   }) as const;
 
-export async function GET(request: NextRequest) {
+export const GET = withAxiom(async (request: NextRequest) => {
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
@@ -118,9 +120,9 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     return apiError("Failed to fetch bookings", error, 500, request);
   }
-}
+});
 
-export async function POST(request: NextRequest) {
+export const POST = withAxiom(async (request: NextRequest) => {
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
@@ -270,6 +272,19 @@ export async function POST(request: NextRequest) {
     // Auto-run promotion matching
     const appliedPromoIds = await matchPromotionsForBooking(booking.id);
 
+    logger.info("booking:created", {
+      userId,
+      bookingId: booking.id,
+      accommodationType: (accommodationType ?? "hotel") as string,
+      checkIn,
+      checkOut,
+      numNights: Number(numNights),
+      totalCost: Number(totalCost),
+      currency: resolvedCurrency,
+      ingestionMethod: (ingestionMethod ?? "manual") as string,
+      promotionsApplied: appliedPromoIds.length,
+    });
+
     // Re-evaluate subsequent bookings if this is an earlier stay
     await reevaluateSubsequentBookings(booking.id, appliedPromoIds);
 
@@ -291,4 +306,4 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return apiError("Failed to create booking", error, 500, request);
   }
-}
+});

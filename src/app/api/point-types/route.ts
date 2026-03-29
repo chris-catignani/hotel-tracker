@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withAxiom } from "next-axiom";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { requireAdmin } from "@/lib/auth-utils";
 
-export async function GET(request: NextRequest) {
+export const GET = withAxiom(async (request: NextRequest) => {
   try {
     const pointTypes = await prisma.pointType.findMany({
       orderBy: [{ category: "asc" }, { name: "asc" }],
@@ -12,9 +13,9 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     return apiError("Failed to fetch point types", error, 500, request);
   }
-}
+});
 
-export async function POST(request: NextRequest) {
+export const POST = withAxiom(async (request: NextRequest) => {
   try {
     const adminError = await requireAdmin();
     if (adminError instanceof NextResponse) return adminError;
@@ -36,4 +37,4 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return apiError("Failed to create point type", error, 500, request);
   }
-}
+});

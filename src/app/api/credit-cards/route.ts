@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withAxiom } from "next-axiom";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { CreditCardRewardRuleFormData } from "@/lib/types";
@@ -14,7 +15,7 @@ const CARD_INCLUDE = {
   },
 } as const;
 
-export async function GET(request: NextRequest) {
+export const GET = withAxiom(async (request: NextRequest) => {
   try {
     const cards = await prisma.creditCard.findMany({
       where: { isDeleted: false },
@@ -27,9 +28,9 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     return apiError("Failed to fetch credit cards", error, 500, request);
   }
-}
+});
 
-export async function POST(request: NextRequest) {
+export const POST = withAxiom(async (request: NextRequest) => {
   try {
     const adminError = await requireAdmin();
     if (adminError instanceof NextResponse) return adminError;
@@ -58,4 +59,4 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return apiError("Failed to create credit card", error, 500, request);
   }
-}
+});
