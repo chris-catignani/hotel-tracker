@@ -12,15 +12,15 @@
 
 ## File Map
 
-| File | Change |
-|------|--------|
-| `src/lib/route-logging.ts` | **Delete** |
-| `src/app/api/cron/refresh-exchange-rates/route.ts` | Remove `withRouteLogging`, rename event |
-| `src/app/api/inbound-email/route.ts` | Remove `withRouteLogging`, rename/clean events |
-| `src/app/api/bookings/route.ts` | Add `booking:created` event to POST |
-| `src/app/api/bookings/[id]/route.ts` | Add `booking:updated`, `booking:deleted` events |
-| `src/app/api/auth/register/route.ts` | Add `auth:registered` event |
-| `src/app/api/geo/search/route.ts` | Add `geo:searched` event |
+| File                                               | Change                                          |
+| -------------------------------------------------- | ----------------------------------------------- |
+| `src/lib/route-logging.ts`                         | **Delete**                                      |
+| `src/app/api/cron/refresh-exchange-rates/route.ts` | Remove `withRouteLogging`, rename event         |
+| `src/app/api/inbound-email/route.ts`               | Remove `withRouteLogging`, rename/clean events  |
+| `src/app/api/bookings/route.ts`                    | Add `booking:created` event to POST             |
+| `src/app/api/bookings/[id]/route.ts`               | Add `booking:updated`, `booking:deleted` events |
+| `src/app/api/auth/register/route.ts`               | Add `auth:registered` event                     |
+| `src/app/api/geo/search/route.ts`                  | Add `geo:searched` event                        |
 
 ---
 
@@ -42,6 +42,7 @@
 ## Task 2: Clean up cron route — remove wrapper, rename event
 
 **Files:**
+
 - Modify: `src/app/api/cron/refresh-exchange-rates/route.ts`
 
 - [ ] **Step 1: Remove `withRouteLogging` import and rename the stats event**
@@ -49,11 +50,13 @@
   Open `src/app/api/cron/refresh-exchange-rates/route.ts`.
 
   Remove this import line:
+
   ```typescript
   import { withRouteLogging } from "@/lib/route-logging";
   ```
 
   Rename the stats event (line 113):
+
   ```typescript
   // Before:
   logger.info("cron:exchange-rates: stats", {
@@ -63,6 +66,7 @@
   ```
 
   Update the export (last line of file):
+
   ```typescript
   // Before:
   export const GET = withAxiom(withRouteLogging("cron:exchange-rates", handler));
@@ -91,11 +95,13 @@
 ## Task 3: Clean up inbound-email route — remove wrapper, rename and sanitise events
 
 **Files:**
+
 - Modify: `src/app/api/inbound-email/route.ts`
 
 - [ ] **Step 1: Remove `withRouteLogging` import**
 
   Remove this import line:
+
   ```typescript
   import { withRouteLogging } from "@/lib/route-logging";
   ```
@@ -105,6 +111,7 @@
   Apply each change below in order. The line references are approximate — search for the old string.
 
   **"received" event** — rename, drop PII `from` field:
+
   ```typescript
   // Before:
   logger.info("inbound-email: received", { from: forwarderEmail, subject: data.subject });
@@ -114,6 +121,7 @@
   ```
 
   **"wrong recipient" event** — rename, drop PII `to` field:
+
   ```typescript
   // Before:
   logger.info("inbound-email: discarding email — wrong recipient", { to: data.to });
@@ -123,6 +131,7 @@
   ```
 
   **"no matching user" event** — rename, drop PII `from` field:
+
   ```typescript
   // Before:
   logger.info("inbound-email: discarding email — no matching user", {
@@ -135,12 +144,14 @@
   ```
 
   **"claude parsed" event** — delete entirely (debug-level, not a metric):
+
   ```typescript
   // Delete this line:
   logger.info("inbound-email: claude parsed", { parsed });
   ```
 
   **"parse failed" event** — rename, drop PII `from` field, add `userId`:
+
   ```typescript
   // Before:
   logger.warn("inbound-email: parse failed", { from: forwarderEmail, outcome: "parse_failed" });
@@ -150,6 +161,7 @@
   ```
 
   **"duplicate" event** — rename, drop `outcome` field (name is now the outcome), add `userId`:
+
   ```typescript
   // Before:
   logger.info("inbound-email: duplicate booking, skipping", {
@@ -167,6 +179,7 @@
   ```
 
   **"booking created" event** — rename, drop `outcome` field, add `userId`:
+
   ```typescript
   // Before:
   logger.info("inbound-email: booking created", {
@@ -215,6 +228,7 @@
 ## Task 4: Delete `route-logging.ts`
 
 **Files:**
+
 - Delete: `src/lib/route-logging.ts`
 
 - [ ] **Step 1: Confirm no remaining usages**
@@ -251,11 +265,13 @@
 ## Task 5: Add `booking:created` event to POST /api/bookings
 
 **Files:**
+
 - Modify: `src/app/api/bookings/route.ts`
 
 - [ ] **Step 1: Add `logger` import**
 
   Add to the imports at the top of `src/app/api/bookings/route.ts`:
+
   ```typescript
   import { logger } from "@/lib/logger";
   ```
@@ -263,11 +279,13 @@
 - [ ] **Step 2: Log the event after promotion matching**
 
   In the `POST` handler, find the line:
+
   ```typescript
   const appliedPromoIds = await matchPromotionsForBooking(booking.id);
   ```
 
   Immediately after it, add:
+
   ```typescript
   logger.info("booking:created", {
     userId,
@@ -303,11 +321,13 @@
 ## Task 6: Add `booking:updated` and `booking:deleted` events to /api/bookings/[id]
 
 **Files:**
+
 - Modify: `src/app/api/bookings/[id]/route.ts`
 
 - [ ] **Step 1: Add `logger` import**
 
   Add to the imports at the top of `src/app/api/bookings/[id]/route.ts`:
+
   ```typescript
   import { logger } from "@/lib/logger";
   ```
@@ -315,6 +335,7 @@
 - [ ] **Step 2: Log `booking:updated` in the PUT handler**
 
   In the `PUT` handler, find the line:
+
   ```typescript
   const booking = await prisma.booking.update({
     where: { id },
@@ -323,6 +344,7 @@
   ```
 
   Immediately after it, add:
+
   ```typescript
   logger.info("booking:updated", {
     userId,
@@ -334,6 +356,7 @@
 - [ ] **Step 3: Log `booking:deleted` in the DELETE handler**
 
   In the `DELETE` handler, find the line:
+
   ```typescript
   await prisma.booking.delete({
     where: { id },
@@ -341,6 +364,7 @@
   ```
 
   Immediately after it, add:
+
   ```typescript
   logger.info("booking:deleted", {
     userId,
@@ -368,11 +392,13 @@
 ## Task 7: Add `auth:registered` event to POST /api/auth/register
 
 **Files:**
+
 - Modify: `src/app/api/auth/register/route.ts`
 
 - [ ] **Step 1: Add `logger` import**
 
   Add to the imports at the top of `src/app/api/auth/register/route.ts`:
+
   ```typescript
   import { logger } from "@/lib/logger";
   ```
@@ -380,6 +406,7 @@
 - [ ] **Step 2: Log the duplicate outcome before the early return**
 
   Find the block:
+
   ```typescript
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
@@ -388,6 +415,7 @@
   ```
 
   Update it to:
+
   ```typescript
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
@@ -399,6 +427,7 @@
 - [ ] **Step 3: Log the success outcome after the user is created**
 
   Find the block:
+
   ```typescript
   const user = await prisma.user.create({
     data: { email, password: hashed, name: name || null },
@@ -409,6 +438,7 @@
   ```
 
   Update it to:
+
   ```typescript
   const user = await prisma.user.create({
     data: { email, password: hashed, name: name || null },
@@ -439,11 +469,13 @@
 ## Task 8: Add `geo:searched` event to GET /api/geo/search
 
 **Files:**
+
 - Modify: `src/app/api/geo/search/route.ts`
 
 - [ ] **Step 1: Add `logger` import**
 
   Add to the imports at the top of `src/app/api/geo/search/route.ts`:
+
   ```typescript
   import { logger } from "@/lib/logger";
   ```
@@ -451,12 +483,14 @@
 - [ ] **Step 2: Add timing and log the event**
 
   Find the block:
+
   ```typescript
   const results = await searchProperties(q, isHotel);
   return NextResponse.json(results);
   ```
 
   Replace it with:
+
   ```typescript
   const start = Date.now();
   const results = await searchProperties(q, isHotel);

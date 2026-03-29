@@ -14,6 +14,7 @@ Expand observability coverage by setting up a Vercel Log Drain (zero-code HTTP m
 Set up the Axiom Vercel integration via the Vercel dashboard (no code changes required).
 
 **What it provides automatically:**
+
 - HTTP access logs for every route: method, path, status code, response duration, bytes, region
 - All stdout/stderr from serverless functions (captures `logger.info/warn/error` output)
 - Deploy events: start, success, failure with git SHA, branch, environment, build duration
@@ -57,8 +58,8 @@ All business events include `userId` where an authenticated user is in scope.
 
 ### `cron/refresh-exchange-rates`
 
-| Old | New |
-|-----|-----|
+| Old                            | New                          |
+| ------------------------------ | ---------------------------- |
 | `"cron:exchange-rates: stats"` | `"exchange_rates:refreshed"` |
 
 Fields unchanged: `currenciesUpdated`, `currenciesNotFound`, `bookingsLocked`, `pointTypesRefreshed`, `bookingsReevaluated`.
@@ -67,15 +68,15 @@ No `userId` — this is a system cron with no user scope.
 
 ### `inbound-email`
 
-| Old | New | Notes |
-|-----|-----|-------|
-| `"inbound-email: received"` | `"inbound-email:received"` | Remove `from` field (PII). Keep `subject`. |
-| `"inbound-email: discarding email — wrong recipient"` | `"inbound-email:discarded"` | Add `reason: "wrong_recipient"`. Remove `to` field (PII). |
-| `"inbound-email: discarding email — no matching user"` | `"inbound-email:user_not_found"` | Remove `from` field (PII). |
-| `"inbound-email: parse failed"` | `"inbound-email:parse_failed"` | Add `userId`. Remove `from` field (PII). |
-| `"inbound-email: duplicate booking, skipping"` | `"inbound-email:duplicate"` | Add `userId`. Keep `bookingId`, `confirmationNumber`. |
-| `"inbound-email: booking created"` | `"inbound-email:booking_created"` | Add `userId`. Keep `bookingId`, `property`, `checkIn`. |
-| `"inbound-email: claude parsed"` | _(deleted)_ | Debug-level, not a useful metric. |
+| Old                                                    | New                               | Notes                                                     |
+| ------------------------------------------------------ | --------------------------------- | --------------------------------------------------------- |
+| `"inbound-email: received"`                            | `"inbound-email:received"`        | Remove `from` field (PII). Keep `subject`.                |
+| `"inbound-email: discarding email — wrong recipient"`  | `"inbound-email:discarded"`       | Add `reason: "wrong_recipient"`. Remove `to` field (PII). |
+| `"inbound-email: discarding email — no matching user"` | `"inbound-email:user_not_found"`  | Remove `from` field (PII).                                |
+| `"inbound-email: parse failed"`                        | `"inbound-email:parse_failed"`    | Add `userId`. Remove `from` field (PII).                  |
+| `"inbound-email: duplicate booking, skipping"`         | `"inbound-email:duplicate"`       | Add `userId`. Keep `bookingId`, `confirmationNumber`.     |
+| `"inbound-email: booking created"`                     | `"inbound-email:booking_created"` | Add `userId`. Keep `bookingId`, `property`, `checkIn`.    |
+| `"inbound-email: claude parsed"`                       | _(deleted)_                       | Debug-level, not a useful metric.                         |
 
 Error logs (`logger.error`) keep their existing descriptive messages — they route to Sentry and don't need the naming scheme.
 
