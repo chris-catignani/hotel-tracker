@@ -18,6 +18,7 @@ import { findOrCreateProperty } from "@/lib/property-utils";
 import { reapplyCardBenefitsAffectedByBooking } from "@/lib/card-benefit-apply";
 import { resolvePartnershipEarns } from "@/lib/partnership-earns";
 import { validateBenefits } from "@/lib/booking-benefit-validation";
+import { logger } from "@/lib/logger";
 
 const BOOKING_INCLUDE = (userId: string) =>
   ({
@@ -269,6 +270,19 @@ export async function POST(request: NextRequest) {
 
     // Auto-run promotion matching
     const appliedPromoIds = await matchPromotionsForBooking(booking.id);
+
+    logger.info("booking:created", {
+      userId,
+      bookingId: booking.id,
+      accommodationType: (accommodationType ?? "hotel") as string,
+      checkIn,
+      checkOut,
+      numNights: Number(numNights),
+      totalCost: Number(totalCost),
+      currency: resolvedCurrency,
+      ingestionMethod: (ingestionMethod ?? "manual") as string,
+      promotionsApplied: appliedPromoIds.length,
+    });
 
     // Re-evaluate subsequent bookings if this is an earlier stay
     await reevaluateSubsequentBookings(booking.id, appliedPromoIds);
