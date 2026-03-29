@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withAxiom } from "next-axiom";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
@@ -7,7 +8,7 @@ const INCLUDE = {
   creditCard: { include: { pointType: true, rewardRules: true } },
 } as const;
 
-export async function GET(request: NextRequest) {
+export const GET = withAxiom(async (request: NextRequest) => {
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
@@ -22,9 +23,9 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     return apiError("Failed to fetch user credit cards", error, 500, request);
   }
-}
+});
 
-export async function POST(request: NextRequest) {
+export const POST = withAxiom(async (request: NextRequest) => {
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
@@ -50,4 +51,4 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return apiError("Failed to create user credit card", error, 500, request);
   }
-}
+});

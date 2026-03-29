@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withAxiom } from "next-axiom";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 
 /** GET /api/properties?hotelChainId=&name=&includeChain= — search properties */
-export async function GET(request: NextRequest) {
+export const GET = withAxiom(async (request: NextRequest) => {
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
@@ -27,4 +28,4 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     return apiError("Failed to fetch properties", error, 500, request);
   }
-}
+});

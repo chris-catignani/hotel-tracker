@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withAxiomRouteHandler } from "next-axiom";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
@@ -34,74 +35,80 @@ const PRICE_WATCH_INCLUDE = {
   },
 } as const;
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  try {
-    const userIdOrResponse = await getAuthenticatedUserId();
-    if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
-    const userId = userIdOrResponse;
+export const GET = withAxiomRouteHandler(
+  async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+    const { id } = await params;
+    try {
+      const userIdOrResponse = await getAuthenticatedUserId();
+      if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
+      const userId = userIdOrResponse;
 
-    const watch = await prisma.priceWatch.findFirst({
-      where: { id, userId },
-      include: PRICE_WATCH_INCLUDE,
-    });
+      const watch = await prisma.priceWatch.findFirst({
+        where: { id, userId },
+        include: PRICE_WATCH_INCLUDE,
+      });
 
-    if (!watch) return apiError("Price watch not found", null, 404, request, { priceWatchId: id });
-    return NextResponse.json(watch);
-  } catch (error) {
-    return apiError("Failed to fetch price watch", error, 500, request, { priceWatchId: id });
+      if (!watch)
+        return apiError("Price watch not found", null, 404, request, { priceWatchId: id });
+      return NextResponse.json(watch);
+    } catch (error) {
+      return apiError("Failed to fetch price watch", error, 500, request, { priceWatchId: id });
+    }
   }
-}
+);
 
 /** PUT /api/price-watches/[id] — toggle isEnabled */
-export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  try {
-    const userIdOrResponse = await getAuthenticatedUserId();
-    if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
-    const userId = userIdOrResponse;
+export const PUT = withAxiomRouteHandler(
+  async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+    const { id } = await params;
+    try {
+      const userIdOrResponse = await getAuthenticatedUserId();
+      if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
+      const userId = userIdOrResponse;
 
-    const exists = await prisma.priceWatch.findFirst({
-      where: { id, userId },
-      select: { id: true },
-    });
-    if (!exists) return apiError("Price watch not found", null, 404, request, { priceWatchId: id });
+      const exists = await prisma.priceWatch.findFirst({
+        where: { id, userId },
+        select: { id: true },
+      });
+      if (!exists)
+        return apiError("Price watch not found", null, 404, request, { priceWatchId: id });
 
-    const body = await request.json();
-    const { isEnabled } = body;
+      const body = await request.json();
+      const { isEnabled } = body;
 
-    const watch = await prisma.priceWatch.update({
-      where: { id },
-      data: { isEnabled },
-      include: PRICE_WATCH_INCLUDE,
-    });
+      const watch = await prisma.priceWatch.update({
+        where: { id },
+        data: { isEnabled },
+        include: PRICE_WATCH_INCLUDE,
+      });
 
-    return NextResponse.json(watch);
-  } catch (error) {
-    return apiError("Failed to update price watch", error, 500, request, { priceWatchId: id });
+      return NextResponse.json(watch);
+    } catch (error) {
+      return apiError("Failed to update price watch", error, 500, request, { priceWatchId: id });
+    }
   }
-}
+);
 
 /** DELETE /api/price-watches/[id] */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params;
-  try {
-    const userIdOrResponse = await getAuthenticatedUserId();
-    if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
-    const userId = userIdOrResponse;
+export const DELETE = withAxiomRouteHandler(
+  async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+    const { id } = await params;
+    try {
+      const userIdOrResponse = await getAuthenticatedUserId();
+      if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
+      const userId = userIdOrResponse;
 
-    const exists = await prisma.priceWatch.findFirst({
-      where: { id, userId },
-      select: { id: true },
-    });
-    if (!exists) return apiError("Price watch not found", null, 404, request, { priceWatchId: id });
+      const exists = await prisma.priceWatch.findFirst({
+        where: { id, userId },
+        select: { id: true },
+      });
+      if (!exists)
+        return apiError("Price watch not found", null, 404, request, { priceWatchId: id });
 
-    await prisma.priceWatch.delete({ where: { id } });
-    return NextResponse.json({ message: "Price watch deleted" });
-  } catch (error) {
-    return apiError("Failed to delete price watch", error, 500, request, { priceWatchId: id });
+      await prisma.priceWatch.delete({ where: { id } });
+      return NextResponse.json({ message: "Price watch deleted" });
+    } catch (error) {
+      return apiError("Failed to delete price watch", error, 500, request, { priceWatchId: id });
+    }
   }
-}
+);

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withAxiom } from "next-axiom";
 import prisma from "@/lib/prisma";
 import { matchPromotionsForBooking } from "@/lib/promotion-matching";
 import { reevaluateSubsequentBookings } from "@/lib/promotion-matching-helpers";
@@ -69,7 +70,7 @@ const BOOKING_INCLUDE = (userId: string) =>
     bookingCardBenefits: { include: { cardBenefit: true } },
   }) as const;
 
-export async function GET(request: NextRequest) {
+export const GET = withAxiom(async (request: NextRequest) => {
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
@@ -119,9 +120,9 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     return apiError("Failed to fetch bookings", error, 500, request);
   }
-}
+});
 
-export async function POST(request: NextRequest) {
+export const POST = withAxiom(async (request: NextRequest) => {
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
@@ -305,4 +306,4 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return apiError("Failed to create booking", error, 500, request);
   }
-}
+});

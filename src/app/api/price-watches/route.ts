@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withAxiom } from "next-axiom";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
@@ -28,7 +29,7 @@ const PRICE_WATCH_INCLUDE = {
 } as const;
 
 /** GET /api/price-watches — list all price watches for the current user */
-export async function GET(request: NextRequest) {
+export const GET = withAxiom(async (request: NextRequest) => {
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
@@ -44,7 +45,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     return apiError("Failed to fetch price watches", error, 500, request);
   }
-}
+});
 
 /**
  * POST /api/price-watches
@@ -59,7 +60,7 @@ export async function GET(request: NextRequest) {
  * Creates or updates (upserts) a PriceWatch for (userId, propertyId).
  * If bookingId is provided, also upserts a PriceWatchBooking.
  */
-export async function POST(request: NextRequest) {
+export const POST = withAxiom(async (request: NextRequest) => {
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
@@ -123,4 +124,4 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return apiError("Failed to create price watch", error, 500, request);
   }
-}
+});

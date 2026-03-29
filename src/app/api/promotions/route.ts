@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withAxiom } from "next-axiom";
 import prisma from "@/lib/prisma";
 import { PromotionType, Prisma } from "@prisma/client";
 import { apiError } from "@/lib/api-error";
@@ -39,7 +40,7 @@ const PROMOTION_INCLUDE = {
   userPromotions: true,
 } as const;
 
-export async function GET(request: NextRequest) {
+export const GET = withAxiom(async (request: NextRequest) => {
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
@@ -61,9 +62,9 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     return apiError("Failed to fetch promotions", error, 500, request);
   }
-}
+});
 
-export async function POST(request: NextRequest) {
+export const POST = withAxiom(async (request: NextRequest) => {
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
@@ -151,4 +152,4 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return apiError("Failed to create promotion", error, 500, request);
   }
-}
+});

@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withAxiom } from "next-axiom";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { searchProperties } from "@/lib/geo-lookup";
 import { apiError } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
 
-export async function GET(request: NextRequest) {
+export const GET = withAxiom(async (request: NextRequest) => {
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
@@ -29,4 +30,4 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     return apiError("Failed to search properties", error, 500, request);
   }
-}
+});

@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withAxiom } from "next-axiom";
 import prisma from "@/lib/prisma";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { apiError } from "@/lib/api-error";
 
-export async function POST(request: NextRequest) {
+export const POST = withAxiom(async (request: NextRequest) => {
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
@@ -27,4 +28,4 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return apiError("Failed to update partnership earn preference", error, 500, request);
   }
-}
+});

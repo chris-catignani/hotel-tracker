@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withAxiom } from "next-axiom";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
 
-export async function POST(request: NextRequest) {
+export const POST = withAxiom(async (request: NextRequest) => {
   try {
     const { email, password, name } = await request.json();
 
@@ -29,4 +30,4 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return apiError("Failed to register user", error, 500, request);
   }
-}
+});
