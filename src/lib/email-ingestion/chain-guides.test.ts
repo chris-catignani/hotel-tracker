@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { extractDomain, getChainGuide } from "@/lib/email-ingestion/chain-guides/index";
+import {
+  extractDomain,
+  getChainGuide,
+  detectChainGuideFromContent,
+} from "@/lib/email-ingestion/chain-guides/index";
 
 describe("extractDomain", () => {
   it("extracts domain from a plain email address", () => {
@@ -99,5 +103,36 @@ describe("getChainGuide", () => {
     const guide = getChainGuide("donotreply@chasetravel.com");
     expect(guide).not.toBeNull();
     expect(guide?.chainName).toBe("Chase Travel");
+  });
+});
+
+describe("detectChainGuideFromContent", () => {
+  it("detects Hyatt from email body containing hyatt.com links", () => {
+    const content = "Visit https://www.hyatt.com/hotel/hyatt-regency for details.";
+    const guide = detectChainGuideFromContent(content);
+    expect(guide?.chainName).toBe("Hyatt");
+  });
+
+  it("detects Hyatt from email body containing reservations.hyatt.com", () => {
+    const content = "From: Hyatt <reservations@reservations.hyatt.com>";
+    const guide = detectChainGuideFromContent(content);
+    expect(guide?.chainName).toBe("Hyatt");
+  });
+
+  it("detects Marriott from email body containing marriott.com links", () => {
+    const content = "Manage your reservation at https://www.marriott.com/reservation/123.";
+    const guide = detectChainGuideFromContent(content);
+    expect(guide?.chainName).toBe("Marriott");
+  });
+
+  it("returns null for email body with no known chain domains", () => {
+    const content = "Your reservation is confirmed. See you soon!";
+    expect(detectChainGuideFromContent(content)).toBeNull();
+  });
+
+  it("is case-insensitive", () => {
+    const content = "Book directly at HYATT.COM for the best rates.";
+    const guide = detectChainGuideFromContent(content);
+    expect(guide?.chainName).toBe("Hyatt");
   });
 });
