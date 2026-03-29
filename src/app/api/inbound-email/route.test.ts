@@ -35,9 +35,6 @@ vi.mock("next-axiom", () => ({
   withAxiom: (handler: unknown) => handler,
   log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
-vi.mock("@/lib/route-logging", () => ({
-  withRouteLogging: (_name: string, handler: unknown) => handler,
-}));
 
 const mockLoggerInfo = vi.hoisted(() => vi.fn());
 const mockLoggerWarn = vi.hoisted(() => vi.fn());
@@ -122,10 +119,7 @@ describe("POST /api/inbound-email", () => {
     const res = await POST(req);
 
     expect(res.status).toBe(200);
-    expect(mockLoggerInfo).toHaveBeenCalledWith(
-      "inbound-email: discarding email — no matching user",
-      expect.objectContaining({ outcome: "user_not_found" })
-    );
+    expect(mockLoggerInfo).toHaveBeenCalledWith("inbound-email:user_not_found");
   });
 
   it("returns 200 and sends error email when parse fails, logs outcome: parse_failed", async () => {
@@ -139,8 +133,8 @@ describe("POST /api/inbound-email", () => {
 
     expect(res.status).toBe(200);
     expect(mockLoggerWarn).toHaveBeenCalledWith(
-      "inbound-email: parse failed",
-      expect.objectContaining({ outcome: "parse_failed" })
+      "inbound-email:parse_failed",
+      expect.objectContaining({ userId: "u1" })
     );
   });
 
@@ -160,8 +154,8 @@ describe("POST /api/inbound-email", () => {
     await POST(req);
 
     expect(mockLoggerInfo).toHaveBeenCalledWith(
-      "inbound-email: duplicate booking, skipping",
-      expect.objectContaining({ outcome: "duplicate" })
+      "inbound-email:duplicate",
+      expect.objectContaining({ bookingId: "b1", confirmationNumber: "ABC123", userId: "u1" })
     );
   });
 
@@ -181,8 +175,13 @@ describe("POST /api/inbound-email", () => {
     await POST(req);
 
     expect(mockLoggerInfo).toHaveBeenCalledWith(
-      "inbound-email: booking created",
-      expect.objectContaining({ outcome: "success" })
+      "inbound-email:booking_created",
+      expect.objectContaining({
+        bookingId: "b1",
+        property: "Grand Hyatt",
+        checkIn: "2026-04-01",
+        userId: "u1",
+      })
     );
   });
 

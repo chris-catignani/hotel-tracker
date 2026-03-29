@@ -6,7 +6,6 @@ import { parseConfirmationEmail } from "@/lib/email-ingestion/email-parser";
 import { ingestBookingFromEmail } from "@/lib/email-ingestion/ingest-booking";
 import { sendIngestionConfirmation, sendIngestionError } from "@/lib/email";
 import { logger } from "@/lib/logger";
-import { withRouteLogging } from "@/lib/route-logging";
 
 /**
  * Resend Inbound email webhook.
@@ -64,13 +63,13 @@ async function handler(req: NextRequest): Promise<NextResponse> {
 
   // Filter to only process emails addressed to the designated inbound address
   if (!data.to.includes(inboundEmail)) {
-    logger.info("inbound-email: discarding email — wrong recipient", { to: data.to });
+    logger.info("inbound-email:discarded", { reason: "wrong_recipient" });
     return NextResponse.json({ ok: true });
   }
 
   const forwarderEmail = data.from ?? "";
 
-  logger.info("inbound-email: received", { from: forwarderEmail, subject: data.subject });
+  logger.info("inbound-email:received", { subject: data.subject });
 
   // Fetch full email body from Resend — webhook payload only contains metadata
   const emailRes = await fetch(`https://api.resend.com/emails/receiving/${data.email_id}`, {
@@ -95,19 +94,15 @@ async function handler(req: NextRequest): Promise<NextResponse> {
     where: { email: forwarderEmail },
   });
   if (!user) {
-    logger.info("inbound-email: discarding email — no matching user", {
-      from: forwarderEmail,
-      outcome: "user_not_found",
-    });
+    logger.info("inbound-email:user_not_found");
     return NextResponse.json({ ok: true });
   }
 
   // Resend doesn't expose the original sender domain for forwarded emails,
   // so we can't identify the chain — pass null and let Claude parse without chain hints
   const parsed = await parseConfirmationEmail(rawEmail, null);
-  logger.info("inbound-email: claude parsed", { parsed });
   if (!parsed) {
-    logger.warn("inbound-email: parse failed", { from: forwarderEmail, outcome: "parse_failed" });
+    logger.warn("inbound-email:parse_failed", { userId: user.id });
     await sendIngestionError({
       to: user.email!,
       reason: "We couldn't recognise the booking details in this email.",
@@ -119,17 +114,17 @@ async function handler(req: NextRequest): Promise<NextResponse> {
   const { bookingId, duplicate } = await ingestBookingFromEmail(parsed, user.id, null);
 
   if (duplicate) {
-    logger.info("inbound-email: duplicate booking, skipping", {
+    logger.info("inbound-email:duplicate", {
       bookingId,
       confirmationNumber: parsed.confirmationNumber,
-      outcome: "duplicate",
+      userId: user.id,
     });
   } else {
-    logger.info("inbound-email: booking created", {
+    logger.info("inbound-email:booking_created", {
       bookingId,
       property: parsed.propertyName,
       checkIn: parsed.checkIn,
-      outcome: "success",
+      userId: user.id,
     });
     await sendIngestionConfirmation({
       to: user.email!,
@@ -143,4 +138,4 @@ async function handler(req: NextRequest): Promise<NextResponse> {
   return NextResponse.json({ ok: true });
 }
 
-export const POST = withAxiom(withRouteLogging("inbound-email", handler));
+export const POST = withAxiom(handler);
