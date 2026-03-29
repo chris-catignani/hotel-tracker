@@ -3,6 +3,7 @@ import { withAxiom } from "next-axiom";
 import { Webhook } from "svix";
 import prisma from "@/lib/prisma";
 import { parseConfirmationEmail } from "@/lib/email-ingestion/email-parser";
+import { detectChainGuideFromContent } from "@/lib/email-ingestion/chain-guides";
 import { ingestBookingFromEmail } from "@/lib/email-ingestion/ingest-booking";
 import { sendIngestionConfirmation, sendIngestionError } from "@/lib/email";
 import { logger } from "@/lib/logger";
@@ -105,8 +106,9 @@ async function handler(req: NextRequest): Promise<NextResponse> {
   }
 
   // Resend doesn't expose the original sender domain for forwarded emails,
-  // so we can't identify the chain — pass null and let Claude parse without chain hints
-  const parsed = await parseConfirmationEmail(rawEmail, null);
+  // so scan the email body for known chain domains to pick the right guide.
+  const guide = detectChainGuideFromContent(rawEmail);
+  const parsed = await parseConfirmationEmail(rawEmail, guide);
   if (!parsed) {
     logger.warn("inbound-email:parse_failed", { userId: user.id, resendEmailId: data.email_id });
     await sendIngestionError({

@@ -42,3 +42,20 @@ export function getChainGuide(senderEmail: string): ChainGuide | null {
   const domain = extractDomain(senderEmail);
   return DOMAIN_TO_GUIDE.get(domain) ?? null;
 }
+
+/**
+ * Detects the ChainGuide by scanning the email body for known sender domains.
+ * Used for forwarded emails where the original sender domain is not available.
+ * Returns the first matching guide, or null if no known chain is detected.
+ */
+export function detectChainGuideFromContent(emailContent: string): ChainGuide | null {
+  const lowerContent = emailContent.toLowerCase();
+  for (const guide of ALL_GUIDES) {
+    for (const domain of guide.senderDomains) {
+      if (lowerContent.includes(domain.toLowerCase())) {
+        return guide;
+      }
+    }
+  }
+  return null;
+}

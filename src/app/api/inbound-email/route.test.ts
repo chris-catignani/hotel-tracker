@@ -125,6 +125,21 @@ describe("POST /api/inbound-email", () => {
     );
   });
 
+  it("detects chain guide from email body and passes it to parseConfirmationEmail", async () => {
+    mockSvixVerify.mockReturnValueOnce(makePayload({ from: "user@example.com", email_id: "e1" }));
+    // Email body contains hyatt.com — detectChainGuideFromContent should return the Hyatt guide
+    mockEmailBody("<html>Book at https://www.hyatt.com/hotel/example</html>");
+    mockUserFindFirst.mockResolvedValueOnce({ id: "u1", email: "user@example.com" });
+    (parseConfirmationEmail as Mock).mockResolvedValueOnce(null);
+
+    const req = makeRequest({ from: "user@example.com", email_id: "e1" });
+    await POST(req);
+
+    const [, guideArg] = (parseConfirmationEmail as Mock).mock.calls[0];
+    expect(guideArg).not.toBeNull();
+    expect(guideArg?.chainName).toBe("Hyatt");
+  });
+
   it("returns 200 and sends error email when parse fails, logs outcome: parse_failed", async () => {
     mockSvixVerify.mockReturnValueOnce(makePayload({ from: "user@example.com", email_id: "e1" }));
     mockEmailBody("<html>junk</html>");
