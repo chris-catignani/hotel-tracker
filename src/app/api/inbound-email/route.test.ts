@@ -119,7 +119,10 @@ describe("POST /api/inbound-email", () => {
     const res = await POST(req);
 
     expect(res.status).toBe(200);
-    expect(mockLoggerInfo).toHaveBeenCalledWith("inbound-email:user_not_found");
+    expect(mockLoggerInfo).toHaveBeenCalledWith(
+      "inbound-email:discarded",
+      expect.objectContaining({ reason: "user_not_found", emailId: "e1" })
+    );
   });
 
   it("returns 200 and sends error email when parse fails, logs outcome: parse_failed", async () => {
@@ -134,7 +137,7 @@ describe("POST /api/inbound-email", () => {
     expect(res.status).toBe(200);
     expect(mockLoggerWarn).toHaveBeenCalledWith(
       "inbound-email:parse_failed",
-      expect.objectContaining({ userId: "u1" })
+      expect.objectContaining({ userId: "u1", emailId: "e1" })
     );
   });
 
@@ -155,7 +158,12 @@ describe("POST /api/inbound-email", () => {
 
     expect(mockLoggerInfo).toHaveBeenCalledWith(
       "inbound-email:duplicate",
-      expect.objectContaining({ bookingId: "b1", confirmationNumber: "ABC123", userId: "u1" })
+      expect.objectContaining({
+        bookingId: "b1",
+        confirmationNumber: "ABC123",
+        userId: "u1",
+        emailId: "e1",
+      })
     );
   });
 
@@ -181,6 +189,7 @@ describe("POST /api/inbound-email", () => {
         property: "Grand Hyatt",
         checkIn: "2026-04-01",
         userId: "u1",
+        emailId: "e1",
       })
     );
   });

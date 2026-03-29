@@ -63,13 +63,13 @@ async function handler(req: NextRequest): Promise<NextResponse> {
 
   // Filter to only process emails addressed to the designated inbound address
   if (!data.to.includes(inboundEmail)) {
-    logger.info("inbound-email:discarded", { reason: "wrong_recipient" });
+    logger.info("inbound-email:discarded", { reason: "wrong_recipient", emailId: data.email_id });
     return NextResponse.json({ ok: true });
   }
 
   const forwarderEmail = data.from ?? "";
 
-  logger.info("inbound-email:received", { subject: data.subject });
+  logger.info("inbound-email:received", { subject: data.subject, emailId: data.email_id });
 
   // Fetch full email body from Resend — webhook payload only contains metadata
   const emailRes = await fetch(`https://api.resend.com/emails/receiving/${data.email_id}`, {
@@ -94,7 +94,7 @@ async function handler(req: NextRequest): Promise<NextResponse> {
     where: { email: forwarderEmail },
   });
   if (!user) {
-    logger.info("inbound-email:user_not_found");
+    logger.info("inbound-email:discarded", { reason: "user_not_found", emailId: data.email_id });
     return NextResponse.json({ ok: true });
   }
 
@@ -102,7 +102,7 @@ async function handler(req: NextRequest): Promise<NextResponse> {
   // so we can't identify the chain — pass null and let Claude parse without chain hints
   const parsed = await parseConfirmationEmail(rawEmail, null);
   if (!parsed) {
-    logger.warn("inbound-email:parse_failed", { userId: user.id });
+    logger.warn("inbound-email:parse_failed", { userId: user.id, emailId: data.email_id });
     await sendIngestionError({
       to: user.email!,
       reason: "We couldn't recognise the booking details in this email.",
@@ -118,6 +118,7 @@ async function handler(req: NextRequest): Promise<NextResponse> {
       bookingId,
       confirmationNumber: parsed.confirmationNumber,
       userId: user.id,
+      emailId: data.email_id,
     });
   } else {
     logger.info("inbound-email:booking_created", {
@@ -125,6 +126,7 @@ async function handler(req: NextRequest): Promise<NextResponse> {
       property: parsed.propertyName,
       checkIn: parsed.checkIn,
       userId: user.id,
+      emailId: data.email_id,
     });
     await sendIngestionConfirmation({
       to: user.email!,
