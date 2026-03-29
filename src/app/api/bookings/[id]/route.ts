@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 import {
   matchPromotionsForBooking,
   reevaluateBookings,
@@ -500,6 +501,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       data,
     });
 
+    logger.info("booking:updated", {
+      userId,
+      bookingId: id,
+      fieldsUpdated: Object.keys(data),
+    });
+
     // Re-run promotion matching after update
     const appliedPromoIds = await matchPromotionsForBooking(booking.id);
 
@@ -606,6 +613,11 @@ export async function DELETE(
 
     await prisma.booking.delete({
       where: { id },
+    });
+
+    logger.info("booking:deleted", {
+      userId,
+      bookingId: id,
     });
 
     // Re-evaluate subsequent bookings
