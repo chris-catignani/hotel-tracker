@@ -7,7 +7,6 @@ import { apiError } from "@/lib/api-error";
 import { CURRENCIES } from "@/lib/constants";
 import { reevaluateBookings } from "@/lib/promotion-matching";
 import { logger } from "@/lib/logger";
-import { withRouteLogging } from "@/lib/route-logging";
 
 const RATES_CDN =
   "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json";
@@ -110,7 +109,7 @@ async function handler(request: NextRequest) {
       pointTypesUpdated.push(`POINT_TYPE_REFRESH=>ERROR`);
     }
 
-    logger.info("cron:exchange-rates: stats", {
+    logger.info("exchange_rates:refreshed", {
       currenciesUpdated: upsertResults.filter(
         (r) => !r.includes("ERROR") && !r.includes("NOT_FOUND")
       ).length,
@@ -135,4 +134,4 @@ async function handler(request: NextRequest) {
   }
 }
 
-export const GET = withAxiom(withRouteLogging("cron:exchange-rates", handler));
+export const GET = withAxiom(handler);
