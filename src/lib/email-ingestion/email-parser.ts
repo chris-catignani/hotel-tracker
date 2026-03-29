@@ -63,7 +63,7 @@ Rules:
   GHA Discovery: PARKROYAL, Pan Pacific, Anantara, Kempinski, Corinthia, Capella, Tivoli, NH Hotels, NH Collection, Viceroy, Outrigger, Oaks, Minor
 
 Email:
-${emailText.slice(0, 8000)}`;
+${emailText.slice(0, 16000)}`;
 }
 
 function isValidParsed(data: unknown): data is ParsedBookingData {
