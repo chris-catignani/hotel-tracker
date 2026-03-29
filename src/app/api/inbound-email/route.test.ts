@@ -121,7 +121,7 @@ describe("POST /api/inbound-email", () => {
     expect(res.status).toBe(200);
     expect(mockLoggerInfo).toHaveBeenCalledWith(
       "inbound-email:discarded",
-      expect.objectContaining({ reason: "user_not_found", emailId: "e1" })
+      expect.objectContaining({ reason: "user_not_found", resendEmailId: "e1" })
     );
   });
 
@@ -137,7 +137,7 @@ describe("POST /api/inbound-email", () => {
     expect(res.status).toBe(200);
     expect(mockLoggerWarn).toHaveBeenCalledWith(
       "inbound-email:parse_failed",
-      expect.objectContaining({ userId: "u1", emailId: "e1" })
+      expect.objectContaining({ userId: "u1", resendEmailId: "e1" })
     );
   });
 
@@ -162,7 +162,7 @@ describe("POST /api/inbound-email", () => {
         bookingId: "b1",
         confirmationNumber: "ABC123",
         userId: "u1",
-        emailId: "e1",
+        resendEmailId: "e1",
       })
     );
   });
@@ -189,7 +189,7 @@ describe("POST /api/inbound-email", () => {
         property: "Grand Hyatt",
         checkIn: "2026-04-01",
         userId: "u1",
-        emailId: "e1",
+        resendEmailId: "e1",
       })
     );
   });
