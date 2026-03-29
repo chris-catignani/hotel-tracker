@@ -84,6 +84,7 @@ const baseParsed: ParsedBookingData = {
   taxAmount: 98.5,
   totalCost: 689.54,
   pointsRedeemed: null,
+  certsRedeemed: null,
 };
 
 describe("ingestBookingFromEmail", () => {

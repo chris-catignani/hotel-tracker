@@ -49,7 +49,8 @@ ${chainSection}Return ONLY valid JSON with these fields (no explanation, no mark
   "pretaxCost": number | null,   // pretax total if shown directly; null if returning nightlyRates
   "taxAmount": number | null,    // tax total for the entire stay if shown directly; null if nightlyRates is populated
   "totalCost": number | null,    // cash bookings only
-  "pointsRedeemed": number | null  // award bookings only, null if count not stated
+  "pointsRedeemed": number | null,  // award bookings only, null if count not stated
+  "certsRedeemed": [{ "certType": string, "count": number }] | null  // cert/cert+points bookings only; use chain-specific certType values from the guide
 }
 
 Rules:
@@ -63,7 +64,7 @@ Rules:
   GHA Discovery: PARKROYAL, Pan Pacific, Anantara, Kempinski, Corinthia, Capella, Tivoli, NH Hotels, NH Collection, Viceroy, Outrigger, Oaks, Minor
 
 Email:
-${emailText.slice(0, 8000)}`;
+${emailText.slice(0, 16000)}`;
 }
 
 function isValidParsed(data: unknown): data is ParsedBookingData {
