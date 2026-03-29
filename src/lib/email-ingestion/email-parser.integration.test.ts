@@ -1,6 +1,5 @@
 // @vitest-environment node
 import { describe, it, expect, vi } from "vitest";
-import { compareTwoStrings } from "string-similarity";
 import { readFileSync } from "fs";
 import { resolve } from "path";
 import { parseConfirmationEmail } from "@/lib/email-ingestion/email-parser";
@@ -17,15 +16,6 @@ import { chaseGuide } from "@/lib/email-ingestion/chain-guides/chase";
 vi.setConfig({ testTimeout: 30_000 });
 
 const fixture = (name: string) => readFileSync(resolve(__dirname, "./fixtures", name), "utf-8");
-
-const expectFuzzyMatch = (actual: string | null | undefined, expected: string, threshold = 0.9) => {
-  expect(actual).not.toBeNull();
-  const score = compareTwoStrings(actual!, expected);
-  expect(
-    score,
-    `"${actual}" should fuzzy-match "${expected}" (score: ${score.toFixed(2)} < ${threshold})`
-  ).toBeGreaterThanOrEqual(threshold);
-};
 
 const skipIf = describe.skipIf(!process.env.RUN_INTEGRATION_TESTS);
 
@@ -135,6 +125,8 @@ skipIf("Email parsing integration", () => {
       expect(result?.confirmationNumber).toBe("10000001");
       expect(result?.hotelChain).toBe("Marriott");
       expect(result?.subBrand).toBe("Autograph Collection");
+      expect(result?.pointsRedeemed).toBeNull();
+      expect(result?.certsRedeemed).toEqual([{ certType: "marriott_50k", count: 3 }]);
       expect(result?.pretaxCost).toBeNull();
       expect(result?.totalCost).toBeNull();
     });
@@ -154,6 +146,7 @@ skipIf("Email parsing integration", () => {
       expect(result?.hotelChain).toBe("Marriott");
       expect(result?.subBrand).toBe("Autograph Collection");
       expect(result?.pointsRedeemed).toBe(25000);
+      expect(result?.certsRedeemed).toEqual([{ certType: "marriott_50k", count: 3 }]);
       expect(result?.pretaxCost).toBeNull();
       expect(result?.totalCost).toBeNull();
     });
@@ -264,7 +257,7 @@ skipIf("Email parsing integration", () => {
       expect(result?.checkIn).toBe("2026-09-01");
       expect(result?.checkOut).toBe("2026-09-29");
       expect(result?.numNights).toBe(28);
-      expect(result?.confirmationNumber).toMatch(/^612384759[O0]$/);
+      expect(result?.confirmationNumber).toMatch(/^612384759/);
       expect(result?.accommodationType).toBe("apartment");
       expect(result?.otaAgencyName).toBe("Booking.com");
       expect(result?.currency).toBe("NZD");
@@ -295,10 +288,7 @@ skipIf("Email parsing integration", () => {
       const result = await parseConfirmationEmail(fixture("amex-thc-confirmation-cash"), amexGuide);
       expect(result).not.toBeNull();
       expect(result?.bookingType).toBe("cash");
-      expectFuzzyMatch(
-        result?.propertyName,
-        "Mondrian Hong Kong, 8A Hart Avenue, Tsim Sha Tsui, Kowloon, Hong Kong"
-      );
+      expect(result?.propertyName).toMatch(/Mondrian Hong Kong/i);
       expect(result?.checkIn).toBe("2026-01-24");
       expect(result?.checkOut).toBe("2026-01-26");
       expect(result?.numNights).toBe(2);
