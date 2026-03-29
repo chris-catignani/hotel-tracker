@@ -108,7 +108,7 @@ skipIf("Email parsing integration", () => {
         marriottGuide
       );
       expect(result).not.toBeNull();
-      expect(result?.bookingType).toBe("cert");
+      expect(result?.bookingType).toBe("points");
       expect(result?.propertyName).toBe("Moxy Munich Ostbahnhof");
       expect(result?.checkIn).toBe("2025-09-11");
       expect(result?.checkOut).toBe("2025-09-16");
@@ -116,6 +116,44 @@ skipIf("Email parsing integration", () => {
       expect(result?.confirmationNumber).toBe("61748392");
       expect(result?.hotelChain).toBe("Marriott");
       expect(result?.subBrand).toBe("Moxy");
+      expect(result?.pointsRedeemed).toBe(100000);
+      expect(result?.pretaxCost).toBeNull();
+      expect(result?.totalCost).toBeNull();
+    });
+
+    it("parses cert-only booking with null costs", async () => {
+      const result = await parseConfirmationEmail(
+        fixture("marriott-confirmation-cert"),
+        marriottGuide
+      );
+      expect(result).not.toBeNull();
+      expect(result?.bookingType).toBe("cert");
+      expect(result?.propertyName).toBe("Duxton Reserve Singapore, Autograph Collection");
+      expect(result?.checkIn).toBe("2026-03-02");
+      expect(result?.checkOut).toBe("2026-03-05");
+      expect(result?.numNights).toBe(3);
+      expect(result?.confirmationNumber).toBe("10000001");
+      expect(result?.hotelChain).toBe("Marriott");
+      expect(result?.subBrand).toBe("Autograph Collection");
+      expect(result?.pretaxCost).toBeNull();
+      expect(result?.totalCost).toBeNull();
+    });
+
+    it("parses cert+points top-off booking with null costs", async () => {
+      const result = await parseConfirmationEmail(
+        fixture("marriott-confirmation-cert-and-points"),
+        marriottGuide
+      );
+      expect(result).not.toBeNull();
+      expect(result?.bookingType).toBe("cert");
+      expect(result?.propertyName).toBe("Duxton Reserve Singapore, Autograph Collection");
+      expect(result?.checkIn).toBe("2026-03-02");
+      expect(result?.checkOut).toBe("2026-03-05");
+      expect(result?.numNights).toBe(3);
+      expect(result?.confirmationNumber).toBe("20000002");
+      expect(result?.hotelChain).toBe("Marriott");
+      expect(result?.subBrand).toBe("Autograph Collection");
+      expect(result?.pointsRedeemed).toBe(25000);
       expect(result?.pretaxCost).toBeNull();
       expect(result?.totalCost).toBeNull();
     });
@@ -205,9 +243,9 @@ skipIf("Email parsing integration", () => {
       expect(result?.accommodationType).toBe("apartment");
       expect(result?.otaAgencyName).toBe("Airbnb");
       expect(result?.currency).toBe("USD");
-      // Monthly discount present → pretaxCost null
-      expect(result?.pretaxCost).toBeNull();
-      expect(result?.taxAmount).toBe(67.31);
+      // pretaxCost = nightly total minus monthly discount; taxAmount = taxes + net service fee
+      expect(result?.pretaxCost).toBe(1015.49);
+      expect(result?.taxAmount).toBe(197.61);
       expect(result?.totalCost).toBe(1213.1);
     });
   });

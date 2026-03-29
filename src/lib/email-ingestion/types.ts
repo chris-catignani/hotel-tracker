@@ -36,4 +36,5 @@ export interface ParsedBookingData {
   totalCost: number | null;
   // Award bookings
   pointsRedeemed: number | null;
+  certsRedeemed: { certType: string; count: number }[] | null;
 }
