@@ -84,6 +84,7 @@ const BOOKING_INCLUDE = (userId: string) =>
     property: true,
     priceWatchBooking: { include: { priceWatch: { select: { isEnabled: true } } } },
     bookingCardBenefits: { include: { cardBenefit: true } },
+    bookingPartnershipEarnStatuses: true,
   }) as const;
 
 export const GET = withAxiom(async (request: NextRequest) => {
@@ -92,8 +93,30 @@ export const GET = withAxiom(async (request: NextRequest) => {
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
     const userId = userIdOrResponse;
 
+    const { searchParams } = new URL(request.url);
+    const filter = searchParams.get("filter");
+
+    const whereClause =
+      filter === "needs-attention"
+        ? {
+            userId,
+            OR: [
+              { checkIn: { gte: new Date() } },
+              { loyaltyPostingStatus: "pending" as const },
+              { cardRewardPostingStatus: "pending" as const },
+              { portalCashbackPostingStatus: "pending" as const },
+              { bookingPromotions: { some: { postingStatus: "pending" as const } } },
+              { bookingCardBenefits: { some: { postingStatus: "pending" as const } } },
+              { benefits: { some: { postingStatus: "pending" as const } } },
+              {
+                bookingPartnershipEarnStatuses: { some: { postingStatus: "pending" as const } },
+              },
+            ],
+          }
+        : { userId };
+
     const bookings = await prisma.booking.findMany({
-      where: { userId },
+      where: whereClause,
       include: BOOKING_INCLUDE(userId),
       orderBy: {
         checkIn: "asc",
