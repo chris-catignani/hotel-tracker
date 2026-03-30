@@ -626,7 +626,12 @@ export const PATCH = withAxiomRouteHandler(
       if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
       const userId = userIdOrResponse;
 
-      const { needsReview } = await request.json();
+      const {
+        needsReview,
+        loyaltyPostingStatus,
+        cardRewardPostingStatus,
+        portalCashbackPostingStatus,
+      } = await request.json();
 
       const exists = await prisma.booking.findFirst({
         where: { id, userId },
@@ -634,9 +639,17 @@ export const PATCH = withAxiomRouteHandler(
       });
       if (!exists) return apiError("Booking not found", null, 404, request, { bookingId: id });
 
+      const data: Record<string, unknown> = {};
+      if (needsReview !== undefined) data.needsReview = needsReview;
+      if (loyaltyPostingStatus !== undefined) data.loyaltyPostingStatus = loyaltyPostingStatus;
+      if (cardRewardPostingStatus !== undefined)
+        data.cardRewardPostingStatus = cardRewardPostingStatus;
+      if (portalCashbackPostingStatus !== undefined)
+        data.portalCashbackPostingStatus = portalCashbackPostingStatus;
+
       const booking = await prisma.booking.update({
         where: { id },
-        data: { needsReview },
+        data,
       });
 
       return NextResponse.json(booking);
