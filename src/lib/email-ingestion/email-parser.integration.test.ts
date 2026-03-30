@@ -211,7 +211,7 @@ skipIf("Email parsing integration", () => {
       expect(result?.currency).toBe("THB");
       // Free-night benefit present → pretaxCost must be null (discount rule)
       expect(result?.pretaxCost).toBeNull();
-      // 5 × 2689.60 (Oct 19–24), 1 × 0.00 free night (Oct 24–25), 1 × 2890.50 (Oct 25–26)
+      // 5 × 2689.60 (Oct 19–23), 1 × 0.00 free night (Oct 24), 1 × 2890.50 (Oct 25)
       expect(result?.nightlyRates).toHaveLength(7);
       expect(result?.nightlyRates?.[0].amount).toBe(2689.6);
       expect(result?.nightlyRates?.[1].amount).toBe(2689.6);
