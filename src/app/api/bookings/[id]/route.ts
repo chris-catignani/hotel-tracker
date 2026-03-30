@@ -109,6 +109,7 @@ async function getFullBookingWithUsage(id: string, userId: string) {
       property: true,
       priceWatchBooking: { include: { priceWatch: { select: { isEnabled: true } } } },
       bookingCardBenefits: { include: { cardBenefit: true } },
+      bookingPartnershipEarnStatuses: true,
     },
   });
 
