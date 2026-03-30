@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAxiom } from "next-axiom";
 import prisma from "@/lib/prisma";
-import { matchPromotionsForBooking } from "@/lib/promotion-matching";
-import { reevaluateSubsequentBookings } from "@/lib/promotion-matching-helpers";
+import { runPostBookingCreate } from "@/lib/booking-service";
 import { apiError } from "@/lib/api-error";
 import { resolveBookingFinancials } from "@/lib/booking-financials";
 import {
@@ -16,10 +15,8 @@ import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
 import { enrichBookingWithRate } from "@/lib/booking-enrichment";
 import { findOrCreateProperty } from "@/lib/property-utils";
-import { reapplyCardBenefitsAffectedByBooking } from "@/lib/card-benefit-apply";
 import { resolvePartnershipEarns } from "@/lib/partnership-earns";
 import { validateBenefits } from "@/lib/booking-benefit-validation";
-import { logger } from "@/lib/logger";
 
 const BOOKING_INCLUDE = (userId: string) =>
   ({
@@ -269,12 +266,8 @@ export const POST = withAxiom(async (request: NextRequest) => {
       },
     });
 
-    // Auto-run promotion matching
-    const appliedPromoIds = await matchPromotionsForBooking(booking.id);
-
-    logger.info("booking:created", {
+    await runPostBookingCreate(booking.id, {
       userId,
-      bookingId: booking.id,
       accommodationType: (accommodationType ?? "hotel") as string,
       checkIn,
       checkOut,
@@ -282,14 +275,7 @@ export const POST = withAxiom(async (request: NextRequest) => {
       totalCost: Number(totalCost),
       currency: resolvedCurrency,
       ingestionMethod: (ingestionMethod ?? "manual") as string,
-      promotionsApplied: appliedPromoIds.length,
     });
-
-    // Re-evaluate subsequent bookings if this is an earlier stay
-    await reevaluateSubsequentBookings(booking.id, appliedPromoIds);
-
-    // Apply card benefits (re-evaluates all bookings in affected periods)
-    await reapplyCardBenefitsAffectedByBooking(booking.id);
 
     // Fetch the booking with all relations to return
     const fullBooking = await prisma.booking.findUnique({
