@@ -193,7 +193,7 @@ async function main() {
     process.exit(1);
   }
   const body = JSON.parse(bodyText) as {
-    dashboard?: { uid?: string; id?: string };
+    dashboard?: { id?: string };
     error?: string;
   };
 
