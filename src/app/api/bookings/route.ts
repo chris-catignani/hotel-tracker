@@ -18,6 +18,25 @@ import { findOrCreateProperty } from "@/lib/property-utils";
 import { resolvePartnershipEarns } from "@/lib/partnership-earns";
 import { validateBenefits } from "@/lib/booking-benefit-validation";
 
+function derivePostingStatuses(data: {
+  loyaltyPointsEarned: number | null | undefined;
+  accommodationType: string;
+  hotelChainId: string | null | undefined;
+  userCreditCardId: string | null | undefined;
+  shoppingPortalId: string | null | undefined;
+}) {
+  return {
+    loyaltyPostingStatus:
+      data.loyaltyPointsEarned != null &&
+      data.accommodationType !== "apartment" &&
+      data.hotelChainId != null
+        ? ("pending" as const)
+        : null,
+    cardRewardPostingStatus: data.userCreditCardId != null ? ("pending" as const) : null,
+    portalCashbackPostingStatus: data.shoppingPortalId != null ? ("pending" as const) : null,
+  };
+}
+
 const BOOKING_INCLUDE = (userId: string) =>
   ({
     hotelChain: {
@@ -203,6 +222,14 @@ export const POST = withAxiom(async (request: NextRequest) => {
       return apiError(benefitValidationError, null, 400, request);
     }
 
+    const postingStatuses = derivePostingStatuses({
+      loyaltyPointsEarned: calculatedPoints,
+      accommodationType: accommodationType ?? "hotel",
+      hotelChainId: hotelChainId || null,
+      userCreditCardId: userCreditCardId || null,
+      shoppingPortalId: shoppingPortalId || null,
+    });
+
     const booking = await prisma.booking.create({
       data: {
         userId,
@@ -263,6 +290,7 @@ export const POST = withAxiom(async (request: NextRequest) => {
                 })),
             }
           : undefined,
+        ...postingStatuses,
       },
     });
 

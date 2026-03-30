@@ -31,6 +31,25 @@ import {
 } from "@/lib/card-benefit-apply";
 import { validateBenefits } from "@/lib/booking-benefit-validation";
 
+function derivePostingStatuses(data: {
+  loyaltyPointsEarned: number | null | undefined;
+  accommodationType: string;
+  hotelChainId: string | null | undefined;
+  userCreditCardId: string | null | undefined;
+  shoppingPortalId: string | null | undefined;
+}) {
+  return {
+    loyaltyPostingStatus:
+      data.loyaltyPointsEarned != null &&
+      data.accommodationType !== "apartment" &&
+      data.hotelChainId != null
+        ? ("pending" as const)
+        : null,
+    cardRewardPostingStatus: data.userCreditCardId != null ? ("pending" as const) : null,
+    portalCashbackPostingStatus: data.shoppingPortalId != null ? ("pending" as const) : null,
+  };
+}
+
 async function getFullBookingWithUsage(id: string, userId: string) {
   const booking = await prisma.booking.findFirst({
     where: { id, userId },
@@ -500,6 +519,51 @@ export const PUT = withAxiomRouteHandler(
               ...(longitude !== undefined && { longitude: longitude ?? null }),
             },
           });
+        }
+      }
+
+      // Derive posting statuses from the merged state (incoming fields + current DB values)
+      {
+        const current = await prisma.booking.findFirst({
+          where: { id, userId },
+          select: {
+            loyaltyPointsEarned: true,
+            accommodationType: true,
+            hotelChainId: true,
+            userCreditCardId: true,
+            shoppingPortalId: true,
+          },
+        });
+        if (current) {
+          const finalLoyaltyPoints =
+            loyaltyPointsEarned !== undefined
+              ? (data.loyaltyPointsEarned as number | null | undefined)
+              : current.loyaltyPointsEarned != null
+                ? Number(current.loyaltyPointsEarned)
+                : null;
+          const finalAccommodationType =
+            (data.accommodationType as string | undefined) ?? current.accommodationType;
+          const finalHotelChainId =
+            hotelChainId !== undefined
+              ? (data.hotelChainId as string | null | undefined)
+              : current.hotelChainId;
+          const finalUserCreditCardId =
+            userCreditCardId !== undefined
+              ? (data.userCreditCardId as string | null | undefined)
+              : current.userCreditCardId;
+          const finalShoppingPortalId =
+            shoppingPortalId !== undefined
+              ? (data.shoppingPortalId as string | null | undefined)
+              : current.shoppingPortalId;
+
+          const postingStatuses = derivePostingStatuses({
+            loyaltyPointsEarned: finalLoyaltyPoints,
+            accommodationType: finalAccommodationType,
+            hotelChainId: finalHotelChainId,
+            userCreditCardId: finalUserCreditCardId,
+            shoppingPortalId: finalShoppingPortalId,
+          });
+          Object.assign(data, postingStatuses);
         }
       }
 
