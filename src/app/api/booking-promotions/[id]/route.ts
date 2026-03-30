@@ -55,7 +55,7 @@ export const PATCH = withAxiomRouteHandler(
       if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
       const userId = userIdOrResponse;
 
-      const { verified } = await request.json();
+      const { postingStatus } = await request.json();
 
       const exists = await prisma.bookingPromotion.findFirst({
         where: { id, booking: { userId } },
@@ -68,7 +68,7 @@ export const PATCH = withAxiomRouteHandler(
 
       const bookingPromotion = await prisma.bookingPromotion.update({
         where: { id },
-        data: { verified },
+        data: { postingStatus },
       });
 
       return NextResponse.json(bookingPromotion);
