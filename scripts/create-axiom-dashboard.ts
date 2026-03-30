@@ -192,10 +192,13 @@ async function main() {
     console.error("Failed to create Axiom dashboard", { status: res.status, body: bodyText });
     process.exit(1);
   }
-  const body = JSON.parse(bodyText) as { dashboard?: { uid?: string }; error?: string };
+  const body = JSON.parse(bodyText) as {
+    dashboard?: { id?: string };
+    error?: string;
+  };
 
-  const baseUrl = process.env.NEXT_PUBLIC_AXIOM_URL ?? "https://app.axiom.co";
-  console.log(`Dashboard created: ${baseUrl}/dashboards/${body.dashboard?.uid}`);
+  const baseUrl = process.env.NEXT_PUBLIC_AXIOM_DASHBOARD_URL ?? "https://app.axiom.co";
+  console.log(`Dashboard created: ${baseUrl}/dashboards/${body.dashboard?.id}`);
 }
 
 main().catch((err) => {
