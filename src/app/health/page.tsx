@@ -21,7 +21,7 @@ export default function HealthPage() {
     {
       title: "Axiom",
       description: "Logs, email ingestion stats, and job health dashboards",
-      href: process.env.NEXT_PUBLIC_AXIOM_URL ?? "https://app.axiom.co",
+      href: process.env.NEXT_PUBLIC_AXIOM_DASHBOARD_URL ?? "https://app.axiom.co",
     },
     {
       title: "Sentry",
