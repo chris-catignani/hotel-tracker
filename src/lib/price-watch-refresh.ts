@@ -61,6 +61,8 @@ export interface WatchResult {
   property: string;
   snapshots: number;
   alerts: number;
+  fetchErrors: number;
+  durationMs: number;
 }
 
 export async function runPriceWatchRefresh(fetchers: PriceFetcher[]): Promise<{
@@ -102,8 +104,10 @@ export async function runPriceWatchRefresh(fetchers: PriceFetcher[]): Promise<{
 
   for (const watch of watches) {
     const fetcher = selectFetcher(watch.property, fetchers);
+    const watchStart = Date.now();
     let snapshotCount = 0;
     let alertCount = 0;
+    let fetchErrorCount = 0;
 
     for (const pwb of watch.bookings) {
       const checkIn = new Date(pwb.booking.checkIn);
@@ -119,6 +123,7 @@ export async function runPriceWatchRefresh(fetchers: PriceFetcher[]): Promise<{
             checkOut: checkOutStr,
           });
         } catch (error) {
+          fetchErrorCount++;
           logger.error(`Fetch failed for ${watch.property.name}`, error, {
             watchId: watch.id,
             property: watch.property.name,
@@ -259,11 +264,23 @@ export async function runPriceWatchRefresh(fetchers: PriceFetcher[]): Promise<{
       data: { lastCheckedAt: new Date() },
     });
 
+    const watchDurationMs = Date.now() - watchStart;
+    logger.info("price_watch:watch_completed", {
+      watchId: watch.id,
+      property: watch.property.name,
+      snapshots: snapshotCount,
+      alerts: alertCount,
+      fetchErrors: fetchErrorCount,
+      durationMs: watchDurationMs,
+    });
+
     results.push({
       watchId: watch.id,
       property: watch.property.name,
       snapshots: snapshotCount,
       alerts: alertCount,
+      fetchErrors: fetchErrorCount,
+      durationMs: watchDurationMs,
     });
   }
 

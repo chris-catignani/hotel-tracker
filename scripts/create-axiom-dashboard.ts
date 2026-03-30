@@ -5,8 +5,7 @@
  * Run (sourcing your local env):
  *   source .env.local && npx tsx scripts/create-axiom-dashboard.ts
  *
- * Re-running will fail with 409 if the dashboard already exists.
- * To recreate, delete the existing "Hotel Tracker" dashboard in Axiom first.
+ * Idempotent: deletes the existing "Hotel Tracker" dashboard (if any) before creating.
  */
 
 export {};
@@ -127,6 +126,49 @@ async function main() {
       query: q("where level == 'error' | project _time, message, fields.errorMessage, source"),
     },
 
+    // ─── Price Watch ──────────────────────────────────────────────────────────
+    {
+      id: "price-watch-run-log",
+      type: "LogStream",
+      name: "Price Watch Runs",
+      query: q(
+        "where message == 'price_watch:run_completed'" +
+          " | project _time, fields.watchesChecked, fields.snapshotsCreated," +
+          " fields.alertsSent, fields.fetchErrors, fields.durationMs"
+      ),
+    },
+    {
+      id: "price-watch-snapshots",
+      type: "TimeSeries",
+      name: "Snapshots Created Over Time",
+      query: q(
+        "where message == 'price_watch:watch_completed'" +
+          " | summarize sum(toint(fields.snapshots)) by bin(_time, 1d)"
+      ),
+    },
+    {
+      id: "price-watch-alerts-stat",
+      type: "Statistic",
+      name: "Price Drop Alerts Sent",
+      query: q(
+        "where message == 'price_watch:run_completed' | summarize sum(toint(fields.alertsSent))"
+      ),
+      colorScheme: "Green",
+      showChart: true,
+    },
+    {
+      id: "price-watch-errors-stat",
+      type: "Statistic",
+      name: "Price Watch Fetch Errors",
+      query: q(
+        "where message == 'price_watch:run_completed' | summarize sum(toint(fields.fetchErrors))"
+      ),
+      colorScheme: "Red",
+      showChart: true,
+      errorThreshold: "Above",
+      errorThresholdValue: "0",
+    },
+
     // ─── Bookings ─────────────────────────────────────────────────────────────
     {
       id: "bookings-over-time",
@@ -159,14 +201,19 @@ async function main() {
     // Cron Jobs
     { i: "exchange-rate-cron", x: 0, y: 24, w: 6, h: 5 },
     { i: "cron-errors", x: 6, y: 24, w: 6, h: 5 },
+    // Price Watch
+    { i: "price-watch-run-log", x: 0, y: 29, w: 12, h: 5 },
+    { i: "price-watch-snapshots", x: 0, y: 34, w: 8, h: 5 },
+    { i: "price-watch-alerts-stat", x: 8, y: 34, w: 2, h: 5 },
+    { i: "price-watch-errors-stat", x: 10, y: 34, w: 2, h: 5 },
     // Bookings
-    { i: "bookings-over-time", x: 0, y: 29, w: 8, h: 5 },
-    { i: "bookings-by-method", x: 8, y: 29, w: 4, h: 5 },
+    { i: "bookings-over-time", x: 0, y: 39, w: 8, h: 5 },
+    { i: "bookings-by-method", x: 8, y: 39, w: 4, h: 5 },
   ];
 
   const dashboardDoc = {
     name: "Hotel Tracker",
-    description: "API health, email ingestion, cron jobs, and booking activity",
+    description: "API health, email ingestion, cron jobs, price watch, and booking activity",
     owner: "X-AXIOM-EVERYONE",
     charts,
     layout,
@@ -175,6 +222,22 @@ async function main() {
     timeWindowStart: "qr-now-7d",
     timeWindowEnd: "qr-now",
   };
+
+  // Delete existing dashboard with the same name (makes the script idempotent)
+  const listRes = await fetch(`${AXIOM_API}/dashboards`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (listRes.ok) {
+    const listBody = (await listRes.json()) as { dashboards?: { id?: string; name?: string }[] };
+    const existing = listBody.dashboards?.find((d) => d.name === dashboardDoc.name);
+    if (existing?.id) {
+      console.log(`Deleting existing dashboard '${dashboardDoc.name}' (id: ${existing.id})...`);
+      await fetch(`${AXIOM_API}/dashboards/${existing.id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    }
+  }
 
   console.log(`Creating dashboard in dataset '${dataset}'...`);
 
