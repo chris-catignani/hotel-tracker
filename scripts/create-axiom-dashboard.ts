@@ -99,6 +99,14 @@ async function main() {
       errorThresholdValue: "0",
     },
     {
+      id: "email-duplicate-stat",
+      type: "Statistic",
+      name: "Duplicate Emails Skipped",
+      query: q("where message == 'inbound-email:duplicate' | summarize count()"),
+      colorScheme: "Yellow",
+      showChart: true,
+    },
+    {
       id: "email-outcomes",
       type: "TimeSeries",
       name: "Email Ingestion Outcomes Over Time",
@@ -194,9 +202,10 @@ async function main() {
     { i: "p95-latency", x: 6, y: 5, w: 6, h: 5 },
     { i: "top-endpoints", x: 0, y: 10, w: 12, h: 5 },
     // Email Ingestion
-    { i: "email-received-stat", x: 0, y: 15, w: 4, h: 4 },
-    { i: "email-booking-created-stat", x: 4, y: 15, w: 4, h: 4 },
-    { i: "email-parse-failed-stat", x: 8, y: 15, w: 4, h: 4 },
+    { i: "email-received-stat", x: 0, y: 15, w: 3, h: 4 },
+    { i: "email-booking-created-stat", x: 3, y: 15, w: 3, h: 4 },
+    { i: "email-parse-failed-stat", x: 6, y: 15, w: 3, h: 4 },
+    { i: "email-duplicate-stat", x: 9, y: 15, w: 3, h: 4 },
     { i: "email-outcomes", x: 0, y: 19, w: 12, h: 5 },
     // Cron Jobs
     { i: "exchange-rate-cron", x: 0, y: 24, w: 6, h: 5 },
