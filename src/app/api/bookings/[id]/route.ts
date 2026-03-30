@@ -12,7 +12,7 @@ import {
 } from "@/lib/promotion-matching";
 import { reevaluateSubsequentBookings } from "@/lib/promotion-matching-helpers";
 import { apiError } from "@/lib/api-error";
-import { CertType, BenefitType, BenefitPointsEarnType } from "@prisma/client";
+import { CertType, BenefitType, BenefitPointsEarnType, PostingStatus } from "@prisma/client";
 import { calculatePoints, resolveBasePointRate } from "@/lib/loyalty-utils";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
@@ -30,25 +30,6 @@ import {
   reapplyBenefitForPeriod,
 } from "@/lib/card-benefit-apply";
 import { validateBenefits } from "@/lib/booking-benefit-validation";
-
-function derivePostingStatuses(data: {
-  loyaltyPointsEarned: number | null | undefined;
-  accommodationType: string;
-  hotelChainId: string | null | undefined;
-  userCreditCardId: string | null | undefined;
-  shoppingPortalId: string | null | undefined;
-}) {
-  return {
-    loyaltyPostingStatus:
-      data.loyaltyPointsEarned != null &&
-      data.accommodationType !== "apartment" &&
-      data.hotelChainId != null
-        ? ("pending" as const)
-        : null,
-    cardRewardPostingStatus: data.userCreditCardId != null ? ("pending" as const) : null,
-    portalCashbackPostingStatus: data.shoppingPortalId != null ? ("pending" as const) : null,
-  };
-}
 
 async function getFullBookingWithUsage(id: string, userId: string) {
   const booking = await prisma.booking.findFirst({
@@ -523,7 +504,8 @@ export const PUT = withAxiomRouteHandler(
         }
       }
 
-      // Derive posting statuses from the merged state (incoming fields + current DB values)
+      // Derive posting statuses: only reset to "pending" when the relevant entity changes;
+      // otherwise preserve the current DB value so user-set statuses are not overwritten.
       {
         const current = await prisma.booking.findFirst({
           where: { id, userId },
@@ -533,9 +515,14 @@ export const PUT = withAxiomRouteHandler(
             hotelChainId: true,
             userCreditCardId: true,
             shoppingPortalId: true,
+            loyaltyPostingStatus: true,
+            cardRewardPostingStatus: true,
+            portalCashbackPostingStatus: true,
           },
         });
         if (current) {
+          // --- loyaltyPostingStatus ---
+          // Loyalty is affected by: loyaltyPointsEarned, accommodationType, hotelChainId
           const finalLoyaltyPoints =
             loyaltyPointsEarned !== undefined
               ? (data.loyaltyPointsEarned as number | null | undefined)
@@ -548,23 +535,74 @@ export const PUT = withAxiomRouteHandler(
             hotelChainId !== undefined
               ? (data.hotelChainId as string | null | undefined)
               : current.hotelChainId;
+
+          const loyaltyEligible =
+            finalLoyaltyPoints != null &&
+            finalAccommodationType !== "apartment" &&
+            finalHotelChainId != null;
+
+          let loyaltyPostingStatus: PostingStatus | null;
+          if (!loyaltyEligible) {
+            loyaltyPostingStatus = null;
+          } else {
+            const loyaltyChanged =
+              (loyaltyPointsEarned !== undefined &&
+                Number(loyaltyPointsEarned || null) !==
+                  (current.loyaltyPointsEarned != null
+                    ? Number(current.loyaltyPointsEarned)
+                    : null)) ||
+              (accommodationType !== undefined &&
+                accommodationType !== current.accommodationType) ||
+              (hotelChainId !== undefined && hotelChainId !== current.hotelChainId);
+            if (loyaltyChanged) {
+              loyaltyPostingStatus = "pending";
+            } else {
+              loyaltyPostingStatus = current.loyaltyPostingStatus ?? "pending";
+            }
+          }
+          data.loyaltyPostingStatus = loyaltyPostingStatus;
+
+          // --- cardRewardPostingStatus ---
           const finalUserCreditCardId =
             userCreditCardId !== undefined
               ? (data.userCreditCardId as string | null | undefined)
               : current.userCreditCardId;
+
+          let cardRewardPostingStatus: PostingStatus | null;
+          if (finalUserCreditCardId == null) {
+            cardRewardPostingStatus = null;
+          } else if (
+            userCreditCardId !== undefined &&
+            userCreditCardId !== current.userCreditCardId
+          ) {
+            // Card changed — reset to pending
+            cardRewardPostingStatus = "pending";
+          } else {
+            // Card unchanged — preserve existing status
+            cardRewardPostingStatus = current.cardRewardPostingStatus ?? "pending";
+          }
+          data.cardRewardPostingStatus = cardRewardPostingStatus;
+
+          // --- portalCashbackPostingStatus ---
           const finalShoppingPortalId =
             shoppingPortalId !== undefined
               ? (data.shoppingPortalId as string | null | undefined)
               : current.shoppingPortalId;
 
-          const postingStatuses = derivePostingStatuses({
-            loyaltyPointsEarned: finalLoyaltyPoints,
-            accommodationType: finalAccommodationType,
-            hotelChainId: finalHotelChainId,
-            userCreditCardId: finalUserCreditCardId,
-            shoppingPortalId: finalShoppingPortalId,
-          });
-          Object.assign(data, postingStatuses);
+          let portalCashbackPostingStatus: PostingStatus | null;
+          if (finalShoppingPortalId == null) {
+            portalCashbackPostingStatus = null;
+          } else if (
+            shoppingPortalId !== undefined &&
+            shoppingPortalId !== current.shoppingPortalId
+          ) {
+            // Portal changed — reset to pending
+            portalCashbackPostingStatus = "pending";
+          } else {
+            // Portal unchanged — preserve existing status
+            portalCashbackPostingStatus = current.portalCashbackPostingStatus ?? "pending";
+          }
+          data.portalCashbackPostingStatus = portalCashbackPostingStatus;
         }
       }
 
