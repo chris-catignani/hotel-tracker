@@ -57,7 +57,7 @@ async function main() {
       name: "Response Time P95 (ms)",
       query: q(
         "where isnotnull(['request.durationMs'])" +
-          " | summarize percentiles(['request.durationMs'], 95) by bin(_time, 5m)"
+          " | summarize percentile(['request.durationMs'], 95) by bin(_time, 5m)"
       ),
     },
     {
