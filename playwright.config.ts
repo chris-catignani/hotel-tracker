@@ -1,7 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 import dotenv from "dotenv";
 
-// Load environment variables from .env file if it exists
+// Load environment variables (.env.local takes precedence over .env)
+dotenv.config({ path: ".env.local" });
 dotenv.config();
 
 /**

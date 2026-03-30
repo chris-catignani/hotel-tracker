@@ -1,5 +1,6 @@
 import { PostingStatus } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
+import { DEFAULT_EQN_VALUE } from "@/lib/constants";
 
 export const NEXT_STATUS: Record<PostingStatus, PostingStatus> = {
   pending: "posted",
@@ -22,11 +23,14 @@ export function formatLoyaltyValue(
 export function formatCardRewardValue(
   value: number,
   rewardType: string,
-  pointTypeName: string | null
+  pointTypeName: string | null,
+  usdCentsPerPoint?: number | null
 ): string {
   if (rewardType === "cashback") return formatCurrency(value);
+  const centsPerPoint = usdCentsPerPoint ?? 0.01;
+  const points = Math.round(value / centsPerPoint);
   const abbr = pointTypeName ? abbreviatePointType(pointTypeName) : "";
-  return `${Math.round(value).toLocaleString()}${abbr ? ` ${abbr}` : ""} pts`;
+  return `${points.toLocaleString()}${abbr ? ` ${abbr}` : ""} pts`;
 }
 
 function abbreviatePointType(name: string): string {
@@ -38,22 +42,34 @@ function abbreviatePointType(name: string): string {
     .join("");
 }
 
-export function formatPortalValue(cashbackValue: number): string {
-  return formatCurrency(cashbackValue);
+export function formatPortalValue(
+  cashbackValue: number,
+  rewardType?: string | null,
+  pointTypeName?: string | null,
+  usdCentsPerPoint?: number | null
+): string {
+  if (!rewardType || rewardType === "cashback") return formatCurrency(cashbackValue);
+  const centsPerPoint = usdCentsPerPoint ?? 0.01;
+  const points = Math.round(cashbackValue / centsPerPoint);
+  const abbr = pointTypeName ? abbreviatePointType(pointTypeName) : "";
+  return `${points.toLocaleString()}${abbr ? ` ${abbr}` : ""} pts`;
 }
 
 export function formatPromotionValue(bp: {
-  rewardType: string;
+  rewardType?: string;
+  promotion?: { benefits?: { rewardType: string }[] };
   bonusPointsApplied: number | null;
   appliedValue: number | string;
 }): string {
   const v = Number(bp.appliedValue);
-  if (bp.rewardType === "points" && bp.bonusPointsApplied != null) {
+  // bonus_points_applied is the authoritative signal for points-type benefits
+  if (bp.bonusPointsApplied != null) {
     return `+${bp.bonusPointsApplied.toLocaleString()} pts`;
   }
-  if (bp.rewardType === "cashback") return formatCurrency(v);
-  if (bp.rewardType === "eqn") return `+${v} EQNs`;
-  if (bp.rewardType === "certificate") return "Cert";
+  const rewardType = bp.rewardType ?? bp.promotion?.benefits?.[0]?.rewardType;
+  if (rewardType === "cashback") return formatCurrency(v);
+  if (rewardType === "eqn") return `+${Math.round(v / DEFAULT_EQN_VALUE)} EQNs`;
+  if (rewardType === "certificate") return "Cert";
   return formatCurrency(v);
 }
 

@@ -39,7 +39,7 @@ export function PostingStatusCell(props: PostingStatusCellProps) {
         onClick={props.onCycle}
         data-testid={props.testId}
         className={cn(
-          "rounded px-2 py-0.5 text-xs font-medium cursor-pointer",
+          "rounded px-2 py-0.5 text-xs font-medium cursor-pointer whitespace-nowrap",
           statusColorClass(props.status)
         )}
       >
@@ -61,7 +61,7 @@ export function PostingStatusCell(props: PostingStatusCellProps) {
       onClick={props.onToggle}
       data-testid={props.testId}
       className={cn(
-        "rounded px-2 py-0.5 text-xs font-medium cursor-pointer",
+        "rounded px-2 py-0.5 text-xs font-medium cursor-pointer whitespace-nowrap",
         allPosted
           ? statusColorClass("posted")
           : props.worstStatus === "failed"

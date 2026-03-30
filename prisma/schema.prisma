@@ -351,7 +351,7 @@ model BookingBenefit {
   pointsEarnType   BenefitPointsEarnType? @map("points_earn_type")
   pointsAmount     Int?                   @map("points_amount")
   pointsMultiplier Decimal?               @map("points_multiplier") @db.Decimal(6, 3)
-  postingStatus    PostingStatus          @default(pending)
+  postingStatus    PostingStatus          @default(pending) @map("posting_status")
   booking          Booking                @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
   @@map("booking_benefits")
@@ -525,7 +525,7 @@ model BookingPromotion {
   isOrphaned          Boolean                   @default(false) @map("is_orphaned")
   isPreQualifying     Boolean                   @default(false) @map("is_pre_qualifying")
   autoApplied         Boolean                   @default(true) @map("auto_applied")
-  postingStatus       PostingStatus             @default(pending)
+  postingStatus       PostingStatus             @default(pending) @map("posting_status")
   eligibleNightsAtBooking Int?                  @map("eligible_nights_at_booking")
   benefitApplications BookingPromotionBenefit[]
 
@@ -663,7 +663,7 @@ model BookingCardBenefit {
   cardBenefit   CardBenefit   @relation(fields: [cardBenefitId], references: [id], onDelete: Cascade)
   appliedValue  Decimal       @map("applied_value") @db.Decimal(10, 2)
   periodKey     String        @map("period_key")
-  postingStatus PostingStatus @default(pending)
+  postingStatus PostingStatus @default(pending) @map("posting_status")
 
   @@unique([bookingId, cardBenefitId])
   @@map("booking_card_benefits")
@@ -696,7 +696,7 @@ model BookingPartnershipEarnStatus {
   booking           Booking         @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   partnershipEarnId String          @map("partnership_earn_id")
   partnershipEarn   PartnershipEarn @relation(fields: [partnershipEarnId], references: [id], onDelete: Cascade)
-  postingStatus     PostingStatus   @default(pending)
+  postingStatus     PostingStatus   @default(pending) @map("posting_status")
 
   @@unique([bookingId, partnershipEarnId])
   @@map("booking_partnership_earn_statuses")

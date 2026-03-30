@@ -538,6 +538,7 @@ export const PUT = withAxiomRouteHandler(
 
           const loyaltyEligible =
             finalLoyaltyPoints != null &&
+            finalLoyaltyPoints > 0 &&
             finalAccommodationType !== "apartment" &&
             finalHotelChainId != null;
 

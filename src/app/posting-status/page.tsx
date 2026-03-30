@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
 import { enrichBookingWithRate } from "@/lib/booking-enrichment";
 import { resolvePartnershipEarns, PartnershipEarnInput } from "@/lib/partnership-earns";
+import { getNetCostBreakdown } from "@/lib/net-cost";
 
 async function getBookings(filter: string) {
   const userIdOrResponse = await getAuthenticatedUserId();
@@ -19,7 +20,18 @@ async function getBookings(filter: string) {
       ? {
           userId,
           OR: [
-            { checkIn: { gte: today } },
+            {
+              checkIn: { gte: today },
+              OR: [
+                { loyaltyPostingStatus: { not: null } },
+                { cardRewardPostingStatus: { not: null } },
+                { portalCashbackPostingStatus: { not: null } },
+                { bookingPromotions: { some: {} } },
+                { bookingCardBenefits: { some: {} } },
+                { benefits: { some: {} } },
+                { bookingPartnershipEarnStatuses: { some: {} } },
+              ],
+            },
             { loyaltyPostingStatus: "pending" as const },
             { cardRewardPostingStatus: "pending" as const },
             { portalCashbackPostingStatus: "pending" as const },
@@ -39,8 +51,8 @@ async function getBookings(filter: string) {
       userCreditCard: {
         include: { creditCard: { include: { pointType: true, rewardRules: true } } },
       },
-      shoppingPortal: true,
-      bookingPromotions: { include: { promotion: true } },
+      shoppingPortal: { include: { pointType: true } },
+      bookingPromotions: { include: { promotion: { include: { benefits: true } } } },
       bookingCardBenefits: { include: { cardBenefit: true } },
       benefits: true,
       bookingPartnershipEarnStatuses: true,
@@ -88,7 +100,13 @@ async function getBookings(filter: string) {
           pointTypeName: input?.pointType.name ?? "",
         };
       });
-      return { ...b, partnershipEarns };
+      const { cardReward, portalCashback } = getNetCostBreakdown({
+        ...b,
+        partnershipEarns,
+        certificates: [],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any);
+      return { ...b, partnershipEarns, cardReward, portalCashback };
     })
   );
 }
@@ -102,7 +120,7 @@ export default async function PostingStatusPage({
   const bookings = await getBookings(filter);
 
   return (
-    <div className="container mx-auto py-6 space-y-4">
+    <div className="flex flex-col flex-1 min-h-0 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Posting Status</h1>
         <div className="flex gap-2">

@@ -28,8 +28,12 @@ describe("formatCardRewardValue", () => {
   it("formats cashback as dollars", () => {
     expect(formatCardRewardValue(45.0, "cashback", null)).toBe("$45.00");
   });
-  it("formats points with type name", () => {
-    expect(formatCardRewardValue(15000, "points", "Membership Rewards")).toBe("15,000 MR pts");
+  it("formats points with type name, converting USD value to points count", () => {
+    // $15 value at 0.01 USD/pt = 1500 pts
+    expect(formatCardRewardValue(15, "points", "Membership Rewards", 0.01)).toBe("1,500 MR pts");
+  });
+  it("falls back to 0.01 USD/pt when centsPerPoint not provided", () => {
+    expect(formatCardRewardValue(15, "points", "Membership Rewards")).toBe("1,500 MR pts");
   });
 });
 
@@ -46,13 +50,31 @@ describe("formatPromotionValue", () => {
   });
   it("formats eqn reward", () => {
     expect(
-      formatPromotionValue({ rewardType: "eqn", bonusPointsApplied: null, appliedValue: 2 })
+      formatPromotionValue({ rewardType: "eqn", bonusPointsApplied: null, appliedValue: 20 })
     ).toBe("+2 EQNs");
   });
   it("formats certificate reward", () => {
     expect(
       formatPromotionValue({ rewardType: "certificate", bonusPointsApplied: null, appliedValue: 0 })
     ).toBe("Cert");
+  });
+  it("shows points from bonusPointsApplied when set", () => {
+    expect(
+      formatPromotionValue({
+        promotion: { benefits: [{ rewardType: "points" }] },
+        bonusPointsApplied: 5000,
+        appliedValue: 100,
+      })
+    ).toBe("+5,000 pts");
+  });
+  it("reads rewardType from benefits for eqn", () => {
+    expect(
+      formatPromotionValue({
+        promotion: { benefits: [{ rewardType: "eqn" }] },
+        bonusPointsApplied: null,
+        appliedValue: 60,
+      })
+    ).toBe("+6 EQNs");
   });
 });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-fetch";
 import { PostingStatusCell } from "./posting-status-cell";
@@ -17,7 +17,7 @@ import {
   statusColorClass,
   statusLabel,
 } from "@/lib/posting-status-utils";
-import { cn, formatDate } from "@/lib/utils";
+import { cn, formatDate, pruneHotelName } from "@/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -164,11 +164,13 @@ export function PostingStatusGrid({ initialBookings }: { initialBookings: any[] 
   }
 
   return (
-    <div className="overflow-x-auto">
+    <div className="flex-1 min-h-0 overflow-auto">
       <table className="w-full text-sm border-collapse">
         <thead>
-          <tr className="border-b text-xs uppercase text-muted-foreground font-semibold">
-            <th className="text-left px-3 py-2 whitespace-nowrap">Booking</th>
+          <tr className="border-b text-xs uppercase text-muted-foreground font-semibold sticky top-0 bg-background z-20">
+            <th className="text-left px-3 py-2 whitespace-nowrap sticky left-0 bg-background z-10">
+              Booking
+            </th>
             <th className="px-2 py-2 whitespace-nowrap">Loyalty</th>
             <th className="px-2 py-2 whitespace-nowrap">Promotions</th>
             <th className="px-2 py-2 whitespace-nowrap">Card Reward</th>
@@ -208,7 +210,7 @@ function renderBookingRows(
   patchBenefitStatus: any,
   patchPartnershipStatus: any
 ) {
-  const bps = booking.bookingPromotions ?? [];
+  const bps = (booking.bookingPromotions ?? []).filter((bp: any) => Number(bp.appliedValue) > 0);
   const cardBenefits = booking.bookingCardBenefits ?? [];
   const perks = booking.benefits ?? [];
   const partnerships = booking.partnershipEarns ?? [];
@@ -218,15 +220,16 @@ function renderBookingRows(
     booking.loyaltyPointsEarned,
     booking.hotelChain?.loyaltyProgram ?? null
   );
+  const effectiveLoyaltyStatus: PostingStatus = booking.loyaltyPostingStatus ?? "pending";
   const loyaltyCell =
-    loyaltyValue && booking.loyaltyPostingStatus != null ? (
+    loyaltyValue && booking.loyaltyPointsEarned > 0 ? (
       <PostingStatusCell
         kind="single"
         value={loyaltyValue}
-        status={booking.loyaltyPostingStatus}
+        status={effectiveLoyaltyStatus}
         testId={`loyalty-cell-${booking.id}`}
         onCycle={() =>
-          patchBookingStatus(booking.id, "loyaltyPostingStatus", booking.loyaltyPostingStatus)
+          patchBookingStatus(booking.id, "loyaltyPostingStatus", effectiveLoyaltyStatus)
         }
       />
     ) : (
@@ -235,13 +238,14 @@ function renderBookingRows(
 
   // Card reward cell
   const cardRewardCell =
-    booking.cardRewardPostingStatus != null && booking.userCreditCard ? (
+    booking.cardRewardPostingStatus != null && booking.userCreditCard && booking.cardReward > 0 ? (
       <PostingStatusCell
         kind="single"
         value={formatCardRewardValue(
           booking.cardReward ?? 0,
           booking.userCreditCard.creditCard.rewardType,
-          booking.userCreditCard.creditCard.pointType?.name ?? null
+          booking.userCreditCard.creditCard.pointType?.name ?? null,
+          booking.userCreditCard.creditCard.pointType?.usdCentsPerPoint ?? null
         )}
         status={booking.cardRewardPostingStatus}
         onCycle={() =>
@@ -254,10 +258,15 @@ function renderBookingRows(
 
   // Portal cell
   const portalCell =
-    booking.portalCashbackPostingStatus != null ? (
+    booking.portalCashbackPostingStatus != null && booking.portalCashback > 0 ? (
       <PostingStatusCell
         kind="single"
-        value={formatPortalValue(booking.portalCashback ?? 0)}
+        value={formatPortalValue(
+          booking.portalCashback ?? 0,
+          booking.shoppingPortal?.rewardType ?? null,
+          booking.shoppingPortal?.pointType?.name ?? null,
+          booking.shoppingPortal?.pointType?.usdCentsPerPoint ?? null
+        )}
         status={booking.portalCashbackPostingStatus}
         onCycle={() =>
           patchBookingStatus(
@@ -396,8 +405,8 @@ function renderBookingRows(
   // Main booking row
   rows.push(
     <tr key={booking.id} className="border-t">
-      <td className="px-3 py-2 whitespace-nowrap">
-        <div className="font-semibold">{booking.property?.name ?? "Unknown"}</div>
+      <td className="px-3 py-2 whitespace-nowrap sticky left-0 bg-background z-10">
+        <div className="font-semibold">{pruneHotelName(booking.property?.name ?? "Unknown")}</div>
         <div className="text-xs text-muted-foreground">
           {formatDate(booking.checkIn)}--{formatDate(booking.checkOut)}
         </div>
@@ -451,150 +460,161 @@ function renderBookingRows(
     </tr>
   );
 
+  // Column index map for aligning expansion rows under their header
+  const COL_OFFSET: Record<string, number> = {
+    promotions: 2,
+    partners: 5,
+    cardBenefits: 6,
+    perks: 6,
+  };
+  const TOTAL_COLS = 8;
+
+  function expandRow(
+    key: string,
+    col: string,
+    title: string,
+    content: React.ReactNode,
+    testId?: string
+  ) {
+    const offset = COL_OFFSET[col] ?? 0;
+    return (
+      <tr key={key} data-testid={testId} className="border-t-2 border-primary">
+        <td className="sticky left-0 bg-background z-10" />
+        {offset > 1 && <td colSpan={offset - 1} className="bg-muted/20" />}
+        <td colSpan={TOTAL_COLS - offset} className="px-3 pb-3 pt-1 bg-muted/20">
+          <div className="text-[10px] font-bold uppercase tracking-wide text-primary mb-2">
+            {title}
+          </div>
+          <div className="flex flex-col gap-1">{content}</div>
+        </td>
+      </tr>
+    );
+  }
+
   // Expansion rows
   if (expandedCol === "promotions" && bps.length > 1) {
     rows.push(
-      <tr
-        key={`${booking.id}-promotions-expand`}
-        data-testid={`promotions-expand-${booking.id}`}
-        className="border-t-2 border-primary"
-      >
-        <td colSpan={8} className="px-3 pb-3 pt-1 bg-muted/20">
-          <div className="text-[10px] font-bold uppercase tracking-wide text-primary mb-2">
-            Promotions -- {booking.property?.name}
+      expandRow(
+        `${booking.id}-promotions-expand`,
+        "promotions",
+        `Promotions — ${booking.property?.name}`,
+        bps.map((bp: any) => (
+          <div
+            key={bp.id}
+            className="flex items-center gap-2 px-2 py-1 rounded bg-card cursor-pointer w-fit"
+            onClick={() => patchPromotionStatus(booking.id, bp.id, bp.postingStatus)}
+          >
+            <span className="font-medium text-xs">{bp.promotion?.name}</span>
+            <span
+              className={cn(
+                "rounded px-2 py-0.5 text-xs font-semibold whitespace-nowrap",
+                statusColorClass(bp.postingStatus)
+              )}
+            >
+              {formatPromotionValue(bp)} · {statusLabel(bp.postingStatus)}
+            </span>
           </div>
-          <div className="flex flex-col gap-1">
-            {bps.map((bp: any) => (
-              <div
-                key={bp.id}
-                className="flex items-center gap-2 px-2 py-1 rounded bg-card cursor-pointer w-fit"
-                onClick={() => patchPromotionStatus(booking.id, bp.id, bp.postingStatus)}
-              >
-                <span className="font-medium text-xs">{bp.promotion?.name}</span>
-                <span
-                  className={cn(
-                    "rounded px-2 py-0.5 text-xs font-semibold whitespace-nowrap",
-                    statusColorClass(bp.postingStatus)
-                  )}
-                >
-                  {formatPromotionValue(bp)} · {statusLabel(bp.postingStatus)}
-                </span>
-              </div>
-            ))}
-          </div>
-        </td>
-      </tr>
+        )),
+        `promotions-expand-${booking.id}`
+      )
     );
   }
 
   if (expandedCol === "cardBenefits" && cardBenefits.length > 1) {
     rows.push(
-      <tr key={`${booking.id}-cardBenefits-expand`} className="border-t-2 border-primary">
-        <td colSpan={8} className="px-3 pb-3 pt-1 bg-muted/20">
-          <div className="text-[10px] font-bold uppercase tracking-wide text-primary mb-2">
-            Card Benefits -- {booking.property?.name}
+      expandRow(
+        `${booking.id}-cardBenefits-expand`,
+        "cardBenefits",
+        `Card Benefits — ${booking.property?.name}`,
+        cardBenefits.map((bcb: any) => (
+          <div
+            key={bcb.id}
+            className="flex items-center gap-2 px-2 py-1 rounded bg-card cursor-pointer w-fit"
+            onClick={() => patchCardBenefitStatus(booking.id, bcb.id, bcb.postingStatus)}
+          >
+            <span className="font-medium text-xs">{bcb.cardBenefit?.description}</span>
+            <span
+              className={cn(
+                "rounded px-2 py-0.5 text-xs font-semibold whitespace-nowrap",
+                statusColorClass(bcb.postingStatus)
+              )}
+            >
+              {formatCardBenefitValue(Number(bcb.appliedValue))} · {statusLabel(bcb.postingStatus)}
+            </span>
           </div>
-          <div className="flex flex-col gap-1">
-            {cardBenefits.map((bcb: any) => (
-              <div
-                key={bcb.id}
-                className="flex items-center gap-2 px-2 py-1 rounded bg-card cursor-pointer w-fit"
-                onClick={() => patchCardBenefitStatus(booking.id, bcb.id, bcb.postingStatus)}
-              >
-                <span className="font-medium text-xs">{bcb.cardBenefit?.description}</span>
-                <span
-                  className={cn(
-                    "rounded px-2 py-0.5 text-xs font-semibold whitespace-nowrap",
-                    statusColorClass(bcb.postingStatus)
-                  )}
-                >
-                  {formatCardBenefitValue(Number(bcb.appliedValue))} ·{" "}
-                  {statusLabel(bcb.postingStatus)}
-                </span>
-              </div>
-            ))}
-          </div>
-        </td>
-      </tr>
+        ))
+      )
     );
   }
 
   if (expandedCol === "perks" && perks.length > 1) {
     rows.push(
-      <tr key={`${booking.id}-perks-expand`} className="border-t-2 border-primary">
-        <td colSpan={8} className="px-3 pb-3 pt-1 bg-muted/20">
-          <div className="text-[10px] font-bold uppercase tracking-wide text-primary mb-2">
-            Perks -- {booking.property?.name}
+      expandRow(
+        `${booking.id}-perks-expand`,
+        "perks",
+        `Perks — ${booking.property?.name}`,
+        perks.map((p: any) => (
+          <div
+            key={p.id}
+            className="flex items-center gap-2 px-2 py-1 rounded bg-card cursor-pointer w-fit"
+            onClick={() => patchBenefitStatus(booking.id, p.id, p.postingStatus)}
+          >
+            <span className="font-medium text-xs">
+              {formatPerkValue(p.benefitType, null, p.label)}
+            </span>
+            <span
+              className={cn(
+                "rounded px-2 py-0.5 text-xs font-semibold whitespace-nowrap",
+                statusColorClass(p.postingStatus)
+              )}
+            >
+              {formatPerkValue(
+                p.benefitType,
+                p.dollarValue != null ? Number(p.dollarValue) : null,
+                p.label
+              )}{" "}
+              · {statusLabel(p.postingStatus)}
+            </span>
           </div>
-          <div className="flex flex-col gap-1">
-            {perks.map((p: any) => (
-              <div
-                key={p.id}
-                className="flex items-center gap-2 px-2 py-1 rounded bg-card cursor-pointer w-fit"
-                onClick={() => patchBenefitStatus(booking.id, p.id, p.postingStatus)}
-              >
-                <span className="font-medium text-xs">
-                  {formatPerkValue(p.benefitType, null, p.label)}
-                </span>
-                <span
-                  className={cn(
-                    "rounded px-2 py-0.5 text-xs font-semibold whitespace-nowrap",
-                    statusColorClass(p.postingStatus)
-                  )}
-                >
-                  {formatPerkValue(
-                    p.benefitType,
-                    p.dollarValue != null ? Number(p.dollarValue) : null,
-                    p.label
-                  )}{" "}
-                  · {statusLabel(p.postingStatus)}
-                </span>
-              </div>
-            ))}
-          </div>
-        </td>
-      </tr>
+        ))
+      )
     );
   }
 
   if (expandedCol === "partners" && partnerships.length > 1) {
     rows.push(
-      <tr key={`${booking.id}-partners-expand`} className="border-t-2 border-primary">
-        <td colSpan={8} className="px-3 pb-3 pt-1 bg-muted/20">
-          <div className="text-[10px] font-bold uppercase tracking-wide text-primary mb-2">
-            Partnership Earns -- {booking.property?.name}
-          </div>
-          <div className="flex flex-col gap-1">
-            {partnerships.map((earn: any) => {
-              const statusRecord =
-                booking.bookingPartnershipEarnStatuses?.find(
-                  (s: any) => s.partnershipEarnId === earn.id
-                ) ?? null;
-              const currentStatus: PostingStatus = statusRecord?.postingStatus ?? "pending";
-              return (
-                <div
-                  key={earn.id}
-                  className="flex items-center gap-2 px-2 py-1 rounded bg-card cursor-pointer w-fit"
-                  onClick={() =>
-                    patchPartnershipStatus(booking.id, earn.id, statusRecord, currentStatus)
-                  }
-                >
-                  <span className="font-medium text-xs">{earn.name}</span>
-                  <span
-                    className={cn(
-                      "rounded px-2 py-0.5 text-xs font-semibold whitespace-nowrap",
-                      statusColorClass(currentStatus)
-                    )}
-                  >
-                    {formatPartnershipValue(earn.earnedValue ?? 0, earn.pointTypeName ?? "")} ·{" "}
-                    {statusLabel(currentStatus)}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </td>
-      </tr>
+      expandRow(
+        `${booking.id}-partners-expand`,
+        "partners",
+        `Partnership Earns — ${booking.property?.name}`,
+        partnerships.map((earn: any) => {
+          const statusRecord =
+            booking.bookingPartnershipEarnStatuses?.find(
+              (s: any) => s.partnershipEarnId === earn.id
+            ) ?? null;
+          const currentStatus: PostingStatus = statusRecord?.postingStatus ?? "pending";
+          return (
+            <div
+              key={earn.id}
+              className="flex items-center gap-2 px-2 py-1 rounded bg-card cursor-pointer w-fit"
+              onClick={() =>
+                patchPartnershipStatus(booking.id, earn.id, statusRecord, currentStatus)
+              }
+            >
+              <span className="font-medium text-xs">{earn.name}</span>
+              <span
+                className={cn(
+                  "rounded px-2 py-0.5 text-xs font-semibold whitespace-nowrap",
+                  statusColorClass(currentStatus)
+                )}
+              >
+                {formatPartnershipValue(earn.earnedValue ?? 0, earn.pointTypeName ?? "")} ·{" "}
+                {statusLabel(currentStatus)}
+              </span>
+            </div>
+          );
+        })
+      )
     );
   }
 
