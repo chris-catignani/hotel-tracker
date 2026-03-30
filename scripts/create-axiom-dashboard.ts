@@ -228,11 +228,11 @@ async function main() {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (listRes.ok) {
-    const listBody = (await listRes.json()) as { dashboards?: { id?: string; name?: string }[] };
-    const existing = listBody.dashboards?.find((d) => d.name === dashboardDoc.name);
-    if (existing?.id) {
-      console.log(`Deleting existing dashboard '${dashboardDoc.name}' (id: ${existing.id})...`);
-      const deleteRes = await fetch(`${AXIOM_API}/dashboards/${existing.id}`, {
+    const dashboards = (await listRes.json()) as { uid?: string; dashboard?: { name?: string } }[];
+    const existing = dashboards.find((d) => d.dashboard?.name === dashboardDoc.name);
+    if (existing?.uid) {
+      console.log(`Deleting existing dashboard '${dashboardDoc.name}' (uid: ${existing.uid})...`);
+      const deleteRes = await fetch(`${AXIOM_API}/dashboards/uid/${existing.uid}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
