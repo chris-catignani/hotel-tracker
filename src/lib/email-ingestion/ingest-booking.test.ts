@@ -51,8 +51,8 @@ vi.mock("@/lib/exchange-rate", () => ({
   fetchExchangeRate: vi.fn().mockResolvedValue(1.0),
   resolveCalcCurrencyRate: vi.fn().mockResolvedValue(null),
 }));
-vi.mock("@/lib/promotion-matching", () => ({
-  matchPromotionsForBooking: vi.fn().mockResolvedValue([]),
+vi.mock("@/lib/booking-service", () => ({
+  runPostBookingCreate: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock("@/lib/prisma", () => ({
