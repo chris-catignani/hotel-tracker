@@ -97,11 +97,13 @@ describe("parseConfirmationEmail", () => {
     mockCreate.mockReset();
   });
 
-  it("Hyatt guide prompt instructs Claude to expand date-range nightly rate entries", async () => {
+  it("Hyatt guide prompt instructs Claude to expand date-range nightly rate entries (inclusive end date)", async () => {
     mockCreate.mockResolvedValueOnce({ content: [{ type: "text", text: "{}" }] });
     await parseConfirmationEmail("raw email text", hyattGuide);
     const prompt = mockCreate.mock.calls[0][0].messages[0].content;
-    expect(prompt).toContain("The end date of the range is exclusive");
+    expect(prompt).toContain("The end date is the last night (inclusive)");
+    expect(prompt).toContain("never return nightlyRates: null when this section is present");
+    expect(prompt).toContain("total number of nightlyRates entries must equal numNights");
   });
 
   it("calls Claude with decoded email text and chain guide notes", async () => {

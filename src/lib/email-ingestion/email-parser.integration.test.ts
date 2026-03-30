@@ -32,7 +32,12 @@ skipIf("Email parsing integration", () => {
       expect(result?.confirmationNumber).toBe("73829461");
       expect(result?.hotelChain).toBe("Hyatt");
       expect(result?.currency).toBe("USD");
+      // Jan 14 at 160.72, then Jan 15–17 range expanded to 3 × 142.10 (inclusive end date)
       expect(result?.nightlyRates).toHaveLength(4);
+      expect(result?.nightlyRates?.[0].amount).toBe(160.72);
+      expect(result?.nightlyRates?.[1].amount).toBe(142.1);
+      expect(result?.nightlyRates?.[2].amount).toBe(142.1);
+      expect(result?.nightlyRates?.[3].amount).toBe(142.1);
       expect(result?.pretaxCost).toBeNull();
       expect(result?.totalCost).toBeNull();
     });
@@ -48,7 +53,12 @@ skipIf("Email parsing integration", () => {
       expect(result?.confirmationNumber).toBe("12345678");
       expect(result?.hotelChain).toBe("Hyatt");
       expect(result?.currency).toBe("USD");
+      // Jan 14 at 160.72, then Jan 15–17 range expanded to 3 × 142.10 (inclusive end date)
       expect(result?.nightlyRates).toHaveLength(4);
+      expect(result?.nightlyRates?.[0].amount).toBe(160.72);
+      expect(result?.nightlyRates?.[1].amount).toBe(142.1);
+      expect(result?.nightlyRates?.[2].amount).toBe(142.1);
+      expect(result?.nightlyRates?.[3].amount).toBe(142.1);
       expect(result?.pretaxCost).toBeNull();
       expect(result?.totalCost).toBeNull();
     });
@@ -201,7 +211,15 @@ skipIf("Email parsing integration", () => {
       expect(result?.currency).toBe("THB");
       // Free-night benefit present → pretaxCost must be null (discount rule)
       expect(result?.pretaxCost).toBeNull();
-      expect(result?.nightlyRates).not.toBeNull();
+      // 5 × 2689.60 (Oct 19–24), 1 × 0.00 free night (Oct 24–25), 1 × 2890.50 (Oct 25–26)
+      expect(result?.nightlyRates).toHaveLength(7);
+      expect(result?.nightlyRates?.[0].amount).toBe(2689.6);
+      expect(result?.nightlyRates?.[1].amount).toBe(2689.6);
+      expect(result?.nightlyRates?.[2].amount).toBe(2689.6);
+      expect(result?.nightlyRates?.[3].amount).toBe(2689.6);
+      expect(result?.nightlyRates?.[4].amount).toBe(2689.6);
+      expect(result?.nightlyRates?.[5].amount).toBe(0);
+      expect(result?.nightlyRates?.[6].amount).toBe(2890.5);
     });
   });
 
