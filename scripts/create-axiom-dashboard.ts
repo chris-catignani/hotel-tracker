@@ -182,7 +182,7 @@ async function main() {
       id: "bookings-over-time",
       type: "TimeSeries",
       name: "Bookings Created",
-      query: q("where message == 'booking:created' | summarize count() by bin(_time, 1d)"),
+      query: q("where message == 'booking:created' | summarize count() by bin(_time, 1h)"),
     },
     {
       id: "bookings-by-method",
