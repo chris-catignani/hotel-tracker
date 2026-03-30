@@ -12,6 +12,8 @@
  *   npx tsx scripts/debug-gha.ts --rates 23084
  */
 
+export {};
+
 const GHA_BASIC_AUTH = "Basic Z2hhOnVFNlU4d253aExzVTVHa1k=";
 
 async function searchByName(keyword: string) {
