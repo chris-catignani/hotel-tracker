@@ -2,7 +2,7 @@ import prisma from "@/lib/prisma";
 import { findOrCreateProperty } from "@/lib/property-utils";
 import { searchProperties } from "@/lib/geo-lookup";
 import { resolveBookingFinancials } from "@/lib/booking-financials";
-import { matchPromotionsForBooking } from "@/lib/promotion-matching";
+import { runPostBookingCreate } from "@/lib/booking-service";
 import { matchSubBrand } from "./email-parser";
 import { logger } from "@/lib/logger";
 import type { ParsedBookingData } from "./types";
@@ -155,7 +155,16 @@ export async function ingestBookingFromEmail(
     },
   });
 
-  await matchPromotionsForBooking(booking.id);
+  await runPostBookingCreate(booking.id, {
+    userId,
+    accommodationType: parsed.accommodationType ?? "hotel",
+    checkIn: parsed.checkIn,
+    checkOut: parsed.checkOut,
+    numNights: parsed.numNights,
+    totalCost: parsed.totalCost ?? 0,
+    currency: parsed.currency ?? "USD",
+    ingestionMethod: "email",
+  });
 
   return { bookingId: booking.id, duplicate: false };
 }

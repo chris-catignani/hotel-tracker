@@ -4,6 +4,7 @@ dotenv.config();
 dotenv.config({ path: ".env.local", override: true });
 
 import * as Sentry from "@sentry/node";
+import { log } from "next-axiom";
 
 Sentry.init({ dsn: process.env.SENTRY_DSN, tracesSampleRate: 0 });
 
@@ -20,6 +21,7 @@ const prisma = new PrismaClient();
 
 async function main() {
   console.log("[RefreshScript] Starting daily price watch refresh...");
+  const runStart = Date.now();
   try {
     const result = await runPriceWatchRefresh([
       createAccorFetcher(),
@@ -29,15 +31,32 @@ async function main() {
       createIhgFetcher(),
       createMarriottFetcher(),
     ]);
+    const durationMs = Date.now() - runStart;
+    const { totalSnapshots, totalAlerts, totalFetchErrors } = result.results.reduce(
+      (totals, r) => {
+        totals.totalSnapshots += r.snapshots;
+        totals.totalAlerts += r.alerts;
+        totals.totalFetchErrors += r.fetchErrors;
+        return totals;
+      },
+      { totalSnapshots: 0, totalAlerts: 0, totalFetchErrors: 0 }
+    );
+    log.info("price_watch:run_completed", {
+      watchesChecked: result.watched,
+      snapshotsCreated: totalSnapshots,
+      alertsSent: totalAlerts,
+      fetchErrors: totalFetchErrors,
+      durationMs,
+    });
     console.log(
       `[RefreshScript] Done. ${result.watched} watches checked, results:`,
       result.results
     );
-    await Sentry.flush(2000);
+    await Promise.all([Sentry.flush(2000), log.flush()]);
   } catch (error) {
     console.error("[RefreshScript] ERROR during refresh:", error);
     Sentry.captureException(error);
-    await Sentry.flush(2000);
+    await Promise.all([Sentry.flush(2000), log.flush()]);
     process.exit(1);
   } finally {
     await prisma.$disconnect();

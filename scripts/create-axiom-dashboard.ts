@@ -5,8 +5,7 @@
  * Run (sourcing your local env):
  *   source .env.local && npx tsx scripts/create-axiom-dashboard.ts
  *
- * Re-running will fail with 409 if the dashboard already exists.
- * To recreate, delete the existing "Hotel Tracker" dashboard in Axiom first.
+ * Idempotent: deletes the existing "Hotel Tracker" dashboard (if any) before creating.
  */
 
 export {};
@@ -39,8 +38,8 @@ async function main() {
       type: "TimeSeries",
       name: "Request Rate by Status",
       query: q(
-        "where isnotnull(request.statusCode)" +
-          " | summarize count() by bin(_time, 5m), tostring(request.statusCode)"
+        "where isnotnull(['request.statusCode'])" +
+          " | summarize count() by bin(_time, 5m), tostring(['request.statusCode'])"
       ),
     },
     {
@@ -48,7 +47,7 @@ async function main() {
       type: "TimeSeries",
       name: "Error Rate (4xx / 5xx)",
       query: q(
-        "where isnotnull(request.statusCode) and toint(request.statusCode) >= 400" +
+        "where isnotnull(['request.statusCode']) and toint(['request.statusCode']) >= 400" +
           " | summarize count() by bin(_time, 5m)"
       ),
     },
@@ -57,8 +56,8 @@ async function main() {
       type: "TimeSeries",
       name: "Response Time P95 (ms)",
       query: q(
-        "where isnotnull(request.durationMs)" +
-          " | summarize percentiles(request.durationMs, 95) by bin(_time, 5m)"
+        "where isnotnull(['request.durationMs'])" +
+          " | summarize percentile(['request.durationMs'], 95) by bin(_time, 5m)"
       ),
     },
     {
@@ -66,8 +65,8 @@ async function main() {
       type: "TopK",
       name: "Top Endpoints (by Request Count)",
       query: q(
-        "where isnotnull(request.path) and isnotnull(request.statusCode)" +
-          " | summarize count() by tostring(request.path)" +
+        "where isnotnull(['request.path']) and isnotnull(['request.statusCode'])" +
+          " | summarize count() by tostring(['request.path'])" +
           " | top 10 by count_"
       ),
     },
@@ -100,6 +99,14 @@ async function main() {
       errorThresholdValue: "0",
     },
     {
+      id: "email-duplicate-stat",
+      type: "Statistic",
+      name: "Duplicate Emails Skipped",
+      query: q("where message == 'inbound-email:duplicate' | summarize count()"),
+      colorScheme: "Yellow",
+      showChart: true,
+    },
+    {
       id: "email-outcomes",
       type: "TimeSeries",
       name: "Email Ingestion Outcomes Over Time",
@@ -116,15 +123,58 @@ async function main() {
       name: "Exchange Rate Cron Runs",
       query: q(
         "where message == 'exchange_rates:refreshed'" +
-          " | project _time, fields.currenciesUpdated, fields.bookingsLocked," +
-          " fields.pointTypesRefreshed, fields.bookingsReevaluated"
+          " | project _time, ['fields.currenciesUpdated'], ['fields.bookingsLocked']," +
+          " ['fields.pointTypesRefreshed'], ['fields.bookingsReevaluated']"
       ),
     },
     {
       id: "cron-errors",
       type: "LogStream",
       name: "Cron / Worker Errors",
-      query: q("where level == 'error' | project _time, message, fields.errorMessage, source"),
+      query: q("where level == 'error' | project _time, message, ['fields.errorMessage'], source"),
+    },
+
+    // ─── Price Watch ──────────────────────────────────────────────────────────
+    {
+      id: "price-watch-run-log",
+      type: "LogStream",
+      name: "Price Watch Runs",
+      query: q(
+        "where message == 'price_watch:run_completed'" +
+          " | project _time, ['fields.watchesChecked'], ['fields.snapshotsCreated']," +
+          " ['fields.alertsSent'], ['fields.fetchErrors'], ['fields.durationMs']"
+      ),
+    },
+    {
+      id: "price-watch-snapshots",
+      type: "TimeSeries",
+      name: "Snapshots Created Over Time",
+      query: q(
+        "where message == 'price_watch:watch_completed'" +
+          " | summarize sum(toint(['fields.snapshots'])) by bin(_time, 1d)"
+      ),
+    },
+    {
+      id: "price-watch-alerts-stat",
+      type: "Statistic",
+      name: "Price Drop Alerts Sent",
+      query: q(
+        "where message == 'price_watch:run_completed' | summarize sum(toint(['fields.alertsSent']))"
+      ),
+      colorScheme: "Green",
+      showChart: true,
+    },
+    {
+      id: "price-watch-errors-stat",
+      type: "Statistic",
+      name: "Price Watch Fetch Errors",
+      query: q(
+        "where message == 'price_watch:run_completed' | summarize sum(toint(['fields.fetchErrors']))"
+      ),
+      colorScheme: "Red",
+      showChart: true,
+      errorThreshold: "Above",
+      errorThresholdValue: "0",
     },
 
     // ─── Bookings ─────────────────────────────────────────────────────────────
@@ -140,7 +190,7 @@ async function main() {
       name: "Bookings by Ingestion Method",
       query: q(
         "where message == 'booking:created'" +
-          " | summarize count() by tostring(fields.ingestionMethod)"
+          " | summarize count() by tostring(['fields.ingestionMethod'])"
       ),
     },
   ];
@@ -152,21 +202,27 @@ async function main() {
     { i: "p95-latency", x: 6, y: 5, w: 6, h: 5 },
     { i: "top-endpoints", x: 0, y: 10, w: 12, h: 5 },
     // Email Ingestion
-    { i: "email-received-stat", x: 0, y: 15, w: 4, h: 4 },
-    { i: "email-booking-created-stat", x: 4, y: 15, w: 4, h: 4 },
-    { i: "email-parse-failed-stat", x: 8, y: 15, w: 4, h: 4 },
+    { i: "email-received-stat", x: 0, y: 15, w: 3, h: 4 },
+    { i: "email-booking-created-stat", x: 3, y: 15, w: 3, h: 4 },
+    { i: "email-parse-failed-stat", x: 6, y: 15, w: 3, h: 4 },
+    { i: "email-duplicate-stat", x: 9, y: 15, w: 3, h: 4 },
     { i: "email-outcomes", x: 0, y: 19, w: 12, h: 5 },
     // Cron Jobs
     { i: "exchange-rate-cron", x: 0, y: 24, w: 6, h: 5 },
     { i: "cron-errors", x: 6, y: 24, w: 6, h: 5 },
+    // Price Watch
+    { i: "price-watch-run-log", x: 0, y: 29, w: 12, h: 5 },
+    { i: "price-watch-snapshots", x: 0, y: 34, w: 8, h: 5 },
+    { i: "price-watch-alerts-stat", x: 8, y: 34, w: 2, h: 5 },
+    { i: "price-watch-errors-stat", x: 10, y: 34, w: 2, h: 5 },
     // Bookings
-    { i: "bookings-over-time", x: 0, y: 29, w: 8, h: 5 },
-    { i: "bookings-by-method", x: 8, y: 29, w: 4, h: 5 },
+    { i: "bookings-over-time", x: 0, y: 39, w: 8, h: 5 },
+    { i: "bookings-by-method", x: 8, y: 39, w: 4, h: 5 },
   ];
 
   const dashboardDoc = {
     name: "Hotel Tracker",
-    description: "API health, email ingestion, cron jobs, and booking activity",
+    description: "API health, email ingestion, cron jobs, price watch, and booking activity",
     owner: "X-AXIOM-EVERYONE",
     charts,
     layout,
@@ -175,6 +231,31 @@ async function main() {
     timeWindowStart: "qr-now-7d",
     timeWindowEnd: "qr-now",
   };
+
+  // Delete existing dashboard with the same name (makes the script idempotent)
+  const listRes = await fetch(`${AXIOM_API}/dashboards`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (listRes.ok) {
+    const dashboards = (await listRes.json()) as { uid?: string; dashboard?: { name?: string } }[];
+    const existing = dashboards.filter((d) => d.dashboard?.name === dashboardDoc.name);
+    for (const d of existing) {
+      if (!d.uid) continue;
+      console.log(`Deleting existing dashboard '${dashboardDoc.name}' (uid: ${d.uid})...`);
+      const deleteRes = await fetch(`${AXIOM_API}/dashboards/uid/${d.uid}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!deleteRes.ok) {
+        const bodyText = await deleteRes.text();
+        console.error("Failed to delete existing dashboard", {
+          dashboardName: dashboardDoc.name,
+          status: deleteRes.status,
+          body: bodyText,
+        });
+      }
+    }
+  }
 
   console.log(`Creating dashboard in dataset '${dataset}'...`);
 
