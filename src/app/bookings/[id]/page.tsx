@@ -9,7 +9,8 @@ import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { certTypeLabel } from "@/lib/cert-types";
 import { getNetCostBreakdown, NetCostBooking } from "@/lib/net-cost";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, cn } from "@/lib/utils";
+import { PostingStatus } from "@/lib/types";
 import {
   Table,
   TableBody,
@@ -56,7 +57,7 @@ interface BookingPromotion {
   eligibleStayCount?: number | null;
   eligibleNightCount?: number | null;
   autoApplied: boolean;
-  verified: boolean;
+  postingStatus: PostingStatus;
   promotion: {
     name: string;
     type: string;
@@ -253,13 +254,20 @@ export default function BookingDetailPage() {
     refetchBooking();
   };
 
-  const toggleVerified = async (bp: BookingPromotion) => {
+  const NEXT_STATUS: Record<PostingStatus, PostingStatus> = {
+    pending: "posted",
+    posted: "failed",
+    failed: "pending",
+  };
+
+  const cyclePostingStatus = async (bp: BookingPromotion) => {
+    const nextStatus = NEXT_STATUS[bp.postingStatus];
     const result = await apiFetch(`/api/booking-promotions/${bp.id}`, {
       method: "PATCH",
-      body: { verified: !bp.verified },
+      body: { postingStatus: nextStatus },
     });
     if (!result.ok) {
-      logger.error("Failed to update promotion verification", result.error, {
+      logger.error("Failed to update promotion posting status", result.error, {
         bookingPromotionId: bp.id,
         status: result.status,
       });
@@ -637,20 +645,21 @@ export default function BookingDetailPage() {
                       >
                         {bp.autoApplied ? "Auto" : "Manual"}
                       </Badge>
-                      {bp.verified && (
-                        <Badge variant="default" data-testid="promo-verified-badge">
-                          Verified
-                        </Badge>
-                      )}
                     </div>
-                    <Button
-                      variant={bp.verified ? "secondary" : "outline"}
-                      size="sm"
-                      onClick={() => toggleVerified(bp)}
-                      data-testid="promo-verify-button"
+                    <button
+                      onClick={() => cyclePostingStatus(bp)}
+                      data-testid="promo-posting-status-button"
+                      className={cn(
+                        "rounded px-2 py-0.5 text-xs font-medium",
+                        bp.postingStatus === "posted" && "bg-green-100 text-green-700",
+                        bp.postingStatus === "failed" && "bg-red-100 text-red-700",
+                        bp.postingStatus === "pending" && "bg-amber-100 text-amber-700"
+                      )}
                     >
-                      {bp.verified ? "Unverify" : "Mark Verified"}
-                    </Button>
+                      {bp.postingStatus === "posted" && "✓ Posted"}
+                      {bp.postingStatus === "failed" && "✗ Failed"}
+                      {bp.postingStatus === "pending" && "⏳ Pending"}
+                    </button>
                   </div>
                 </div>
               ))}
@@ -665,7 +674,7 @@ export default function BookingDetailPage() {
                     <TableHead>Type</TableHead>
                     <TableHead>Applied Value</TableHead>
                     <TableHead>Auto-applied</TableHead>
-                    <TableHead>Verified</TableHead>
+                    <TableHead>Posting Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -689,14 +698,20 @@ export default function BookingDetailPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Button
-                          variant={bp.verified ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => toggleVerified(bp)}
-                          data-testid="promo-verify-button"
+                        <button
+                          onClick={() => cyclePostingStatus(bp)}
+                          data-testid="promo-posting-status-button"
+                          className={cn(
+                            "rounded px-2 py-0.5 text-xs font-medium",
+                            bp.postingStatus === "posted" && "bg-green-100 text-green-700",
+                            bp.postingStatus === "failed" && "bg-red-100 text-red-700",
+                            bp.postingStatus === "pending" && "bg-amber-100 text-amber-700"
+                          )}
                         >
-                          {bp.verified ? "Verified" : "Mark Verified"}
-                        </Button>
+                          {bp.postingStatus === "posted" && "✓ Posted"}
+                          {bp.postingStatus === "failed" && "✗ Failed"}
+                          {bp.postingStatus === "pending" && "⏳ Pending"}
+                        </button>
                       </TableCell>
                     </TableRow>
                   ))}

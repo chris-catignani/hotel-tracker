@@ -35,6 +35,7 @@ import { useYearFilter, buildYearOptions, type YearFilter } from "@/hooks/use-ye
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { logger } from "@/lib/logger";
+import { PostingStatus } from "@/lib/types";
 
 interface BookingCertificate {
   id: string;
@@ -116,7 +117,7 @@ interface BookingWithRelations {
     eligibleStayCount?: number | null;
     eligibleNightCount?: number | null;
     autoApplied: boolean;
-    verified: boolean;
+    postingStatus: PostingStatus;
     promotion: {
       id: string;
       name: string;

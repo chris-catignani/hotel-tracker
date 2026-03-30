@@ -125,7 +125,7 @@ export interface NetCostBooking {
     promotionId?: string;
     appliedValue: string | number;
     autoApplied?: boolean;
-    verified?: boolean;
+    postingStatus?: string;
     eligibleNightsAtBooking?: number | null;
     eligibleStayCount?: number | null;
     eligibleNightCount?: number | null;
