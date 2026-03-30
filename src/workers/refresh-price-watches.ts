@@ -32,9 +32,15 @@ async function main() {
       createMarriottFetcher(),
     ]);
     const durationMs = Date.now() - runStart;
-    const totalSnapshots = result.results.reduce((s, r) => s + r.snapshots, 0);
-    const totalAlerts = result.results.reduce((s, r) => s + r.alerts, 0);
-    const totalFetchErrors = result.results.reduce((s, r) => s + r.fetchErrors, 0);
+    const { totalSnapshots, totalAlerts, totalFetchErrors } = result.results.reduce(
+      (totals, r) => {
+        totals.totalSnapshots += r.snapshots;
+        totals.totalAlerts += r.alerts;
+        totals.totalFetchErrors += r.fetchErrors;
+        return totals;
+      },
+      { totalSnapshots: 0, totalAlerts: 0, totalFetchErrors: 0 }
+    );
     log.info("price_watch:run_completed", {
       watchesChecked: result.watched,
       snapshotsCreated: totalSnapshots,

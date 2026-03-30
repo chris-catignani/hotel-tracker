@@ -38,8 +38,8 @@ async function main() {
       type: "TimeSeries",
       name: "Request Rate by Status",
       query: q(
-        "where isnotnull(request.statusCode)" +
-          " | summarize count() by bin(_time, 5m), tostring(request.statusCode)"
+        "where isnotnull(['request.statusCode'])" +
+          " | summarize count() by bin(_time, 5m), tostring(['request.statusCode'])"
       ),
     },
     {
@@ -47,7 +47,7 @@ async function main() {
       type: "TimeSeries",
       name: "Error Rate (4xx / 5xx)",
       query: q(
-        "where isnotnull(request.statusCode) and toint(request.statusCode) >= 400" +
+        "where isnotnull(['request.statusCode']) and toint(['request.statusCode']) >= 400" +
           " | summarize count() by bin(_time, 5m)"
       ),
     },
@@ -56,8 +56,8 @@ async function main() {
       type: "TimeSeries",
       name: "Response Time P95 (ms)",
       query: q(
-        "where isnotnull(request.durationMs)" +
-          " | summarize percentiles(request.durationMs, 95) by bin(_time, 5m)"
+        "where isnotnull(['request.durationMs'])" +
+          " | summarize percentiles(['request.durationMs'], 95) by bin(_time, 5m)"
       ),
     },
     {
@@ -65,8 +65,8 @@ async function main() {
       type: "TopK",
       name: "Top Endpoints (by Request Count)",
       query: q(
-        "where isnotnull(request.path) and isnotnull(request.statusCode)" +
-          " | summarize count() by tostring(request.path)" +
+        "where isnotnull(['request.path']) and isnotnull(['request.statusCode'])" +
+          " | summarize count() by tostring(['request.path'])" +
           " | top 10 by count_"
       ),
     },
@@ -115,15 +115,15 @@ async function main() {
       name: "Exchange Rate Cron Runs",
       query: q(
         "where message == 'exchange_rates:refreshed'" +
-          " | project _time, fields.currenciesUpdated, fields.bookingsLocked," +
-          " fields.pointTypesRefreshed, fields.bookingsReevaluated"
+          " | project _time, ['fields.currenciesUpdated'], ['fields.bookingsLocked']," +
+          " ['fields.pointTypesRefreshed'], ['fields.bookingsReevaluated']"
       ),
     },
     {
       id: "cron-errors",
       type: "LogStream",
       name: "Cron / Worker Errors",
-      query: q("where level == 'error' | project _time, message, fields.errorMessage, source"),
+      query: q("where level == 'error' | project _time, message, ['fields.errorMessage'], source"),
     },
 
     // ─── Price Watch ──────────────────────────────────────────────────────────
@@ -133,8 +133,8 @@ async function main() {
       name: "Price Watch Runs",
       query: q(
         "where message == 'price_watch:run_completed'" +
-          " | project _time, fields.watchesChecked, fields.snapshotsCreated," +
-          " fields.alertsSent, fields.fetchErrors, fields.durationMs"
+          " | project _time, ['fields.watchesChecked'], ['fields.snapshotsCreated']," +
+          " ['fields.alertsSent'], ['fields.fetchErrors'], ['fields.durationMs']"
       ),
     },
     {
@@ -143,7 +143,7 @@ async function main() {
       name: "Snapshots Created Over Time",
       query: q(
         "where message == 'price_watch:watch_completed'" +
-          " | summarize sum(toint(fields.snapshots)) by bin(_time, 1d)"
+          " | summarize sum(toint(['fields.snapshots'])) by bin(_time, 1d)"
       ),
     },
     {
@@ -151,7 +151,7 @@ async function main() {
       type: "Statistic",
       name: "Price Drop Alerts Sent",
       query: q(
-        "where message == 'price_watch:run_completed' | summarize sum(toint(fields.alertsSent))"
+        "where message == 'price_watch:run_completed' | summarize sum(toint(['fields.alertsSent']))"
       ),
       colorScheme: "Green",
       showChart: true,
@@ -161,7 +161,7 @@ async function main() {
       type: "Statistic",
       name: "Price Watch Fetch Errors",
       query: q(
-        "where message == 'price_watch:run_completed' | summarize sum(toint(fields.fetchErrors))"
+        "where message == 'price_watch:run_completed' | summarize sum(toint(['fields.fetchErrors']))"
       ),
       colorScheme: "Red",
       showChart: true,
@@ -182,7 +182,7 @@ async function main() {
       name: "Bookings by Ingestion Method",
       query: q(
         "where message == 'booking:created'" +
-          " | summarize count() by tostring(fields.ingestionMethod)"
+          " | summarize count() by tostring(['fields.ingestionMethod'])"
       ),
     },
   ];
@@ -232,10 +232,18 @@ async function main() {
     const existing = listBody.dashboards?.find((d) => d.name === dashboardDoc.name);
     if (existing?.id) {
       console.log(`Deleting existing dashboard '${dashboardDoc.name}' (id: ${existing.id})...`);
-      await fetch(`${AXIOM_API}/dashboards/${existing.id}`, {
+      const deleteRes = await fetch(`${AXIOM_API}/dashboards/${existing.id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (!deleteRes.ok) {
+        const bodyText = await deleteRes.text();
+        console.error("Failed to delete existing dashboard", {
+          dashboardName: dashboardDoc.name,
+          status: deleteRes.status,
+          body: bodyText,
+        });
+      }
     }
   }
 
