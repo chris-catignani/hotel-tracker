@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withObservability as withAxiom } from "@/lib/observability";
+import { withObservability } from "@/lib/observability";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
 
-export const POST = withAxiom(async (request: NextRequest) => {
+export const POST = withObservability(async (request: NextRequest) => {
   try {
     const { email, password, name } = await request.json();
 

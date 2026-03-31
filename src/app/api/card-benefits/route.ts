@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withObservability as withAxiom } from "@/lib/observability";
+import { withObservability } from "@/lib/observability";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { requireAdmin } from "@/lib/auth-utils";
@@ -11,7 +11,7 @@ const INCLUDE = {
   otaAgencies: { include: { otaAgency: { select: { id: true, name: true } } } },
 };
 
-export const GET = withAxiom(async (_request: NextRequest) => {
+export const GET = withObservability(async (_request: NextRequest) => {
   try {
     const cardBenefits = await prisma.cardBenefit.findMany({
       include: INCLUDE,
@@ -23,7 +23,7 @@ export const GET = withAxiom(async (_request: NextRequest) => {
   }
 });
 
-export const POST = withAxiom(async (request: NextRequest) => {
+export const POST = withObservability(async (request: NextRequest) => {
   try {
     const adminOrResponse = await requireAdmin();
     if (adminOrResponse instanceof NextResponse) return adminOrResponse;

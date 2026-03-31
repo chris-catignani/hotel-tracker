@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withObservability as withAxiom } from "@/lib/observability";
+import { withObservability } from "@/lib/observability";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
@@ -29,7 +29,7 @@ const PRICE_WATCH_INCLUDE = {
 } as const;
 
 /** GET /api/price-watches — list all price watches for the current user */
-export const GET = withAxiom(async (request: NextRequest) => {
+export const GET = withObservability(async (request: NextRequest) => {
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
@@ -60,7 +60,7 @@ export const GET = withAxiom(async (request: NextRequest) => {
  * Creates or updates (upserts) a PriceWatch for (userId, propertyId).
  * If bookingId is provided, also upserts a PriceWatchBooking.
  */
-export const POST = withAxiom(async (request: NextRequest) => {
+export const POST = withObservability(async (request: NextRequest) => {
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;

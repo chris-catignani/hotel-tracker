@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withObservability as withAxiom } from "@/lib/observability";
+import { withObservability } from "@/lib/observability";
 import prisma from "@/lib/prisma";
 import { getCurrentRate } from "@/lib/exchange-rate";
 import { finalizeCheckedInBookings } from "@/lib/booking-enrichment";
@@ -134,4 +134,4 @@ async function handler(request: NextRequest) {
   }
 }
 
-export const GET = withAxiom(handler);
+export const GET = withObservability(handler);
