@@ -11,8 +11,8 @@ test.describe("Settings — Point Types", () => {
       await expect(adminPage.getByTestId("tab-point-types")).toBeVisible();
 
       await adminPage.getByTestId("add-point-type-button").click();
-      await adminPage.getByLabel("Name *").fill(name);
-      await adminPage.getByLabel("Short Name *").fill("TestPT");
+      await adminPage.getByLabel("Name *", { exact: true }).fill(name);
+      await adminPage.getByLabel("Short Name *", { exact: true }).fill("TestPT");
       await adminPage.getByLabel("USD Value per Point ($) *").fill("0.005");
       await adminPage.getByRole("button", { name: "Save" }).click();
 
@@ -51,7 +51,7 @@ test.describe("Settings — Point Types", () => {
         .filter({ has: adminPage.getByTestId("point-type-name").filter({ hasText: original }) });
 
       await row.getByRole("button", { name: "Edit" }).click();
-      await adminPage.getByLabel("Name *").fill(updated);
+      await adminPage.getByLabel("Name *", { exact: true }).fill(updated);
       await adminPage.getByRole("button", { name: "Save" }).click();
 
       await expect(
