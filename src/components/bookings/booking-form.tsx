@@ -233,8 +233,10 @@ export function BookingForm({
   // Convert native pretax cost to USD for loyalty calculation
   const currentRate = exchangeRates[currency] ?? 1;
   const effectiveRate =
-    initialData?.lockedExchangeRate != null ? Number(initialData.lockedExchangeRate) : currentRate;
-  const usdPretaxCost = pretaxCost ? String(Number(pretaxCost) * currentRate) : "";
+    initialData?.lockedExchangeRate != null && initialData.currency === currency
+      ? Number(initialData.lockedExchangeRate)
+      : currentRate;
+  const usdPretaxCost = pretaxCost ? String(Number(pretaxCost) * effectiveRate) : "";
 
   const loyaltyPointsEarned = useMemo(
     () =>
