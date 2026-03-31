@@ -11,7 +11,8 @@ test.describe("Settings — Point Types", () => {
       await expect(adminPage.getByTestId("tab-point-types")).toBeVisible();
 
       await adminPage.getByTestId("add-point-type-button").click();
-      await adminPage.getByLabel("Name *").fill(name);
+      await adminPage.getByLabel("Name *", { exact: true }).fill(name);
+      await adminPage.getByLabel("Short Name *", { exact: true }).fill("TestPT");
       await adminPage.getByLabel("USD Value per Point ($) *").fill("0.005");
       await adminPage.getByRole("button", { name: "Save" }).click();
 
@@ -36,7 +37,7 @@ test.describe("Settings — Point Types", () => {
     const original = `Edit PT ${crypto.randomUUID()}`;
     const updated = `Updated PT ${crypto.randomUUID()}`;
     const res = await adminRequest.post("/api/point-types", {
-      data: { name: original, category: "hotel", usdCentsPerPoint: 0.005 },
+      data: { name: original, shortName: "EditPT", category: "hotel", usdCentsPerPoint: 0.005 },
     });
     const pt = await res.json();
 
@@ -50,7 +51,7 @@ test.describe("Settings — Point Types", () => {
         .filter({ has: adminPage.getByTestId("point-type-name").filter({ hasText: original }) });
 
       await row.getByRole("button", { name: "Edit" }).click();
-      await adminPage.getByLabel("Name *").fill(updated);
+      await adminPage.getByLabel("Name *", { exact: true }).fill(updated);
       await adminPage.getByRole("button", { name: "Save" }).click();
 
       await expect(
@@ -69,7 +70,7 @@ test.describe("Settings — Point Types", () => {
   }) => {
     const name = `Del PT ${crypto.randomUUID()}`;
     const res = await adminRequest.post("/api/point-types", {
-      data: { name, category: "hotel", usdCentsPerPoint: 0.005 },
+      data: { name, shortName: "DelPT", category: "hotel", usdCentsPerPoint: 0.005 },
     });
     const pt = await res.json();
 
@@ -98,7 +99,7 @@ test.describe("Settings — Point Types", () => {
     const ptName = `409 PT ${crypto.randomUUID()}`;
     const chainName = `409 Chain ${crypto.randomUUID()}`;
     const ptRes = await adminRequest.post("/api/point-types", {
-      data: { name: ptName, category: "hotel", usdCentsPerPoint: 0.005 },
+      data: { name: ptName, shortName: "409PT", category: "hotel", usdCentsPerPoint: 0.005 },
     });
     const pt = await ptRes.json();
     const chainRes = await adminRequest.post("/api/hotel-chains", {

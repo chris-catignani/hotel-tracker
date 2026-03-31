@@ -21,11 +21,13 @@ export const POST = withAxiom(async (request: NextRequest) => {
     if (adminError instanceof NextResponse) return adminError;
 
     const body = await request.json();
-    const { name, category, usdCentsPerPoint, programCurrency, programCentsPerPoint } = body;
+    const { name, shortName, category, usdCentsPerPoint, programCurrency, programCentsPerPoint } =
+      body;
 
     const pointType = await prisma.pointType.create({
       data: {
         name,
+        shortName,
         category,
         usdCentsPerPoint: Number(usdCentsPerPoint),
         programCurrency: programCurrency ?? null,

@@ -14,7 +14,12 @@ export interface PartnershipEarnInput {
   earnRate: string | number;
   earnCurrency: string;
   countryCodes: string[];
-  pointType: { name: string; category: string; usdCentsPerPoint: string | number };
+  pointType: {
+    name: string;
+    shortName: string;
+    category: string;
+    usdCentsPerPoint: string | number;
+  };
 }
 
 export interface PartnershipEarnResult {

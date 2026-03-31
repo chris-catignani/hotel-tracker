@@ -15,7 +15,7 @@ import {
   formatCardBenefitValue,
   formatPerkValue,
   statusColorClass,
-  statusLabel,
+  statusIcon,
 } from "@/lib/posting-status-utils";
 import { cn, formatDate, pruneHotelName } from "@/lib/utils";
 
@@ -218,7 +218,7 @@ function renderBookingRows(
   // Loyalty cell
   const loyaltyValue = formatLoyaltyValue(
     booking.loyaltyPointsEarned,
-    booking.hotelChain?.loyaltyProgram ?? null
+    booking.hotelChain?.pointType?.shortName ?? null
   );
   const effectiveLoyaltyStatus: PostingStatus = booking.loyaltyPostingStatus ?? "pending";
   const loyaltyCell =
@@ -244,10 +244,11 @@ function renderBookingRows(
         value={formatCardRewardValue(
           booking.cardReward ?? 0,
           booking.userCreditCard.creditCard.rewardType,
-          booking.userCreditCard.creditCard.pointType?.name ?? null,
+          booking.userCreditCard.creditCard.pointType?.shortName ?? null,
           booking.userCreditCard.creditCard.pointType?.usdCentsPerPoint ?? null
         )}
         status={booking.cardRewardPostingStatus}
+        testId={`card-reward-cell-${booking.id}`}
         onCycle={() =>
           patchBookingStatus(booking.id, "cardRewardPostingStatus", booking.cardRewardPostingStatus)
         }
@@ -272,11 +273,12 @@ function renderBookingRows(
         value={formatPortalValue(
           booking.portalCashback ?? 0,
           booking.shoppingPortal?.rewardType ?? null,
-          booking.shoppingPortal?.pointType?.name ?? null,
+          booking.shoppingPortal?.pointType?.shortName ?? null,
           booking.shoppingPortal?.pointType?.usdCentsPerPoint ?? null,
           rawPortalPoints
         )}
         status={booking.portalCashbackPostingStatus}
+        testId={`portal-cashback-cell-${booking.id}`}
         onCycle={() =>
           patchBookingStatus(
             booking.id,
@@ -296,7 +298,7 @@ function renderBookingRows(
     ) : bps.length === 1 ? (
       <PostingStatusCell
         kind="single"
-        value={formatPromotionValue(bps[0])}
+        value={formatPromotionValue(bps[0], booking.hotelChain?.pointType?.shortName ?? null)}
         status={bps[0].postingStatus}
         testId={`promotions-cell-${booking.id}`}
         onCycle={() => patchPromotionStatus(booking.id, bps[0].id, bps[0].postingStatus)}
@@ -322,6 +324,7 @@ function renderBookingRows(
         kind="single"
         value={formatCardBenefitValue(Number(cardBenefits[0].appliedValue))}
         status={cardBenefits[0].postingStatus}
+        testId={`card-benefit-cell-${booking.id}`}
         onCycle={() =>
           patchCardBenefitStatus(booking.id, cardBenefits[0].id, cardBenefits[0].postingStatus)
         }
@@ -351,6 +354,7 @@ function renderBookingRows(
           booking.currency ?? "USD"
         )}
         status={perks[0].postingStatus}
+        testId={`perks-cell-${booking.id}`}
         onCycle={() => patchBenefitStatus(booking.id, perks[0].id, perks[0].postingStatus)}
       />
     ) : (
@@ -417,7 +421,9 @@ function renderBookingRows(
   rows.push(
     <tr key={booking.id} className="border-t">
       <td className="px-3 py-2 whitespace-nowrap sticky left-0 bg-background z-10">
-        <div className="font-semibold">{pruneHotelName(booking.property?.name ?? "Unknown")}</div>
+        <a href={`/bookings/${booking.id}`} className="font-semibold hover:underline">
+          {pruneHotelName(booking.property?.name ?? "Unknown")}
+        </a>
         <div className="text-xs text-muted-foreground">
           {formatDate(booking.checkIn)}--{formatDate(booking.checkOut)}
         </div>
@@ -522,7 +528,8 @@ function renderBookingRows(
                 statusColorClass(bp.postingStatus)
               )}
             >
-              {formatPromotionValue(bp)} · {statusLabel(bp.postingStatus)}
+              {formatPromotionValue(bp, booking.hotelChain?.pointType?.shortName ?? null)} ·{" "}
+              {statusIcon(bp.postingStatus)}
             </span>
           </div>
         )),
@@ -550,7 +557,7 @@ function renderBookingRows(
                 statusColorClass(bcb.postingStatus)
               )}
             >
-              {formatCardBenefitValue(Number(bcb.appliedValue))} · {statusLabel(bcb.postingStatus)}
+              {formatCardBenefitValue(Number(bcb.appliedValue))} · {statusIcon(bcb.postingStatus)}
             </span>
           </div>
         ))
@@ -585,7 +592,7 @@ function renderBookingRows(
                 p.label,
                 booking.currency ?? "USD"
               )}{" "}
-              · {statusLabel(p.postingStatus)}
+              · {statusIcon(p.postingStatus)}
             </span>
           </div>
         ))
@@ -621,7 +628,7 @@ function renderBookingRows(
                 )}
               >
                 {formatPartnershipValue(earn.pointsEarned ?? 0, earn.pointTypeName ?? "")} ·{" "}
-                {statusLabel(currentStatus)}
+                {statusIcon(currentStatus)}
               </span>
             </div>
           );

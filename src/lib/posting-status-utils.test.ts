@@ -5,7 +5,9 @@ import {
   formatCardRewardValue,
   formatPerkValue,
   formatPortalValue,
+  formatPartnershipValue,
   nextPostingStatus,
+  statusIcon,
 } from "@/lib/posting-status-utils";
 
 describe("nextPostingStatus", () => {
@@ -16,12 +18,23 @@ describe("nextPostingStatus", () => {
   });
 });
 
+describe("statusIcon", () => {
+  it("returns correct icon for each status", () => {
+    expect(statusIcon("pending")).toBe("⏳");
+    expect(statusIcon("posted")).toBe("✓");
+    expect(statusIcon("failed")).toBe("✗");
+  });
+});
+
 describe("formatLoyaltyValue", () => {
-  it("formats points with program name", () => {
-    expect(formatLoyaltyValue(4200, "World of Hyatt")).toBe("4,200 pts");
+  it("formats points with shortName", () => {
+    expect(formatLoyaltyValue(4200, "Hyatt")).toBe("4,200 Hyatt pts");
+  });
+  it("formats points without shortName", () => {
+    expect(formatLoyaltyValue(4200, null)).toBe("4,200 pts");
   });
   it("returns null when no points", () => {
-    expect(formatLoyaltyValue(null, "World of Hyatt")).toBeNull();
+    expect(formatLoyaltyValue(null, "Hyatt")).toBeNull();
   });
 });
 
@@ -29,20 +42,31 @@ describe("formatCardRewardValue", () => {
   it("formats cashback as dollars", () => {
     expect(formatCardRewardValue(45.0, "cashback", null)).toBe("$45.00");
   });
-  it("formats points with type name, converting USD value to points count", () => {
+  it("formats points with shortName, converting USD value to points count", () => {
     // $15 value at 0.01 USD/pt = 1500 pts
-    expect(formatCardRewardValue(15, "points", "Membership Rewards", 0.01)).toBe("1,500 MR pts");
+    expect(formatCardRewardValue(15, "points", "MR", 0.01)).toBe("1,500 MR pts");
   });
   it("falls back to 0.01 USD/pt when centsPerPoint not provided", () => {
-    expect(formatCardRewardValue(15, "points", "Membership Rewards")).toBe("1,500 MR pts");
+    expect(formatCardRewardValue(15, "points", "MR")).toBe("1,500 MR pts");
+  });
+  it("formats points without shortName", () => {
+    expect(formatCardRewardValue(15, "points", null, 0.01)).toBe("1,500 pts");
   });
 });
 
 describe("formatPromotionValue", () => {
-  it("formats points reward", () => {
+  it("formats points reward without shortName", () => {
     expect(
       formatPromotionValue({ rewardType: "points", bonusPointsApplied: 4200, appliedValue: 84 })
-    ).toBe("+4,200 pts");
+    ).toBe("4,200 pts");
+  });
+  it("formats points reward with shortName", () => {
+    expect(
+      formatPromotionValue(
+        { rewardType: "points", bonusPointsApplied: 4200, appliedValue: 84 },
+        "Hyatt"
+      )
+    ).toBe("4,200 Hyatt pts");
   });
   it("formats cashback reward", () => {
     expect(
@@ -52,7 +76,7 @@ describe("formatPromotionValue", () => {
   it("formats eqn reward", () => {
     expect(
       formatPromotionValue({ rewardType: "eqn", bonusPointsApplied: null, appliedValue: 20 })
-    ).toBe("+2 EQNs");
+    ).toBe("2 EQNs");
   });
   it("formats certificate reward", () => {
     expect(
@@ -66,7 +90,7 @@ describe("formatPromotionValue", () => {
         bonusPointsApplied: 5000,
         appliedValue: 100,
       })
-    ).toBe("+5,000 pts");
+    ).toBe("5,000 pts");
   });
   it("reads rewardType from benefits for eqn", () => {
     expect(
@@ -75,7 +99,7 @@ describe("formatPromotionValue", () => {
         bonusPointsApplied: null,
         appliedValue: 60,
       })
-    ).toBe("+6 EQNs");
+    ).toBe("6 EQNs");
   });
 });
 
@@ -86,9 +110,8 @@ describe("formatPortalValue", () => {
   it("formats points portals with raw points count", () => {
     expect(formatPortalValue(0, "points", null, 1.2, 1500)).toBe("1,500 pts");
   });
-  it("includes abbreviated point type name", () => {
-    // "Membership Rewards" abbreviates to "MR"
-    expect(formatPortalValue(0, "points", "Membership Rewards", 1.5, 2000)).toBe("2,000 MR pts");
+  it("includes point type shortName", () => {
+    expect(formatPortalValue(0, "points", "MR", 1.5, 2000)).toBe("2,000 MR pts");
   });
   it("handles Prisma string values for usdCentsPerPoint", () => {
     expect(formatPortalValue(0, "points", null, "1.2" as unknown as number, 1500)).toBe(
@@ -110,5 +133,17 @@ describe("formatPerkValue", () => {
   it("formats dollarValue using the provided currency", () => {
     expect(formatPerkValue("dining_credit", 120, null, "MYR")).not.toContain("$");
     expect(formatPerkValue("dining_credit", 120, null, "MYR")).toContain("MYR");
+  });
+});
+
+describe("formatPartnershipValue", () => {
+  it("formats points with shortName", () => {
+    expect(formatPartnershipValue(476, "Qantas")).toBe("476 Qantas pts");
+  });
+  it("rounds fractional points", () => {
+    expect(formatPartnershipValue(476.7, "Qantas")).toBe("477 Qantas pts");
+  });
+  it("formats large point counts with locale separators", () => {
+    expect(formatPartnershipValue(12500, "Qantas")).toBe("12,500 Qantas pts");
   });
 });

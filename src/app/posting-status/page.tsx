@@ -118,7 +118,7 @@ export default async function PostingStatusPage({
   return (
     <div className="flex flex-col flex-1 min-h-0 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Posting Status</h1>
+        <h1 className="text-2xl font-bold">Earnings Tracker</h1>
         <div className="flex gap-2">
           <a
             href="/posting-status?filter=needs-attention"

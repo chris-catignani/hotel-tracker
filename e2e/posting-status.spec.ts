@@ -1,6 +1,7 @@
 import { test, expect } from "./fixtures";
 import crypto from "crypto";
 import { HOTEL_ID } from "../src/lib/constants";
+import { CREDIT_CARD_ID, SHOPPING_PORTAL_ID } from "../prisma/seed-ids";
 
 const ACCOR_ID = HOTEL_ID.ACCOR;
 const ACCOR_QANTAS_EARN_ID = "cpartnership0accorqantas1";
@@ -36,7 +37,7 @@ test.describe("Posting Status", () => {
       await isolatedUser.page.goto("/posting-status");
 
       await expect(
-        isolatedUser.page.getByRole("heading", { name: "Posting Status" })
+        isolatedUser.page.getByRole("heading", { name: "Earnings Tracker" })
       ).toBeVisible();
       await expect(isolatedUser.page.getByText(propertyName)).toBeVisible();
 
@@ -80,7 +81,7 @@ test.describe("Posting Status", () => {
       // Default view = needs-attention: past apartment booking should be hidden
       await isolatedUser.page.goto("/posting-status");
       await expect(
-        isolatedUser.page.getByRole("heading", { name: "Posting Status" })
+        isolatedUser.page.getByRole("heading", { name: "Earnings Tracker" })
       ).toBeVisible();
       await expect(isolatedUser.page.getByText(propertyName)).toHaveCount(0);
 
@@ -119,24 +120,24 @@ test.describe("Posting Status", () => {
       const loyaltyCell = isolatedUser.page.getByTestId(`loyalty-cell-${booking.id}`);
 
       // Initial state: Pending
-      await expect(loyaltyCell).toContainText("Pending");
+      await expect(loyaltyCell).toContainText("⏳");
 
       // Click -> Posted
       await loyaltyCell.click();
-      await expect(loyaltyCell).toContainText("Posted");
+      await expect(loyaltyCell).toContainText("✓");
 
       // Click -> Failed
       await loyaltyCell.click();
-      await expect(loyaltyCell).toContainText("Failed");
+      await expect(loyaltyCell).toContainText("✗");
 
       // Click -> Pending
       await loyaltyCell.click();
-      await expect(loyaltyCell).toContainText("Pending");
+      await expect(loyaltyCell).toContainText("⏳");
 
       // Reload and verify persistence
       await isolatedUser.page.reload();
       const loyaltyCellAfterReload = isolatedUser.page.getByTestId(`loyalty-cell-${booking.id}`);
-      await expect(loyaltyCellAfterReload).toContainText("Pending");
+      await expect(loyaltyCellAfterReload).toContainText("⏳");
     } finally {
       await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
     }
@@ -175,7 +176,7 @@ test.describe("Posting Status", () => {
     try {
       await isolatedUser.page.goto("/posting-status?filter=all");
       await expect(
-        isolatedUser.page.getByRole("heading", { name: "Posting Status" })
+        isolatedUser.page.getByRole("heading", { name: "Earnings Tracker" })
       ).toBeVisible();
 
       const partnerCell = isolatedUser.page.getByTestId(`partners-cell-${booking.id}`);
@@ -278,6 +279,225 @@ test.describe("Posting Status", () => {
       await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
       await isolatedUser.request.delete(`/api/promotions/${promo1.id}`);
       await isolatedUser.request.delete(`/api/promotions/${promo2.id}`);
+    }
+  });
+
+  test("card reward cell cycles its status", async ({ isolatedUser }) => {
+    // Chase Sapphire Reserve: 4x UR points → non-zero cardReward triggers the cell
+    const uccRes = await isolatedUser.request.post("/api/user-credit-cards", {
+      data: { creditCardId: CREDIT_CARD_ID.CHASE_SAPPHIRE_RESERVE },
+    });
+    expect(uccRes.ok()).toBeTruthy();
+    const { id: userCreditCardId } = await uccRes.json();
+
+    const propertyName = `Card Reward Cycle ${crypto.randomUUID()}`;
+    const bookingRes = await isolatedUser.request.post("/api/bookings", {
+      data: {
+        hotelChainId: HYATT_ID,
+        propertyName,
+        checkIn: `${YEAR}-11-20`,
+        checkOut: `${YEAR}-11-25`,
+        numNights: 5,
+        pretaxCost: 400,
+        taxAmount: 80,
+        totalCost: 480,
+        currency: "USD",
+        bookingSource: "direct_web",
+        countryCode: "US",
+        city: "New York",
+        userCreditCardId,
+      },
+    });
+    expect(bookingRes.ok()).toBeTruthy();
+    const booking = await bookingRes.json();
+
+    try {
+      await isolatedUser.page.goto("/posting-status");
+
+      const cardRewardCell = isolatedUser.page.getByTestId(`card-reward-cell-${booking.id}`);
+
+      // Initial state: Pending
+      await expect(cardRewardCell).toContainText("⏳");
+
+      // Click → Posted
+      await cardRewardCell.click();
+      await expect(cardRewardCell).toContainText("✓");
+
+      // Click → Failed
+      await cardRewardCell.click();
+      await expect(cardRewardCell).toContainText("✗");
+
+      // Click → Pending
+      await cardRewardCell.click();
+      await expect(cardRewardCell).toContainText("⏳");
+    } finally {
+      await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
+      await isolatedUser.request.delete(`/api/user-credit-cards/${userCreditCardId}`);
+    }
+  });
+
+  test("portal cashback cell cycles its status", async ({ isolatedUser }) => {
+    const propertyName = `Portal Cycle ${crypto.randomUUID()}`;
+    const bookingRes = await isolatedUser.request.post("/api/bookings", {
+      data: {
+        hotelChainId: HYATT_ID,
+        propertyName,
+        checkIn: `${YEAR}-11-25`,
+        checkOut: `${YEAR}-11-30`,
+        numNights: 5,
+        pretaxCost: 400,
+        taxAmount: 80,
+        totalCost: 480,
+        currency: "USD",
+        bookingSource: "direct_web",
+        countryCode: "US",
+        city: "New York",
+        shoppingPortalId: SHOPPING_PORTAL_ID.RAKUTEN,
+        portalCashbackRate: 0.05,
+        portalCashbackOnTotal: false,
+      },
+    });
+    expect(bookingRes.ok()).toBeTruthy();
+    const booking = await bookingRes.json();
+
+    try {
+      await isolatedUser.page.goto("/posting-status");
+
+      const portalCell = isolatedUser.page.getByTestId(`portal-cashback-cell-${booking.id}`);
+
+      // Initial state: Pending
+      await expect(portalCell).toContainText("⏳");
+
+      // Click → Posted
+      await portalCell.click();
+      await expect(portalCell).toContainText("✓");
+
+      // Click → Failed
+      await portalCell.click();
+      await expect(portalCell).toContainText("✗");
+
+      // Click → Pending
+      await portalCell.click();
+      await expect(portalCell).toContainText("⏳");
+    } finally {
+      await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
+    }
+  });
+
+  test("card benefit cell cycles its status", async ({
+    isolatedUser,
+    adminRequest,
+    testHotelChain,
+  }) => {
+    const uccRes = await isolatedUser.request.post("/api/user-credit-cards", {
+      data: { creditCardId: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM },
+    });
+    expect(uccRes.ok()).toBeTruthy();
+    const { id: userCreditCardId } = await uccRes.json();
+
+    const benefitRes = await adminRequest.post("/api/card-benefits", {
+      data: {
+        creditCardId: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM,
+        description: "Test posting status credit",
+        value: 50,
+        period: "quarterly",
+        hotelChainId: testHotelChain.id,
+        isActive: true,
+      },
+    });
+    expect(benefitRes.ok()).toBeTruthy();
+    const { id: benefitId } = await benefitRes.json();
+
+    const propertyName = `Card Benefit Cycle ${crypto.randomUUID()}`;
+    const bookingRes = await isolatedUser.request.post("/api/bookings", {
+      data: {
+        hotelChainId: testHotelChain.id,
+        propertyName,
+        checkIn: `${YEAR}-12-01`,
+        checkOut: `${YEAR}-12-05`,
+        numNights: 4,
+        pretaxCost: 400,
+        taxAmount: 40,
+        totalCost: 440,
+        currency: "USD",
+        bookingSource: "direct_web",
+        countryCode: "US",
+        city: "Chicago",
+        userCreditCardId,
+      },
+    });
+    expect(bookingRes.ok()).toBeTruthy();
+    const booking = await bookingRes.json();
+
+    try {
+      await isolatedUser.page.goto("/posting-status");
+
+      const cardBenefitCell = isolatedUser.page.getByTestId(`card-benefit-cell-${booking.id}`);
+
+      // Initial state: Pending
+      await expect(cardBenefitCell).toContainText("⏳");
+
+      // Click → Posted
+      await cardBenefitCell.click();
+      await expect(cardBenefitCell).toContainText("✓");
+
+      // Click → Failed
+      await cardBenefitCell.click();
+      await expect(cardBenefitCell).toContainText("✗");
+
+      // Click → Pending
+      await cardBenefitCell.click();
+      await expect(cardBenefitCell).toContainText("⏳");
+    } finally {
+      await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
+      await isolatedUser.request.delete(`/api/user-credit-cards/${userCreditCardId}`);
+      await adminRequest.delete(`/api/card-benefits/${benefitId}`);
+    }
+  });
+
+  test("perks cell cycles its status", async ({ isolatedUser }) => {
+    const propertyName = `Perks Cycle ${crypto.randomUUID()}`;
+    const bookingRes = await isolatedUser.request.post("/api/bookings", {
+      data: {
+        hotelChainId: HYATT_ID,
+        propertyName,
+        checkIn: `${YEAR}-12-05`,
+        checkOut: `${YEAR}-12-10`,
+        numNights: 5,
+        pretaxCost: 400,
+        taxAmount: 80,
+        totalCost: 480,
+        currency: "USD",
+        bookingSource: "direct_web",
+        countryCode: "US",
+        city: "New York",
+        benefits: [{ benefitType: "free_breakfast", dollarValue: 25 }],
+      },
+    });
+    expect(bookingRes.ok()).toBeTruthy();
+    const booking = await bookingRes.json();
+
+    try {
+      await isolatedUser.page.goto("/posting-status");
+
+      const perksCell = isolatedUser.page.getByTestId(`perks-cell-${booking.id}`);
+
+      // Initial state: Pending
+      await expect(perksCell).toContainText("⏳");
+
+      // Click → Posted
+      await perksCell.click();
+      await expect(perksCell).toContainText("✓");
+
+      // Click → Failed
+      await perksCell.click();
+      await expect(perksCell).toContainText("✗");
+
+      // Click → Pending
+      await perksCell.click();
+      await expect(perksCell).toContainText("⏳");
+    } finally {
+      await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
     }
   });
 });

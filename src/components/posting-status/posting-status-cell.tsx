@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { PostingStatus } from "@/lib/types";
-import { statusColorClass, statusLabel } from "@/lib/posting-status-utils";
+import { statusColorClass, statusIcon } from "@/lib/posting-status-utils";
 
 interface SingleItemCell {
   kind: "single";
@@ -43,7 +43,7 @@ export function PostingStatusCell(props: PostingStatusCellProps) {
           statusColorClass(props.status)
         )}
       >
-        {props.value} · {statusLabel(props.status)}
+        {props.value} {statusIcon(props.status)}
       </button>
     );
   }
