@@ -257,6 +257,13 @@ function renderBookingRows(
     );
 
   // Portal cell
+  const isPointsPortal = booking.shoppingPortal?.rewardType === "points";
+  const portalBasis = booking.portalCashbackOnTotal
+    ? Number(booking.totalCost || 0)
+    : Number(booking.pretaxCost || 0);
+  const rawPortalPoints = isPointsPortal
+    ? Number(booking.portalCashbackRate || 0) * portalBasis
+    : null;
   const portalCell =
     booking.portalCashbackPostingStatus != null && booking.portalCashback > 0 ? (
       <PostingStatusCell
@@ -265,7 +272,8 @@ function renderBookingRows(
           booking.portalCashback ?? 0,
           booking.shoppingPortal?.rewardType ?? null,
           booking.shoppingPortal?.pointType?.name ?? null,
-          booking.shoppingPortal?.pointType?.usdCentsPerPoint ?? null
+          booking.shoppingPortal?.pointType?.usdCentsPerPoint ?? null,
+          rawPortalPoints
         )}
         status={booking.portalCashbackPostingStatus}
         onCycle={() =>

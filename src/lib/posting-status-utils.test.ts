@@ -4,6 +4,7 @@ import {
   formatLoyaltyValue,
   formatCardRewardValue,
   formatPerkValue,
+  formatPortalValue,
   nextPostingStatus,
 } from "@/lib/posting-status-utils";
 
@@ -75,6 +76,24 @@ describe("formatPromotionValue", () => {
         appliedValue: 60,
       })
     ).toBe("+6 EQNs");
+  });
+});
+
+describe("formatPortalValue", () => {
+  it("formats cashback portals as USD", () => {
+    expect(formatPortalValue(15, "cashback")).toBe("$15.00");
+  });
+  it("formats points portals with raw points count", () => {
+    expect(formatPortalValue(0, "points", null, 1.2, 1500)).toBe("1,500 pts");
+  });
+  it("includes abbreviated point type name", () => {
+    // "Membership Rewards" abbreviates to "MR"
+    expect(formatPortalValue(0, "points", "Membership Rewards", 1.5, 2000)).toBe("2,000 MR pts");
+  });
+  it("handles Prisma string values for usdCentsPerPoint", () => {
+    expect(formatPortalValue(0, "points", null, "1.2" as unknown as number, 1500)).toBe(
+      "1,500 pts"
+    );
   });
 });
 
