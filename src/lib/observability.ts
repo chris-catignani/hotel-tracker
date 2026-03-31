@@ -11,9 +11,12 @@ type WrappedHandler = ReturnType<typeof withAxiomRouteHandler>;
  * logs (it only uses the non-blocking waitUntil path on Vercel). In development
  * we attach a plain Logger instance (falls back to console.log when no Axiom
  * token is configured) so req.log is available for parity.
+ *
+ * When Axiom is not configured (e.g. in CI), we skip withAxiomRouteHandler to
+ * avoid duplicate console output from next-axiom's prettyPrint fallback.
  */
 export function withObservability(handler: RouteHandler): WrappedHandler {
-  if (process.env.NODE_ENV === "production") {
+  if (process.env.NODE_ENV === "production" && process.env.AXIOM_TOKEN) {
     return withAxiomRouteHandler(handler);
   }
   return ((req: NextRequest, arg?: unknown) => {

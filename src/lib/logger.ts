@@ -24,7 +24,9 @@ function formatMessage(message: string, extra?: Record<string, unknown>): string
 export const logger = {
   info(message: string, extra?: Record<string, unknown>) {
     console.log(`[INFO] ${formatMessage(message, extra)}`);
-    axiomLog.info(message, extra);
+    // Only forward to Axiom when the token is actually configured; otherwise
+    // next-axiom falls back to a duplicate console.log with a 1-second delay.
+    if (process.env.AXIOM_TOKEN) axiomLog.info(message, extra);
   },
 
   warn(message: string, extra?: Record<string, unknown>) {
@@ -34,7 +36,7 @@ export const logger = {
       level: "warning",
       extra,
     });
-    axiomLog.warn(message, extra);
+    if (process.env.AXIOM_TOKEN) axiomLog.warn(message, extra);
   },
 
   error(message: string, error?: unknown, extra?: Record<string, unknown>) {
@@ -48,11 +50,12 @@ export const logger = {
         originalMessage: message,
       },
     });
-    axiomLog.error(message, {
-      ...extra,
-      errorMessage:
-        error instanceof Error ? error.message : error != null ? String(error) : undefined,
-      errorStack: error instanceof Error ? error.stack : undefined,
-    });
+    if (process.env.AXIOM_TOKEN)
+      axiomLog.error(message, {
+        ...extra,
+        errorMessage:
+          error instanceof Error ? error.message : error != null ? String(error) : undefined,
+        errorStack: error instanceof Error ? error.stack : undefined,
+      });
   },
 };

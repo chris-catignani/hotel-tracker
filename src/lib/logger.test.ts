@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from "vitest";
 import * as SentryNext from "@sentry/nextjs";
 import * as SentryNode from "@sentry/node";
 import { log as axiomLog } from "next-axiom";
@@ -78,39 +78,65 @@ describe("logger", () => {
     expect(captured.message).toBe("not an error object");
   });
 
-  it("info() should send structured fields to Axiom", () => {
-    logger.info("test info", { foo: "bar" });
-    expect(axiomLog.info).toHaveBeenCalledWith("test info", { foo: "bar" });
-  });
+  describe("Axiom forwarding (AXIOM_TOKEN set)", () => {
+    beforeEach(() => {
+      process.env.AXIOM_TOKEN = "test-token";
+    });
+    afterEach(() => {
+      delete process.env.AXIOM_TOKEN;
+    });
 
-  it("warn() should send structured fields to Axiom", () => {
-    logger.warn("test warn", { foo: "bar" });
-    expect(axiomLog.warn).toHaveBeenCalledWith("test warn", { foo: "bar" });
-  });
+    it("info() should send structured fields to Axiom", () => {
+      logger.info("test info", { foo: "bar" });
+      expect(axiomLog.info).toHaveBeenCalledWith("test info", { foo: "bar" });
+    });
 
-  it("error() should send structured fields to Axiom with error details", () => {
-    const err = new Error("boom");
-    logger.error("test error", err, { foo: "bar" });
-    expect(axiomLog.error).toHaveBeenCalledWith("test error", {
-      foo: "bar",
-      errorMessage: "boom",
-      errorStack: expect.any(String),
+    it("warn() should send structured fields to Axiom", () => {
+      logger.warn("test warn", { foo: "bar" });
+      expect(axiomLog.warn).toHaveBeenCalledWith("test warn", { foo: "bar" });
+    });
+
+    it("error() should send structured fields to Axiom with error details", () => {
+      const err = new Error("boom");
+      logger.error("test error", err, { foo: "bar" });
+      expect(axiomLog.error).toHaveBeenCalledWith("test error", {
+        foo: "bar",
+        errorMessage: "boom",
+        errorStack: expect.any(String),
+      });
+    });
+
+    it("error() with string error should include errorMessage in Axiom fields", () => {
+      logger.error("test error string", "not an error object");
+      expect(axiomLog.error).toHaveBeenCalledWith("test error string", {
+        errorMessage: "not an error object",
+        errorStack: undefined,
+      });
+    });
+
+    it("error() with null error should not produce 'null' as errorMessage in Axiom fields", () => {
+      logger.error("test error null", null);
+      expect(axiomLog.error).toHaveBeenCalledWith("test error null", {
+        errorMessage: undefined,
+        errorStack: undefined,
+      });
     });
   });
 
-  it("error() with string error should include errorMessage in Axiom fields", () => {
-    logger.error("test error string", "not an error object");
-    expect(axiomLog.error).toHaveBeenCalledWith("test error string", {
-      errorMessage: "not an error object",
-      errorStack: undefined,
+  describe("Axiom forwarding (AXIOM_TOKEN not set)", () => {
+    it("info() should NOT call axiomLog when AXIOM_TOKEN is absent", () => {
+      logger.info("test info", { foo: "bar" });
+      expect(axiomLog.info).not.toHaveBeenCalled();
     });
-  });
 
-  it("error() with null error should not produce 'null' as errorMessage in Axiom fields", () => {
-    logger.error("test error null", null);
-    expect(axiomLog.error).toHaveBeenCalledWith("test error null", {
-      errorMessage: undefined,
-      errorStack: undefined,
+    it("warn() should NOT call axiomLog when AXIOM_TOKEN is absent", () => {
+      logger.warn("test warn", { foo: "bar" });
+      expect(axiomLog.warn).not.toHaveBeenCalled();
+    });
+
+    it("error() should NOT call axiomLog when AXIOM_TOKEN is absent", () => {
+      logger.error("test error", new Error("boom"));
+      expect(axiomLog.error).not.toHaveBeenCalled();
     });
   });
 });
