@@ -12,10 +12,12 @@ export const PUT = withObservability(
       if (adminError instanceof NextResponse) return adminError;
 
       const body = await request.json();
-      const { name, category, usdCentsPerPoint, programCurrency, programCentsPerPoint } = body;
+      const { name, shortName, category, usdCentsPerPoint, programCurrency, programCentsPerPoint } =
+        body;
 
       const data: Record<string, unknown> = {};
       if (name !== undefined) data.name = name;
+      if (shortName !== undefined) data.shortName = shortName;
       if (category !== undefined) data.category = category;
       if (usdCentsPerPoint !== undefined) data.usdCentsPerPoint = Number(usdCentsPerPoint);
       if (programCurrency !== undefined) data.programCurrency = programCurrency ?? null;

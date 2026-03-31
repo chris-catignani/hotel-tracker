@@ -37,7 +37,7 @@ test.describe("Posting Status", () => {
       await isolatedUser.page.goto("/posting-status");
 
       await expect(
-        isolatedUser.page.getByRole("heading", { name: "Posting Status" })
+        isolatedUser.page.getByRole("heading", { name: "Earnings Tracker" })
       ).toBeVisible();
       await expect(isolatedUser.page.getByText(propertyName)).toBeVisible();
 
@@ -81,7 +81,7 @@ test.describe("Posting Status", () => {
       // Default view = needs-attention: past apartment booking should be hidden
       await isolatedUser.page.goto("/posting-status");
       await expect(
-        isolatedUser.page.getByRole("heading", { name: "Posting Status" })
+        isolatedUser.page.getByRole("heading", { name: "Earnings Tracker" })
       ).toBeVisible();
       await expect(isolatedUser.page.getByText(propertyName)).toHaveCount(0);
 
@@ -176,7 +176,7 @@ test.describe("Posting Status", () => {
     try {
       await isolatedUser.page.goto("/posting-status?filter=all");
       await expect(
-        isolatedUser.page.getByRole("heading", { name: "Posting Status" })
+        isolatedUser.page.getByRole("heading", { name: "Earnings Tracker" })
       ).toBeVisible();
 
       const partnerCell = isolatedUser.page.getByTestId(`partners-cell-${booking.id}`);

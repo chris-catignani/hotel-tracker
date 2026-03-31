@@ -36,7 +36,7 @@ test.describe("Settings — Point Types", () => {
     const original = `Edit PT ${crypto.randomUUID()}`;
     const updated = `Updated PT ${crypto.randomUUID()}`;
     const res = await adminRequest.post("/api/point-types", {
-      data: { name: original, category: "hotel", usdCentsPerPoint: 0.005 },
+      data: { name: original, shortName: "EditPT", category: "hotel", usdCentsPerPoint: 0.005 },
     });
     const pt = await res.json();
 
@@ -69,7 +69,7 @@ test.describe("Settings — Point Types", () => {
   }) => {
     const name = `Del PT ${crypto.randomUUID()}`;
     const res = await adminRequest.post("/api/point-types", {
-      data: { name, category: "hotel", usdCentsPerPoint: 0.005 },
+      data: { name, shortName: "DelPT", category: "hotel", usdCentsPerPoint: 0.005 },
     });
     const pt = await res.json();
 
@@ -98,7 +98,7 @@ test.describe("Settings — Point Types", () => {
     const ptName = `409 PT ${crypto.randomUUID()}`;
     const chainName = `409 Chain ${crypto.randomUUID()}`;
     const ptRes = await adminRequest.post("/api/point-types", {
-      data: { name: ptName, category: "hotel", usdCentsPerPoint: 0.005 },
+      data: { name: ptName, shortName: "409PT", category: "hotel", usdCentsPerPoint: 0.005 },
     });
     const pt = await ptRes.json();
     const chainRes = await adminRequest.post("/api/hotel-chains", {

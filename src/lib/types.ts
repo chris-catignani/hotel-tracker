@@ -15,6 +15,7 @@ export type PostingStatus = "pending" | "posted" | "failed";
 export interface PointType {
   id: string;
   name: string;
+  shortName: string;
   category: "hotel" | "airline" | "transferable";
   usdCentsPerPoint: string | number;
   programCurrency: string | null;

@@ -38,6 +38,7 @@ export function PointTypesTab() {
   const [pointTypes, setPointTypes] = useState<PointType[]>([]);
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
+  const [shortName, setShortName] = useState("");
   const [category, setCategory] = useState<"hotel" | "airline" | "transferable">("hotel");
   const [usdCentsPerPoint, setUsdCentsPerPoint] = useState("");
   const [isForeignCurrency, setIsForeignCurrency] = useState(false);
@@ -49,6 +50,7 @@ export function PointTypesTab() {
   const [editOpen, setEditOpen] = useState(false);
   const [editPt, setEditPt] = useState<PointType | null>(null);
   const [editName, setEditName] = useState("");
+  const [editShortName, setEditShortName] = useState("");
   const [editCategory, setEditCategory] = useState<"hotel" | "airline" | "transferable">("hotel");
   const [editUsdCentsPerPoint, setEditUsdCentsPerPoint] = useState("");
   const [editIsForeignCurrency, setEditIsForeignCurrency] = useState(false);
@@ -92,6 +94,7 @@ export function PointTypesTab() {
       method: "POST",
       body: {
         name,
+        shortName: shortName.trim() || null,
         category,
         usdCentsPerPoint: Number(usdCentsPerPoint),
         programCurrency: isForeignCurrency ? programCurrency.trim() || null : null,
@@ -101,6 +104,7 @@ export function PointTypesTab() {
     });
     if (result.ok) {
       setName("");
+      setShortName("");
       setCategory("hotel");
       setUsdCentsPerPoint("");
       setIsForeignCurrency(false);
@@ -118,6 +122,7 @@ export function PointTypesTab() {
   const handleEdit = (pt: PointType) => {
     setEditPt(pt);
     setEditName(pt.name);
+    setEditShortName(pt.shortName ?? "");
     setEditCategory(pt.category);
     setEditUsdCentsPerPoint(String(Number(pt.usdCentsPerPoint)));
     const hasForeign = pt.programCurrency != null;
@@ -142,6 +147,7 @@ export function PointTypesTab() {
       method: "PUT",
       body: {
         name: editName,
+        shortName: editShortName.trim() || null,
         category: editCategory,
         usdCentsPerPoint: Number(editUsdCentsPerPoint),
         programCurrency: editIsForeignCurrency ? editProgramCurrency.trim() || null : null,
@@ -213,6 +219,15 @@ export function PointTypesTab() {
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Hilton Honors"
                   error={showErrors ? currentErrors.name : ""}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="pt-short-name">Short Name</Label>
+                <Input
+                  id="pt-short-name"
+                  value={shortName}
+                  onChange={(e) => setShortName(e.target.value)}
+                  placeholder="e.g. Hilton"
                 />
               </div>
               <div className="space-y-2">
@@ -308,6 +323,15 @@ export function PointTypesTab() {
                 onChange={(e) => setEditName(e.target.value)}
                 placeholder="e.g. Hilton Honors"
                 error={showEditErrors ? editErrors.name : ""}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-pt-short-name">Short Name</Label>
+              <Input
+                id="edit-pt-short-name"
+                value={editShortName}
+                onChange={(e) => setEditShortName(e.target.value)}
+                placeholder="e.g. Hilton"
               />
             </div>
             <div className="space-y-2">
