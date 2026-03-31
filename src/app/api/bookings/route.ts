@@ -28,6 +28,7 @@ function derivePostingStatuses(data: {
   return {
     loyaltyPostingStatus:
       data.loyaltyPointsEarned != null &&
+      data.loyaltyPointsEarned > 0 &&
       data.accommodationType !== "apartment" &&
       data.hotelChainId != null
         ? ("pending" as const)
@@ -101,7 +102,18 @@ export const GET = withAxiom(async (request: NextRequest) => {
         ? {
             userId,
             OR: [
-              { checkIn: { gte: new Date() } },
+              {
+                checkIn: { gte: new Date(new Date().setHours(0, 0, 0, 0)) },
+                OR: [
+                  { loyaltyPostingStatus: { not: null } },
+                  { cardRewardPostingStatus: { not: null } },
+                  { portalCashbackPostingStatus: { not: null } },
+                  { bookingPromotions: { some: {} } },
+                  { bookingCardBenefits: { some: {} } },
+                  { benefits: { some: {} } },
+                  { bookingPartnershipEarnStatuses: { some: {} } },
+                ],
+              },
               { loyaltyPostingStatus: "pending" as const },
               { cardRewardPostingStatus: "pending" as const },
               { portalCashbackPostingStatus: "pending" as const },

@@ -2,6 +2,7 @@ import { certPointsValue } from "@/lib/cert-types";
 import { formatCurrency } from "@/lib/utils";
 import { DEFAULT_EQN_VALUE } from "@/lib/constants";
 import { resolveBasePointRate } from "@/lib/loyalty-utils";
+import { formatBenefitLabel } from "@/lib/posting-status-utils";
 
 const DEFAULT_CENTS_PER_POINT = 0.01;
 const ORPHANED_PROMOTION_DESCRIPTION =
@@ -212,19 +213,6 @@ function formatCents(centsPerPoint: number): string {
   if (Number.isInteger(c)) return c.toString();
   // Use toPrecision or simply toString to avoid trailing zeros unless necessary
   return parseFloat(c.toFixed(2)).toString();
-}
-
-function formatBenefitLabel(benefitType: string): string {
-  const labels: Record<string, string> = {
-    free_breakfast: "Free Breakfast",
-    dining_credit: "Dining Credit",
-    spa_credit: "Spa Credit",
-    room_upgrade: "Room Upgrade",
-    late_checkout: "Late Checkout",
-    early_checkin: "Early Check-in",
-    other: "Other Benefit",
-  };
-  return labels[benefitType] ?? benefitType;
 }
 
 export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {

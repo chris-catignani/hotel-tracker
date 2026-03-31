@@ -88,9 +88,13 @@ const PERK_LABELS: Record<string, string> = {
   spa_credit: "Spa Credit",
   room_upgrade: "Room Upgrade",
   late_checkout: "Late Checkout",
-  early_checkin: "Early Checkin",
-  other: "Perk",
+  early_checkin: "Early Check-in",
+  other: "Other Benefit",
 };
+
+export function formatBenefitLabel(benefitType: string): string {
+  return PERK_LABELS[benefitType] ?? benefitType;
+}
 
 export function formatPerkValue(
   benefitType: string,

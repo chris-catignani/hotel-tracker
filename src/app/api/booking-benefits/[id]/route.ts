@@ -12,6 +12,7 @@ export const PATCH = withAxiomRouteHandler(
       if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
       const userId = userIdOrResponse;
 
+      // Note: this endpoint only supports updating postingStatus
       const { postingStatus } = await request.json();
 
       const exists = await prisma.bookingBenefit.findFirst({

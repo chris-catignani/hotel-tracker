@@ -190,11 +190,27 @@ export const PUT = withAxiomRouteHandler(
       if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
       const userId = userIdOrResponse;
 
-      const exists = await prisma.booking.findFirst({
+      const current = await prisma.booking.findFirst({
         where: { id, userId },
-        select: { id: true },
+        select: {
+          id: true,
+          currency: true,
+          checkIn: true,
+          hotelChainId: true,
+          pretaxCost: true,
+          hotelChainSubBrandId: true,
+          lockedExchangeRate: true,
+          propertyId: true,
+          loyaltyPointsEarned: true,
+          accommodationType: true,
+          userCreditCardId: true,
+          shoppingPortalId: true,
+          loyaltyPostingStatus: true,
+          cardRewardPostingStatus: true,
+          portalCashbackPostingStatus: true,
+        },
       });
-      if (!exists) return apiError("Booking not found", null, 404, request, { bookingId: id });
+      if (!current) return apiError("Booking not found", null, 404, request, { bookingId: id });
 
       const body = await request.json();
       const {
@@ -235,14 +251,7 @@ export const PUT = withAxiomRouteHandler(
       // Resolve propertyId: use provided id, or find/create from geo fields
       let resolvedPropertyId: string | undefined = propertyId;
       if (!resolvedPropertyId && propertyName) {
-        const chainId =
-          hotelChainId ??
-          (
-            await prisma.booking.findFirst({
-              where: { id, userId },
-              select: { hotelChainId: true },
-            })
-          )?.hotelChainId;
+        const chainId = hotelChainId ?? current.hotelChainId;
         resolvedPropertyId = await findOrCreateProperty({
           propertyName,
           placeId,
@@ -287,9 +296,8 @@ export const PUT = withAxiomRouteHandler(
 
       // Resolve exchange rate when currency or checkIn changes
       if (currency !== undefined || checkIn !== undefined) {
-        const current = await prisma.booking.findFirst({ where: { id, userId } });
-        const finalCurrency = currency ?? current?.currency ?? "USD";
-        const finalCheckIn = checkIn ? new Date(checkIn) : (current?.checkIn ?? new Date());
+        const finalCurrency = currency ?? current.currency ?? "USD";
+        const finalCheckIn = checkIn ? new Date(checkIn) : (current.checkIn ?? new Date());
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const isPast = finalCheckIn <= today;
@@ -316,30 +324,26 @@ export const PUT = withAxiomRouteHandler(
         const resolvedPretax = pretaxCost !== undefined ? Number(pretaxCost) : undefined;
 
         if (resolvedHotelChainId || resolvedPretax) {
-          // Fetch current booking to fill in missing values
-          const current = await prisma.booking.findFirst({
-            where: { id, userId },
-          });
-          const finalCurrency = (data.currency as string | undefined) ?? current?.currency ?? "USD";
-          const finalCheckIn = checkIn ? new Date(checkIn) : (current?.checkIn ?? new Date());
+          const finalCurrency = (data.currency as string | undefined) ?? current.currency ?? "USD";
+          const finalCheckIn = checkIn ? new Date(checkIn) : (current.checkIn ?? new Date());
           const today = new Date();
           today.setHours(0, 0, 0, 0);
           const isPast = finalCheckIn <= today;
           const shouldCompute = finalCurrency === "USD" || isPast;
 
           if (shouldCompute) {
-            const finalHotelChainId = resolvedHotelChainId ?? current?.hotelChainId;
-            const finalPretax = resolvedPretax ?? (current ? Number(current.pretaxCost) : null);
+            const finalHotelChainId = resolvedHotelChainId ?? current.hotelChainId;
+            const finalPretax = resolvedPretax ?? Number(current.pretaxCost);
             const finalHotelChainSubBrandId =
               hotelChainSubBrandId !== undefined
                 ? hotelChainSubBrandId || null
-                : (current?.hotelChainSubBrandId ?? null);
+                : (current.hotelChainSubBrandId ?? null);
 
             if (finalHotelChainId && finalPretax) {
               // Resolve exchange rate for USD calculation
               const resolvedRate = data.lockedExchangeRate
                 ? Number(data.lockedExchangeRate)
-                : current?.lockedExchangeRate
+                : current.lockedExchangeRate
                   ? Number(current.lockedExchangeRate)
                   : finalCurrency === "USD"
                     ? 1
@@ -388,10 +392,9 @@ export const PUT = withAxiomRouteHandler(
       // using the program currency rate (not the booking currency) since programCentsPerPoint
       // is denominated in programCurrency regardless of what the guest paid in.
       if (checkIn !== undefined || hotelChainId !== undefined) {
-        const current = await prisma.booking.findFirst({ where: { id, userId } });
-        const finalCheckIn = checkIn ? new Date(checkIn) : (current?.checkIn ?? new Date());
+        const finalCheckIn = checkIn ? new Date(checkIn) : (current.checkIn ?? new Date());
         const finalHotelChainId =
-          hotelChainId !== undefined ? hotelChainId || null : (current?.hotelChainId ?? null);
+          hotelChainId !== undefined ? hotelChainId || null : (current.hotelChainId ?? null);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const isPast = finalCheckIn <= today;
@@ -437,14 +440,7 @@ export const PUT = withAxiomRouteHandler(
         // Resolve effective hotelChainId for benefit validation:
         // body may not include it if the chain isn't being changed
         const effectiveHotelChainId =
-          hotelChainId !== undefined
-            ? hotelChainId || null
-            : ((
-                await prisma.booking.findFirst({
-                  where: { id, userId },
-                  select: { hotelChainId: true },
-                })
-              )?.hotelChainId ?? null);
+          hotelChainId !== undefined ? hotelChainId || null : (current.hotelChainId ?? null);
 
         const benefitValidationError = await validateBenefits(
           benefits ?? [],
@@ -486,11 +482,7 @@ export const PUT = withAxiomRouteHandler(
         !resolvedPropertyId &&
         (countryCode !== undefined || city !== undefined || address !== undefined)
       ) {
-        const current = await prisma.booking.findFirst({
-          where: { id, userId },
-          select: { propertyId: true },
-        });
-        if (current?.propertyId) {
+        if (current.propertyId) {
           await prisma.property.update({
             where: { id: current.propertyId },
             data: {
@@ -506,106 +498,80 @@ export const PUT = withAxiomRouteHandler(
 
       // Derive posting statuses: only reset to "pending" when the relevant entity changes;
       // otherwise preserve the current DB value so user-set statuses are not overwritten.
-      {
-        const current = await prisma.booking.findFirst({
-          where: { id, userId },
-          select: {
-            loyaltyPointsEarned: true,
-            accommodationType: true,
-            hotelChainId: true,
-            userCreditCardId: true,
-            shoppingPortalId: true,
-            loyaltyPostingStatus: true,
-            cardRewardPostingStatus: true,
-            portalCashbackPostingStatus: true,
-          },
-        });
-        if (current) {
-          // --- loyaltyPostingStatus ---
-          // Loyalty is affected by: loyaltyPointsEarned, accommodationType, hotelChainId
-          const finalLoyaltyPoints =
-            loyaltyPointsEarned !== undefined
-              ? (data.loyaltyPointsEarned as number | null | undefined)
-              : current.loyaltyPointsEarned != null
-                ? Number(current.loyaltyPointsEarned)
-                : null;
-          const finalAccommodationType =
-            (data.accommodationType as string | undefined) ?? current.accommodationType;
-          const finalHotelChainId =
-            hotelChainId !== undefined
-              ? (data.hotelChainId as string | null | undefined)
-              : current.hotelChainId;
+      // --- loyaltyPostingStatus ---
+      // Loyalty is affected by: loyaltyPointsEarned, accommodationType, hotelChainId
+      const finalLoyaltyPoints =
+        loyaltyPointsEarned !== undefined
+          ? (data.loyaltyPointsEarned as number | null | undefined)
+          : current.loyaltyPointsEarned != null
+            ? Number(current.loyaltyPointsEarned)
+            : null;
+      const finalAccommodationType =
+        (data.accommodationType as string | undefined) ?? current.accommodationType;
+      const finalHotelChainId =
+        hotelChainId !== undefined
+          ? (data.hotelChainId as string | null | undefined)
+          : current.hotelChainId;
 
-          const loyaltyEligible =
-            finalLoyaltyPoints != null &&
-            finalLoyaltyPoints > 0 &&
-            finalAccommodationType !== "apartment" &&
-            finalHotelChainId != null;
+      const loyaltyEligible =
+        finalLoyaltyPoints != null &&
+        finalLoyaltyPoints > 0 &&
+        finalAccommodationType !== "apartment" &&
+        finalHotelChainId != null;
 
-          let loyaltyPostingStatus: PostingStatus | null;
-          if (!loyaltyEligible) {
-            loyaltyPostingStatus = null;
-          } else {
-            const loyaltyChanged =
-              (loyaltyPointsEarned !== undefined &&
-                Number(loyaltyPointsEarned || null) !==
-                  (current.loyaltyPointsEarned != null
-                    ? Number(current.loyaltyPointsEarned)
-                    : null)) ||
-              (accommodationType !== undefined &&
-                accommodationType !== current.accommodationType) ||
-              (hotelChainId !== undefined && hotelChainId !== current.hotelChainId);
-            if (loyaltyChanged) {
-              loyaltyPostingStatus = "pending";
-            } else {
-              loyaltyPostingStatus = current.loyaltyPostingStatus ?? "pending";
-            }
-          }
-          data.loyaltyPostingStatus = loyaltyPostingStatus;
-
-          // --- cardRewardPostingStatus ---
-          const finalUserCreditCardId =
-            userCreditCardId !== undefined
-              ? (data.userCreditCardId as string | null | undefined)
-              : current.userCreditCardId;
-
-          let cardRewardPostingStatus: PostingStatus | null;
-          if (finalUserCreditCardId == null) {
-            cardRewardPostingStatus = null;
-          } else if (
-            userCreditCardId !== undefined &&
-            userCreditCardId !== current.userCreditCardId
-          ) {
-            // Card changed — reset to pending
-            cardRewardPostingStatus = "pending";
-          } else {
-            // Card unchanged — preserve existing status
-            cardRewardPostingStatus = current.cardRewardPostingStatus ?? "pending";
-          }
-          data.cardRewardPostingStatus = cardRewardPostingStatus;
-
-          // --- portalCashbackPostingStatus ---
-          const finalShoppingPortalId =
-            shoppingPortalId !== undefined
-              ? (data.shoppingPortalId as string | null | undefined)
-              : current.shoppingPortalId;
-
-          let portalCashbackPostingStatus: PostingStatus | null;
-          if (finalShoppingPortalId == null) {
-            portalCashbackPostingStatus = null;
-          } else if (
-            shoppingPortalId !== undefined &&
-            shoppingPortalId !== current.shoppingPortalId
-          ) {
-            // Portal changed — reset to pending
-            portalCashbackPostingStatus = "pending";
-          } else {
-            // Portal unchanged — preserve existing status
-            portalCashbackPostingStatus = current.portalCashbackPostingStatus ?? "pending";
-          }
-          data.portalCashbackPostingStatus = portalCashbackPostingStatus;
+      let loyaltyPostingStatus: PostingStatus | null;
+      if (!loyaltyEligible) {
+        loyaltyPostingStatus = null;
+      } else {
+        const loyaltyChanged =
+          (loyaltyPointsEarned !== undefined &&
+            Number(loyaltyPointsEarned || null) !==
+              (current.loyaltyPointsEarned != null ? Number(current.loyaltyPointsEarned) : null)) ||
+          (accommodationType !== undefined && accommodationType !== current.accommodationType) ||
+          (hotelChainId !== undefined && hotelChainId !== current.hotelChainId);
+        if (loyaltyChanged) {
+          loyaltyPostingStatus = "pending";
+        } else {
+          loyaltyPostingStatus = current.loyaltyPostingStatus ?? "pending";
         }
       }
+      data.loyaltyPostingStatus = loyaltyPostingStatus;
+
+      // --- cardRewardPostingStatus ---
+      const finalUserCreditCardId =
+        userCreditCardId !== undefined
+          ? (data.userCreditCardId as string | null | undefined)
+          : current.userCreditCardId;
+
+      let cardRewardPostingStatus: PostingStatus | null;
+      if (finalUserCreditCardId == null) {
+        cardRewardPostingStatus = null;
+      } else if (userCreditCardId !== undefined && userCreditCardId !== current.userCreditCardId) {
+        // Card changed — reset to pending
+        cardRewardPostingStatus = "pending";
+      } else {
+        // Card unchanged — preserve existing status
+        cardRewardPostingStatus = current.cardRewardPostingStatus ?? "pending";
+      }
+      data.cardRewardPostingStatus = cardRewardPostingStatus;
+
+      // --- portalCashbackPostingStatus ---
+      const finalShoppingPortalId =
+        shoppingPortalId !== undefined
+          ? (data.shoppingPortalId as string | null | undefined)
+          : current.shoppingPortalId;
+
+      let portalCashbackPostingStatus: PostingStatus | null;
+      if (finalShoppingPortalId == null) {
+        portalCashbackPostingStatus = null;
+      } else if (shoppingPortalId !== undefined && shoppingPortalId !== current.shoppingPortalId) {
+        // Portal changed — reset to pending
+        portalCashbackPostingStatus = "pending";
+      } else {
+        // Portal unchanged — preserve existing status
+        portalCashbackPostingStatus = current.portalCashbackPostingStatus ?? "pending";
+      }
+      data.portalCashbackPostingStatus = portalCashbackPostingStatus;
 
       // Capture existing card benefit pairs before update so we can re-evaluate
       // periods that may no longer match after the change (e.g. card switched)
