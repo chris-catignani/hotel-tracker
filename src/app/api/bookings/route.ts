@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withAxiom } from "next-axiom";
+import { withObservability as withAxiom } from "@/lib/observability";
 import prisma from "@/lib/prisma";
 import { runPostBookingCreate } from "@/lib/booking-service";
 import { apiError } from "@/lib/api-error";

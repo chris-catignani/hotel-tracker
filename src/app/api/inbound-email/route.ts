@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withAxiom } from "next-axiom";
+import { withObservability as withAxiom } from "@/lib/observability";
 import { Webhook } from "svix";
 import prisma from "@/lib/prisma";
 import { parseConfirmationEmail } from "@/lib/email-ingestion/email-parser";

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withAxiom } from "next-axiom";
+import { withObservability as withAxiom } from "@/lib/observability";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { searchProperties } from "@/lib/geo-lookup";
 import { apiError } from "@/lib/api-error";
