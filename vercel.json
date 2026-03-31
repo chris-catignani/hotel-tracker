@@ -2,6 +2,7 @@
   "git": {
     "deploymentEnabled": true
   },
+  "buildCommand": "npx prisma migrate resolve --rolled-back 20260330000000_add_posting_status || true && npx prisma migrate deploy && npx prisma generate && next build",
   "crons": [
     {
       "path": "/api/cron/refresh-exchange-rates",
