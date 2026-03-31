@@ -2,9 +2,8 @@ import { PostingStatusGrid } from "@/components/posting-status/posting-status-gr
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
-import { normalizeUserStatuses } from "@/lib/normalize-response";
-import { enrichBookingWithRate } from "@/lib/booking-enrichment";
-import { resolvePartnershipEarns, PartnershipEarnInput } from "@/lib/partnership-earns";
+import { enrichBookingsWithPartnerships } from "@/lib/booking-enrichment";
+import type { PartnershipEarnResult } from "@/lib/partnership-earns";
 import { getNetCostBreakdown } from "@/lib/net-cost";
 
 async function getBookings(filter: string) {
@@ -60,51 +59,25 @@ async function getBookings(filter: string) {
     orderBy: { checkIn: "asc" },
   });
 
-  const normalized = normalizeUserStatuses(bookings) as (typeof bookings)[number][];
-  const enriched = await Promise.all(normalized.map(enrichBookingWithRate));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const enriched = await enrichBookingsWithPartnerships(bookings as any[], userId);
 
-  const enabledEarns = await prisma.userPartnershipEarn.findMany({
-    where: { userId, isEnabled: true },
-    include: { partnershipEarn: { include: { pointType: true } } },
+  return enriched.map((b) => {
+    const partnershipEarns = (b.partnershipEarns as PartnershipEarnResult[]).map((r) => ({
+      id: r.id,
+      name: r.name,
+      pointsEarned: r.pointsEarned,
+      earnedValue: r.earnedValue,
+      pointTypeName: r.pointTypeName,
+    }));
+    const { cardReward, portalCashback } = getNetCostBreakdown({
+      ...b,
+      partnershipEarns,
+      certificates: [],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+    return { ...b, partnershipEarns, cardReward, portalCashback };
   });
-
-  const earnInputs: PartnershipEarnInput[] = enabledEarns.map((e) => ({
-    ...e.partnershipEarn,
-    earnRate: Number(e.partnershipEarn.earnRate),
-    pointType: {
-      ...e.partnershipEarn.pointType,
-      usdCentsPerPoint: Number(e.partnershipEarn.pointType.usdCentsPerPoint),
-    },
-  }));
-
-  return Promise.all(
-    enriched.map(async (b) => {
-      const results = await resolvePartnershipEarns(
-        {
-          hotelChainId: b.hotelChainId,
-          pretaxCost: Number(b.pretaxCost),
-          lockedExchangeRate: b.lockedExchangeRate ? Number(b.lockedExchangeRate) : null,
-          property: b.property,
-          checkIn: b.checkIn,
-        },
-        earnInputs
-      );
-      const partnershipEarns = results.map((r) => ({
-        id: r.id,
-        name: r.name,
-        pointsEarned: r.pointsEarned,
-        earnedValue: r.earnedValue,
-        pointTypeName: r.pointTypeName,
-      }));
-      const { cardReward, portalCashback } = getNetCostBreakdown({
-        ...b,
-        partnershipEarns,
-        certificates: [],
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
-      return { ...b, partnershipEarns, cardReward, portalCashback };
-    })
-  );
 }
 
 export default async function PostingStatusPage({

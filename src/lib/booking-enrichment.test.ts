@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
-import { enrichBookingWithRate, finalizeCheckedInBookings } from "./booking-enrichment";
+import {
+  enrichBookingWithRate,
+  finalizeCheckedInBookings,
+  enrichBookingsWithPartnerships,
+  enrichBookingWithPartnerships,
+} from "./booking-enrichment";
 
 vi.mock("./exchange-rate", () => ({
   getCurrentRate: vi.fn(),
@@ -18,7 +23,12 @@ vi.mock("./prisma", () => ({
     exchangeRateHistory: { findUnique: vi.fn() },
     booking: { findMany: vi.fn(), update: vi.fn() },
     userStatus: { findMany: vi.fn() },
+    userPartnershipEarn: { findMany: vi.fn() },
   },
+}));
+
+vi.mock("./partnership-earns", () => ({
+  resolvePartnershipEarns: vi.fn().mockResolvedValue([]),
 }));
 
 import {
@@ -29,16 +39,19 @@ import {
 } from "./exchange-rate";
 import { calculatePoints } from "./loyalty-utils";
 import prisma from "./prisma";
+import { resolvePartnershipEarns } from "./partnership-earns";
 
 const mockGetCurrentRate = getCurrentRate as Mock;
 const mockResolveCalcCurrencyRate = resolveCalcCurrencyRate as Mock;
 const mockCalculatePoints = calculatePoints as Mock;
 const mockGetOrFetchHistoricalRate = getOrFetchHistoricalRate as Mock;
 const mockFetchExchangeRate = fetchExchangeRate as Mock;
+const mockResolvePartnershipEarns = resolvePartnershipEarns as Mock;
 const prismaMock = prisma as unknown as {
   exchangeRateHistory: { findUnique: Mock };
   booking: { findMany: Mock; update: Mock };
   userStatus: { findMany: Mock };
+  userPartnershipEarn: { findMany: Mock };
 };
 
 const pastDate = new Date("2024-06-01T00:00:00Z");
@@ -514,5 +527,123 @@ describe("finalizeCheckedInBookings", () => {
       where: Record<string, unknown>;
     };
     expect(callArg.where).not.toHaveProperty("userId");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// enrichBookingsWithPartnerships
+// ---------------------------------------------------------------------------
+
+const makeBookingForEnrich = (id: string) => ({
+  ...baseBooking,
+  id,
+  hotelChainId: "chain-1",
+  property: { countryCode: "US" },
+});
+
+const makeEarnRow = (overrides: Record<string, unknown> = {}) => ({
+  partnershipEarn: {
+    id: "earn-1",
+    name: "Qantas",
+    hotelChainId: null,
+    earnRate: "3.5",
+    earnCurrency: "AUD",
+    countryCodes: [],
+    pointType: {
+      name: "Qantas Points",
+      shortName: "QF",
+      category: "airline",
+      usdCentsPerPoint: "1.5",
+    },
+    ...overrides,
+  },
+});
+
+describe("enrichBookingsWithPartnerships", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockResolveCalcCurrencyRate.mockResolvedValue(null);
+    prismaMock.userPartnershipEarn.findMany.mockResolvedValue([]);
+  });
+
+  it("fetches enabled earns scoped to the given userId", async () => {
+    await enrichBookingsWithPartnerships([makeBookingForEnrich("b1")], "user-42");
+
+    expect(prismaMock.userPartnershipEarn.findMany).toHaveBeenCalledWith({
+      where: { userId: "user-42", isEnabled: true },
+      include: { partnershipEarn: { include: { pointType: true } } },
+    });
+  });
+
+  it("fetches enabled earns only once even for multiple bookings", async () => {
+    const bookings = [makeBookingForEnrich("b1"), makeBookingForEnrich("b2")];
+
+    await enrichBookingsWithPartnerships(bookings, "user-1");
+
+    expect(prismaMock.userPartnershipEarn.findMany).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns each booking with partnershipEarns attached", async () => {
+    const earnResult = [{ id: "earn-1", name: "Qantas", pointsEarned: 100, earnedValue: 1.5 }];
+    mockResolvePartnershipEarns.mockResolvedValue(earnResult);
+    prismaMock.userPartnershipEarn.findMany.mockResolvedValue([makeEarnRow()]);
+
+    const bookings = [makeBookingForEnrich("b1")];
+    const result = await enrichBookingsWithPartnerships(bookings, "user-1");
+
+    expect(result).toHaveLength(1);
+    expect(result[0].partnershipEarns).toEqual(earnResult);
+  });
+
+  it("passes earnRate and usdCentsPerPoint as numbers to resolvePartnershipEarns", async () => {
+    prismaMock.userPartnershipEarn.findMany.mockResolvedValue([makeEarnRow()]);
+
+    await enrichBookingsWithPartnerships([makeBookingForEnrich("b1")], "user-1");
+
+    expect(mockResolvePartnershipEarns).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.arrayContaining([
+        expect.objectContaining({
+          earnRate: 3.5,
+          pointType: expect.objectContaining({ usdCentsPerPoint: 1.5 }),
+        }),
+      ])
+    );
+  });
+
+  it("returns an empty array when given no bookings", async () => {
+    const result = await enrichBookingsWithPartnerships([], "user-1");
+    expect(result).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// enrichBookingWithPartnerships
+// ---------------------------------------------------------------------------
+
+describe("enrichBookingWithPartnerships", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockResolveCalcCurrencyRate.mockResolvedValue(null);
+    prismaMock.userPartnershipEarn.findMany.mockResolvedValue([]);
+  });
+
+  it("returns the booking with partnershipEarns attached", async () => {
+    const earnResult = [{ id: "earn-1", name: "Qantas", pointsEarned: 50, earnedValue: 0.75 }];
+    mockResolvePartnershipEarns.mockResolvedValue(earnResult);
+    prismaMock.userPartnershipEarn.findMany.mockResolvedValue([makeEarnRow()]);
+
+    const result = await enrichBookingWithPartnerships(makeBookingForEnrich("b1"), "user-1");
+
+    expect(result.partnershipEarns).toEqual(earnResult);
+  });
+
+  it("fetches enabled earns scoped to the given userId", async () => {
+    await enrichBookingWithPartnerships(makeBookingForEnrich("b1"), "user-99");
+
+    expect(prismaMock.userPartnershipEarn.findMany).toHaveBeenCalledWith({
+      where: { userId: "user-99", isEnabled: true },
+      include: { partnershipEarn: { include: { pointType: true } } },
+    });
   });
 });

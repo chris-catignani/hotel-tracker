@@ -7,6 +7,8 @@ import {
 } from "@/lib/exchange-rate";
 import prisma from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { normalizeUserStatuses } from "@/lib/normalize-response";
+import { resolvePartnershipEarns } from "@/lib/partnership-earns";
 
 type EliteStatusShape = { eliteStatus: unknown };
 
@@ -213,4 +215,62 @@ export async function finalizeCheckedInBookings(userId?: string): Promise<string
   }
 
   return finalizedIds;
+}
+
+/**
+ * Shared helper: fetches enabled partnership earns for a user once, then resolves
+ * earned values for each booking. Replaces the normalize → enrich → partnership
+ * pipeline that was duplicated across the bookings GET route, the single-booking
+ * GET route, and the posting-status page.
+ */
+async function fetchEarnInputs(userId: string) {
+  const enabledEarns = await prisma.userPartnershipEarn.findMany({
+    where: { userId, isEnabled: true },
+    include: { partnershipEarn: { include: { pointType: true } } },
+  });
+  return enabledEarns.map((e) => ({
+    ...e.partnershipEarn,
+    earnRate: Number(e.partnershipEarn.earnRate),
+    pointType: {
+      ...e.partnershipEarn.pointType,
+      usdCentsPerPoint: Number(e.partnershipEarn.pointType.usdCentsPerPoint),
+    },
+  }));
+}
+
+export async function enrichBookingsWithPartnerships<T extends EnrichableBooking>(
+  bookings: T[],
+  userId: string
+) {
+  if (bookings.length === 0) return [];
+
+  const normalized = normalizeUserStatuses(bookings) as T[];
+  const enriched = await Promise.all(normalized.map(enrichBookingWithRate));
+  const earnInputs = await fetchEarnInputs(userId);
+
+  return Promise.all(
+    enriched.map(async (b) => {
+      const partnershipEarns = await resolvePartnershipEarns(
+        {
+          hotelChainId: (b as unknown as { hotelChainId?: string | null }).hotelChainId ?? null,
+          pretaxCost: Number(b.pretaxCost),
+          lockedExchangeRate: b.lockedExchangeRate,
+          property:
+            (b as unknown as { property?: { countryCode?: string | null } | null }).property ??
+            null,
+          checkIn: b.checkIn,
+        },
+        earnInputs
+      );
+      return { ...b, partnershipEarns };
+    })
+  );
+}
+
+export async function enrichBookingWithPartnerships<T extends EnrichableBooking>(
+  booking: T,
+  userId: string
+) {
+  const [result] = await enrichBookingsWithPartnerships([booking], userId);
+  return result;
 }

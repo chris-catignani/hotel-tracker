@@ -15,16 +15,14 @@ import { apiError } from "@/lib/api-error";
 import { CertType, BenefitType, BenefitPointsEarnType, PostingStatus } from "@prisma/client";
 import { calculatePoints, resolveBasePointRate } from "@/lib/loyalty-utils";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
-import { normalizeUserStatuses } from "@/lib/normalize-response";
 import {
   fetchExchangeRate,
   getOrFetchHistoricalRate,
   getCurrentRate,
   resolveCalcCurrencyRate,
 } from "@/lib/exchange-rate";
-import { enrichBookingWithRate } from "@/lib/booking-enrichment";
+import { enrichBookingWithPartnerships } from "@/lib/booking-enrichment";
 import { findOrCreateProperty } from "@/lib/property-utils";
-import { resolvePartnershipEarns } from "@/lib/partnership-earns";
 import {
   reapplyCardBenefitsAffectedByBooking,
   reapplyBenefitForPeriod,
@@ -132,33 +130,7 @@ async function getFullBookingWithUsage(id: string, userId: string) {
     bookingPromotions: enhancedBookingPromotions,
   };
 
-  const normalized = normalizeUserStatuses(result) as typeof result;
-  const enriched = await enrichBookingWithRate(normalized);
-
-  const enabledEarns = await prisma.userPartnershipEarn.findMany({
-    where: { userId, isEnabled: true },
-    include: { partnershipEarn: { include: { pointType: true } } },
-  });
-
-  const partnershipEarns = await resolvePartnershipEarns(
-    {
-      hotelChainId: enriched.hotelChainId,
-      pretaxCost: Number(enriched.pretaxCost),
-      lockedExchangeRate: enriched.lockedExchangeRate ? Number(enriched.lockedExchangeRate) : null,
-      property: enriched.property,
-      checkIn: enriched.checkIn,
-    },
-    enabledEarns.map((e) => ({
-      ...e.partnershipEarn,
-      earnRate: Number(e.partnershipEarn.earnRate),
-      pointType: {
-        ...e.partnershipEarn.pointType,
-        usdCentsPerPoint: Number(e.partnershipEarn.pointType.usdCentsPerPoint),
-      },
-    }))
-  );
-
-  return { ...enriched, partnershipEarns };
+  return enrichBookingWithPartnerships(result, userId);
 }
 
 export const GET = withObservability(

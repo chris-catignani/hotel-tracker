@@ -13,9 +13,8 @@ import {
 } from "@prisma/client";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
-import { enrichBookingWithRate } from "@/lib/booking-enrichment";
+import { enrichBookingWithRate, enrichBookingsWithPartnerships } from "@/lib/booking-enrichment";
 import { findOrCreateProperty } from "@/lib/property-utils";
-import { resolvePartnershipEarns } from "@/lib/partnership-earns";
 import { validateBenefits } from "@/lib/booking-benefit-validation";
 
 function derivePostingStatuses(data: {
@@ -135,37 +134,7 @@ export const GET = withObservability(async (request: NextRequest) => {
       },
     });
 
-    const normalized = normalizeUserStatuses(bookings) as (typeof bookings)[number][];
-    const enriched = await Promise.all(normalized.map(enrichBookingWithRate));
-
-    // Fetch enabled partnership earns for this user once, then apply to each booking
-    const enabledEarns = await prisma.userPartnershipEarn.findMany({
-      where: { userId, isEnabled: true },
-      include: { partnershipEarn: { include: { pointType: true } } },
-    });
-
-    const withPartnerships = await Promise.all(
-      enriched.map(async (b) => {
-        const partnershipEarns = await resolvePartnershipEarns(
-          {
-            hotelChainId: b.hotelChainId,
-            pretaxCost: Number(b.pretaxCost),
-            lockedExchangeRate: b.lockedExchangeRate ? Number(b.lockedExchangeRate) : null,
-            property: b.property,
-            checkIn: b.checkIn,
-          },
-          enabledEarns.map((e) => ({
-            ...e.partnershipEarn,
-            earnRate: Number(e.partnershipEarn.earnRate),
-            pointType: {
-              ...e.partnershipEarn.pointType,
-              usdCentsPerPoint: Number(e.partnershipEarn.pointType.usdCentsPerPoint),
-            },
-          }))
-        );
-        return { ...b, partnershipEarns };
-      })
-    );
+    const withPartnerships = await enrichBookingsWithPartnerships(bookings, userId);
 
     return NextResponse.json(withPartnerships);
   } catch (error) {

@@ -24,10 +24,9 @@ vi.mock("@/lib/normalize-response", () => ({
 
 vi.mock("@/lib/booking-enrichment", () => ({
   enrichBookingWithRate: vi.fn((b) => Promise.resolve(b)),
-}));
-
-vi.mock("@/lib/partnership-earns", () => ({
-  resolvePartnershipEarns: vi.fn(() => Promise.resolve([])),
+  enrichBookingsWithPartnerships: vi.fn((bookings: unknown[]) =>
+    Promise.resolve(bookings.map((b) => ({ ...(b as object), partnershipEarns: [] })))
+  ),
 }));
 
 function makeRequest(url = "http://localhost/api/bookings") {
