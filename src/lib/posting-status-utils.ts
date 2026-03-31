@@ -14,38 +14,28 @@ export function nextPostingStatus(current: PostingStatus): PostingStatus {
 
 export function formatLoyaltyValue(
   loyaltyPointsEarned: number | null,
-  _programName: string | null
+  shortName: string | null
 ): string | null {
   if (loyaltyPointsEarned == null) return null;
-  return `${loyaltyPointsEarned.toLocaleString()} pts`;
+  return `${loyaltyPointsEarned.toLocaleString()}${shortName ? ` ${shortName}` : ""} pts`;
 }
 
 export function formatCardRewardValue(
   value: number,
   rewardType: string,
-  pointTypeName: string | null,
+  pointTypeShortName: string | null,
   usdCentsPerPoint?: number | null
 ): string {
   if (rewardType === "cashback") return formatCurrency(value);
   const centsPerPoint = usdCentsPerPoint ?? 0.01;
   const points = Math.round(value / centsPerPoint);
-  const abbr = pointTypeName ? abbreviatePointType(pointTypeName) : "";
-  return `${points.toLocaleString()}${abbr ? ` ${abbr}` : ""} pts`;
-}
-
-function abbreviatePointType(name: string): string {
-  // e.g. "Membership Rewards" → "MR", "ThankYou Points" → "TY"
-  return name
-    .split(/\s+/)
-    .filter((w) => /^[A-Z]/.test(w))
-    .map((w) => w[0])
-    .join("");
+  return `${points.toLocaleString()}${pointTypeShortName ? ` ${pointTypeShortName}` : ""} pts`;
 }
 
 export function formatPortalValue(
   cashbackValue: number,
   rewardType?: string | null,
-  pointTypeName?: string | null,
+  pointTypeShortName?: string | null,
   usdCentsPerPoint?: number | null,
   rawPoints?: number | null
 ): string {
@@ -53,31 +43,32 @@ export function formatPortalValue(
   const centsPerPoint = Number(usdCentsPerPoint ?? 0.01);
   const points =
     rawPoints != null ? Math.round(rawPoints) : Math.round(cashbackValue / centsPerPoint);
-  const abbr = pointTypeName ? abbreviatePointType(pointTypeName) : "";
-  return `${points.toLocaleString()}${abbr ? ` ${abbr}` : ""} pts`;
+  return `${points.toLocaleString()}${pointTypeShortName ? ` ${pointTypeShortName}` : ""} pts`;
 }
 
-export function formatPromotionValue(bp: {
-  rewardType?: string;
-  promotion?: { benefits?: { rewardType: string }[] };
-  bonusPointsApplied: number | null;
-  appliedValue: number | string;
-}): string {
+export function formatPromotionValue(
+  bp: {
+    rewardType?: string;
+    promotion?: { benefits?: { rewardType: string }[] };
+    bonusPointsApplied: number | null;
+    appliedValue: number | string;
+  },
+  pointTypeShortName?: string | null
+): string {
   const v = Number(bp.appliedValue);
   // bonus_points_applied is the authoritative signal for points-type benefits
   if (bp.bonusPointsApplied != null) {
-    return `+${bp.bonusPointsApplied.toLocaleString()} pts`;
+    return `${bp.bonusPointsApplied.toLocaleString()}${pointTypeShortName ? ` ${pointTypeShortName}` : ""} pts`;
   }
   const rewardType = bp.rewardType ?? bp.promotion?.benefits?.[0]?.rewardType;
   if (rewardType === "cashback") return formatCurrency(v);
-  if (rewardType === "eqn") return `+${Math.round(v / DEFAULT_EQN_VALUE)} EQNs`;
+  if (rewardType === "eqn") return `${Math.round(v / DEFAULT_EQN_VALUE)} EQNs`;
   if (rewardType === "certificate") return "Cert";
   return formatCurrency(v);
 }
 
-export function formatPartnershipValue(pointsEarned: number, pointTypeName: string): string {
-  const abbr = abbreviatePointType(pointTypeName);
-  return `${Math.round(pointsEarned).toLocaleString()}${abbr ? ` ${abbr}` : ""} pts`;
+export function formatPartnershipValue(pointsEarned: number, pointTypeShortName: string): string {
+  return `${Math.round(pointsEarned).toLocaleString()}${pointTypeShortName ? ` ${pointTypeShortName}` : ""} pts`;
 }
 
 export function formatCardBenefitValue(appliedValue: number): string {
@@ -109,10 +100,10 @@ export function formatPerkValue(
   return PERK_LABELS[benefitType] ?? "Perk";
 }
 
-export function statusLabel(status: PostingStatus): string {
-  if (status === "posted") return "✓ Posted";
-  if (status === "failed") return "✗ Failed";
-  return "⏳ Pending";
+export function statusIcon(status: PostingStatus): string {
+  if (status === "posted") return "✓";
+  if (status === "failed") return "✗";
+  return "⏳";
 }
 
 export function statusColorClass(status: PostingStatus): string {

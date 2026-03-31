@@ -158,6 +158,7 @@ model VerificationToken {
 model PointType {
   id                   String           @id @default(cuid())
   name                 String
+  shortName            String           @map("short_name")
   category             PointCategory
   usdCentsPerPoint     Decimal          @map("usd_cents_per_point") @db.Decimal(10, 6)
   programCurrency      String?          @map("program_currency")

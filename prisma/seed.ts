@@ -200,6 +200,7 @@ async function main() {
     {
       id: POINT_TYPE_ID.HILTON_HONORS,
       name: "Hilton Honors Points",
+      shortName: "Hilton",
       category: "hotel",
       usdCentsPerPoint: 0.0045,
       programCurrency: null,
@@ -208,6 +209,7 @@ async function main() {
     {
       id: POINT_TYPE_ID.MARRIOTT_BONVOY,
       name: "Marriott Bonvoy Points",
+      shortName: "Bonvoy",
       category: "hotel",
       usdCentsPerPoint: 0.007,
       programCurrency: null,
@@ -216,6 +218,7 @@ async function main() {
     {
       id: POINT_TYPE_ID.WORLD_OF_HYATT,
       name: "World of Hyatt Points",
+      shortName: "Hyatt",
       category: "hotel",
       usdCentsPerPoint: 0.02,
       programCurrency: null,
@@ -224,6 +227,7 @@ async function main() {
     {
       id: POINT_TYPE_ID.IHG_ONE_REWARDS,
       name: "IHG One Rewards",
+      shortName: "IHG",
       category: "hotel",
       usdCentsPerPoint: 0.006,
       programCurrency: null,
@@ -232,6 +236,7 @@ async function main() {
     {
       id: POINT_TYPE_ID.DISCOVERY_DOLLARS,
       name: "Discovery Dollars",
+      shortName: "D$",
       category: "hotel",
       usdCentsPerPoint: 0.01,
       programCurrency: null,
@@ -240,6 +245,7 @@ async function main() {
     {
       id: POINT_TYPE_ID.ACCOR_ALL,
       name: "ALL - Accor Live Limitless",
+      shortName: "ALL",
       category: "hotel",
       usdCentsPerPoint: 0.022, // overwritten by cron after first run
       programCurrency: "EUR",
@@ -248,6 +254,7 @@ async function main() {
     {
       id: POINT_TYPE_ID.MEMBERSHIP_REWARDS,
       name: "Membership Rewards",
+      shortName: "MR",
       category: "transferable",
       usdCentsPerPoint: 0.02,
       programCurrency: null,
@@ -256,6 +263,7 @@ async function main() {
     {
       id: POINT_TYPE_ID.ULTIMATE_REWARDS,
       name: "Ultimate Rewards",
+      shortName: "UR",
       category: "transferable",
       usdCentsPerPoint: 0.02,
       programCurrency: null,
@@ -264,6 +272,7 @@ async function main() {
     {
       id: POINT_TYPE_ID.CAPITAL_ONE_MILES,
       name: "Capital One Miles",
+      shortName: "Cap1",
       category: "transferable",
       usdCentsPerPoint: 0.0175,
       programCurrency: null,
@@ -272,6 +281,7 @@ async function main() {
     {
       id: POINT_TYPE_ID.AVIOS,
       name: "Avios",
+      shortName: "Avios",
       category: "airline",
       usdCentsPerPoint: 0.012,
       programCurrency: null,
@@ -280,6 +290,7 @@ async function main() {
     {
       id: POINT_TYPE_ID.BILT,
       name: "Bilt",
+      shortName: "Bilt",
       category: "transferable",
       usdCentsPerPoint: 0.02,
       programCurrency: null,
@@ -288,6 +299,7 @@ async function main() {
     {
       id: POINT_TYPE_ID.WELLS_FARGO,
       name: "Wells Fargo Rewards",
+      shortName: "WF",
       category: "transferable",
       usdCentsPerPoint: 0.015,
       programCurrency: null,
@@ -296,6 +308,7 @@ async function main() {
     {
       id: POINT_TYPE_ID.QANTAS_POINTS,
       name: "Qantas Points",
+      shortName: "Qantas",
       category: "airline",
       usdCentsPerPoint: 0.012,
       programCurrency: null,
@@ -308,6 +321,7 @@ async function main() {
       where: { id: pt.id },
       update: {
         name: pt.name,
+        shortName: pt.shortName,
         category: pt.category as PointCategory,
         usdCentsPerPoint: pt.usdCentsPerPoint,
         programCurrency: pt.programCurrency,
@@ -316,6 +330,7 @@ async function main() {
       create: {
         id: pt.id,
         name: pt.name,
+        shortName: pt.shortName,
         category: pt.category as PointCategory,
         usdCentsPerPoint: pt.usdCentsPerPoint,
         programCurrency: pt.programCurrency,
