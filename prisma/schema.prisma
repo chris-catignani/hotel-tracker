@@ -89,6 +89,12 @@ enum IngestionMethod {
   email
 }
 
+enum PostingStatus {
+  pending
+  posted
+  failed
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -320,12 +326,16 @@ model Booking {
   confirmationNumber    String?              @map("confirmation_number")
   ingestionMethod       IngestionMethod      @default(manual) @map("ingestion_method")
   needsReview           Boolean              @default(false)  @map("needs_review")
+  loyaltyPostingStatus     PostingStatus? @map("loyalty_posting_status")
+  cardRewardPostingStatus  PostingStatus? @map("card_reward_posting_status")
+  portalCashbackPostingStatus PostingStatus? @map("portal_cashback_posting_status")
   createdAt             DateTime             @default(now()) @map("created_at")
   bookingPromotions     BookingPromotion[]
   bookingCardBenefits   BookingCardBenefit[]
   certificates          BookingCertificate[]
   benefits              BookingBenefit[]
   priceWatchBooking     PriceWatchBooking?
+  bookingPartnershipEarnStatuses BookingPartnershipEarnStatus[]
 
   @@index([checkIn])
   @@index([createdAt])
@@ -341,6 +351,7 @@ model BookingBenefit {
   pointsEarnType   BenefitPointsEarnType? @map("points_earn_type")
   pointsAmount     Int?                   @map("points_amount")
   pointsMultiplier Decimal?               @map("points_multiplier") @db.Decimal(6, 3)
+  postingStatus    PostingStatus          @default(pending) @map("posting_status")
   booking          Booking                @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
   @@map("booking_benefits")
@@ -514,7 +525,7 @@ model BookingPromotion {
   isOrphaned          Boolean                   @default(false) @map("is_orphaned")
   isPreQualifying     Boolean                   @default(false) @map("is_pre_qualifying")
   autoApplied         Boolean                   @default(true) @map("auto_applied")
-  verified            Boolean                   @default(false)
+  postingStatus       PostingStatus             @default(pending) @map("posting_status")
   eligibleNightsAtBooking Int?                  @map("eligible_nights_at_booking")
   benefitApplications BookingPromotionBenefit[]
 
@@ -549,6 +560,7 @@ model PartnershipEarn {
   hotelChain HotelChain?           @relation(fields: [hotelChainId], references: [id])
   pointType  PointType             @relation(fields: [pointTypeId], references: [id])
   userEarns  UserPartnershipEarn[]
+  bookingPartnershipEarnStatuses BookingPartnershipEarnStatus[]
 
   @@map("partnership_earns")
 }
@@ -644,13 +656,14 @@ model CardBenefitOtaAgency {
 }
 
 model BookingCardBenefit {
-  id            String      @id @default(cuid())
-  bookingId     String      @map("booking_id")
-  booking       Booking     @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  cardBenefitId String      @map("card_benefit_id")
-  cardBenefit   CardBenefit @relation(fields: [cardBenefitId], references: [id], onDelete: Cascade)
-  appliedValue  Decimal     @map("applied_value") @db.Decimal(10, 2)
-  periodKey     String      @map("period_key")
+  id            String        @id @default(cuid())
+  bookingId     String        @map("booking_id")
+  booking       Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  cardBenefitId String        @map("card_benefit_id")
+  cardBenefit   CardBenefit   @relation(fields: [cardBenefitId], references: [id], onDelete: Cascade)
+  appliedValue  Decimal       @map("applied_value") @db.Decimal(10, 2)
+  periodKey     String        @map("period_key")
+  postingStatus PostingStatus @default(pending) @map("posting_status")
 
   @@unique([bookingId, cardBenefitId])
   @@map("booking_card_benefits")
@@ -675,6 +688,18 @@ model Property {
 
   @@unique([name, hotelChainId])
   @@map("properties")
+}
+
+model BookingPartnershipEarnStatus {
+  id                String          @id @default(cuid())
+  bookingId         String          @map("booking_id")
+  booking           Booking         @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  partnershipEarnId String          @map("partnership_earn_id")
+  partnershipEarn   PartnershipEarn @relation(fields: [partnershipEarnId], references: [id], onDelete: Cascade)
+  postingStatus     PostingStatus   @default(pending) @map("posting_status")
+
+  @@unique([bookingId, partnershipEarnId])
+  @@map("booking_partnership_earn_statuses")
 }
 
 model PriceWatch {

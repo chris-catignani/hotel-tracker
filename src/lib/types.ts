@@ -6,6 +6,8 @@ export type UserRole = "USER" | "ADMIN";
 
 export type AccommodationType = "hotel" | "apartment";
 
+export type PostingStatus = "pending" | "posted" | "failed";
+
 // ---------------------------------------------------------------------------
 // Core Data Models
 // ---------------------------------------------------------------------------
@@ -128,6 +130,7 @@ export interface BookingCardBenefit {
   cardBenefit: { description: string };
   appliedValue: string | number;
   periodKey: string;
+  postingStatus: PostingStatus;
 }
 
 export interface ShoppingPortal {
@@ -435,6 +438,7 @@ export interface BookingBenefit {
   pointsEarnType: string | null;
   pointsAmount: number | null;
   pointsMultiplier: string | number | null;
+  postingStatus: PostingStatus;
 }
 
 export interface Booking {
@@ -468,6 +472,10 @@ export interface Booking {
   confirmationNumber: string | null;
   ingestionMethod: "manual" | "email";
   needsReview: boolean;
+  loyaltyPostingStatus: PostingStatus | null;
+  cardRewardPostingStatus: PostingStatus | null;
+  portalCashbackPostingStatus: PostingStatus | null;
+  bookingPartnershipEarnStatuses: BookingPartnershipEarnStatus[];
   certificates: BookingCertificate[];
   bookingSource: string | null;
   otaAgencyId: string | null;
@@ -522,7 +530,7 @@ export interface BookingPromotion {
   appliedValue: string | number;
   bonusPointsApplied: number | null;
   autoApplied: boolean;
-  verified: boolean;
+  postingStatus: PostingStatus;
   eligibleNightsAtBooking?: number | null; // Cumulative nights including current stay
   eligibleStayCount?: number | null;
   eligibleNightCount?: number | null;
@@ -530,6 +538,13 @@ export interface BookingPromotion {
   isPreQualifying?: boolean;
   promotion: Promotion;
   benefitApplications: BookingPromotionBenefit[];
+}
+
+export interface BookingPartnershipEarnStatus {
+  id: string;
+  bookingId: string;
+  partnershipEarnId: string;
+  postingStatus: PostingStatus;
 }
 
 export interface BookingPromotionBenefit {

@@ -280,6 +280,10 @@ describe("BookingForm benefit approximate value", () => {
       certificates: [],
       bookingSource: null,
       otaAgencyId: null,
+      loyaltyPostingStatus: null,
+      cardRewardPostingStatus: null,
+      portalCashbackPostingStatus: null,
+      bookingPartnershipEarnStatuses: [],
       benefits: [
         {
           id: "b1",
@@ -289,6 +293,7 @@ describe("BookingForm benefit approximate value", () => {
           pointsEarnType: "multiplier_on_base",
           pointsAmount: null,
           pointsMultiplier: 2,
+          postingStatus: "pending",
         },
       ],
       bookingCardBenefits: [],

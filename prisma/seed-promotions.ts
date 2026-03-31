@@ -696,7 +696,7 @@ async function seedBookingPromotions(userId: string) {
           bonusPointsApplied: bp.bonusPointsApplied,
           eligibleNightsAtBooking: bp.eligibleNightsAtBooking,
           autoApplied: true,
-          verified: false,
+          postingStatus: "pending",
         },
       });
 

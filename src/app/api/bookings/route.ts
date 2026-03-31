@@ -18,6 +18,26 @@ import { findOrCreateProperty } from "@/lib/property-utils";
 import { resolvePartnershipEarns } from "@/lib/partnership-earns";
 import { validateBenefits } from "@/lib/booking-benefit-validation";
 
+function derivePostingStatuses(data: {
+  loyaltyPointsEarned: number | null | undefined;
+  accommodationType: string;
+  hotelChainId: string | null | undefined;
+  userCreditCardId: string | null | undefined;
+  shoppingPortalId: string | null | undefined;
+}) {
+  return {
+    loyaltyPostingStatus:
+      data.loyaltyPointsEarned != null &&
+      data.loyaltyPointsEarned > 0 &&
+      data.accommodationType !== "apartment" &&
+      data.hotelChainId != null
+        ? ("pending" as const)
+        : null,
+    cardRewardPostingStatus: data.userCreditCardId != null ? ("pending" as const) : null,
+    portalCashbackPostingStatus: data.shoppingPortalId != null ? ("pending" as const) : null,
+  };
+}
+
 const BOOKING_INCLUDE = (userId: string) =>
   ({
     hotelChain: {
@@ -65,6 +85,7 @@ const BOOKING_INCLUDE = (userId: string) =>
     property: true,
     priceWatchBooking: { include: { priceWatch: { select: { isEnabled: true } } } },
     bookingCardBenefits: { include: { cardBenefit: true } },
+    bookingPartnershipEarnStatuses: true,
   }) as const;
 
 export const GET = withAxiom(async (request: NextRequest) => {
@@ -73,8 +94,41 @@ export const GET = withAxiom(async (request: NextRequest) => {
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
     const userId = userIdOrResponse;
 
+    const { searchParams } = new URL(request.url);
+    const filter = searchParams.get("filter");
+
+    const whereClause =
+      filter === "needs-attention"
+        ? {
+            userId,
+            OR: [
+              {
+                checkIn: { gte: new Date(new Date().setHours(0, 0, 0, 0)) },
+                OR: [
+                  { loyaltyPostingStatus: { not: null } },
+                  { cardRewardPostingStatus: { not: null } },
+                  { portalCashbackPostingStatus: { not: null } },
+                  { bookingPromotions: { some: {} } },
+                  { bookingCardBenefits: { some: {} } },
+                  { benefits: { some: {} } },
+                  { bookingPartnershipEarnStatuses: { some: {} } },
+                ],
+              },
+              { loyaltyPostingStatus: "pending" as const },
+              { cardRewardPostingStatus: "pending" as const },
+              { portalCashbackPostingStatus: "pending" as const },
+              { bookingPromotions: { some: { postingStatus: "pending" as const } } },
+              { bookingCardBenefits: { some: { postingStatus: "pending" as const } } },
+              { benefits: { some: { postingStatus: "pending" as const } } },
+              {
+                bookingPartnershipEarnStatuses: { some: { postingStatus: "pending" as const } },
+              },
+            ],
+          }
+        : { userId };
+
     const bookings = await prisma.booking.findMany({
-      where: { userId },
+      where: whereClause,
       include: BOOKING_INCLUDE(userId),
       orderBy: {
         checkIn: "asc",
@@ -203,6 +257,14 @@ export const POST = withAxiom(async (request: NextRequest) => {
       return apiError(benefitValidationError, null, 400, request);
     }
 
+    const postingStatuses = derivePostingStatuses({
+      loyaltyPointsEarned: calculatedPoints,
+      accommodationType: accommodationType ?? "hotel",
+      hotelChainId: hotelChainId || null,
+      userCreditCardId: userCreditCardId || null,
+      shoppingPortalId: shoppingPortalId || null,
+    });
+
     const booking = await prisma.booking.create({
       data: {
         userId,
@@ -263,6 +325,7 @@ export const POST = withAxiom(async (request: NextRequest) => {
                 })),
             }
           : undefined,
+        ...postingStatuses,
       },
     });
 

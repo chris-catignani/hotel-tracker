@@ -34,6 +34,7 @@ import { useApiQuery } from "@/hooks/use-api-query";
 import { apiFetch } from "@/lib/api-fetch";
 import { logger } from "@/lib/logger";
 import { toast } from "sonner";
+import { PostingStatus } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -45,7 +46,7 @@ interface BookingPromotion {
   promotionId: string;
   appliedValue: string | number;
   autoApplied: boolean;
-  verified: boolean;
+  postingStatus: PostingStatus;
   promotion: {
     id: string;
     name: string;
