@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withAxiom } from "next-axiom";
+import { withObservability } from "@/lib/observability";
 import prisma from "@/lib/prisma";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { apiError } from "@/lib/api-error";
 
-export const POST = withAxiom(async (request: NextRequest) => {
+export const POST = withObservability(async (request: NextRequest) => {
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;

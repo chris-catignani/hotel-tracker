@@ -14,6 +14,12 @@ const IS_NEXT = process.env.NEXT_RUNTIME === "nodejs" || process.env.NEXT_RUNTIM
 // Next.js (server & client) uses @sentry/nextjs.
 const Sentry = IS_NEXT || !IS_SERVER ? SentryNext : SentryNode;
 
+// Mirror next-axiom's NEXT_PUBLIC_AXIOM_LOG_LEVEL so a single env var controls
+// both Axiom forwarding and console output. Defaults to 'debug' (log everything).
+// Set to 'warn' in CI (playwright.config.ts webServer env) to suppress INFO noise.
+const LOG_LEVEL = process.env.NEXT_PUBLIC_AXIOM_LOG_LEVEL ?? "debug";
+const LOG_INFO = LOG_LEVEL === "debug" || LOG_LEVEL === "info";
+
 function formatMessage(message: string, extra?: Record<string, unknown>): string {
   if (extra && Object.keys(extra).length > 0) {
     return `${message} ${JSON.stringify(extra)}`;
@@ -23,8 +29,10 @@ function formatMessage(message: string, extra?: Record<string, unknown>): string
 
 export const logger = {
   info(message: string, extra?: Record<string, unknown>) {
-    console.log(`[INFO] ${formatMessage(message, extra)}`);
-    axiomLog.info(message, extra);
+    if (LOG_INFO) console.log(`[INFO] ${formatMessage(message, extra)}`);
+    // Only forward to Axiom when the token is actually configured; otherwise
+    // next-axiom falls back to a duplicate console.log with a 1-second delay.
+    if (process.env.AXIOM_TOKEN) axiomLog.info(message, extra);
   },
 
   warn(message: string, extra?: Record<string, unknown>) {
@@ -34,7 +42,7 @@ export const logger = {
       level: "warning",
       extra,
     });
-    axiomLog.warn(message, extra);
+    if (process.env.AXIOM_TOKEN) axiomLog.warn(message, extra);
   },
 
   error(message: string, error?: unknown, extra?: Record<string, unknown>) {
@@ -48,11 +56,12 @@ export const logger = {
         originalMessage: message,
       },
     });
-    axiomLog.error(message, {
-      ...extra,
-      errorMessage:
-        error instanceof Error ? error.message : error != null ? String(error) : undefined,
-      errorStack: error instanceof Error ? error.stack : undefined,
-    });
+    if (process.env.AXIOM_TOKEN)
+      axiomLog.error(message, {
+        ...extra,
+        errorMessage:
+          error instanceof Error ? error.message : error != null ? String(error) : undefined,
+        errorStack: error instanceof Error ? error.stack : undefined,
+      });
   },
 };

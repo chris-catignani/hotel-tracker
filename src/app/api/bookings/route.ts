@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withAxiom } from "next-axiom";
+import { withObservability } from "@/lib/observability";
 import prisma from "@/lib/prisma";
 import { runPostBookingCreate } from "@/lib/booking-service";
 import { apiError } from "@/lib/api-error";
@@ -88,7 +88,7 @@ const BOOKING_INCLUDE = (userId: string) =>
     bookingPartnershipEarnStatuses: true,
   }) as const;
 
-export const GET = withAxiom(async (request: NextRequest) => {
+export const GET = withObservability(async (request: NextRequest) => {
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
@@ -173,7 +173,7 @@ export const GET = withAxiom(async (request: NextRequest) => {
   }
 });
 
-export const POST = withAxiom(async (request: NextRequest) => {
+export const POST = withObservability(async (request: NextRequest) => {
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;

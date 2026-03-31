@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withAxiom } from "next-axiom";
+import { withObservability } from "@/lib/observability";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { searchProperties } from "@/lib/geo-lookup";
 import { apiError } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
 
-export const GET = withAxiom(async (request: NextRequest) => {
+export const GET = withObservability(async (request: NextRequest) => {
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;

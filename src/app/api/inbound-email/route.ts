@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withAxiom } from "next-axiom";
+import { withObservability } from "@/lib/observability";
 import { Webhook } from "svix";
 import prisma from "@/lib/prisma";
 import { parseConfirmationEmail } from "@/lib/email-ingestion/email-parser";
@@ -148,4 +148,4 @@ async function handler(req: NextRequest): Promise<NextResponse> {
   return NextResponse.json({ ok: true });
 }
 
-export const POST = withAxiom(handler);
+export const POST = withObservability(handler);

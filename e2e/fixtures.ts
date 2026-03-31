@@ -271,40 +271,41 @@ export const test = base.extend<TestFixtures>({
     const pastYear = new Date().getFullYear() - 1;
     const currentYear = new Date().getFullYear();
 
-    const currentRes = await isolatedUser.request.post("/api/bookings", {
-      data: {
-        hotelChainId: chain.id,
-        propertyName: `Current Year Hotel ${crypto.randomUUID()}`,
-        checkIn: `${currentYear}-08-10`,
-        checkOut: `${currentYear}-08-15`,
-        numNights: 5,
-        pretaxCost: 400,
-        taxAmount: 80,
-        totalCost: 480,
-        currency: "USD",
-        bookingSource: "direct_web",
-        countryCode: "US",
-        city: "New York",
-      },
-    });
+    const [currentRes, pastRes] = await Promise.all([
+      isolatedUser.request.post("/api/bookings", {
+        data: {
+          hotelChainId: chain.id,
+          propertyName: `Current Year Hotel ${crypto.randomUUID()}`,
+          checkIn: `${currentYear}-08-10`,
+          checkOut: `${currentYear}-08-15`,
+          numNights: 5,
+          pretaxCost: 400,
+          taxAmount: 80,
+          totalCost: 480,
+          currency: "USD",
+          bookingSource: "direct_web",
+          countryCode: "US",
+          city: "New York",
+        },
+      }),
+      isolatedUser.request.post("/api/bookings", {
+        data: {
+          hotelChainId: chain.id,
+          propertyName: `Past Year Hotel ${crypto.randomUUID()}`,
+          checkIn: `${pastYear}-06-01`,
+          checkOut: `${pastYear}-06-05`,
+          numNights: 4,
+          pretaxCost: 400,
+          taxAmount: 40,
+          totalCost: 440,
+          currency: "USD",
+          bookingSource: "direct_web",
+          countryCode: "US",
+          city: "Chicago",
+        },
+      }),
+    ]);
     const currentBooking = await currentRes.json();
-
-    const pastRes = await isolatedUser.request.post("/api/bookings", {
-      data: {
-        hotelChainId: chain.id,
-        propertyName: `Past Year Hotel ${crypto.randomUUID()}`,
-        checkIn: `${pastYear}-06-01`,
-        checkOut: `${pastYear}-06-05`,
-        numNights: 4,
-        pretaxCost: 400,
-        taxAmount: 40,
-        totalCost: 440,
-        currency: "USD",
-        bookingSource: "direct_web",
-        countryCode: "US",
-        city: "Chicago",
-      },
-    });
     const pastBooking = await pastRes.json();
 
     await use({

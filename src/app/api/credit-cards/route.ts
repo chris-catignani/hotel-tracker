@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withAxiom } from "next-axiom";
+import { withObservability } from "@/lib/observability";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { CreditCardRewardRuleFormData } from "@/lib/types";
@@ -15,7 +15,7 @@ const CARD_INCLUDE = {
   },
 } as const;
 
-export const GET = withAxiom(async (request: NextRequest) => {
+export const GET = withObservability(async (request: NextRequest) => {
   try {
     const cards = await prisma.creditCard.findMany({
       where: { isDeleted: false },
@@ -30,7 +30,7 @@ export const GET = withAxiom(async (request: NextRequest) => {
   }
 });
 
-export const POST = withAxiom(async (request: NextRequest) => {
+export const POST = withObservability(async (request: NextRequest) => {
   try {
     const adminError = await requireAdmin();
     if (adminError instanceof NextResponse) return adminError;

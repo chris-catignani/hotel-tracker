@@ -32,8 +32,13 @@ vi.mock("svix", () => ({
 
 // Strip wrappers so POST is the bare handler in tests
 vi.mock("next-axiom", () => ({
-  withAxiom: (handler: unknown) => handler,
   log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+  Logger: class {
+    log = vi.fn();
+  },
+}));
+vi.mock("@/lib/observability", () => ({
+  withObservability: (handler: unknown) => handler,
 }));
 
 const mockLoggerInfo = vi.hoisted(() => vi.fn());

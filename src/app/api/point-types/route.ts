@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withAxiom } from "next-axiom";
+import { withObservability } from "@/lib/observability";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { requireAdmin } from "@/lib/auth-utils";
 
-export const GET = withAxiom(async (request: NextRequest) => {
+export const GET = withObservability(async (request: NextRequest) => {
   try {
     const pointTypes = await prisma.pointType.findMany({
       orderBy: [{ category: "asc" }, { name: "asc" }],
@@ -15,7 +15,7 @@ export const GET = withAxiom(async (request: NextRequest) => {
   }
 });
 
-export const POST = withAxiom(async (request: NextRequest) => {
+export const POST = withObservability(async (request: NextRequest) => {
   try {
     const adminError = await requireAdmin();
     if (adminError instanceof NextResponse) return adminError;

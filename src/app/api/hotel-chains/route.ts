@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withAxiom } from "next-axiom";
+import { withObservability } from "@/lib/observability";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { getAuthenticatedUserId, requireAdmin } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
 import { getCurrentRate } from "@/lib/exchange-rate";
 
-export const GET = withAxiom(async (request: NextRequest) => {
+export const GET = withObservability(async (request: NextRequest) => {
   try {
     const userIdOrResponse = await getAuthenticatedUserId();
     if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
@@ -74,7 +74,7 @@ export function parseCalculationCurrency(raw: unknown): string | null {
   return /^[A-Z]{3}$/.test(value) ? value : null;
 }
 
-export const POST = withAxiom(async (request: NextRequest) => {
+export const POST = withObservability(async (request: NextRequest) => {
   try {
     const adminError = await requireAdmin();
     if (adminError instanceof NextResponse) return adminError;
