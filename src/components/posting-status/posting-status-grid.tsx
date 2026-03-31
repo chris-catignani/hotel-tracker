@@ -338,7 +338,8 @@ function renderBookingRows(
         value={formatPerkValue(
           perks[0].benefitType,
           perks[0].dollarValue != null ? Number(perks[0].dollarValue) : null,
-          perks[0].label
+          perks[0].label,
+          booking.currency ?? "USD"
         )}
         status={perks[0].postingStatus}
         onCycle={() => patchBenefitStatus(booking.id, perks[0].id, perks[0].postingStatus)}
@@ -571,7 +572,8 @@ function renderBookingRows(
               {formatPerkValue(
                 p.benefitType,
                 p.dollarValue != null ? Number(p.dollarValue) : null,
-                p.label
+                p.label,
+                booking.currency ?? "USD"
               )}{" "}
               · {statusLabel(p.postingStatus)}
             </span>

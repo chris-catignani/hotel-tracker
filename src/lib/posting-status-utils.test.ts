@@ -88,4 +88,8 @@ describe("formatPerkValue", () => {
   it("uses custom label when provided", () => {
     expect(formatPerkValue("other", null, "Airport Transfer")).toBe("Airport Transfer");
   });
+  it("formats dollarValue using the provided currency", () => {
+    expect(formatPerkValue("dining_credit", 120, null, "MYR")).not.toContain("$");
+    expect(formatPerkValue("dining_credit", 120, null, "MYR")).toContain("MYR");
+  });
 });
