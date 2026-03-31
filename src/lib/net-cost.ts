@@ -217,10 +217,14 @@ function formatCents(centsPerPoint: number): string {
 
 function calcPromotionBreakdowns(
   booking: NetCostBooking,
-  hotelCentsPerPoint: number,
   totalCost: number,
   pretaxCost: number
 ): { promotions: PromotionBreakdown[]; promoSavings: number } {
+  const hotelCentsPerPoint =
+    booking.hotelChain?.pointType?.usdCentsPerPoint != null
+      ? Number(booking.hotelChain.pointType.usdCentsPerPoint)
+      : DEFAULT_CENTS_PER_POINT;
+
   // NOTE: Redemption Constraints
   // The appliedValue shown here already reflects any constraints enforced at matching time:
   // - maxStayCount: limits how many separate stays can trigger a promotion
@@ -1243,17 +1247,8 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
   const exchangeRate = booking.lockedExchangeRate ? Number(booking.lockedExchangeRate) : 1;
   const totalCost = toUSD(Number(booking.totalCost), exchangeRate);
   const pretaxCost = toUSD(Number(booking.pretaxCost), exchangeRate);
-  const hotelCentsPerPoint =
-    booking.hotelChain?.pointType?.usdCentsPerPoint != null
-      ? Number(booking.hotelChain.pointType.usdCentsPerPoint)
-      : DEFAULT_CENTS_PER_POINT;
 
-  const { promotions, promoSavings } = calcPromotionBreakdowns(
-    booking,
-    hotelCentsPerPoint,
-    totalCost,
-    pretaxCost
-  );
+  const { promotions, promoSavings } = calcPromotionBreakdowns(booking, totalCost, pretaxCost);
   const { cardBenefitSavings, cardBenefitCalc } = calcCardBenefits(booking);
   const { portalCashback, portalCashbackCalc } = calcPortalCashback(booking, totalCost, pretaxCost);
   const { cardReward, cardRewardCalc } = calcCardReward(booking, totalCost);
