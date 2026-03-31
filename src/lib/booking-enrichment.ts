@@ -106,7 +106,8 @@ export async function enrichBookingWithRate<T extends EnrichableBooking>(booking
       }),
     ]);
 
-    exchangeRateEstimated = historyOnDate == null && historyDayBefore == null;
+    exchangeRateEstimated =
+      !booking.lockedExchangeRate && historyOnDate == null && historyDayBefore == null;
   }
 
   return {

@@ -288,13 +288,27 @@ describe("enrichBookingWithRate", () => {
       lockedExchangeRate: "0.63",
       checkIn: new Date("2022-01-15T00:00:00Z"), // very old, pre-API coverage
     };
+    const pastNonUsdBookingNoLock = {
+      ...baseBooking,
+      currency: "AUD",
+      lockedExchangeRate: null,
+      checkIn: new Date("2022-01-15T00:00:00Z"), // very old, pre-API coverage
+    };
 
-    it("is true when no ExchangeRateHistory exists for checkIn or checkIn-1", async () => {
+    it("is true when no ExchangeRateHistory exists for checkIn or checkIn-1 and no lockedExchangeRate", async () => {
+      prismaMock.exchangeRateHistory.findUnique.mockResolvedValue(null);
+
+      const result = await enrichBookingWithRate(pastNonUsdBookingNoLock);
+
+      expect(result.exchangeRateEstimated).toBe(true);
+    });
+
+    it("is false when lockedExchangeRate is set even if no ExchangeRateHistory exists", async () => {
       prismaMock.exchangeRateHistory.findUnique.mockResolvedValue(null);
 
       const result = await enrichBookingWithRate(pastNonUsdBooking);
 
-      expect(result.exchangeRateEstimated).toBe(true);
+      expect(result.exchangeRateEstimated).toBe(false);
     });
 
     it("is false when ExchangeRateHistory exists for checkIn-1 (same-day check-in case)", async () => {
