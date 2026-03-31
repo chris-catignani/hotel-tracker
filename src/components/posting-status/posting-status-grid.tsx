@@ -258,9 +258,10 @@ function renderBookingRows(
 
   // Portal cell
   const isPointsPortal = booking.shoppingPortal?.rewardType === "points";
-  const portalBasis = booking.portalCashbackOnTotal
-    ? Number(booking.totalCost || 0)
-    : Number(booking.pretaxCost || 0);
+  const portalBasis =
+    (booking.portalCashbackOnTotal
+      ? Number(booking.totalCost || 0)
+      : Number(booking.pretaxCost || 0)) * Number(booking.lockedExchangeRate || 1);
   const rawPortalPoints = isPointsPortal
     ? Number(booking.portalCashbackRate || 0) * portalBasis
     : null;
