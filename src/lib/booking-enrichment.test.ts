@@ -289,10 +289,8 @@ describe("enrichBookingWithRate", () => {
       checkIn: new Date("2022-01-15T00:00:00Z"), // very old, pre-API coverage
     };
     const pastNonUsdBookingNoLock = {
-      ...baseBooking,
-      currency: "AUD",
+      ...pastNonUsdBooking,
       lockedExchangeRate: null,
-      checkIn: new Date("2022-01-15T00:00:00Z"), // very old, pre-API coverage
     };
 
     it("is true when no ExchangeRateHistory exists for checkIn or checkIn-1 and no lockedExchangeRate", async () => {
@@ -303,12 +301,11 @@ describe("enrichBookingWithRate", () => {
       expect(result.exchangeRateEstimated).toBe(true);
     });
 
-    it("is false when lockedExchangeRate is set even if no ExchangeRateHistory exists", async () => {
-      prismaMock.exchangeRateHistory.findUnique.mockResolvedValue(null);
-
+    it("is false when lockedExchangeRate is set (skips DB lookup entirely)", async () => {
       const result = await enrichBookingWithRate(pastNonUsdBooking);
 
       expect(result.exchangeRateEstimated).toBe(false);
+      expect(prismaMock.exchangeRateHistory.findUnique).not.toHaveBeenCalled();
     });
 
     it("is false when ExchangeRateHistory exists for checkIn-1 (same-day check-in case)", async () => {
@@ -317,7 +314,7 @@ describe("enrichBookingWithRate", () => {
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce({ rate: "0.63" });
 
-      const result = await enrichBookingWithRate(pastNonUsdBooking);
+      const result = await enrichBookingWithRate(pastNonUsdBookingNoLock);
 
       expect(result.exchangeRateEstimated).toBe(false);
     });
@@ -325,7 +322,7 @@ describe("enrichBookingWithRate", () => {
     it("is false when ExchangeRateHistory exists for checkIn date itself", async () => {
       prismaMock.exchangeRateHistory.findUnique.mockResolvedValueOnce({ rate: "0.63" });
 
-      const result = await enrichBookingWithRate(pastNonUsdBooking);
+      const result = await enrichBookingWithRate(pastNonUsdBookingNoLock);
 
       expect(result.exchangeRateEstimated).toBe(false);
     });
