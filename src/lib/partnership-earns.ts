@@ -22,6 +22,7 @@ export interface PartnershipEarnResult {
   name: string;
   pointsEarned: number;
   earnedValue: number;
+  pointTypeName: string;
   calc: CalculationDetail;
 }
 
@@ -108,7 +109,14 @@ export async function resolvePartnershipEarns(
       ],
     };
 
-    results.push({ id: earn.id, name: earn.name, pointsEarned, earnedValue, calc });
+    results.push({
+      id: earn.id,
+      name: earn.name,
+      pointsEarned,
+      earnedValue,
+      pointTypeName: earn.pointType.name,
+      calc,
+    });
   }
 
   return results;
