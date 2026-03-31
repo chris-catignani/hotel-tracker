@@ -633,7 +633,7 @@ export default function BookingDetailPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex pt-2 border-t">
+                  <div className="flex items-center pt-2 border-t">
                     <Badge
                       variant={bp.autoApplied ? "default" : "outline"}
                       data-testid="promo-auto-applied"
