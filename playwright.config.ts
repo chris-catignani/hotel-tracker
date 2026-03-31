@@ -62,6 +62,11 @@ export default defineConfig({
       // the production Axiom dataset.
       AXIOM_TOKEN: "",
       NEXT_PUBLIC_AXIOM_DATASET: "",
+      // Suppress INFO-level console output in the test server — operational
+      // logs add noise without debugging value. NEXT_PUBLIC_AXIOM_LOG_LEVEL
+      // is the same variable next-axiom reads, so both Axiom forwarding and
+      // our console.log calls respect it consistently.
+      NEXT_PUBLIC_AXIOM_LOG_LEVEL: "warn",
     },
   },
 });

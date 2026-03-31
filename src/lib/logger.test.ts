@@ -123,6 +123,32 @@ describe("logger", () => {
     });
   });
 
+  describe("log level suppression (NEXT_PUBLIC_AXIOM_LOG_LEVEL=warn)", () => {
+    it("info() should NOT log to console when log level is warn", async () => {
+      const original = process.env.NEXT_PUBLIC_AXIOM_LOG_LEVEL;
+      process.env.NEXT_PUBLIC_AXIOM_LOG_LEVEL = "warn";
+      vi.resetModules();
+      const { logger: suppressedLogger } = await import("./logger");
+      suppressedLogger.info("should be suppressed");
+      expect(console.log).not.toHaveBeenCalled();
+      process.env.NEXT_PUBLIC_AXIOM_LOG_LEVEL = original;
+      vi.resetModules();
+    });
+
+    it("warn() and error() should still log to console when log level is warn", async () => {
+      const original = process.env.NEXT_PUBLIC_AXIOM_LOG_LEVEL;
+      process.env.NEXT_PUBLIC_AXIOM_LOG_LEVEL = "warn";
+      vi.resetModules();
+      const { logger: suppressedLogger } = await import("./logger");
+      suppressedLogger.warn("still visible");
+      suppressedLogger.error("still visible", new Error("boom"));
+      expect(console.warn).toHaveBeenCalled();
+      expect(console.error).toHaveBeenCalled();
+      process.env.NEXT_PUBLIC_AXIOM_LOG_LEVEL = original;
+      vi.resetModules();
+    });
+  });
+
   describe("Axiom forwarding (AXIOM_TOKEN not set)", () => {
     it("info() should NOT call axiomLog when AXIOM_TOKEN is absent", () => {
       logger.info("test info", { foo: "bar" });
