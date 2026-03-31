@@ -27,6 +27,8 @@ type EnrichableBooking = {
     userStatus?: EliteStatusShape | null;
   } | null;
   hotelChainSubBrand?: { basePointRate?: unknown } | null;
+  hotelChainId?: string | null;
+  property?: { countryCode?: string | null } | null;
 };
 
 /**
@@ -252,12 +254,10 @@ export async function enrichBookingsWithPartnerships<T extends EnrichableBooking
     enriched.map(async (b) => {
       const partnershipEarns = await resolvePartnershipEarns(
         {
-          hotelChainId: (b as unknown as { hotelChainId?: string | null }).hotelChainId ?? null,
+          hotelChainId: b.hotelChainId ?? null,
           pretaxCost: Number(b.pretaxCost),
-          lockedExchangeRate: b.lockedExchangeRate,
-          property:
-            (b as unknown as { property?: { countryCode?: string | null } | null }).property ??
-            null,
+          lockedExchangeRate: b.lockedExchangeRate as number | null,
+          property: b.property ?? null,
           checkIn: b.checkIn,
         },
         earnInputs

@@ -3,7 +3,6 @@ import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { enrichBookingsWithPartnerships } from "@/lib/booking-enrichment";
-import type { PartnershipEarnResult } from "@/lib/partnership-earns";
 import { getNetCostBreakdown } from "@/lib/net-cost";
 
 async function getBookings(filter: string) {
@@ -63,20 +62,12 @@ async function getBookings(filter: string) {
   const enriched = await enrichBookingsWithPartnerships(bookings as any[], userId);
 
   return enriched.map((b) => {
-    const partnershipEarns = (b.partnershipEarns as PartnershipEarnResult[]).map((r) => ({
-      id: r.id,
-      name: r.name,
-      pointsEarned: r.pointsEarned,
-      earnedValue: r.earnedValue,
-      pointTypeName: r.pointTypeName,
-    }));
     const { cardReward, portalCashback } = getNetCostBreakdown({
       ...b,
-      partnershipEarns,
       certificates: [],
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
-    return { ...b, partnershipEarns, cardReward, portalCashback };
+    return { ...b, cardReward, portalCashback };
   });
 }
 
