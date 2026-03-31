@@ -38,8 +38,10 @@ describe("resolvePartnershipEarns", () => {
     expect(results[0].id).toBe(ACCOR_QANTAS_EARN.id);
     expect(results[0].name).toBe("Accor–Qantas");
     const pretaxAUD = 100 / 0.63;
-    const expected = pretaxAUD * 3 * 0.012;
-    expect(results[0].earnedValue).toBeCloseTo(expected);
+    const expectedPoints = pretaxAUD * 3;
+    const expectedValue = expectedPoints * 0.012;
+    expect(results[0].pointsEarned).toBeCloseTo(expectedPoints);
+    expect(results[0].earnedValue).toBeCloseTo(expectedValue);
   });
 
   it("returns empty array when no enabled earns provided", async () => {
@@ -91,6 +93,7 @@ describe("resolvePartnershipEarns", () => {
     );
 
     expect(results).toHaveLength(1);
+    expect(results[0].pointsEarned).toBeCloseTo(600);
     expect(results[0].earnedValue).toBeCloseTo(7.2);
   });
 

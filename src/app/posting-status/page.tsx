@@ -96,6 +96,7 @@ async function getBookings(filter: string) {
         return {
           id: input?.id ?? r.name,
           name: r.name,
+          pointsEarned: r.pointsEarned,
           earnedValue: r.earnedValue,
           pointTypeName: input?.pointType.name ?? "",
         };
