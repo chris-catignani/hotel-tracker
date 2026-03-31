@@ -35,6 +35,7 @@ describe("resolvePartnershipEarns", () => {
     const results = await resolvePartnershipEarns(APAC_BOOKING, [ACCOR_QANTAS_EARN]);
 
     expect(results).toHaveLength(1);
+    expect(results[0].id).toBe(ACCOR_QANTAS_EARN.id);
     expect(results[0].name).toBe("Accor–Qantas");
     const pretaxAUD = 100 / 0.63;
     const expected = pretaxAUD * 3 * 0.012;
