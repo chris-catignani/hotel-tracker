@@ -383,9 +383,10 @@ function renderBookingRows(
         return (
           <PostingStatusCell
             kind="single"
-            value={formatPartnershipValue(earn.earnedValue ?? 0, earn.pointTypeName ?? "")}
+            value={formatPartnershipValue(earn.pointsEarned ?? 0, earn.pointTypeName ?? "")}
             status={currentStatus}
             onCycle={() => patchPartnershipStatus(booking.id, earn.id, statusRecord, currentStatus)}
+            testId={`partners-cell-${booking.id}`}
           />
         );
       })()
@@ -626,7 +627,7 @@ function renderBookingRows(
                   statusColorClass(currentStatus)
                 )}
               >
-                {formatPartnershipValue(earn.earnedValue ?? 0, earn.pointTypeName ?? "")} ·{" "}
+                {formatPartnershipValue(earn.pointsEarned ?? 0, earn.pointTypeName ?? "")} ·{" "}
                 {statusIcon(currentStatus)}
               </span>
             </div>
