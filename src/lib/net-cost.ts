@@ -215,13 +215,15 @@ function formatCents(centsPerPoint: number): string {
   return parseFloat(c.toFixed(2)).toString();
 }
 
-export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
-  const nativeTotalCost = Number(booking.totalCost);
-  const nativePretaxCost = Number(booking.pretaxCost);
-  const exchangeRate = booking.lockedExchangeRate ? Number(booking.lockedExchangeRate) : 1;
-  // All cost-based calculations use USD values
-  const totalCost = toUSD(nativeTotalCost, exchangeRate);
-  const pretaxCost = toUSD(nativePretaxCost, exchangeRate);
+function calcPromotionBreakdowns(
+  booking: NetCostBooking,
+  totalCost: number,
+  pretaxCost: number
+): { promotions: PromotionBreakdown[]; promoSavings: number } {
+  const hotelCentsPerPoint =
+    booking.hotelChain?.pointType?.usdCentsPerPoint != null
+      ? Number(booking.hotelChain.pointType.usdCentsPerPoint)
+      : DEFAULT_CENTS_PER_POINT;
 
   // NOTE: Redemption Constraints
   // The appliedValue shown here already reflects any constraints enforced at matching time:
@@ -237,12 +239,6 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
   // - registrationDeadline: user must have registered by this date
   // - validDaysAfterRegistration: personal validity window starting from the registration date
   // The final appliedValue shown below is the result after all constraints are applied.
-
-  // 1. Promotions
-  const hotelCentsPerPoint =
-    booking.hotelChain?.pointType?.usdCentsPerPoint != null
-      ? Number(booking.hotelChain.pointType.usdCentsPerPoint)
-      : DEFAULT_CENTS_PER_POINT;
 
   const promotions: PromotionBreakdown[] = booking.bookingPromotions.map((bp, index) => {
     const benefits = bp.benefitApplications ?? [];
@@ -829,249 +825,264 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
       groups,
     };
   });
-  const promoSavings = promotions.reduce((sum, p) => sum + p.appliedValue, 0);
 
-  // 2. Portal Cashback
-  // 3a. Card Benefit Savings (recurring credits, e.g. "$50/quarter Hilton credit")
-  let cardBenefitSavings = 0;
-  let cardBenefitCalc: CalculationDetail | undefined;
-  if ((booking.bookingCardBenefits ?? []).length > 0) {
-    const benefitSegments: CalculationSegment[] = (booking.bookingCardBenefits ?? []).map((bcb) => {
-      const val = Number(bcb.appliedValue);
-      return {
-        label: bcb.cardBenefit.description,
-        value: val,
-        formula: formatCurrency(val),
-        description: `Applied from card benefit: ${bcb.cardBenefit.description}. Uses total cost basis.`,
-      };
-    });
-    cardBenefitSavings = benefitSegments.reduce((sum, s) => sum + s.value, 0);
-    cardBenefitCalc = {
-      label: "Card Benefits",
-      appliedValue: cardBenefitSavings,
-      description: "Recurring credits from your credit card applied to this booking.",
-      groups: [{ name: "Card Credits", segments: benefitSegments }],
+  const promoSavings = promotions.reduce((sum, p) => sum + p.appliedValue, 0);
+  return { promotions, promoSavings };
+}
+
+function calcCardBenefits(booking: NetCostBooking): {
+  cardBenefitSavings: number;
+  cardBenefitCalc: CalculationDetail | undefined;
+} {
+  const bookingCardBenefits = booking.bookingCardBenefits ?? [];
+  if (bookingCardBenefits.length === 0) {
+    return { cardBenefitSavings: 0, cardBenefitCalc: undefined };
+  }
+
+  const benefitSegments: CalculationSegment[] = bookingCardBenefits.map((bcb) => {
+    const val = Number(bcb.appliedValue);
+    return {
+      label: bcb.cardBenefit.description,
+      value: val,
+      formula: formatCurrency(val),
+      description: `Applied from card benefit: ${bcb.cardBenefit.description}. Uses total cost basis.`,
     };
+  });
+
+  const cardBenefitSavings = benefitSegments.reduce((sum, s) => sum + s.value, 0);
+  const cardBenefitCalc: CalculationDetail = {
+    label: "Card Benefits",
+    appliedValue: cardBenefitSavings,
+    description: "Recurring credits from your credit card applied to this booking.",
+    groups: [{ name: "Card Credits", segments: benefitSegments }],
+  };
+
+  return { cardBenefitSavings, cardBenefitCalc };
+}
+
+function calcPortalCashback(
+  booking: NetCostBooking,
+  totalCost: number,
+  pretaxCost: number
+): { portalCashback: number; portalCashbackCalc: CalculationDetail | undefined } {
+  if (!booking.shoppingPortal) {
+    return { portalCashback: 0, portalCashbackCalc: undefined };
   }
 
   const portalBasis = booking.portalCashbackOnTotal ? totalCost : pretaxCost;
   const portalRate = Number(booking.portalCashbackRate || 0);
-  let portalCashback = 0;
-  let portalCashbackCalc: CalculationDetail | undefined;
+  const isPoints = booking.shoppingPortal.rewardType === "points";
+  const centsPerPoint = isPoints
+    ? Number(booking.shoppingPortal.pointType?.usdCentsPerPoint ?? 0)
+    : 1;
+  const portalCashback = portalRate * portalBasis * (isPoints ? centsPerPoint : 1);
 
-  if (booking.shoppingPortal) {
-    const isPoints = booking.shoppingPortal.rewardType === "points";
-    const centsPerPoint = isPoints
-      ? Number(booking.shoppingPortal.pointType?.usdCentsPerPoint ?? 0)
-      : 1;
-    portalCashback = portalRate * portalBasis * (isPoints ? centsPerPoint : 1);
+  const basisStr = booking.portalCashbackOnTotal ? "total cost" : "pre-tax cost";
 
-    const basisStr = booking.portalCashbackOnTotal ? "total cost" : "pre-tax cost";
-
-    let formula = "";
-    let description = "";
-    if (isPoints) {
-      const centsStr = formatCents(centsPerPoint);
-      formula = `${formatCurrency(portalBasis)} (${basisStr}) × ${portalRate} pts/$ × ${centsStr}¢ = ${formatCurrency(portalCashback)}`;
-      description = `${booking.shoppingPortal.name} offers ${portalRate} ${booking.shoppingPortal.pointType?.name || "points"} per dollar based on the ${basisStr}. We value these points at ${centsStr}¢ each.`;
-    } else {
-      formula = `${formatCurrency(portalBasis)} (${basisStr}) × ${(portalRate * 100).toFixed(1)}% = ${formatCurrency(portalCashback)}`;
-      description = `${booking.shoppingPortal.name} offers a ${(portalRate * 100).toFixed(1)}% cashback bonus based on the ${basisStr}.`;
-    }
-
-    portalCashbackCalc = {
-      label: "Portal Cashback",
-      appliedValue: portalCashback,
-      description: `Rewards earned via ${booking.shoppingPortal.name}.`,
-      groups: [
-        {
-          name: booking.shoppingPortal.name,
-          segments: [
-            {
-              label: "Portal Reward",
-              value: portalCashback,
-              formula,
-              description,
-            },
-          ],
-        },
-      ],
-    };
+  let formula = "";
+  let description = "";
+  if (isPoints) {
+    const centsStr = formatCents(centsPerPoint);
+    formula = `${formatCurrency(portalBasis)} (${basisStr}) × ${portalRate} pts/$ × ${centsStr}¢ = ${formatCurrency(portalCashback)}`;
+    description = `${booking.shoppingPortal.name} offers ${portalRate} ${booking.shoppingPortal.pointType?.name || "points"} per dollar based on the ${basisStr}. We value these points at ${centsStr}¢ each.`;
+  } else {
+    formula = `${formatCurrency(portalBasis)} (${basisStr}) × ${(portalRate * 100).toFixed(1)}% = ${formatCurrency(portalCashback)}`;
+    description = `${booking.shoppingPortal.name} offers a ${(portalRate * 100).toFixed(1)}% cashback bonus based on the ${basisStr}.`;
   }
 
-  // 3. Card Reward
-  let cardReward = 0;
-  let cardRewardCalc: CalculationDetail | undefined;
-  if (booking.userCreditCard?.creditCard) {
-    const baseRate = Number(booking.userCreditCard?.creditCard.rewardRate);
-    const rules = booking.userCreditCard?.creditCard.rewardRules || [];
-    const hotelId = booking.hotelChain?.id || booking.hotelChainId;
-    const otaId = booking.otaAgencyId;
+  const portalCashbackCalc: CalculationDetail = {
+    label: "Portal Cashback",
+    appliedValue: portalCashback,
+    description: `Rewards earned via ${booking.shoppingPortal.name}.`,
+    groups: [
+      {
+        name: booking.shoppingPortal.name,
+        segments: [
+          {
+            label: "Portal Reward",
+            value: portalCashback,
+            formula,
+            description,
+          },
+        ],
+      },
+    ],
+  };
 
-    // Strict rule selection: OTA bookings only allow OTA rules.
-    // Direct bookings only allow Hotel Chain rules.
-    const applicableRules = rules.filter((r) => {
-      if (otaId) {
-        return r.otaAgencyId === otaId;
-      }
-      return r.hotelChainId === hotelId;
+  return { portalCashback, portalCashbackCalc };
+}
+
+function calcCardReward(
+  booking: NetCostBooking,
+  totalCost: number
+): { cardReward: number; cardRewardCalc: CalculationDetail | undefined } {
+  if (!booking.userCreditCard?.creditCard) {
+    return { cardReward: 0, cardRewardCalc: undefined };
+  }
+
+  const baseRate = Number(booking.userCreditCard.creditCard.rewardRate);
+  const rules = booking.userCreditCard.creditCard.rewardRules || [];
+  const hotelId = booking.hotelChain?.id || booking.hotelChainId;
+  const otaId = booking.otaAgencyId;
+
+  // Strict rule selection: OTA bookings only allow OTA rules.
+  // Direct bookings only allow Hotel Chain rules.
+  const applicableRules = rules.filter((r) => {
+    if (otaId) {
+      return r.otaAgencyId === otaId;
+    }
+    return r.hotelChainId === hotelId;
+  });
+
+  const multiplierRules = applicableRules.filter((r) => r.rewardType === "multiplier");
+  const fixedRules = applicableRules.filter((r) => r.rewardType === "fixed");
+
+  // Best multiplier (OTA match or Hotel match depending on booking context).
+  // Pick the highest one if multiple match.
+  const bestMultiplierRule = multiplierRules.reduce<(typeof multiplierRules)[0] | undefined>(
+    (best, r) =>
+      best === undefined || Number(r.rewardValue) > Number(best.rewardValue) ? r : best,
+    undefined
+  );
+
+  const multiplierToUse = bestMultiplierRule ? Number(bestMultiplierRule.rewardValue) : baseRate;
+
+  const centsPerPoint = booking.userCreditCard.creditCard.pointType
+    ? Number(booking.userCreditCard.creditCard.pointType.usdCentsPerPoint)
+    : DEFAULT_CENTS_PER_POINT;
+  const centsStr = formatCents(centsPerPoint);
+
+  const cardSegments: CalculationSegment[] = [];
+
+  const baseValue = totalCost * baseRate * centsPerPoint;
+  cardSegments.push({
+    label: "Base Card Earning",
+    value: baseValue,
+    formula: `${formatCurrency(totalCost)} (total cost) × ${baseRate}x × ${centsStr}¢ = ${formatCurrency(baseValue)}`,
+    description: `Standard earning rate for the ${booking.userCreditCard.creditCard.name}.`,
+  });
+
+  if (bestMultiplierRule) {
+    const boostValue = totalCost * (multiplierToUse - baseRate) * centsPerPoint;
+    cardSegments.push({
+      label: `Hotel/Booking Boost`,
+      value: boostValue,
+      formula: `${formatCurrency(totalCost)} (total cost) × ${multiplierToUse - baseRate}x boost × ${centsStr}¢ = ${formatCurrency(boostValue)}`,
+      description: `Additional earning for booking with ${booking.hotelChain?.name ?? "this hotel"}.`,
+    });
+  }
+
+  // Fixed Bonuses
+  for (const rule of fixedRules) {
+    const bonusValue = Number(rule.rewardValue) * centsPerPoint;
+    cardSegments.push({
+      label: "Fixed Card Bonus",
+      value: bonusValue,
+      formula: `${Number(rule.rewardValue).toLocaleString()} bonus pts × ${centsStr}¢ = ${formatCurrency(bonusValue)}`,
+      description: `Fixed point bonus awarded for this booking type.`,
+    });
+  }
+
+  const cardReward = cardSegments.reduce((sum, s) => sum + s.value, 0);
+
+  const cardRewardCalc: CalculationDetail = {
+    label: "Card Reward",
+    appliedValue: cardReward,
+    description: `Total rewards earned using your ${booking.userCreditCard.creditCard.name}.`,
+    groups: [
+      {
+        name: booking.userCreditCard.creditCard.name,
+        segments: cardSegments,
+      },
+    ],
+  };
+
+  return { cardReward, cardRewardCalc };
+}
+
+function calcLoyaltyPoints(
+  booking: NetCostBooking,
+  pretaxCost: number
+): { loyaltyPointsValue: number; loyaltyPointsCalc: CalculationDetail | undefined } {
+  if (!booking.loyaltyPointsEarned || !booking.hotelChain?.pointType) {
+    return { loyaltyPointsValue: 0, loyaltyPointsCalc: undefined };
+  }
+
+  const centsPerPoint =
+    booking.lockedLoyaltyUsdCentsPerPoint != null
+      ? Number(booking.lockedLoyaltyUsdCentsPerPoint)
+      : Number(booking.hotelChain.pointType.usdCentsPerPoint);
+  const pointName = booking.hotelChain.pointType.name || "points";
+  const centsStr = formatCents(centsPerPoint);
+  const loyaltyPointsValue = booking.loyaltyPointsEarned * centsPerPoint;
+
+  const loyaltySegments: CalculationSegment[] = [];
+  const elite = booking.hotelChain?.userStatus?.eliteStatus;
+
+  const effectiveBasePointRate = resolveBasePointRate(
+    booking.hotelChain ?? null,
+    booking.hotelChainSubBrand
+  );
+
+  if (elite && !elite.isFixed && elite.bonusPercentage != null && effectiveBasePointRate != null) {
+    const baseRate = effectiveBasePointRate;
+    const bonusPct = Number(elite.bonusPercentage);
+    const calcCurrency = booking.hotelChain?.calculationCurrency ?? "USD";
+    const calcCurrencyToUsdRate = booking.hotelChain?.calcCurrencyToUsdRate ?? null;
+    // Convert USD pretax cost to the chain's calculation currency (e.g., EUR for Accor)
+    const effectivePretaxCost =
+      calcCurrency !== "USD" && calcCurrencyToUsdRate
+        ? pretaxCost / calcCurrencyToUsdRate
+        : pretaxCost;
+    const basePoints = Math.round(effectivePretaxCost * baseRate);
+    const bonusPoints = Math.round(basePoints * bonusPct);
+
+    const costBasisNote =
+      calcCurrency !== "USD" ? `pre-tax cost (calculated in ${calcCurrency})` : "pre-tax cost";
+    loyaltySegments.push({
+      label: "Base Loyalty Points",
+      value: basePoints * centsPerPoint,
+      formula: `${formatCurrency(effectivePretaxCost, calcCurrency)} (pre-tax) × ${baseRate}x = ${basePoints.toLocaleString()} pts × ${centsStr}¢ = ${formatCurrency(basePoints * centsPerPoint)}`,
+      description: `Standard earning rate for this hotel chain, applied to the ${costBasisNote}.`,
     });
 
-    const multiplierRules = applicableRules.filter((r) => r.rewardType === "multiplier");
-    const fixedRules = applicableRules.filter((r) => r.rewardType === "fixed");
-
-    // Best multiplier (OTA match or Hotel match depending on booking context).
-    // Pick the highest one if multiple match.
-    const bestMultiplierRule = multiplierRules.sort(
-      (a, b) => Number(b.rewardValue) - Number(a.rewardValue)
-    )[0];
-
-    const multiplierToUse = bestMultiplierRule ? Number(bestMultiplierRule.rewardValue) : baseRate;
-
-    const centsPerPoint = booking.userCreditCard?.creditCard.pointType
-      ? Number(booking.userCreditCard?.creditCard.pointType.usdCentsPerPoint)
-      : DEFAULT_CENTS_PER_POINT;
-    const centsStr = formatCents(centsPerPoint);
-
-    const cardSegments: CalculationSegment[] = [];
-
-    // Base vs Boosted Multiplier
-    if (bestMultiplierRule) {
-      const baseValue = totalCost * baseRate * centsPerPoint;
-      const boostValue = totalCost * (multiplierToUse - baseRate) * centsPerPoint;
-
-      cardSegments.push({
-        label: "Base Card Earning",
-        value: baseValue,
-        formula: `${formatCurrency(totalCost)} (total cost) × ${baseRate}x × ${centsStr}¢ = ${formatCurrency(baseValue)}`,
-        description: `Standard earning rate for the ${booking.userCreditCard?.creditCard.name}.`,
-      });
-
-      cardSegments.push({
-        label: `Hotel/Booking Boost`,
-        value: boostValue,
-        formula: `${formatCurrency(totalCost)} (total cost) × ${multiplierToUse - baseRate}x boost × ${centsStr}¢ = ${formatCurrency(boostValue)}`,
-        description: `Additional earning for booking with ${booking.hotelChain?.name ?? "this hotel"}.`,
-      });
-    } else {
-      const baseValue = totalCost * baseRate * centsPerPoint;
-      cardSegments.push({
-        label: "Base Card Earning",
-        value: baseValue,
-        formula: `${formatCurrency(totalCost)} (total cost) × ${baseRate}x × ${centsStr}¢ = ${formatCurrency(baseValue)}`,
-        description: `Standard earning rate for the ${booking.userCreditCard?.creditCard.name}.`,
-      });
-    }
-
-    // Fixed Bonuses
-    for (const rule of fixedRules) {
-      const bonusValue = Number(rule.rewardValue) * centsPerPoint;
-      cardSegments.push({
-        label: "Fixed Card Bonus",
-        value: bonusValue,
-        formula: `${Number(rule.rewardValue).toLocaleString()} bonus pts × ${centsStr}¢ = ${formatCurrency(bonusValue)}`,
-        description: `Fixed point bonus awarded for this booking type.`,
-      });
-    }
-
-    cardReward = cardSegments.reduce((sum, s) => sum + s.value, 0);
-
-    cardRewardCalc = {
-      label: "Card Reward",
-      appliedValue: cardReward,
-      description: `Total rewards earned using your ${booking.userCreditCard?.creditCard.name}.`,
-      groups: [
-        {
-          name: booking.userCreditCard?.creditCard.name,
-          segments: cardSegments,
-        },
-      ],
-    };
+    loyaltySegments.push({
+      label: `${elite.name} Elite Bonus`,
+      value: bonusPoints * centsPerPoint,
+      formula: `${basePoints.toLocaleString()} base pts × ${bonusPct * 100}% bonus = ${bonusPoints.toLocaleString()} pts × ${centsStr}¢ = ${formatCurrency(bonusPoints * centsPerPoint)}`,
+      description: `Additional points for your ${elite.name} status.`,
+    });
+  } else {
+    loyaltySegments.push({
+      label: "Total Loyalty Points",
+      value: loyaltyPointsValue,
+      formula: `${booking.loyaltyPointsEarned.toLocaleString()} pts × ${centsStr}¢ = ${formatCurrency(loyaltyPointsValue)}`,
+      description: `Total points earned for this stay.`,
+    });
   }
 
-  // 4. Loyalty Points Earned
-  let loyaltyPointsValue = 0;
-  let loyaltyPointsCalc: CalculationDetail | undefined;
-  if (booking.loyaltyPointsEarned && booking.hotelChain?.pointType) {
-    const centsPerPoint =
-      booking.lockedLoyaltyUsdCentsPerPoint != null
-        ? Number(booking.lockedLoyaltyUsdCentsPerPoint)
-        : Number(booking.hotelChain.pointType.usdCentsPerPoint);
-    const pointName = booking.hotelChain.pointType.name || "points";
-    const centsStr = formatCents(centsPerPoint);
-    loyaltyPointsValue = booking.loyaltyPointsEarned * centsPerPoint;
+  const loyaltyPointsCalc: CalculationDetail = {
+    label: "Loyalty Points Value",
+    appliedValue: loyaltyPointsValue,
+    description: `You earned ${booking.loyaltyPointsEarned.toLocaleString()} ${pointName} for this stay.`,
+    groups: [
+      {
+        name: booking.hotelChain?.loyaltyProgram || "Loyalty Points",
+        segments: loyaltySegments,
+      },
+    ],
+  };
 
-    const loyaltySegments: CalculationSegment[] = [];
-    const elite = booking.hotelChain?.userStatus?.eliteStatus;
+  return { loyaltyPointsValue, loyaltyPointsCalc };
+}
 
-    const effectiveBasePointRate = resolveBasePointRate(
-      booking.hotelChain ?? null,
-      booking.hotelChainSubBrand
-    );
-
-    if (
-      elite &&
-      !elite.isFixed &&
-      elite.bonusPercentage != null &&
-      effectiveBasePointRate != null
-    ) {
-      const baseRate = effectiveBasePointRate;
-      const bonusPct = Number(elite.bonusPercentage);
-      const calcCurrency = booking.hotelChain?.calculationCurrency ?? "USD";
-      const calcCurrencyToUsdRate = booking.hotelChain?.calcCurrencyToUsdRate ?? null;
-      // Convert USD pretax cost to the chain's calculation currency (e.g., EUR for Accor)
-      const effectivePretaxCost =
-        calcCurrency !== "USD" && calcCurrencyToUsdRate
-          ? pretaxCost / calcCurrencyToUsdRate
-          : pretaxCost;
-      const basePoints = Math.round(effectivePretaxCost * baseRate);
-      const bonusPoints = Math.round(basePoints * bonusPct);
-
-      const costBasisNote =
-        calcCurrency !== "USD" ? `pre-tax cost (calculated in ${calcCurrency})` : "pre-tax cost";
-      loyaltySegments.push({
-        label: "Base Loyalty Points",
-        value: basePoints * centsPerPoint,
-        formula: `${formatCurrency(effectivePretaxCost, calcCurrency)} (pre-tax) × ${baseRate}x = ${basePoints.toLocaleString()} pts × ${centsStr}¢ = ${formatCurrency(basePoints * centsPerPoint)}`,
-        description: `Standard earning rate for this hotel chain, applied to the ${costBasisNote}.`,
-      });
-
-      loyaltySegments.push({
-        label: `${elite.name} Elite Bonus`,
-        value: bonusPoints * centsPerPoint,
-        formula: `${basePoints.toLocaleString()} base pts × ${bonusPct * 100}% bonus = ${bonusPoints.toLocaleString()} pts × ${centsStr}¢ = ${formatCurrency(bonusPoints * centsPerPoint)}`,
-        description: `Additional points for your ${elite.name} status.`,
-      });
-    } else {
-      loyaltySegments.push({
-        label: "Total Loyalty Points",
-        value: loyaltyPointsValue,
-        formula: `${booking.loyaltyPointsEarned.toLocaleString()} pts × ${centsStr}¢ = ${formatCurrency(loyaltyPointsValue)}`,
-        description: `Total points earned for this stay.`,
-      });
-    }
-
-    loyaltyPointsCalc = {
-      label: "Loyalty Points Value",
-      appliedValue: loyaltyPointsValue,
-      description: `You earned ${booking.loyaltyPointsEarned.toLocaleString()} ${pointName} for this stay.`,
-      groups: [
-        {
-          name: booking.hotelChain?.loyaltyProgram || "Loyalty Points",
-          segments: loyaltySegments,
-        },
-      ],
-    };
-  }
-
-  // 4b. Partnership Earns (e.g. Accor–Qantas miles)
-  const partnershipEarns = booking.partnershipEarns ?? [];
-  const partnershipEarnsValue = partnershipEarns.reduce((sum, e) => sum + e.earnedValue, 0);
-
-  // 4c. Booking Benefits (cash perks and points awards from the rate/stay)
-  let bookingBenefitsValue = 0;
-  let bookingBenefitsCalc: CalculationDetail | undefined;
-  const bookingBenefits: { label: string; value: number; detail: string }[] = [];
+function calcBookingBenefits(booking: NetCostBooking): {
+  bookingBenefitsValue: number;
+  bookingBenefitsCalc: CalculationDetail | undefined;
+  bookingBenefits: { label: string; value: number; detail: string }[];
+} {
+  const exchangeRate = booking.lockedExchangeRate ? Number(booking.lockedExchangeRate) : 1;
+  const nativePretaxCost = Number(booking.pretaxCost);
 
   const benefitUsdCentsPerPoint =
     booking.lockedLoyaltyUsdCentsPerPoint != null
@@ -1082,6 +1093,10 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
 
   const benefitCalcCurrencyToUsdRate = booking.hotelChain?.calcCurrencyToUsdRate ?? null;
   const benefitCalculationCurrency = booking.hotelChain?.calculationCurrency ?? null;
+
+  let bookingBenefitsValue = 0;
+  let bookingBenefitsCalc: CalculationDetail | undefined;
+  const bookingBenefits: { label: string; value: number; detail: string }[] = [];
 
   for (const benefit of booking.benefits ?? []) {
     const benefitLabel = benefit.label || formatBenefitLabel(benefit.benefitType);
@@ -1152,66 +1167,98 @@ export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
     };
   }
 
-  // 5. Points RedeemedValue
-  let pointsRedeemedValue = 0;
-  let pointsRedeemedCalc: CalculationDetail | undefined;
-  if (booking.pointsRedeemed && booking.hotelChain?.pointType) {
-    const centsPerPoint = Number(booking.hotelChain.pointType.usdCentsPerPoint);
-    const centsStr = formatCents(centsPerPoint);
-    pointsRedeemedValue = booking.pointsRedeemed * centsPerPoint;
+  return { bookingBenefitsValue, bookingBenefitsCalc, bookingBenefits };
+}
 
-    pointsRedeemedCalc = {
-      label: "Points Redeemed Value",
-      appliedValue: pointsRedeemedValue,
-      description: `The estimated value of the points you redeemed for this stay.`,
-      groups: [
-        {
-          name: "Points Redemption",
-          segments: [
-            {
-              label: "Points Redeemed",
-              value: pointsRedeemedValue,
-              formula: `${booking.pointsRedeemed.toLocaleString()} pts × ${centsStr}¢ = ${formatCurrency(pointsRedeemedValue)}`,
-              description: `Estimated value based on ${centsStr}¢ per point.`,
-            },
-          ],
-        },
-      ],
-    };
+function calcPointsRedeemed(booking: NetCostBooking): {
+  pointsRedeemedValue: number;
+  pointsRedeemedCalc: CalculationDetail | undefined;
+} {
+  if (!booking.pointsRedeemed || !booking.hotelChain?.pointType) {
+    return { pointsRedeemedValue: 0, pointsRedeemedCalc: undefined };
   }
 
-  // 6. Certificates Value
-  let certsValue = 0;
-  let certsCalc: CalculationDetail | undefined;
-  if (booking.certificates.length > 0 && booking.hotelChain?.pointType) {
-    const centsPerPoint = Number(booking.hotelChain.pointType.usdCentsPerPoint);
-    const centsStr = formatCents(centsPerPoint);
+  const centsPerPoint = Number(booking.hotelChain.pointType.usdCentsPerPoint);
+  const centsStr = formatCents(centsPerPoint);
+  const pointsRedeemedValue = booking.pointsRedeemed * centsPerPoint;
 
-    const certSegments = booking.certificates.map((cert) => {
-      const points = certPointsValue(cert.certType);
-      const value = points * centsPerPoint;
-      return {
-        label: `Free Night Cert (${cert.certType})`,
-        value,
-        formula: `${points.toLocaleString()} pts × ${centsStr}¢ = ${formatCurrency(value)}`,
-        description: `Estimated value of this certificate type.`,
-      };
-    });
+  const pointsRedeemedCalc: CalculationDetail = {
+    label: "Points Redeemed Value",
+    appliedValue: pointsRedeemedValue,
+    description: `The estimated value of the points you redeemed for this stay.`,
+    groups: [
+      {
+        name: "Points Redemption",
+        segments: [
+          {
+            label: "Points Redeemed",
+            value: pointsRedeemedValue,
+            formula: `${booking.pointsRedeemed.toLocaleString()} pts × ${centsStr}¢ = ${formatCurrency(pointsRedeemedValue)}`,
+            description: `Estimated value based on ${centsStr}¢ per point.`,
+          },
+        ],
+      },
+    ],
+  };
 
-    certsValue = certSegments.reduce((sum, s) => sum + s.value, 0);
+  return { pointsRedeemedValue, pointsRedeemedCalc };
+}
 
-    certsCalc = {
-      label: "Certificates Value",
-      appliedValue: certsValue,
-      description: `The total estimated value of certificates used for this stay.`,
-      groups: [
-        {
-          name: "Free Night Certificates",
-          segments: certSegments,
-        },
-      ],
-    };
+function calcCertificates(booking: NetCostBooking): {
+  certsValue: number;
+  certsCalc: CalculationDetail | undefined;
+} {
+  if (booking.certificates.length === 0 || !booking.hotelChain?.pointType) {
+    return { certsValue: 0, certsCalc: undefined };
   }
+
+  const centsPerPoint = Number(booking.hotelChain.pointType.usdCentsPerPoint);
+  const centsStr = formatCents(centsPerPoint);
+
+  const certSegments = booking.certificates.map((cert) => {
+    const points = certPointsValue(cert.certType);
+    const value = points * centsPerPoint;
+    return {
+      label: `Free Night Cert (${cert.certType})`,
+      value,
+      formula: `${points.toLocaleString()} pts × ${centsStr}¢ = ${formatCurrency(value)}`,
+      description: `Estimated value of this certificate type.`,
+    };
+  });
+
+  const certsValue = certSegments.reduce((sum, s) => sum + s.value, 0);
+
+  const certsCalc: CalculationDetail = {
+    label: "Certificates Value",
+    appliedValue: certsValue,
+    description: `The total estimated value of certificates used for this stay.`,
+    groups: [
+      {
+        name: "Free Night Certificates",
+        segments: certSegments,
+      },
+    ],
+  };
+
+  return { certsValue, certsCalc };
+}
+
+export function getNetCostBreakdown(booking: NetCostBooking): NetCostBreakdown {
+  const exchangeRate = booking.lockedExchangeRate ? Number(booking.lockedExchangeRate) : 1;
+  const totalCost = toUSD(Number(booking.totalCost), exchangeRate);
+  const pretaxCost = toUSD(Number(booking.pretaxCost), exchangeRate);
+
+  const { promotions, promoSavings } = calcPromotionBreakdowns(booking, totalCost, pretaxCost);
+  const { cardBenefitSavings, cardBenefitCalc } = calcCardBenefits(booking);
+  const { portalCashback, portalCashbackCalc } = calcPortalCashback(booking, totalCost, pretaxCost);
+  const { cardReward, cardRewardCalc } = calcCardReward(booking, totalCost);
+  const { loyaltyPointsValue, loyaltyPointsCalc } = calcLoyaltyPoints(booking, pretaxCost);
+  const partnershipEarns = booking.partnershipEarns ?? [];
+  const partnershipEarnsValue = partnershipEarns.reduce((sum, e) => sum + e.earnedValue, 0);
+  const { bookingBenefitsValue, bookingBenefitsCalc, bookingBenefits } =
+    calcBookingBenefits(booking);
+  const { pointsRedeemedValue, pointsRedeemedCalc } = calcPointsRedeemed(booking);
+  const { certsValue, certsCalc } = calcCertificates(booking);
 
   const netCost =
     totalCost -
