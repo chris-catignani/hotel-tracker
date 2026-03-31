@@ -57,7 +57,8 @@ function calcBenefitApproxValue(
 ): number | null {
   if (benefit.valueType === "cash") {
     const v = Number(benefit.dollarValue || 0);
-    return v > 0 ? v : null;
+    if (v <= 0 || exchangeRate === 1) return null;
+    return v * exchangeRate;
   }
   if (benefit.valueType === "fixed_per_stay") {
     const pts = Math.floor(Number(benefit.pointsAmount || 0));
@@ -231,7 +232,11 @@ export function BookingForm({
 
   // Convert native pretax cost to USD for loyalty calculation
   const currentRate = exchangeRates[currency] ?? 1;
-  const usdPretaxCost = pretaxCost ? String(Number(pretaxCost) * currentRate) : "";
+  const effectiveRate =
+    initialData?.lockedExchangeRate != null && initialData.currency === currency
+      ? Number(initialData.lockedExchangeRate)
+      : currentRate;
+  const usdPretaxCost = pretaxCost ? String(Number(pretaxCost) * effectiveRate) : "";
 
   const loyaltyPointsEarned = useMemo(
     () =>
@@ -897,7 +902,7 @@ export function BookingForm({
                       pretaxCost,
                       chainBasePointRate,
                       chainUsdCentsPerPoint,
-                      currentRate
+                      effectiveRate
                     );
                     const isOther = benefit.type === "other";
                     return (
@@ -1048,7 +1053,7 @@ export function BookingForm({
                               }}
                               options={[
                                 { label: "No value", value: "none" },
-                                { label: "Cash ($)", value: "cash" },
+                                { label: `Cash (${currency})`, value: "cash" },
                                 ...(chainHasLoyalty
                                   ? [
                                       { label: "Pts/stay", value: "fixed_per_stay" },
@@ -1067,7 +1072,7 @@ export function BookingForm({
                         {/* Cash value input — shown when valueType is "cash" */}
                         {benefit.valueType === "cash" && (
                           <div className="flex items-center gap-1">
-                            <span className="text-sm text-muted-foreground">$</span>
+                            <span className="text-sm text-muted-foreground">{currency}</span>
                             <Input
                               type="number"
                               step="0.01"

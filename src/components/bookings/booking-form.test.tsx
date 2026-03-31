@@ -327,6 +327,62 @@ describe("BookingForm benefit approximate value", () => {
     });
   });
 
+  const mockBookingWithCashBenefit = (currency: string, dollarValue: number): Booking =>
+    ({
+      ...mockBookingWithMultiplierBenefit(currency),
+      benefits: [
+        {
+          id: "b1",
+          benefitType: "other",
+          label: "Dining Credit",
+          dollarValue,
+          pointsEarnType: null,
+          pointsAmount: null,
+          pointsMultiplier: null,
+          postingStatus: "pending",
+        },
+      ],
+    }) as Booking;
+
+  it("cash benefit value type selector shows booking currency code not dollar sign", async () => {
+    render(<BookingForm {...defaultProps} initialData={mockBookingWithCashBenefit("MYR", 120)} />);
+    await waitFor(() => {
+      expect(screen.getByText("Cash (MYR)")).toBeInTheDocument();
+      expect(screen.queryByText("Cash ($)")).not.toBeInTheDocument();
+    });
+  });
+
+  it("cash benefit approx value shows USD equivalent using live rate for non-USD bookings", async () => {
+    // EUR booking: dollarValue=100 EUR, live rate=1.1 → approx USD = 100 × 1.1 = $110.00
+    render(<BookingForm {...defaultProps} initialData={mockBookingWithCashBenefit("EUR", 100)} />);
+    await waitFor(() => {
+      const approxEl = screen.getByTestId("benefit-approx-value-0");
+      expect(approxEl).toHaveTextContent("$110.00");
+      expect(approxEl).not.toHaveTextContent("EUR");
+    });
+  });
+
+  it("cash benefit approx value uses lockedExchangeRate when available", async () => {
+    // EUR booking: dollarValue=100, lockedExchangeRate=1.2 (live rate=1.1 — should be ignored)
+    const booking = {
+      ...mockBookingWithCashBenefit("EUR", 100),
+      lockedExchangeRate: 1.2,
+    } as Booking;
+    render(<BookingForm {...defaultProps} initialData={booking} />);
+    await waitFor(() => {
+      const approxEl = screen.getByTestId("benefit-approx-value-0");
+      expect(approxEl).toHaveTextContent("$120.00");
+    });
+  });
+
+  it("cash benefit shows no approx value for USD bookings", async () => {
+    render(<BookingForm {...defaultProps} initialData={mockBookingWithCashBenefit("USD", 120)} />);
+    await waitFor(() => {
+      const approxEl = screen.getByTestId("benefit-approx-value-0");
+      expect(approxEl).not.toHaveTextContent("≈");
+    });
+  });
+
   it("multiplier benefit approx value converts native pretaxCost to USD using exchange rate", async () => {
     // EUR booking: pretaxCost=100 EUR, rate=1.1 → costUsd=110
     // extraPts = floor((2-1) × 10 × 110) = 1100; value = 1100 × 0.01 = $11.00

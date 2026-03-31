@@ -99,9 +99,10 @@ export function formatBenefitLabel(benefitType: string): string {
 export function formatPerkValue(
   benefitType: string,
   dollarValue: number | null,
-  label?: string | null
+  label?: string | null,
+  currency = "USD"
 ): string {
-  if (dollarValue != null) return formatCurrency(dollarValue);
+  if (dollarValue != null) return formatCurrency(dollarValue, currency);
   if (label) return label;
   return PERK_LABELS[benefitType] ?? "Perk";
 }

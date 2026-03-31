@@ -721,7 +721,7 @@ export default function BookingDetailPage() {
                   <span className="flex items-center gap-2">
                     {b.dollarValue != null ? (
                       <span className="text-muted-foreground">
-                        ${Number(b.dollarValue).toFixed(2)}
+                        {formatCurrency(Number(b.dollarValue), booking.currency)}
                       </span>
                     ) : b.pointsEarnType === "fixed_per_stay" && b.pointsAmount != null ? (
                       <span className="text-muted-foreground">
