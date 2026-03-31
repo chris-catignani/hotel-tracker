@@ -18,6 +18,7 @@ export interface PartnershipEarnInput {
 }
 
 export interface PartnershipEarnResult {
+  id: string;
   name: string;
   earnedValue: number;
   calc: CalculationDetail;
@@ -106,7 +107,7 @@ export async function resolvePartnershipEarns(
       ],
     };
 
-    results.push({ name: earn.name, earnedValue, calc });
+    results.push({ id: earn.id, name: earn.name, earnedValue, calc });
   }
 
   return results;
