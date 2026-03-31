@@ -117,24 +117,24 @@ test.describe("Posting Status", () => {
       const loyaltyCell = isolatedUser.page.getByTestId(`loyalty-cell-${booking.id}`);
 
       // Initial state: Pending
-      await expect(loyaltyCell).toContainText("Pending");
+      await expect(loyaltyCell).toContainText("⏳");
 
       // Click -> Posted
       await loyaltyCell.click();
-      await expect(loyaltyCell).toContainText("Posted");
+      await expect(loyaltyCell).toContainText("✓");
 
       // Click -> Failed
       await loyaltyCell.click();
-      await expect(loyaltyCell).toContainText("Failed");
+      await expect(loyaltyCell).toContainText("✗");
 
       // Click -> Pending
       await loyaltyCell.click();
-      await expect(loyaltyCell).toContainText("Pending");
+      await expect(loyaltyCell).toContainText("⏳");
 
       // Reload and verify persistence
       await isolatedUser.page.reload();
       const loyaltyCellAfterReload = isolatedUser.page.getByTestId(`loyalty-cell-${booking.id}`);
-      await expect(loyaltyCellAfterReload).toContainText("Pending");
+      await expect(loyaltyCellAfterReload).toContainText("⏳");
     } finally {
       await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
     }
@@ -259,19 +259,19 @@ test.describe("Posting Status", () => {
       const cardRewardCell = isolatedUser.page.getByTestId(`card-reward-cell-${booking.id}`);
 
       // Initial state: Pending
-      await expect(cardRewardCell).toContainText("Pending");
+      await expect(cardRewardCell).toContainText("⏳");
 
       // Click → Posted
       await cardRewardCell.click();
-      await expect(cardRewardCell).toContainText("Posted");
+      await expect(cardRewardCell).toContainText("✓");
 
       // Click → Failed
       await cardRewardCell.click();
-      await expect(cardRewardCell).toContainText("Failed");
+      await expect(cardRewardCell).toContainText("✗");
 
       // Click → Pending
       await cardRewardCell.click();
-      await expect(cardRewardCell).toContainText("Pending");
+      await expect(cardRewardCell).toContainText("⏳");
     } finally {
       await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
       await isolatedUser.request.delete(`/api/user-credit-cards/${userCreditCardId}`);
@@ -308,19 +308,19 @@ test.describe("Posting Status", () => {
       const portalCell = isolatedUser.page.getByTestId(`portal-cashback-cell-${booking.id}`);
 
       // Initial state: Pending
-      await expect(portalCell).toContainText("Pending");
+      await expect(portalCell).toContainText("⏳");
 
       // Click → Posted
       await portalCell.click();
-      await expect(portalCell).toContainText("Posted");
+      await expect(portalCell).toContainText("✓");
 
       // Click → Failed
       await portalCell.click();
-      await expect(portalCell).toContainText("Failed");
+      await expect(portalCell).toContainText("✗");
 
       // Click → Pending
       await portalCell.click();
-      await expect(portalCell).toContainText("Pending");
+      await expect(portalCell).toContainText("⏳");
     } finally {
       await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
     }
@@ -377,19 +377,19 @@ test.describe("Posting Status", () => {
       const cardBenefitCell = isolatedUser.page.getByTestId(`card-benefit-cell-${booking.id}`);
 
       // Initial state: Pending
-      await expect(cardBenefitCell).toContainText("Pending");
+      await expect(cardBenefitCell).toContainText("⏳");
 
       // Click → Posted
       await cardBenefitCell.click();
-      await expect(cardBenefitCell).toContainText("Posted");
+      await expect(cardBenefitCell).toContainText("✓");
 
       // Click → Failed
       await cardBenefitCell.click();
-      await expect(cardBenefitCell).toContainText("Failed");
+      await expect(cardBenefitCell).toContainText("✗");
 
       // Click → Pending
       await cardBenefitCell.click();
-      await expect(cardBenefitCell).toContainText("Pending");
+      await expect(cardBenefitCell).toContainText("⏳");
     } finally {
       await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
       await isolatedUser.request.delete(`/api/user-credit-cards/${userCreditCardId}`);
@@ -425,19 +425,19 @@ test.describe("Posting Status", () => {
       const perksCell = isolatedUser.page.getByTestId(`perks-cell-${booking.id}`);
 
       // Initial state: Pending
-      await expect(perksCell).toContainText("Pending");
+      await expect(perksCell).toContainText("⏳");
 
       // Click → Posted
       await perksCell.click();
-      await expect(perksCell).toContainText("Posted");
+      await expect(perksCell).toContainText("✓");
 
       // Click → Failed
       await perksCell.click();
-      await expect(perksCell).toContainText("Failed");
+      await expect(perksCell).toContainText("✗");
 
       // Click → Pending
       await perksCell.click();
-      await expect(perksCell).toContainText("Pending");
+      await expect(perksCell).toContainText("⏳");
     } finally {
       await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
     }
