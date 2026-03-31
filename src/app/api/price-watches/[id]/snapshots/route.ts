@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withAxiomRouteHandler } from "next-axiom";
+import { withObservability } from "@/lib/observability";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 
 /** GET /api/price-watches/[id]/snapshots — full price history */
-export const GET = withAxiomRouteHandler(
+export const GET = withObservability(
   async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
     const { id } = await params;
     try {

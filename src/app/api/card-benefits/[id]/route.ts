@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withAxiomRouteHandler } from "next-axiom";
+import { withObservability } from "@/lib/observability";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { requireAdmin } from "@/lib/auth-utils";
@@ -11,7 +11,7 @@ const INCLUDE = {
   otaAgencies: { include: { otaAgency: { select: { id: true, name: true } } } },
 };
 
-export const GET = withAxiomRouteHandler(
+export const GET = withObservability(
   async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
     const { id } = await params;
     try {
@@ -28,7 +28,7 @@ export const GET = withAxiomRouteHandler(
   }
 );
 
-export const PUT = withAxiomRouteHandler(
+export const PUT = withObservability(
   async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
     const { id } = await params;
     try {
@@ -89,7 +89,7 @@ export const PUT = withAxiomRouteHandler(
   }
 );
 
-export const DELETE = withAxiomRouteHandler(
+export const DELETE = withObservability(
   async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
     const { id } = await params;
     try {

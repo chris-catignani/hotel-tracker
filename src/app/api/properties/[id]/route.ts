@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withAxiomRouteHandler } from "next-axiom";
+import { withObservability } from "@/lib/observability";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { getAuthenticatedUserId, requireAdmin } from "@/lib/auth-utils";
 
 /** PUT /api/properties/[id] — update chainPropertyId (spiritCode etc); admin only */
-export const PUT = withAxiomRouteHandler(
+export const PUT = withObservability(
   async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
     const { id } = await params;
     try {
