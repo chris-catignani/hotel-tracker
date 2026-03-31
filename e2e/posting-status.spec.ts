@@ -2,6 +2,9 @@ import { test, expect } from "./fixtures";
 import crypto from "crypto";
 import { HOTEL_ID } from "../src/lib/constants";
 
+const ACCOR_ID = HOTEL_ID.ACCOR;
+const ACCOR_QANTAS_EARN_ID = "cpartnership0accorqantas1";
+
 const YEAR = new Date().getFullYear();
 // Use Hyatt — it has a pointType seeded, so loyaltyPointsEarned will auto-calculate
 // and loyaltyPostingStatus will initialize to "pending".
@@ -136,6 +139,61 @@ test.describe("Posting Status", () => {
       await expect(loyaltyCellAfterReload).toContainText("Pending");
     } finally {
       await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
+    }
+  });
+
+  test("partnership earn cell shows point count not dollar amount", async ({ isolatedUser }) => {
+    // Enable Accor–Qantas earn for this user
+    const enableRes = await isolatedUser.request.post("/api/user-partnership-earns", {
+      data: { partnershipEarnId: ACCOR_QANTAS_EARN_ID, isEnabled: true },
+    });
+    expect(enableRes.ok()).toBeTruthy();
+
+    // Past USD booking at Accor APAC (AU) — lockedExchangeRate will be 1 (USD)
+    // pretaxCostUSD=400, pretaxAUD≈640 (rate ~0.625), pointsEarned≈1920 — far above earnedValue (~$23)
+    const pastYear = YEAR - 1;
+    const propertyName = `Accor Partnership Test ${crypto.randomUUID()}`;
+    const bookingRes = await isolatedUser.request.post("/api/bookings", {
+      data: {
+        hotelChainId: ACCOR_ID,
+        propertyName,
+        checkIn: `${pastYear}-06-10`,
+        checkOut: `${pastYear}-06-15`,
+        numNights: 5,
+        pretaxCost: 400,
+        taxAmount: 40,
+        totalCost: 440,
+        currency: "USD",
+        bookingSource: "direct_web",
+        countryCode: "AU",
+        city: "Sydney",
+      },
+    });
+    expect(bookingRes.ok()).toBeTruthy();
+    const booking = await bookingRes.json();
+
+    try {
+      await isolatedUser.page.goto("/posting-status?filter=all");
+      await expect(
+        isolatedUser.page.getByRole("heading", { name: "Posting Status" })
+      ).toBeVisible();
+
+      const partnerCell = isolatedUser.page.getByTestId(`partners-cell-${booking.id}`);
+      await expect(partnerCell).toBeVisible();
+
+      // The cell should show a point count (hundreds+), not a dollar amount (single/double digits).
+      // Correct: "1,920 QP pts · Pending" — buggy: "23 pts · Pending"
+      const cellText = await partnerCell.textContent();
+      const match = cellText?.match(/^([\d,]+)/);
+      expect(match).not.toBeNull();
+      const pointCount = parseInt(match![1].replace(/,/g, ""), 10);
+      expect(pointCount).toBeGreaterThan(100);
+    } finally {
+      await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
+      // Disable the earn so it doesn't affect other tests for this user
+      await isolatedUser.request.post("/api/user-partnership-earns", {
+        data: { partnershipEarnId: ACCOR_QANTAS_EARN_ID, isEnabled: false },
+      });
     }
   });
 

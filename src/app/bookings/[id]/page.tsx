@@ -112,6 +112,7 @@ interface BookingCardBenefitLocal {
 interface PartnershipEarn {
   id: string;
   name: string;
+  pointsEarned: number;
   earnedValue: number;
   pointTypeName: string;
   calc: CalculationDetail;
@@ -718,7 +719,7 @@ export default function BookingDetailPage() {
                 <li key={earn.id} className="flex items-center justify-between">
                   <span>{earn.name}</span>
                   <span className="text-muted-foreground">
-                    {Math.round(earn.earnedValue).toLocaleString()} pts
+                    {Math.round(earn.pointsEarned).toLocaleString()} pts
                   </span>
                 </li>
               ))}

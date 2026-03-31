@@ -89,17 +89,13 @@ async function getBookings(filter: string) {
         },
         earnInputs
       );
-      // Merge resolved results with input earn metadata (id, pointType name)
-      // Results are produced in the same order as filtered inputs
-      const partnershipEarns = results.map((r) => {
-        const input = earnInputs.find((e) => e.name === r.name);
-        return {
-          id: input?.id ?? r.name,
-          name: r.name,
-          earnedValue: r.earnedValue,
-          pointTypeName: input?.pointType.name ?? "",
-        };
-      });
+      const partnershipEarns = results.map((r) => ({
+        id: r.id,
+        name: r.name,
+        pointsEarned: r.pointsEarned,
+        earnedValue: r.earnedValue,
+        pointTypeName: r.pointTypeName,
+      }));
       const { cardReward, portalCashback } = getNetCostBreakdown({
         ...b,
         partnershipEarns,
