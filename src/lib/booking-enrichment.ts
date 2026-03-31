@@ -80,7 +80,7 @@ export async function enrichBookingWithRate<T extends EnrichableBooking>(booking
   }
 
   let exchangeRateEstimated = false;
-  if (isNonUsd && !isFuture && resolvedRate != null) {
+  if (isNonUsd && !isFuture && !booking.lockedExchangeRate && resolvedRate != null) {
     const checkInDate = checkIn;
     const dayBefore = new Date(checkInDate);
     dayBefore.setDate(dayBefore.getDate() - 1);
