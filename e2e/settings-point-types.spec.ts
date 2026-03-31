@@ -12,6 +12,7 @@ test.describe("Settings — Point Types", () => {
 
       await adminPage.getByTestId("add-point-type-button").click();
       await adminPage.getByLabel("Name *").fill(name);
+      await adminPage.getByLabel("Short Name *").fill("TestPT");
       await adminPage.getByLabel("USD Value per Point ($) *").fill("0.005");
       await adminPage.getByRole("button", { name: "Save" }).click();
 

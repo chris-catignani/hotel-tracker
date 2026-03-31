@@ -76,15 +76,17 @@ export function PointTypesTab() {
   }, [fetchPointTypes]);
 
   const validate = useCallback(
-    (n: string, cpp: string) => ({
+    (n: string, sn: string, cpp: string) => ({
       name: !n.trim() ? "Name is required" : "",
+      shortName: !sn.trim() ? "Short name is required" : "",
       usdCentsPerPoint: !cpp ? "Value is required" : "",
     }),
     []
   );
 
-  const currentErrors = validate(name, usdCentsPerPoint);
-  const isValid = !currentErrors.name && !currentErrors.usdCentsPerPoint;
+  const currentErrors = validate(name, shortName, usdCentsPerPoint);
+  const isValid =
+    !currentErrors.name && !currentErrors.shortName && !currentErrors.usdCentsPerPoint;
 
   const handleSubmit = async () => {
     setShowErrors(true);
@@ -135,8 +137,8 @@ export function PointTypesTab() {
     setEditOpen(true);
   };
 
-  const editErrors = validate(editName, editUsdCentsPerPoint);
-  const isEditValid = !editErrors.name && !editErrors.usdCentsPerPoint;
+  const editErrors = validate(editName, editShortName, editUsdCentsPerPoint);
+  const isEditValid = !editErrors.name && !editErrors.shortName && !editErrors.usdCentsPerPoint;
 
   const handleEditSubmit = async () => {
     if (!editPt) return;
@@ -222,12 +224,13 @@ export function PointTypesTab() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="pt-short-name">Short Name</Label>
+                <Label htmlFor="pt-short-name">Short Name *</Label>
                 <Input
                   id="pt-short-name"
                   value={shortName}
                   onChange={(e) => setShortName(e.target.value)}
                   placeholder="e.g. Hilton"
+                  error={showErrors ? currentErrors.shortName : ""}
                 />
               </div>
               <div className="space-y-2">
@@ -326,12 +329,13 @@ export function PointTypesTab() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-pt-short-name">Short Name</Label>
+              <Label htmlFor="edit-pt-short-name">Short Name *</Label>
               <Input
                 id="edit-pt-short-name"
                 value={editShortName}
                 onChange={(e) => setEditShortName(e.target.value)}
                 placeholder="e.g. Hilton"
+                error={showEditErrors ? editErrors.shortName : ""}
               />
             </div>
             <div className="space-y-2">
