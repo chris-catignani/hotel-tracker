@@ -9,9 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { certTypeLabel } from "@/lib/cert-types";
 import { getNetCostBreakdown, NetCostBooking, CalculationDetail } from "@/lib/net-cost";
-import { formatCurrency, formatDate, cn } from "@/lib/utils";
-import { PostingStatus, BookingPartnershipEarnStatus } from "@/lib/types";
-import { NEXT_STATUS, statusColorClass, statusLabel } from "@/lib/posting-status-utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -58,7 +56,6 @@ interface BookingPromotion {
   eligibleStayCount?: number | null;
   eligibleNightCount?: number | null;
   autoApplied: boolean;
-  postingStatus: PostingStatus;
   promotion: {
     name: string;
     type: string;
@@ -101,7 +98,6 @@ interface BookingBenefit {
   pointsEarnType: string | null;
   pointsAmount: number | null;
   pointsMultiplier: string | number | null;
-  postingStatus: PostingStatus;
 }
 
 interface BookingCardBenefitLocal {
@@ -111,7 +107,6 @@ interface BookingCardBenefitLocal {
   cardBenefit: { description: string };
   appliedValue: string | number;
   periodKey: string;
-  postingStatus: PostingStatus;
 }
 
 interface PartnershipEarn {
@@ -180,11 +175,7 @@ interface Booking extends Omit<NetCostBooking, "bookingPromotions" | "userCredit
   benefits: BookingBenefit[];
   bookingPromotions: BookingPromotion[];
   bookingCardBenefits: BookingCardBenefitLocal[];
-  bookingPartnershipEarnStatuses: BookingPartnershipEarnStatus[];
   partnershipEarns: PartnershipEarn[];
-  loyaltyPostingStatus: PostingStatus | null;
-  cardRewardPostingStatus: PostingStatus | null;
-  portalCashbackPostingStatus: PostingStatus | null;
   priceWatchBooking: PriceWatchBookingData | null;
 }
 
@@ -275,90 +266,6 @@ export default function BookingDetailPage() {
         status: result.status,
       });
       toast.error("Failed to update. Please try again.");
-      return;
-    }
-    refetchBooking();
-  };
-
-  const cyclePostingStatus = async (bp: BookingPromotion) => {
-    const nextStatus = NEXT_STATUS[bp.postingStatus];
-    const result = await apiFetch(`/api/booking-promotions/${bp.id}`, {
-      method: "PATCH",
-      body: { postingStatus: nextStatus },
-    });
-    if (!result.ok) {
-      logger.error("Failed to update promotion posting status", result.error, {
-        bookingPromotionId: bp.id,
-        status: result.status,
-      });
-      toast.error("Failed to update. Please try again.");
-      return;
-    }
-    refetchBooking();
-  };
-
-  const cycleBookingStatus = async (
-    field: "loyaltyPostingStatus" | "cardRewardPostingStatus" | "portalCashbackPostingStatus",
-    current: PostingStatus
-  ) => {
-    const next = NEXT_STATUS[current];
-    const result = await apiFetch(`/api/bookings/${id}`, {
-      method: "PATCH",
-      body: { [field]: next },
-    });
-    if (!result.ok) {
-      toast.error("Failed to update status");
-      return;
-    }
-    refetchBooking();
-  };
-
-  const cycleCardBenefitStatus = async (bcbId: string, current: PostingStatus) => {
-    const next = NEXT_STATUS[current];
-    const result = await apiFetch(`/api/booking-card-benefits/${bcbId}`, {
-      method: "PATCH",
-      body: { postingStatus: next },
-    });
-    if (!result.ok) {
-      toast.error("Failed to update status");
-      return;
-    }
-    refetchBooking();
-  };
-
-  const cycleBenefitStatus = async (benefitId: string, current: PostingStatus) => {
-    const next = NEXT_STATUS[current];
-    const result = await apiFetch(`/api/booking-benefits/${benefitId}`, {
-      method: "PATCH",
-      body: { postingStatus: next },
-    });
-    if (!result.ok) {
-      toast.error("Failed to update status");
-      return;
-    }
-    refetchBooking();
-  };
-
-  const cyclePartnershipStatus = async (
-    partnershipEarnId: string,
-    existingRecord: BookingPartnershipEarnStatus | null,
-    current: PostingStatus
-  ) => {
-    const next = NEXT_STATUS[current];
-    let result;
-    if (!existingRecord) {
-      result = await apiFetch("/api/booking-partnership-earn-statuses", {
-        method: "POST",
-        body: { bookingId: id, partnershipEarnId, postingStatus: next },
-      });
-    } else {
-      result = await apiFetch(`/api/booking-partnership-earn-statuses/${existingRecord.id}`, {
-        method: "PATCH",
-        body: { postingStatus: next },
-      });
-    }
-    if (!result.ok) {
-      toast.error("Failed to update status");
       return;
     }
     refetchBooking();
@@ -567,88 +474,34 @@ export default function BookingDetailPage() {
             {booking.userCreditCard && (
               <div>
                 <p className="text-sm text-muted-foreground">Credit Card</p>
-                <div className="flex items-center gap-2">
-                  <p className="font-medium" data-testid="booking-credit-card">
-                    {booking.userCreditCard.nickname
-                      ? `${booking.userCreditCard.creditCard.name} (${booking.userCreditCard.nickname})`
-                      : booking.userCreditCard.creditCard.name}
-                  </p>
-                  {booking.cardRewardPostingStatus != null && (
-                    <button
-                      onClick={() =>
-                        cycleBookingStatus(
-                          "cardRewardPostingStatus",
-                          booking.cardRewardPostingStatus!
-                        )
-                      }
-                      data-testid="card-reward-posting-status-button"
-                      className={cn(
-                        "rounded px-2 py-0.5 text-xs font-medium",
-                        statusColorClass(booking.cardRewardPostingStatus!)
-                      )}
-                    >
-                      {statusLabel(booking.cardRewardPostingStatus!)}
-                    </button>
-                  )}
-                </div>
+                <p className="font-medium" data-testid="booking-credit-card">
+                  {booking.userCreditCard.nickname
+                    ? `${booking.userCreditCard.creditCard.name} (${booking.userCreditCard.nickname})`
+                    : booking.userCreditCard.creditCard.name}
+                </p>
               </div>
             )}
             {booking.shoppingPortal && (
               <div>
                 <p className="text-sm text-muted-foreground">Shopping Portal</p>
-                <div className="flex items-center gap-2">
-                  <p className="font-medium" data-testid="booking-portal">
-                    {booking.shoppingPortal.name}
-                    {booking.portalCashbackRate
-                      ? booking.shoppingPortal.rewardType === "points"
-                        ? ` (${Number(booking.portalCashbackRate).toFixed(2)} pts/$ — ${booking.portalCashbackOnTotal ? "total cost basis" : "pre-tax basis"})`
-                        : ` (${(Number(booking.portalCashbackRate) * 100).toFixed(1)}% — ${booking.portalCashbackOnTotal ? "total cost basis" : "pre-tax basis"})`
-                      : ""}
-                  </p>
-                  {booking.portalCashbackPostingStatus != null && (
-                    <button
-                      onClick={() =>
-                        cycleBookingStatus(
-                          "portalCashbackPostingStatus",
-                          booking.portalCashbackPostingStatus!
-                        )
-                      }
-                      data-testid="portal-posting-status-button"
-                      className={cn(
-                        "rounded px-2 py-0.5 text-xs font-medium",
-                        statusColorClass(booking.portalCashbackPostingStatus!)
-                      )}
-                    >
-                      {statusLabel(booking.portalCashbackPostingStatus!)}
-                    </button>
-                  )}
-                </div>
+                <p className="font-medium" data-testid="booking-portal">
+                  {booking.shoppingPortal.name}
+                  {booking.portalCashbackRate
+                    ? booking.shoppingPortal.rewardType === "points"
+                      ? ` (${Number(booking.portalCashbackRate).toFixed(2)} pts/$ — ${booking.portalCashbackOnTotal ? "total cost basis" : "pre-tax basis"})`
+                      : ` (${(Number(booking.portalCashbackRate) * 100).toFixed(1)}% — ${booking.portalCashbackOnTotal ? "total cost basis" : "pre-tax basis"})`
+                    : ""}
+                </p>
               </div>
             )}
             {booking.loyaltyPointsEarned != null && (
               <div>
                 <p className="text-sm text-muted-foreground">Loyalty Points Earned</p>
-                <div className="flex items-center gap-2">
-                  <p className="font-medium" data-testid="loyalty-points-earned">
-                    {booking.loyaltyPointsEstimated ? "~" : ""}
-                    {booking.loyaltyPointsEarned.toLocaleString()}
-                    {booking.loyaltyPointsEstimated ? " (est.)" : ""}
-                  </p>
-                  {booking.loyaltyPostingStatus != null && (
-                    <button
-                      onClick={() =>
-                        cycleBookingStatus("loyaltyPostingStatus", booking.loyaltyPostingStatus!)
-                      }
-                      data-testid="loyalty-posting-status-button"
-                      className={cn(
-                        "rounded px-2 py-0.5 text-xs font-medium",
-                        statusColorClass(booking.loyaltyPostingStatus!)
-                      )}
-                    >
-                      {statusLabel(booking.loyaltyPostingStatus!)}
-                    </button>
-                  )}
-                </div>
+                <p className="font-medium" data-testid="loyalty-points-earned">
+                  {booking.loyaltyPointsEstimated ? "~" : ""}
+                  {booking.loyaltyPointsEarned.toLocaleString()}
+                  {booking.loyaltyPointsEstimated ? " (est.)" : ""}
+                </p>
               </div>
             )}
             {booking.pointsRedeemed != null && (
@@ -718,7 +571,7 @@ export default function BookingDetailPage() {
                     {formatBenefitType(b.benefitType)}
                     {b.label ? ` — ${b.label}` : ""}
                   </span>
-                  <span className="flex items-center gap-2">
+                  <span>
                     {b.dollarValue != null ? (
                       <span className="text-muted-foreground">
                         {formatCurrency(Number(b.dollarValue), booking.currency)}
@@ -736,16 +589,6 @@ export default function BookingDetailPage() {
                         {Number(b.pointsMultiplier)}× multiplier
                       </span>
                     ) : null}
-                    <button
-                      onClick={() => cycleBenefitStatus(b.id, b.postingStatus)}
-                      data-testid="perk-posting-status-button"
-                      className={cn(
-                        "rounded px-2 py-0.5 text-xs font-medium",
-                        statusColorClass(b.postingStatus)
-                      )}
-                    >
-                      {statusLabel(b.postingStatus)}
-                    </button>
                   </span>
                 </li>
               ))}
@@ -790,25 +633,13 @@ export default function BookingDetailPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between pt-2 border-t">
-                    <div className="flex gap-2">
-                      <Badge
-                        variant={bp.autoApplied ? "default" : "outline"}
-                        data-testid="promo-auto-applied"
-                      >
-                        {bp.autoApplied ? "Auto" : "Manual"}
-                      </Badge>
-                    </div>
-                    <button
-                      onClick={() => cyclePostingStatus(bp)}
-                      data-testid="promo-posting-status-button"
-                      className={cn(
-                        "rounded px-2 py-0.5 text-xs font-medium",
-                        statusColorClass(bp.postingStatus)
-                      )}
+                  <div className="flex items-center pt-2 border-t">
+                    <Badge
+                      variant={bp.autoApplied ? "default" : "outline"}
+                      data-testid="promo-auto-applied"
                     >
-                      {statusLabel(bp.postingStatus)}
-                    </button>
+                      {bp.autoApplied ? "Auto" : "Manual"}
+                    </Badge>
                   </div>
                 </div>
               ))}
@@ -823,7 +654,6 @@ export default function BookingDetailPage() {
                     <TableHead>Type</TableHead>
                     <TableHead>Applied Value</TableHead>
                     <TableHead>Auto-applied</TableHead>
-                    <TableHead>Posting Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -846,18 +676,6 @@ export default function BookingDetailPage() {
                           {bp.autoApplied ? "Yes" : "No"}
                         </Badge>
                       </TableCell>
-                      <TableCell>
-                        <button
-                          onClick={() => cyclePostingStatus(bp)}
-                          data-testid="promo-posting-status-button"
-                          className={cn(
-                            "rounded px-2 py-0.5 text-xs font-medium",
-                            statusColorClass(bp.postingStatus)
-                          )}
-                        >
-                          {statusLabel(bp.postingStatus)}
-                        </button>
-                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -878,20 +696,8 @@ export default function BookingDetailPage() {
               {booking.bookingCardBenefits.map((bcb) => (
                 <li key={bcb.id} className="flex items-center justify-between">
                   <span>{bcb.cardBenefit.description}</span>
-                  <span className="flex items-center gap-2">
-                    <span className="text-muted-foreground">
-                      {formatCurrency(Number(bcb.appliedValue))}
-                    </span>
-                    <button
-                      onClick={() => cycleCardBenefitStatus(bcb.id, bcb.postingStatus)}
-                      data-testid="card-benefit-posting-status-button"
-                      className={cn(
-                        "rounded px-2 py-0.5 text-xs font-medium",
-                        statusColorClass(bcb.postingStatus)
-                      )}
-                    >
-                      {statusLabel(bcb.postingStatus)}
-                    </button>
+                  <span className="text-muted-foreground">
+                    {formatCurrency(Number(bcb.appliedValue))}
                   </span>
                 </li>
               ))}
@@ -908,33 +714,14 @@ export default function BookingDetailPage() {
           </CardHeader>
           <CardContent>
             <ul className="space-y-2">
-              {booking.partnershipEarns.map((earn) => {
-                const statusRecord =
-                  booking.bookingPartnershipEarnStatuses?.find(
-                    (s) => s.partnershipEarnId === earn.id
-                  ) ?? null;
-                const currentStatus: PostingStatus = statusRecord?.postingStatus ?? "pending";
-                return (
-                  <li key={earn.id} className="flex items-center justify-between">
-                    <span>{earn.name}</span>
-                    <span className="flex items-center gap-2">
-                      <span className="text-muted-foreground">
-                        {Math.round(earn.earnedValue).toLocaleString()} pts
-                      </span>
-                      <button
-                        onClick={() => cyclePartnershipStatus(earn.id, statusRecord, currentStatus)}
-                        data-testid="partnership-earn-posting-status-button"
-                        className={cn(
-                          "rounded px-2 py-0.5 text-xs font-medium",
-                          statusColorClass(currentStatus)
-                        )}
-                      >
-                        {statusLabel(currentStatus)}
-                      </button>
-                    </span>
-                  </li>
-                );
-              })}
+              {booking.partnershipEarns.map((earn) => (
+                <li key={earn.id} className="flex items-center justify-between">
+                  <span>{earn.name}</span>
+                  <span className="text-muted-foreground">
+                    {Math.round(earn.earnedValue).toLocaleString()} pts
+                  </span>
+                </li>
+              ))}
             </ul>
           </CardContent>
         </Card>
