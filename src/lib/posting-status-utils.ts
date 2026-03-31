@@ -46,11 +46,13 @@ export function formatPortalValue(
   cashbackValue: number,
   rewardType?: string | null,
   pointTypeName?: string | null,
-  usdCentsPerPoint?: number | null
+  usdCentsPerPoint?: number | null,
+  rawPoints?: number | null
 ): string {
   if (!rewardType || rewardType === "cashback") return formatCurrency(cashbackValue);
-  const centsPerPoint = usdCentsPerPoint ?? 0.01;
-  const points = Math.round(cashbackValue / centsPerPoint);
+  const centsPerPoint = Number(usdCentsPerPoint ?? 0.01);
+  const points =
+    rawPoints != null ? Math.round(rawPoints) : Math.round(cashbackValue / centsPerPoint);
   const abbr = pointTypeName ? abbreviatePointType(pointTypeName) : "";
   return `${points.toLocaleString()}${abbr ? ` ${abbr}` : ""} pts`;
 }
