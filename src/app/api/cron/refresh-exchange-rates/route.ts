@@ -100,7 +100,21 @@ async function handler(request: NextRequest) {
       }
 
       if (pointTypeBookingIds.size > 0) {
-        await reevaluateBookings([...pointTypeBookingIds]);
+        const bookingUserPairs = await prisma.booking.findMany({
+          where: { id: { in: [...pointTypeBookingIds] } },
+          select: { id: true, userId: true },
+        });
+
+        const byUser = new Map<string, string[]>();
+        for (const { id, userId } of bookingUserPairs) {
+          const arr = byUser.get(userId) ?? [];
+          arr.push(id);
+          byUser.set(userId, arr);
+        }
+
+        for (const [userId, ids] of byUser) {
+          await reevaluateBookings(ids, userId);
+        }
       }
     } catch (err) {
       logger.error("Cron job failed during point type USD refresh", err, {
