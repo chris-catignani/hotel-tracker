@@ -105,6 +105,7 @@ async function getFullBookingWithUsage(id: string, userId: string) {
   const usageMap = await fetchPromotionUsage(
     constrainedPromos,
     booking as unknown as MatchingBooking,
+    userId,
     booking.id
   );
 
@@ -570,10 +571,10 @@ export const PUT = withObservability(
       });
 
       // Re-run promotion matching after update
-      const appliedPromoIds = await matchPromotionsForBooking(booking.id);
+      const appliedPromoIds = await matchPromotionsForBooking(booking.id, userId);
 
       // Re-evaluate subsequent bookings if this is an earlier stay
-      await reevaluateSubsequentBookings(booking.id, appliedPromoIds);
+      await reevaluateSubsequentBookings(booking.id, userId, appliedPromoIds);
 
       // Re-apply card benefits, including any periods affected before the change
       await reapplyCardBenefitsAffectedByBooking(
@@ -701,7 +702,7 @@ export const DELETE = withObservability(
 
       // Re-evaluate subsequent bookings
       if (subsequentBookingIds.length > 0) {
-        await reevaluateBookings(subsequentBookingIds);
+        await reevaluateBookings(subsequentBookingIds, userId);
       }
 
       // Re-evaluate card benefit periods freed by this deletion

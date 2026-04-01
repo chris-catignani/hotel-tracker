@@ -32,7 +32,7 @@ beforeEach(() => vi.clearAllMocks());
 describe("runPostBookingCreate", () => {
   it("runs promotion matching with the bookingId", async () => {
     await runPostBookingCreate("booking-1", metadata);
-    expect(matchPromotionsForBooking).toHaveBeenCalledWith("booking-1");
+    expect(matchPromotionsForBooking).toHaveBeenCalledWith("booking-1", "user-1");
   });
 
   it("logs booking:created with bookingId, promotionsApplied, and metadata", async () => {
@@ -53,7 +53,7 @@ describe("runPostBookingCreate", () => {
 
   it("re-evaluates subsequent bookings with appliedPromoIds", async () => {
     await runPostBookingCreate("booking-1", metadata);
-    expect(reevaluateSubsequentBookings).toHaveBeenCalledWith("booking-1", ["promo-1"]);
+    expect(reevaluateSubsequentBookings).toHaveBeenCalledWith("booking-1", "user-1", ["promo-1"]);
   });
 
   it("reapplies card benefits", async () => {

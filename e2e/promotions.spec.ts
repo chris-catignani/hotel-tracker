@@ -941,3 +941,134 @@ test.describe("Promotions payment type restrictions", () => {
     await expect(isolatedUser.page.getByTestId("restriction-option-hotel_chain")).toBeVisible();
   });
 });
+
+test.describe("Promotion user isolation", () => {
+  test("User B booking should not receive User A promotion even with matching criteria", async ({
+    playwright,
+    baseURL,
+    adminRequest,
+  }) => {
+    const resolvedBase = baseURL ?? "http://127.0.0.1:3001";
+
+    // --- Setup: fetch a hotel chain (seeded reference data) ---
+    const chainsRes = await adminRequest.get("/api/hotel-chains");
+    const chains = await chainsRes.json();
+    const chain = chains[0];
+    expect(chain).toBeDefined();
+
+    // --- User A: register, login, create promotion and booking ---
+    const userAReq = await playwright.request.newContext({ baseURL: resolvedBase });
+    const emailA = `user-a-isolation-${crypto.randomUUID()}@example.com`;
+    await userAReq.post("/api/auth/register", {
+      data: { email: emailA, password: "testpass123", name: "User A" },
+    });
+    const csrfA = await (await userAReq.get("/api/auth/csrf")).json();
+    await userAReq.post("/api/auth/callback/credentials", {
+      form: {
+        csrfToken: csrfA.csrfToken,
+        email: emailA,
+        password: "testpass123",
+        callbackUrl: resolvedBase,
+        redirect: "false",
+      },
+    });
+
+    // User A creates a loyalty promotion for this chain
+    const promoRes = await userAReq.post("/api/promotions", {
+      data: {
+        name: `Isolation Test Promo ${crypto.randomUUID()}`,
+        type: "loyalty",
+        hotelChainId: chain.id,
+        startDate: `${YEAR}-01-01`,
+        endDate: `${YEAR}-12-31`,
+        benefits: [
+          { rewardType: "cashback", valueType: "fixed", value: 50, certType: null, sortOrder: 0 },
+        ],
+      },
+    });
+    expect(promoRes.status()).toBe(201);
+    const promoA = await promoRes.json();
+
+    // User A creates a booking at the same chain
+    const bookingARes = await userAReq.post("/api/bookings", {
+      data: {
+        hotelChainId: chain.id,
+        propertyName: `Hotel A ${crypto.randomUUID()}`,
+        checkIn: `${YEAR}-07-01`,
+        checkOut: `${YEAR}-07-05`,
+        numNights: 4,
+        pretaxCost: 400,
+        taxAmount: 40,
+        totalCost: 440,
+        currency: "USD",
+        bookingSource: "direct_web",
+        countryCode: "US",
+        city: "New York",
+      },
+    });
+    expect(bookingARes.status()).toBe(201);
+    const bookingA = await bookingARes.json();
+
+    // Verify User A's booking received the promotion
+    const bookingADetail = await (await userAReq.get(`/api/bookings/${bookingA.id}`)).json();
+    const bookingAPromoIds = bookingADetail.bookingPromotions.map(
+      (bp: { promotionId: string }) => bp.promotionId
+    );
+    expect(bookingAPromoIds).toContain(promoA.id);
+
+    // --- User B: register, login, create matching booking ---
+    const userBReq = await playwright.request.newContext({ baseURL: resolvedBase });
+    const emailB = `user-b-isolation-${crypto.randomUUID()}@example.com`;
+    await userBReq.post("/api/auth/register", {
+      data: { email: emailB, password: "testpass123", name: "User B" },
+    });
+    const csrfB = await (await userBReq.get("/api/auth/csrf")).json();
+    await userBReq.post("/api/auth/callback/credentials", {
+      form: {
+        csrfToken: csrfB.csrfToken,
+        email: emailB,
+        password: "testpass123",
+        callbackUrl: resolvedBase,
+        redirect: "false",
+      },
+    });
+
+    // User B creates a booking at the SAME chain (criteria match User A's promotion)
+    const bookingBRes = await userBReq.post("/api/bookings", {
+      data: {
+        hotelChainId: chain.id,
+        propertyName: `Hotel B ${crypto.randomUUID()}`,
+        checkIn: `${YEAR}-07-10`,
+        checkOut: `${YEAR}-07-14`,
+        numNights: 4,
+        pretaxCost: 400,
+        taxAmount: 40,
+        totalCost: 440,
+        currency: "USD",
+        bookingSource: "direct_web",
+        countryCode: "US",
+        city: "Chicago",
+      },
+    });
+    expect(bookingBRes.status()).toBe(201);
+    const bookingB = await bookingBRes.json();
+
+    // Verify User B's booking has NO promotions applied (User A's promo is invisible to User B)
+    const bookingBDetail = await (await userBReq.get(`/api/bookings/${bookingB.id}`)).json();
+    expect(bookingBDetail.bookingPromotions).toHaveLength(0);
+
+    // Verify User A's booking is unchanged after User B's activity
+    const bookingARecheck = await (await userAReq.get(`/api/bookings/${bookingA.id}`)).json();
+    const recheckPromoIds = bookingARecheck.bookingPromotions.map(
+      (bp: { promotionId: string }) => bp.promotionId
+    );
+    expect(recheckPromoIds).toContain(promoA.id);
+
+    // --- Teardown ---
+    await userAReq.delete(`/api/bookings/${bookingA.id}`);
+    await userAReq.delete(`/api/promotions/${promoA.id}`);
+    await userBReq.delete(`/api/bookings/${bookingB.id}`);
+    await userAReq.dispose();
+    await userBReq.dispose();
+  });
+});

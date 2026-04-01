@@ -90,6 +90,7 @@ function buildPotentialMatchFilter(
 export async function fetchPromotionUsage(
   promotions: MatchingPromotion[],
   booking: MatchingBooking,
+  userId: string,
   excludeBookingId?: string
 ): Promise<PromotionUsageMap> {
   const usageMap: PromotionUsageMap = new Map();
@@ -104,6 +105,7 @@ export async function fetchPromotionUsage(
       promotionId: { in: promotionIds },
       ...(excludeBookingId ? { bookingId: { not: excludeBookingId } } : {}),
       booking: {
+        userId,
         checkIn: {
           lt: new Date(booking.checkIn),
         },
@@ -143,6 +145,7 @@ export async function fetchPromotionUsage(
         ...(excludeBookingId ? { bookingPromotion: { bookingId: { not: excludeBookingId } } } : {}),
         bookingPromotion: {
           booking: {
+            userId,
             checkIn: {
               lt: new Date(booking.checkIn),
             },
@@ -159,6 +162,7 @@ export async function fetchPromotionUsage(
         promotionId: { in: promotions.map((p) => p.id) },
         ...(excludeBookingId ? { bookingId: { not: excludeBookingId } } : {}),
         booking: {
+          userId,
           checkIn: {
             lt: new Date(booking.checkIn),
           },
@@ -204,7 +208,7 @@ export async function fetchPromotionUsage(
   for (const promo of promotions) {
     // Filter by the same core rules used in calculateMatchedPromotions
     const potentialStats = await prisma.booking.aggregate({
-      where: buildPotentialMatchFilter(promo),
+      where: { ...buildPotentialMatchFilter(promo), userId },
       _count: { id: true },
       _sum: { numNights: true },
     });
@@ -216,6 +220,7 @@ export async function fetchPromotionUsage(
     const futurePotentialStats = await prisma.booking.aggregate({
       where: {
         ...promoBaseFilter,
+        userId,
         checkIn: {
           ...((promoBaseFilter.checkIn as Prisma.DateTimeFilter) ?? {}),
           gt: currentCheckInDate,
@@ -246,7 +251,7 @@ export async function fetchPromotionUsage(
     // Also fetch benefit-level potential match (oncePerSubBrand / subBrand restrictions)
     for (const b of [...promo.benefits, ...promo.tiers.flatMap((t) => t.benefits)]) {
       const bPotentialStats = await prisma.booking.aggregate({
-        where: buildPotentialMatchFilter(promo, b.restrictions),
+        where: { ...buildPotentialMatchFilter(promo, b.restrictions), userId },
         _count: { id: true },
         _sum: { numNights: true },
       });
@@ -255,6 +260,7 @@ export async function fetchPromotionUsage(
       const bFuturePotentialStats = await prisma.booking.aggregate({
         where: {
           ...bBaseFilter,
+          userId,
           checkIn: {
             ...((bBaseFilter.checkIn as Prisma.DateTimeFilter) ?? {}),
             gt: currentCheckInDate,
@@ -311,6 +317,7 @@ export async function fetchPromotionUsage(
     const eligibleStats = await prisma.booking.aggregate({
       where: {
         ...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
+        userId,
         hotelChainId:
           promo.type === PromotionType.loyalty ? (promo.hotelChainId ?? undefined) : undefined,
         userCreditCard:
@@ -352,6 +359,7 @@ export async function fetchPromotionUsage(
         promotionId: { in: spanStaysPromoIds },
         ...(excludeBookingId ? { bookingId: { not: excludeBookingId } } : {}),
         booking: {
+          userId,
           checkIn: {
             lt: new Date(booking.checkIn),
           },
@@ -393,6 +401,7 @@ export async function fetchPromotionUsage(
         promotionId: { in: oncePerSubBrandPromoIds },
         ...(excludeBookingId ? { bookingId: { not: excludeBookingId } } : {}),
         booking: {
+          userId,
           checkIn: {
             lt: new Date(booking.checkIn),
           },

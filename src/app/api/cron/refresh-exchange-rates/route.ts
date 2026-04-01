@@ -62,7 +62,7 @@ async function handler(request: NextRequest) {
 
     // Step 3: Refresh USD value for foreign-currency PointTypes
     const pointTypesUpdated: string[] = [];
-    const pointTypeBookingIds = new Set<string>();
+    const pointTypeBookings = new Map<string, string>(); // bookingId → userId
 
     try {
       const foreignPointTypes = await prisma.pointType.findMany({
@@ -93,14 +93,21 @@ async function handler(request: NextRequest) {
               bookingPromotions: { some: {} },
               checkIn: { gt: today },
             },
-            select: { id: true },
+            select: { id: true, userId: true },
           });
-          for (const b of affectedBookings) pointTypeBookingIds.add(b.id);
+          for (const b of affectedBookings) pointTypeBookings.set(b.id, b.userId);
         }
       }
 
-      if (pointTypeBookingIds.size > 0) {
-        await reevaluateBookings([...pointTypeBookingIds]);
+      if (pointTypeBookings.size > 0) {
+        const byUser = new Map<string, string[]>();
+        for (const [id, userId] of pointTypeBookings) {
+          const arr = byUser.get(userId) ?? [];
+          arr.push(id);
+          byUser.set(userId, arr);
+        }
+
+        await Promise.all([...byUser].map(([userId, ids]) => reevaluateBookings(ids, userId)));
       }
     } catch (err) {
       logger.error("Cron job failed during point type USD refresh", err, {
@@ -118,7 +125,7 @@ async function handler(request: NextRequest) {
       pointTypesRefreshed: pointTypesUpdated.filter(
         (r) => !r.includes("ERROR") && !r.includes("NO_RATE")
       ).length,
-      bookingsReevaluated: pointTypeBookingIds.size,
+      bookingsReevaluated: pointTypeBookings.size,
     });
 
     return NextResponse.json({
@@ -126,7 +133,7 @@ async function handler(request: NextRequest) {
       ratesUpdated: upsertResults,
       bookingsLocked: lockedBookingIds.length,
       pointTypesRefreshed: pointTypesUpdated,
-      bookingsReevaluated: pointTypeBookingIds.size,
+      bookingsReevaluated: pointTypeBookings.size,
       date: todayStr,
     });
   } catch (error) {

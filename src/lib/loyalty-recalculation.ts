@@ -118,5 +118,5 @@ export async function recalculateLoyaltyForHotelChain(
 
   // 5. Re-evaluate promotions (especially points multipliers) for these bookings
   // Since we changed the base points, any 2x/3x multipliers need their appliedValue updated
-  await reevaluateBookings(bookingIds);
+  await reevaluateBookings(bookingIds, userId);
 }

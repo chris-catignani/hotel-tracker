@@ -10,7 +10,7 @@ async function main() {
 
   const bookings = await prisma.booking.findMany({
     orderBy: { checkIn: "asc" },
-    select: { id: true, property: { select: { name: true } }, checkIn: true },
+    select: { id: true, userId: true, property: { select: { name: true } }, checkIn: true },
   });
 
   console.log(`Found ${bookings.length} bookings to process.`);
@@ -27,7 +27,7 @@ async function main() {
     );
 
     try {
-      await matchPromotionsForBooking(booking.id);
+      await matchPromotionsForBooking(booking.id, booking.userId);
       console.log("✅");
       successCount++;
     } catch (error) {
