@@ -5,7 +5,7 @@ import { getCurrentRate } from "@/lib/exchange-rate";
 import { finalizeCheckedInBookings } from "@/lib/booking-enrichment";
 import { apiError } from "@/lib/api-error";
 import { CURRENCIES } from "@/lib/constants";
-import { reevaluateBookings } from "@/lib/promotion-matching";
+import { reevaluateBookings } from "@/lib/promotion-apply";
 import { logger } from "@/lib/logger";
 
 const RATES_CDN =

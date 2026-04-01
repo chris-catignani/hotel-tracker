@@ -1,9 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-vi.mock("@/lib/promotion-matching", () => ({
+vi.mock("@/lib/promotion-apply", () => ({
   matchPromotionsForBooking: vi.fn().mockResolvedValue(["promo-1"]),
-}));
-vi.mock("@/lib/promotion-matching-helpers", () => ({
   reevaluateSubsequentBookings: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock("@/lib/card-benefit-apply", () => ({
@@ -14,8 +12,7 @@ vi.mock("@/lib/logger", () => ({
 }));
 
 import { runPostBookingCreate } from "./booking-service";
-import { matchPromotionsForBooking } from "@/lib/promotion-matching";
-import { reevaluateSubsequentBookings } from "@/lib/promotion-matching-helpers";
+import { matchPromotionsForBooking, reevaluateSubsequentBookings } from "@/lib/promotion-apply";
 import { reapplyCardBenefitsAffectedByBooking } from "@/lib/card-benefit-apply";
 import { logger } from "@/lib/logger";
 

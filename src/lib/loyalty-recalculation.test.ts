@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, type Mock } from "vitest";
 import { recalculateLoyaltyForHotelChain } from "./loyalty-recalculation";
 import prisma from "./prisma";
-import { reevaluateBookings } from "./promotion-matching";
+import { reevaluateBookings } from "./promotion-apply";
 import { resolveCalcCurrencyRate } from "./exchange-rate";
 
 // Mock the dependencies
@@ -18,7 +18,7 @@ vi.mock("./prisma", () => ({
   },
 }));
 
-vi.mock("./promotion-matching", () => ({
+vi.mock("./promotion-apply", () => ({
   reevaluateBookings: vi.fn(),
 }));
 

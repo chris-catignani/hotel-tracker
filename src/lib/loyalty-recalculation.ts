@@ -1,6 +1,6 @@
 import prisma from "@/lib/prisma";
 import { calculatePoints, resolveBasePointRate } from "./loyalty-utils";
-import { reevaluateBookings } from "./promotion-matching";
+import { reevaluateBookings } from "./promotion-apply";
 import { resolveCalcCurrencyRate } from "./exchange-rate";
 
 /**

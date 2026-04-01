@@ -3,7 +3,7 @@ import { withObservability } from "@/lib/observability";
 import prisma from "@/lib/prisma";
 import { PromotionType, Prisma } from "@prisma/client";
 import { apiError } from "@/lib/api-error";
-import { matchPromotionsForAffectedBookings, reevaluateBookings } from "@/lib/promotion-matching";
+import { matchPromotionsForAffectedBookings, reevaluateBookings } from "@/lib/promotion-apply";
 import {
   PromotionBenefitFormData,
   PromotionTierFormData,
