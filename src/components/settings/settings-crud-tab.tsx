@@ -50,6 +50,7 @@ interface SettingsCrudTabProps<T extends { id: string }> {
     onSubmit: () => Promise<boolean>;
     isValid: boolean;
     onClose?: () => void;
+    saveButtonTestId?: string;
   };
   editDialog?: {
     title: string;
@@ -59,6 +60,7 @@ interface SettingsCrudTabProps<T extends { id: string }> {
     isValid: boolean;
     onOpen: (item: T) => void;
     onClose?: () => void;
+    saveButtonTestId?: string;
   };
   deleteDialog?: {
     getTitle: (item: T) => string;
@@ -68,7 +70,13 @@ interface SettingsCrudTabProps<T extends { id: string }> {
   };
   extraDialogs?: ReactNode;
   emptyState: { icon: LucideIcon; title: string; description: string };
-  testIds?: { list?: string; empty?: string };
+  testIds?: {
+    list?: string;
+    empty?: string;
+    row?: string;
+    editButton?: string;
+    deleteButton?: string;
+  };
 }
 
 export function SettingsCrudTab<T extends { id: string }>({
@@ -179,7 +187,11 @@ export function SettingsCrudTab<T extends { id: string }>({
           </DialogHeader>
           {addDialog.renderFields()}
           <DialogFooter>
-            <Button onClick={handleAddSubmit} disabled={!addDialog.isValid}>
+            <Button
+              onClick={handleAddSubmit}
+              disabled={!addDialog.isValid}
+              data-testid={addDialog.saveButtonTestId}
+            >
               Save
             </Button>
           </DialogFooter>
@@ -203,7 +215,11 @@ export function SettingsCrudTab<T extends { id: string }>({
             </DialogHeader>
             {editDialog.renderFields()}
             <DialogFooter>
-              <Button onClick={handleEditSubmit} disabled={!editDialog.isValid}>
+              <Button
+                onClick={handleEditSubmit}
+                disabled={!editDialog.isValid}
+                data-testid={editDialog.saveButtonTestId}
+              >
                 Save
               </Button>
             </DialogFooter>
@@ -253,19 +269,29 @@ export function SettingsCrudTab<T extends { id: string }>({
               </TableHeader>
               <TableBody>
                 {items.map((item) => (
-                  <TableRow key={item.id}>
+                  <TableRow key={item.id} data-testid={testIds?.row}>
                     {columns.map((col) => (
                       <TableCell key={col.header}>{col.render(item)}</TableCell>
                     ))}
                     <TableCell>
                       <div className="flex gap-2">
                         {editDialog && (
-                          <Button variant="ghost" size="sm" onClick={() => handleEditClick(item)}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            data-testid={testIds?.editButton}
+                            onClick={() => handleEditClick(item)}
+                          >
                             Edit
                           </Button>
                         )}
                         {deleteDialog && (
-                          <Button variant="ghost" size="sm" onClick={() => handleDeleteClick(item)}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            data-testid={testIds?.deleteButton}
+                            onClick={() => handleDeleteClick(item)}
+                          >
                             Delete
                           </Button>
                         )}

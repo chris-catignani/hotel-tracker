@@ -221,7 +221,7 @@ export function ShoppingPortalsTab() {
         description:
           "Add portals like Rakuten or TopCashback to track extra rewards on your bookings.",
       }}
-      testIds={{ list: "portals-desktop", empty: "portals-empty" }}
+      testIds={{ list: "portals-desktop", empty: "portals-empty", row: "portal-row" }}
     />
   );
 }

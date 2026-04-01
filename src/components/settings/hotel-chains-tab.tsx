@@ -435,7 +435,12 @@ export function HotelChainsTab() {
         title: "No hotel chains",
         description: "Add hotel chains like Marriott or Hilton to start tracking your stays.",
       }}
-      testIds={{ list: "hotel-chains-desktop", empty: "hotel-chains-empty" }}
+      testIds={{
+        list: "hotel-chains-desktop",
+        empty: "hotel-chains-empty",
+        row: "hotel-chain-table-row",
+        editButton: "hotel-chain-edit-button",
+      }}
     />
   );
 }

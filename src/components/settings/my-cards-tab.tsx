@@ -257,6 +257,7 @@ export function MyCardsTab() {
         ),
         onSubmit: handleAddSubmit,
         isValid: form.creditCardId.length > 0,
+        saveButtonTestId: "add-my-card-save",
       }}
       editDialog={{
         title: "Edit Card Instance",
@@ -271,6 +272,7 @@ export function MyCardsTab() {
         ),
         onSubmit: handleEditSubmit,
         isValid: editForm.creditCardId.length > 0,
+        saveButtonTestId: "edit-my-card-save",
         onOpen: (card) => {
           setEditCard(card);
           setEditForm({
@@ -293,7 +295,13 @@ export function MyCardsTab() {
         title: "No card instances",
         description: "Add the credit cards you hold to track which card you used for each booking.",
       }}
-      testIds={{ list: "my-cards-desktop", empty: "my-cards-empty" }}
+      testIds={{
+        list: "my-cards-desktop",
+        empty: "my-cards-empty",
+        row: "my-card-row",
+        editButton: "my-card-edit-button",
+        deleteButton: "my-card-delete-button",
+      }}
     />
   );
 }

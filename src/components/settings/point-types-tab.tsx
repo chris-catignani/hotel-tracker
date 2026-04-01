@@ -404,7 +404,7 @@ export function PointTypesTab() {
         title: "No point types",
         description: "Define point values for hotel chains, credit cards, and portals.",
       }}
-      testIds={{ list: "point-types-desktop", empty: "point-types-empty" }}
+      testIds={{ list: "point-types-desktop", empty: "point-types-empty", row: "point-type-row" }}
     />
   );
 }

@@ -164,7 +164,13 @@ export function OtaAgenciesTab() {
         title: "No OTA agencies",
         description: "Add agencies like Expedia or Chase Travel to track where you book.",
       }}
-      testIds={{ list: "agencies-desktop", empty: "ota-agencies-empty" }}
+      testIds={{
+        list: "agencies-desktop",
+        empty: "ota-agencies-empty",
+        row: "agency-row",
+        editButton: "agency-edit-button",
+        deleteButton: "agency-delete-button",
+      }}
     />
   );
 }
