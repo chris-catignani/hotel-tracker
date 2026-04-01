@@ -106,10 +106,10 @@ describe("fetchPromotionUsage userId scoping", () => {
 
     // The spanStays bookingPromotion.findMany should be scoped
     const calls = prismaMock.bookingPromotion.findMany.mock.calls;
-    const hasUserIdScope = calls.some(
-      ([args]: [{ where: { booking?: { userId?: string } } }]) =>
-        args.where?.booking?.userId === userId
-    );
+    const hasUserIdScope = calls.some((call: unknown[]) => {
+      const args = call[0] as { where?: { booking?: { userId?: string } } };
+      return args.where?.booking?.userId === userId;
+    });
     expect(hasUserIdScope).toBe(true);
   });
 });

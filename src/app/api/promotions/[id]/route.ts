@@ -281,7 +281,7 @@ export const PUT = withObservability(
         });
       });
 
-      await matchPromotionsForAffectedBookings(promotion.id);
+      await matchPromotionsForAffectedBookings(promotion.id, userId);
 
       return NextResponse.json(promotion);
     } catch (error) {
@@ -304,9 +304,9 @@ export const DELETE = withObservability(
       });
       if (!exists) return apiError("Promotion not found", null, 404, request, { promotionId: id });
 
-      // Find bookings that currently have this promotion applied
+      // Find bookings that currently have this promotion applied (scoped to this user)
       const affectedBookings = await prisma.booking.findMany({
-        where: { bookingPromotions: { some: { promotionId: id } } },
+        where: { userId, bookingPromotions: { some: { promotionId: id } } },
         select: { id: true },
       });
 
@@ -335,7 +335,10 @@ export const DELETE = withObservability(
       }
 
       if (affectedBookings.length > 0) {
-        await reevaluateBookings(affectedBookings.map((b) => b.id));
+        await reevaluateBookings(
+          affectedBookings.map((b) => b.id),
+          userId
+        );
       }
 
       return NextResponse.json({ message: "Promotion deleted" });

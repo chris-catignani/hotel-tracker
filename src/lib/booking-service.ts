@@ -17,7 +17,8 @@ export async function runPostBookingCreate(
   bookingId: string,
   metadata: PostBookingCreateMetadata
 ): Promise<void> {
-  const appliedPromoIds = await matchPromotionsForBooking(bookingId);
+  const { userId } = metadata;
+  const appliedPromoIds = await matchPromotionsForBooking(bookingId, userId);
 
   logger.info("booking:created", {
     bookingId,
@@ -25,6 +26,6 @@ export async function runPostBookingCreate(
     ...metadata,
   });
 
-  await reevaluateSubsequentBookings(bookingId, appliedPromoIds);
+  await reevaluateSubsequentBookings(bookingId, userId, appliedPromoIds);
   await reapplyCardBenefitsAffectedByBooking(bookingId);
 }

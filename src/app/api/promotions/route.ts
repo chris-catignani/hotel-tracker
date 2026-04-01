@@ -146,7 +146,7 @@ export const POST = withObservability(async (request: NextRequest) => {
       }) as Promise<import("@prisma/client").Promotion>;
     });
 
-    await matchPromotionsForAffectedBookings(promotion.id);
+    await matchPromotionsForAffectedBookings(promotion.id, userId);
 
     return NextResponse.json(promotion, { status: 201 });
   } catch (error) {
