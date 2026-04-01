@@ -107,9 +107,7 @@ async function handler(request: NextRequest) {
           byUser.set(userId, arr);
         }
 
-        for (const [userId, ids] of byUser) {
-          await reevaluateBookings(ids, userId);
-        }
+        await Promise.all([...byUser].map(([userId, ids]) => reevaluateBookings(ids, userId)));
       }
     } catch (err) {
       logger.error("Cron job failed during point type USD refresh", err, {
