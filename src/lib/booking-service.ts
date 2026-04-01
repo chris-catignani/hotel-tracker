@@ -1,5 +1,4 @@
-import { matchPromotionsForBooking } from "@/lib/promotion-matching";
-import { reevaluateSubsequentBookings } from "@/lib/promotion-matching-helpers";
+import { matchPromotionsForBooking, reevaluateSubsequentBookings } from "@/lib/promotion-apply";
 import { reapplyCardBenefitsAffectedByBooking } from "@/lib/card-benefit-apply";
 import { logger } from "@/lib/logger";
 

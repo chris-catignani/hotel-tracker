@@ -3,14 +3,16 @@ import { withObservability } from "@/lib/observability";
 import prisma from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import {
+  getConstrainedPromotions,
+  type MatchingPromotion,
+  type MatchingBooking,
+} from "@/lib/promotion-matching";
+import { fetchPromotionUsage } from "@/lib/promotion-usage";
+import {
   matchPromotionsForBooking,
   reevaluateBookings,
-  getConstrainedPromotions,
-  fetchPromotionUsage,
-  MatchingPromotion,
-  MatchingBooking,
-} from "@/lib/promotion-matching";
-import { reevaluateSubsequentBookings } from "@/lib/promotion-matching-helpers";
+  reevaluateSubsequentBookings,
+} from "@/lib/promotion-apply";
 import { apiError } from "@/lib/api-error";
 import { CertType, BenefitType, BenefitPointsEarnType, PostingStatus } from "@prisma/client";
 import { calculatePoints, resolveBasePointRate } from "@/lib/loyalty-utils";
