@@ -85,11 +85,12 @@ async function applyMatchedPromotions(
  * Re-evaluates and applies promotions for a list of booking IDs sequentially.
  * Processes bookings one at a time to ensure accurate redemption constraint checks.
  */
-export async function reevaluateBookings(bookingIds: string[]): Promise<void> {
+export async function reevaluateBookings(bookingIds: string[], userId: string): Promise<void> {
   if (bookingIds.length === 0) return;
 
   const activePromotions = (
     await prisma.promotion.findMany({
+      where: { userId },
       include: PROMOTIONS_INCLUDE,
     })
   ).map((p) => ({
@@ -98,7 +99,7 @@ export async function reevaluateBookings(bookingIds: string[]): Promise<void> {
   }));
 
   const bookings = await prisma.booking.findMany({
-    where: { id: { in: bookingIds } },
+    where: { id: { in: bookingIds }, userId },
     include: BOOKING_INCLUDE,
     orderBy: { checkIn: "asc" },
   });
@@ -108,7 +109,7 @@ export async function reevaluateBookings(bookingIds: string[]): Promise<void> {
 
   // Process sequentially to ensure accurate constraint checks
   for (const booking of bookings) {
-    const priorUsage = await fetchPromotionUsage(constrainedPromos, booking, booking.id);
+    const priorUsage = await fetchPromotionUsage(constrainedPromos, booking, userId, booking.id);
     const matched = calculateMatchedPromotions(booking, activePromotions, priorUsage);
 
     await applyMatchedPromotions(booking.id, matched);
@@ -119,9 +120,12 @@ export async function reevaluateBookings(bookingIds: string[]): Promise<void> {
  * Re-evaluates and applies promotions for a single booking.
  * Returns the list of promotion IDs that were applied.
  */
-export async function matchPromotionsForBooking(bookingId: string): Promise<string[]> {
-  const booking = await prisma.booking.findUnique({
-    where: { id: bookingId },
+export async function matchPromotionsForBooking(
+  bookingId: string,
+  userId: string
+): Promise<string[]> {
+  const booking = await prisma.booking.findFirst({
+    where: { id: bookingId, userId },
     include: BOOKING_INCLUDE,
   });
 
@@ -143,6 +147,7 @@ export async function matchPromotionsForBooking(bookingId: string): Promise<stri
 
   const activePromotions = (
     await prisma.promotion.findMany({
+      where: { userId },
       include: PROMOTIONS_INCLUDE,
     })
   ).map((p) => ({
@@ -154,7 +159,12 @@ export async function matchPromotionsForBooking(bookingId: string): Promise<stri
   const constrainedPromos = getConstrainedPromotions(activePromotions);
 
   // Fetch prior usage excluding current booking
-  const priorUsage = await fetchPromotionUsage(constrainedPromos, bookingWithRate, bookingId);
+  const priorUsage = await fetchPromotionUsage(
+    constrainedPromos,
+    bookingWithRate,
+    userId,
+    bookingId
+  );
 
   const matched = calculateMatchedPromotions(bookingWithRate, activePromotions, priorUsage);
   await applyMatchedPromotions(bookingId, matched);
@@ -166,11 +176,14 @@ export async function matchPromotionsForBooking(bookingId: string): Promise<stri
  * This includes bookings that already have the promotion applied AND bookings
  * that match the promotion's core criteria (hotel chain, dates, etc.).
  */
-export async function getAffectedBookingIds(promotionIds: string[]): Promise<string[]> {
+export async function getAffectedBookingIds(
+  promotionIds: string[],
+  userId: string
+): Promise<string[]> {
   if (promotionIds.length === 0) return [];
 
   const promotions = await prisma.promotion.findMany({
-    where: { id: { in: promotionIds } },
+    where: { id: { in: promotionIds }, userId },
   });
 
   if (promotions.length === 0) return [];
@@ -208,6 +221,7 @@ export async function getAffectedBookingIds(promotionIds: string[]): Promise<str
 
   const affectedBookings = await prisma.booking.findMany({
     where: {
+      userId,
       OR: orConditions,
     },
     select: { id: true },
@@ -221,17 +235,21 @@ export async function getAffectedBookingIds(promotionIds: string[]): Promise<str
 /**
  * Re-evaluates and applies promotions for all bookings potentially affected by a promotion change.
  */
-export async function matchPromotionsForAffectedBookings(promotionId: string): Promise<void> {
-  const affectedBookingIds = await getAffectedBookingIds([promotionId]);
-  await reevaluateBookings(affectedBookingIds);
+export async function matchPromotionsForAffectedBookings(
+  promotionId: string,
+  userId: string
+): Promise<void> {
+  const affectedBookingIds = await getAffectedBookingIds([promotionId], userId);
+  await reevaluateBookings(affectedBookingIds, userId);
 }
 
 /**
  * Finds all bookings that occur after a given check-in date.
  */
-export async function getSubsequentBookingIds(checkIn: Date): Promise<string[]> {
+export async function getSubsequentBookingIds(checkIn: Date, userId: string): Promise<string[]> {
   const subsequentBookings = await prisma.booking.findMany({
     where: {
+      userId,
       checkIn: {
         gt: checkIn,
       },
@@ -254,6 +272,7 @@ export async function getSubsequentBookingIds(checkIn: Date): Promise<string[]> 
  */
 export async function reevaluateSubsequentBookings(
   bookingId: string,
+  userId: string,
   promotionIds?: string[]
 ): Promise<void> {
   const booking = await prisma.booking.findUnique({
@@ -269,6 +288,7 @@ export async function reevaluateSubsequentBookings(
     // Optimized path: only find bookings after this stay that match the same promos
     const affected = await prisma.booking.findMany({
       where: {
+        userId,
         checkIn: { gt: booking.checkIn },
         bookingPromotions: {
           some: {
@@ -282,10 +302,10 @@ export async function reevaluateSubsequentBookings(
     queryIds = affected.map((b) => b.id);
   } else {
     // Fallback: re-evaluate all future bookings (e.g. on deletion where we don't know what matched)
-    queryIds = await getSubsequentBookingIds(booking.checkIn);
+    queryIds = await getSubsequentBookingIds(booking.checkIn, userId);
   }
 
   if (queryIds.length > 0) {
-    await reevaluateBookings(queryIds);
+    await reevaluateBookings(queryIds, userId);
   }
 }
