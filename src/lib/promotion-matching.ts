@@ -38,7 +38,7 @@ export type PromotionUsage = {
 };
 export type PromotionUsageMap = Map<string, PromotionUsage>;
 
-const BOOKING_INCLUDE = {
+export const BOOKING_INCLUDE = {
   hotelChain: { include: { pointType: true } },
   hotelChainSubBrand: true,
   userCreditCard: { include: { creditCard: { include: { pointType: true } } } },
@@ -52,7 +52,7 @@ const BOOKING_INCLUDE = {
   },
 } as const;
 
-type MatchingRestrictions = {
+export type MatchingRestrictions = {
   minSpend: Prisma.Decimal | null;
   minNightsRequired: number | null;
   nightsStackable: boolean;
@@ -88,12 +88,12 @@ type MatchingBenefit = {
   restrictions: MatchingRestrictions;
 };
 
-const RESTRICTIONS_INCLUDE = {
+export const RESTRICTIONS_INCLUDE = {
   subBrandRestrictions: true,
   tieInCards: true,
 } as const;
 
-const PROMOTIONS_INCLUDE = {
+export const PROMOTIONS_INCLUDE = {
   benefits: {
     orderBy: { sortOrder: "asc" as const },
     include: { restrictions: { include: RESTRICTIONS_INCLUDE } },
@@ -170,7 +170,7 @@ export interface MatchingPromotion {
   }[];
 }
 
-interface BenefitApplication {
+export interface BenefitApplication {
   promotionBenefitId: string;
   appliedValue: number;
   bonusPointsApplied: number;
@@ -180,7 +180,7 @@ interface BenefitApplication {
   isMaxedOut?: boolean;
 }
 
-interface MatchedPromotion {
+export interface MatchedPromotion {
   promotionId: string;
   appliedValue: number;
   bonusPointsApplied: number;
