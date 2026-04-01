@@ -1,0 +1,291 @@
+import prisma from "@/lib/prisma";
+import { BookingPromotion, Prisma } from "@prisma/client";
+import { getCurrentRate } from "./exchange-rate";
+import {
+  calculateMatchedPromotions,
+  getConstrainedPromotions,
+  type MatchedPromotion,
+  BOOKING_INCLUDE,
+  PROMOTIONS_INCLUDE,
+} from "./promotion-matching";
+import { fetchPromotionUsage } from "./promotion-usage";
+
+/**
+ * Persists matched promotions to a booking, replacing existing auto-applied ones.
+ * The delete-and-recreate is wrapped in a transaction so no concurrent reader can
+ * observe the booking in a zero-BP state between the two operations.
+ */
+async function applyMatchedPromotions(
+  bookingId: string,
+  matched: MatchedPromotion[]
+): Promise<BookingPromotion[]> {
+  // Verify booking still exists to avoid foreign key violations in concurrent re-evaluations
+  const bookingExists = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    select: { id: true },
+  });
+
+  if (!bookingExists) {
+    console.warn(`applyMatchedPromotions: Booking ${bookingId} not found, skipping.`);
+    return [];
+  }
+
+  try {
+    return await prisma.$transaction(async (tx) => {
+      // Delete existing auto-applied BookingPromotions for this booking
+      await tx.bookingPromotion.deleteMany({
+        where: {
+          bookingId,
+          autoApplied: true,
+        },
+      });
+
+      // Create new BookingPromotion records with benefit applications
+      const createdRecords: BookingPromotion[] = [];
+      for (const match of matched) {
+        const record = await tx.bookingPromotion.create({
+          data: {
+            bookingId,
+            promotionId: match.promotionId,
+            appliedValue: match.appliedValue,
+            bonusPointsApplied: match.bonusPointsApplied > 0 ? match.bonusPointsApplied : null,
+            autoApplied: true,
+            eligibleNightsAtBooking: match.eligibleNightsAtBooking,
+            isOrphaned: match.isOrphaned ?? false,
+            isPreQualifying: match.isPreQualifying ?? false,
+            benefitApplications: {
+              create: match.benefitApplications.map((ba) => ({
+                promotionBenefitId: ba.promotionBenefitId,
+                appliedValue: ba.appliedValue,
+                bonusPointsApplied: ba.bonusPointsApplied > 0 ? ba.bonusPointsApplied : null,
+                eligibleNightsAtBooking: ba.eligibleNightsAtBooking,
+                isOrphaned: ba.isOrphaned ?? false,
+                isPreQualifying: ba.isPreQualifying ?? false,
+              })),
+            },
+          },
+        });
+        createdRecords.push(record);
+      }
+      return createdRecords;
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      (error.code === "P2003" || error.code === "P2025")
+    ) {
+      console.warn(`applyMatchedPromotions: Booking ${bookingId} was likely deleted concurrently.`);
+      return [];
+    }
+    throw error;
+  }
+}
+
+/**
+ * Re-evaluates and applies promotions for a list of booking IDs sequentially.
+ * Processes bookings one at a time to ensure accurate redemption constraint checks.
+ */
+export async function reevaluateBookings(bookingIds: string[]): Promise<void> {
+  if (bookingIds.length === 0) return;
+
+  const activePromotions = (
+    await prisma.promotion.findMany({
+      include: PROMOTIONS_INCLUDE,
+    })
+  ).map((p) => ({
+    ...p,
+    registrationDate: p.userPromotions ? p.userPromotions.registrationDate : null,
+  }));
+
+  const bookings = await prisma.booking.findMany({
+    where: { id: { in: bookingIds } },
+    include: BOOKING_INCLUDE,
+    orderBy: { checkIn: "asc" },
+  });
+
+  // Get all promotions with constraints (including tier-based stay counting)
+  const constrainedPromos = getConstrainedPromotions(activePromotions);
+
+  // Process sequentially to ensure accurate constraint checks
+  for (const booking of bookings) {
+    const priorUsage = await fetchPromotionUsage(constrainedPromos, booking, booking.id);
+    const matched = calculateMatchedPromotions(booking, activePromotions, priorUsage);
+
+    await applyMatchedPromotions(booking.id, matched);
+  }
+}
+
+/**
+ * Re-evaluates and applies promotions for a single booking.
+ * Returns the list of promotion IDs that were applied.
+ */
+export async function matchPromotionsForBooking(bookingId: string): Promise<string[]> {
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    include: BOOKING_INCLUDE,
+  });
+
+  if (!booking) {
+    throw new Error(`Booking with id ${bookingId} not found`);
+  }
+
+  // Resolve exchange rate for USD-based cost calculations
+  // For past/USD bookings, exchangeRate is already set; for future non-USD, fetch current rate
+  let resolvedExchangeRate: number = 1;
+  if (booking.currency === "USD") {
+    resolvedExchangeRate = 1;
+  } else if (booking.lockedExchangeRate != null) {
+    resolvedExchangeRate = Number(booking.lockedExchangeRate);
+  } else {
+    resolvedExchangeRate = (await getCurrentRate(booking.currency)) ?? 1;
+  }
+  const bookingWithRate = { ...booking, lockedExchangeRate: resolvedExchangeRate };
+
+  const activePromotions = (
+    await prisma.promotion.findMany({
+      include: PROMOTIONS_INCLUDE,
+    })
+  ).map((p) => ({
+    ...p,
+    registrationDate: p.userPromotions ? p.userPromotions.registrationDate : null,
+  }));
+
+  // Get all promotions with constraints (including tier-based stay counting)
+  const constrainedPromos = getConstrainedPromotions(activePromotions);
+
+  // Fetch prior usage excluding current booking
+  const priorUsage = await fetchPromotionUsage(constrainedPromos, bookingWithRate, bookingId);
+
+  const matched = calculateMatchedPromotions(bookingWithRate, activePromotions, priorUsage);
+  await applyMatchedPromotions(bookingId, matched);
+  return matched.map((m) => m.promotionId);
+}
+
+/**
+ * Finds all bookings potentially affected by changes to a list of promotions.
+ * This includes bookings that already have the promotion applied AND bookings
+ * that match the promotion's core criteria (hotel chain, dates, etc.).
+ */
+export async function getAffectedBookingIds(promotionIds: string[]): Promise<string[]> {
+  if (promotionIds.length === 0) return [];
+
+  const promotions = await prisma.promotion.findMany({
+    where: { id: { in: promotionIds } },
+  });
+
+  if (promotions.length === 0) return [];
+
+  const orConditions = promotions.map((promotion) => {
+    const coreConditions = [
+      { hotelChainId: promotion.hotelChainId ?? undefined },
+      promotion.creditCardId
+        ? { userCreditCard: { creditCardId: promotion.creditCardId } }
+        : { userCreditCardId: undefined },
+      { shoppingPortalId: promotion.shoppingPortalId ?? undefined },
+      {
+        bookingPromotions: {
+          some: { promotionId: promotion.id },
+        },
+      },
+    ].filter((condition) => {
+      const firstKey = Object.keys(condition)[0] as keyof typeof condition;
+      const value = condition[firstKey];
+      return value !== undefined && value !== null;
+    });
+
+    return {
+      AND: [
+        { OR: coreConditions },
+        {
+          checkIn: {
+            gte: promotion.startDate ?? undefined,
+            lte: promotion.endDate ?? undefined,
+          },
+        },
+      ],
+    };
+  });
+
+  const affectedBookings = await prisma.booking.findMany({
+    where: {
+      OR: orConditions,
+    },
+    select: { id: true },
+  });
+
+  // Use a Set to handle bookings affected by multiple promotions
+  const allAffectedIds = new Set(affectedBookings.map((b) => b.id));
+  return Array.from(allAffectedIds);
+}
+
+/**
+ * Re-evaluates and applies promotions for all bookings potentially affected by a promotion change.
+ */
+export async function matchPromotionsForAffectedBookings(promotionId: string): Promise<void> {
+  const affectedBookingIds = await getAffectedBookingIds([promotionId]);
+  await reevaluateBookings(affectedBookingIds);
+}
+
+/**
+ * Finds all bookings that occur after a given check-in date.
+ */
+export async function getSubsequentBookingIds(checkIn: Date): Promise<string[]> {
+  const subsequentBookings = await prisma.booking.findMany({
+    where: {
+      checkIn: {
+        gt: checkIn,
+      },
+    },
+    select: { id: true },
+    orderBy: { checkIn: "asc" },
+  });
+
+  return subsequentBookings.map((b) => b.id);
+}
+
+/**
+ * Re-evaluates all bookings that occur after a given booking.
+ * This is necessary because changes to an earlier booking can affect the
+ * redemption capacity and eligibility for chronologically later stays.
+ *
+ * Optimization: If promotionIds are provided, only re-evaluates subsequent
+ * bookings that either currently have one of those promotions or could
+ * potentially match them.
+ */
+export async function reevaluateSubsequentBookings(
+  bookingId: string,
+  promotionIds?: string[]
+): Promise<void> {
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    select: { checkIn: true },
+  });
+
+  if (!booking) return;
+
+  let queryIds: string[] = [];
+
+  if (promotionIds && promotionIds.length > 0) {
+    // Optimized path: only find bookings after this stay that match the same promos
+    const affected = await prisma.booking.findMany({
+      where: {
+        checkIn: { gt: booking.checkIn },
+        bookingPromotions: {
+          some: {
+            promotionId: { in: promotionIds },
+          },
+        },
+      },
+      select: { id: true },
+      orderBy: { checkIn: "asc" },
+    });
+    queryIds = affected.map((b) => b.id);
+  } else {
+    // Fallback: re-evaluate all future bookings (e.g. on deletion where we don't know what matched)
+    queryIds = await getSubsequentBookingIds(booking.checkIn);
+  }
+
+  if (queryIds.length > 0) {
+    await reevaluateBookings(queryIds);
+  }
+}
