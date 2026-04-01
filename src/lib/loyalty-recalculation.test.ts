@@ -82,7 +82,7 @@ describe("loyalty-recalculation", () => {
     expect(prismaMock.booking.update).toHaveBeenCalledTimes(2);
 
     // 5. Verify promotion re-evaluation
-    expect(reevaluateBookings).toHaveBeenCalledWith(["101", "102"]);
+    expect(reevaluateBookings).toHaveBeenCalledWith(["101", "102"], "user-1");
   });
 
   it("should return early if chain not found", async () => {
