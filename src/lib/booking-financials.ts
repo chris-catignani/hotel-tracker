@@ -29,10 +29,8 @@ export async function resolveBookingFinancials(
   const { checkIn, currency, hotelChainId, hotelChainSubBrandId, pretaxCost, userId } = params;
 
   // ── Exchange rate ──────────────────────────────────────────────────────────
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const checkInDate = new Date(checkIn);
-  const isPast = checkInDate <= today;
+  const todayStr = new Date().toISOString().split("T")[0];
+  const isPast = checkIn <= todayStr;
 
   let lockedExchangeRate: number | null = null;
   if (currency === "USD") {
