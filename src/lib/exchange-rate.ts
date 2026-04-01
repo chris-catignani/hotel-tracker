@@ -82,9 +82,8 @@ export async function getOrFetchHistoricalRate(
 ): Promise<number | null> {
   if (fromCurrency === "USD") return 1;
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const isPast = new Date(date) < today;
+  const todayUTC = new Date().toISOString().split("T")[0];
+  const isPast = date < todayUTC;
 
   if (!isPast) {
     // Today or future date — use current cached rate as best estimate.
