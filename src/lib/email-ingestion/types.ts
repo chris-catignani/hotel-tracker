@@ -32,7 +32,8 @@ export interface ParsedBookingData {
   currency: string | null;
   nightlyRates: { amount: number }[] | null; // per-night breakdown when pretax total isn't shown
   pretaxCost: number | null; // direct pretax total; derived from nightlyRates when null
-  taxAmount: number | null; // direct tax total; derived from totalCost - pretaxCost when nightlyRates present
+  taxLines: { label: string; amount: number }[] | null; // individual tax/fee line items (positive only; discounts go in discounts[])
+  discounts: { label: string; amount: number; type: "accommodation" | "fee" }[] | null;
   totalCost: number | null;
   // Award bookings
   pointsRedeemed: number | null;

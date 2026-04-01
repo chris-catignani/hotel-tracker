@@ -81,7 +81,8 @@ const baseParsed: ParsedBookingData = {
   currency: "USD",
   nightlyRates: null,
   pretaxCost: 591.04,
-  taxAmount: 98.5,
+  taxLines: [{ label: "Taxes", amount: 98.5 }],
+  discounts: null,
   totalCost: 689.54,
   pointsRedeemed: null,
   certsRedeemed: null,
@@ -160,7 +161,7 @@ describe("ingestBookingFromEmail", () => {
         bookingType: "points",
         pointsRedeemed: 25000,
         pretaxCost: null,
-        taxAmount: null,
+        taxLines: null,
         totalCost: null,
         currency: null,
       },
@@ -339,7 +340,12 @@ describe("ingestBookingFromEmail", () => {
 
   it("derives pretaxCost from totalCost - taxAmount when Claude returns pretaxCost null (Airbnb discounts)", async () => {
     await ingestBookingFromEmail(
-      { ...baseParsed, pretaxCost: null, taxAmount: 69.17, totalCost: 1038.78 },
+      {
+        ...baseParsed,
+        pretaxCost: null,
+        taxLines: [{ label: "Taxes and fees", amount: 69.17 }],
+        totalCost: 1038.78,
+      },
       "user-1",
       null
     );
@@ -347,6 +353,101 @@ describe("ingestBookingFromEmail", () => {
     expect(data.pretaxCost).toBe(969.61);
     expect(data.taxAmount).toBe(69.17);
     expect(data.totalCost).toBe(1038.78);
+  });
+
+  it("computes net taxAmount and pretaxCost using fee and accommodation discounts (no nightlyRates)", async () => {
+    await ingestBookingFromEmail(
+      {
+        ...baseParsed,
+        nightlyRates: null,
+        pretaxCost: null,
+        taxLines: [{ label: "Taxes and fees", amount: 69.17 }],
+        totalCost: 1038.78,
+        discounts: [
+          { label: "Special offer", amount: 247.0, type: "accommodation" },
+          { label: "Airbnb monthly stay savings", amount: 31.02, type: "fee" },
+        ],
+      },
+      "user-1",
+      null
+    );
+    const data = mockBookingCreate.mock.calls[0][0].data;
+    // netTax = 69.17 - 31.02 = 38.15
+    // pretaxCost = 1038.78 - 38.15 = 1000.63
+    expect(data.taxAmount).toBe(38.15);
+    expect(data.pretaxCost).toBe(1000.63);
+  });
+
+  it("logs a warning when Method A (nightlyRates - accommodation discounts) disagrees with Method B (totalCost - netTax) beyond tolerance", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    await ingestBookingFromEmail(
+      {
+        ...baseParsed,
+        // nightlyRates sum = 44.56 × 28 = 1247.68; Method A = 1247.68 - 100.00 = 1147.68
+        nightlyRates: Array.from({ length: 28 }, () => ({ amount: 44.56 })),
+        pretaxCost: null,
+        taxLines: [{ label: "Taxes and fees", amount: 69.17 }],
+        totalCost: 1038.78,
+        discounts: [
+          { label: "Special offer", amount: 100.0, type: "accommodation" }, // deliberately wrong
+          { label: "Airbnb monthly stay savings", amount: 31.02, type: "fee" },
+        ],
+      },
+      "user-1",
+      null
+    );
+    // Method B: 1038.78 - (69.17 - 31.02) = 1000.63
+    // Method A: 1247.68 - 100.00 = 1147.68 → discrepancy 147.05 > 0.10 → warn
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("pretaxCost mismatch"));
+    const data = mockBookingCreate.mock.calls[0][0].data;
+    // Method B is authoritative
+    expect(data.pretaxCost).toBe(1000.63);
+    warnSpy.mockRestore();
+  });
+
+  it("does not warn when Method A and Method B agree within tolerance", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    await ingestBookingFromEmail(
+      {
+        ...baseParsed,
+        // 28 × 44.56 = 1247.68; Method A = 1247.68 - 247.00 = 1000.68
+        // Method B = 1038.78 - (69.17 - 31.02) = 1000.63 → diff = 0.05 < 0.10
+        nightlyRates: Array.from({ length: 28 }, () => ({ amount: 44.56 })),
+        pretaxCost: null,
+        taxLines: [{ label: "Taxes and fees", amount: 69.17 }],
+        totalCost: 1038.78,
+        discounts: [
+          { label: "Special offer", amount: 247.0, type: "accommodation" },
+          { label: "Airbnb monthly stay savings", amount: 31.02, type: "fee" },
+        ],
+      },
+      "user-1",
+      null
+    );
+    expect(warnSpy).not.toHaveBeenCalledWith(expect.stringContaining("pretaxCost mismatch"));
+    warnSpy.mockRestore();
+  });
+
+  it("uses discount-aware path and treats taxAmount as 0 when discounts present but taxLines absent", async () => {
+    await ingestBookingFromEmail(
+      {
+        ...baseParsed,
+        nightlyRates: null,
+        pretaxCost: null,
+        taxLines: null,
+        totalCost: 800.0,
+        discounts: [{ label: "Special offer", amount: 200.0, type: "accommodation" }],
+      },
+      "user-1",
+      null
+    );
+    const data = mockBookingCreate.mock.calls[0][0].data;
+    // No tax lines → parsedTaxAmount = null → treated as 0
+    // feeDiscountsTotal = 0 (discount is accommodation type)
+    // taxAmount = (0) - 0 = 0
+    // pretaxCost = 800.00 - 0 = 800.00
+    expect(data.taxAmount).toBe(0);
+    expect(data.pretaxCost).toBe(800.0);
   });
 
   it("derives taxAmount from totalCost - pretaxCost when nightlyRates is present", async () => {
@@ -361,7 +462,7 @@ describe("ingestBookingFromEmail", () => {
           { amount: 270.75 },
         ],
         pretaxCost: null,
-        taxAmount: null,
+        taxLines: null,
         totalCost: 1683.19,
       },
       "user-1",

@@ -10,7 +10,7 @@ export const airbnbGuide: ChainGuide = {
     'bookingType is always "cash". ' +
     'The "Confirmation code" is the confirmationNumber. ' +
     "Total cost is the full amount charged including all fees. " +
-    "For pretaxCost: sum the nightly/weekly/monthly accommodation line items and subtract any accommodation discounts (e.g. monthly stay discount, weekly discount). " +
-    "For taxAmount: add together the explicitly shown taxes AND any platform service fees (e.g. Airbnb service fee net of any service fee savings/discounts). " +
-    "These override the general discount rule — always populate pretaxCost and taxAmount for Airbnb bookings.",
+    "For nightlyRates: when the email shows '$X × N nights', expand it into N individual entries each with amount X (e.g. '$44.56 × 28 nights' → 28 entries of 44.56). " +
+    "Always populate taxLines with each individual positive tax/fee line item (e.g. 'Taxes', 'Airbnb service fee'). " +
+    "Always populate discounts: classify each discount line as 'accommodation' (reduces the nightly cost, e.g. special offer, monthly stay discount, weekly discount) or 'fee' (reduces taxes/fees, e.g. Airbnb service fee savings, Airbnb monthly stay savings).",
 };

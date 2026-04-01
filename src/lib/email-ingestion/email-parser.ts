@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { ChainGuide, ParsedBookingData } from "./types";
+import { logger } from "@/lib/logger";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const MODEL = process.env.ANTHROPIC_MODEL ?? "claude-haiku-4-5-20251001";
@@ -47,16 +48,18 @@ ${chainSection}Return ONLY valid JSON with these fields (no explanation, no mark
   "currency": string | null,     // 3-letter code e.g. "USD", "SGD"
   "nightlyRates": [{ "amount": number }] | null,  // per-night amounts when no pretax total is shown
   "pretaxCost": number | null,   // pretax total if shown directly; null if returning nightlyRates
-  "taxAmount": number | null,    // tax total for the entire stay if shown directly; null if nightlyRates is populated
+  "taxLines": [{ "label": string, "amount": number }] | null,  // individual tax/fee line items — positive amounts only; do NOT include discount/savings lines here (those go in discounts[])
+  "discounts": [{ "label": string, "amount": number, "type": "accommodation" | "fee" }] | null,  // discount line items: "accommodation" reduces pretaxCost, "fee" reduces taxLines amounts
   "totalCost": number | null,    // cash bookings only
   "pointsRedeemed": number | null,  // award bookings only, null if count not stated
   "certsRedeemed": [{ "certType": string, "count": number }] | null  // cert/cert+points bookings only; use chain-specific certType values from the guide
 }
 
 Rules:
-- If the email shows per-night rates but no pretax subtotal: populate "nightlyRates", leave "pretaxCost" and "taxAmount" null
+- If the email shows per-night rates but no pretax subtotal: populate "nightlyRates", leave "pretaxCost" null
 - Never compute sums yourself — return the raw line items and leave the derived fields null
-- If the price breakdown includes any discount line items (special offers, savings, promotions), return pretaxCost: null — do not attempt to compute it; the system will derive it automatically. Still populate nightlyRates with the per-night amounts if they are shown. Always return taxAmount if it is explicitly shown, even when discounts are present
+- If the price breakdown includes any discount line items (special offers, savings, promotions), return pretaxCost: null — do not attempt to compute it; the system will derive it automatically. Still populate nightlyRates with the per-night amounts if they are shown. Always return taxLines if tax/fee lines are explicitly shown, even when discounts are present
+- taxLines must contain only positive fee/tax line items (e.g. "Taxes", "Service fee", "City tax"). Discount and savings lines belong in discounts[], never in taxLines
 - Chase The Edit and American Express Travel (AMEX FHR/THC) always charge guests in USD — set currency to "USD" for these regardless of hotel location
 - For hotelChain, always use the parent group, not the sub-brand. Less obvious parent chains:
   IHG: Kimpton, Six Senses, Regent, voco, Vignette Collection, InterContinental, Crowne Plaza, Hotel Indigo, HUALUXE, Iberostar, avid, Staybridge Suites, Candlewood Suites
@@ -109,8 +112,40 @@ Return ONLY the exact string from the list that best matches, or null if none is
       .trim()
       .replace(/^"(.*)"$/, "$1"); // strip surrounding quotes if present
     return candidates.includes(text) ? text : null;
-  } catch {
+  } catch (e) {
+    logger.warn("email-parser: matchSubBrand API call failed", { error: e });
     return null;
+  }
+}
+
+/**
+ * Verify that the parsed totals balance within a small tolerance.
+ * Logs a warning if they don't to help catch Claude arithmetic errors.
+ */
+function verifyBalance(parsed: ParsedBookingData): void {
+  if (parsed.totalCost === null || !parsed.taxLines) return;
+  const rawTaxTotal = parsed.taxLines.reduce((sum, l) => sum + l.amount, 0);
+  const feeDiscounts =
+    parsed.discounts?.filter((d) => d.type === "fee").reduce((sum, d) => sum + d.amount, 0) ?? 0;
+  const accommodationDiscounts =
+    parsed.discounts
+      ?.filter((d) => d.type === "accommodation")
+      .reduce((sum, d) => sum + d.amount, 0) ?? 0;
+  const netTax = rawTaxTotal - feeDiscounts;
+
+  let expectedTotal: number | null = null;
+  if (parsed.pretaxCost !== null) {
+    expectedTotal = parsed.pretaxCost + netTax;
+  } else if (parsed.nightlyRates) {
+    const nightlyTotal = parsed.nightlyRates.reduce((sum, r) => sum + r.amount, 0);
+    expectedTotal = nightlyTotal - accommodationDiscounts + netTax;
+  }
+
+  if (expectedTotal !== null && Math.abs(expectedTotal - parsed.totalCost) > 0.1) {
+    logger.warn("email-parser: balance check failed", {
+      expectedTotal: expectedTotal.toFixed(2),
+      parsedTotal: parsed.totalCost.toFixed(2),
+    });
   }
 }
 
@@ -132,22 +167,31 @@ export async function parseConfirmationEmail(
   try {
     const response = await anthropic.messages.create({
       model: MODEL,
-      max_tokens: 512,
+      max_tokens: 1024,
       messages: [{ role: "user", content: prompt }],
     });
     responseText = response.content
       .filter((b) => b.type === "text")
       .map((b) => (b as { type: "text"; text: string }).text)
       .join("");
-  } catch {
+  } catch (e) {
+    logger.warn("email-parser: Claude API call failed", { error: e });
     return null;
   }
 
   try {
     const cleaned = responseText.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
     const parsed = JSON.parse(cleaned);
-    return isValidParsed(parsed) ? (parsed as ParsedBookingData) : null;
-  } catch {
+    if (!isValidParsed(parsed)) {
+      logger.warn("email-parser: Claude response failed validation", { parsed });
+      return null;
+    }
+    const result = parsed as ParsedBookingData;
+    logger.info("email-parser: Claude parsed result", { result });
+    verifyBalance(result);
+    return result;
+  } catch (e) {
+    logger.warn("email-parser: failed to parse Claude response as JSON", { error: e });
     return null;
   }
 }

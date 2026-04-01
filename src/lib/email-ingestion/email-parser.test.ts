@@ -120,7 +120,7 @@ describe("parseConfirmationEmail", () => {
             confirmationNumber: "73829461",
             currency: "USD",
             pretaxCost: 591.04,
-            taxAmount: 98.5,
+            taxLines: [{ label: "Taxes", amount: 98.5 }],
             totalCost: 689.54,
             pointsRedeemed: null,
           }),
@@ -184,7 +184,7 @@ describe("parseConfirmationEmail", () => {
               confirmationNumber: null,
               currency: "USD",
               pretaxCost: 200,
-              taxAmount: 30,
+              taxLines: [{ label: "Taxes", amount: 30 }],
               totalCost: 230,
               pointsRedeemed: null,
             }) +
@@ -218,7 +218,7 @@ describe("parseConfirmationEmail", () => {
             confirmationNumber: null,
             currency: "USD",
             pretaxCost: 200,
-            taxAmount: 30,
+            taxLines: [{ label: "Taxes", amount: 30 }],
             totalCost: 230,
             pointsRedeemed: null,
           }),
@@ -249,7 +249,7 @@ describe("parseConfirmationEmail", () => {
             currency: "NZD",
             nightlyRates: null,
             pretaxCost: 240.0,
-            taxAmount: 36.0,
+            taxLines: [{ label: "Taxes", amount: 36.0 }],
             totalCost: 276.0,
             pointsRedeemed: null,
           }),
@@ -287,7 +287,7 @@ describe("parseConfirmationEmail", () => {
             currency: "USD",
             nightlyRates: null,
             pretaxCost: 520.34,
-            taxAmount: 52.03,
+            taxLines: [{ label: "Taxes", amount: 52.03 }],
             totalCost: 572.37,
             pointsRedeemed: null,
           }),
@@ -323,7 +323,7 @@ describe("parseConfirmationEmail", () => {
             currency: null,
             nightlyRates: null,
             pretaxCost: null,
-            taxAmount: null,
+            taxLines: null,
             totalCost: null,
             pointsRedeemed: 25000,
           }),
@@ -358,7 +358,7 @@ describe("parseConfirmationEmail", () => {
               { amount: 142.1 },
             ],
             pretaxCost: null,
-            taxAmount: null,
+            taxLines: null,
             totalCost: 687.02,
             pointsRedeemed: null,
           }),
@@ -384,6 +384,99 @@ describe("parseConfirmationEmail", () => {
     const prompt = mockCreate.mock.calls[0][0].messages[0].content;
     expect(prompt).toContain("nightlyRates");
     expect(prompt).toContain("Never compute sums yourself");
+  });
+
+  it("prompt instructs Claude to populate taxLines with individual tax/fee line items", async () => {
+    mockCreate.mockResolvedValueOnce({ content: [{ type: "text", text: "{}" }] });
+    await parseConfirmationEmail("raw email text", null);
+    const prompt = mockCreate.mock.calls[0][0].messages[0].content;
+    expect(prompt).toContain("taxLines");
+    expect(prompt).toContain("positive");
+  });
+
+  it("prompt instructs Claude to extract discounts with label, amount, and type", async () => {
+    mockCreate.mockResolvedValueOnce({ content: [{ type: "text", text: "{}" }] });
+    await parseConfirmationEmail("raw email text", null);
+    const prompt = mockCreate.mock.calls[0][0].messages[0].content;
+    expect(prompt).toContain("discounts");
+    expect(prompt).toContain("accommodation");
+  });
+
+  it("passes through discounts from Claude response", async () => {
+    mockCreate.mockResolvedValueOnce({
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({
+            propertyName: "Test Apartment",
+            checkIn: "2026-05-14",
+            checkOut: "2026-06-11",
+            numNights: 28,
+            bookingType: "cash",
+            confirmationNumber: "HMFAKE5678",
+            hotelChain: null,
+            subBrand: null,
+            accommodationType: "apartment",
+            otaAgencyName: "Airbnb",
+            currency: "USD",
+            nightlyRates: [{ amount: 44.56 }],
+            pretaxCost: null,
+            taxLines: [{ label: "Taxes and fees", amount: 69.17 }],
+            discounts: [
+              { label: "Special offer", amount: 247.0, type: "accommodation" },
+              { label: "Airbnb monthly stay savings", amount: 31.02, type: "fee" },
+            ],
+            totalCost: 1038.78,
+            pointsRedeemed: null,
+            certsRedeemed: null,
+          }),
+        },
+      ],
+    });
+
+    const result = await parseConfirmationEmail("raw email text", null);
+    expect(result?.discounts).toEqual([
+      { label: "Special offer", amount: 247.0, type: "accommodation" },
+      { label: "Airbnb monthly stay savings", amount: 31.02, type: "fee" },
+    ]);
+  });
+
+  it("logs a warning when parsed totals do not balance within tolerance", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    mockCreate.mockResolvedValueOnce({
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({
+            propertyName: "Test Apartment",
+            checkIn: "2026-05-14",
+            checkOut: "2026-06-11",
+            numNights: 28,
+            bookingType: "cash",
+            confirmationNumber: "HMFAKE5678",
+            hotelChain: null,
+            subBrand: null,
+            accommodationType: "apartment",
+            otaAgencyName: "Airbnb",
+            currency: "USD",
+            nightlyRates: [{ amount: 44.56 }],
+            pretaxCost: null,
+            taxLines: [{ label: "Taxes and fees", amount: 99.99 }], // deliberately wrong — won't balance
+            discounts: [
+              { label: "Special offer", amount: 247.0, type: "accommodation" },
+              { label: "Airbnb monthly stay savings", amount: 31.02, type: "fee" },
+            ],
+            totalCost: 1038.78,
+            pointsRedeemed: null,
+            certsRedeemed: null,
+          }),
+        },
+      ],
+    });
+
+    await parseConfirmationEmail("raw email text", null);
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("balance check failed"));
+    warnSpy.mockRestore();
   });
 });
 

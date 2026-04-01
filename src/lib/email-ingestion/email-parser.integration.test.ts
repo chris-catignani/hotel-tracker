@@ -74,7 +74,7 @@ skipIf("Email parsing integration", () => {
       expect(result?.confirmationNumber).toBe("58134720");
       expect(result?.hotelChain).toBe("Hyatt");
       expect(result?.pretaxCost).toBeNull();
-      expect(result?.taxAmount).toBeNull();
+      expect(result?.taxLines).toBeNull();
       expect(result?.totalCost).toBeNull();
     });
   });
@@ -97,8 +97,10 @@ skipIf("Email parsing integration", () => {
       expect(result?.hotelChain).toBe("Marriott");
       expect(result?.subBrand).toBe("Tribute Portfolio");
       expect(result?.currency).toBe("SGD");
-      expect(result?.pretaxCost).toBe(235.0);
-      expect(result?.taxAmount).toBe(46.77);
+      // Email presents cost as "per night per room" — Claude returns nightlyRates, not pretaxCost
+      expect(result?.nightlyRates?.[0].amount).toBe(235.0);
+      expect(result?.pretaxCost).toBeNull();
+      expect(result?.taxLines?.reduce((s, l) => s + l.amount, 0)).toBeCloseTo(46.77, 1);
       expect(result?.totalCost).toBe(281.77);
     });
 
@@ -175,8 +177,10 @@ skipIf("Email parsing integration", () => {
       expect(result?.hotelChain).toBe("IHG");
       expect(result?.subBrand).toBe("Holiday Inn Express");
       expect(result?.currency).toBe("MYR");
-      expect(result?.pretaxCost).toBe(221.45);
-      expect(result?.taxAmount).toBe(41.63);
+      // Email presents cost as "1 night stay" rate — Claude returns nightlyRates, not pretaxCost
+      expect(result?.nightlyRates?.[0].amount).toBe(221.45);
+      expect(result?.pretaxCost).toBeNull();
+      expect(result?.taxLines?.reduce((s, l) => s + l.amount, 0)).toBeCloseTo(41.63, 1);
       expect(result?.totalCost).toBe(263.08);
     });
 
@@ -237,7 +241,7 @@ skipIf("Email parsing integration", () => {
       expect(result?.subBrand).toBe("PARKROYAL COLLECTION");
       expect(result?.currency).toBe("MYR");
       expect(result?.pretaxCost).toBe(1170.0);
-      expect(result?.taxAmount).toBe(93.6);
+      expect(result?.taxLines?.reduce((s, l) => s + l.amount, 0)).toBeCloseTo(93.6, 1);
       expect(result?.totalCost).toBe(1263.6);
     });
   });
@@ -254,10 +258,56 @@ skipIf("Email parsing integration", () => {
       expect(result?.accommodationType).toBe("apartment");
       expect(result?.otaAgencyName).toBe("Airbnb");
       expect(result?.currency).toBe("USD");
-      // pretaxCost = nightly total minus monthly discount; taxAmount = taxes + net service fee
-      expect(result?.pretaxCost).toBe(1015.49);
-      expect(result?.taxAmount).toBe(197.61);
+      expect(result?.nightlyRates).toHaveLength(28);
+      expect(result?.nightlyRates?.[0].amount).toBe(42.58);
+      // taxLines = separate line items: Airbnb service fee + Taxes
+      expect(result?.taxLines).not.toBeNull();
+      expect(result?.taxLines!.length).toBeGreaterThanOrEqual(2); // service fee + taxes as separate lines
+      expect(result?.taxLines!.reduce((s, l) => s + l.amount, 0)).toBeCloseTo(233.15, 1); // 165.84 + 67.31
+      expect(result?.discounts).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ type: "accommodation" }), // monthly stay discount
+          expect.objectContaining({ type: "fee" }), // service fee savings
+        ])
+      );
+      expect(result?.pretaxCost).toBeNull();
       expect(result?.totalCost).toBe(1213.1);
+    });
+
+    it("parses apartment booking with special offer and monthly stay savings discounts", async () => {
+      const result = await parseConfirmationEmail(
+        fixture("airbnb-confirmation-cash-2"),
+        airbnbGuide
+      );
+      expect(result).not.toBeNull();
+      expect(result?.bookingType).toBe("cash");
+      expect(result?.checkIn).toBe("2026-05-14");
+      expect(result?.checkOut).toBe("2026-06-11");
+      expect(result?.numNights).toBe(28);
+      expect(result?.confirmationNumber).toBe("HMFAKE5678");
+      expect(result?.accommodationType).toBe("apartment");
+      expect(result?.otaAgencyName).toBe("Airbnb");
+      expect(result?.currency).toBe("USD");
+      expect(result?.nightlyRates).toHaveLength(28);
+      expect(result?.nightlyRates?.[0].amount).toBe(44.56);
+      // taxLines = individual tax/fee line items before discounts
+      expect(result?.taxLines?.reduce((s, l) => s + l.amount, 0)).toBeCloseTo(69.17, 1);
+      expect(result?.discounts).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            label: expect.stringMatching(/special offer/i),
+            amount: 247.0,
+            type: "accommodation",
+          }),
+          expect.objectContaining({
+            label: expect.stringMatching(/monthly stay savings/i),
+            amount: 31.02,
+            type: "fee",
+          }),
+        ])
+      );
+      expect(result?.pretaxCost).toBeNull();
+      expect(result?.totalCost).toBe(1038.78);
     });
   });
 
@@ -280,7 +330,7 @@ skipIf("Email parsing integration", () => {
       expect(result?.otaAgencyName).toBe("Booking.com");
       expect(result?.currency).toBe("NZD");
       expect(result?.pretaxCost).toBe(5842.09);
-      expect(result?.taxAmount).toBe(876.31);
+      expect(result?.taxLines?.reduce((s, l) => s + l.amount, 0)).toBeCloseTo(876.31, 1);
       expect(result?.totalCost).toBe(6718.4);
     });
   });
@@ -298,7 +348,7 @@ skipIf("Email parsing integration", () => {
       expect(result?.otaAgencyName).toBe("AMEX FHR");
       expect(result?.currency).toBe("USD");
       expect(result?.pretaxCost).toBe(286.83);
-      expect(result?.taxAmount).toBe(25.19);
+      expect(result?.taxLines?.reduce((s, l) => s + l.amount, 0)).toBeCloseTo(25.19, 1);
       expect(result?.totalCost).toBe(312.02);
     });
 
@@ -314,7 +364,7 @@ skipIf("Email parsing integration", () => {
       expect(result?.otaAgencyName).toBe("AMEX THC");
       expect(result?.currency).toBe("USD");
       expect(result?.pretaxCost).toBe(520.92);
-      expect(result?.taxAmount).toBe(67.72);
+      expect(result?.taxLines?.reduce((s, l) => s + l.amount, 0)).toBeCloseTo(67.72, 1);
       expect(result?.totalCost).toBe(588.64);
     });
   });
