@@ -89,9 +89,12 @@ describe("MyCardsTab", () => {
     });
     render(<MyCardsTab />);
     await waitFor(() => {
-      // Desktop table shows card name in one cell, nickname in another
-      const rows = screen.queryAllByTestId("my-card-row");
-      expect(rows.length).toBeGreaterThan(0);
+      // Mobile card shows combined label with nickname
+      const cards = screen.queryAllByTestId("my-card-card");
+      expect(cards.length).toBeGreaterThan(0);
+      expect(screen.getAllByTestId("my-card-name")[0]).toHaveTextContent(
+        "Chase Sapphire Preferred (#1)"
+      );
     });
   });
 });
