@@ -91,25 +91,56 @@ export async function ingestBookingFromEmail(
     longitude: geo?.longitude ?? null,
   });
 
+  const parsedTaxAmount = parsed.taxLines
+    ? Math.round(parsed.taxLines.reduce((sum, l) => sum + l.amount, 0) * 100) / 100
+    : null;
+
   let pretaxCost: number | null;
   let taxAmount: number | null;
 
   if (parsed.bookingType === "cash") {
-    if (parsed.nightlyRates) {
+    if (parsed.discounts && parsedTaxAmount !== null && parsed.totalCost !== null) {
+      // Discount-aware path: compute net tax and derive pretaxCost via Method B (totalCost - netTax)
+      const feeDiscountsTotal =
+        Math.round(
+          parsed.discounts.filter((d) => d.type === "fee").reduce((sum, d) => sum + d.amount, 0) *
+            100
+        ) / 100;
+      const accommodationDiscountsTotal =
+        Math.round(
+          parsed.discounts
+            .filter((d) => d.type === "accommodation")
+            .reduce((sum, d) => sum + d.amount, 0) * 100
+        ) / 100;
+      taxAmount = Math.round((parsedTaxAmount - feeDiscountsTotal) * 100) / 100;
+      pretaxCost = Math.round((parsed.totalCost - taxAmount) * 100) / 100;
+      if (parsed.nightlyRates) {
+        // Cross-check: nightly rates minus accommodation discounts should agree with totalCost minus net tax
+        const nightlyTotal =
+          Math.round(parsed.nightlyRates.reduce((sum, r) => sum + r.amount, 0) * 100) / 100;
+        const pretaxCostA = Math.round((nightlyTotal - accommodationDiscountsTotal) * 100) / 100;
+        if (Math.abs(pretaxCostA - pretaxCost) > 0.1) {
+          logger.warn("ingest-booking: pretaxCost mismatch", {
+            fromNightlyRates: pretaxCostA,
+            fromTotalCost: pretaxCost,
+          });
+        }
+      }
+    } else if (parsed.nightlyRates) {
       // Nightly rates provided — sum them for pretaxCost, derive taxAmount
       pretaxCost =
         Math.round(parsed.nightlyRates.reduce((sum, r) => sum + r.amount, 0) * 100) / 100;
       taxAmount =
         parsed.totalCost !== null
           ? Math.round((parsed.totalCost - pretaxCost) * 100) / 100
-          : parsed.taxAmount;
+          : parsedTaxAmount;
     } else if (parsed.pretaxCost !== null) {
       // pretaxCost shown directly (most hotel emails)
       pretaxCost = parsed.pretaxCost;
-      taxAmount = parsed.taxAmount;
-    } else if (parsed.totalCost !== null && parsed.taxAmount !== null) {
+      taxAmount = parsedTaxAmount;
+    } else if (parsed.totalCost !== null && parsedTaxAmount !== null) {
       // pretaxCost null (e.g. Airbnb with discount line items) — derive from totalCost - taxAmount
-      taxAmount = parsed.taxAmount;
+      taxAmount = parsedTaxAmount;
       pretaxCost = Math.round((parsed.totalCost - taxAmount) * 100) / 100;
     } else {
       pretaxCost = null;

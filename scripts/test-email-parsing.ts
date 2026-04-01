@@ -17,6 +17,7 @@ async function extractEmailBody(raw: string): Promise<string> {
 const FIXTURES: { file: string; senderEmail: string }[] = [
   { file: "accor-confirmation-cash", senderEmail: "all@confirmation.all.com" },
   { file: "airbnb-confirmation-cash", senderEmail: "automated@airbnb.com" },
+  { file: "airbnb-confirmation-cash-2", senderEmail: "automated@airbnb.com" },
   {
     file: "amex-fhr-confirmation-cash",
     senderEmail: "AmericanExpress@welcome.americanexpress.com",

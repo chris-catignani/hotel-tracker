@@ -17,7 +17,7 @@ export const hyattGuide: ChainGuide = {
     'Hyatt points redemptions are labelled "STANDARD ROOM FREE NIGHT" or similar — ' +
     'this means bookingType = "points", NOT "cert". ' +
     'Certificate stays are labelled "FREE NIGHT AWARD". ' +
-    "For points bookings the pretaxCost/taxAmount/totalCost should be null. " +
+    "For points bookings the pretaxCost/taxLines/totalCost should be null. " +
     'Points redeemed may appear in a "Rate information" section. ' +
     'When you see a "Nightly rate per room" section, you MUST populate nightlyRates with one ' +
     "entry per night — never return nightlyRates: null when this section is present. " +
