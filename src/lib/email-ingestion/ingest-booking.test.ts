@@ -428,6 +428,28 @@ describe("ingestBookingFromEmail", () => {
     warnSpy.mockRestore();
   });
 
+  it("uses discount-aware path and treats taxAmount as 0 when discounts present but taxLines absent", async () => {
+    await ingestBookingFromEmail(
+      {
+        ...baseParsed,
+        nightlyRates: null,
+        pretaxCost: null,
+        taxLines: null,
+        totalCost: 800.0,
+        discounts: [{ label: "Special offer", amount: 200.0, type: "accommodation" }],
+      },
+      "user-1",
+      null
+    );
+    const data = mockBookingCreate.mock.calls[0][0].data;
+    // No tax lines → parsedTaxAmount = null → treated as 0
+    // feeDiscountsTotal = 0 (discount is accommodation type)
+    // taxAmount = (0) - 0 = 0
+    // pretaxCost = 800.00 - 0 = 800.00
+    expect(data.taxAmount).toBe(0);
+    expect(data.pretaxCost).toBe(800.0);
+  });
+
   it("derives taxAmount from totalCost - pretaxCost when nightlyRates is present", async () => {
     const result = await ingestBookingFromEmail(
       {

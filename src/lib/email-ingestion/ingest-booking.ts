@@ -99,7 +99,7 @@ export async function ingestBookingFromEmail(
   let taxAmount: number | null;
 
   if (parsed.bookingType === "cash") {
-    if (parsed.discounts && parsedTaxAmount !== null && parsed.totalCost !== null) {
+    if (parsed.discounts && parsed.totalCost !== null) {
       // Discount-aware path: compute net tax and derive pretaxCost via Method B (totalCost - netTax)
       const feeDiscountsTotal =
         Math.round(
@@ -112,7 +112,7 @@ export async function ingestBookingFromEmail(
             .filter((d) => d.type === "accommodation")
             .reduce((sum, d) => sum + d.amount, 0) * 100
         ) / 100;
-      taxAmount = Math.round((parsedTaxAmount - feeDiscountsTotal) * 100) / 100;
+      taxAmount = Math.round(((parsedTaxAmount ?? 0) - feeDiscountsTotal) * 100) / 100;
       pretaxCost = Math.round((parsed.totalCost - taxAmount) * 100) / 100;
       if (parsed.nightlyRates) {
         // Cross-check: nightly rates minus accommodation discounts should agree with totalCost minus net tax
