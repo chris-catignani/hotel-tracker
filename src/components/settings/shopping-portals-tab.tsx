@@ -1,67 +1,40 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { AppSelect } from "@/components/ui/app-select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { apiFetch } from "@/lib/api-fetch";
 import { logger } from "@/lib/logger";
 import { PointType, ShoppingPortal } from "@/lib/types";
-import { ErrorBanner } from "@/components/ui/error-banner";
-import { EmptyState } from "@/components/ui/empty-state";
 import { Globe } from "lucide-react";
 import { toast } from "sonner";
+import { SettingsCrudTab, ColumnDef, CrudActions } from "./settings-crud-tab";
 
 export function ShoppingPortalsTab() {
-  const [portals, setPortals] = useState<ShoppingPortal[]>([]);
   const [pointTypes, setPointTypes] = useState<PointType[]>([]);
-  const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [rewardType, setRewardType] = useState("cashback");
   const [pointTypeId, setPointTypeId] = useState("none");
-  const [error, setError] = useState<string | null>(null);
-
-  const [editOpen, setEditOpen] = useState(false);
   const [editPortal, setEditPortal] = useState<ShoppingPortal | null>(null);
   const [editName, setEditName] = useState("");
   const [editRewardType, setEditRewardType] = useState("cashback");
   const [editPointTypeId, setEditPointTypeId] = useState("none");
 
-  const fetchData = useCallback(async () => {
-    const [portalsResult, ptResult] = await Promise.all([
-      apiFetch<ShoppingPortal[]>("/api/portals"),
-      apiFetch<PointType[]>("/api/point-types"),
-    ]);
-    if (portalsResult.ok) setPortals(portalsResult.data);
-    else setError(portalsResult.error.message);
+  const fetchDependencies = async () => {
+    const ptResult = await apiFetch<PointType[]>("/api/point-types");
     if (ptResult.ok) setPointTypes(ptResult.data);
-  }, []);
+  };
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchData();
-  }, [fetchData]);
+  const fetchItems = async () => {
+    const result = await apiFetch<ShoppingPortal[]>("/api/portals");
+    if (!result.ok) throw new Error(result.error.message);
+    return result.data;
+  };
 
-  const handleSubmit = async () => {
+  const handleAddSubmit = async () => {
     const result = await apiFetch("/api/portals", {
       method: "POST",
       body: {
@@ -74,24 +47,15 @@ export function ShoppingPortalsTab() {
       setName("");
       setRewardType("cashback");
       setPointTypeId("none");
-      setOpen(false);
-      fetchData();
-    } else {
-      logger.error("Failed to add shopping portal", result.error, { status: result.status });
-      toast.error("Failed to add shopping portal. Please try again.");
+      return true;
     }
-  };
-
-  const handleEdit = (portal: ShoppingPortal) => {
-    setEditPortal(portal);
-    setEditName(portal.name);
-    setEditRewardType(portal.rewardType);
-    setEditPointTypeId(portal.pointTypeId != null ? portal.pointTypeId : "none");
-    setEditOpen(true);
+    logger.error("Failed to add shopping portal", result.error, { status: result.status });
+    toast.error("Failed to add shopping portal. Please try again.");
+    return false;
   };
 
   const handleEditSubmit = async () => {
-    if (!editPortal) return;
+    if (!editPortal) return false;
     const result = await apiFetch(`/api/portals/${editPortal.id}`, {
       method: "PUT",
       body: {
@@ -102,89 +66,112 @@ export function ShoppingPortalsTab() {
       },
     });
     if (result.ok) {
-      setEditOpen(false);
       setEditPortal(null);
-      fetchData();
-    } else {
-      logger.error("Failed to update shopping portal", result.error, { status: result.status });
-      toast.error("Failed to update shopping portal. Please try again.");
+      return true;
     }
+    logger.error("Failed to update shopping portal", result.error, { status: result.status });
+    toast.error("Failed to update shopping portal. Please try again.");
+    return false;
   };
 
-  return (
-    <div className="flex flex-col flex-1 min-h-0 space-y-4">
-      <ErrorBanner error={error} onDismiss={() => setError(null)} />
-      <div className="flex items-center justify-between shrink-0">
-        <h2 className="text-lg font-semibold">Shopping Portals</h2>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button data-testid="add-portal-button">Add Portal</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add Shopping Portal</DialogTitle>
-              <DialogDescription>
-                Add a shopping portal for cashback or points tracking.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-2">
-              <div className="space-y-2">
-                <Label htmlFor="portal-name">Name</Label>
-                <Input
-                  id="portal-name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Portal name"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="portal-reward-type">Reward Type</Label>
-                <AppSelect
-                  value={rewardType}
-                  onValueChange={setRewardType}
-                  options={[
-                    { label: "Cashback", value: "cashback" },
-                    { label: "Points", value: "points" },
-                  ]}
-                  placeholder="Select reward type"
-                  data-testid="portal-reward-type-select"
-                />
-              </div>
-              {rewardType === "points" && (
-                <div className="space-y-2">
-                  <Label htmlFor="portal-point-type">Point Type</Label>
-                  <AppSelect
-                    value={pointTypeId}
-                    onValueChange={setPointTypeId}
-                    options={[
-                      { label: "None", value: "none" },
-                      ...pointTypes.map((pt) => ({
-                        label: pt.name,
-                        value: pt.id,
-                      })),
-                    ]}
-                    placeholder="Select point type..."
-                    data-testid="portal-point-type-select"
-                  />
-                </div>
-              )}
-            </div>
-            <DialogFooter>
-              <Button onClick={handleSubmit} disabled={!name.trim()}>
-                Save
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
+  const columns: ColumnDef<ShoppingPortal>[] = [
+    { header: "Name", render: (p) => <span data-testid="portal-name">{p.name}</span> },
+    { header: "Reward Type", render: (p) => <span className="capitalize">{p.rewardType}</span> },
+    { header: "Point Type", render: (p) => p.pointType?.name ?? "—" },
+  ];
 
-      {/* Edit Dialog */}
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Shopping Portal</DialogTitle>
-            <DialogDescription>Update shopping portal details.</DialogDescription>
-          </DialogHeader>
+  const renderMobileCard = (portal: ShoppingPortal, actions: CrudActions<ShoppingPortal>) => (
+    <Card key={portal.id} data-testid="portal-card">
+      <CardContent className="p-4 space-y-3">
+        <div className="flex items-start justify-between">
+          <div>
+            <h4 className="font-bold" data-testid="portal-name">
+              {portal.name}
+            </h4>
+            <p className="text-sm text-muted-foreground capitalize">{portal.rewardType}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-muted-foreground">Point Type</p>
+            <p className="font-medium">{portal.pointType?.name ?? "—"}</p>
+          </div>
+        </div>
+        <div className="pt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={() => actions.onEdit(portal)}
+          >
+            Edit
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const rewardTypeOptions = [
+    { label: "Cashback", value: "cashback" },
+    { label: "Points", value: "points" },
+  ];
+  const pointTypeOptions = [
+    { label: "None", value: "none" },
+    ...pointTypes.map((pt) => ({ label: pt.name, value: pt.id })),
+  ];
+
+  return (
+    <SettingsCrudTab<ShoppingPortal>
+      title="Shopping Portals"
+      addButtonLabel="Add Portal"
+      addButtonTestId="add-portal-button"
+      fetchItems={fetchItems}
+      fetchDependencies={fetchDependencies}
+      columns={columns}
+      renderMobileCard={renderMobileCard}
+      addDialog={{
+        title: "Add Shopping Portal",
+        description: "Add a shopping portal for cashback or points tracking.",
+        renderFields: () => (
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="portal-name">Name</Label>
+              <Input
+                id="portal-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Portal name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Reward Type</Label>
+              <AppSelect
+                value={rewardType}
+                onValueChange={setRewardType}
+                options={rewardTypeOptions}
+                placeholder="Select reward type"
+                data-testid="portal-reward-type-select"
+              />
+            </div>
+            {rewardType === "points" && (
+              <div className="space-y-2">
+                <Label>Point Type</Label>
+                <AppSelect
+                  value={pointTypeId}
+                  onValueChange={setPointTypeId}
+                  options={pointTypeOptions}
+                  placeholder="Select point type..."
+                  data-testid="portal-point-type-select"
+                />
+              </div>
+            )}
+          </div>
+        ),
+        onSubmit: handleAddSubmit,
+        isValid: name.trim().length > 0,
+      }}
+      editDialog={{
+        title: "Edit Shopping Portal",
+        description: "Update shopping portal details.",
+        renderFields: () => (
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <Label htmlFor="edit-portal-name">Name</Label>
@@ -196,124 +183,45 @@ export function ShoppingPortalsTab() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-portal-reward-type">Reward Type</Label>
+              <Label>Reward Type</Label>
               <AppSelect
                 value={editRewardType}
                 onValueChange={setEditRewardType}
-                options={[
-                  { label: "Cashback", value: "cashback" },
-                  { label: "Points", value: "points" },
-                ]}
+                options={rewardTypeOptions}
                 placeholder="Select reward type"
                 data-testid="edit-portal-reward-type-select"
               />
             </div>
             {editRewardType === "points" && (
               <div className="space-y-2">
-                <Label htmlFor="edit-portal-point-type">Point Type</Label>
+                <Label>Point Type</Label>
                 <AppSelect
                   value={editPointTypeId}
                   onValueChange={setEditPointTypeId}
-                  options={[
-                    { label: "None", value: "none" },
-                    ...pointTypes.map((pt) => ({
-                      label: pt.name,
-                      value: pt.id,
-                    })),
-                  ]}
+                  options={pointTypeOptions}
                   placeholder="Select point type..."
                   data-testid="edit-portal-point-type-select"
                 />
               </div>
             )}
           </div>
-          <DialogFooter>
-            <Button onClick={handleEditSubmit} disabled={!editName.trim()}>
-              Save
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {portals.length === 0 ? (
-        <EmptyState
-          icon={Globe}
-          title="No shopping portals"
-          description="Add portals like Rakuten or TopCashback to track extra rewards on your bookings."
-          action={{
-            label: "Add Portal",
-            onClick: () => setOpen(true),
-          }}
-          data-testid="portals-empty"
-        />
-      ) : (
-        <>
-          {/* Mobile View: Cards */}
-          <div className="grid grid-cols-1 gap-4 md:hidden" data-testid="portals-mobile">
-            {portals.map((portal) => (
-              <Card key={portal.id} data-testid="portal-card">
-                <CardContent className="p-4 space-y-3">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h4 className="font-bold" data-testid="portal-name">
-                        {portal.name}
-                      </h4>
-                      <p className="text-sm text-muted-foreground capitalize">
-                        {portal.rewardType}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-muted-foreground">Point Type</p>
-                      <p className="font-medium">{portal.pointType?.name ?? "—"}</p>
-                    </div>
-                  </div>
-                  <div className="pt-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
-                      onClick={() => handleEdit(portal)}
-                    >
-                      Edit
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {/* Desktop View: Table */}
-          <div
-            className="hidden md:flex md:flex-col md:flex-1 md:min-h-0 md:overflow-auto"
-            data-testid="portals-desktop"
-          >
-            <Table containerClassName="overflow-visible">
-              <TableHeader className="sticky top-0 bg-background z-20">
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Reward Type</TableHead>
-                  <TableHead>Point Type</TableHead>
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {portals.map((portal) => (
-                  <TableRow key={portal.id} data-testid="portal-row">
-                    <TableCell data-testid="portal-name">{portal.name}</TableCell>
-                    <TableCell className="capitalize">{portal.rewardType}</TableCell>
-                    <TableCell>{portal.pointType?.name ?? "—"}</TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="sm" onClick={() => handleEdit(portal)}>
-                        Edit
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </>
-      )}
-    </div>
+        ),
+        onSubmit: handleEditSubmit,
+        isValid: editName.trim().length > 0,
+        onOpen: (portal) => {
+          setEditPortal(portal);
+          setEditName(portal.name);
+          setEditRewardType(portal.rewardType);
+          setEditPointTypeId(portal.pointTypeId != null ? portal.pointTypeId : "none");
+        },
+      }}
+      emptyState={{
+        icon: Globe,
+        title: "No shopping portals",
+        description:
+          "Add portals like Rakuten or TopCashback to track extra rewards on your bookings.",
+      }}
+      testIds={{ list: "portals-desktop", empty: "portals-empty", row: "portal-row" }}
+    />
   );
 }

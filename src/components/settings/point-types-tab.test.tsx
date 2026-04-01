@@ -53,10 +53,10 @@ describe("PointTypesTab", () => {
     render(<PointTypesTab />);
 
     // Verify it appears in both views
-    const mobileView = await screen.findByTestId("point-types-mobile");
+    const mobileCard = await screen.findByTestId("point-type-card");
     const desktopView = screen.getByTestId("point-types-desktop");
 
-    expect(within(mobileView).getByText("Marriott Points")).toBeInTheDocument();
+    expect(within(mobileCard).getByText("Marriott Points")).toBeInTheDocument();
     expect(within(desktopView).getByText("Marriott Points")).toBeInTheDocument();
   });
 
