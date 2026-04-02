@@ -79,7 +79,7 @@ describe("GET /api/bookings", () => {
     expect(where.OR).toContainEqual({ cardRewardPostingStatus: "pending" });
     expect(where.OR).toContainEqual({ portalCashbackPostingStatus: "pending" });
     expect(where.OR).toContainEqual({
-      bookingPromotions: { some: { postingStatus: "pending" } },
+      bookingPromotions: { some: { postingStatus: "pending", appliedValue: { gt: 0 } } },
     });
     expect(where.OR).toContainEqual({
       bookingCardBenefits: { some: { postingStatus: "pending" } },
@@ -94,5 +94,6 @@ describe("GET /api/bookings", () => {
     const futureCheckIn = where.OR.find((c: Record<string, unknown>) => "checkIn" in c);
     expect(futureCheckIn).toBeDefined();
     expect(futureCheckIn.checkIn).toHaveProperty("gte");
+    expect(futureCheckIn.OR).toContainEqual({ bookingPromotions: { some: {} } });
   });
 });

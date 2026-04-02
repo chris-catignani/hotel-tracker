@@ -455,6 +455,69 @@ test.describe("Posting Status", () => {
     }
   });
 
+  test("booking with only $0 pre-qualifying promotions leaves Needs Attention when all visible items posted", async ({
+    isolatedUser,
+  }) => {
+    // Create a promotion that requires 1 prerequisite stay — so the FIRST booking
+    // is pre-qualifying (appliedValue=0, isPreQualifying=true) and invisible in the grid.
+    const promoName = `PreQual Promo ${crypto.randomUUID()}`;
+    const promoRes = await isolatedUser.request.post("/api/promotions", {
+      data: {
+        name: promoName,
+        type: "loyalty",
+        hotelChainId: HYATT_ID,
+        benefits: [{ rewardType: "cashback", valueType: "fixed", value: 50, sortOrder: 0 }],
+        restrictions: { prerequisiteStayCount: 1 },
+      },
+    });
+    expect(promoRes.ok()).toBeTruthy();
+    const promo = await promoRes.json();
+
+    // Create a future Hyatt booking — loyalty auto-sets to pending; promo attaches as pre-qualifying ($0)
+    const propertyName = `PreQual Hotel ${crypto.randomUUID()}`;
+    const bookingRes = await isolatedUser.request.post("/api/bookings", {
+      data: {
+        hotelChainId: HYATT_ID,
+        propertyName,
+        checkIn: `${YEAR}-11-01`,
+        checkOut: `${YEAR}-11-05`,
+        numNights: 4,
+        pretaxCost: 400,
+        taxAmount: 80,
+        totalCost: 480,
+        currency: "USD",
+        bookingSource: "direct_web",
+        countryCode: "US",
+        city: "New York",
+      },
+    });
+    expect(bookingRes.ok()).toBeTruthy();
+    const booking = await bookingRes.json();
+
+    try {
+      await isolatedUser.page.goto("/posting-status");
+      await expect(
+        isolatedUser.page.getByRole("heading", { name: "Earnings Tracker" })
+      ).toBeVisible();
+
+      // Booking should appear in Needs Attention (loyalty is pending)
+      await expect(isolatedUser.page.getByText(propertyName)).toBeVisible();
+
+      // Mark loyalty as posted — now ALL visible items are posted
+      // (the $0 pre-qualifying promo is hidden in the grid and should NOT count)
+      const loyaltyCell = isolatedUser.page.getByTestId(`loyalty-cell-${booking.id}`);
+      await loyaltyCell.click();
+      await expect(loyaltyCell).toContainText("✓");
+
+      // Reload — booking should now be GONE from Needs Attention
+      await isolatedUser.page.reload();
+      await expect(isolatedUser.page.getByText(propertyName)).toHaveCount(0);
+    } finally {
+      await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
+      await isolatedUser.request.delete(`/api/promotions/${promo.id}`);
+    }
+  });
+
   test("perks cell cycles its status", async ({ isolatedUser }) => {
     const propertyName = `Perks Cycle ${crypto.randomUUID()}`;
     const bookingRes = await isolatedUser.request.post("/api/bookings", {

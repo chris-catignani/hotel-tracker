@@ -413,7 +413,11 @@ export async function listBookings(userId: string, filter?: string | null) {
             { loyaltyPostingStatus: "pending" as const },
             { cardRewardPostingStatus: "pending" as const },
             { portalCashbackPostingStatus: "pending" as const },
-            { bookingPromotions: { some: { postingStatus: "pending" as const } } },
+            {
+              bookingPromotions: {
+                some: { postingStatus: "pending" as const, appliedValue: { gt: 0 } },
+              },
+            },
             { bookingCardBenefits: { some: { postingStatus: "pending" as const } } },
             { benefits: { some: { postingStatus: "pending" as const } } },
             {
