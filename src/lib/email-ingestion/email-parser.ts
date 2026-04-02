@@ -27,7 +27,7 @@ ${chainSection}Return ONLY valid JSON with these fields (no explanation, no mark
   "currency": string | null,     // 3-letter code e.g. "USD", "SGD"
   "nightlyRates": [{ "amount": number }] | null,  // per-night amounts when no pretax total is shown
   "pretaxCost": number | null,   // pretax total if shown directly; null if returning nightlyRates
-  "taxLines": [{ "label": string, "amount": number }] | null,  // individual tax/fee line items — positive amounts only; do NOT include discount/savings lines here (those go in discounts[]); null if amounts are not shown
+  "taxLines": [{ "label": string, "amount": number }] | null,  // individual tax/fee line items — positive amounts only; do NOT include discount/savings lines here (those go in discounts[])
   "discounts": [{ "label": string, "amount": number, "type": "accommodation" | "fee" }] | null,  // discount line items: "accommodation" reduces pretaxCost, "fee" reduces taxLines amounts
   "totalCost": number | null,    // cash bookings only
   "pointsRedeemed": number | null,  // award bookings only, null if count not stated
@@ -38,7 +38,7 @@ Rules:
 - If the email shows per-night rates but no pretax subtotal: populate "nightlyRates", leave "pretaxCost" null
 - Never compute sums yourself — return the raw line items and leave the derived fields null
 - If the price breakdown includes any discount line items (special offers, savings, promotions), return pretaxCost: null — do not attempt to compute it; the system will derive it automatically. Still populate nightlyRates with the per-night amounts if they are shown. Always return taxLines if tax/fee lines are explicitly shown, even when discounts are present
-- taxLines must contain only positive fee/tax line items with known amounts (e.g. "Taxes", "Service fee", "City tax"). Omit any line where the amount is unknown or not shown — if no amounts are available, return taxLines: null. Discount and savings lines belong in discounts[], never in taxLines
+- taxLines must contain only positive fee/tax line items with known numeric amounts (e.g. "Taxes", "Service fee", "City tax"). Omit any line where the amount is unknown, not shown, or null — if no amounts are available, return taxLines: null. For points bookings (bookingType = "points"), taxLines must be null. Discount and savings lines belong in discounts[], never in taxLines
 - Chase The Edit and American Express Travel (AMEX FHR/THC) always charge guests in USD — set currency to "USD" for these regardless of hotel location
 - For hotelChain, always use the parent group, not the sub-brand. Less obvious parent chains:
   IHG: Kimpton, Six Senses, Regent, voco, Vignette Collection, InterContinental, Crowne Plaza, Hotel Indigo, HUALUXE, Iberostar, avid, Staybridge Suites, Candlewood Suites
@@ -194,7 +194,10 @@ export async function parseConfirmationEmail(
     verifyBalance(result);
     return result;
   } catch (e) {
-    logger.warn("email-parser: failed to parse Claude response as JSON", { error: e });
+    logger.warn("email-parser: failed to parse Claude response as JSON", {
+      error: e,
+      responseText,
+    });
     return null;
   }
 }

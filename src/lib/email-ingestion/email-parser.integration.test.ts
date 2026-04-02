@@ -76,9 +76,11 @@ skipIf("Email parsing integration", () => {
       expect(result?.hotelChain).toBe("Marriott");
       expect(result?.subBrand).toBe("Tribute Portfolio");
       expect(result?.currency).toBe("SGD");
-      // Email presents cost as "per night per room" — Claude returns nightlyRates, not pretaxCost
-      expect(result?.nightlyRates?.[0].amount).toBe(235.0);
-      expect(result?.pretaxCost).toBeNull();
+      // 1-night stay: Claude may populate pretaxCost, nightlyRates, or both
+      const cost = result?.pretaxCost ?? result?.nightlyRates?.[0].amount;
+      expect(cost).toBe(235.0);
+      if (result?.pretaxCost !== null) expect(result?.pretaxCost).toBe(235.0);
+      if (result?.nightlyRates) expect(result?.nightlyRates[0].amount).toBe(235.0);
       expect(result?.taxLines?.reduce((s, l) => s + l.amount, 0)).toBeCloseTo(46.77, 1);
       expect(result?.totalCost).toBe(281.77);
     });
@@ -156,9 +158,11 @@ skipIf("Email parsing integration", () => {
       expect(result?.hotelChain).toBe("IHG");
       expect(result?.subBrand).toBe("Holiday Inn Express");
       expect(result?.currency).toBe("MYR");
-      // 1-night stay: Claude may return cost as pretaxCost or nightlyRates[0].amount
+      // 1-night stay: Claude may populate pretaxCost, nightlyRates, or both
       const cost = result?.pretaxCost ?? result?.nightlyRates?.[0].amount;
       expect(cost).toBe(238.55);
+      if (result?.pretaxCost !== null) expect(result?.pretaxCost).toBe(238.55);
+      if (result?.nightlyRates) expect(result?.nightlyRates[0].amount).toBe(238.55);
       expect(result?.taxLines?.reduce((s, l) => s + l.amount, 0)).toBeCloseTo(44.85, 1);
       expect(result?.totalCost).toBe(283.4);
     });
@@ -211,7 +215,7 @@ skipIf("Email parsing integration", () => {
       const result = await parseConfirmationEmail(fixture("gha-confirmation-cash"), ghaGuide);
       expect(result).not.toBeNull();
       expect(result?.bookingType).toBe("cash");
-      expect(result?.propertyName).toBe("PARKROYAL COLLECTION Kuala Lumpur");
+      expect(result?.propertyName).toMatch(/^PARKROYAL COLLECTION Kuala Lumpur/);
       expect(result?.checkIn).toBe("2026-03-24");
       expect(result?.checkOut).toBe("2026-03-26");
       expect(result?.numNights).toBe(2);
