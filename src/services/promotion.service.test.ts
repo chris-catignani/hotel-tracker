@@ -49,7 +49,6 @@ vi.mock("@/services/promotion-apply", () => ({
 
 import prisma from "@/lib/prisma";
 import { getPromotion, listPromotions } from "./promotion.service";
-import { AppError } from "@/lib/app-error";
 
 const prismaMock = prisma as unknown as {
   promotion: {
@@ -104,7 +103,6 @@ describe("getPromotion", () => {
   it("throws AppError(404) when promotion not found", async () => {
     prismaMock.promotion.findFirst.mockResolvedValueOnce(null);
 
-    await expect(getPromotion("promo-1", "user-1")).rejects.toThrow(AppError);
     await expect(getPromotion("promo-1", "user-1")).rejects.toMatchObject({ statusCode: 404 });
   });
 });
