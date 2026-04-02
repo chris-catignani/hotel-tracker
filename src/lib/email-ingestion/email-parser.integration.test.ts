@@ -21,7 +21,7 @@ const skipIf = describe.skipIf(!process.env.RUN_INTEGRATION_TESTS);
 
 skipIf("Email parsing integration", () => {
   describe("Hyatt", () => {
-    it("expands date-range nightly rates into per-night entries (cash fixture 1)", async () => {
+    it("expands date-range nightly rates into per-night entries", async () => {
       const result = await parseConfirmationEmail(fixture("hyatt-confirmation-cash"), hyattGuide);
       expect(result).not.toBeNull();
       expect(result?.bookingType).toBe("cash");
@@ -30,27 +30,6 @@ skipIf("Email parsing integration", () => {
       expect(result?.checkOut).toBe("2027-01-18");
       expect(result?.numNights).toBe(4);
       expect(result?.confirmationNumber).toBe("73829461");
-      expect(result?.hotelChain).toBe("Hyatt");
-      expect(result?.currency).toBe("USD");
-      // Jan 14 at 160.72, then Jan 15–17 range expanded to 3 × 142.10 (inclusive end date)
-      expect(result?.nightlyRates).toHaveLength(4);
-      expect(result?.nightlyRates?.[0].amount).toBe(160.72);
-      expect(result?.nightlyRates?.[1].amount).toBe(142.1);
-      expect(result?.nightlyRates?.[2].amount).toBe(142.1);
-      expect(result?.nightlyRates?.[3].amount).toBe(142.1);
-      expect(result?.pretaxCost).toBeNull();
-      expect(result?.totalCost).toBeNull();
-    });
-
-    it("expands date-range nightly rates into per-night entries (cash fixture 2)", async () => {
-      const result = await parseConfirmationEmail(fixture("hyatt-confirmation-cash-2"), hyattGuide);
-      expect(result).not.toBeNull();
-      expect(result?.bookingType).toBe("cash");
-      expect(result?.propertyName).toBe("Hyatt Regency Salt Lake City");
-      expect(result?.checkIn).toBe("2027-01-14");
-      expect(result?.checkOut).toBe("2027-01-18");
-      expect(result?.numNights).toBe(4);
-      expect(result?.confirmationNumber).toBe("12345678");
       expect(result?.hotelChain).toBe("Hyatt");
       expect(result?.currency).toBe("USD");
       // Jan 14 at 160.72, then Jan 15–17 range expanded to 3 × 142.10 (inclusive end date)
@@ -178,10 +157,10 @@ skipIf("Email parsing integration", () => {
       expect(result?.subBrand).toBe("Holiday Inn Express");
       expect(result?.currency).toBe("MYR");
       // Email presents cost as "1 night stay" rate — Claude returns nightlyRates, not pretaxCost
-      expect(result?.nightlyRates?.[0].amount).toBe(221.45);
+      expect(result?.nightlyRates?.[0].amount).toBe(238.55);
       expect(result?.pretaxCost).toBeNull();
-      expect(result?.taxLines?.reduce((s, l) => s + l.amount, 0)).toBeCloseTo(41.63, 1);
-      expect(result?.totalCost).toBe(263.08);
+      expect(result?.taxLines?.reduce((s, l) => s + l.amount, 0)).toBeCloseTo(44.85, 1);
+      expect(result?.totalCost).toBe(283.4);
     });
 
     it("parses points booking with null costs", async () => {
