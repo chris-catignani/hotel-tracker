@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import { POST } from "@/app/api/inbound-email/route";
-import { parseConfirmationEmail } from "@/lib/email-ingestion/email-parser";
+import { parseConfirmationEmail } from "@/services/email-ingestion/email-parser";
 import { ingestBookingFromEmail } from "@/services/email-ingestion/ingest-booking";
 import { NextRequest } from "next/server";
 
-vi.mock("@/lib/email-ingestion/email-parser", () => ({
+vi.mock("@/services/email-ingestion/email-parser", () => ({
   parseConfirmationEmail: vi.fn(),
 }));
 vi.mock("@/services/email-ingestion/ingest-booking", () => ({
