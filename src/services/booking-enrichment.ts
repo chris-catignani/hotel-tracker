@@ -8,7 +8,7 @@ import {
 import prisma from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
-import { resolvePartnershipEarns } from "@/lib/partnership-earns";
+import { resolvePartnershipEarns } from "@/services/partnership-earns";
 
 type EliteStatusShape = { eliteStatus: unknown };
 
