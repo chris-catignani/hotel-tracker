@@ -5,7 +5,6 @@ vi.mock("@/lib/prisma", () => ({
     priceWatch: {
       findMany: vi.fn(),
       findFirst: vi.fn(),
-      findUnique: vi.fn(),
       upsert: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
@@ -26,7 +25,6 @@ const prismaMock = prisma as unknown as {
   priceWatch: {
     findMany: Mock;
     findFirst: Mock;
-    findUnique: Mock;
     upsert: Mock;
     update: Mock;
     delete: Mock;

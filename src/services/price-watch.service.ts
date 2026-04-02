@@ -153,12 +153,13 @@ export async function upsertPriceWatch(
     });
   }
 
-  const fullWatch = await prisma.priceWatch.findUnique({
-    where: { id: watch.id },
+  const fullWatch = await prisma.priceWatch.findFirst({
+    where: { id: watch.id, userId },
     include: PRICE_WATCH_DETAIL_INCLUDE,
   });
 
-  return fullWatch as FullPriceWatch;
+  if (!fullWatch) throw new AppError("Price watch not found after upsert", 500);
+  return fullWatch;
 }
 
 /**
