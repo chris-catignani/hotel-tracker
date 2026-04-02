@@ -19,7 +19,7 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 import prisma from "@/lib/prisma";
-import { listPriceWatches, getPriceWatch } from "./price-watch.service";
+import { listPriceWatches, getPriceWatch, upsertPriceWatch } from "./price-watch.service";
 
 const prismaMock = prisma as unknown as {
   priceWatch: {
@@ -84,5 +84,80 @@ describe("getPriceWatch", () => {
     await expect(getPriceWatch("watch-1", "user-1")).rejects.toMatchObject({
       statusCode: 404,
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// upsertPriceWatch
+// ---------------------------------------------------------------------------
+
+describe("upsertPriceWatch", () => {
+  const baseInput = { propertyId: "prop-1" };
+
+  beforeEach(() => {
+    prismaMock.priceWatch.upsert.mockResolvedValue({ id: "watch-1" });
+    prismaMock.priceWatch.findFirst.mockResolvedValue(mockWatch);
+  });
+
+  it("throws AppError(400) when propertyId is missing", async () => {
+    await expect(upsertPriceWatch("user-1", { propertyId: "" })).rejects.toMatchObject({
+      statusCode: 400,
+    });
+  });
+
+  it("upserts watch for (userId, propertyId) and returns full watch", async () => {
+    const result = await upsertPriceWatch("user-1", baseInput);
+
+    expect(prismaMock.priceWatch.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { userId_propertyId: { userId: "user-1", propertyId: "prop-1" } },
+        create: expect.objectContaining({ userId: "user-1", propertyId: "prop-1" }),
+      })
+    );
+    expect(prismaMock.priceWatchBooking.upsert).not.toHaveBeenCalled();
+    expect(result).toEqual(mockWatch);
+  });
+
+  it("links a booking when bookingId is provided", async () => {
+    prismaMock.booking.findFirst.mockResolvedValueOnce({ id: "booking-1" });
+
+    await upsertPriceWatch("user-1", {
+      ...baseInput,
+      bookingId: "booking-1",
+      cashThreshold: 200,
+      awardThreshold: 15000,
+      dateFlexibilityDays: 2,
+    });
+
+    expect(prismaMock.booking.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "booking-1", userId: "user-1" } })
+    );
+    expect(prismaMock.priceWatchBooking.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { bookingId: "booking-1" },
+        create: expect.objectContaining({
+          priceWatchId: "watch-1",
+          cashThreshold: 200,
+          awardThreshold: 15000,
+          dateFlexibilityDays: 2,
+        }),
+      })
+    );
+  });
+
+  it("throws AppError(404) when bookingId not owned by user", async () => {
+    prismaMock.booking.findFirst.mockResolvedValueOnce(null);
+
+    await expect(
+      upsertPriceWatch("user-1", { ...baseInput, bookingId: "other-booking" })
+    ).rejects.toMatchObject({ statusCode: 404 });
+
+    expect(prismaMock.priceWatchBooking.upsert).not.toHaveBeenCalled();
+  });
+
+  it("throws AppError(500) when refetch returns null after upsert", async () => {
+    prismaMock.priceWatch.findFirst.mockResolvedValueOnce(null);
+
+    await expect(upsertPriceWatch("user-1", baseInput)).rejects.toMatchObject({ statusCode: 500 });
   });
 });
