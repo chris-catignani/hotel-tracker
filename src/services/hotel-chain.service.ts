@@ -148,6 +148,7 @@ export async function updateHotelChain(id: string, userId: string, data: UpdateH
     where: { id },
     select: { basePointRate: true, calculationCurrency: true },
   });
+  if (!existing) throw new AppError("Hotel chain not found", 404);
 
   const updateData: Record<string, unknown> = {};
   if (name !== undefined) updateData.name = name;
