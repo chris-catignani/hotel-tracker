@@ -49,7 +49,13 @@ vi.mock("@/services/promotion-apply", () => ({
 
 import prisma from "@/lib/prisma";
 import { matchPromotionsForAffectedBookings } from "@/services/promotion-apply";
-import { getPromotion, listPromotions, createPromotion } from "./promotion.service";
+import {
+  getPromotion,
+  listPromotions,
+  createPromotion,
+  updatePromotion,
+} from "./promotion.service";
+import type { PromotionBenefitFormData } from "@/lib/types";
 
 const prismaMock = prisma as unknown as {
   promotion: {
@@ -241,5 +247,274 @@ describe("createPromotion", () => {
     expect(prismaMock.promotion.findUnique).toHaveBeenCalledWith(
       expect.objectContaining({ where: { id: "promo-1" } })
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// updatePromotion
+// ---------------------------------------------------------------------------
+
+describe("updatePromotion", () => {
+  const baseUpdateInput = {
+    name: "Updated Promo",
+    type: "loyalty" as const,
+    benefits: [] as PromotionBenefitFormData[],
+    tiers: undefined as undefined,
+    hotelChainId: undefined as undefined,
+    creditCardId: undefined as undefined,
+    shoppingPortalId: undefined as undefined,
+    startDate: undefined as undefined,
+    endDate: undefined as undefined,
+    restrictions: undefined as undefined,
+  };
+
+  beforeEach(() => {
+    prismaMock.$transaction.mockImplementation(
+      async (fn: (tx: typeof prismaMock) => Promise<unknown>) => fn(prismaMock)
+    );
+    prismaMock.promotion.findFirst.mockResolvedValue({ id: "promo-1" });
+    prismaMock.promotion.findUnique.mockResolvedValue({ restrictionsId: null });
+    prismaMock.promotionBenefit.findMany.mockResolvedValue([]);
+    prismaMock.promotionTier.findMany.mockResolvedValue([]);
+    prismaMock.promotion.update.mockResolvedValue(mockPromotion);
+  });
+
+  it("throws AppError(404) when promotion not found or not owned", async () => {
+    prismaMock.promotion.findFirst.mockResolvedValueOnce(null);
+
+    await expect(updatePromotion("promo-1", "user-1", baseUpdateInput)).rejects.toMatchObject({
+      statusCode: 404,
+    });
+  });
+
+  it("upserts restrictions when existing restrictionsId present", async () => {
+    prismaMock.promotion.findUnique.mockResolvedValueOnce({ restrictionsId: "restr-1" });
+    const input = {
+      ...baseUpdateInput,
+      restrictions: {
+        minSpend: "50",
+        minNightsRequired: "",
+        nightsStackable: false,
+        spanStays: false,
+        maxStayCount: "",
+        maxRewardCount: "",
+        maxRedemptionValue: "",
+        maxTotalBonusPoints: "",
+        oncePerSubBrand: false,
+        bookByDate: "",
+        registrationDeadline: "",
+        validDaysAfterRegistration: "",
+        registrationDate: "",
+        tieInRequiresPayment: false,
+        allowedPaymentTypes: [],
+        allowedBookingSources: [],
+        allowedCountryCodes: [],
+        allowedAccommodationTypes: [],
+        hotelChainId: "",
+        prerequisiteStayCount: "",
+        prerequisiteNightCount: "",
+        subBrandIncludeIds: [],
+        subBrandExcludeIds: [],
+        tieInCreditCardIds: [],
+      },
+    };
+
+    await updatePromotion("promo-1", "user-1", input);
+
+    expect(prismaMock.promotionSubBrandRestriction.deleteMany).toHaveBeenCalledWith({
+      where: { promotionRestrictionsId: "restr-1" },
+    });
+    expect(prismaMock.promotionRestrictionTieInCard.deleteMany).toHaveBeenCalledWith({
+      where: { promotionRestrictionsId: "restr-1" },
+    });
+    expect(prismaMock.promotionRestrictions.update).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "restr-1" } })
+    );
+  });
+
+  it("creates new restrictions when no existing restrictionsId", async () => {
+    prismaMock.promotion.findUnique.mockResolvedValueOnce({ restrictionsId: null });
+    prismaMock.promotionRestrictions.create.mockResolvedValueOnce({ id: "new-restr-1" });
+    const input = {
+      ...baseUpdateInput,
+      restrictions: {
+        minSpend: "",
+        minNightsRequired: "",
+        nightsStackable: false,
+        spanStays: false,
+        maxStayCount: "",
+        maxRewardCount: "",
+        maxRedemptionValue: "",
+        maxTotalBonusPoints: "",
+        oncePerSubBrand: false,
+        bookByDate: "",
+        registrationDeadline: "",
+        validDaysAfterRegistration: "",
+        registrationDate: "",
+        tieInRequiresPayment: false,
+        allowedPaymentTypes: [],
+        allowedBookingSources: [],
+        allowedCountryCodes: [],
+        allowedAccommodationTypes: [],
+        hotelChainId: "",
+        prerequisiteStayCount: "",
+        prerequisiteNightCount: "",
+        subBrandIncludeIds: [],
+        subBrandExcludeIds: [],
+        tieInCreditCardIds: [],
+      },
+    };
+
+    await updatePromotion("promo-1", "user-1", input);
+
+    expect(prismaMock.promotionRestrictions.create).toHaveBeenCalled();
+    const updateCall = prismaMock.promotion.update.mock.calls[0][0];
+    expect(updateCall.data.restrictions).toEqual({ connect: { id: "new-restr-1" } });
+  });
+
+  it("clears restrictions when restrictions is null and existing restrictionsId exists", async () => {
+    prismaMock.promotion.findUnique.mockResolvedValueOnce({ restrictionsId: "restr-1" });
+    const input = { ...baseUpdateInput, restrictions: null };
+
+    await updatePromotion("promo-1", "user-1", input as unknown as typeof baseUpdateInput);
+
+    expect(prismaMock.promotionRestrictions.delete).toHaveBeenCalledWith({
+      where: { id: "restr-1" },
+    });
+    const updateCall = prismaMock.promotion.update.mock.calls[0][0];
+    expect(updateCall.data.restrictions).toEqual({ disconnect: true });
+  });
+
+  it("replaces flat benefits when benefits array provided", async () => {
+    prismaMock.promotionBenefit.findMany.mockResolvedValueOnce([
+      { id: "b-1", restrictionsId: null },
+    ]);
+    const input = {
+      ...baseUpdateInput,
+      benefits: [
+        {
+          rewardType: "points" as const,
+          valueType: "fixed" as const,
+          value: 500,
+          certType: null,
+          sortOrder: 0,
+          restrictions: null,
+        },
+      ],
+    };
+
+    await updatePromotion("promo-1", "user-1", input);
+
+    expect(prismaMock.promotionBenefit.deleteMany).toHaveBeenCalledWith({
+      where: { promotionId: "promo-1" },
+    });
+    const updateCall = prismaMock.promotion.update.mock.calls[0][0];
+    expect(updateCall.data.benefits).toEqual(
+      expect.objectContaining({ create: expect.any(Array) })
+    );
+  });
+
+  it("replaces tiers when tiers array provided", async () => {
+    prismaMock.promotionTier.findMany.mockResolvedValueOnce([{ id: "t-1", benefits: [] }]);
+    const input = {
+      ...baseUpdateInput,
+      tiers: [{ minStays: 2, maxStays: null, minNights: null, maxNights: null, benefits: [] }],
+    };
+
+    await updatePromotion("promo-1", "user-1", input);
+
+    expect(prismaMock.promotionTier.deleteMany).toHaveBeenCalledWith({
+      where: { promotionId: "promo-1" },
+    });
+    const updateCall = prismaMock.promotion.update.mock.calls[0][0];
+    expect(updateCall.data.tiers).toEqual(expect.objectContaining({ create: expect.any(Array) }));
+  });
+
+  it("upserts UserPromotion when registrationDate is provided in restrictions", async () => {
+    const input = {
+      ...baseUpdateInput,
+      restrictions: {
+        minSpend: "",
+        minNightsRequired: "",
+        nightsStackable: false,
+        spanStays: false,
+        maxStayCount: "",
+        maxRewardCount: "",
+        maxRedemptionValue: "",
+        maxTotalBonusPoints: "",
+        oncePerSubBrand: false,
+        bookByDate: "",
+        registrationDeadline: "",
+        validDaysAfterRegistration: "",
+        registrationDate: "2026-07-01",
+        tieInRequiresPayment: false,
+        allowedPaymentTypes: [],
+        allowedBookingSources: [],
+        allowedCountryCodes: [],
+        allowedAccommodationTypes: [],
+        hotelChainId: "",
+        prerequisiteStayCount: "",
+        prerequisiteNightCount: "",
+        subBrandIncludeIds: [],
+        subBrandExcludeIds: [],
+        tieInCreditCardIds: [],
+      },
+    };
+
+    await updatePromotion("promo-1", "user-1", input);
+
+    expect(prismaMock.userPromotion.upsert).toHaveBeenCalledWith({
+      where: { promotionId: "promo-1" },
+      update: { registrationDate: new Date("2026-07-01") },
+      create: {
+        promotionId: "promo-1",
+        userId: "user-1",
+        registrationDate: new Date("2026-07-01"),
+      },
+    });
+  });
+
+  it("deletes UserPromotion when registrationDate is empty string", async () => {
+    const input = {
+      ...baseUpdateInput,
+      restrictions: {
+        minSpend: "",
+        minNightsRequired: "",
+        nightsStackable: false,
+        spanStays: false,
+        maxStayCount: "",
+        maxRewardCount: "",
+        maxRedemptionValue: "",
+        maxTotalBonusPoints: "",
+        oncePerSubBrand: false,
+        bookByDate: "",
+        registrationDeadline: "",
+        validDaysAfterRegistration: "",
+        registrationDate: "",
+        tieInRequiresPayment: false,
+        allowedPaymentTypes: [],
+        allowedBookingSources: [],
+        allowedCountryCodes: [],
+        allowedAccommodationTypes: [],
+        hotelChainId: "",
+        prerequisiteStayCount: "",
+        prerequisiteNightCount: "",
+        subBrandIncludeIds: [],
+        subBrandExcludeIds: [],
+        tieInCreditCardIds: [],
+      },
+    };
+
+    await updatePromotion("promo-1", "user-1", input);
+
+    expect(prismaMock.userPromotion.deleteMany).toHaveBeenCalledWith({
+      where: { promotionId: "promo-1" },
+    });
+  });
+
+  it("calls matchPromotionsForAffectedBookings after transaction", async () => {
+    await updatePromotion("promo-1", "user-1", baseUpdateInput);
+
+    expect(matchPromotionsForAffectedBookings).toHaveBeenCalledWith("promo-1", "user-1");
   });
 });
