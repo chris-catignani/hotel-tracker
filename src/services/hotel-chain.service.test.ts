@@ -24,7 +24,14 @@ vi.mock("@/services/loyalty-recalculation", () => ({
 
 import prisma from "@/lib/prisma";
 import { getCurrentRate } from "@/services/exchange-rate";
-import { parseCalculationCurrency, listHotelChains, getHotelChain } from "./hotel-chain.service";
+import { recalculateLoyaltyForHotelChain } from "@/services/loyalty-recalculation";
+import {
+  parseCalculationCurrency,
+  listHotelChains,
+  getHotelChain,
+  createHotelChain,
+  updateHotelChain,
+} from "./hotel-chain.service";
 
 const prismaMock = prisma as unknown as {
   hotelChain: {
@@ -144,5 +151,94 @@ describe("getHotelChain", () => {
     prismaMock.hotelChain.findUnique.mockResolvedValueOnce(null);
 
     await expect(getHotelChain("missing", "user-1")).rejects.toMatchObject({ statusCode: 404 });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// createHotelChain
+// ---------------------------------------------------------------------------
+
+describe("createHotelChain", () => {
+  it("creates and returns the normalized chain", async () => {
+    prismaMock.hotelChain.create.mockResolvedValueOnce(mockChain);
+
+    const result = await createHotelChain({ name: "Hyatt" });
+
+    expect(prismaMock.hotelChain.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ name: "Hyatt", calculationCurrency: "USD" }),
+      })
+    );
+    expect(result).toMatchObject({ id: "chain-1" });
+  });
+
+  it("throws AppError(400) for invalid calculationCurrency", async () => {
+    await expect(
+      createHotelChain({ name: "Hyatt", calculationCurrency: "bad" })
+    ).rejects.toMatchObject({ statusCode: 400 });
+
+    expect(prismaMock.hotelChain.create).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// updateHotelChain
+// ---------------------------------------------------------------------------
+
+describe("updateHotelChain", () => {
+  beforeEach(() => {
+    prismaMock.hotelChain.findUnique.mockResolvedValue({
+      basePointRate: "0.5",
+      calculationCurrency: "USD",
+    });
+    prismaMock.hotelChain.update.mockResolvedValue({ ...mockChain, name: "Updated Hyatt" });
+  });
+
+  it("updates and returns the normalized chain", async () => {
+    const result = await updateHotelChain("chain-1", "user-1", { name: "Updated Hyatt" });
+
+    expect(prismaMock.hotelChain.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "chain-1" },
+        data: { name: "Updated Hyatt" },
+      })
+    );
+    expect(result).toMatchObject({ id: "chain-1" });
+  });
+
+  it("throws AppError(400) for invalid calculationCurrency", async () => {
+    await expect(
+      updateHotelChain("chain-1", "user-1", { calculationCurrency: "xx" })
+    ).rejects.toMatchObject({ statusCode: 400 });
+
+    expect(prismaMock.hotelChain.update).not.toHaveBeenCalled();
+  });
+
+  it("throws AppError(404) when hotel chain not found", async () => {
+    prismaMock.hotelChain.findUnique.mockResolvedValueOnce(null);
+
+    await expect(updateHotelChain("missing", "user-1", { name: "New" })).rejects.toMatchObject({
+      statusCode: 404,
+    });
+
+    expect(prismaMock.hotelChain.update).not.toHaveBeenCalled();
+  });
+
+  it("triggers loyalty recalculation when basePointRate changes", async () => {
+    await updateHotelChain("chain-1", "user-1", { basePointRate: 1.0 });
+
+    expect(recalculateLoyaltyForHotelChain).toHaveBeenCalledWith("chain-1");
+  });
+
+  it("triggers loyalty recalculation when calculationCurrency changes", async () => {
+    await updateHotelChain("chain-1", "user-1", { calculationCurrency: "EUR" });
+
+    expect(recalculateLoyaltyForHotelChain).toHaveBeenCalledWith("chain-1");
+  });
+
+  it("does NOT trigger loyalty recalculation when neither rate nor currency changes", async () => {
+    await updateHotelChain("chain-1", "user-1", { name: "New Name" });
+
+    expect(recalculateLoyaltyForHotelChain).not.toHaveBeenCalled();
   });
 });
