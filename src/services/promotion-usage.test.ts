@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
-import prisma from "./prisma";
+import prisma from "@/lib/prisma";
 import { fetchPromotionUsage } from "./promotion-usage";
-import type { MatchingPromotion, MatchingBooking } from "./promotion-matching";
+import type { MatchingPromotion, MatchingBooking } from "@/lib/promotion-matching";
 
-vi.mock("./prisma", () => ({
+vi.mock("@/lib/prisma", () => ({
   default: {
     bookingPromotion: {
       groupBy: vi.fn(),

@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { getPeriodKey } from "./card-benefit-matching";
+import { getPeriodKey } from "@/lib/card-benefit-matching";
 import { BenefitPeriod } from "@prisma/client";
 
 /**

@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { requireAdmin } from "@/lib/auth-utils";
 import { BenefitPeriod } from "@prisma/client";
-import { reapplyBenefitForAllUsers } from "@/lib/card-benefit-apply";
+import { reapplyBenefitForAllUsers } from "@/services/card-benefit-apply";
 
 const INCLUDE = {
   hotelChain: { select: { id: true, name: true } },

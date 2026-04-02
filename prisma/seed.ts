@@ -10,9 +10,9 @@ import {
 } from "./seed-ids";
 import { seedBookings } from "./seed-bookings";
 import { seedPromotions } from "./seed-promotions";
-import { recalculateLoyaltyForHotelChain } from "../src/lib/loyalty-recalculation";
-import { reapplyBenefitForAllUsers } from "../src/lib/card-benefit-apply";
-import { finalizeCheckedInBookings } from "../src/lib/booking-enrichment";
+import { recalculateLoyaltyForHotelChain } from "../src/services/loyalty-recalculation";
+import { reapplyBenefitForAllUsers } from "../src/services/card-benefit-apply";
+import { finalizeCheckedInBookings } from "../src/services/booking-enrichment";
 
 const prisma = new PrismaClient();
 

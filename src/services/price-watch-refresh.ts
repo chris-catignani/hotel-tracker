@@ -3,17 +3,17 @@
  * and the standalone src/workers/refresh-price-watches.ts script.
  */
 
-import { logger } from "./logger";
-import prisma from "./prisma";
+import { logger } from "@/lib/logger";
+import prisma from "@/lib/prisma";
 import {
   selectFetcher,
   lowestRefundableCash,
   lowestRefundableAward,
   type PriceFetcher,
-} from "./price-fetcher";
-import { sendPriceDropAlert } from "./email";
+} from "@/lib/price-fetcher";
+import { sendPriceDropAlert } from "@/lib/email";
 import { getCurrentRate } from "./exchange-rate";
-import { HOTEL_ID } from "./constants";
+import { HOTEL_ID } from "@/lib/constants";
 
 /**
  * For chains whose loyalty programme has a fixed point value against a base currency,

@@ -4,7 +4,7 @@ import {
   resolveCalcCurrencyRate,
   fetchExchangeRate,
   getOrFetchHistoricalRate,
-} from "@/lib/exchange-rate";
+} from "@/services/exchange-rate";
 import prisma from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { normalizeUserStatuses } from "@/lib/normalize-response";

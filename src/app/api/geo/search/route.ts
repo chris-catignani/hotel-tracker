@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withObservability } from "@/lib/observability";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
-import { searchProperties } from "@/lib/geo-lookup";
+import { searchProperties } from "@/services/geo-lookup";
 import { apiError } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
 

@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, type Mock } from "vitest";
 import { recalculateLoyaltyForHotelChain } from "./loyalty-recalculation";
-import prisma from "./prisma";
+import prisma from "@/lib/prisma";
 import { reevaluateBookings } from "./promotion-apply";
 import { resolveCalcCurrencyRate } from "./exchange-rate";
 
 // Mock the dependencies
-vi.mock("./prisma", () => ({
+vi.mock("@/lib/prisma", () => ({
   default: {
     hotelChain: {
       findUnique: vi.fn(),

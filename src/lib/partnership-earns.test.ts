@@ -2,11 +2,11 @@ import { describe, it, expect, vi } from "vitest";
 import { resolvePartnershipEarns } from "./partnership-earns";
 
 // Mock getOrFetchHistoricalRate so tests don't hit the external API or DB
-vi.mock("./exchange-rate", () => ({
+vi.mock("@/services/exchange-rate", () => ({
   getOrFetchHistoricalRate: vi.fn(),
 }));
 
-import { getOrFetchHistoricalRate } from "./exchange-rate";
+import { getOrFetchHistoricalRate } from "@/services/exchange-rate";
 
 const ACCOR_ID = "cv53wjloc78ambkei5wlnsvfn";
 const ACCOR_QANTAS_EARN = {

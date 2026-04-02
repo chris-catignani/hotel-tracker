@@ -4,10 +4,10 @@ import {
   reapplyBenefitForPeriod,
   reapplyCardBenefitsAffectedByBooking,
 } from "./card-benefit-apply";
-import prisma from "./prisma";
+import prisma from "@/lib/prisma";
 import { BenefitPeriod } from "@prisma/client";
 
-vi.mock("./prisma", () => ({
+vi.mock("@/lib/prisma", () => ({
   default: {
     cardBenefit: { findUnique: vi.fn() },
     booking: { findMany: vi.fn(), findUnique: vi.fn() },

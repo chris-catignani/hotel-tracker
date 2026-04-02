@@ -1,19 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-vi.mock("@/lib/promotion-apply", () => ({
+vi.mock("@/services/promotion-apply", () => ({
   matchPromotionsForBooking: vi.fn().mockResolvedValue(["promo-1"]),
   reevaluateSubsequentBookings: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock("@/lib/card-benefit-apply", () => ({
+vi.mock("@/services/card-benefit-apply", () => ({
   reapplyCardBenefitsAffectedByBooking: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock("@/lib/logger", () => ({
   logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn() },
 }));
 
-import { runPostBookingCreate } from "./booking-service";
-import { matchPromotionsForBooking, reevaluateSubsequentBookings } from "@/lib/promotion-apply";
-import { reapplyCardBenefitsAffectedByBooking } from "@/lib/card-benefit-apply";
+import { runPostBookingCreate } from "./booking.service";
+import {
+  matchPromotionsForBooking,
+  reevaluateSubsequentBookings,
+} from "@/services/promotion-apply";
+import { reapplyCardBenefitsAffectedByBooking } from "@/services/card-benefit-apply";
 import { logger } from "@/lib/logger";
 
 const metadata = {

@@ -15,7 +15,7 @@ import { createHiltonFetcher } from "@/lib/scrapers/hilton";
 import { createHyattFetcher } from "@/lib/scrapers/hyatt";
 import { createIhgFetcher } from "@/lib/scrapers/ihg";
 import { createMarriottFetcher } from "@/lib/scrapers/marriott";
-import { runPriceWatchRefresh } from "@/lib/price-watch-refresh";
+import { runPriceWatchRefresh } from "@/services/price-watch-refresh";
 
 const prisma = new PrismaClient();
 

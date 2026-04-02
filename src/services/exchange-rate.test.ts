@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, type Mock } from "vitest";
 import { fetchExchangeRate, getCurrentRate, getOrFetchHistoricalRate } from "./exchange-rate";
-import prisma from "./prisma";
+import prisma from "@/lib/prisma";
 
 // Mock the fetch global
 const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
 
 // Mock Prisma
-vi.mock("./prisma", () => ({
+vi.mock("@/lib/prisma", () => ({
   default: {
     exchangeRate: {
       findUnique: vi.fn(),
@@ -20,7 +20,7 @@ vi.mock("./prisma", () => ({
 }));
 
 // Mock logger to avoid Sentry side-effects in tests
-vi.mock("./logger", () => ({
+vi.mock("@/lib/logger", () => ({
   logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn() },
 }));
 

@@ -2,7 +2,7 @@ import { PostingStatusGrid } from "@/components/posting-status/posting-status-gr
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
-import { enrichBookingsWithPartnerships } from "@/lib/booking-enrichment";
+import { enrichBookingsWithPartnerships } from "@/services/booking-enrichment";
 import { getNetCostBreakdown } from "@/lib/net-cost";
 
 async function getBookings(filter: string) {
