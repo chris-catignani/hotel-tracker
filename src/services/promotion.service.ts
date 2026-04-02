@@ -6,6 +6,7 @@ import type {
   PromotionFormData,
   PromotionBenefitFormData,
   PromotionRestrictionsFormData,
+  PromotionTierFormData,
 } from "@/lib/types";
 import type { AccommodationType, PromotionType } from "@prisma/client";
 
@@ -123,10 +124,82 @@ export async function listPromotions(_userId: string, type?: string): Promise<Fu
 }
 
 export async function createPromotion(
-  _userId: string,
-  _data: PromotionFormData
+  userId: string,
+  data: PromotionFormData
 ): Promise<FullPromotion> {
-  throw new Error("not implemented");
+  const {
+    name,
+    type,
+    benefits,
+    tiers,
+    hotelChainId,
+    creditCardId,
+    shoppingPortalId,
+    startDate,
+    endDate,
+    restrictions,
+  } = data;
+
+  const registrationDate = (restrictions as PromotionRestrictionsFormData | null)?.registrationDate;
+  const hasTiers = Array.isArray(tiers) && tiers.length > 0;
+
+  const promotion = await prisma.$transaction(async (tx) => {
+    const created = await tx.promotion.create({
+      data: {
+        name,
+        type,
+        user: { connect: { id: userId } },
+        hotelChain: hotelChainId ? { connect: { id: hotelChainId } } : undefined,
+        creditCard: creditCardId ? { connect: { id: creditCardId } } : undefined,
+        shoppingPortal: shoppingPortalId ? { connect: { id: shoppingPortalId } } : undefined,
+        startDate: startDate ? new Date(startDate) : null,
+        endDate: endDate ? new Date(endDate) : null,
+        ...(restrictions
+          ? { restrictions: { create: buildRestrictionsCreateData(restrictions) } }
+          : {}),
+        ...(hasTiers
+          ? {
+              tiers: {
+                create: (tiers as PromotionTierFormData[]).map((tier) => ({
+                  minStays: tier.minStays,
+                  maxStays: tier.maxStays ?? null,
+                  benefits: {
+                    create: (tier.benefits || []).map((b: PromotionBenefitFormData, i: number) =>
+                      buildBenefitCreateData(b, i)
+                    ),
+                  },
+                })),
+              },
+            }
+          : {
+              benefits: {
+                create: ((benefits as PromotionBenefitFormData[]) || []).map((b, i) =>
+                  buildBenefitCreateData(b, i)
+                ),
+              },
+            }),
+      } as unknown as Prisma.PromotionCreateInput,
+      include: PROMOTION_INCLUDE,
+    });
+
+    if (registrationDate) {
+      await tx.userPromotion.create({
+        data: {
+          promotionId: created.id,
+          userId,
+          registrationDate: new Date(registrationDate),
+        },
+      });
+    }
+
+    return tx.promotion.findUnique({
+      where: { id: created.id },
+      include: PROMOTION_INCLUDE,
+    }) as Promise<FullPromotion>;
+  });
+
+  await matchPromotionsForAffectedBookings(promotion.id, userId);
+  return promotion;
 }
 
 export async function updatePromotion(
@@ -141,9 +214,7 @@ export async function deletePromotion(_id: string, _userId: string): Promise<voi
   throw new Error("not implemented");
 }
 
-// Placeholders that reference imports used by later task implementations,
+// Placeholder that references an import used by a later task implementation,
 // preventing "defined but never used" lint errors on the skeleton.
-// These will be replaced by real usage in subsequent tasks.
-void (matchPromotionsForAffectedBookings as unknown);
+// This will be replaced by real usage in a subsequent task.
 void (reevaluateBookings as unknown);
-void (buildBenefitCreateData as unknown);
