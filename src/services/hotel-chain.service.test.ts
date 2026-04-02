@@ -250,6 +250,7 @@ describe("updateHotelChain", () => {
 
 describe("deleteHotelChain", () => {
   it("deletes when no bookings and no sub-brands exist", async () => {
+    prismaMock.hotelChain.findUnique.mockResolvedValueOnce({ id: "chain-1" });
     prismaMock.booking.count.mockResolvedValueOnce(0);
     prismaMock.hotelChainSubBrand.count.mockResolvedValueOnce(0);
     prismaMock.hotelChain.delete.mockResolvedValueOnce({});
@@ -259,7 +260,16 @@ describe("deleteHotelChain", () => {
     expect(prismaMock.hotelChain.delete).toHaveBeenCalledWith({ where: { id: "chain-1" } });
   });
 
+  it("throws AppError(404) when hotel chain not found", async () => {
+    prismaMock.hotelChain.findUnique.mockResolvedValueOnce(null);
+
+    await expect(deleteHotelChain("missing")).rejects.toMatchObject({ statusCode: 404 });
+
+    expect(prismaMock.hotelChain.delete).not.toHaveBeenCalled();
+  });
+
   it("throws AppError(409) when bookings exist", async () => {
+    prismaMock.hotelChain.findUnique.mockResolvedValueOnce({ id: "chain-1" });
     prismaMock.booking.count.mockResolvedValueOnce(2);
 
     await expect(deleteHotelChain("chain-1")).rejects.toMatchObject({ statusCode: 409 });
@@ -268,6 +278,7 @@ describe("deleteHotelChain", () => {
   });
 
   it("throws AppError(409) when sub-brands exist", async () => {
+    prismaMock.hotelChain.findUnique.mockResolvedValueOnce({ id: "chain-1" });
     prismaMock.booking.count.mockResolvedValueOnce(0);
     prismaMock.hotelChainSubBrand.count.mockResolvedValueOnce(1);
 

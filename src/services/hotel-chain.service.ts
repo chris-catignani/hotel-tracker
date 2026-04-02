@@ -184,6 +184,9 @@ export async function updateHotelChain(id: string, userId: string, data: UpdateH
  * Throws AppError(409) if bookings or sub-brands exist.
  */
 export async function deleteHotelChain(id: string): Promise<void> {
+  const existing = await prisma.hotelChain.findUnique({ where: { id }, select: { id: true } });
+  if (!existing) throw new AppError("Hotel chain not found", 404);
+
   const [bookingCount, subBrandCount] = await Promise.all([
     prisma.booking.count({ where: { hotelChainId: id } }),
     prisma.hotelChainSubBrand.count({ where: { hotelChainId: id } }),
