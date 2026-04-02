@@ -65,6 +65,8 @@ export async function listCardBenefits(): Promise<FullCardBenefit[]> {
 /**
  * Fetch a single card benefit by id.
  * Throws AppError(404) if not found.
+ * Note: CardBenefit is admin-managed reference data with no per-user ownership.
+ * IDOR protection is handled at the HTTP layer via requireAdmin().
  */
 export async function getCardBenefit(id: string): Promise<FullCardBenefit> {
   const benefit = await prisma.cardBenefit.findUnique({
@@ -104,7 +106,7 @@ export async function createCardBenefit(data: CreateCardBenefitInput): Promise<F
       description,
       value: Number(value),
       maxValuePerBooking: maxValuePerBooking != null ? Number(maxValuePerBooking) : null,
-      period: period as BenefitPeriod,
+      period: period,
       hotelChainId: hotelChainId || null,
       isActive: isActive ?? true,
       startDate: startDate ? new Date(startDate) : null,
@@ -129,6 +131,9 @@ export async function updateCardBenefit(
   id: string,
   data: UpdateCardBenefitInput
 ): Promise<FullCardBenefit> {
+  const existing = await prisma.cardBenefit.findUnique({ where: { id }, select: { id: true } });
+  if (!existing) throw new AppError("Card benefit not found", 404);
+
   const {
     creditCardId,
     description,
@@ -148,7 +153,7 @@ export async function updateCardBenefit(
   if (value !== undefined) updateData.value = Number(value);
   if (maxValuePerBooking !== undefined)
     updateData.maxValuePerBooking = maxValuePerBooking != null ? Number(maxValuePerBooking) : null;
-  if (period !== undefined) updateData.period = period as BenefitPeriod;
+  if (period !== undefined) updateData.period = period;
   if (hotelChainId !== undefined) updateData.hotelChainId = hotelChainId || null;
   if (isActive !== undefined) updateData.isActive = isActive;
   if (startDate !== undefined) updateData.startDate = startDate ? new Date(startDate) : null;
@@ -176,5 +181,7 @@ export async function updateCardBenefit(
 
 /** Delete a card benefit. */
 export async function deleteCardBenefit(id: string): Promise<void> {
+  const existing = await prisma.cardBenefit.findUnique({ where: { id }, select: { id: true } });
+  if (!existing) throw new AppError("Card benefit not found", 404);
   await prisma.cardBenefit.delete({ where: { id } });
 }

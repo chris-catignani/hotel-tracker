@@ -18,7 +18,7 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 vi.mock("@/services/card-benefit-apply", () => ({
-  reapplyBenefitForAllUsers: vi.fn(),
+  reapplyBenefitForAllUsers: vi.fn().mockResolvedValue(undefined),
 }));
 
 import prisma from "@/lib/prisma";
