@@ -95,7 +95,7 @@ export interface CreateBookingInput {
 
 export interface UpdateBookingInput {
   accommodationType?: string;
-  hotelChainId?: string;
+  hotelChainId?: string | null;
   propertyId?: string;
   propertyName?: string;
   placeId?: string;
@@ -438,7 +438,7 @@ export async function createBooking(userId: string, input: CreateBookingInput) {
   const resolvedCurrency = input.currency || "USD";
 
   // Resolve propertyId: use provided id, or find/create from geo fields
-  let propertyId: string = input.propertyId!;
+  let propertyId: string | undefined = input.propertyId;
   if (!propertyId && input.propertyName) {
     propertyId = await findOrCreateProperty({
       propertyName: input.propertyName,
@@ -451,6 +451,7 @@ export async function createBooking(userId: string, input: CreateBookingInput) {
       longitude: input.longitude ?? null,
     });
   }
+  if (!propertyId) throw new AppError("Property ID or Property Name is required", 400);
 
   const userProvidedPoints =
     input.loyaltyPointsEarned != null ? Number(input.loyaltyPointsEarned) : undefined;
