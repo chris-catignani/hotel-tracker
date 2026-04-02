@@ -162,7 +162,7 @@ export async function updateCardBenefit(
   const benefit = await prisma.$transaction(async (tx) => {
     if (otaAgencyIds !== undefined) {
       await tx.cardBenefitOtaAgency.deleteMany({ where: { cardBenefitId: id } });
-      if (Array.isArray(otaAgencyIds) && otaAgencyIds.length > 0) {
+      if (otaAgencyIds.length > 0) {
         await tx.cardBenefitOtaAgency.createMany({
           data: otaAgencyIds.map((otaAgencyId: string) => ({ cardBenefitId: id, otaAgencyId })),
         });
