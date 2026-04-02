@@ -131,25 +131,17 @@ export async function upsertPriceWatch(
     const booking = await prisma.booking.findFirst({ where: { id: bookingId, userId } });
     if (!booking) throw new AppError("Booking not found", 404);
 
-    const resolvedCashThreshold = cashThreshold != null ? Number(cashThreshold) : null;
-    const resolvedAwardThreshold = awardThreshold != null ? Number(awardThreshold) : null;
-    const resolvedFlexibility = Number(dateFlexibilityDays) || 0;
+    const bookingData = {
+      priceWatchId: watch.id,
+      cashThreshold: cashThreshold != null ? Number(cashThreshold) : null,
+      awardThreshold: awardThreshold != null ? Number(awardThreshold) : null,
+      dateFlexibilityDays: Number(dateFlexibilityDays) || 0,
+    };
 
     await prisma.priceWatchBooking.upsert({
       where: { bookingId },
-      update: {
-        priceWatchId: watch.id,
-        cashThreshold: resolvedCashThreshold,
-        awardThreshold: resolvedAwardThreshold,
-        dateFlexibilityDays: resolvedFlexibility,
-      },
-      create: {
-        priceWatchId: watch.id,
-        bookingId,
-        cashThreshold: resolvedCashThreshold,
-        awardThreshold: resolvedAwardThreshold,
-        dateFlexibilityDays: resolvedFlexibility,
-      },
+      update: bookingData,
+      create: { ...bookingData, bookingId },
     });
   }
 
