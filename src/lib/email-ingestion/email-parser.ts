@@ -5,27 +5,6 @@ import { logger } from "@/lib/logger";
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const MODEL = process.env.ANTHROPIC_MODEL ?? "claude-haiku-4-5-20251001";
 
-/**
- * Decode quoted-printable encoding and strip HTML tags to produce readable text.
- */
-export function decodeEmailToText(rawEmail: string): string {
-  const qpDecoded = rawEmail
-    .replace(/=\r?\n/g, "")
-    .replace(/=([0-9A-Fa-f]{2})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
-
-  return qpDecoded
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&zwnj;/g, "")
-    .replace(/\s{2,}/g, " ")
-    .trim();
-}
-
 function buildPrompt(emailText: string, guide: ChainGuide | null): string {
   const chainSection = guide?.promptNotes
     ? `Chain-specific notes for ${guide.chainName}:\n${guide.promptNotes}\n\n`
@@ -48,7 +27,7 @@ ${chainSection}Return ONLY valid JSON with these fields (no explanation, no mark
   "currency": string | null,     // 3-letter code e.g. "USD", "SGD"
   "nightlyRates": [{ "amount": number }] | null,  // per-night amounts when no pretax total is shown
   "pretaxCost": number | null,   // pretax total if shown directly; null if returning nightlyRates
-  "taxLines": [{ "label": string, "amount": number }] | null,  // individual tax/fee line items — positive amounts only; do NOT include discount/savings lines here (those go in discounts[])
+  "taxLines": [{ "label": string, "amount": number }] | null,  // individual tax/fee line items — positive amounts only; do NOT include discount/savings lines here (those go in discounts[]); null if amounts are not shown
   "discounts": [{ "label": string, "amount": number, "type": "accommodation" | "fee" }] | null,  // discount line items: "accommodation" reduces pretaxCost, "fee" reduces taxLines amounts
   "totalCost": number | null,    // cash bookings only
   "pointsRedeemed": number | null,  // award bookings only, null if count not stated
@@ -59,7 +38,7 @@ Rules:
 - If the email shows per-night rates but no pretax subtotal: populate "nightlyRates", leave "pretaxCost" null
 - Never compute sums yourself — return the raw line items and leave the derived fields null
 - If the price breakdown includes any discount line items (special offers, savings, promotions), return pretaxCost: null — do not attempt to compute it; the system will derive it automatically. Still populate nightlyRates with the per-night amounts if they are shown. Always return taxLines if tax/fee lines are explicitly shown, even when discounts are present
-- taxLines must contain only positive fee/tax line items (e.g. "Taxes", "Service fee", "City tax"). Discount and savings lines belong in discounts[], never in taxLines
+- taxLines must contain only positive fee/tax line items with known amounts (e.g. "Taxes", "Service fee", "City tax"). Omit any line where the amount is unknown or not shown — if no amounts are available, return taxLines: null. Discount and savings lines belong in discounts[], never in taxLines
 - Chase The Edit and American Express Travel (AMEX FHR/THC) always charge guests in USD — set currency to "USD" for these regardless of hotel location
 - For hotelChain, always use the parent group, not the sub-brand. Less obvious parent chains:
   IHG: Kimpton, Six Senses, Regent, voco, Vignette Collection, InterContinental, Crowne Plaza, Hotel Indigo, HUALUXE, Iberostar, avid, Staybridge Suites, Candlewood Suites
@@ -67,7 +46,7 @@ Rules:
   GHA Discovery: PARKROYAL, Pan Pacific, Anantara, Kempinski, Corinthia, Capella, Tivoli, NH Hotels, NH Collection, Viceroy, Outrigger, Oaks, Minor
 
 Email:
-${emailText.slice(0, 16000)}`;
+${emailText.slice(0, 12000)}`;
 }
 
 function isValidParsed(data: unknown): data is ParsedBookingData {
@@ -149,18 +128,42 @@ function verifyBalance(parsed: ParsedBookingData): void {
   }
 }
 
+function preprocessEmail(text: string): string {
+  // Strip boilerplate legal sections that appear as standalone headings
+  const boilerplateMarker = /^Terms (?:and|&) [Cc]onditions\s*$/m;
+  const markerMatch = boilerplateMarker.exec(text);
+  const trimmed = markerMatch ? text.slice(0, markerMatch.index) : text;
+
+  return (
+    trimmed
+      // Replace long angle-bracket URLs with just the origin
+      .replace(/<(https?:\/\/[^/>]+)[^>]{40,}>/g, "<$1/>")
+      // Strip [image: ...] alt-text lines
+      .replace(/\[image:[^\]]*\]\n?/g, "")
+      // Strip lines consisting only of invisible Unicode spacers
+      // (U+034F combining grapheme joiner, U+00AD soft hyphen, U+200C ZWNJ, U+200B ZWSP, U+FEFF BOM)
+      .replace(/^[\s\u034f\u00ad\u200c\u200b\ufeff]+$/gm, "")
+      // Collapse 3+ consecutive blank lines down to 2
+      .replace(/\n{3,}/g, "\n\n")
+      .trim()
+  );
+}
+
 /**
  * Parse a raw email string into structured booking data using Claude.
  * Returns null if parsing fails or required fields are missing.
  *
- * @param rawEmail - Full raw email content (headers + body)
+ * @param rawEmail - Plain text email content (pre-decoded by Resend)
  * @param guide - Chain-specific parsing guide, or null for a generic parse attempt
  */
 export async function parseConfirmationEmail(
   rawEmail: string,
   guide: ChainGuide | null
 ): Promise<ParsedBookingData | null> {
-  const emailText = decodeEmailToText(rawEmail);
+  const emailText = preprocessEmail(rawEmail);
+  if (emailText.length > 12000) {
+    logger.warn("email-parser: email truncated for prompt", { originalLength: emailText.length });
+  }
   const prompt = buildPrompt(emailText, guide);
 
   let responseText: string;

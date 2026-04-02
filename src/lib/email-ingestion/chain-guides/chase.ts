@@ -3,7 +3,6 @@ import type { ChainGuide } from "../types";
 export const chaseGuide: ChainGuide = {
   chainName: "Chase Travel",
   senderDomains: ["chasetravel.com"],
-  terminologyMappings: [],
   promptNotes:
     "These are hotel bookings made through Chase Travel (The Edit curated hotel program). " +
     'bookingType is always "cash". ' +

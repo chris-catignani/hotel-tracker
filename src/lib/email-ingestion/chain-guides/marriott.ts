@@ -3,12 +3,6 @@ import type { ChainGuide } from "../types";
 export const marriottGuide: ChainGuide = {
   chainName: "Marriott",
   senderDomains: ["marriott.com", "email.marriott.com", "info.marriott.com"],
-  terminologyMappings: [
-    {
-      emailText: "Marriott Bonvoy Certificate Number",
-      bookingType: "cert",
-    },
-  ],
   promptNotes:
     "To determine bookingType, look at the redemption type label inside the award summary section — NOT the section heading itself (which Marriott labels 'Redemption certificate' for all award types). " +
     'If the label says "Standard Redemption Rate" or similar points-rate language, bookingType = "points" and certsRedeemed = null. ' +

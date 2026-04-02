@@ -3,7 +3,6 @@ import type { ChainGuide } from "../types";
 export const accorGuide: ChainGuide = {
   chainName: "Accor",
   senderDomains: ["confirmation.all.com"],
-  terminologyMappings: [],
   promptNotes:
     "Accor emails come from the ALL – Accor Live Limitless program. " +
     "These are standard cash hotel bookings. " +

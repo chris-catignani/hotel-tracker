@@ -4,15 +4,8 @@
  */
 import { readFileSync } from "fs";
 import { resolve } from "path";
-import { simpleParser } from "mailparser";
-import { decodeEmailToText, parseConfirmationEmail } from "../src/lib/email-ingestion/email-parser";
+import { parseConfirmationEmail } from "../src/lib/email-ingestion/email-parser";
 import { getChainGuide, extractDomain } from "../src/lib/email-ingestion/chain-guides/index";
-
-/** Parse the raw MIME email and return html ?? text body, just like Resend does in production. */
-async function extractEmailBody(raw: string): Promise<string> {
-  const parsed = await simpleParser(raw);
-  return parsed.html || parsed.text || "";
-}
 
 const FIXTURES: { file: string; senderEmail: string }[] = [
   { file: "accor-confirmation-cash", senderEmail: "all@confirmation.all.com" },
@@ -39,16 +32,13 @@ async function run() {
     console.log(`Fixture: ${file}`);
     console.log(`Sender:  ${senderEmail} (domain: ${extractDomain(senderEmail)})`);
 
-    const raw = readFileSync(resolve(fixtureDir, file), "utf-8");
-    const body = await extractEmailBody(raw);
+    const emailText = readFileSync(resolve(fixtureDir, file), "utf-8");
     const guide = getChainGuide(senderEmail);
     console.log(`Guide:   ${guide?.chainName ?? "(none)"}`);
-
-    const emailText = decodeEmailToText(body);
     console.log(`Text length: ${emailText.length} chars`);
     console.log(`Text preview (first 300): ${emailText.slice(0, 300)}`);
 
-    const result = await parseConfirmationEmail(body, guide);
+    const result = await parseConfirmationEmail(emailText, guide);
 
     if (!result) {
       console.log("❌ FAILED");
