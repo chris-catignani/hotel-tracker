@@ -48,7 +48,8 @@ vi.mock("@/services/promotion-apply", () => ({
 }));
 
 import prisma from "@/lib/prisma";
-import { getPromotion, listPromotions } from "./promotion.service";
+import { matchPromotionsForAffectedBookings } from "@/services/promotion-apply";
+import { getPromotion, listPromotions, createPromotion } from "./promotion.service";
 
 const prismaMock = prisma as unknown as {
   promotion: {
@@ -130,6 +131,115 @@ describe("listPromotions", () => {
 
     expect(prismaMock.promotion.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { type: "LOYALTY" } })
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// createPromotion
+// ---------------------------------------------------------------------------
+
+describe("createPromotion", () => {
+  const baseInput = {
+    name: "Summer Bonus",
+    type: "loyalty" as const,
+    benefits: [
+      {
+        rewardType: "points" as const,
+        valueType: "fixed" as const,
+        value: 1000,
+        certType: null,
+        sortOrder: 0,
+        restrictions: null,
+      },
+    ],
+    tiers: undefined,
+    hotelChainId: null,
+    creditCardId: null,
+    shoppingPortalId: null,
+    startDate: null,
+    endDate: null,
+    restrictions: null,
+  };
+
+  beforeEach(() => {
+    prismaMock.$transaction.mockImplementation(
+      async (fn: (tx: typeof prismaMock) => Promise<unknown>) => fn(prismaMock)
+    );
+    prismaMock.promotion.create.mockResolvedValue({ id: "promo-1" });
+    prismaMock.promotion.findUnique.mockResolvedValue(mockPromotion);
+  });
+
+  it("creates promotion with flat benefits (no tiers)", async () => {
+    const result = await createPromotion("user-1", baseInput);
+
+    expect(prismaMock.promotion.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          name: "Summer Bonus",
+          type: "loyalty",
+          user: { connect: { id: "user-1" } },
+          benefits: expect.objectContaining({ create: expect.any(Array) }),
+        }),
+      })
+    );
+    expect(result).toEqual(mockPromotion);
+  });
+
+  it("creates promotion with tiers when tiers array is non-empty", async () => {
+    const inputWithTiers = {
+      ...baseInput,
+      tiers: [{ minStays: 1, maxStays: null, minNights: null, maxNights: null, benefits: [] }],
+    };
+
+    await createPromotion("user-1", inputWithTiers);
+
+    expect(prismaMock.promotion.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          tiers: expect.objectContaining({ create: expect.any(Array) }),
+        }),
+      })
+    );
+    // flat benefits should NOT appear when tiers are present
+    const callArg = prismaMock.promotion.create.mock.calls[0][0];
+    expect(callArg.data).not.toHaveProperty("benefits");
+  });
+
+  it("creates UserPromotion when registrationDate is provided", async () => {
+    const inputWithReg = {
+      ...baseInput,
+      restrictions: { registrationDate: "2026-06-01" } as unknown as typeof baseInput.restrictions,
+    };
+
+    await createPromotion("user-1", inputWithReg);
+
+    expect(prismaMock.userPromotion.create).toHaveBeenCalledWith({
+      data: {
+        promotionId: "promo-1",
+        userId: "user-1",
+        registrationDate: new Date("2026-06-01"),
+      },
+    });
+  });
+
+  it("does NOT create UserPromotion when registrationDate is absent", async () => {
+    await createPromotion("user-1", baseInput);
+
+    expect(prismaMock.userPromotion.create).not.toHaveBeenCalled();
+  });
+
+  it("calls matchPromotionsForAffectedBookings with promotion id and userId", async () => {
+    await createPromotion("user-1", baseInput);
+
+    expect(matchPromotionsForAffectedBookings).toHaveBeenCalledWith("promo-1", "user-1");
+  });
+
+  it("re-fetches promotion via findUnique after create to get full relations", async () => {
+    await createPromotion("user-1", baseInput);
+
+    expect(prismaMock.promotion.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "promo-1" } })
     );
   });
 });
