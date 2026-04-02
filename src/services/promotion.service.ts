@@ -7,7 +7,7 @@ import type {
   PromotionBenefitFormData,
   PromotionRestrictionsFormData,
 } from "@/lib/types";
-import type { AccommodationType } from "@prisma/client";
+import type { AccommodationType, PromotionType } from "@prisma/client";
 
 // ---------------------------------------------------------------------------
 // Internal helpers (moved from lib/promotion-api-helpers.ts)
@@ -107,12 +107,19 @@ export type FullPromotion = Prisma.PromotionGetPayload<{ include: typeof PROMOTI
 // Exported service functions (stubs — implemented in later tasks)
 // ---------------------------------------------------------------------------
 
-export async function getPromotion(_id: string, _userId: string): Promise<FullPromotion> {
-  throw new Error("not implemented");
+export async function getPromotion(id: string, userId: string): Promise<FullPromotion> {
+  const promotion = await prisma.promotion.findFirst({
+    where: { id, userId },
+    include: PROMOTION_INCLUDE,
+  });
+  if (!promotion) throw new AppError("Promotion not found", 404);
+  return promotion;
 }
 
-export async function listPromotions(_userId: string, _type?: string): Promise<FullPromotion[]> {
-  throw new Error("not implemented");
+export async function listPromotions(_userId: string, type?: string): Promise<FullPromotion[]> {
+  const where: Record<string, unknown> = {};
+  if (type) where.type = type as PromotionType;
+  return prisma.promotion.findMany({ where, include: PROMOTION_INCLUDE });
 }
 
 export async function createPromotion(
@@ -137,9 +144,6 @@ export async function deletePromotion(_id: string, _userId: string): Promise<voi
 // Placeholders that reference imports used by later task implementations,
 // preventing "defined but never used" lint errors on the skeleton.
 // These will be replaced by real usage in subsequent tasks.
-void (prisma as unknown);
-void (AppError as unknown);
 void (matchPromotionsForAffectedBookings as unknown);
 void (reevaluateBookings as unknown);
 void (buildBenefitCreateData as unknown);
-void (PROMOTION_INCLUDE as unknown);
