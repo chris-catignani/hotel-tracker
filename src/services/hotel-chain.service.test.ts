@@ -31,6 +31,7 @@ import {
   getHotelChain,
   createHotelChain,
   updateHotelChain,
+  deleteHotelChain,
 } from "./hotel-chain.service";
 
 const prismaMock = prisma as unknown as {
@@ -240,5 +241,38 @@ describe("updateHotelChain", () => {
     await updateHotelChain("chain-1", "user-1", { name: "New Name" });
 
     expect(recalculateLoyaltyForHotelChain).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// deleteHotelChain
+// ---------------------------------------------------------------------------
+
+describe("deleteHotelChain", () => {
+  it("deletes when no bookings and no sub-brands exist", async () => {
+    prismaMock.booking.count.mockResolvedValueOnce(0);
+    prismaMock.hotelChainSubBrand.count.mockResolvedValueOnce(0);
+    prismaMock.hotelChain.delete.mockResolvedValueOnce({});
+
+    await deleteHotelChain("chain-1");
+
+    expect(prismaMock.hotelChain.delete).toHaveBeenCalledWith({ where: { id: "chain-1" } });
+  });
+
+  it("throws AppError(409) when bookings exist", async () => {
+    prismaMock.booking.count.mockResolvedValueOnce(2);
+
+    await expect(deleteHotelChain("chain-1")).rejects.toMatchObject({ statusCode: 409 });
+
+    expect(prismaMock.hotelChain.delete).not.toHaveBeenCalled();
+  });
+
+  it("throws AppError(409) when sub-brands exist", async () => {
+    prismaMock.booking.count.mockResolvedValueOnce(0);
+    prismaMock.hotelChainSubBrand.count.mockResolvedValueOnce(1);
+
+    await expect(deleteHotelChain("chain-1")).rejects.toMatchObject({ statusCode: 409 });
+
+    expect(prismaMock.hotelChain.delete).not.toHaveBeenCalled();
   });
 });
