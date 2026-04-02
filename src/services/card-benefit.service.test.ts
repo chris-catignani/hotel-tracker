@@ -22,9 +22,8 @@ vi.mock("@/services/card-benefit-apply", () => ({
 }));
 
 import prisma from "@/lib/prisma";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { reapplyBenefitForAllUsers } from "@/services/card-benefit-apply";
-import { listCardBenefits, getCardBenefit } from "./card-benefit.service";
+import { listCardBenefits, getCardBenefit, createCardBenefit } from "./card-benefit.service";
 
 const prismaMock = prisma as unknown as {
   cardBenefit: {
@@ -94,5 +93,62 @@ describe("getCardBenefit", () => {
     prismaMock.cardBenefit.findUnique.mockResolvedValueOnce(null);
 
     await expect(getCardBenefit("missing")).rejects.toMatchObject({ statusCode: 404 });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// createCardBenefit
+// ---------------------------------------------------------------------------
+
+describe("createCardBenefit", () => {
+  const baseInput = {
+    creditCardId: "card-1",
+    description: "5% cashback",
+    value: 5,
+    period: "ANNUAL" as const,
+  };
+
+  it("throws AppError(400) when required fields are missing", async () => {
+    await expect(
+      createCardBenefit({ creditCardId: "", description: "x", value: 5, period: "ANNUAL" as const })
+    ).rejects.toMatchObject({ statusCode: 400 });
+
+    expect(prismaMock.cardBenefit.create).not.toHaveBeenCalled();
+  });
+
+  it("creates benefit without OTA agencies and calls reapplyBenefitForAllUsers", async () => {
+    prismaMock.cardBenefit.create.mockResolvedValueOnce(mockBenefit);
+
+    const result = await createCardBenefit(baseInput);
+
+    expect(prismaMock.cardBenefit.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          creditCardId: "card-1",
+          description: "5% cashback",
+          value: 5,
+          period: "ANNUAL",
+          otaAgencies: undefined,
+        }),
+      })
+    );
+    expect(reapplyBenefitForAllUsers).toHaveBeenCalledWith("benefit-1");
+    expect(result).toEqual(mockBenefit);
+  });
+
+  it("creates OTA agency links when otaAgencyIds is provided", async () => {
+    prismaMock.cardBenefit.create.mockResolvedValueOnce(mockBenefit);
+
+    await createCardBenefit({ ...baseInput, otaAgencyIds: ["ota-1", "ota-2"] });
+
+    expect(prismaMock.cardBenefit.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          otaAgencies: {
+            create: [{ otaAgencyId: "ota-1" }, { otaAgencyId: "ota-2" }],
+          },
+        }),
+      })
+    );
   });
 });
