@@ -28,6 +28,7 @@ import {
   getCardBenefit,
   createCardBenefit,
   updateCardBenefit,
+  deleteCardBenefit,
 } from "./card-benefit.service";
 
 const prismaMock = prisma as unknown as {
@@ -226,5 +227,30 @@ describe("updateCardBenefit", () => {
     });
 
     expect(prismaMock.cardBenefit.update).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// deleteCardBenefit
+// ---------------------------------------------------------------------------
+
+describe("deleteCardBenefit", () => {
+  it("deletes the benefit by id", async () => {
+    prismaMock.cardBenefit.findUnique.mockResolvedValueOnce({ id: "benefit-1" });
+    prismaMock.cardBenefit.delete.mockResolvedValueOnce(mockBenefit);
+
+    await deleteCardBenefit("benefit-1");
+
+    expect(prismaMock.cardBenefit.delete).toHaveBeenCalledWith({
+      where: { id: "benefit-1" },
+    });
+  });
+
+  it("throws AppError(404) when benefit not found", async () => {
+    prismaMock.cardBenefit.findUnique.mockResolvedValueOnce(null);
+
+    await expect(deleteCardBenefit("missing")).rejects.toMatchObject({ statusCode: 404 });
+
+    expect(prismaMock.cardBenefit.delete).not.toHaveBeenCalled();
   });
 });
