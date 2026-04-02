@@ -3,7 +3,7 @@ import {
   extractDomain,
   getChainGuide,
   detectChainGuideFromContent,
-} from "@/lib/email-ingestion/chain-guides/index";
+} from "@/services/email-ingestion/chain-guides/index";
 
 describe("extractDomain", () => {
   it("extracts domain from a plain email address", () => {

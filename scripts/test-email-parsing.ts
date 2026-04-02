@@ -4,8 +4,8 @@
  */
 import { readFileSync } from "fs";
 import { resolve } from "path";
-import { parseConfirmationEmail } from "../src/lib/email-ingestion/email-parser";
-import { getChainGuide, extractDomain } from "../src/lib/email-ingestion/chain-guides/index";
+import { parseConfirmationEmail } from "../src/services/email-ingestion/email-parser";
+import { getChainGuide, extractDomain } from "../src/services/email-ingestion/chain-guides/index";
 
 const FIXTURES: { file: string; senderEmail: string }[] = [
   { file: "accor-confirmation-cash", senderEmail: "all@confirmation.all.com" },
@@ -24,7 +24,7 @@ const FIXTURES: { file: string; senderEmail: string }[] = [
   { file: "gha-confirmation-cash", senderEmail: "explore@email.ghadiscovery.com" },
 ];
 
-const fixtureDir = resolve(__dirname, "../src/lib/email-ingestion/fixtures");
+const fixtureDir = resolve(__dirname, "../src/services/email-ingestion/fixtures");
 
 async function run() {
   for (const { file, senderEmail } of FIXTURES) {

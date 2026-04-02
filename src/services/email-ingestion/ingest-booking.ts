@@ -3,9 +3,9 @@ import { findOrCreateProperty } from "@/services/property-utils";
 import { searchProperties } from "@/services/geo-lookup";
 import { resolveBookingFinancials } from "@/services/booking-financials";
 import { runPostBookingCreate } from "@/services/booking.service";
-import { matchSubBrand } from "@/lib/email-ingestion/email-parser";
+import { matchSubBrand } from "@/services/email-ingestion/email-parser";
 import { logger } from "@/lib/logger";
-import type { ParsedBookingData } from "@/lib/email-ingestion/types";
+import type { ParsedBookingData } from "@/services/email-ingestion/types";
 
 export interface IngestResult {
   bookingId: string;

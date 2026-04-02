@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { readFileSync } from "fs";
 import { resolve } from "path";
-import { hyattGuide } from "@/lib/email-ingestion/chain-guides/hyatt";
+import { hyattGuide } from "@/services/email-ingestion/chain-guides/hyatt";
 
 // Store mock function in a way that's accessible before initialization
 const mocks = { mockCreate: vi.fn() };
@@ -19,7 +19,7 @@ vi.mock("@anthropic-ai/sdk", () => {
 });
 
 // Import after mocking
-import { parseConfirmationEmail, matchSubBrand } from "@/lib/email-ingestion/email-parser";
+import { parseConfirmationEmail, matchSubBrand } from "@/services/email-ingestion/email-parser";
 
 // Easier accessor
 const mockCreate = mocks.mockCreate;

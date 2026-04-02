@@ -2,16 +2,16 @@
 import { describe, it, expect, vi } from "vitest";
 import { readFileSync } from "fs";
 import { resolve } from "path";
-import { parseConfirmationEmail } from "@/lib/email-ingestion/email-parser";
-import { hyattGuide } from "@/lib/email-ingestion/chain-guides/hyatt";
-import { marriottGuide } from "@/lib/email-ingestion/chain-guides/marriott";
-import { ihgGuide } from "@/lib/email-ingestion/chain-guides/ihg";
-import { accorGuide } from "@/lib/email-ingestion/chain-guides/accor";
-import { ghaGuide } from "@/lib/email-ingestion/chain-guides/gha";
-import { airbnbGuide } from "@/lib/email-ingestion/chain-guides/airbnb";
-import { amexGuide } from "@/lib/email-ingestion/chain-guides/amex";
-import { bookingcomGuide } from "@/lib/email-ingestion/chain-guides/bookingcom";
-import { chaseGuide } from "@/lib/email-ingestion/chain-guides/chase";
+import { parseConfirmationEmail } from "@/services/email-ingestion/email-parser";
+import { hyattGuide } from "@/services/email-ingestion/chain-guides/hyatt";
+import { marriottGuide } from "@/services/email-ingestion/chain-guides/marriott";
+import { ihgGuide } from "@/services/email-ingestion/chain-guides/ihg";
+import { accorGuide } from "@/services/email-ingestion/chain-guides/accor";
+import { ghaGuide } from "@/services/email-ingestion/chain-guides/gha";
+import { airbnbGuide } from "@/services/email-ingestion/chain-guides/airbnb";
+import { amexGuide } from "@/services/email-ingestion/chain-guides/amex";
+import { bookingcomGuide } from "@/services/email-ingestion/chain-guides/bookingcom";
+import { chaseGuide } from "@/services/email-ingestion/chain-guides/chase";
 
 vi.setConfig({ testTimeout: 30_000 });
 

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ingestBookingFromEmail } from "@/services/email-ingestion/ingest-booking";
-import type { ParsedBookingData } from "@/lib/email-ingestion/types";
+import type { ParsedBookingData } from "@/services/email-ingestion/types";
 
 const {
   mockBookingCreate,
@@ -65,7 +65,7 @@ vi.mock("@/lib/prisma", () => ({
   },
 }));
 
-vi.mock("@/lib/email-ingestion/email-parser", () => ({
+vi.mock("@/services/email-ingestion/email-parser", () => ({
   matchSubBrand: vi.fn().mockResolvedValue(null),
 }));
 

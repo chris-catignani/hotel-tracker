@@ -73,7 +73,7 @@ Three tiers evaluated in order:
 
 ### Email Ingestion
 
-- Chain-specific parsing guides live in `src/lib/email-ingestion/chain-guides.ts` — add a new entry here when adding support for a new hotel chain
+- Chain-specific parsing guides live in `src/services/email-ingestion/chain-guides/` — add a new entry here when adding support for a new hotel chain
 - The `from` address identifies the user; hotel chain is extracted by Claude from the email content
 
 ### Authentication & Authorization
