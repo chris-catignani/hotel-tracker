@@ -19,7 +19,13 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 import prisma from "@/lib/prisma";
-import { listPriceWatches, getPriceWatch, upsertPriceWatch } from "./price-watch.service";
+import {
+  listPriceWatches,
+  getPriceWatch,
+  upsertPriceWatch,
+  updatePriceWatch,
+  deletePriceWatch,
+} from "./price-watch.service";
 
 const prismaMock = prisma as unknown as {
   priceWatch: {
@@ -159,5 +165,63 @@ describe("upsertPriceWatch", () => {
     prismaMock.priceWatch.findFirst.mockResolvedValueOnce(null);
 
     await expect(upsertPriceWatch("user-1", baseInput)).rejects.toMatchObject({ statusCode: 500 });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// updatePriceWatch
+// ---------------------------------------------------------------------------
+
+describe("updatePriceWatch", () => {
+  it("updates and returns the watch when found", async () => {
+    prismaMock.priceWatch.findFirst.mockResolvedValueOnce({ id: "watch-1" });
+    prismaMock.priceWatch.update.mockResolvedValueOnce({ ...mockWatch, isEnabled: false });
+
+    const result = await updatePriceWatch("watch-1", "user-1", { isEnabled: false });
+
+    expect(prismaMock.priceWatch.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "watch-1" },
+        data: { isEnabled: false },
+      })
+    );
+    expect(result).toMatchObject({ isEnabled: false });
+  });
+
+  it("throws AppError(404) when watch not found", async () => {
+    prismaMock.priceWatch.findFirst.mockResolvedValueOnce(null);
+
+    await expect(updatePriceWatch("watch-1", "user-1", { isEnabled: false })).rejects.toMatchObject(
+      { statusCode: 404 }
+    );
+
+    expect(prismaMock.priceWatch.update).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// deletePriceWatch
+// ---------------------------------------------------------------------------
+
+describe("deletePriceWatch", () => {
+  it("deletes the watch when found", async () => {
+    prismaMock.priceWatch.findFirst.mockResolvedValueOnce({ id: "watch-1" });
+    prismaMock.priceWatch.delete.mockResolvedValueOnce({});
+
+    await deletePriceWatch("watch-1", "user-1");
+
+    expect(prismaMock.priceWatch.delete).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "watch-1" } })
+    );
+  });
+
+  it("throws AppError(404) when watch not found", async () => {
+    prismaMock.priceWatch.findFirst.mockResolvedValueOnce(null);
+
+    await expect(deletePriceWatch("watch-1", "user-1")).rejects.toMatchObject({
+      statusCode: 404,
+    });
+
+    expect(prismaMock.priceWatch.delete).not.toHaveBeenCalled();
   });
 });
