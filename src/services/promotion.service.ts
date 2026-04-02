@@ -337,13 +337,13 @@ export async function updatePromotion(
             ),
           },
         })),
-      } as Prisma.PromotionTierUpdateManyWithoutPromotionNestedInput;
+      };
     } else if (benefits !== undefined && !hasTiers) {
       updateData.benefits = {
         create: ((benefits as PromotionBenefitFormData[]) || []).map((b, i) =>
           buildBenefitCreateData(b, i)
         ),
-      } as Prisma.PromotionBenefitUpdateManyWithoutPromotionNestedInput;
+      };
     }
 
     // Handle UserPromotion: upsert if registrationDate provided, delete if empty string
