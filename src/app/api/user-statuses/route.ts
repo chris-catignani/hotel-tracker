@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { withObservability } from "@/lib/observability";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
-import { recalculateLoyaltyForHotelChain } from "@/lib/loyalty-recalculation";
+import { recalculateLoyaltyForHotelChain } from "@/services/loyalty-recalculation";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 
 export const GET = withObservability(async (request: NextRequest) => {

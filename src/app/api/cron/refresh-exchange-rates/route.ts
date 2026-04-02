@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withObservability } from "@/lib/observability";
 import prisma from "@/lib/prisma";
-import { getCurrentRate } from "@/lib/exchange-rate";
-import { finalizeCheckedInBookings } from "@/lib/booking-enrichment";
+import { getCurrentRate } from "@/services/exchange-rate";
+import { finalizeCheckedInBookings } from "@/services/booking-enrichment";
 import { apiError } from "@/lib/api-error";
 import { CURRENCIES } from "@/lib/constants";
-import { reevaluateBookings } from "@/lib/promotion-apply";
+import { reevaluateBookings } from "@/services/promotion-apply";
 import { logger } from "@/lib/logger";
 
 const RATES_CDN =

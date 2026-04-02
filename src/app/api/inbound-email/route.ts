@@ -4,7 +4,7 @@ import { Webhook } from "svix";
 import prisma from "@/lib/prisma";
 import { parseConfirmationEmail } from "@/lib/email-ingestion/email-parser";
 import { detectChainGuideFromContent } from "@/lib/email-ingestion/chain-guides";
-import { ingestBookingFromEmail } from "@/lib/email-ingestion/ingest-booking";
+import { ingestBookingFromEmail } from "@/services/email-ingestion/ingest-booking";
 import { sendIngestionConfirmation, sendIngestionError } from "@/lib/email";
 import { logger } from "@/lib/logger";
 

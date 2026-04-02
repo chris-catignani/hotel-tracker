@@ -1,5 +1,5 @@
 import prisma from "../src/lib/prisma";
-import { matchPromotionsForBooking } from "../src/lib/promotion-apply";
+import { matchPromotionsForBooking } from "../src/services/promotion-apply";
 
 /**
  * Script to re-evaluate promotion matching for every booking in the database.

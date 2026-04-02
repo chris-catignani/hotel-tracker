@@ -11,7 +11,7 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 import prisma from "@/lib/prisma";
-import { searchProperties } from "@/lib/geo-lookup";
+import { searchProperties } from "@/services/geo-lookup";
 
 const mockFindUnique = vi.mocked(prisma.geoCache.findUnique);
 const mockUpsert = vi.mocked(prisma.geoCache.upsert);

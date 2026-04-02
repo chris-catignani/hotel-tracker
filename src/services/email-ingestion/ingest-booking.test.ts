@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ingestBookingFromEmail } from "@/lib/email-ingestion/ingest-booking";
+import { ingestBookingFromEmail } from "@/services/email-ingestion/ingest-booking";
 import type { ParsedBookingData } from "@/lib/email-ingestion/types";
 
 const {
@@ -35,23 +35,23 @@ const {
   mockOtaAgencyFindFirst: vi.fn().mockResolvedValue(null),
 }));
 
-vi.mock("@/lib/property-utils", () => ({
+vi.mock("@/services/property-utils", () => ({
   findOrCreateProperty: vi.fn().mockResolvedValue("prop-123"),
 }));
-vi.mock("@/lib/geo-lookup", () => ({
+vi.mock("@/services/geo-lookup", () => ({
   searchProperties: vi.fn().mockResolvedValue([]),
 }));
 vi.mock("@/lib/loyalty-utils", () => ({
   calculatePoints: vi.fn().mockReturnValue(1200),
   resolveBasePointRate: vi.fn().mockReturnValue(5),
 }));
-vi.mock("@/lib/exchange-rate", () => ({
+vi.mock("@/services/exchange-rate", () => ({
   getOrFetchHistoricalRate: vi.fn().mockResolvedValue(1.0),
   getCurrentRate: vi.fn().mockResolvedValue(1.0),
   fetchExchangeRate: vi.fn().mockResolvedValue(1.0),
   resolveCalcCurrencyRate: vi.fn().mockResolvedValue(null),
 }));
-vi.mock("@/lib/booking-service", () => ({
+vi.mock("@/services/booking.service", () => ({
   runPostBookingCreate: vi.fn().mockResolvedValue(undefined),
 }));
 
@@ -179,7 +179,7 @@ describe("ingestBookingFromEmail", () => {
   });
 
   it("locks exchange rate for non-USD past check-in", async () => {
-    const { getOrFetchHistoricalRate } = await import("@/lib/exchange-rate");
+    const { getOrFetchHistoricalRate } = await import("@/services/exchange-rate");
     vi.mocked(getOrFetchHistoricalRate).mockResolvedValueOnce(1.35);
 
     const result = await ingestBookingFromEmail(
@@ -194,7 +194,7 @@ describe("ingestBookingFromEmail", () => {
   });
 
   it("does not lock exchange rate for future non-USD check-in", async () => {
-    const { getOrFetchHistoricalRate } = await import("@/lib/exchange-rate");
+    const { getOrFetchHistoricalRate } = await import("@/services/exchange-rate");
 
     const result = await ingestBookingFromEmail(
       { ...baseParsed, currency: "EUR", checkIn: "2099-01-10", checkOut: "2099-01-14" },
@@ -226,7 +226,7 @@ describe("ingestBookingFromEmail", () => {
       }
     );
 
-    const { getOrFetchHistoricalRate } = await import("@/lib/exchange-rate");
+    const { getOrFetchHistoricalRate } = await import("@/services/exchange-rate");
     vi.mocked(getOrFetchHistoricalRate).mockResolvedValueOnce(1.1); // EUR/USD = 1.1
 
     const result = await ingestBookingFromEmail(
@@ -276,8 +276,8 @@ describe("ingestBookingFromEmail", () => {
   });
 
   it("geo-enriches the property using searchProperties and passes geo fields to findOrCreateProperty", async () => {
-    const { searchProperties } = await import("@/lib/geo-lookup");
-    const { findOrCreateProperty } = await import("@/lib/property-utils");
+    const { searchProperties } = await import("@/services/geo-lookup");
+    const { findOrCreateProperty } = await import("@/services/property-utils");
     vi.mocked(searchProperties).mockResolvedValueOnce([
       {
         placeId: "gplace-123",
@@ -307,7 +307,7 @@ describe("ingestBookingFromEmail", () => {
   });
 
   it("falls back to parsed propertyName when geo lookup returns no results", async () => {
-    const { findOrCreateProperty } = await import("@/lib/property-utils");
+    const { findOrCreateProperty } = await import("@/services/property-utils");
     await ingestBookingFromEmail(baseParsed, "user-1", null);
     expect(findOrCreateProperty).toHaveBeenCalledWith(
       expect.objectContaining({ propertyName: baseParsed.propertyName })
@@ -315,7 +315,7 @@ describe("ingestBookingFromEmail", () => {
   });
 
   it("uses isHotel=false for apartment geo lookup", async () => {
-    const { searchProperties } = await import("@/lib/geo-lookup");
+    const { searchProperties } = await import("@/services/geo-lookup");
     await ingestBookingFromEmail({ ...baseParsed, accommodationType: "apartment" }, "user-1", null);
     expect(searchProperties).toHaveBeenCalledWith(baseParsed.propertyName, false);
   });

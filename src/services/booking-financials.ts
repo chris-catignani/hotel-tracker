@@ -1,6 +1,6 @@
 import prisma from "@/lib/prisma";
 import { calculatePoints, resolveBasePointRate } from "@/lib/loyalty-utils";
-import { getOrFetchHistoricalRate, resolveCalcCurrencyRate } from "@/lib/exchange-rate";
+import { getOrFetchHistoricalRate, resolveCalcCurrencyRate } from "@/services/exchange-rate";
 
 export interface BookingFinancialParams {
   /** YYYY-MM-DD */

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withObservability } from "@/lib/observability";
 import prisma from "@/lib/prisma";
-import { runPostBookingCreate } from "@/lib/booking-service";
+import { runPostBookingCreate } from "@/services/booking.service";
 import { apiError } from "@/lib/api-error";
-import { resolveBookingFinancials } from "@/lib/booking-financials";
+import { resolveBookingFinancials } from "@/services/booking-financials";
 import {
   CertType,
   BenefitType,
@@ -13,9 +13,12 @@ import {
 } from "@prisma/client";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
-import { enrichBookingWithRate, enrichBookingsWithPartnerships } from "@/lib/booking-enrichment";
-import { findOrCreateProperty } from "@/lib/property-utils";
-import { validateBenefits } from "@/lib/booking-benefit-validation";
+import {
+  enrichBookingWithRate,
+  enrichBookingsWithPartnerships,
+} from "@/services/booking-enrichment";
+import { findOrCreateProperty } from "@/services/property-utils";
+import { validateBenefits } from "@/services/booking-benefit-validation";
 
 function derivePostingStatuses(data: {
   loyaltyPointsEarned: number | null | undefined;

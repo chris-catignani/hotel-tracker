@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { getAuthenticatedUserId, requireAdmin } from "@/lib/auth-utils";
 import { normalizeUserStatuses } from "@/lib/normalize-response";
-import { getCurrentRate } from "@/lib/exchange-rate";
+import { getCurrentRate } from "@/services/exchange-rate";
 
 export const GET = withObservability(async (request: NextRequest) => {
   try {

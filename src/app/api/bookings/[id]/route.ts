@@ -7,12 +7,12 @@ import {
   type MatchingPromotion,
   type MatchingBooking,
 } from "@/lib/promotion-matching";
-import { fetchPromotionUsage } from "@/lib/promotion-usage";
+import { fetchPromotionUsage } from "@/services/promotion-usage";
 import {
   matchPromotionsForBooking,
   reevaluateBookings,
   reevaluateSubsequentBookings,
-} from "@/lib/promotion-apply";
+} from "@/services/promotion-apply";
 import { apiError } from "@/lib/api-error";
 import { CertType, BenefitType, BenefitPointsEarnType, PostingStatus } from "@prisma/client";
 import { calculatePoints, resolveBasePointRate } from "@/lib/loyalty-utils";
@@ -22,14 +22,14 @@ import {
   getOrFetchHistoricalRate,
   getCurrentRate,
   resolveCalcCurrencyRate,
-} from "@/lib/exchange-rate";
-import { enrichBookingWithPartnerships } from "@/lib/booking-enrichment";
-import { findOrCreateProperty } from "@/lib/property-utils";
+} from "@/services/exchange-rate";
+import { enrichBookingWithPartnerships } from "@/services/booking-enrichment";
+import { findOrCreateProperty } from "@/services/property-utils";
 import {
   reapplyCardBenefitsAffectedByBooking,
   reapplyBenefitForPeriod,
-} from "@/lib/card-benefit-apply";
-import { validateBenefits } from "@/lib/booking-benefit-validation";
+} from "@/services/card-benefit-apply";
+import { validateBenefits } from "@/services/booking-benefit-validation";
 
 async function getFullBookingWithUsage(id: string, userId: string) {
   const booking = await prisma.booking.findFirst({

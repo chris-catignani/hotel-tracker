@@ -13,12 +13,12 @@ vi.mock("./exchange-rate", () => ({
   fetchExchangeRate: vi.fn(),
 }));
 
-vi.mock("./loyalty-utils", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("./loyalty-utils")>();
+vi.mock("@/lib/loyalty-utils", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/loyalty-utils")>();
   return { ...actual, calculatePoints: vi.fn() };
 });
 
-vi.mock("./prisma", () => ({
+vi.mock("@/lib/prisma", () => ({
   default: {
     exchangeRateHistory: { findUnique: vi.fn() },
     booking: { findMany: vi.fn(), update: vi.fn() },
@@ -27,7 +27,7 @@ vi.mock("./prisma", () => ({
   },
 }));
 
-vi.mock("./partnership-earns", () => ({
+vi.mock("@/lib/partnership-earns", () => ({
   resolvePartnershipEarns: vi.fn().mockResolvedValue([]),
 }));
 
@@ -37,9 +37,9 @@ import {
   getOrFetchHistoricalRate,
   fetchExchangeRate,
 } from "./exchange-rate";
-import { calculatePoints } from "./loyalty-utils";
-import prisma from "./prisma";
-import { resolvePartnershipEarns } from "./partnership-earns";
+import { calculatePoints } from "@/lib/loyalty-utils";
+import prisma from "@/lib/prisma";
+import { resolvePartnershipEarns } from "@/lib/partnership-earns";
 
 const mockGetCurrentRate = getCurrentRate as Mock;
 const mockResolveCalcCurrencyRate = resolveCalcCurrencyRate as Mock;

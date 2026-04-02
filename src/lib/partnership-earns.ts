@@ -1,4 +1,4 @@
-import { getOrFetchHistoricalRate } from "@/lib/exchange-rate";
+import { getOrFetchHistoricalRate } from "@/services/exchange-rate";
 import type { CalculationDetail } from "@/lib/net-cost";
 
 function formatCents(centsPerPoint: number): string {

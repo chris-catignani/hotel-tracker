@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, type Mock } from "vitest";
-import prisma from "./prisma";
+import prisma from "@/lib/prisma";
 import {
   reevaluateSubsequentBookings,
   getSubsequentBookingIds,
@@ -8,7 +8,7 @@ import {
   getAffectedBookingIds,
 } from "./promotion-apply";
 
-vi.mock("./prisma", () => ({
+vi.mock("@/lib/prisma", () => ({
   default: {
     booking: {
       findUnique: vi.fn(),
@@ -30,7 +30,7 @@ vi.mock("./promotion-usage", () => ({
   fetchPromotionUsage: vi.fn().mockResolvedValue(new Map()),
 }));
 
-vi.mock("./promotion-matching", () => ({
+vi.mock("@/lib/promotion-matching", () => ({
   calculateMatchedPromotions: vi.fn().mockReturnValue([]),
   getConstrainedPromotions: vi.fn().mockReturnValue([]),
   BOOKING_INCLUDE: {},

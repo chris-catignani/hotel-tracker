@@ -1,11 +1,11 @@
 import prisma from "@/lib/prisma";
-import { findOrCreateProperty } from "@/lib/property-utils";
-import { searchProperties } from "@/lib/geo-lookup";
-import { resolveBookingFinancials } from "@/lib/booking-financials";
-import { runPostBookingCreate } from "@/lib/booking-service";
-import { matchSubBrand } from "./email-parser";
+import { findOrCreateProperty } from "@/services/property-utils";
+import { searchProperties } from "@/services/geo-lookup";
+import { resolveBookingFinancials } from "@/services/booking-financials";
+import { runPostBookingCreate } from "@/services/booking.service";
+import { matchSubBrand } from "@/lib/email-ingestion/email-parser";
 import { logger } from "@/lib/logger";
-import type { ParsedBookingData } from "./types";
+import type { ParsedBookingData } from "@/lib/email-ingestion/types";
 
 export interface IngestResult {
   bookingId: string;

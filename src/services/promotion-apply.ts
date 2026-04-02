@@ -7,7 +7,7 @@ import {
   type MatchedPromotion,
   BOOKING_INCLUDE,
   PROMOTIONS_INCLUDE,
-} from "./promotion-matching";
+} from "@/lib/promotion-matching";
 import { fetchPromotionUsage } from "./promotion-usage";
 
 /**

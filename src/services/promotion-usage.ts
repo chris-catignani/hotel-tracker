@@ -5,7 +5,7 @@ import {
   type MatchingPromotion,
   type MatchingRestrictions,
   type PromotionUsageMap,
-} from "./promotion-matching";
+} from "@/lib/promotion-matching";
 
 /**
  * Builds a Prisma 'where' clause that reflects the Core Eligibility rules.

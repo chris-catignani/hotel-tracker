@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { calculatePoints, resolveBasePointRate } from "./loyalty-utils";
+import { calculatePoints, resolveBasePointRate } from "@/lib/loyalty-utils";
 import { reevaluateBookings } from "./promotion-apply";
 import { resolveCalcCurrencyRate } from "./exchange-rate";
 

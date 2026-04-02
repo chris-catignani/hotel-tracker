@@ -14,12 +14,12 @@ vi.mock("@/lib/price-fetcher", async (importActual) => {
 });
 
 vi.mock("@/lib/email", () => ({ sendPriceDropAlert: vi.fn() }));
-vi.mock("@/lib/exchange-rate", () => ({ getCurrentRate: vi.fn() }));
+vi.mock("@/services/exchange-rate", () => ({ getCurrentRate: vi.fn() }));
 
 import prisma from "@/lib/prisma";
 import { selectFetcher } from "@/lib/price-fetcher";
 import { sendPriceDropAlert } from "@/lib/email";
-import { getCurrentRate } from "@/lib/exchange-rate";
+import { getCurrentRate } from "@/services/exchange-rate";
 import { runPriceWatchRefresh, fixedRateAwardPoints } from "./price-watch-refresh";
 import { HOTEL_ID } from "@/lib/constants";
 import type { Prisma } from "@prisma/client";

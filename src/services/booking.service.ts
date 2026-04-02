@@ -1,5 +1,8 @@
-import { matchPromotionsForBooking, reevaluateSubsequentBookings } from "@/lib/promotion-apply";
-import { reapplyCardBenefitsAffectedByBooking } from "@/lib/card-benefit-apply";
+import {
+  matchPromotionsForBooking,
+  reevaluateSubsequentBookings,
+} from "@/services/promotion-apply";
+import { reapplyCardBenefitsAffectedByBooking } from "@/services/card-benefit-apply";
 import { logger } from "@/lib/logger";
 
 export interface PostBookingCreateMetadata {

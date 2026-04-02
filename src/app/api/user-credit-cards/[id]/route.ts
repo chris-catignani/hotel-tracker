@@ -3,7 +3,7 @@ import { withObservability } from "@/lib/observability";
 import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
-import { reapplyBenefitsForUserCard } from "@/lib/card-benefit-apply";
+import { reapplyBenefitsForUserCard } from "@/services/card-benefit-apply";
 
 const INCLUDE = {
   creditCard: { include: { pointType: true, rewardRules: true } },

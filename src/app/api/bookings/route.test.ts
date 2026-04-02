@@ -22,7 +22,7 @@ vi.mock("@/lib/normalize-response", () => ({
   normalizeUserStatuses: vi.fn((x) => (Array.isArray(x) ? x : x)),
 }));
 
-vi.mock("@/lib/booking-enrichment", () => ({
+vi.mock("@/services/booking-enrichment", () => ({
   enrichBookingWithRate: vi.fn((b) => Promise.resolve(b)),
   enrichBookingsWithPartnerships: vi.fn((bookings: unknown[]) =>
     Promise.resolve(bookings.map((b) => ({ ...(b as object), partnershipEarns: [] })))
