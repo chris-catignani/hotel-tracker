@@ -48,12 +48,13 @@ vi.mock("@/services/promotion-apply", () => ({
 }));
 
 import prisma from "@/lib/prisma";
-import { matchPromotionsForAffectedBookings } from "@/services/promotion-apply";
+import { matchPromotionsForAffectedBookings, reevaluateBookings } from "@/services/promotion-apply";
 import {
   getPromotion,
   listPromotions,
   createPromotion,
   updatePromotion,
+  deletePromotion,
 } from "./promotion.service";
 import type { PromotionBenefitFormData } from "@/lib/types";
 
@@ -277,6 +278,7 @@ describe("updatePromotion", () => {
     prismaMock.promotionBenefit.findMany.mockResolvedValue([]);
     prismaMock.promotionTier.findMany.mockResolvedValue([]);
     prismaMock.promotion.update.mockResolvedValue(mockPromotion);
+    prismaMock.promotionRestrictions.create.mockResolvedValue({ id: "new-restr-1" });
   });
 
   it("throws AppError(404) when promotion not found or not owned", async () => {
@@ -516,5 +518,76 @@ describe("updatePromotion", () => {
     await updatePromotion("promo-1", "user-1", baseUpdateInput);
 
     expect(matchPromotionsForAffectedBookings).toHaveBeenCalledWith("promo-1", "user-1");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// deletePromotion
+// ---------------------------------------------------------------------------
+
+describe("deletePromotion", () => {
+  beforeEach(() => {
+    prismaMock.promotion.findFirst.mockResolvedValue({ id: "promo-1" });
+    prismaMock.booking.findMany.mockResolvedValue([]);
+    prismaMock.promotion.findUnique.mockResolvedValue({
+      restrictionsId: null,
+      benefits: [],
+      tiers: [],
+    });
+    prismaMock.promotion.delete.mockResolvedValue(undefined);
+  });
+
+  it("throws AppError(404) when promotion not found or not owned", async () => {
+    prismaMock.promotion.findFirst.mockResolvedValueOnce(null);
+
+    await expect(deletePromotion("promo-1", "user-1")).rejects.toMatchObject({ statusCode: 404 });
+  });
+
+  it("collects restriction IDs from promotion-level, benefit-level, and tier benefit-level", async () => {
+    prismaMock.promotion.findUnique.mockResolvedValueOnce({
+      restrictionsId: "r-promo",
+      benefits: [{ restrictionsId: "r-benefit" }],
+      tiers: [{ benefits: [{ restrictionsId: "r-tier-benefit" }] }],
+    });
+
+    await deletePromotion("promo-1", "user-1");
+
+    expect(prismaMock.promotionRestrictions.deleteMany).toHaveBeenCalledWith({
+      where: { id: { in: ["r-promo", "r-benefit", "r-tier-benefit"] } },
+    });
+  });
+
+  it("skips promotionRestrictions.deleteMany when no restriction IDs collected", async () => {
+    prismaMock.promotion.findUnique.mockResolvedValueOnce({
+      restrictionsId: null,
+      benefits: [{ restrictionsId: null }],
+      tiers: [],
+    });
+
+    await deletePromotion("promo-1", "user-1");
+
+    expect(prismaMock.promotionRestrictions.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it("calls reevaluateBookings with affected booking IDs", async () => {
+    prismaMock.booking.findMany.mockResolvedValueOnce([{ id: "b-1" }, { id: "b-2" }]);
+
+    await deletePromotion("promo-1", "user-1");
+
+    expect(reevaluateBookings).toHaveBeenCalledWith(["b-1", "b-2"], "user-1");
+  });
+
+  it("does NOT call reevaluateBookings when no affected bookings", async () => {
+    prismaMock.booking.findMany.mockResolvedValueOnce([]);
+
+    await deletePromotion("promo-1", "user-1");
+
+    expect(reevaluateBookings).not.toHaveBeenCalled();
+  });
+
+  it("calls promotion.delete with the promotion id", async () => {
+    await deletePromotion("promo-1", "user-1");
+
+    expect(prismaMock.promotion.delete).toHaveBeenCalledWith({ where: { id: "promo-1" } });
   });
 });
