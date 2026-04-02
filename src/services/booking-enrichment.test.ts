@@ -27,7 +27,7 @@ vi.mock("@/lib/prisma", () => ({
   },
 }));
 
-vi.mock("@/lib/partnership-earns", () => ({
+vi.mock("@/services/partnership-earns", () => ({
   resolvePartnershipEarns: vi.fn().mockResolvedValue([]),
 }));
 
@@ -39,7 +39,7 @@ import {
 } from "./exchange-rate";
 import { calculatePoints } from "@/lib/loyalty-utils";
 import prisma from "@/lib/prisma";
-import { resolvePartnershipEarns } from "@/lib/partnership-earns";
+import { resolvePartnershipEarns } from "@/services/partnership-earns";
 
 const mockGetCurrentRate = getCurrentRate as Mock;
 const mockResolveCalcCurrencyRate = resolveCalcCurrencyRate as Mock;
