@@ -23,7 +23,12 @@ vi.mock("@/services/card-benefit-apply", () => ({
 
 import prisma from "@/lib/prisma";
 import { reapplyBenefitForAllUsers } from "@/services/card-benefit-apply";
-import { listCardBenefits, getCardBenefit, createCardBenefit } from "./card-benefit.service";
+import {
+  listCardBenefits,
+  getCardBenefit,
+  createCardBenefit,
+  updateCardBenefit,
+} from "./card-benefit.service";
 
 const prismaMock = prisma as unknown as {
   cardBenefit: {
@@ -150,5 +155,76 @@ describe("createCardBenefit", () => {
         }),
       })
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// updateCardBenefit
+// ---------------------------------------------------------------------------
+
+describe("updateCardBenefit", () => {
+  beforeEach(() => {
+    prismaMock.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) =>
+      fn(prismaMock)
+    );
+    prismaMock.cardBenefit.update.mockResolvedValue({ ...mockBenefit, isActive: false });
+  });
+
+  it("updates fields and calls reapplyBenefitForAllUsers", async () => {
+    prismaMock.cardBenefit.findUnique.mockResolvedValueOnce({ id: "benefit-1" });
+
+    const result = await updateCardBenefit("benefit-1", { isActive: false });
+
+    expect(prismaMock.cardBenefit.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "benefit-1" },
+        data: { isActive: false },
+      })
+    );
+    expect(reapplyBenefitForAllUsers).toHaveBeenCalledWith("benefit-1");
+    expect(result).toMatchObject({ isActive: false });
+  });
+
+  it("replaces OTA agencies when otaAgencyIds is provided", async () => {
+    prismaMock.cardBenefit.findUnique.mockResolvedValueOnce({ id: "benefit-1" });
+
+    await updateCardBenefit("benefit-1", { otaAgencyIds: ["ota-3"] });
+
+    expect(prismaMock.cardBenefitOtaAgency.deleteMany).toHaveBeenCalledWith({
+      where: { cardBenefitId: "benefit-1" },
+    });
+    expect(prismaMock.cardBenefitOtaAgency.createMany).toHaveBeenCalledWith({
+      data: [{ cardBenefitId: "benefit-1", otaAgencyId: "ota-3" }],
+    });
+  });
+
+  it("skips OTA agency update when otaAgencyIds is not provided", async () => {
+    prismaMock.cardBenefit.findUnique.mockResolvedValueOnce({ id: "benefit-1" });
+
+    await updateCardBenefit("benefit-1", { isActive: true });
+
+    expect(prismaMock.cardBenefitOtaAgency.deleteMany).not.toHaveBeenCalled();
+    expect(prismaMock.cardBenefitOtaAgency.createMany).not.toHaveBeenCalled();
+  });
+
+  it("deletes all OTA agencies when otaAgencyIds is empty array", async () => {
+    prismaMock.cardBenefit.findUnique.mockResolvedValueOnce({ id: "benefit-1" });
+
+    await updateCardBenefit("benefit-1", { otaAgencyIds: [] });
+
+    expect(prismaMock.cardBenefitOtaAgency.deleteMany).toHaveBeenCalledWith({
+      where: { cardBenefitId: "benefit-1" },
+    });
+    expect(prismaMock.cardBenefitOtaAgency.createMany).not.toHaveBeenCalled();
+  });
+
+  it("throws AppError(404) when benefit not found", async () => {
+    prismaMock.cardBenefit.findUnique.mockResolvedValueOnce(null);
+
+    await expect(updateCardBenefit("missing", { isActive: false })).rejects.toMatchObject({
+      statusCode: 404,
+    });
+
+    expect(prismaMock.cardBenefit.update).not.toHaveBeenCalled();
   });
 });
