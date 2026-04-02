@@ -49,7 +49,7 @@ const mockBenefit = {
   description: "5% cashback",
   value: 5,
   maxValuePerBooking: null,
-  period: "ANNUAL" as const,
+  period: "annual" as const,
   hotelChainId: null,
   isActive: true,
   startDate: null,
@@ -111,12 +111,12 @@ describe("createCardBenefit", () => {
     creditCardId: "card-1",
     description: "5% cashback",
     value: 5,
-    period: "ANNUAL" as const,
+    period: "annual" as const,
   };
 
   it("throws AppError(400) when required fields are missing", async () => {
     await expect(
-      createCardBenefit({ creditCardId: "", description: "x", value: 5, period: "ANNUAL" as const })
+      createCardBenefit({ creditCardId: "", description: "x", value: 5, period: "annual" as const })
     ).rejects.toMatchObject({ statusCode: 400 });
 
     expect(prismaMock.cardBenefit.create).not.toHaveBeenCalled();
@@ -133,7 +133,7 @@ describe("createCardBenefit", () => {
           creditCardId: "card-1",
           description: "5% cashback",
           value: 5,
-          period: "ANNUAL",
+          period: "annual",
           otaAgencies: undefined,
         }),
       })
