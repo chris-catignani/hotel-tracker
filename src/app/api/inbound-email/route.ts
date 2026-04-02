@@ -11,18 +11,9 @@ import { logger } from "@/lib/logger";
 /**
  * Resend Inbound email webhook.
  *
- * Resend wraps the email in an envelope:
- * {
- *   type: "email.received",
- *   created_at: string,
- *   data: {
- *     to: string[],      // recipient addresses
- *     from: string,      // forwarding user's email address
- *     subject: string,
- *     html: string,      // full raw email HTML
- *     text: string,
- *   }
- * }
+ * Resend inbound webhook delivers only metadata; the full email body is fetched
+ * separately from GET /emails/receiving/:id, which returns { text, html, ... }.
+ * We prefer `text` (clean plain text, ~9KB) over `html` (101KB+ with inline images).
  */
 interface ResendInboundPayload {
   type: string;
@@ -90,8 +81,8 @@ async function handler(req: NextRequest): Promise<NextResponse> {
     const isTransient = emailRes.status === 404 || emailRes.status >= 500;
     return NextResponse.json({ ok: true }, { status: isTransient ? 500 : 200 });
   }
-  const emailData = (await emailRes.json()) as { html?: string | null; text?: string | null };
-  const rawEmail = emailData.html ?? emailData.text ?? "";
+  const emailData = (await emailRes.json()) as { text?: string; html?: string };
+  const rawEmail = emailData.text ?? emailData.html ?? "";
 
   // Identify user
   const user = await prisma.user.findFirst({

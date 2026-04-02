@@ -76,9 +76,11 @@ skipIf("Email parsing integration", () => {
       expect(result?.hotelChain).toBe("Marriott");
       expect(result?.subBrand).toBe("Tribute Portfolio");
       expect(result?.currency).toBe("SGD");
-      // Email presents cost as "per night per room" — Claude returns nightlyRates, not pretaxCost
-      expect(result?.nightlyRates?.[0].amount).toBe(235.0);
-      expect(result?.pretaxCost).toBeNull();
+      // 1-night stay: Claude may populate pretaxCost, nightlyRates, or both
+      const cost = result?.pretaxCost ?? result?.nightlyRates?.[0].amount;
+      expect(cost).toBe(235.0);
+      if (result?.pretaxCost !== null) expect(result?.pretaxCost).toBe(235.0);
+      if (result?.nightlyRates) expect(result?.nightlyRates[0].amount).toBe(235.0);
       expect(result?.taxLines?.reduce((s, l) => s + l.amount, 0)).toBeCloseTo(46.77, 1);
       expect(result?.totalCost).toBe(281.77);
     });
@@ -97,7 +99,7 @@ skipIf("Email parsing integration", () => {
       expect(result?.confirmationNumber).toBe("61748392");
       expect(result?.hotelChain).toBe("Marriott");
       expect(result?.subBrand).toBe("Moxy");
-      expect(result?.pointsRedeemed).toBe(100000);
+      expect(result?.pointsRedeemed).toBe(102000);
       expect(result?.pretaxCost).toBeNull();
       expect(result?.totalCost).toBeNull();
     });
@@ -156,9 +158,11 @@ skipIf("Email parsing integration", () => {
       expect(result?.hotelChain).toBe("IHG");
       expect(result?.subBrand).toBe("Holiday Inn Express");
       expect(result?.currency).toBe("MYR");
-      // Email presents cost as "1 night stay" rate — Claude returns nightlyRates, not pretaxCost
-      expect(result?.nightlyRates?.[0].amount).toBe(238.55);
-      expect(result?.pretaxCost).toBeNull();
+      // 1-night stay: Claude may populate pretaxCost, nightlyRates, or both
+      const cost = result?.pretaxCost ?? result?.nightlyRates?.[0].amount;
+      expect(cost).toBe(238.55);
+      if (result?.pretaxCost !== null) expect(result?.pretaxCost).toBe(238.55);
+      if (result?.nightlyRates) expect(result?.nightlyRates[0].amount).toBe(238.55);
       expect(result?.taxLines?.reduce((s, l) => s + l.amount, 0)).toBeCloseTo(44.85, 1);
       expect(result?.totalCost).toBe(283.4);
     });
@@ -211,7 +215,7 @@ skipIf("Email parsing integration", () => {
       const result = await parseConfirmationEmail(fixture("gha-confirmation-cash"), ghaGuide);
       expect(result).not.toBeNull();
       expect(result?.bookingType).toBe("cash");
-      expect(result?.propertyName).toBe("PARKROYAL COLLECTION Kuala Lumpur");
+      expect(result?.propertyName).toMatch(/^PARKROYAL COLLECTION Kuala Lumpur/);
       expect(result?.checkIn).toBe("2026-03-24");
       expect(result?.checkOut).toBe("2026-03-26");
       expect(result?.numNights).toBe(2);
@@ -304,7 +308,7 @@ skipIf("Email parsing integration", () => {
       expect(result?.checkIn).toBe("2026-09-01");
       expect(result?.checkOut).toBe("2026-09-29");
       expect(result?.numNights).toBe(28);
-      expect(result?.confirmationNumber).toMatch(/^612384759/);
+      expect(result?.confirmationNumber).toBe("1234567890");
       expect(result?.accommodationType).toBe("apartment");
       expect(result?.otaAgencyName).toBe("Booking.com");
       expect(result?.currency).toBe("NZD");

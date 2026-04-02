@@ -19,82 +19,28 @@ vi.mock("@anthropic-ai/sdk", () => {
 });
 
 // Import after mocking
-import {
-  parseConfirmationEmail,
-  decodeEmailToText,
-  matchSubBrand,
-} from "@/lib/email-ingestion/email-parser";
+import { parseConfirmationEmail, matchSubBrand } from "@/lib/email-ingestion/email-parser";
 
 // Easier accessor
 const mockCreate = mocks.mockCreate;
 
 const fixture = (name: string) => readFileSync(resolve(__dirname, "./fixtures", name), "utf-8");
 
-describe("decodeEmailToText", () => {
-  it("removes QP soft line breaks with CRLF (=\\r\\n)", () => {
-    const input = "Hello=\r\nWorld";
-    expect(decodeEmailToText(input)).toBe("HelloWorld");
-  });
-
-  it("removes QP soft line breaks with LF only (=\\n)", () => {
-    const input = "Hello=\nWorld";
-    expect(decodeEmailToText(input)).toBe("HelloWorld");
-  });
-
-  it("decodes QP hex-encoded bytes (=20 → space, =41 → A)", () => {
-    expect(decodeEmailToText("Hello=20World")).toBe("Hello World");
-    expect(decodeEmailToText("=41=42=43")).toBe("ABC");
-    expect(decodeEmailToText("=48=65=6C=6C=6F")).toBe("Hello"); // 48=H, 65=e, 6C=l, 6C=l, 6F=o
-  });
-
-  it("strips <style> blocks including their contents", () => {
-    const input = 'before<style type="text/css">body { color: red; }</style>after';
-    expect(decodeEmailToText(input)).toBe("beforeafter");
-  });
-
-  it("strips <script> blocks including their contents", () => {
-    const input = "before<script>alert('xss')</script>after";
-    expect(decodeEmailToText(input)).toBe("beforeafter");
-  });
-
-  it("replaces HTML tags with a space", () => {
-    const input = "<p>Hello</p><br/><span>World</span>";
-    expect(decodeEmailToText(input)).toBe("Hello World");
-    expect(decodeEmailToText("Hello<br>World")).toBe("Hello World");
-  });
-
-  it("decodes &nbsp; to space", () => {
-    expect(decodeEmailToText("Hello&nbsp;World")).toBe("Hello World");
-  });
-
-  it("decodes &amp; to &", () => {
-    expect(decodeEmailToText("Cats&amp;Dogs")).toBe("Cats&Dogs");
-  });
-
-  it("decodes &lt; to <", () => {
-    expect(decodeEmailToText("1&lt;2")).toBe("1<2");
-  });
-
-  it("decodes &gt; to >", () => {
-    expect(decodeEmailToText("2&gt;1")).toBe("2>1");
-  });
-
-  it("replaces &zwnj; with empty string", () => {
-    expect(decodeEmailToText("Hello&zwnj;World")).toBe("HelloWorld");
-  });
-
-  it("collapses multiple consecutive whitespace to a single space", () => {
-    expect(decodeEmailToText("Hello   World")).toBe("Hello World");
-  });
-
-  it("trims leading and trailing whitespace", () => {
-    expect(decodeEmailToText("  Hello World  ")).toBe("Hello World");
-  });
-});
-
 describe("parseConfirmationEmail", () => {
   beforeEach(() => {
     mockCreate.mockReset();
+  });
+
+  it.each([
+    ["Terms and Conditions", "Amex-style heading"],
+    ["Terms & conditions", "Chase-style heading"],
+  ])("strips boilerplate legal section at '%s'", async (heading) => {
+    mockCreate.mockResolvedValueOnce({ content: [{ type: "text", text: "{}" }] });
+    const email = `Booking confirmed\n\nCheck-in: Jan 1\n\n${heading}\n\nAll products are subject to terms.`;
+    await parseConfirmationEmail(email, null);
+    const prompt = mockCreate.mock.calls[0][0].messages[0].content;
+    expect(prompt).toContain("Booking confirmed");
+    expect(prompt).not.toContain("All products are subject to terms");
   });
 
   it("Hyatt guide prompt instructs Claude to expand date-range nightly rate entries (inclusive end date)", async () => {
