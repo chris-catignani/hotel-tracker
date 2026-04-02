@@ -315,9 +315,17 @@ export async function updatePromotion(
         shoppingPortal: shoppingPortalId ? { connect: { id: shoppingPortalId } } : undefined,
         startDate: startDate ? new Date(startDate) : null,
         endDate: endDate ? new Date(endDate) : null,
-        restrictions: restrictionConnect as unknown,
-        ...(benefitCreate ? { benefits: benefitCreate as unknown } : {}),
-        ...(tierCreate ? { tiers: tierCreate as unknown } : {}),
+        restrictions:
+          restrictionConnect as Prisma.PromotionRestrictionsUpdateOneWithoutPromotionNestedInput,
+        ...(benefitCreate
+          ? {
+              benefits:
+                benefitCreate as Prisma.PromotionBenefitUpdateManyWithoutPromotionNestedInput,
+            }
+          : {}),
+        ...(tierCreate
+          ? { tiers: tierCreate as Prisma.PromotionTierUpdateManyWithoutPromotionNestedInput }
+          : {}),
       },
       include: PROMOTION_INCLUDE,
     });
@@ -344,7 +352,7 @@ export async function updatePromotion(
   });
 
   await matchPromotionsForAffectedBookings(id, userId);
-  return promotion;
+  return promotion as FullPromotion;
 }
 
 export async function deletePromotion(id: string, userId: string): Promise<void> {

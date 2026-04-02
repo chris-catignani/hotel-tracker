@@ -266,7 +266,7 @@ describe("updatePromotion", () => {
     shoppingPortalId: undefined as undefined,
     startDate: undefined as undefined,
     endDate: undefined as undefined,
-    restrictions: undefined as undefined,
+    restrictions: null,
   };
 
   beforeEach(() => {
