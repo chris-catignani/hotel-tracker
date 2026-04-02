@@ -256,44 +256,45 @@ export async function updatePromotion(
     if (endDate !== undefined) updateData.endDate = endDate ? new Date(endDate) : null;
 
     // Handle restrictions: upsert, create, or delete
-    if (restrictions) {
-      const currentRestrictions = await tx.promotion.findUnique({
-        where: { id },
-        select: { restrictionsId: true },
-      });
-
-      if (currentRestrictions?.restrictionsId) {
-        // Upsert: delete sub-relations and update
-        await tx.promotionSubBrandRestriction.deleteMany({
-          where: { promotionRestrictionsId: currentRestrictions.restrictionsId },
+    if (restrictions !== undefined) {
+      if (restrictions === null) {
+        // Clear restrictions if they exist
+        const currentRestrictions = await tx.promotion.findUnique({
+          where: { id },
+          select: { restrictionsId: true },
         });
-        await tx.promotionRestrictionTieInCard.deleteMany({
-          where: { promotionRestrictionsId: currentRestrictions.restrictionsId },
+        if (currentRestrictions?.restrictionsId) {
+          await tx.promotionRestrictions.delete({
+            where: { id: currentRestrictions.restrictionsId },
+          });
+          updateData.restrictions = { disconnect: true };
+        }
+      } else if (restrictions) {
+        const currentRestrictions = await tx.promotion.findUnique({
+          where: { id },
+          select: { restrictionsId: true },
         });
-        await tx.promotionRestrictions.update({
-          where: { id: currentRestrictions.restrictionsId },
-          data: buildRestrictionsCreateData(restrictions),
-        });
-        updateData.restrictions = { connect: { id: currentRestrictions.restrictionsId } };
-      } else {
-        // Create new restrictions
-        const created = await tx.promotionRestrictions.create({
-          data: buildRestrictionsCreateData(restrictions),
-        });
-        updateData.restrictions = { connect: { id: created.id } };
+        if (currentRestrictions?.restrictionsId) {
+          // Upsert: delete sub-relations and update
+          await tx.promotionSubBrandRestriction.deleteMany({
+            where: { promotionRestrictionsId: currentRestrictions.restrictionsId },
+          });
+          await tx.promotionRestrictionTieInCard.deleteMany({
+            where: { promotionRestrictionsId: currentRestrictions.restrictionsId },
+          });
+          await tx.promotionRestrictions.update({
+            where: { id: currentRestrictions.restrictionsId },
+            data: buildRestrictionsCreateData(restrictions),
+          });
+          updateData.restrictions = { connect: { id: currentRestrictions.restrictionsId } };
+        } else {
+          // Create new restrictions
+          const created = await tx.promotionRestrictions.create({
+            data: buildRestrictionsCreateData(restrictions),
+          });
+          updateData.restrictions = { connect: { id: created.id } };
+        }
       }
-    } else {
-      // Clear restrictions if they exist
-      const currentRestrictions = await tx.promotion.findUnique({
-        where: { id },
-        select: { restrictionsId: true },
-      });
-      if (currentRestrictions?.restrictionsId) {
-        await tx.promotionRestrictions.delete({
-          where: { id: currentRestrictions.restrictionsId },
-        });
-      }
-      updateData.restrictions = { disconnect: true };
     }
 
     // Fix Bug 2: Clean up restriction records before deleteMany
@@ -346,21 +347,22 @@ export async function updatePromotion(
     }
 
     // Handle UserPromotion: upsert if registrationDate provided, delete if empty string
-    if (registrationDate && registrationDate !== "") {
-      await tx.userPromotion.upsert({
-        where: { promotionId: id },
-        update: { registrationDate: new Date(registrationDate) },
-        create: {
-          promotionId: id,
-          userId,
-          registrationDate: new Date(registrationDate),
-        },
-      });
-    } else if (!registrationDate || registrationDate === "") {
-      // Delete if registrationDate is empty or undefined
-      await tx.userPromotion.deleteMany({
-        where: { promotionId: id },
-      });
+    if (registrationDate !== undefined) {
+      if (registrationDate) {
+        await tx.userPromotion.upsert({
+          where: { promotionId: id },
+          update: { registrationDate: new Date(registrationDate) },
+          create: {
+            promotionId: id,
+            userId,
+            registrationDate: new Date(registrationDate),
+          },
+        });
+      } else {
+        await tx.userPromotion.deleteMany({
+          where: { promotionId: id },
+        });
+      }
     }
 
     // Update promotion
