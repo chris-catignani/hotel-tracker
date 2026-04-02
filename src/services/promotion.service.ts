@@ -203,11 +203,148 @@ export async function createPromotion(
 }
 
 export async function updatePromotion(
-  _id: string,
-  _userId: string,
-  _data: PromotionFormData
+  id: string,
+  userId: string,
+  data: PromotionFormData
 ): Promise<FullPromotion> {
-  throw new Error("not implemented");
+  const {
+    name,
+    type,
+    benefits,
+    tiers,
+    hotelChainId,
+    creditCardId,
+    shoppingPortalId,
+    startDate,
+    endDate,
+    restrictions,
+  } = data;
+
+  // Verify ownership before updating
+  const existing = await prisma.promotion.findFirst({
+    where: { id, userId },
+  });
+  if (!existing) throw new AppError("Promotion not found", 404);
+
+  const registrationDate = (restrictions as PromotionRestrictionsFormData | null)?.registrationDate;
+  const hasTiers = Array.isArray(tiers) && tiers.length > 0;
+
+  const promotion = await prisma.$transaction(async (tx) => {
+    // Handle restrictions: upsert, create, or delete
+    let restrictionConnect: unknown;
+    if (restrictions) {
+      const currentRestrictions = await tx.promotion.findUnique({
+        where: { id },
+        select: { restrictionsId: true },
+      });
+
+      if (currentRestrictions?.restrictionsId) {
+        // Upsert: delete sub-relations and update
+        await tx.promotionSubBrandRestriction.deleteMany({
+          where: { promotionRestrictionsId: currentRestrictions.restrictionsId },
+        });
+        await tx.promotionRestrictionTieInCard.deleteMany({
+          where: { promotionRestrictionsId: currentRestrictions.restrictionsId },
+        });
+        await tx.promotionRestrictions.update({
+          where: { id: currentRestrictions.restrictionsId },
+          data: buildRestrictionsCreateData(restrictions),
+        });
+        restrictionConnect = { connect: { id: currentRestrictions.restrictionsId } };
+      } else {
+        // Create new restrictions
+        const created = await tx.promotionRestrictions.create({
+          data: buildRestrictionsCreateData(restrictions),
+        });
+        restrictionConnect = { connect: { id: created.id } };
+      }
+    } else {
+      // Clear restrictions if they exist
+      const currentRestrictions = await tx.promotion.findUnique({
+        where: { id },
+        select: { restrictionsId: true },
+      });
+      if (currentRestrictions?.restrictionsId) {
+        await tx.promotionRestrictions.delete({
+          where: { id: currentRestrictions.restrictionsId },
+        });
+      }
+      restrictionConnect = { disconnect: true };
+    }
+
+    // Handle benefits replacement
+    let benefitCreate: unknown;
+    if (benefits) {
+      await tx.promotionBenefit.deleteMany({
+        where: { promotionId: id },
+      });
+      benefitCreate = {
+        create: (benefits as PromotionBenefitFormData[]).map((b, i) =>
+          buildBenefitCreateData(b, i)
+        ),
+      };
+    }
+
+    // Handle tiers replacement
+    let tierCreate: unknown;
+    if (hasTiers) {
+      await tx.promotionTier.deleteMany({
+        where: { promotionId: id },
+      });
+      tierCreate = {
+        create: (tiers as PromotionTierFormData[]).map((tier) => ({
+          minStays: tier.minStays,
+          maxStays: tier.maxStays ?? null,
+          benefits: {
+            create: (tier.benefits || []).map((b: PromotionBenefitFormData, i: number) =>
+              buildBenefitCreateData(b, i)
+            ),
+          },
+        })),
+      };
+    }
+
+    // Update promotion
+    const updated = await tx.promotion.update({
+      where: { id },
+      data: {
+        name,
+        type,
+        hotelChain: hotelChainId ? { connect: { id: hotelChainId } } : undefined,
+        creditCard: creditCardId ? { connect: { id: creditCardId } } : undefined,
+        shoppingPortal: shoppingPortalId ? { connect: { id: shoppingPortalId } } : undefined,
+        startDate: startDate ? new Date(startDate) : null,
+        endDate: endDate ? new Date(endDate) : null,
+        restrictions: restrictionConnect as unknown,
+        ...(benefitCreate ? { benefits: benefitCreate as unknown } : {}),
+        ...(tierCreate ? { tiers: tierCreate as unknown } : {}),
+      },
+      include: PROMOTION_INCLUDE,
+    });
+
+    // Handle UserPromotion: upsert if registrationDate provided, delete if empty string
+    if (registrationDate && registrationDate !== "") {
+      await tx.userPromotion.upsert({
+        where: { promotionId: id },
+        update: { registrationDate: new Date(registrationDate) },
+        create: {
+          promotionId: id,
+          userId,
+          registrationDate: new Date(registrationDate),
+        },
+      });
+    } else if (!registrationDate || registrationDate === "") {
+      // Delete if registrationDate is empty or undefined
+      await tx.userPromotion.deleteMany({
+        where: { promotionId: id },
+      });
+    }
+
+    return updated;
+  });
+
+  await matchPromotionsForAffectedBookings(id, userId);
+  return promotion;
 }
 
 export async function deletePromotion(_id: string, _userId: string): Promise<void> {
