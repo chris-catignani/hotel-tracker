@@ -7,6 +7,7 @@ const ACCOR_ID = HOTEL_ID.ACCOR;
 const ACCOR_QANTAS_EARN_ID = "cpartnership0accorqantas1";
 
 const YEAR = new Date().getFullYear();
+const PAST_YEAR = YEAR - 1;
 // Use Hyatt — it has a pointType seeded, so loyaltyPointsEarned will auto-calculate
 // and loyaltyPostingStatus will initialize to "pending".
 const HYATT_ID = HOTEL_ID.HYATT;
@@ -55,15 +56,14 @@ test.describe("Posting Status", () => {
     // Create a past apartment booking — apartment bookings have no posting statuses
     // (no loyalty, no card reward, no portal, no promotions), so it won't appear
     // in needs-attention. This avoids cross-test interference from globally-matched promotions.
-    const pastYear = YEAR - 1;
     const propertyName = `Past Posting Apt ${crypto.randomUUID()}`;
     const res = await isolatedUser.request.post("/api/bookings", {
       data: {
         accommodationType: "apartment",
         hotelChainId: null,
         propertyName,
-        checkIn: `${pastYear}-03-10`,
-        checkOut: `${pastYear}-03-15`,
+        checkIn: `${PAST_YEAR}-03-10`,
+        checkOut: `${PAST_YEAR}-03-15`,
         numNights: 5,
         pretaxCost: 400,
         taxAmount: 80,
@@ -152,14 +152,13 @@ test.describe("Posting Status", () => {
 
     // Past USD booking at Accor APAC (AU) — lockedExchangeRate will be 1 (USD)
     // pretaxCostUSD=400, pretaxAUD≈640 (rate ~0.625), pointsEarned≈1920 — far above earnedValue (~$23)
-    const pastYear = YEAR - 1;
     const propertyName = `Accor Partnership Test ${crypto.randomUUID()}`;
     const bookingRes = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: ACCOR_ID,
         propertyName,
-        checkIn: `${pastYear}-06-10`,
-        checkOut: `${pastYear}-06-15`,
+        checkIn: `${PAST_YEAR}-06-10`,
+        checkOut: `${PAST_YEAR}-06-15`,
         numNights: 5,
         pretaxCost: 400,
         taxAmount: 40,
@@ -452,6 +451,69 @@ test.describe("Posting Status", () => {
       await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
       await isolatedUser.request.delete(`/api/user-credit-cards/${userCreditCardId}`);
       await adminRequest.delete(`/api/card-benefits/${benefitId}`);
+    }
+  });
+
+  test("booking with only $0 pre-qualifying promotions leaves Needs Attention when all visible items posted", async ({
+    isolatedUser,
+  }) => {
+    // Create a promotion that requires 1 prerequisite stay — so the FIRST booking
+    // is pre-qualifying (appliedValue=0, isPreQualifying=true) and invisible in the grid.
+    const promoName = `PreQual Promo ${crypto.randomUUID()}`;
+    const promoRes = await isolatedUser.request.post("/api/promotions", {
+      data: {
+        name: promoName,
+        type: "loyalty",
+        hotelChainId: HYATT_ID,
+        benefits: [{ rewardType: "cashback", valueType: "fixed", value: 50, sortOrder: 0 }],
+        restrictions: { prerequisiteStayCount: 1 },
+      },
+    });
+    expect(promoRes.ok()).toBeTruthy();
+    const promo = await promoRes.json();
+
+    // Create a PAST Hyatt booking — loyalty auto-sets to pending; promo attaches as pre-qualifying ($0).
+    const propertyName = `PreQual Hotel ${crypto.randomUUID()}`;
+    const bookingRes = await isolatedUser.request.post("/api/bookings", {
+      data: {
+        hotelChainId: HYATT_ID,
+        propertyName,
+        checkIn: `${PAST_YEAR}-11-01`,
+        checkOut: `${PAST_YEAR}-11-05`,
+        numNights: 4,
+        pretaxCost: 400,
+        taxAmount: 80,
+        totalCost: 480,
+        currency: "USD",
+        bookingSource: "direct_web",
+        countryCode: "US",
+        city: "New York",
+      },
+    });
+    expect(bookingRes.ok()).toBeTruthy();
+    const booking = await bookingRes.json();
+
+    try {
+      await isolatedUser.page.goto("/posting-status");
+      await expect(
+        isolatedUser.page.getByRole("heading", { name: "Earnings Tracker" })
+      ).toBeVisible();
+
+      // Booking should appear in Needs Attention (loyalty is pending)
+      await expect(isolatedUser.page.getByText(propertyName)).toBeVisible();
+
+      // Mark loyalty as posted — now all visible items are posted
+      // (the $0 pre-qualifying promo is hidden and must NOT keep the booking in Needs Attention)
+      const loyaltyCell = isolatedUser.page.getByTestId(`loyalty-cell-${booking.id}`);
+      await loyaltyCell.click();
+      await expect(loyaltyCell).toContainText("✓");
+
+      // Reload — booking should now be GONE from Needs Attention
+      await isolatedUser.page.reload();
+      await expect(isolatedUser.page.getByText(propertyName)).toHaveCount(0);
+    } finally {
+      await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
+      await isolatedUser.request.delete(`/api/promotions/${promo.id}`);
     }
   });
 
