@@ -537,8 +537,8 @@ describe("updatePromotion", () => {
       ...baseUpdateInput,
       benefits: [
         {
-          rewardType: "points",
-          valueType: "fixed",
+          rewardType: "points" as const,
+          valueType: "fixed" as const,
           value: 500,
           certType: null,
           sortOrder: 0,
