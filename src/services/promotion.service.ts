@@ -347,11 +347,42 @@ export async function updatePromotion(
   return promotion;
 }
 
-export async function deletePromotion(_id: string, _userId: string): Promise<void> {
-  throw new Error("not implemented");
-}
+export async function deletePromotion(id: string, userId: string): Promise<void> {
+  const exists = await prisma.promotion.findFirst({ where: { id, userId }, select: { id: true } });
+  if (!exists) throw new AppError("Promotion not found", 404);
 
-// Placeholder that references an import used by a later task implementation,
-// preventing "defined but never used" lint errors on the skeleton.
-// This will be replaced by real usage in a subsequent task.
-void (reevaluateBookings as unknown);
+  const affectedBookings = await prisma.booking.findMany({
+    where: { userId, bookingPromotions: { some: { promotionId: id } } },
+    select: { id: true },
+  });
+
+  const promo = await prisma.promotion.findUnique({
+    where: { id },
+    select: {
+      restrictionsId: true,
+      benefits: { select: { restrictionsId: true } },
+      tiers: { include: { benefits: { select: { restrictionsId: true } } } },
+    },
+  });
+
+  const restrictionIdsToDelete = [
+    promo?.restrictionsId,
+    ...(promo?.benefits ?? []).map((b) => b.restrictionsId),
+    ...(promo?.tiers ?? []).flatMap((t) => t.benefits.map((b) => b.restrictionsId)),
+  ].filter((rid): rid is string => rid !== null && rid !== undefined);
+
+  await prisma.promotion.delete({ where: { id } });
+
+  if (restrictionIdsToDelete.length > 0) {
+    await prisma.promotionRestrictions.deleteMany({
+      where: { id: { in: restrictionIdsToDelete } },
+    });
+  }
+
+  if (affectedBookings.length > 0) {
+    await reevaluateBookings(
+      affectedBookings.map((b) => b.id),
+      userId
+    );
+  }
+}
