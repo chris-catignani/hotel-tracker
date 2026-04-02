@@ -21,9 +21,8 @@ async function handler(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayStr = today.toISOString().split("T")[0];
+    const todayStr = new Date().toISOString().split("T")[0];
+    const today = new Date(todayStr); // UTC midnight, used in Prisma date filter below
 
     // Step 1: Fetch all current rates in one request and upsert into ExchangeRate table
     const nonUsdCurrencies = CURRENCIES.filter((c) => c !== "USD");

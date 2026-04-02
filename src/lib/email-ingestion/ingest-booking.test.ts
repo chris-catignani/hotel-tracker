@@ -226,8 +226,8 @@ describe("ingestBookingFromEmail", () => {
       }
     );
 
-    const { fetchExchangeRate } = await import("@/lib/exchange-rate");
-    vi.mocked(fetchExchangeRate).mockResolvedValueOnce(1.1); // EUR/USD = 1.1
+    const { getOrFetchHistoricalRate } = await import("@/lib/exchange-rate");
+    vi.mocked(getOrFetchHistoricalRate).mockResolvedValueOnce(1.1); // EUR/USD = 1.1
 
     const result = await ingestBookingFromEmail(
       { ...baseParsed, checkIn: "2024-01-10", checkOut: "2024-01-14" },
@@ -236,7 +236,7 @@ describe("ingestBookingFromEmail", () => {
     );
 
     expect(result.duplicate).toBe(false);
-    expect(fetchExchangeRate).toHaveBeenCalledWith("EUR", "2024-01-10");
+    expect(getOrFetchHistoricalRate).toHaveBeenCalledWith("EUR", "2024-01-10");
     const data = mockBookingCreate.mock.calls[0][0].data;
     expect(data.lockedLoyaltyUsdCentsPerPoint).toBeCloseTo(2.2); // 2.0 * 1.1
   });

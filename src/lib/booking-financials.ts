@@ -1,10 +1,6 @@
 import prisma from "@/lib/prisma";
 import { calculatePoints, resolveBasePointRate } from "@/lib/loyalty-utils";
-import {
-  fetchExchangeRate,
-  getOrFetchHistoricalRate,
-  resolveCalcCurrencyRate,
-} from "@/lib/exchange-rate";
+import { getOrFetchHistoricalRate, resolveCalcCurrencyRate } from "@/lib/exchange-rate";
 
 export interface BookingFinancialParams {
   /** YYYY-MM-DD */
@@ -29,10 +25,8 @@ export async function resolveBookingFinancials(
   const { checkIn, currency, hotelChainId, hotelChainSubBrandId, pretaxCost, userId } = params;
 
   // ── Exchange rate ──────────────────────────────────────────────────────────
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const checkInDate = new Date(checkIn);
-  const isPast = checkInDate <= today;
+  const todayStr = new Date().toISOString().split("T")[0];
+  const isPast = checkIn <= todayStr;
 
   let lockedExchangeRate: number | null = null;
   if (currency === "USD") {
@@ -92,8 +86,10 @@ export async function resolveBookingFinancials(
     });
     const pt = hcWithPt?.pointType;
     if (pt?.programCurrency != null && pt?.programCentsPerPoint != null) {
-      const programRate = await fetchExchangeRate(pt.programCurrency, checkIn);
-      lockedLoyaltyUsdCentsPerPoint = Number(pt.programCentsPerPoint) * programRate;
+      const programRate = await getOrFetchHistoricalRate(pt.programCurrency, checkIn);
+      if (programRate != null) {
+        lockedLoyaltyUsdCentsPerPoint = Number(pt.programCentsPerPoint) * programRate;
+      }
     }
   }
 
