@@ -519,6 +519,40 @@ describe("updatePromotion", () => {
 
     expect(matchPromotionsForAffectedBookings).toHaveBeenCalledWith("promo-1", "user-1");
   });
+
+  it("disconnects hotelChain when hotelChainId is set to null", async () => {
+    const input = { ...baseUpdateInput, hotelChainId: null };
+
+    await updatePromotion("promo-1", "user-1", input);
+
+    const updateCall = prismaMock.promotion.update.mock.calls[0][0];
+    expect(updateCall.data.hotelChain).toEqual({ disconnect: true });
+  });
+
+  it("deletes benefit-level restrictions before replacing benefits", async () => {
+    prismaMock.promotionBenefit.findMany.mockResolvedValueOnce([
+      { id: "b-1", restrictionsId: "r-b-1" },
+    ]);
+    const input = {
+      ...baseUpdateInput,
+      benefits: [
+        {
+          rewardType: "points",
+          valueType: "fixed",
+          value: 500,
+          certType: null,
+          sortOrder: 0,
+          restrictions: null,
+        },
+      ],
+    };
+
+    await updatePromotion("promo-1", "user-1", input);
+
+    expect(prismaMock.promotionRestrictions.delete).toHaveBeenCalledWith({
+      where: { id: "r-b-1" },
+    });
+  });
 });
 
 // ---------------------------------------------------------------------------

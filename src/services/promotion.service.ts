@@ -228,10 +228,34 @@ export async function updatePromotion(
 
   const registrationDate = (restrictions as PromotionRestrictionsFormData | null)?.registrationDate;
   const hasTiers = Array.isArray(tiers) && tiers.length > 0;
+  const replacingBenefitsOrTiers = benefits !== undefined || tiers !== undefined;
 
   const promotion = await prisma.$transaction(async (tx) => {
+    const updateData: Prisma.PromotionUpdateInput = {};
+    if (name !== undefined) updateData.name = name;
+    if (type !== undefined) updateData.type = type;
+
+    // Fix Bug 1: Use disconnect pattern when value is falsy but defined
+    if (hotelChainId !== undefined) {
+      updateData.hotelChain = hotelChainId
+        ? { connect: { id: hotelChainId } }
+        : { disconnect: true };
+    }
+    if (creditCardId !== undefined) {
+      updateData.creditCard = creditCardId
+        ? { connect: { id: creditCardId } }
+        : { disconnect: true };
+    }
+    if (shoppingPortalId !== undefined) {
+      updateData.shoppingPortal = shoppingPortalId
+        ? { connect: { id: shoppingPortalId } }
+        : { disconnect: true };
+    }
+
+    if (startDate !== undefined) updateData.startDate = startDate ? new Date(startDate) : null;
+    if (endDate !== undefined) updateData.endDate = endDate ? new Date(endDate) : null;
+
     // Handle restrictions: upsert, create, or delete
-    let restrictionConnect: unknown;
     if (restrictions) {
       const currentRestrictions = await tx.promotion.findUnique({
         where: { id },
@@ -250,13 +274,13 @@ export async function updatePromotion(
           where: { id: currentRestrictions.restrictionsId },
           data: buildRestrictionsCreateData(restrictions),
         });
-        restrictionConnect = { connect: { id: currentRestrictions.restrictionsId } };
+        updateData.restrictions = { connect: { id: currentRestrictions.restrictionsId } };
       } else {
         // Create new restrictions
         const created = await tx.promotionRestrictions.create({
           data: buildRestrictionsCreateData(restrictions),
         });
-        restrictionConnect = { connect: { id: created.id } };
+        updateData.restrictions = { connect: { id: created.id } };
       }
     } else {
       // Clear restrictions if they exist
@@ -269,29 +293,40 @@ export async function updatePromotion(
           where: { id: currentRestrictions.restrictionsId },
         });
       }
-      restrictionConnect = { disconnect: true };
+      updateData.restrictions = { disconnect: true };
     }
 
-    // Handle benefits replacement
-    let benefitCreate: unknown;
-    if (benefits) {
-      await tx.promotionBenefit.deleteMany({
+    // Fix Bug 2: Clean up restriction records before deleteMany
+    if (replacingBenefitsOrTiers) {
+      // Delete flat benefits (those directly on the promotion) along with their restrictions
+      const benefitsToDelete = await tx.promotionBenefit.findMany({
         where: { promotionId: id },
+        select: { id: true, restrictionsId: true },
       });
-      benefitCreate = {
-        create: (benefits as PromotionBenefitFormData[]).map((b, i) =>
-          buildBenefitCreateData(b, i)
-        ),
-      };
+      for (const b of benefitsToDelete) {
+        if (b.restrictionsId) {
+          await tx.promotionRestrictions.delete({ where: { id: b.restrictionsId } });
+        }
+      }
+      await tx.promotionBenefit.deleteMany({ where: { promotionId: id } });
+
+      // Delete all tiers along with their benefits' restrictions
+      const tiersToDelete = await tx.promotionTier.findMany({
+        where: { promotionId: id },
+        include: { benefits: { select: { id: true, restrictionsId: true } } },
+      });
+      for (const tier of tiersToDelete) {
+        for (const b of tier.benefits) {
+          if (b.restrictionsId) {
+            await tx.promotionRestrictions.delete({ where: { id: b.restrictionsId } });
+          }
+        }
+      }
+      await tx.promotionTier.deleteMany({ where: { promotionId: id } });
     }
 
-    // Handle tiers replacement
-    let tierCreate: unknown;
-    if (hasTiers) {
-      await tx.promotionTier.deleteMany({
-        where: { promotionId: id },
-      });
-      tierCreate = {
+    if (tiers !== undefined && Array.isArray(tiers) && tiers.length > 0) {
+      updateData.tiers = {
         create: (tiers as PromotionTierFormData[]).map((tier) => ({
           minStays: tier.minStays,
           maxStays: tier.maxStays ?? null,
@@ -301,34 +336,14 @@ export async function updatePromotion(
             ),
           },
         })),
-      };
+      } as Prisma.PromotionTierUpdateManyWithoutPromotionNestedInput;
+    } else if (benefits !== undefined && !hasTiers) {
+      updateData.benefits = {
+        create: ((benefits as PromotionBenefitFormData[]) || []).map((b, i) =>
+          buildBenefitCreateData(b, i)
+        ),
+      } as Prisma.PromotionBenefitUpdateManyWithoutPromotionNestedInput;
     }
-
-    // Update promotion
-    const updated = await tx.promotion.update({
-      where: { id },
-      data: {
-        name,
-        type,
-        hotelChain: hotelChainId ? { connect: { id: hotelChainId } } : undefined,
-        creditCard: creditCardId ? { connect: { id: creditCardId } } : undefined,
-        shoppingPortal: shoppingPortalId ? { connect: { id: shoppingPortalId } } : undefined,
-        startDate: startDate ? new Date(startDate) : null,
-        endDate: endDate ? new Date(endDate) : null,
-        restrictions:
-          restrictionConnect as Prisma.PromotionRestrictionsUpdateOneWithoutPromotionNestedInput,
-        ...(benefitCreate
-          ? {
-              benefits:
-                benefitCreate as Prisma.PromotionBenefitUpdateManyWithoutPromotionNestedInput,
-            }
-          : {}),
-        ...(tierCreate
-          ? { tiers: tierCreate as Prisma.PromotionTierUpdateManyWithoutPromotionNestedInput }
-          : {}),
-      },
-      include: PROMOTION_INCLUDE,
-    });
 
     // Handle UserPromotion: upsert if registrationDate provided, delete if empty string
     if (registrationDate && registrationDate !== "") {
@@ -348,7 +363,12 @@ export async function updatePromotion(
       });
     }
 
-    return updated;
+    // Update promotion
+    return tx.promotion.update({
+      where: { id },
+      data: updateData,
+      include: PROMOTION_INCLUDE,
+    });
   });
 
   await matchPromotionsForAffectedBookings(id, userId);
