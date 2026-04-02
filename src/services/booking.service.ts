@@ -214,7 +214,7 @@ const BOOKING_INCLUDE = (userId: string) =>
 // Private helpers
 // ---------------------------------------------------------------------------
 
-function derivePostingStatusesForCreate(data: {
+export function derivePostingStatusesForCreate(data: {
   loyaltyPointsEarned: number | null | undefined;
   accommodationType: string;
   hotelChainId: string | null | undefined;
@@ -234,7 +234,7 @@ function derivePostingStatusesForCreate(data: {
   };
 }
 
-function derivePostingStatusesForUpdate(
+export function derivePostingStatusesForUpdate(
   data: Record<string, unknown>,
   current: {
     loyaltyPointsEarned: unknown;
