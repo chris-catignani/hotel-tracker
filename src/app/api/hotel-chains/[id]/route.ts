@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withObservability } from "@/lib/observability";
-import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
-import { recalculateLoyaltyForHotelChain } from "@/services/loyalty-recalculation";
+import { AppError } from "@/lib/app-error";
 import { getAuthenticatedUserId, requireAdmin } from "@/lib/auth-utils";
-import { normalizeUserStatuses } from "@/lib/normalize-response";
-import { parseCalculationCurrency } from "@/app/api/hotel-chains/route";
+import { getHotelChain, updateHotelChain, deleteHotelChain } from "@/services/hotel-chain.service";
 
 export const GET = withObservability(
   async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
@@ -15,23 +13,11 @@ export const GET = withObservability(
       if (userIdOrResponse instanceof NextResponse) return userIdOrResponse;
       const userId = userIdOrResponse;
 
-      const hotelChain = await prisma.hotelChain.findUnique({
-        where: { id: id },
-        include: {
-          pointType: true,
-          hotelChainSubBrands: true,
-          eliteStatuses: true,
-          userStatuses: {
-            where: { userId },
-            include: { eliteStatus: true },
-            take: 1,
-          },
-        },
-      });
-      if (!hotelChain)
-        return apiError("Hotel chain not found", null, 404, request, { hotelChainId: id });
-      return NextResponse.json(normalizeUserStatuses(hotelChain));
+      const hotelChain = await getHotelChain(id, userId);
+      return NextResponse.json(hotelChain);
     } catch (error) {
+      if (error instanceof AppError)
+        return apiError(error.message, null, error.statusCode, request, { hotelChainId: id });
       return apiError("Failed to fetch hotel chain", error, 500, request, { hotelChainId: id });
     }
   }
@@ -49,62 +35,11 @@ export const PUT = withObservability(
       const userId = userIdOrResponse;
 
       const body = await request.json();
-      const { name, loyaltyProgram, basePointRate, calculationCurrency, pointTypeId } = body;
-
-      // Check if rate-affecting fields are changing to avoid unnecessary recalculations
-      const existing = await prisma.hotelChain.findUnique({
-        where: { id: id },
-        select: { basePointRate: true, calculationCurrency: true },
-      });
-
-      let resolvedCurrency: string | undefined;
-      if (calculationCurrency !== undefined) {
-        const parsed = parseCalculationCurrency(calculationCurrency);
-        if (parsed === null) {
-          return apiError(
-            "Invalid calculationCurrency: must be a 3-letter ISO 4217 code",
-            null,
-            400,
-            request
-          );
-        }
-        resolvedCurrency = parsed;
-      }
-
-      const data: Record<string, unknown> = {};
-      if (name !== undefined) data.name = name;
-      if (loyaltyProgram !== undefined) data.loyaltyProgram = loyaltyProgram || null;
-      if (basePointRate !== undefined)
-        data.basePointRate = basePointRate != null ? Number(basePointRate) : null;
-      if (resolvedCurrency !== undefined) data.calculationCurrency = resolvedCurrency;
-      if (pointTypeId !== undefined) data.pointTypeId = pointTypeId || null;
-
-      const hotelChain = await prisma.hotelChain.update({
-        where: { id: id },
-        data,
-        include: {
-          pointType: true,
-          eliteStatuses: { orderBy: { eliteTierLevel: "asc" } },
-          userStatuses: {
-            where: { userId },
-            include: { eliteStatus: true },
-            take: 1,
-          },
-        },
-      });
-
-      // Recalculate loyalty points if the base rate or calculation currency changed
-      const rateChanged =
-        basePointRate !== undefined && Number(existing?.basePointRate) !== Number(basePointRate);
-      const currencyChanged =
-        resolvedCurrency !== undefined &&
-        (existing?.calculationCurrency ?? "USD") !== resolvedCurrency;
-      if (rateChanged || currencyChanged) {
-        await recalculateLoyaltyForHotelChain(id);
-      }
-
-      return NextResponse.json(normalizeUserStatuses(hotelChain));
+      const hotelChain = await updateHotelChain(id, userId, body);
+      return NextResponse.json(hotelChain);
     } catch (error) {
+      if (error instanceof AppError)
+        return apiError(error.message, null, error.statusCode, request, { hotelChainId: id });
       return apiError("Failed to update hotel chain", error, 500, request, { hotelChainId: id });
     }
   }
@@ -117,36 +52,11 @@ export const DELETE = withObservability(
       const adminError = await requireAdmin();
       if (adminError instanceof NextResponse) return adminError;
 
-      // Check for existing bookings
-      const bookingCount = await prisma.booking.count({
-        where: { hotelChainId: id },
-      });
-
-      if (bookingCount > 0) {
-        return NextResponse.json(
-          { error: "Cannot delete hotel chain with existing bookings" },
-          { status: 409 }
-        );
-      }
-
-      // Check for existing sub-brands
-      const subBrandCount = await prisma.hotelChainSubBrand.count({
-        where: { hotelChainId: id },
-      });
-
-      if (subBrandCount > 0) {
-        return NextResponse.json(
-          { error: "Cannot delete hotel chain with existing sub-brands" },
-          { status: 409 }
-        );
-      }
-
-      await prisma.hotelChain.delete({
-        where: { id: id },
-      });
-
+      await deleteHotelChain(id);
       return new NextResponse(null, { status: 204 });
     } catch (error) {
+      if (error instanceof AppError)
+        return apiError(error.message, null, error.statusCode, request, { hotelChainId: id });
       return apiError("Failed to delete hotel chain", error, 500, request, { hotelChainId: id });
     }
   }

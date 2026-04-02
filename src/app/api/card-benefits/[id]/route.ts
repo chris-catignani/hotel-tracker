@@ -1,28 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withObservability } from "@/lib/observability";
-import prisma from "@/lib/prisma";
 import { apiError } from "@/lib/api-error";
+import { AppError } from "@/lib/app-error";
 import { requireAdmin } from "@/lib/auth-utils";
-import { BenefitPeriod } from "@prisma/client";
-import { reapplyBenefitForAllUsers } from "@/services/card-benefit-apply";
-
-const INCLUDE = {
-  hotelChain: { select: { id: true, name: true } },
-  otaAgencies: { include: { otaAgency: { select: { id: true, name: true } } } },
-};
+import {
+  getCardBenefit,
+  updateCardBenefit,
+  deleteCardBenefit,
+} from "@/services/card-benefit.service";
 
 export const GET = withObservability(
   async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
     const { id } = await params;
     try {
-      const cardBenefit = await prisma.cardBenefit.findUnique({
-        where: { id },
-        include: INCLUDE,
-      });
-      if (!cardBenefit)
-        return apiError("Card benefit not found", null, 404, request, { cardBenefitId: id });
+      const cardBenefit = await getCardBenefit(id);
       return NextResponse.json(cardBenefit);
     } catch (error) {
+      if (error instanceof AppError)
+        return apiError(error.message, null, error.statusCode, request, { cardBenefitId: id });
       return apiError("Failed to fetch card benefit", error, 500, request, { cardBenefitId: id });
     }
   }
@@ -36,54 +31,11 @@ export const PUT = withObservability(
       if (adminOrResponse instanceof NextResponse) return adminOrResponse;
 
       const body = await request.json();
-      const {
-        creditCardId,
-        description,
-        value,
-        maxValuePerBooking,
-        period,
-        hotelChainId,
-        otaAgencyIds,
-        isActive,
-        startDate,
-        endDate,
-      } = body;
-
-      const data: Record<string, unknown> = {};
-      if (creditCardId !== undefined) data.creditCardId = creditCardId;
-      if (description !== undefined) data.description = description;
-      if (value !== undefined) data.value = Number(value);
-      if (maxValuePerBooking !== undefined)
-        data.maxValuePerBooking = maxValuePerBooking != null ? Number(maxValuePerBooking) : null;
-      if (period !== undefined) data.period = period as BenefitPeriod;
-      if (hotelChainId !== undefined) data.hotelChainId = hotelChainId || null;
-      if (isActive !== undefined) data.isActive = isActive;
-      if (startDate !== undefined) data.startDate = startDate ? new Date(startDate) : null;
-      if (endDate !== undefined) data.endDate = endDate ? new Date(endDate) : null;
-
-      const cardBenefit = await prisma.$transaction(async (tx) => {
-        // Update OTA agencies: replace existing rows if otaAgencyIds is provided
-        if (otaAgencyIds !== undefined) {
-          await tx.cardBenefitOtaAgency.deleteMany({ where: { cardBenefitId: id } });
-          if (Array.isArray(otaAgencyIds) && otaAgencyIds.length > 0) {
-            await tx.cardBenefitOtaAgency.createMany({
-              data: otaAgencyIds.map((otaAgencyId: string) => ({ cardBenefitId: id, otaAgencyId })),
-            });
-          }
-        }
-
-        return tx.cardBenefit.update({
-          where: { id },
-          data,
-          include: INCLUDE,
-        });
-      });
-
-      // Re-evaluate all existing matching bookings
-      await reapplyBenefitForAllUsers(cardBenefit.id);
-
+      const cardBenefit = await updateCardBenefit(id, body);
       return NextResponse.json(cardBenefit);
     } catch (error) {
+      if (error instanceof AppError)
+        return apiError(error.message, null, error.statusCode, request, { cardBenefitId: id });
       return apiError("Failed to update card benefit", error, 500, request, { cardBenefitId: id });
     }
   }
@@ -96,9 +48,11 @@ export const DELETE = withObservability(
       const adminOrResponse = await requireAdmin();
       if (adminOrResponse instanceof NextResponse) return adminOrResponse;
 
-      await prisma.cardBenefit.delete({ where: { id } });
+      await deleteCardBenefit(id);
       return NextResponse.json({ message: "Card benefit deleted" });
     } catch (error) {
+      if (error instanceof AppError)
+        return apiError(error.message, null, error.statusCode, request, { cardBenefitId: id });
       return apiError("Failed to delete card benefit", error, 500, request, { cardBenefitId: id });
     }
   }
