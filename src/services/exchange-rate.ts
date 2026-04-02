@@ -179,7 +179,7 @@ export async function refreshAllExchangeRates(): Promise<string[]> {
   const ratesData = (await ratesRes.json()) as { usd: Record<string, number> };
   const rawRates = ratesData.usd; // 1 USD = X foreign
 
-  return Promise.all(
+  const settled = await Promise.allSettled(
     nonUsdCurrencies.map(async (currency) => {
       const usdPerForeign = rawRates[currency.toLowerCase()];
       if (typeof usdPerForeign !== "number" || isNaN(usdPerForeign) || usdPerForeign === 0) {
@@ -193,6 +193,9 @@ export async function refreshAllExchangeRates(): Promise<string[]> {
       });
       return `${currency}=>${rate.toFixed(6)}`;
     })
+  );
+  return settled.map((r, i) =>
+    r.status === "fulfilled" ? r.value : `${nonUsdCurrencies[i]}=>ERROR: ${r.reason}`
   );
 }
 
@@ -230,7 +233,9 @@ export async function refreshPointTypeUsdValues(today: Date): Promise<RefreshPoi
     }
   }
 
-  const [affectedBookings] = await Promise.all([
+  // Run booking query and point type updates concurrently; allSettled ensures a failed
+  // point type update doesn't prevent the booking query result from being used.
+  const [bookingResult, updateResults] = await Promise.all([
     activeChainIds.size > 0
       ? prisma.booking.findMany({
           where: {
@@ -241,8 +246,7 @@ export async function refreshPointTypeUsdValues(today: Date): Promise<RefreshPoi
           select: { id: true, userId: true },
         })
       : Promise.resolve([]),
-    // Point type updates can run concurrently with the booking query
-    Promise.all(
+    Promise.allSettled(
       foreignPointTypes.map(async (pt) => {
         if (!pt.programCurrency || pt.programCentsPerPoint == null) return;
         const rate = rateMap.get(pt.programCurrency);
@@ -259,6 +263,10 @@ export async function refreshPointTypeUsdValues(today: Date): Promise<RefreshPoi
       })
     ),
   ]);
+  const affectedBookings = bookingResult;
+  for (const r of updateResults) {
+    if (r.status === "rejected") pointTypesUpdated.push(`POINT_TYPE_UPDATE=>ERROR: ${r.reason}`);
+  }
 
   for (const b of affectedBookings) pointTypeBookings.set(b.id, b.userId);
 
