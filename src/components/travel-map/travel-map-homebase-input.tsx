@@ -7,10 +7,9 @@ import type { HomebaseEntry } from "./travel-map-utils";
 interface HomebaseInputProps {
   initialEntry: HomebaseEntry | null;
   onSelect: (entry: HomebaseEntry | null) => void;
-  onSkip: () => void;
 }
 
-export function HomebaseInput({ initialEntry, onSelect, onSkip }: HomebaseInputProps) {
+export function HomebaseInput({ initialEntry, onSelect }: HomebaseInputProps) {
   const [query, setQuery] = useState(initialEntry?.address ?? "");
   const [suggestions, setSuggestions] = useState<GeoResult[]>([]);
   const [open, setOpen] = useState(false);
@@ -111,15 +110,7 @@ export function HomebaseInput({ initialEntry, onSelect, onSkip }: HomebaseInputP
             </div>
           )}
         </div>
-        <div className="flex items-center justify-between">
-          <button
-            type="button"
-            onClick={onSkip}
-            className="text-slate-500 text-sm hover:text-slate-300 transition-colors"
-            data-testid="homebase-skip"
-          >
-            Skip
-          </button>
+        <div className="flex justify-end">
           <button
             type="button"
             onClick={() => onSelect(selectedEntry)}

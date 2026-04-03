@@ -122,10 +122,6 @@ export function TravelMapModal({ open, onOpenChange }: TravelMapModalProps) {
     setHomebasePromptVisible(false);
   }, []);
 
-  const handleHomebaseSkip = useCallback(() => {
-    setHomebasePromptVisible(false);
-  }, []);
-
   const handleRestart = useCallback(() => {
     setIsPlaying(false);
     setStopIndex(-1);
@@ -225,11 +221,7 @@ export function TravelMapModal({ open, onOpenChange }: TravelMapModalProps) {
             )}
             {/* Homebase prompt — shown after stops load, before countdown */}
             {homebasePromptVisible && (
-              <HomebaseInput
-                initialEntry={homebase}
-                onSelect={handleHomebaseSelect}
-                onSkip={handleHomebaseSkip}
-              />
+              <HomebaseInput initialEntry={homebase} onSelect={handleHomebaseSelect} />
             )}
             {/* Pause overlay */}
             {!isPlaying && countdown === null && !isComplete && !homebasePromptVisible && (
