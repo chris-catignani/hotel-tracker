@@ -1,13 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import type { EarningsTrackerBooking } from "@/app/api/earnings-tracker/route";
-import { toast } from "sonner";
-import { apiFetch } from "@/lib/api-fetch";
 import { EarningsTrackerCell } from "./earnings-tracker-cell";
 import { PostingStatus, BookingPartnershipEarnStatus } from "@/lib/types";
 import {
-  nextPostingStatus,
   formatLoyaltyValue,
   formatCardRewardValue,
   formatPortalValue,
@@ -22,150 +19,49 @@ import { cn, formatDate, pruneHotelName } from "@/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-export function EarningsTrackerGrid({
-  initialBookings,
-}: {
-  initialBookings: EarningsTrackerBooking[];
-}) {
-  const [bookings, setBookings] = useState<EarningsTrackerBooking[]>(initialBookings);
-  const [expandedCells, setExpandedCells] = useState<Record<string, string | null>>({});
+export interface EarningsTrackerGridProps {
+  bookings: EarningsTrackerBooking[];
+  expandedCells: Record<string, string | null>;
+  setExpandedCells: React.Dispatch<React.SetStateAction<Record<string, string | null>>>;
+  patchBookingStatus: (
+    bookingId: string,
+    field: "loyaltyPostingStatus" | "cardRewardPostingStatus" | "portalCashbackPostingStatus",
+    current: PostingStatus
+  ) => Promise<void>;
+  patchPromotionStatus: (bookingId: string, bpId: string, current: PostingStatus) => Promise<void>;
+  patchCardBenefitStatus: (
+    bookingId: string,
+    bcbId: string,
+    current: PostingStatus
+  ) => Promise<void>;
+  patchBenefitStatus: (
+    bookingId: string,
+    benefitId: string,
+    current: PostingStatus
+  ) => Promise<void>;
+  patchPartnershipStatus: (
+    bookingId: string,
+    partnershipEarnId: string,
+    existingRecord: BookingPartnershipEarnStatus | null,
+    current: PostingStatus
+  ) => Promise<void>;
+}
 
+export function EarningsTrackerGrid({
+  bookings,
+  expandedCells,
+  setExpandedCells,
+  patchBookingStatus,
+  patchPromotionStatus,
+  patchCardBenefitStatus,
+  patchBenefitStatus,
+  patchPartnershipStatus,
+}: EarningsTrackerGridProps) {
   function toggleCell(bookingId: string, column: string) {
     setExpandedCells((prev) => ({
       ...prev,
       [bookingId]: prev[bookingId] === column ? null : column,
     }));
-  }
-
-  async function patchBookingStatus(
-    bookingId: string,
-    field: "loyaltyPostingStatus" | "cardRewardPostingStatus" | "portalCashbackPostingStatus",
-    current: PostingStatus
-  ) {
-    const next = nextPostingStatus(current);
-    const res = await apiFetch(`/api/bookings/${bookingId}`, {
-      method: "PATCH",
-      body: { [field]: next },
-    });
-    if (!res.ok) {
-      toast.error("Failed to update status");
-      return;
-    }
-    setBookings((prev) => prev.map((b) => (b.id === bookingId ? { ...b, [field]: next } : b)));
-  }
-
-  async function patchPromotionStatus(bookingId: string, bpId: string, current: PostingStatus) {
-    const next = nextPostingStatus(current);
-    const res = await apiFetch(`/api/booking-promotions/${bpId}`, {
-      method: "PATCH",
-      body: { postingStatus: next },
-    });
-    if (!res.ok) {
-      toast.error("Failed to update status");
-      return;
-    }
-    setBookings((prev) =>
-      prev.map((b) =>
-        b.id === bookingId
-          ? {
-              ...b,
-              bookingPromotions: b.bookingPromotions.map((bp: any) =>
-                bp.id === bpId ? { ...bp, postingStatus: next } : bp
-              ),
-            }
-          : b
-      )
-    );
-  }
-
-  async function patchCardBenefitStatus(bookingId: string, bcbId: string, current: PostingStatus) {
-    const next = nextPostingStatus(current);
-    const res = await apiFetch(`/api/booking-card-benefits/${bcbId}`, {
-      method: "PATCH",
-      body: { postingStatus: next },
-    });
-    if (!res.ok) {
-      toast.error("Failed to update status");
-      return;
-    }
-    setBookings((prev) =>
-      prev.map((b) =>
-        b.id === bookingId
-          ? {
-              ...b,
-              bookingCardBenefits: b.bookingCardBenefits.map((bcb: any) =>
-                bcb.id === bcbId ? { ...bcb, postingStatus: next } : bcb
-              ),
-            }
-          : b
-      )
-    );
-  }
-
-  async function patchBenefitStatus(bookingId: string, benefitId: string, current: PostingStatus) {
-    const next = nextPostingStatus(current);
-    const res = await apiFetch(`/api/booking-benefits/${benefitId}`, {
-      method: "PATCH",
-      body: { postingStatus: next },
-    });
-    if (!res.ok) {
-      toast.error("Failed to update status");
-      return;
-    }
-    setBookings((prev) =>
-      prev.map((b) =>
-        b.id === bookingId
-          ? {
-              ...b,
-              benefits: b.benefits.map((ben: any) =>
-                ben.id === benefitId ? { ...ben, postingStatus: next } : ben
-              ),
-            }
-          : b
-      )
-    );
-  }
-
-  async function patchPartnershipStatus(
-    bookingId: string,
-    partnershipEarnId: string,
-    existingRecord: BookingPartnershipEarnStatus | null,
-    current: PostingStatus
-  ) {
-    const next = nextPostingStatus(current);
-    let res;
-    if (!existingRecord) {
-      res = await apiFetch("/api/booking-partnership-earn-statuses", {
-        method: "POST",
-        body: { bookingId, partnershipEarnId, postingStatus: next },
-      });
-    } else {
-      res = await apiFetch(`/api/booking-partnership-earn-statuses/${existingRecord.id}`, {
-        method: "PATCH",
-        body: { postingStatus: next },
-      });
-    }
-    if (!res.ok) {
-      toast.error("Failed to update status");
-      return;
-    }
-    const updated = res.data;
-    setBookings((prev) =>
-      prev.map((b) => {
-        if (b.id !== bookingId) return b;
-        const existing = b.bookingPartnershipEarnStatuses.find(
-          (s: any) => s.partnershipEarnId === partnershipEarnId
-        );
-        return {
-          ...b,
-          bookingPartnershipEarnStatuses: existing
-            ? b.bookingPartnershipEarnStatuses.map((s: any) =>
-                s.partnershipEarnId === partnershipEarnId ? updated : s
-              )
-            : [...b.bookingPartnershipEarnStatuses, updated],
-        };
-      })
-    );
   }
 
   return (
