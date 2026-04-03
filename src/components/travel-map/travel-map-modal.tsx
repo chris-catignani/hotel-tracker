@@ -36,6 +36,7 @@ export function TravelMapModal({ open, onOpenChange }: TravelMapModalProps) {
   const [tickedNights, setTickedNights] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
   const [mapKey, setMapKey] = useState(0);
+  const [countdown, setCountdown] = useState<number | null>(null);
 
   useEffect(() => {
     if (!open) {
@@ -46,6 +47,7 @@ export function TravelMapModal({ open, onOpenChange }: TravelMapModalProps) {
       setTickedNights(0);
       setIsComplete(false);
       setMapKey(0);
+      setCountdown(null);
       /* eslint-enable react-hooks/set-state-in-effect */
       return;
     }
@@ -66,12 +68,35 @@ export function TravelMapModal({ open, onOpenChange }: TravelMapModalProps) {
     setTickedNights(ticked);
   }, []);
 
+  // Start countdown when stops first load
+  useEffect(() => {
+    if (stops.length === 0) return;
+    /* eslint-disable react-hooks/set-state-in-effect */
+    setCountdown(5);
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [stops]);
+
+  // Countdown tick — auto-plays when it reaches 0
+  useEffect(() => {
+    if (countdown === null) return;
+    if (countdown === 0) {
+      /* eslint-disable react-hooks/set-state-in-effect */
+      setCountdown(null);
+      setIsPlaying(true);
+      /* eslint-enable react-hooks/set-state-in-effect */
+      return;
+    }
+    const timer = setTimeout(() => setCountdown((c) => (c !== null ? c - 1 : null)), 1000);
+    return () => clearTimeout(timer);
+  }, [countdown]);
+
   const handleRestart = useCallback(() => {
     setIsPlaying(false);
     setStopIndex(-1);
     setTickedNights(0);
     setIsComplete(false);
     setMapKey((k) => k + 1);
+    setCountdown(5);
   }, []);
 
   const handleComplete = useCallback(() => {
@@ -134,28 +159,51 @@ export function TravelMapModal({ open, onOpenChange }: TravelMapModalProps) {
               totalCountries={totalCountries}
               isComplete={isComplete}
             />
+            {/* Countdown overlay */}
+            {countdown !== null && (
+              <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+                <div
+                  className="text-white font-black tabular-nums select-none"
+                  style={{ fontSize: "20vmin", opacity: 0.7, textShadow: "0 0 40px #60a5fa" }}
+                >
+                  {countdown}
+                </div>
+              </div>
+            )}
             {/* Controls — top left, above HUD */}
             <div className="absolute top-4 left-4 flex items-center gap-3 z-10">
               <Button
                 variant="secondary"
                 size="icon"
-                onClick={() => setIsPlaying((p) => !p)}
+                onClick={() => {
+                  if (isComplete) {
+                    handleRestart();
+                  } else if (countdown !== null) {
+                    setCountdown(null);
+                    setIsPlaying(true);
+                  } else {
+                    setIsPlaying((p) => !p);
+                  }
+                }}
                 data-testid="travel-map-play-pause"
-                aria-label={isPlaying ? "Pause" : "Play"}
+                aria-label={
+                  isComplete
+                    ? "Restart"
+                    : isPlaying
+                      ? "Pause"
+                      : countdown !== null
+                        ? "Skip countdown"
+                        : "Play"
+                }
               >
-                {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-              </Button>
-              {(stopIndex >= 0 || isComplete) && (
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  onClick={handleRestart}
-                  data-testid="travel-map-restart"
-                  aria-label="Restart"
-                >
+                {isComplete ? (
                   <RotateCcw className="h-4 w-4" />
-                </Button>
-              )}
+                ) : isPlaying ? (
+                  <Pause className="h-4 w-4" />
+                ) : (
+                  <Play className="h-4 w-4" />
+                )}
+              </Button>
               <div className="flex items-center gap-2 bg-slate-900/80 px-3 py-1.5 rounded-md">
                 <span className="text-slate-400 text-xs">Speed</span>
                 <input

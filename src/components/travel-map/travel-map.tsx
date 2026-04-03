@@ -53,6 +53,21 @@ function greatCirclePoints(
   return points;
 }
 
+// Normalize arc point longitudes so no consecutive pair differs by more than 180°.
+// Prevents MapLibre from drawing lines the "wrong way around" the globe.
+function normalizeLngPath(points: [number, number][]): [number, number][] {
+  if (points.length < 2) return points;
+  const result: [number, number][] = [points[0]];
+  for (let i = 1; i < points.length; i++) {
+    let lng = points[i][0];
+    const prev = result[i - 1][0];
+    while (lng - prev > 180) lng -= 360;
+    while (prev - lng > 180) lng += 360;
+    result.push([lng, points[i][1]]);
+  }
+  return result;
+}
+
 // Fly to a stop while simultaneously drawing the arc tip at the camera center.
 // On moveend, snaps the arc to the proper great-circle line and adds it to completedFeatures.
 function flyToStopWithArc(
@@ -69,6 +84,11 @@ function flyToStopWithArc(
     function updateArcToCamera() {
       if (!from || cancelled()) return;
       const center = map.getCenter();
+      // Normalize camera longitude relative to `from` to avoid the line flipping
+      // across the antimeridian during long-distance pans
+      let camLng = center.lng;
+      while (camLng - from[0] > 180) camLng -= 360;
+      while (from[0] - camLng > 180) camLng += 360;
       const source = map.getSource("arcs") as maplibregl.GeoJSONSource;
       source.setData({
         type: "FeatureCollection",
@@ -77,7 +97,7 @@ function flyToStopWithArc(
           {
             type: "Feature",
             properties: {},
-            geometry: { type: "LineString", coordinates: [from, [center.lng, center.lat]] },
+            geometry: { type: "LineString", coordinates: [from, [camLng, center.lat]] },
           },
         ],
       });
@@ -91,7 +111,7 @@ function flyToStopWithArc(
         if (!cancelled()) {
           // Snap to proper great-circle arc and add to completed set
           const to: [number, number] = [toStop.lng, toStop.lat];
-          const arcPoints = greatCirclePoints(from, to);
+          const arcPoints = normalizeLngPath(greatCirclePoints(from, to));
           completedFeatures.push({
             type: "Feature" as const,
             properties: {},
