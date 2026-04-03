@@ -239,7 +239,10 @@ export function TravelMap({ stops, isPlaying, speed, onUpdate, onComplete }: Tra
       center: [stops[0].lng, stops[0].lat],
       zoom: 2,
       interactive: false,
+      attributionControl: false,
     });
+
+    map.addControl(new maplibregl.AttributionControl({ compact: true }), "top-right");
 
     mapRef.current = map;
 
