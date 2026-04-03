@@ -22,6 +22,7 @@ import {
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { EmptyState } from "@/components/ui/empty-state";
+import { PageSpinner } from "@/components/ui/page-spinner";
 import { LucideIcon } from "lucide-react";
 import { ReactNode } from "react";
 
@@ -100,6 +101,7 @@ export function SettingsCrudTab<T extends { id: string }>({
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<T | null>(null);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   const refresh = useCallback(async () => {
     try {
@@ -108,6 +110,8 @@ export function SettingsCrudTab<T extends { id: string }>({
       setItems(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load data");
+    } finally {
+      setInitialLoading(false);
     }
   }, [fetchItems, fetchDependencies]);
 
@@ -158,6 +162,8 @@ export function SettingsCrudTab<T extends { id: string }>({
     onEdit: handleEditClick,
     onDelete: handleDeleteClick,
   };
+
+  if (initialLoading) return <PageSpinner />;
 
   return (
     <div className="flex flex-col flex-1 min-h-0 space-y-4">

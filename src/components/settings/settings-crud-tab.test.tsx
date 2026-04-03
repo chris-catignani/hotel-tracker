@@ -46,7 +46,7 @@ describe("SettingsCrudTab", () => {
 
   it("renders title and add button", async () => {
     render(<SettingsCrudTab {...makeProps()} />);
-    expect(screen.getByText("Things")).toBeInTheDocument();
+    expect(await screen.findByText("Things")).toBeInTheDocument();
     expect(screen.getByTestId("add-thing-button")).toBeInTheDocument();
   });
 
@@ -72,7 +72,8 @@ describe("SettingsCrudTab", () => {
   it("opens add dialog when add button is clicked", async () => {
     const user = userEvent.setup();
     render(<SettingsCrudTab {...makeProps()} />);
-    await user.click(screen.getByTestId("add-thing-button"));
+    const addButton = await screen.findByTestId("add-thing-button");
+    await user.click(addButton);
     expect(screen.getByText("Add Thing")).toBeInTheDocument();
     expect(screen.getByTestId("add-name")).toBeInTheDocument();
   });
@@ -86,7 +87,8 @@ describe("SettingsCrudTab", () => {
         {...makeProps({ addDialog: { ...makeProps().addDialog, onSubmit }, fetchItems })}
       />
     );
-    await user.click(screen.getByTestId("add-thing-button"));
+    const addButton = await screen.findByTestId("add-thing-button");
+    await user.click(addButton);
     await user.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(fetchItems).toHaveBeenCalledTimes(2));
@@ -98,7 +100,8 @@ describe("SettingsCrudTab", () => {
     render(
       <SettingsCrudTab {...makeProps({ addDialog: { ...makeProps().addDialog, onSubmit } })} />
     );
-    await user.click(screen.getByTestId("add-thing-button"));
+    const addButton = await screen.findByTestId("add-thing-button");
+    await user.click(addButton);
     await user.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
     expect(screen.getByTestId("add-name")).toBeInTheDocument(); // dialog still open
