@@ -210,7 +210,10 @@ export default function EarningsTrackerPage() {
             <EarningsTrackerMobileList {...sharedProps} />
           </div>
           {/* Desktop view */}
-          <div className="hidden md:flex md:flex-col md:flex-1 md:min-h-0">
+          <div
+            className="hidden md:flex md:flex-col md:flex-1 md:min-h-0"
+            data-testid="earnings-tracker-desktop"
+          >
             <EarningsTrackerGrid {...sharedProps} />
           </div>
         </>
