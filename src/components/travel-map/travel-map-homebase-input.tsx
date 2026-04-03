@@ -95,10 +95,12 @@ export function HomebaseInput({ initialAddress, onSelect, onSkip }: HomebaseInpu
                   }}
                   data-testid={`homebase-suggestion-${i}`}
                 >
-                  <span className="font-medium">{result.displayName}</span>
-                  {result.countryCode && (
-                    <span className="text-slate-400 ml-1">{result.countryCode}</span>
-                  )}
+                  <div>
+                    <span className="font-medium">{result.displayName}</span>
+                    {result.address && (
+                      <span className="block text-slate-400 text-xs mt-0.5">{result.address}</span>
+                    )}
+                  </div>
                 </button>
               ))}
             </div>
