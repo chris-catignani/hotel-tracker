@@ -807,7 +807,7 @@ export async function updateBooking(id: string, userId: string, input: UpdateBoo
     }
   }
 
-  // Derive posting statuses
+  // Derive earnings tracker statuses
   const postingStatuses = derivePostingStatusesForUpdate(data, current, input);
   data.loyaltyPostingStatus = postingStatuses.loyaltyPostingStatus;
   data.cardRewardPostingStatus = postingStatuses.cardRewardPostingStatus;

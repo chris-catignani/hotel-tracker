@@ -2,7 +2,7 @@ import { certPointsValue } from "@/lib/cert-types";
 import { formatCurrency } from "@/lib/utils";
 import { DEFAULT_EQN_VALUE } from "@/lib/constants";
 import { resolveBasePointRate } from "@/lib/loyalty-utils";
-import { formatBenefitLabel } from "@/lib/posting-status-utils";
+import { formatBenefitLabel } from "@/lib/earnings-tracker-utils";
 
 const DEFAULT_CENTS_PER_POINT = 0.01;
 const ORPHANED_PROMOTION_DESCRIPTION =

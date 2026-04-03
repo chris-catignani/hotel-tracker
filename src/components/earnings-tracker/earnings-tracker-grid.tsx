@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-fetch";
-import { PostingStatusCell } from "./posting-status-cell";
+import { EarningsTrackerCell } from "./earnings-tracker-cell";
 import { PostingStatus, BookingPartnershipEarnStatus } from "@/lib/types";
 import {
   nextPostingStatus,
@@ -16,12 +16,12 @@ import {
   formatPerkValue,
   statusColorClass,
   statusIcon,
-} from "@/lib/posting-status-utils";
+} from "@/lib/earnings-tracker-utils";
 import { cn, formatDate, pruneHotelName } from "@/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-export function PostingStatusGrid({ initialBookings }: { initialBookings: any[] }) {
+export function EarningsTrackerGrid({ initialBookings }: { initialBookings: any[] }) {
   const [bookings, setBookings] = useState(initialBookings);
   const [expandedCells, setExpandedCells] = useState<Record<string, string | null>>({});
 
@@ -223,7 +223,7 @@ function renderBookingRows(
   const effectiveLoyaltyStatus: PostingStatus = booking.loyaltyPostingStatus ?? "pending";
   const loyaltyCell =
     loyaltyValue && booking.loyaltyPointsEarned > 0 ? (
-      <PostingStatusCell
+      <EarningsTrackerCell
         kind="single"
         value={loyaltyValue}
         status={effectiveLoyaltyStatus}
@@ -233,13 +233,13 @@ function renderBookingRows(
         }
       />
     ) : (
-      <PostingStatusCell kind="empty" />
+      <EarningsTrackerCell kind="empty" />
     );
 
   // Card reward cell
   const cardRewardCell =
     booking.cardRewardPostingStatus != null && booking.userCreditCard && booking.cardReward > 0 ? (
-      <PostingStatusCell
+      <EarningsTrackerCell
         kind="single"
         value={formatCardRewardValue(
           booking.cardReward ?? 0,
@@ -254,7 +254,7 @@ function renderBookingRows(
         }
       />
     ) : (
-      <PostingStatusCell kind="empty" />
+      <EarningsTrackerCell kind="empty" />
     );
 
   // Portal cell
@@ -268,7 +268,7 @@ function renderBookingRows(
     : null;
   const portalCell =
     booking.portalCashbackPostingStatus != null && booking.portalCashback > 0 ? (
-      <PostingStatusCell
+      <EarningsTrackerCell
         kind="single"
         value={formatPortalValue(
           booking.portalCashback ?? 0,
@@ -288,15 +288,15 @@ function renderBookingRows(
         }
       />
     ) : (
-      <PostingStatusCell kind="empty" />
+      <EarningsTrackerCell kind="empty" />
     );
 
   // Promotions cell
   const promoCell =
     bps.length === 0 ? (
-      <PostingStatusCell kind="empty" />
+      <EarningsTrackerCell kind="empty" />
     ) : bps.length === 1 ? (
-      <PostingStatusCell
+      <EarningsTrackerCell
         kind="single"
         value={formatPromotionValue(bps[0], booking.hotelChain?.pointType?.shortName ?? null)}
         status={bps[0].postingStatus}
@@ -304,7 +304,7 @@ function renderBookingRows(
         onCycle={() => patchPromotionStatus(booking.id, bps[0].id, bps[0].postingStatus)}
       />
     ) : (
-      <PostingStatusCell
+      <EarningsTrackerCell
         kind="multi"
         testId={`promotions-cell-${booking.id}`}
         postedCount={bps.filter((bp: any) => bp.postingStatus === "posted").length}
@@ -318,9 +318,9 @@ function renderBookingRows(
   // Card benefits cell
   const cardBenefitCell =
     cardBenefits.length === 0 ? (
-      <PostingStatusCell kind="empty" />
+      <EarningsTrackerCell kind="empty" />
     ) : cardBenefits.length === 1 ? (
-      <PostingStatusCell
+      <EarningsTrackerCell
         kind="single"
         value={formatCardBenefitValue(Number(cardBenefits[0].appliedValue))}
         status={cardBenefits[0].postingStatus}
@@ -330,7 +330,7 @@ function renderBookingRows(
         }
       />
     ) : (
-      <PostingStatusCell
+      <EarningsTrackerCell
         kind="multi"
         postedCount={cardBenefits.filter((b: any) => b.postingStatus === "posted").length}
         total={cardBenefits.length}
@@ -343,9 +343,9 @@ function renderBookingRows(
   // Perks cell
   const perkCell =
     perks.length === 0 ? (
-      <PostingStatusCell kind="empty" />
+      <EarningsTrackerCell kind="empty" />
     ) : perks.length === 1 ? (
-      <PostingStatusCell
+      <EarningsTrackerCell
         kind="single"
         value={formatPerkValue(
           perks[0].benefitType,
@@ -358,7 +358,7 @@ function renderBookingRows(
         onCycle={() => patchBenefitStatus(booking.id, perks[0].id, perks[0].postingStatus)}
       />
     ) : (
-      <PostingStatusCell
+      <EarningsTrackerCell
         kind="multi"
         postedCount={perks.filter((p: any) => p.postingStatus === "posted").length}
         total={perks.length}
@@ -371,7 +371,7 @@ function renderBookingRows(
   // Partners cell
   const partnerCell =
     partnerships.length === 0 ? (
-      <PostingStatusCell kind="empty" />
+      <EarningsTrackerCell kind="empty" />
     ) : partnerships.length === 1 ? (
       (() => {
         const earn = partnerships[0];
@@ -381,7 +381,7 @@ function renderBookingRows(
           ) ?? null;
         const currentStatus: PostingStatus = statusRecord?.postingStatus ?? "pending";
         return (
-          <PostingStatusCell
+          <EarningsTrackerCell
             kind="single"
             value={formatPartnershipValue(earn.pointsEarned ?? 0, earn.pointTypeName ?? "")}
             status={currentStatus}
@@ -391,7 +391,7 @@ function renderBookingRows(
         );
       })()
     ) : (
-      <PostingStatusCell
+      <EarningsTrackerCell
         kind="multi"
         postedCount={
           partnerships.filter((e: any) => {

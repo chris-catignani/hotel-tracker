@@ -12,9 +12,9 @@ const PAST_YEAR = YEAR - 1;
 // and loyaltyPostingStatus will initialize to "pending".
 const HYATT_ID = HOTEL_ID.HYATT;
 
-test.describe("Posting Status", () => {
+test.describe("Earnings Tracker", () => {
   test("shows needs-attention bookings by default", async ({ isolatedUser }) => {
-    const propertyName = `Posting Test Hotel ${crypto.randomUUID()}`;
+    const propertyName = `Earnings Tracker Test Hotel ${crypto.randomUUID()}`;
     const res = await isolatedUser.request.post("/api/bookings", {
       data: {
         hotelChainId: HYATT_ID,
@@ -35,7 +35,7 @@ test.describe("Posting Status", () => {
     const booking = await res.json();
 
     try {
-      await isolatedUser.page.goto("/posting-status");
+      await isolatedUser.page.goto("/earnings-tracker");
 
       await expect(
         isolatedUser.page.getByRole("heading", { name: "Earnings Tracker" })
@@ -53,10 +53,10 @@ test.describe("Posting Status", () => {
   });
 
   test("All Bookings toggle shows all bookings", async ({ isolatedUser }) => {
-    // Create a past apartment booking — apartment bookings have no posting statuses
+    // Create a past apartment booking — apartment bookings have no earnings tracker statuses
     // (no loyalty, no card reward, no portal, no promotions), so it won't appear
     // in needs-attention. This avoids cross-test interference from globally-matched promotions.
-    const propertyName = `Past Posting Apt ${crypto.randomUUID()}`;
+    const propertyName = `Past Earnings Tracker Apt ${crypto.randomUUID()}`;
     const res = await isolatedUser.request.post("/api/bookings", {
       data: {
         accommodationType: "apartment",
@@ -79,7 +79,7 @@ test.describe("Posting Status", () => {
 
     try {
       // Default view = needs-attention: past apartment booking should be hidden
-      await isolatedUser.page.goto("/posting-status");
+      await isolatedUser.page.goto("/earnings-tracker");
       await expect(
         isolatedUser.page.getByRole("heading", { name: "Earnings Tracker" })
       ).toBeVisible();
@@ -115,7 +115,7 @@ test.describe("Posting Status", () => {
     const booking = await res.json();
 
     try {
-      await isolatedUser.page.goto("/posting-status");
+      await isolatedUser.page.goto("/earnings-tracker");
 
       const loyaltyCell = isolatedUser.page.getByTestId(`loyalty-cell-${booking.id}`);
 
@@ -173,7 +173,7 @@ test.describe("Posting Status", () => {
     const booking = await bookingRes.json();
 
     try {
-      await isolatedUser.page.goto("/posting-status?filter=all");
+      await isolatedUser.page.goto("/earnings-tracker?filter=all");
       await expect(
         isolatedUser.page.getByRole("heading", { name: "Earnings Tracker" })
       ).toBeVisible();
@@ -261,7 +261,7 @@ test.describe("Posting Status", () => {
     const booking = await bookingRes.json();
 
     try {
-      await isolatedUser.page.goto("/posting-status");
+      await isolatedUser.page.goto("/earnings-tracker");
 
       const promoCell = isolatedUser.page.getByTestId(`promotions-cell-${booking.id}`);
       await expect(promoCell).toBeVisible();
@@ -311,7 +311,7 @@ test.describe("Posting Status", () => {
     const booking = await bookingRes.json();
 
     try {
-      await isolatedUser.page.goto("/posting-status");
+      await isolatedUser.page.goto("/earnings-tracker");
 
       const cardRewardCell = isolatedUser.page.getByTestId(`card-reward-cell-${booking.id}`);
 
@@ -360,7 +360,7 @@ test.describe("Posting Status", () => {
     const booking = await bookingRes.json();
 
     try {
-      await isolatedUser.page.goto("/posting-status");
+      await isolatedUser.page.goto("/earnings-tracker");
 
       const portalCell = isolatedUser.page.getByTestId(`portal-cashback-cell-${booking.id}`);
 
@@ -397,7 +397,7 @@ test.describe("Posting Status", () => {
     const benefitRes = await adminRequest.post("/api/card-benefits", {
       data: {
         creditCardId: CREDIT_CARD_ID.AMEX_BUSINESS_PLATINUM,
-        description: "Test posting status credit",
+        description: "Test earnings tracker credit",
         value: 50,
         period: "quarterly",
         hotelChainId: testHotelChain.id,
@@ -429,7 +429,7 @@ test.describe("Posting Status", () => {
     const booking = await bookingRes.json();
 
     try {
-      await isolatedUser.page.goto("/posting-status");
+      await isolatedUser.page.goto("/earnings-tracker");
 
       const cardBenefitCell = isolatedUser.page.getByTestId(`card-benefit-cell-${booking.id}`);
 
@@ -494,7 +494,7 @@ test.describe("Posting Status", () => {
     const booking = await bookingRes.json();
 
     try {
-      await isolatedUser.page.goto("/posting-status");
+      await isolatedUser.page.goto("/earnings-tracker");
       await expect(
         isolatedUser.page.getByRole("heading", { name: "Earnings Tracker" })
       ).toBeVisible();
@@ -540,7 +540,7 @@ test.describe("Posting Status", () => {
     const booking = await bookingRes.json();
 
     try {
-      await isolatedUser.page.goto("/posting-status");
+      await isolatedUser.page.goto("/earnings-tracker");
 
       const perksCell = isolatedUser.page.getByTestId(`perks-cell-${booking.id}`);
 
