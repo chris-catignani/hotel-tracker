@@ -12,7 +12,7 @@ const GEO_RESULTS = [
     latitude: 39.8,
     longitude: -89.6,
     placeId: null,
-    address: null,
+    address: "Springfield, Sangamon County, Illinois, United States",
   },
   {
     displayName: "Paris, France",
@@ -37,16 +37,22 @@ describe("HomebaseInput", () => {
     vi.restoreAllMocks();
   });
 
-  it("renders the prompt overlay", () => {
+  it("renders the prompt overlay with Skip and Done buttons", () => {
     render(<HomebaseInput initialAddress="" onSelect={vi.fn()} onSkip={vi.fn()} />);
     expect(screen.getByTestId("homebase-prompt")).toBeInTheDocument();
     expect(screen.getByTestId("homebase-address-input")).toBeInTheDocument();
     expect(screen.getByTestId("homebase-skip")).toBeInTheDocument();
+    expect(screen.getByTestId("homebase-done")).toBeInTheDocument();
   });
 
   it("prefills the input with initialAddress", () => {
     render(<HomebaseInput initialAddress="Paris, France" onSelect={vi.fn()} onSkip={vi.fn()} />);
     expect(screen.getByTestId("homebase-address-input")).toHaveValue("Paris, France");
+  });
+
+  it("Done button is disabled until a suggestion is selected", () => {
+    render(<HomebaseInput initialAddress="" onSelect={vi.fn()} onSkip={vi.fn()} />);
+    expect(screen.getByTestId("homebase-done")).toBeDisabled();
   });
 
   it("calls onSkip when Skip is clicked", async () => {
@@ -93,7 +99,21 @@ describe("HomebaseInput", () => {
     expect(screen.getByTestId("homebase-suggestion-1")).toBeInTheDocument();
   });
 
-  it("calls onSelect with correct HomebaseEntry when suggestion clicked", async () => {
+  it("selecting a suggestion fills input with full address and enables Done", async () => {
+    const user = userEvent.setup({ delay: null });
+    render(<HomebaseInput initialAddress="" onSelect={vi.fn()} onSkip={vi.fn()} />);
+    const input = screen.getByTestId("homebase-address-input");
+    await user.type(input, "Spr");
+    await waitFor(() => expect(screen.getByTestId("homebase-suggestion-0")).toBeInTheDocument(), {
+      timeout: 500,
+    });
+    await user.click(screen.getByTestId("homebase-suggestion-0"));
+    // Full address (result.address) shown in input
+    expect(input).toHaveValue("Springfield, Sangamon County, Illinois, United States");
+    expect(screen.getByTestId("homebase-done")).not.toBeDisabled();
+  });
+
+  it("selecting a suggestion does not immediately call onSelect", async () => {
     const user = userEvent.setup({ delay: null });
     const onSelect = vi.fn();
     render(<HomebaseInput initialAddress="" onSelect={onSelect} onSkip={vi.fn()} />);
@@ -103,14 +123,42 @@ describe("HomebaseInput", () => {
       timeout: 500,
     });
     await user.click(screen.getByTestId("homebase-suggestion-0"));
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it("calls onSelect with full address when Done is clicked after suggestion selected", async () => {
+    const user = userEvent.setup({ delay: null });
+    const onSelect = vi.fn();
+    render(<HomebaseInput initialAddress="" onSelect={onSelect} onSkip={vi.fn()} />);
+    const input = screen.getByTestId("homebase-address-input");
+    await user.type(input, "Spr");
+    await waitFor(() => expect(screen.getByTestId("homebase-suggestion-0")).toBeInTheDocument(), {
+      timeout: 500,
+    });
+    await user.click(screen.getByTestId("homebase-suggestion-0"));
+    await user.click(screen.getByTestId("homebase-done"));
     const expected: HomebaseEntry = {
-      address: "Springfield, Illinois",
+      address: "Springfield, Sangamon County, Illinois, United States",
       city: "Springfield",
       countryCode: "US",
       lat: 39.8,
       lng: -89.6,
     };
     expect(onSelect).toHaveBeenCalledWith(expected);
+  });
+
+  it("falls back to displayName when result.address is null", async () => {
+    const user = userEvent.setup({ delay: null });
+    const onSelect = vi.fn();
+    render(<HomebaseInput initialAddress="" onSelect={onSelect} onSkip={vi.fn()} />);
+    const input = screen.getByTestId("homebase-address-input");
+    await user.type(input, "Par");
+    await waitFor(() => expect(screen.getByTestId("homebase-suggestion-1")).toBeInTheDocument(), {
+      timeout: 500,
+    });
+    await user.click(screen.getByTestId("homebase-suggestion-1"));
+    await user.click(screen.getByTestId("homebase-done"));
+    expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ address: "Paris, France" }));
   });
 
   it("does not call onSelect when result has null coordinates", async () => {
@@ -137,6 +185,8 @@ describe("HomebaseInput", () => {
       timeout: 500,
     });
     await user.click(screen.getByTestId("homebase-suggestion-0"));
+    // Done stays disabled since selectedEntry was never set
+    expect(screen.getByTestId("homebase-done")).toBeDisabled();
     expect(onSelect).not.toHaveBeenCalled();
   });
 });
