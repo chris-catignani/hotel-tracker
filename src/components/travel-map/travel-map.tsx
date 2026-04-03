@@ -14,8 +14,6 @@ export interface TravelMapProps {
   onComplete: () => void;
 }
 
-// Compute great-circle interpolation points between two [lng, lat] coordinates.
-// Returns numPoints+1 points forming a geodesic arc.
 function greatCirclePoints(
   from: [number, number],
   to: [number, number],
@@ -23,12 +21,10 @@ function greatCirclePoints(
 ): [number, number][] {
   const toRad = (d: number) => (d * Math.PI) / 180;
   const toDeg = (r: number) => (r * 180) / Math.PI;
-
-  const lat1 = toRad(from[1]);
-  const lng1 = toRad(from[0]);
-  const lat2 = toRad(to[1]);
-  const lng2 = toRad(to[0]);
-
+  const lat1 = toRad(from[1]),
+    lng1 = toRad(from[0]);
+  const lat2 = toRad(to[1]),
+    lng2 = toRad(to[0]);
   const d =
     2 *
     Math.asin(
@@ -37,9 +33,7 @@ function greatCirclePoints(
           Math.cos(lat1) * Math.cos(lat2) * Math.sin((lng1 - lng2) / 2) ** 2
       )
     );
-
   if (d === 0) return Array(numPoints + 1).fill(from) as [number, number][];
-
   const points: [number, number][] = [];
   for (let i = 0; i <= numPoints; i++) {
     const f = i / numPoints;
@@ -53,8 +47,6 @@ function greatCirclePoints(
   return points;
 }
 
-// Normalize arc point longitudes so no consecutive pair differs by more than 180°.
-// Prevents MapLibre from drawing lines the "wrong way around" the globe.
 function normalizeLngPath(points: [number, number][]): [number, number][] {
   if (points.length < 2) return points;
   const result: [number, number][] = [points[0]];
@@ -94,8 +86,21 @@ function zoomForDistance(km: number): number {
   return 3;
 }
 
-// Fly to a stop while progressively revealing the great-circle arc based on elapsed time.
-// This avoids the straight-line → curved-arc jump that occurs if we draw to the camera center.
+const ARC_PAINT = {
+  "line-color": "#60a5fa",
+  "line-width": 4,
+  "line-opacity": 0.85,
+  "line-blur": 2,
+};
+
+// Fly to a stop while drawing the current leg's arc progressively.
+//
+// Two separate GeoJSON sources keep the cost constant per frame:
+//   arcs-completed — all finished legs, uploaded once per leg (never touched during flyTo)
+//   arcs-current   — only the leg being drawn right now (≤51 points), updated on each move
+//
+// The key insight: previously we uploaded ALL arcs on every frame, so cost grew O(n legs).
+// Now only arcs-current is updated during animation — always a fixed small payload.
 function flyToStopWithArc(
   map: maplibregl.Map,
   fromStop: TravelStop | null,
@@ -113,19 +118,24 @@ function flyToStopWithArc(
       const arcPoints = normalizeLngPath(greatCirclePoints(from, to));
       const totalDist = gcDistanceKm(from, to);
 
-      function updateArc() {
+      const completedSource = map.getSource("arcs-completed") as maplibregl.GeoJSONSource;
+      const currentSource = map.getSource("arcs-current") as maplibregl.GeoJSONSource;
+
+      // Snapshot completed arcs once — won't change while this leg animates.
+      completedSource.setData({ type: "FeatureCollection", features: completedFeatures });
+
+      let lastCount = 0;
+      function updateCurrentArc() {
         if (cancelled()) return;
-        // Use the camera's geographic progress toward the destination so the arc tip
-        // stays in sync with where the camera actually is, regardless of zoom curve.
         const center = map.getCenter();
         const t =
           totalDist > 0 ? Math.min(gcDistanceKm(from, [center.lng, center.lat]) / totalDist, 1) : 1;
         const count = Math.max(2, Math.ceil(t * arcPoints.length));
-        const source = map.getSource("arcs") as maplibregl.GeoJSONSource;
-        source.setData({
+        if (count === lastCount) return;
+        lastCount = count;
+        currentSource.setData({
           type: "FeatureCollection",
           features: [
-            ...completedFeatures,
             {
               type: "Feature",
               properties: {},
@@ -135,18 +145,18 @@ function flyToStopWithArc(
         });
       }
 
-      map.on("move", updateArc);
+      map.on("move", updateCurrentArc);
 
       map.once("moveend", () => {
-        map.off("move", updateArc);
+        map.off("move", updateCurrentArc);
         if (!cancelled()) {
           completedFeatures.push({
             type: "Feature" as const,
             properties: {},
             geometry: { type: "LineString" as const, coordinates: arcPoints },
           } satisfies Feature);
-          const source = map.getSource("arcs") as maplibregl.GeoJSONSource;
-          source.setData({ type: "FeatureCollection", features: completedFeatures });
+          completedSource.setData({ type: "FeatureCollection", features: completedFeatures });
+          currentSource.setData({ type: "FeatureCollection", features: [] });
         }
         resolve();
       });
@@ -208,14 +218,11 @@ export function TravelMap({ stops, isPlaying, speed, onUpdate, onComplete }: Tra
   useEffect(() => {
     isPlayingRef.current = isPlaying;
   }, [isPlaying]);
-
   useEffect(() => {
     speedRef.current = speed;
   }, [speed]);
 
   useEffect(() => {
-    // Reset cancellation flag on each mount — required because React Strict Mode
-    // unmounts and remounts components in dev, which would leave cancelledRef=true.
     cancelledRef.current = false;
     animationStartedRef.current = false;
 
@@ -243,39 +250,43 @@ export function TravelMap({ stops, isPlaying, speed, onUpdate, onComplete }: Tra
     });
 
     map.addControl(new maplibregl.AttributionControl({ compact: true }), "top-right");
-
     mapRef.current = map;
 
     map.on("load", () => {
-      map.addSource("arcs", {
+      // Completed arcs — stable during each leg's animation.
+      map.addSource("arcs-completed", {
         type: "geojson",
         data: { type: "FeatureCollection", features: [] },
       });
       map.addLayer({
-        id: "arcs-layer",
+        id: "arcs-completed-layer",
         type: "line",
-        source: "arcs",
-        paint: {
-          "line-color": "#60a5fa",
-          "line-width": 4,
-          "line-opacity": 0.85,
-          "line-blur": 2,
-        },
+        source: "arcs-completed",
+        paint: ARC_PAINT,
+      });
+
+      // Current arc — only this source is updated during flyTo (≤51 points, constant cost).
+      map.addSource("arcs-current", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
+      });
+      map.addLayer({
+        id: "arcs-current-layer",
+        type: "line",
+        source: "arcs-current",
+        paint: ARC_PAINT,
       });
     });
 
-    map.on("error", (e) => {
-      console.error("MapLibre error:", e.error);
-    });
+    map.on("error", (e) => console.error("MapLibre error:", e.error));
 
     return () => {
       cancelledRef.current = true;
-      markersRef.current.forEach((marker) => marker.remove());
+      markersRef.current.forEach((m) => m.remove());
       markersRef.current = [];
       map.remove();
       mapRef.current = null;
     };
-    // stops identity is stable per modal open — intentional single-run
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -285,10 +296,7 @@ export function TravelMap({ stops, isPlaying, speed, onUpdate, onComplete }: Tra
 
     async function runAnimation() {
       const map = mapRef.current;
-      if (!map) {
-        console.warn("[TravelMap] runAnimation: map not initialized");
-        return;
-      }
+      if (!map) return;
 
       if (!map.isStyleLoaded()) {
         await new Promise<void>((resolve) => map.once("load", resolve));
@@ -304,11 +312,9 @@ export function TravelMap({ stops, isPlaying, speed, onUpdate, onComplete }: Tra
 
         const stop = stops[i];
         const prev = i > 0 ? stops[i - 1] : null;
-
         const distKm = prev ? gcDistanceKm([prev.lng, prev.lat], [stop.lng, stop.lat]) : null;
         const zoom = distKm !== null ? zoomForDistance(distKm) : 6;
 
-        // Fly to stop while progressively revealing the great-circle arc
         await flyToStopWithArc(
           map,
           prev,
@@ -323,10 +329,9 @@ export function TravelMap({ stops, isPlaying, speed, onUpdate, onComplete }: Tra
         const el = document.createElement("div");
         el.style.cssText =
           "width:10px;height:10px;border-radius:50%;background:#a78bfa;box-shadow:0 0 8px #a78bfa,0 0 16px #7c3aed;";
-        const marker = new maplibregl.Marker({ element: el })
-          .setLngLat([stop.lng, stop.lat])
-          .addTo(map);
-        markersRef.current.push(marker);
+        markersRef.current.push(
+          new maplibregl.Marker({ element: el }).setLngLat([stop.lng, stop.lat]).addTo(map)
+        );
 
         onUpdate(i, 0);
         await animateNightCounter(

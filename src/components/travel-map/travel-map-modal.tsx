@@ -99,6 +99,17 @@ export function TravelMapModal({ open, onOpenChange }: TravelMapModalProps) {
     setCountdown(5);
   }, []);
 
+  const handlePlayPause = useCallback(() => {
+    if (isComplete) {
+      handleRestart();
+    } else if (countdown !== null) {
+      setCountdown(null);
+      setIsPlaying(true);
+    } else {
+      setIsPlaying((p) => !p);
+    }
+  }, [isComplete, countdown, handleRestart]);
+
   const handleComplete = useCallback(() => {
     setIsPlaying(false);
     setIsComplete(true);
@@ -117,7 +128,7 @@ export function TravelMapModal({ open, onOpenChange }: TravelMapModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="w-screen h-screen max-w-none m-0 p-0 border-0 rounded-none bg-[#0f172a] [&>button]:text-white [&>button]:top-4 [&>button]:right-4"
+        className="fixed inset-0 sm:inset-6 w-auto h-auto max-w-none sm:max-w-none translate-x-0 translate-y-0 m-0 p-0 border-0 rounded-none sm:rounded-xl overflow-hidden bg-[#0f172a] [&>button]:text-white [&>button]:top-10 [&>button]:right-4"
         data-testid="travel-map-modal"
       >
         <VisuallyHidden>
@@ -140,7 +151,7 @@ export function TravelMapModal({ open, onOpenChange }: TravelMapModalProps) {
           />
         )}
         {!loading && !fetchError && stops.length > 0 && (
-          <div className="relative w-full h-full">
+          <div className="relative w-full h-full cursor-pointer" onClick={handlePlayPause}>
             <TravelMap
               key={mapKey}
               stops={stops}
@@ -168,6 +179,14 @@ export function TravelMapModal({ open, onOpenChange }: TravelMapModalProps) {
                 />
               </div>
             )}
+            {/* Pause overlay */}
+            {!isPlaying && countdown === null && !isComplete && (
+              <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+                <div className="rounded-full bg-black/40 p-6">
+                  <Play className="h-12 w-12 text-white opacity-80" fill="white" />
+                </div>
+              </div>
+            )}
             {/* Countdown overlay */}
             {countdown !== null && (
               <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
@@ -179,21 +198,15 @@ export function TravelMapModal({ open, onOpenChange }: TravelMapModalProps) {
                 </div>
               </div>
             )}
-            {/* Controls — top left, above HUD */}
-            <div className="absolute top-4 left-4 flex items-center gap-3 z-10">
+            {/* Controls — below MapLibre attribution pill */}
+            <div
+              className="absolute top-10 left-4 flex items-center gap-3 z-10"
+              onClick={(e) => e.stopPropagation()}
+            >
               <Button
                 variant="secondary"
                 size="icon"
-                onClick={() => {
-                  if (isComplete) {
-                    handleRestart();
-                  } else if (countdown !== null) {
-                    setCountdown(null);
-                    setIsPlaying(true);
-                  } else {
-                    setIsPlaying((p) => !p);
-                  }
-                }}
+                onClick={handlePlayPause}
                 data-testid="travel-map-play-pause"
                 aria-label={
                   isComplete
