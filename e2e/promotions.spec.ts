@@ -1072,3 +1072,137 @@ test.describe("Promotion user isolation", () => {
     await userBReq.dispose();
   });
 });
+
+test.describe("Promotions status filter", () => {
+  const PAST = "2020-01-01";
+  const FUTURE = "2099-12-31";
+
+  const basePromo = {
+    type: "loyalty",
+    benefits: [
+      { rewardType: "cashback", valueType: "fixed", value: 10, certType: null, sortOrder: 0 },
+    ],
+  };
+
+  test("defaults to Ongoing and hides expired/upcoming promos", async ({ isolatedUser }) => {
+    const ongoingName = `Ongoing ${crypto.randomUUID()}`;
+    const expiredName = `Expired ${crypto.randomUUID()}`;
+    const upcomingName = `Upcoming ${crypto.randomUUID()}`;
+
+    const [ongoingRes, expiredRes, upcomingRes] = await Promise.all([
+      isolatedUser.request.post("/api/promotions", {
+        data: { ...basePromo, name: ongoingName, startDate: PAST, endDate: FUTURE },
+      }),
+      isolatedUser.request.post("/api/promotions", {
+        data: { ...basePromo, name: expiredName, startDate: PAST, endDate: PAST },
+      }),
+      isolatedUser.request.post("/api/promotions", {
+        data: { ...basePromo, name: upcomingName, startDate: FUTURE, endDate: FUTURE },
+      }),
+    ]);
+    const ongoing = await ongoingRes.json();
+    const expired = await expiredRes.json();
+    const upcoming = await upcomingRes.json();
+
+    try {
+      await isolatedUser.page.goto("/promotions");
+      const desktop = isolatedUser.page.getByTestId("promotions-list-desktop");
+      await expect(desktop.getByText(ongoingName)).toBeVisible();
+      await expect(isolatedUser.page.getByText(expiredName)).not.toBeVisible();
+      await expect(isolatedUser.page.getByText(upcomingName)).not.toBeVisible();
+    } finally {
+      await Promise.all([
+        isolatedUser.request.delete(`/api/promotions/${ongoing.id}`),
+        isolatedUser.request.delete(`/api/promotions/${expired.id}`),
+        isolatedUser.request.delete(`/api/promotions/${upcoming.id}`),
+      ]);
+    }
+  });
+
+  test("Expired filter shows only expired promos", async ({ isolatedUser }) => {
+    const expiredName = `Expired ${crypto.randomUUID()}`;
+    const ongoingName = `Ongoing ${crypto.randomUUID()}`;
+
+    const [expiredRes, ongoingRes] = await Promise.all([
+      isolatedUser.request.post("/api/promotions", {
+        data: { ...basePromo, name: expiredName, startDate: PAST, endDate: PAST },
+      }),
+      isolatedUser.request.post("/api/promotions", {
+        data: { ...basePromo, name: ongoingName, startDate: PAST, endDate: FUTURE },
+      }),
+    ]);
+    const expired = await expiredRes.json();
+    const ongoing = await ongoingRes.json();
+
+    try {
+      await isolatedUser.page.goto("/promotions");
+      await isolatedUser.page.getByTestId("status-filter-expired").click();
+      const desktop = isolatedUser.page.getByTestId("promotions-list-desktop");
+      await expect(desktop.getByText(expiredName)).toBeVisible();
+      await expect(isolatedUser.page.getByText(ongoingName)).not.toBeVisible();
+    } finally {
+      await Promise.all([
+        isolatedUser.request.delete(`/api/promotions/${expired.id}`),
+        isolatedUser.request.delete(`/api/promotions/${ongoing.id}`),
+      ]);
+    }
+  });
+
+  test("Upcoming filter shows only upcoming promos", async ({ isolatedUser }) => {
+    const upcomingName = `Upcoming ${crypto.randomUUID()}`;
+    const ongoingName = `Ongoing ${crypto.randomUUID()}`;
+
+    const [upcomingRes, ongoingRes] = await Promise.all([
+      isolatedUser.request.post("/api/promotions", {
+        data: { ...basePromo, name: upcomingName, startDate: FUTURE, endDate: FUTURE },
+      }),
+      isolatedUser.request.post("/api/promotions", {
+        data: { ...basePromo, name: ongoingName, startDate: PAST, endDate: FUTURE },
+      }),
+    ]);
+    const upcoming = await upcomingRes.json();
+    const ongoing = await ongoingRes.json();
+
+    try {
+      await isolatedUser.page.goto("/promotions");
+      await isolatedUser.page.getByTestId("status-filter-upcoming").click();
+      const desktop = isolatedUser.page.getByTestId("promotions-list-desktop");
+      await expect(desktop.getByText(upcomingName)).toBeVisible();
+      await expect(isolatedUser.page.getByText(ongoingName)).not.toBeVisible();
+    } finally {
+      await Promise.all([
+        isolatedUser.request.delete(`/api/promotions/${upcoming.id}`),
+        isolatedUser.request.delete(`/api/promotions/${ongoing.id}`),
+      ]);
+    }
+  });
+
+  test("All filter shows promos of all statuses", async ({ isolatedUser }) => {
+    const ongoingName = `Ongoing ${crypto.randomUUID()}`;
+    const expiredName = `Expired ${crypto.randomUUID()}`;
+
+    const [ongoingRes, expiredRes] = await Promise.all([
+      isolatedUser.request.post("/api/promotions", {
+        data: { ...basePromo, name: ongoingName, startDate: PAST, endDate: FUTURE },
+      }),
+      isolatedUser.request.post("/api/promotions", {
+        data: { ...basePromo, name: expiredName, startDate: PAST, endDate: PAST },
+      }),
+    ]);
+    const ongoing = await ongoingRes.json();
+    const expired = await expiredRes.json();
+
+    try {
+      await isolatedUser.page.goto("/promotions");
+      await isolatedUser.page.getByTestId("status-filter-all").click();
+      const desktop = isolatedUser.page.getByTestId("promotions-list-desktop");
+      await expect(desktop.getByText(ongoingName)).toBeVisible();
+      await expect(desktop.getByText(expiredName)).toBeVisible();
+    } finally {
+      await Promise.all([
+        isolatedUser.request.delete(`/api/promotions/${ongoing.id}`),
+        isolatedUser.request.delete(`/api/promotions/${expired.id}`),
+      ]);
+    }
+  });
+});

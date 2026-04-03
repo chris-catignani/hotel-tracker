@@ -42,11 +42,9 @@ test.describe("Earnings Tracker", () => {
       ).toBeVisible();
       await expect(isolatedUser.page.getByText(propertyName)).toBeVisible();
 
-      // "Needs Attention" filter button should be active (has primary background)
-      const needsAttentionLink = isolatedUser.page.getByRole("link", {
-        name: "Needs Attention",
-      });
-      await expect(needsAttentionLink).toHaveClass(/bg-primary/);
+      // "Needs Attention" filter button should be active
+      const needsAttentionLink = isolatedUser.page.getByTestId("earnings-filter-needs-attention");
+      await expect(needsAttentionLink).toHaveClass(/bg-background/);
     } finally {
       await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
     }
