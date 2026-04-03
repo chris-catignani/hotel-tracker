@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Button } from "@/components/ui/button";
 import { Play, Pause, Map } from "lucide-react";
 import { PageSpinner } from "@/components/ui/page-spinner";
@@ -84,6 +85,9 @@ export function TravelMapModal({ open, onOpenChange }: TravelMapModalProps) {
         className="w-screen h-screen max-w-none m-0 p-0 border-0 rounded-none bg-[#0f172a] [&>button]:text-white [&>button]:top-4 [&>button]:right-4"
         data-testid="travel-map-modal"
       >
+        <VisuallyHidden>
+          <DialogTitle>Travel Map</DialogTitle>
+        </VisuallyHidden>
         {loading && <PageSpinner />}
         {fetchError && (
           <div className="flex items-center justify-center h-full">

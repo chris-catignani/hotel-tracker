@@ -165,6 +165,11 @@ export function TravelMap({ stops, isPlaying, speed, onUpdate, onComplete }: Tra
   }, [speed]);
 
   useEffect(() => {
+    // Reset cancellation flag on each mount — required because React Strict Mode
+    // unmounts and remounts components in dev, which would leave cancelledRef=true.
+    cancelledRef.current = false;
+    animationStartedRef.current = false;
+
     if (!containerRef.current || stops.length === 0) return;
 
     const map = new maplibregl.Map({
