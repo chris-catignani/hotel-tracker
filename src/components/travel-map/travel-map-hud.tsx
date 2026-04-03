@@ -46,7 +46,8 @@ export function TravelMapHud({
 
   if (!currentStop) return null;
 
-  const cityDisplay = (currentStop.city ?? currentStop.propertyName).toUpperCase();
+  const propertyDisplay = currentStop.propertyName.toUpperCase();
+  const city = currentStop.city;
   const country = currentStop.countryCode ? countryName(currentStop.countryCode) : null;
 
   return (
@@ -58,11 +59,12 @@ export function TravelMapHud({
         <div>
           <div
             className="text-white text-2xl font-bold uppercase tracking-wide"
-            data-testid="hud-city-name"
+            data-testid="hud-property-name"
           >
-            {cityDisplay}
+            {propertyDisplay}
           </div>
           <div className="text-slate-400 text-sm">
+            {city && <span>{city} · </span>}
             {country && <span>{country} · </span>}
             {currentStop.checkIn}
           </div>

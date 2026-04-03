@@ -53,35 +53,22 @@ function greatCirclePoints(
   return points;
 }
 
-function flyToStop(map: maplibregl.Map, stop: TravelStop, durationMs: number): Promise<void> {
-  return new Promise((resolve) => {
-    map.once("moveend", resolve);
-    map.flyTo({
-      center: [stop.lng, stop.lat],
-      zoom: 6,
-      duration: durationMs,
-      curve: 1.5,
-    });
-  });
-}
-
-// completedFeatures contains arcs already fully drawn; the new arc is appended live.
-function animateArc(
+// Fly to a stop while simultaneously drawing the arc tip at the camera center.
+// On moveend, snaps the arc to the proper great-circle line and adds it to completedFeatures.
+function flyToStopWithArc(
   map: maplibregl.Map,
-  points: [number, number][],
-  completedFeatures: Feature[],
+  fromStop: TravelStop | null,
+  toStop: TravelStop,
   durationMs: number,
+  completedFeatures: Feature[],
   cancelled: () => boolean
 ): Promise<void> {
   return new Promise((resolve) => {
-    const start = performance.now();
-    function frame(now: number) {
-      if (cancelled()) {
-        resolve();
-        return;
-      }
-      const t = Math.min((now - start) / durationMs, 1);
-      const count = Math.max(2, Math.ceil(t * points.length));
+    const from: [number, number] | null = fromStop ? [fromStop.lng, fromStop.lat] : null;
+
+    function updateArcToCamera() {
+      if (!from || cancelled()) return;
+      const center = map.getCenter();
       const source = map.getSource("arcs") as maplibregl.GeoJSONSource;
       source.setData({
         type: "FeatureCollection",
@@ -90,22 +77,34 @@ function animateArc(
           {
             type: "Feature",
             properties: {},
-            geometry: { type: "LineString", coordinates: points.slice(0, count) },
+            geometry: { type: "LineString", coordinates: [from, [center.lng, center.lat]] },
           },
         ],
       });
-      if (t < 1) {
-        requestAnimationFrame(frame);
-      } else {
-        completedFeatures.push({
-          type: "Feature" as const,
-          properties: {},
-          geometry: { type: "LineString" as const, coordinates: points },
-        } satisfies Feature);
-        resolve();
-      }
     }
-    requestAnimationFrame(frame);
+
+    if (from) map.on("move", updateArcToCamera);
+
+    map.once("moveend", () => {
+      if (from) {
+        map.off("move", updateArcToCamera);
+        if (!cancelled()) {
+          // Snap to proper great-circle arc and add to completed set
+          const to: [number, number] = [toStop.lng, toStop.lat];
+          const arcPoints = greatCirclePoints(from, to);
+          completedFeatures.push({
+            type: "Feature" as const,
+            properties: {},
+            geometry: { type: "LineString" as const, coordinates: arcPoints },
+          } satisfies Feature);
+          const source = map.getSource("arcs") as maplibregl.GeoJSONSource;
+          source.setData({ type: "FeatureCollection", features: completedFeatures });
+        }
+      }
+      resolve();
+    });
+
+    map.flyTo({ center: [toStop.lng, toStop.lat], zoom: 6, duration: durationMs, curve: 1.5 });
   });
 }
 
@@ -205,7 +204,7 @@ export function TravelMap({ stops, isPlaying, speed, onUpdate, onComplete }: Tra
         source: "arcs",
         paint: {
           "line-color": "#60a5fa",
-          "line-width": 2,
+          "line-width": 4,
           "line-opacity": 0.85,
           "line-blur": 2,
         },
@@ -251,8 +250,17 @@ export function TravelMap({ stops, isPlaying, speed, onUpdate, onComplete }: Tra
         if (cancelledRef.current) return;
 
         const stop = stops[i];
+        const prev = i > 0 ? stops[i - 1] : null;
 
-        await flyToStop(map, stop, 1500 / speedRef.current);
+        // Fly to stop while drawing the arc line tip at the camera center
+        await flyToStopWithArc(
+          map,
+          prev,
+          stop,
+          1500 / speedRef.current,
+          completedArcFeaturesRef.current,
+          () => cancelledRef.current
+        );
         if (cancelledRef.current) return;
 
         const el = document.createElement("div");
@@ -262,19 +270,6 @@ export function TravelMap({ stops, isPlaying, speed, onUpdate, onComplete }: Tra
           .setLngLat([stop.lng, stop.lat])
           .addTo(map);
         markersRef.current.push(marker);
-
-        if (i > 0) {
-          const prev = stops[i - 1];
-          const arcPoints = greatCirclePoints([prev.lng, prev.lat], [stop.lng, stop.lat]);
-          await animateArc(
-            map,
-            arcPoints,
-            completedArcFeaturesRef.current,
-            600 / speedRef.current,
-            () => cancelledRef.current
-          );
-          if (cancelledRef.current) return;
-        }
 
         onUpdate(i, 0);
         await animateNightCounter(

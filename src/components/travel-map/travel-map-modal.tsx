@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Button } from "@/components/ui/button";
-import { Play, Pause, Map } from "lucide-react";
+import { Play, Pause, Map, RotateCcw } from "lucide-react";
 import { PageSpinner } from "@/components/ui/page-spinner";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -35,6 +35,7 @@ export function TravelMapModal({ open, onOpenChange }: TravelMapModalProps) {
   const [stopIndex, setStopIndex] = useState(-1);
   const [tickedNights, setTickedNights] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
+  const [mapKey, setMapKey] = useState(0);
 
   useEffect(() => {
     if (!open) {
@@ -44,6 +45,7 @@ export function TravelMapModal({ open, onOpenChange }: TravelMapModalProps) {
       setStopIndex(-1);
       setTickedNights(0);
       setIsComplete(false);
+      setMapKey(0);
       /* eslint-enable react-hooks/set-state-in-effect */
       return;
     }
@@ -62,6 +64,14 @@ export function TravelMapModal({ open, onOpenChange }: TravelMapModalProps) {
   const handleUpdate = useCallback((index: number, ticked: number) => {
     setStopIndex(index);
     setTickedNights(ticked);
+  }, []);
+
+  const handleRestart = useCallback(() => {
+    setIsPlaying(false);
+    setStopIndex(-1);
+    setTickedNights(0);
+    setIsComplete(false);
+    setMapKey((k) => k + 1);
   }, []);
 
   const handleComplete = useCallback(() => {
@@ -107,6 +117,7 @@ export function TravelMapModal({ open, onOpenChange }: TravelMapModalProps) {
         {!loading && !fetchError && stops.length > 0 && (
           <div className="relative w-full h-full">
             <TravelMap
+              key={mapKey}
               stops={stops}
               isPlaying={isPlaying}
               speed={speed}
@@ -134,6 +145,17 @@ export function TravelMapModal({ open, onOpenChange }: TravelMapModalProps) {
               >
                 {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
               </Button>
+              {(stopIndex >= 0 || isComplete) && (
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  onClick={handleRestart}
+                  data-testid="travel-map-restart"
+                  aria-label="Restart"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+              )}
               <div className="flex items-center gap-2 bg-slate-900/80 px-3 py-1.5 rounded-md">
                 <span className="text-slate-400 text-xs">Speed</span>
                 <input

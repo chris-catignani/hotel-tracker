@@ -45,7 +45,7 @@ describe("TravelMapHud", () => {
       />
     );
     expect(screen.getByTestId("travel-map-hud")).toBeInTheDocument();
-    expect(screen.getByTestId("hud-city-name")).toHaveTextContent("PARIS");
+    expect(screen.getByTestId("hud-property-name")).toHaveTextContent("PARK HYATT PARIS");
   });
 
   it("shows ticked night counter during animation", () => {
@@ -132,6 +132,6 @@ describe("TravelMapHud", () => {
         isComplete={false}
       />
     );
-    expect(screen.getByTestId("hud-city-name")).toHaveTextContent("PARK HYATT PARIS");
+    expect(screen.getByTestId("hud-property-name")).toHaveTextContent("PARK HYATT PARIS");
   });
 });
