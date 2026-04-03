@@ -159,6 +159,15 @@ export function TravelMapModal({ open, onOpenChange }: TravelMapModalProps) {
               totalCountries={totalCountries}
               isComplete={isComplete}
             />
+            {/* Journey progress bar — bottom of screen, weighted by nights */}
+            {totalNights > 0 && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-slate-800 z-30">
+                <div
+                  className="h-full bg-gradient-to-r from-blue-400 to-purple-400"
+                  style={{ width: `${(cumulativeNights / totalNights) * 100}%` }}
+                />
+              </div>
+            )}
             {/* Countdown overlay */}
             {countdown !== null && (
               <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">

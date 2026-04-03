@@ -86,6 +86,7 @@ function gcDistanceKm(from: [number, number], to: [number, number]): number {
 }
 
 function zoomForDistance(km: number): number {
+  if (km < 10) return 14;
   if (km < 50) return 12;
   if (km < 300) return 8;
   if (km < 2000) return 6;
@@ -110,11 +111,15 @@ function flyToStopWithArc(
     if (fromStop) {
       const from: [number, number] = [fromStop.lng, fromStop.lat];
       const arcPoints = normalizeLngPath(greatCirclePoints(from, to));
-      const startTime = performance.now();
+      const totalDist = gcDistanceKm(from, to);
 
       function updateArc() {
         if (cancelled()) return;
-        const t = Math.min((performance.now() - startTime) / durationMs, 1);
+        // Use the camera's geographic progress toward the destination so the arc tip
+        // stays in sync with where the camera actually is, regardless of zoom curve.
+        const center = map.getCenter();
+        const t =
+          totalDist > 0 ? Math.min(gcDistanceKm(from, [center.lng, center.lat]) / totalDist, 1) : 1;
         const count = Math.max(2, Math.ceil(t * arcPoints.length));
         const source = map.getSource("arcs") as maplibregl.GeoJSONSource;
         source.setData({
