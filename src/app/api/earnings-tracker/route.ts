@@ -88,10 +88,7 @@ export const GET = withObservability(async (request: NextRequest) => {
       orderBy: { checkIn: "asc" },
     });
 
-    const enriched = await enrichBookingsWithPartnerships(
-      bookings as Prisma.BookingGetPayload<{ include: typeof EARNINGS_TRACKER_INCLUDE }>[],
-      userId
-    );
+    const enriched = await enrichBookingsWithPartnerships(bookings, userId);
 
     const result: EarningsTrackerBooking[] = enriched.map((b) => {
       const { cardReward, portalCashback } = getNetCostBreakdown({
