@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import type { GeoResult } from "@/lib/types";
 import type { HomebaseEntry } from "./travel-map-utils";
 
@@ -34,6 +34,12 @@ export function HomebaseInput({ initialAddress, onSelect, onSkip }: HomebaseInpu
     } catch {
       // silently ignore — user can keep typing
     }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -90,7 +96,9 @@ export function HomebaseInput({ initialAddress, onSelect, onSkip }: HomebaseInpu
                   data-testid={`homebase-suggestion-${i}`}
                 >
                   <span className="font-medium">{result.displayName}</span>
-                  {result.city && <span className="text-slate-400 ml-1">{result.city}</span>}
+                  {result.countryCode && (
+                    <span className="text-slate-400 ml-1">{result.countryCode}</span>
+                  )}
                 </button>
               ))}
             </div>
