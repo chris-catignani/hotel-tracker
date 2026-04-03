@@ -58,6 +58,7 @@ test.describe("Travel Map", () => {
 
       await isolatedUser.page.getByTestId("travel-map-button").click();
       await expect(isolatedUser.page.getByTestId("travel-map-modal")).toBeVisible();
+      await isolatedUser.page.getByTestId("page-spinner").waitFor({ state: "hidden" });
 
       // Play button is only rendered when stops exist with coordinates;
       // otherwise the empty state is shown. Either outcome is acceptable here.
@@ -73,6 +74,65 @@ test.describe("Travel Map", () => {
       expect(hasMap || hasEmpty).toBe(true);
 
       // Close
+      await isolatedUser.page.keyboard.press("Escape");
+      await expect(isolatedUser.page.getByTestId("travel-map-modal")).not.toBeVisible();
+    } finally {
+      await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
+    }
+  });
+
+  test("shows homebase prompt when modal opens with coordinate-bearing stops", async ({
+    isolatedUser,
+    adminRequest,
+  }) => {
+    const chains = await adminRequest.get("/api/hotel-chains");
+    const chain = (await chains.json())[0];
+
+    const bookingRes = await isolatedUser.request.post("/api/bookings", {
+      data: {
+        hotelChainId: chain.id,
+        propertyName: "E2E Homebase Test Hotel",
+        checkIn: "2024-06-10",
+        checkOut: "2024-06-13",
+        numNights: 3,
+        pretaxCost: 270,
+        taxAmount: 30,
+        totalCost: 300,
+        currency: "USD",
+        bookingSource: "direct_web",
+        countryCode: "US",
+        city: "New York",
+      },
+    });
+    const booking = await bookingRes.json();
+
+    try {
+      await isolatedUser.page.goto("/");
+      await isolatedUser.page.waitForLoadState("networkidle");
+      await isolatedUser.page.getByTestId("travel-map-button").click();
+      await expect(isolatedUser.page.getByTestId("travel-map-modal")).toBeVisible();
+      await isolatedUser.page.getByTestId("page-spinner").waitFor({ state: "hidden" });
+
+      // findOrCreateProperty skips geocoding in E2E, so properties have no lat/lng
+      // and the empty state appears. If coordinates are present, the homebase prompt
+      // must show before the countdown — never the play/countdown without the prompt.
+      const hasPrompt = await isolatedUser.page
+        .getByTestId("homebase-prompt")
+        .isVisible()
+        .catch(() => false);
+      const hasEmpty = await isolatedUser.page
+        .getByText("No location data yet")
+        .isVisible()
+        .catch(() => false);
+
+      expect(hasPrompt || hasEmpty).toBe(true);
+
+      // If prompt is visible, skip closes it and countdown appears
+      if (hasPrompt) {
+        await isolatedUser.page.getByTestId("homebase-skip").click();
+        await expect(isolatedUser.page.getByTestId("homebase-prompt")).not.toBeVisible();
+      }
+
       await isolatedUser.page.keyboard.press("Escape");
       await expect(isolatedUser.page.getByTestId("travel-map-modal")).not.toBeVisible();
     } finally {
