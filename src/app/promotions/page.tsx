@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { logger } from "@/lib/logger";
+import { PageSpinner } from "@/components/ui/page-spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -88,7 +89,7 @@ export default function PromotionsPage() {
 
         <TabsContent value={activeTab} className="min-h-0 flex flex-col">
           {loading ? (
-            <p className="text-muted-foreground py-8 text-center text-sm">Loading promotions...</p>
+            <PageSpinner />
           ) : filteredPromotions.length === 0 ? (
             <EmptyState
               icon={Tag}
