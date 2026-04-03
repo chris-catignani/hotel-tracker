@@ -35,7 +35,7 @@ vi.mock("./travel-map-homebase-input", () => ({
     onSkip,
   }: {
     initialEntry: HomebaseEntry | null;
-    onSelect: (e: HomebaseEntry) => void;
+    onSelect: (e: HomebaseEntry | null) => void;
     onSkip: () => void;
   }) => (
     <div data-testid="homebase-prompt">

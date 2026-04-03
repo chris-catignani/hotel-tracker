@@ -6,7 +6,7 @@ import type { HomebaseEntry } from "./travel-map-utils";
 
 interface HomebaseInputProps {
   initialEntry: HomebaseEntry | null;
-  onSelect: (entry: HomebaseEntry) => void;
+  onSelect: (entry: HomebaseEntry | null) => void;
   onSkip: () => void;
 }
 
@@ -122,8 +122,8 @@ export function HomebaseInput({ initialEntry, onSelect, onSkip }: HomebaseInputP
           </button>
           <button
             type="button"
-            onClick={() => selectedEntry && onSelect(selectedEntry)}
-            disabled={!selectedEntry}
+            onClick={() => onSelect(selectedEntry)}
+            disabled={selectedEntry === null && !(initialEntry !== null && query.trim() === "")}
             className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             data-testid="homebase-done"
           >

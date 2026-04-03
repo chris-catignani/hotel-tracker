@@ -84,12 +84,36 @@ describe("HomebaseInput", () => {
     expect(onSkip).toHaveBeenCalledTimes(1);
   });
 
-  it("typing clears the selected entry and disables Done", async () => {
+  it("typing (non-empty) clears the selected entry and disables Done", async () => {
     const user = userEvent.setup({ delay: null });
     render(<HomebaseInput initialEntry={SAVED_ENTRY} onSelect={vi.fn()} onSkip={vi.fn()} />);
     const input = screen.getByTestId("homebase-address-input");
     await user.clear(input);
     await user.type(input, "new");
+    expect(screen.getByTestId("homebase-done")).toBeDisabled();
+  });
+
+  it("clearing the input enables Done when there was a saved entry", async () => {
+    const user = userEvent.setup({ delay: null });
+    render(<HomebaseInput initialEntry={SAVED_ENTRY} onSelect={vi.fn()} onSkip={vi.fn()} />);
+    const input = screen.getByTestId("homebase-address-input");
+    await user.clear(input);
+    expect(screen.getByTestId("homebase-done")).not.toBeDisabled();
+  });
+
+  it("clicking Done with cleared input calls onSelect with null", async () => {
+    const user = userEvent.setup({ delay: null });
+    const onSelect = vi.fn();
+    render(<HomebaseInput initialEntry={SAVED_ENTRY} onSelect={onSelect} onSkip={vi.fn()} />);
+    const input = screen.getByTestId("homebase-address-input");
+    await user.clear(input);
+    await user.click(screen.getByTestId("homebase-done"));
+    expect(onSelect).toHaveBeenCalledWith(null);
+  });
+
+  it("clearing the input keeps Done disabled when there was no saved entry", () => {
+    render(<HomebaseInput initialEntry={null} onSelect={vi.fn()} onSkip={vi.fn()} />);
+    // Input starts empty, Done should stay disabled
     expect(screen.getByTestId("homebase-done")).toBeDisabled();
   });
 

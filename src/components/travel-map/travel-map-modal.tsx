@@ -112,8 +112,12 @@ export function TravelMapModal({ open, onOpenChange }: TravelMapModalProps) {
     return () => clearTimeout(timer);
   }, [countdown]);
 
-  const handleHomebaseSelect = useCallback((entry: HomebaseEntry) => {
-    localStorage.setItem(HOMEBASE_STORAGE_KEY, JSON.stringify(entry));
+  const handleHomebaseSelect = useCallback((entry: HomebaseEntry | null) => {
+    if (entry) {
+      localStorage.setItem(HOMEBASE_STORAGE_KEY, JSON.stringify(entry));
+    } else {
+      localStorage.removeItem(HOMEBASE_STORAGE_KEY);
+    }
     setHomebase(entry);
     setHomebasePromptVisible(false);
   }, []);
