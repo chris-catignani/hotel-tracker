@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { EarningsTrackerGrid } from "@/components/earnings-tracker/earnings-tracker-grid";
+import { EarningsTrackerMobileList } from "@/components/earnings-tracker/earnings-tracker-mobile-list";
 import { PageSpinner } from "@/components/ui/page-spinner";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { ErrorBanner } from "@/components/ui/error-banner";
@@ -200,7 +201,20 @@ export default function EarningsTrackerPage() {
         onDismiss={clearError}
       />
 
-      {loading ? <PageSpinner /> : <EarningsTrackerGrid {...sharedProps} />}
+      {loading ? (
+        <PageSpinner />
+      ) : (
+        <>
+          {/* Mobile view */}
+          <div className="md:hidden">
+            <EarningsTrackerMobileList {...sharedProps} />
+          </div>
+          {/* Desktop view */}
+          <div className="hidden md:flex md:flex-col md:flex-1 md:min-h-0">
+            <EarningsTrackerGrid {...sharedProps} />
+          </div>
+        </>
+      )}
     </div>
   );
 }
