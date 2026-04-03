@@ -56,8 +56,9 @@ export function TravelMapHud({
       <div className="flex justify-between items-end mb-3">
         <div>
           <div
-            className="text-white text-2xl font-bold uppercase tracking-wide"
+            className="text-white text-2xl font-bold uppercase tracking-wide truncate"
             data-testid="hud-property-name"
+            title={propertyDisplay}
           >
             {propertyDisplay}
           </div>

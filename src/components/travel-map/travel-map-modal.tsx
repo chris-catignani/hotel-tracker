@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
@@ -118,12 +118,16 @@ export function TravelMapModal({ open, onOpenChange }: TravelMapModalProps) {
     setTickedNights(last?.numNights ?? 0);
   }, [stops]);
 
-  const completedNights = stops
-    .slice(0, Math.max(stopIndex, 0))
-    .reduce((s, st) => s + st.numNights, 0);
+  const completedNights = useMemo(
+    () => stops.slice(0, Math.max(stopIndex, 0)).reduce((s, st) => s + st.numNights, 0),
+    [stops, stopIndex]
+  );
   const cumulativeNights = completedNights + tickedNights;
-  const totalNights = stops.reduce((s, st) => s + st.numNights, 0);
-  const totalCountries = new Set(stops.map((s) => s.countryCode).filter(Boolean)).size;
+  const totalNights = useMemo(() => stops.reduce((s, st) => s + st.numNights, 0), [stops]);
+  const totalCountries = useMemo(
+    () => new Set(stops.map((s) => s.countryCode).filter(Boolean)).size,
+    [stops]
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
