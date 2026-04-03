@@ -473,12 +473,12 @@ export default function DashboardPage() {
           </Link>
         </div>
       )}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">Dashboard</h1>
           <p className="text-muted-foreground">Overview of your bookings and savings</p>
         </div>
-        <div className="flex shrink-0 flex-wrap gap-2 items-center justify-end">
+        <div className="flex flex-col sm:flex-row shrink-0 gap-2 items-end sm:items-center">
           <Select
             value={String(yearFilter)}
             onValueChange={(val) => {

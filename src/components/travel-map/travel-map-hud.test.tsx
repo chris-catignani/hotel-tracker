@@ -199,4 +199,28 @@ describe("TravelMapHud", () => {
     );
     expect(screen.getByTestId("hud-night-counter")).toHaveTextContent("0");
   });
+
+  it("constrains property name to 2 lines and keeps night counter in DOM", () => {
+    const longStop: TravelStop = {
+      ...stop,
+      propertyName:
+        "The Ritz-Carlton Residences at The Ritz-Carlton Hotel and Spa of Chicago Downtown",
+    };
+    render(
+      <TravelMapHud
+        currentStop={longStop}
+        stopIndex={0}
+        totalStops={5}
+        tickedNights={1}
+        cumulativeNights={1}
+        totalNights={20}
+        totalCountries={2}
+        isComplete={false}
+      />
+    );
+    const nameEl = screen.getByTestId("hud-property-name");
+    expect(nameEl).toBeInTheDocument();
+    expect(nameEl.className).toContain("line-clamp-2");
+    expect(screen.getByTestId("hud-night-counter")).toBeInTheDocument();
+  });
 });

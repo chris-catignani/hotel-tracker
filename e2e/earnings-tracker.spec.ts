@@ -40,7 +40,9 @@ test.describe("Earnings Tracker", () => {
       await expect(
         isolatedUser.page.getByRole("heading", { name: "Earnings Tracker" })
       ).toBeVisible();
-      await expect(isolatedUser.page.getByText(propertyName)).toBeVisible();
+      await expect(
+        isolatedUser.page.getByTestId("earnings-tracker-desktop").getByText(propertyName)
+      ).toBeVisible();
 
       // "Needs Attention" filter button should be active
       const needsAttentionBtn = isolatedUser.page.getByTestId("earnings-filter-needs-attention");
@@ -85,7 +87,9 @@ test.describe("Earnings Tracker", () => {
 
       // Click "All Bookings" to see everything
       await isolatedUser.page.getByTestId("earnings-filter-all").click();
-      await expect(isolatedUser.page.getByText(propertyName)).toBeVisible();
+      await expect(
+        isolatedUser.page.getByTestId("earnings-tracker-desktop").getByText(propertyName)
+      ).toBeVisible();
     } finally {
       await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
     }
@@ -499,7 +503,9 @@ test.describe("Earnings Tracker", () => {
       ).toBeVisible();
 
       // Booking should appear in Needs Attention (loyalty is pending)
-      await expect(isolatedUser.page.getByText(propertyName)).toBeVisible();
+      await expect(
+        isolatedUser.page.getByTestId("earnings-tracker-desktop").getByText(propertyName)
+      ).toBeVisible();
 
       // Mark loyalty as posted — now all visible items are posted
       // (the $0 pre-qualifying promo is hidden and must NOT keep the booking in Needs Attention)

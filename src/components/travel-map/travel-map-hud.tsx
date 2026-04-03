@@ -58,9 +58,9 @@ export function TravelMapHud({
       data-testid="travel-map-hud"
     >
       <div className="flex justify-between items-end mb-3">
-        <div>
+        <div className="min-w-0">
           <div
-            className="text-white text-2xl font-bold uppercase tracking-wide truncate"
+            className="text-white text-xl sm:text-2xl font-bold uppercase tracking-wide line-clamp-2"
             data-testid="hud-property-name"
             title={propertyDisplay}
           >
@@ -72,7 +72,7 @@ export function TravelMapHud({
             {currentStop.checkIn}
           </div>
         </div>
-        <div className="text-right">
+        <div className="text-right shrink-0">
           <div
             className="text-purple-400 text-4xl font-black font-mono leading-none"
             data-testid="hud-night-counter"

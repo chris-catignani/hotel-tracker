@@ -30,19 +30,14 @@ import { HOMEBASE_STORAGE_KEY } from "./travel-map-utils";
 
 vi.mock("./travel-map-homebase-input", () => ({
   HomebaseInput: ({
-    initialAddress,
+    initialEntry,
     onSelect,
-    onSkip,
   }: {
-    initialAddress: string;
-    onSelect: (e: HomebaseEntry) => void;
-    onSkip: () => void;
+    initialEntry: HomebaseEntry | null;
+    onSelect: (e: HomebaseEntry | null) => void;
   }) => (
     <div data-testid="homebase-prompt">
-      <span data-testid="homebase-prefilled">{initialAddress}</span>
-      <button data-testid="homebase-skip" onClick={onSkip}>
-        Skip
-      </button>
+      <span data-testid="homebase-prefilled">{initialEntry?.address ?? ""}</span>
       <button
         data-testid="homebase-select"
         onClick={() =>
@@ -176,13 +171,12 @@ describe("TravelMapModal", () => {
     expect(screen.queryByTestId("travel-map-countdown")).not.toBeInTheDocument();
   });
 
-  it("dismisses prompt and shows countdown when Skip is clicked", async () => {
+  it("dismisses prompt and shows countdown when Done is clicked with null (clear)", async () => {
     mockApiFetch.mockResolvedValue(makeOkResult([SAMPLE_STOP]));
     render(<TravelMapModal open={true} onOpenChange={vi.fn()} />);
     await waitFor(() => expect(screen.getByTestId("homebase-prompt")).toBeInTheDocument());
-    fireEvent.click(screen.getByTestId("homebase-skip"));
+    fireEvent.click(screen.getByTestId("homebase-select"));
     await waitFor(() => expect(screen.queryByTestId("homebase-prompt")).not.toBeInTheDocument());
-    // Countdown "5" should now render
     await waitFor(() => expect(screen.getByTestId("travel-map-countdown")).toHaveTextContent("5"));
   });
 

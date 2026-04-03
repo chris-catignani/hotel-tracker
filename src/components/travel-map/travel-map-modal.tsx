@@ -112,13 +112,13 @@ export function TravelMapModal({ open, onOpenChange }: TravelMapModalProps) {
     return () => clearTimeout(timer);
   }, [countdown]);
 
-  const handleHomebaseSelect = useCallback((entry: HomebaseEntry) => {
-    localStorage.setItem(HOMEBASE_STORAGE_KEY, JSON.stringify(entry));
+  const handleHomebaseSelect = useCallback((entry: HomebaseEntry | null) => {
+    if (entry) {
+      localStorage.setItem(HOMEBASE_STORAGE_KEY, JSON.stringify(entry));
+    } else {
+      localStorage.removeItem(HOMEBASE_STORAGE_KEY);
+    }
     setHomebase(entry);
-    setHomebasePromptVisible(false);
-  }, []);
-
-  const handleHomebaseSkip = useCallback(() => {
     setHomebasePromptVisible(false);
   }, []);
 
@@ -132,6 +132,7 @@ export function TravelMapModal({ open, onOpenChange }: TravelMapModalProps) {
   }, []);
 
   const handlePlayPause = useCallback(() => {
+    if (homebasePromptVisible) return;
     if (isComplete) {
       handleRestart();
     } else if (countdown !== null) {
@@ -140,7 +141,7 @@ export function TravelMapModal({ open, onOpenChange }: TravelMapModalProps) {
     } else {
       setIsPlaying((p) => !p);
     }
-  }, [isComplete, countdown, handleRestart]);
+  }, [isComplete, countdown, handleRestart, homebasePromptVisible]);
 
   const handleComplete = useCallback(() => {
     setIsPlaying(false);
@@ -167,7 +168,7 @@ export function TravelMapModal({ open, onOpenChange }: TravelMapModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="fixed inset-0 sm:inset-6 w-auto h-auto max-w-none sm:max-w-none translate-x-0 translate-y-0 m-0 p-0 border-0 rounded-none sm:rounded-xl overflow-hidden bg-[#0f172a] [&>button]:text-white [&>button]:top-10 [&>button]:right-4"
+        className="fixed inset-0 sm:inset-6 w-auto h-auto max-w-none sm:max-w-none translate-x-0 translate-y-0 m-0 p-0 border-0 rounded-none sm:rounded-xl overflow-hidden bg-[#0f172a] [&>button]:text-white [&>button]:top-10 [&>button]:right-4 [&>button]:size-10 [&>button]:rounded-full [&>button]:bg-black/40 [&>button]:flex [&>button]:items-center [&>button]:justify-center [&>button_svg]:size-6 [touch-action:manipulation]"
         data-testid="travel-map-modal"
       >
         <VisuallyHidden>
@@ -220,11 +221,7 @@ export function TravelMapModal({ open, onOpenChange }: TravelMapModalProps) {
             )}
             {/* Homebase prompt — shown after stops load, before countdown */}
             {homebasePromptVisible && (
-              <HomebaseInput
-                initialAddress={homebase?.address ?? ""}
-                onSelect={handleHomebaseSelect}
-                onSkip={handleHomebaseSkip}
-              />
+              <HomebaseInput initialEntry={homebase} onSelect={handleHomebaseSelect} />
             )}
             {/* Pause overlay */}
             {!isPlaying && countdown === null && !isComplete && !homebasePromptVisible && (
