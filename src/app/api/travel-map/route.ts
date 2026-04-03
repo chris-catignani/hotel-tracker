@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withObservability } from "@/lib/observability";
 import { apiError } from "@/lib/api-error";
+import { AppError } from "@/lib/app-error";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import prisma from "@/lib/prisma";
 
@@ -53,12 +54,14 @@ export const GET = withObservability(async (req: NextRequest) => {
       countryCode: b.property.countryCode,
       checkIn: b.checkIn.toISOString().split("T")[0],
       numNights: b.numNights,
+      // latitude/longitude are non-null: guaranteed by the where clause above
       lat: b.property.latitude!,
       lng: b.property.longitude!,
     }));
 
     return NextResponse.json(stops);
   } catch (error) {
+    if (error instanceof AppError) return apiError(error.message, null, error.statusCode, req);
     return apiError("Failed to fetch travel map stops", error, 500, req);
   }
 });
