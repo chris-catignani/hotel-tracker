@@ -47,13 +47,38 @@ test.describe("Geo Property Search — Booking with location data", () => {
   });
 
   test("booking detail page does not show location when geo data is absent", async ({
-    testBooking,
+    isolatedUser,
+    adminRequest,
   }) => {
-    // testBooking fixture creates a booking without geo data
-    await testBooking.page.goto(`/bookings/${testBooking.id}`);
+    const chains = await adminRequest.get("/api/hotel-chains");
+    const chain = (await chains.json())[0];
 
-    await expect(testBooking.page.getByRole("heading", { name: "Booking Details" })).toBeVisible();
-    await expect(testBooking.page.getByTestId("booking-location")).not.toBeVisible();
+    const uniqueName = `Geo Test Hotel ${crypto.randomUUID()}`;
+    const res = await isolatedUser.request.post("/api/bookings", {
+      data: {
+        hotelChainId: chain.id,
+        propertyName: uniqueName,
+        checkIn: "2025-08-01",
+        checkOut: "2025-08-03",
+        numNights: 2,
+        pretaxCost: 200,
+        taxAmount: 20,
+        totalCost: 220,
+        currency: "USD",
+        bookingSource: "direct_web",
+      },
+    });
+    const booking = await res.json();
+
+    try {
+      await isolatedUser.page.goto(`/bookings/${booking.id}`);
+      await expect(
+        isolatedUser.page.getByRole("heading", { name: "Booking Details" })
+      ).toBeVisible();
+      await expect(isolatedUser.page.getByTestId("booking-location")).not.toBeVisible();
+    } finally {
+      await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
+    }
   });
 
   test("booking with countryCode is saved and returned by GET API", async ({
