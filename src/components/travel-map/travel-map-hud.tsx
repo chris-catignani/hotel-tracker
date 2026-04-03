@@ -2,6 +2,7 @@
 
 import { countryName } from "@/lib/countries";
 import type { TravelStop } from "@/app/api/travel-map/route";
+import type { AnimationStop } from "./travel-map-utils";
 
 interface TravelMapHudProps {
   currentStop: TravelStop | null;
@@ -44,7 +45,10 @@ export function TravelMapHud({
 
   if (!currentStop) return null;
 
-  const propertyDisplay = currentStop.propertyName.toUpperCase();
+  const isHome = !!(currentStop as AnimationStop).isHome;
+  const propertyDisplay = isHome
+    ? (currentStop.city?.toUpperCase() ?? "HOME")
+    : currentStop.propertyName.toUpperCase();
   const city = currentStop.city;
   const country = currentStop.countryCode ? countryName(currentStop.countryCode) : null;
 

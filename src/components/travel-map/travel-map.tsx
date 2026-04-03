@@ -5,6 +5,7 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Feature, FeatureCollection, LineString } from "geojson";
 import type { TravelStop } from "@/app/api/travel-map/route";
+import { HOME_MARKER_SVG, type AnimationStop } from "./travel-map-utils";
 
 export interface TravelMapProps {
   stops: TravelStop[];
@@ -342,8 +343,12 @@ export function TravelMap({ stops, isPlaying, speed, onUpdate, onComplete }: Tra
         if (cancelledRef.current) return;
 
         const el = document.createElement("div");
-        el.style.cssText =
-          "width:10px;height:10px;border-radius:50%;background:#a78bfa;box-shadow:0 0 8px #a78bfa,0 0 16px #7c3aed;";
+        if ((stop as AnimationStop).isHome) {
+          el.innerHTML = HOME_MARKER_SVG;
+        } else {
+          el.style.cssText =
+            "width:10px;height:10px;border-radius:50%;background:#a78bfa;box-shadow:0 0 8px #a78bfa,0 0 16px #7c3aed;";
+        }
         markersRef.current.push(
           new maplibregl.Marker({ element: el }).setLngLat([stop.lng, stop.lat]).addTo(map)
         );

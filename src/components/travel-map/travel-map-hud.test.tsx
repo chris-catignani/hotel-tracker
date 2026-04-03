@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import { TravelMapHud } from "./travel-map-hud";
 import type { TravelStop } from "@/app/api/travel-map/route";
+import type { AnimationStop } from "./travel-map-utils";
 
 const stop: TravelStop = {
   id: "1",
@@ -116,5 +117,86 @@ describe("TravelMapHud", () => {
       />
     );
     expect(screen.getByTestId("hud-property-name")).toHaveTextContent("PARK HYATT PARIS");
+  });
+
+  it("shows city name (uppercased) for isHome stops instead of property name", () => {
+    const homeStop: AnimationStop = {
+      id: "home-0",
+      propertyName: "Springfield",
+      city: "Springfield",
+      countryCode: "US",
+      checkIn: "2024-07-01",
+      numNights: 0,
+      lat: 39.8,
+      lng: -89.6,
+      isHome: true,
+    };
+    render(
+      <TravelMapHud
+        currentStop={homeStop}
+        stopIndex={1}
+        totalStops={3}
+        tickedNights={0}
+        cumulativeNights={3}
+        totalNights={10}
+        totalCountries={2}
+        isComplete={false}
+      />
+    );
+    expect(screen.getByTestId("hud-property-name")).toHaveTextContent("SPRINGFIELD");
+  });
+
+  it("shows HOME when isHome stop has no city", () => {
+    const homeStop: AnimationStop = {
+      id: "home-0",
+      propertyName: "Home",
+      city: null,
+      countryCode: "US",
+      checkIn: "2024-07-01",
+      numNights: 0,
+      lat: 39.8,
+      lng: -89.6,
+      isHome: true,
+    };
+    render(
+      <TravelMapHud
+        currentStop={homeStop}
+        stopIndex={1}
+        totalStops={3}
+        tickedNights={0}
+        cumulativeNights={3}
+        totalNights={10}
+        totalCountries={2}
+        isComplete={false}
+      />
+    );
+    expect(screen.getByTestId("hud-property-name")).toHaveTextContent("HOME");
+  });
+
+  it("shows 0 in night counter for isHome stops", () => {
+    const homeStop: AnimationStop = {
+      id: "home-0",
+      propertyName: "Springfield",
+      city: "Springfield",
+      countryCode: "US",
+      checkIn: "2024-07-01",
+      numNights: 0,
+      lat: 39.8,
+      lng: -89.6,
+      isHome: true,
+    };
+    render(
+      <TravelMapHud
+        currentStop={homeStop}
+        stopIndex={1}
+        totalStops={3}
+        tickedNights={0}
+        cumulativeNights={3}
+        totalNights={10}
+        totalCountries={2}
+        isComplete={false}
+      />
+    );
+    expect(screen.getByTestId("hud-night-counter")).toHaveTextContent("0");
   });
 });
