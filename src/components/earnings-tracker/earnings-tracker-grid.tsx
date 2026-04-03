@@ -171,12 +171,12 @@ export function EarningsTrackerGrid({ initialBookings }: { initialBookings: any[
             <th className="text-left px-3 py-2 whitespace-nowrap sticky left-0 bg-background z-10">
               Booking
             </th>
-            <th className="px-2 py-2 whitespace-nowrap">Loyalty</th>
-            <th className="px-2 py-2 whitespace-nowrap">Promotions</th>
-            <th className="px-2 py-2 whitespace-nowrap">Card Reward</th>
             <th className="px-2 py-2 whitespace-nowrap">Portal</th>
-            <th className="px-2 py-2 whitespace-nowrap">Partners</th>
+            <th className="px-2 py-2 whitespace-nowrap">Promotions</th>
+            <th className="px-2 py-2 whitespace-nowrap">Loyalty</th>
+            <th className="px-2 py-2 whitespace-nowrap">Card Rewards</th>
             <th className="px-2 py-2 whitespace-nowrap">Card Benefits</th>
+            <th className="px-2 py-2 whitespace-nowrap">Partners</th>
             <th className="px-2 py-2 whitespace-nowrap">Perks</th>
           </tr>
         </thead>
@@ -199,6 +199,15 @@ export function EarningsTrackerGrid({ initialBookings }: { initialBookings: any[
     </div>
   );
 }
+
+// Column index map for aligning expansion rows under their header
+const COL_OFFSET: Record<string, number> = {
+  promotions: 2,
+  cardBenefits: 5,
+  partners: 6,
+  perks: 7,
+};
+const TOTAL_COLS = 8;
 
 function renderBookingRows(
   booking: any,
@@ -428,9 +437,7 @@ function renderBookingRows(
           {formatDate(booking.checkIn)}--{formatDate(booking.checkOut)}
         </div>
       </td>
-      <td className={cn("px-2 py-2 text-center", expandedCol === "loyalty" && "bg-primary/5")}>
-        {loyaltyCell}
-      </td>
+      <td className="px-2 py-2 text-center">{portalCell}</td>
       <td
         className={cn(
           "px-2 py-2 text-center relative",
@@ -442,19 +449,8 @@ function renderBookingRows(
           <div className="absolute bottom-[-10px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-r-[8px] border-t-[10px] border-l-transparent border-r-transparent border-t-primary z-10" />
         )}
       </td>
+      <td className="px-2 py-2 text-center">{loyaltyCell}</td>
       <td className="px-2 py-2 text-center">{cardRewardCell}</td>
-      <td className="px-2 py-2 text-center">{portalCell}</td>
-      <td
-        className={cn(
-          "px-2 py-2 text-center relative",
-          expandedCol === "partners" && "bg-primary/5"
-        )}
-      >
-        {partnerCell}
-        {expandedCol === "partners" && (
-          <div className="absolute bottom-[-10px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-r-[8px] border-t-[10px] border-l-transparent border-r-transparent border-t-primary z-10" />
-        )}
-      </td>
       <td
         className={cn(
           "px-2 py-2 text-center relative",
@@ -463,6 +459,17 @@ function renderBookingRows(
       >
         {cardBenefitCell}
         {expandedCol === "cardBenefits" && (
+          <div className="absolute bottom-[-10px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-r-[8px] border-t-[10px] border-l-transparent border-r-transparent border-t-primary z-10" />
+        )}
+      </td>
+      <td
+        className={cn(
+          "px-2 py-2 text-center relative",
+          expandedCol === "partners" && "bg-primary/5"
+        )}
+      >
+        {partnerCell}
+        {expandedCol === "partners" && (
           <div className="absolute bottom-[-10px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-r-[8px] border-t-[10px] border-l-transparent border-r-transparent border-t-primary z-10" />
         )}
       </td>
@@ -476,15 +483,6 @@ function renderBookingRows(
       </td>
     </tr>
   );
-
-  // Column index map for aligning expansion rows under their header
-  const COL_OFFSET: Record<string, number> = {
-    promotions: 2,
-    partners: 5,
-    cardBenefits: 6,
-    perks: 6,
-  };
-  const TOTAL_COLS = 8;
 
   function expandRow(
     key: string,
