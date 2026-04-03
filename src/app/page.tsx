@@ -478,7 +478,7 @@ export default function DashboardPage() {
           <h1 className="text-3xl font-bold">Dashboard</h1>
           <p className="text-muted-foreground">Overview of your bookings and savings</p>
         </div>
-        <div className="flex shrink-0 flex-wrap gap-2 items-center justify-end">
+        <div className="flex flex-col sm:flex-row shrink-0 gap-2 items-end sm:items-center">
           <Select
             value={String(yearFilter)}
             onValueChange={(val) => {
