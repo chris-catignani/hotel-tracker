@@ -5,7 +5,7 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Feature, FeatureCollection, LineString } from "geojson";
 import type { TravelStop } from "@/app/api/travel-map/route";
-import type { AnimationStop } from "./travel-map-utils";
+import { HOME_MARKER_SVG, type AnimationStop } from "./travel-map-utils";
 
 export interface TravelMapProps {
   stops: TravelStop[];
@@ -344,7 +344,7 @@ export function TravelMap({ stops, isPlaying, speed, onUpdate, onComplete }: Tra
 
         const el = document.createElement("div");
         if ((stop as AnimationStop).isHome) {
-          el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#f59e0b" style="filter:drop-shadow(0 0 8px #f59e0b);display:block;"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22" fill="none" stroke="#f59e0b" stroke-width="2"/></svg>`;
+          el.innerHTML = HOME_MARKER_SVG;
         } else {
           el.style.cssText =
             "width:10px;height:10px;border-radius:50%;background:#a78bfa;box-shadow:0 0 8px #a78bfa,0 0 16px #7c3aed;";
