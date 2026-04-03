@@ -80,7 +80,7 @@ export const GET = withObservability(async (request: NextRequest) => {
     const result = enriched.map((b) => {
       const { cardReward, portalCashback } = getNetCostBreakdown({
         ...b,
-        certificates: [],
+        certificates: [], // not fetched by this endpoint; cardReward/portalCashback don't depend on certs
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any);
       return { ...b, cardReward, portalCashback };
