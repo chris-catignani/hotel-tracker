@@ -22,6 +22,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { CreditCard as CreditCardIcon } from "lucide-react";
 import { CreditCardAccordionItem } from "./credit-card-accordion-item";
 import { toast } from "sonner";
+import { PageSpinner } from "@/components/ui/page-spinner";
 
 export function CreditCardsTab() {
   const [cards, setCards] = useState<CreditCard[]>([]);
@@ -36,21 +37,26 @@ export function CreditCardsTab() {
   const [rewardType, setRewardType] = useState("points");
   const [rewardRate, setRewardRate] = useState("");
   const [pointTypeId, setPointTypeId] = useState("none");
+  const [initialLoading, setInitialLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
-    const [cardsResult, ptResult, hcResult, otaResult, benefitsResult] = await Promise.all([
-      apiFetch<CreditCard[]>("/api/credit-cards"),
-      apiFetch<PointType[]>("/api/point-types"),
-      apiFetch<HotelChain[]>("/api/hotel-chains"),
-      apiFetch<OtaAgency[]>("/api/ota-agencies"),
-      apiFetch<CardBenefit[]>("/api/card-benefits"),
-    ]);
-    if (cardsResult.ok) setCards(cardsResult.data);
-    else setError(cardsResult.error.message);
-    if (ptResult.ok) setPointTypes(ptResult.data);
-    if (hcResult.ok) setHotelChains(hcResult.data);
-    if (otaResult.ok) setOtaAgencies(otaResult.data);
-    if (benefitsResult.ok) setBenefits(benefitsResult.data);
+    try {
+      const [cardsResult, ptResult, hcResult, otaResult, benefitsResult] = await Promise.all([
+        apiFetch<CreditCard[]>("/api/credit-cards"),
+        apiFetch<PointType[]>("/api/point-types"),
+        apiFetch<HotelChain[]>("/api/hotel-chains"),
+        apiFetch<OtaAgency[]>("/api/ota-agencies"),
+        apiFetch<CardBenefit[]>("/api/card-benefits"),
+      ]);
+      if (cardsResult.ok) setCards(cardsResult.data);
+      else setError(cardsResult.error.message);
+      if (ptResult.ok) setPointTypes(ptResult.data);
+      if (hcResult.ok) setHotelChains(hcResult.data);
+      if (otaResult.ok) setOtaAgencies(otaResult.data);
+      if (benefitsResult.ok) setBenefits(benefitsResult.data);
+    } finally {
+      setInitialLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -81,6 +87,8 @@ export function CreditCardsTab() {
       toast.error("Failed to add credit card. Please try again.");
     }
   };
+
+  if (initialLoading) return <PageSpinner />;
 
   return (
     <div className="flex flex-col flex-1 min-h-0 space-y-4">

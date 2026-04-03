@@ -44,7 +44,7 @@ describe("UserStatusTab", () => {
     mockFetch();
     render(<UserStatusTab />);
 
-    expect(screen.getByText(/My Elite Status/i)).toBeInTheDocument();
+    expect(await screen.findByText(/My Elite Status/i)).toBeInTheDocument();
     expect(screen.getByTestId("user-status-table")).toBeInTheDocument();
   });
 
@@ -72,6 +72,7 @@ describe("UserStatusTab", () => {
     mockFetch([]);
     render(<UserStatusTab />);
 
+    await screen.findByText(/My Elite Status/i);
     expect(screen.queryByText(/Hotel Partnerships/i)).not.toBeInTheDocument();
   });
 

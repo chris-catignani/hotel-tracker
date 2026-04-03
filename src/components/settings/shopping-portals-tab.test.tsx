@@ -19,7 +19,7 @@ describe("ShoppingPortalsTab", () => {
 
     render(<ShoppingPortalsTab />);
 
-    expect(screen.getByText("Shopping Portals")).toBeInTheDocument();
+    expect(await screen.findByText("Shopping Portals")).toBeInTheDocument();
     expect(screen.getByTestId("add-portal-button")).toBeInTheDocument();
   });
 

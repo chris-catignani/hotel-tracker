@@ -13,6 +13,7 @@ import { certPointsValue } from "@/lib/cert-types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { PageSpinner } from "@/components/ui/page-spinner";
 import { CalendarDays, Wallet, ChevronUp, ChevronDown } from "lucide-react";
 import {
   Table,
@@ -376,11 +377,7 @@ export default function DashboardPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground">Loading dashboard...</p>
-      </div>
-    );
+    return <PageSpinner />;
   }
 
   const totalBookings = filteredBookings.length;

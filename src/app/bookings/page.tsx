@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { PageSpinner } from "@/components/ui/page-spinner";
 import { CalendarDays, Eye, EyeOff } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -230,7 +231,7 @@ function BookingsPageInner() {
       />
 
       {loading ? (
-        <p className="text-center text-muted-foreground py-8">Loading...</p>
+        <PageSpinner />
       ) : bookings.length === 0 ? (
         <EmptyState
           icon={CalendarDays}

@@ -27,7 +27,7 @@ describe("PointTypesTab", () => {
 
     render(<PointTypesTab />);
 
-    expect(screen.getByText("Point Types")).toBeInTheDocument();
+    expect(await screen.findByText("Point Types")).toBeInTheDocument();
     expect(screen.getByTestId("add-point-type-button")).toBeInTheDocument();
   });
 
@@ -143,7 +143,7 @@ describe("PointTypesTab", () => {
 
     render(<PointTypesTab />);
 
-    await user.click(screen.getByTestId("add-point-type-button"));
+    await user.click(await screen.findByTestId("add-point-type-button"));
 
     await user.type(screen.getByLabelText("Name *"), "Accor ALL");
     await user.type(screen.getByLabelText("Short Name *"), "ALL");

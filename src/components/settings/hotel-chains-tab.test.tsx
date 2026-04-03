@@ -19,7 +19,7 @@ describe("HotelChainsTab", () => {
 
     render(<HotelChainsTab />);
 
-    expect(screen.getByText("Hotel Chains")).toBeInTheDocument();
+    expect(await screen.findByText("Hotel Chains")).toBeInTheDocument();
     expect(screen.getByTestId("add-hotel-chain-button")).toBeInTheDocument();
   });
 

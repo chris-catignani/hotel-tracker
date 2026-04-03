@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageSpinner } from "@/components/ui/page-spinner";
 import { certTypeLabel } from "@/lib/cert-types";
 import { getNetCostBreakdown, NetCostBooking, CalculationDetail } from "@/lib/net-cost";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -272,13 +273,8 @@ export default function BookingDetailPage() {
     refetchBooking();
   };
 
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Booking Details</h1>
-        <p className="text-muted-foreground">Loading...</p>
-      </div>
-    );
+  if (loading && !booking) {
+    return <PageSpinner />;
   }
 
   if (fetchError) {

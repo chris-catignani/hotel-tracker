@@ -18,7 +18,7 @@ describe("OtaAgenciesTab", () => {
 
     render(<OtaAgenciesTab />);
 
-    expect(screen.getByText("OTA Agencies")).toBeInTheDocument();
+    expect(await screen.findByText("OTA Agencies")).toBeInTheDocument();
     expect(screen.getByTestId("add-agency-button")).toBeInTheDocument();
   });
 

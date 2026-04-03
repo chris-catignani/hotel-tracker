@@ -43,8 +43,8 @@ test.describe("Earnings Tracker", () => {
       await expect(isolatedUser.page.getByText(propertyName)).toBeVisible();
 
       // "Needs Attention" filter button should be active
-      const needsAttentionLink = isolatedUser.page.getByTestId("earnings-filter-needs-attention");
-      await expect(needsAttentionLink).toHaveClass(/bg-background/);
+      const needsAttentionBtn = isolatedUser.page.getByTestId("earnings-filter-needs-attention");
+      await expect(needsAttentionBtn).toHaveClass(/bg-background/);
     } finally {
       await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
     }
@@ -84,7 +84,7 @@ test.describe("Earnings Tracker", () => {
       await expect(isolatedUser.page.getByText(propertyName)).toHaveCount(0);
 
       // Click "All Bookings" to see everything
-      await isolatedUser.page.getByRole("link", { name: "All Bookings" }).click();
+      await isolatedUser.page.getByTestId("earnings-filter-all").click();
       await expect(isolatedUser.page.getByText(propertyName)).toBeVisible();
     } finally {
       await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
@@ -171,7 +171,8 @@ test.describe("Earnings Tracker", () => {
     const booking = await bookingRes.json();
 
     try {
-      await isolatedUser.page.goto("/earnings-tracker?filter=all");
+      await isolatedUser.page.goto("/earnings-tracker");
+      await isolatedUser.page.getByTestId("earnings-filter-all").click();
       await expect(
         isolatedUser.page.getByRole("heading", { name: "Earnings Tracker" })
       ).toBeVisible();

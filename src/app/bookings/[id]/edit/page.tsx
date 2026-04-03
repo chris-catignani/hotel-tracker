@@ -6,6 +6,7 @@ import { BookingForm } from "@/components/bookings/booking-form";
 import { BookingPriceWatch } from "@/components/price-watch/booking-price-watch";
 import { Booking, BookingFormData } from "@/lib/types";
 import { ErrorBanner } from "@/components/ui/error-banner";
+import { PageSpinner } from "@/components/ui/page-spinner";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { apiFetch } from "@/lib/api-fetch";
 import { logger } from "@/lib/logger";
@@ -48,12 +49,7 @@ export default function EditBookingPage() {
   };
 
   if (loading && !booking) {
-    return (
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Edit Booking</h1>
-        <p className="text-muted-foreground">Loading...</p>
-      </div>
-    );
+    return <PageSpinner />;
   }
 
   return (

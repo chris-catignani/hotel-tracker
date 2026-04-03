@@ -65,7 +65,7 @@ describe("CreditCardsTab", () => {
   it("renders correctly", async () => {
     render(<CreditCardsTab />);
 
-    expect(screen.getByText("Credit Cards")).toBeInTheDocument();
+    expect(await screen.findByText("Credit Cards")).toBeInTheDocument();
     expect(screen.getByTestId("add-credit-card-button")).toBeInTheDocument();
   });
 
@@ -108,7 +108,8 @@ describe("CreditCardsTab", () => {
 
     render(<CreditCardsTab />);
 
-    await user.click(screen.getByTestId("add-credit-card-button"));
+    const addButton = await screen.findByTestId("add-credit-card-button");
+    await user.click(addButton);
     expect(screen.getByText(/Add a credit card\. You can configure/i)).toBeInTheDocument();
   });
 });
