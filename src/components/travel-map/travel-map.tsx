@@ -68,50 +68,73 @@ function normalizeLngPath(points: [number, number][]): [number, number][] {
   return result;
 }
 
-// Fly to a stop while simultaneously drawing the arc tip at the camera center.
-// On moveend, snaps the arc to the proper great-circle line and adds it to completedFeatures.
+function gcDistanceKm(from: [number, number], to: [number, number]): number {
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const lat1 = toRad(from[1]),
+    lng1 = toRad(from[0]);
+  const lat2 = toRad(to[1]),
+    lng2 = toRad(to[0]);
+  const d =
+    2 *
+    Math.asin(
+      Math.sqrt(
+        Math.sin((lat1 - lat2) / 2) ** 2 +
+          Math.cos(lat1) * Math.cos(lat2) * Math.sin((lng1 - lng2) / 2) ** 2
+      )
+    );
+  return d * 6371;
+}
+
+function zoomForDistance(km: number): number {
+  if (km < 50) return 12;
+  if (km < 300) return 8;
+  if (km < 2000) return 6;
+  if (km < 6000) return 4;
+  return 3;
+}
+
+// Fly to a stop while progressively revealing the great-circle arc based on elapsed time.
+// This avoids the straight-line → curved-arc jump that occurs if we draw to the camera center.
 function flyToStopWithArc(
   map: maplibregl.Map,
   fromStop: TravelStop | null,
   toStop: TravelStop,
+  zoom: number,
   durationMs: number,
   completedFeatures: Feature[],
   cancelled: () => boolean
 ): Promise<void> {
   return new Promise((resolve) => {
-    const from: [number, number] | null = fromStop ? [fromStop.lng, fromStop.lat] : null;
+    const to: [number, number] = [toStop.lng, toStop.lat];
 
-    function updateArcToCamera() {
-      if (!from || cancelled()) return;
-      const center = map.getCenter();
-      // Normalize camera longitude relative to `from` to avoid the line flipping
-      // across the antimeridian during long-distance pans
-      let camLng = center.lng;
-      while (camLng - from[0] > 180) camLng -= 360;
-      while (from[0] - camLng > 180) camLng += 360;
-      const source = map.getSource("arcs") as maplibregl.GeoJSONSource;
-      source.setData({
-        type: "FeatureCollection",
-        features: [
-          ...completedFeatures,
-          {
-            type: "Feature",
-            properties: {},
-            geometry: { type: "LineString", coordinates: [from, [camLng, center.lat]] },
-          },
-        ],
-      });
-    }
+    if (fromStop) {
+      const from: [number, number] = [fromStop.lng, fromStop.lat];
+      const arcPoints = normalizeLngPath(greatCirclePoints(from, to));
+      const startTime = performance.now();
 
-    if (from) map.on("move", updateArcToCamera);
+      function updateArc() {
+        if (cancelled()) return;
+        const t = Math.min((performance.now() - startTime) / durationMs, 1);
+        const count = Math.max(2, Math.ceil(t * arcPoints.length));
+        const source = map.getSource("arcs") as maplibregl.GeoJSONSource;
+        source.setData({
+          type: "FeatureCollection",
+          features: [
+            ...completedFeatures,
+            {
+              type: "Feature",
+              properties: {},
+              geometry: { type: "LineString", coordinates: arcPoints.slice(0, count) },
+            },
+          ],
+        });
+      }
 
-    map.once("moveend", () => {
-      if (from) {
-        map.off("move", updateArcToCamera);
+      map.on("move", updateArc);
+
+      map.once("moveend", () => {
+        map.off("move", updateArc);
         if (!cancelled()) {
-          // Snap to proper great-circle arc and add to completed set
-          const to: [number, number] = [toStop.lng, toStop.lat];
-          const arcPoints = normalizeLngPath(greatCirclePoints(from, to));
           completedFeatures.push({
             type: "Feature" as const,
             properties: {},
@@ -120,11 +143,13 @@ function flyToStopWithArc(
           const source = map.getSource("arcs") as maplibregl.GeoJSONSource;
           source.setData({ type: "FeatureCollection", features: completedFeatures });
         }
-      }
-      resolve();
-    });
+        resolve();
+      });
+    } else {
+      map.once("moveend", resolve);
+    }
 
-    map.flyTo({ center: [toStop.lng, toStop.lat], zoom: 6, duration: durationMs, curve: 1.5 });
+    map.flyTo({ center: to, zoom, duration: durationMs, curve: 1.5 });
   });
 }
 
@@ -272,11 +297,15 @@ export function TravelMap({ stops, isPlaying, speed, onUpdate, onComplete }: Tra
         const stop = stops[i];
         const prev = i > 0 ? stops[i - 1] : null;
 
-        // Fly to stop while drawing the arc line tip at the camera center
+        const distKm = prev ? gcDistanceKm([prev.lng, prev.lat], [stop.lng, stop.lat]) : null;
+        const zoom = distKm !== null ? zoomForDistance(distKm) : 6;
+
+        // Fly to stop while progressively revealing the great-circle arc
         await flyToStopWithArc(
           map,
           prev,
           stop,
+          zoom,
           1500 / speedRef.current,
           completedArcFeaturesRef.current,
           () => cancelledRef.current
