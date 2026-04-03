@@ -15,6 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Loader2, Trash2, Pencil, Check, X } from "lucide-react";
+import { PageSpinner } from "@/components/ui/page-spinner";
 import { ChainPropertyIdHint } from "@/components/price-watch/booking-price-watch";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -266,11 +267,7 @@ export default function PriceWatchPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <PageSpinner />;
   }
 
   return (

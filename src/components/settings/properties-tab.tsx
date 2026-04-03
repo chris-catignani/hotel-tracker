@@ -15,6 +15,7 @@ import {
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Building2, Loader2 } from "lucide-react";
+import { PageSpinner } from "@/components/ui/page-spinner";
 import { apiFetch } from "@/lib/api-fetch";
 import { logger } from "@/lib/logger";
 import type { Property } from "@/lib/types";
@@ -85,11 +86,7 @@ export function PropertiesTab() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <PageSpinner />;
   }
 
   return (
