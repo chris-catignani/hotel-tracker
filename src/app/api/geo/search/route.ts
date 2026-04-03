@@ -17,7 +17,7 @@ export const GET = withObservability(async (request: NextRequest) => {
     }
 
     const accommodationType = request.nextUrl.searchParams.get("accommodationType");
-    const isHotel = accommodationType !== "apartment";
+    const isHotel = accommodationType === "hotel";
     const start = Date.now();
     const results = await searchProperties(q, isHotel);
     logger.info("geo:searched", {
