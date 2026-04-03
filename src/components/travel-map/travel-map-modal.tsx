@@ -11,25 +11,13 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { TravelMapHud } from "./travel-map-hud";
 import { apiFetch } from "@/lib/api-fetch";
 import type { TravelStop } from "@/app/api/travel-map/route";
-
-interface TravelMapProps {
-  stops: TravelStop[];
-  isPlaying: boolean;
-  speed: number;
-  onUpdate: (index: number, ticked: number) => void;
-  onComplete: () => void;
-}
+import type { TravelMapProps } from "./travel-map";
 
 // Lazy-loaded to keep maplibre-gl out of the initial bundle
-// travel-map.tsx is implemented in Task 6 — import will resolve once that file exists
-const TravelMap = dynamic<TravelMapProps>(
-  // @ts-expect-error travel-map.tsx added in Task 6
-  () => import("./travel-map").then((m) => m.TravelMap),
-  {
-    ssr: false,
-    loading: () => <div className="w-full h-full bg-[#0f172a]" />,
-  }
-);
+const TravelMap = dynamic<TravelMapProps>(() => import("./travel-map").then((m) => m.TravelMap), {
+  ssr: false,
+  loading: () => <div className="w-full h-full bg-[#0f172a]" />,
+});
 
 interface TravelMapModalProps {
   open: boolean;
@@ -51,6 +39,7 @@ export function TravelMapModal({ open, onOpenChange }: TravelMapModalProps) {
     if (!open) {
       /* eslint-disable react-hooks/set-state-in-effect */
       setIsPlaying(false);
+      setStops([]);
       setStopIndex(-1);
       setTickedNights(0);
       setIsComplete(false);
