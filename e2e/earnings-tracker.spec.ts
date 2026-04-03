@@ -43,10 +43,10 @@ test.describe("Earnings Tracker", () => {
       await expect(isolatedUser.page.getByText(propertyName)).toBeVisible();
 
       // "Needs Attention" filter button should be active (has primary background)
-      const needsAttentionLink = isolatedUser.page.getByRole("link", {
+      const needsAttentionBtn = isolatedUser.page.getByRole("button", {
         name: "Needs Attention",
       });
-      await expect(needsAttentionLink).toHaveClass(/bg-primary/);
+      await expect(needsAttentionBtn).toHaveClass(/bg-primary/);
     } finally {
       await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
     }
@@ -86,7 +86,7 @@ test.describe("Earnings Tracker", () => {
       await expect(isolatedUser.page.getByText(propertyName)).toHaveCount(0);
 
       // Click "All Bookings" to see everything
-      await isolatedUser.page.getByRole("link", { name: "All Bookings" }).click();
+      await isolatedUser.page.getByRole("button", { name: "All Bookings" }).click();
       await expect(isolatedUser.page.getByText(propertyName)).toBeVisible();
     } finally {
       await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
@@ -173,7 +173,8 @@ test.describe("Earnings Tracker", () => {
     const booking = await bookingRes.json();
 
     try {
-      await isolatedUser.page.goto("/earnings-tracker?filter=all");
+      await isolatedUser.page.goto("/earnings-tracker");
+      await isolatedUser.page.getByRole("button", { name: "All Bookings" }).click();
       await expect(
         isolatedUser.page.getByRole("heading", { name: "Earnings Tracker" })
       ).toBeVisible();
