@@ -22,7 +22,7 @@ export const GET = withObservability(async (request: NextRequest) => {
     const results = await searchProperties(q, isHotel);
     logger.info("geo:searched", {
       userId,
-      accommodationType: accommodationType ?? "hotel",
+      accommodationType: accommodationType ?? null,
       resultCount: results.length,
       durationMs: Date.now() - start,
     });
