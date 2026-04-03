@@ -20,24 +20,18 @@ export default function EarningsTrackerPage() {
     <div className="flex flex-col flex-1 min-h-0 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Earnings Tracker</h1>
-        <div className="flex gap-2">
+        <div className="flex shrink-0 rounded-lg border p-0.5 gap-0.5">
           <button
             onClick={() => setFilter("needs-attention")}
-            className={`rounded-full px-3 py-1 text-sm font-medium ${
-              filter === "needs-attention"
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground"
-            }`}
+            data-testid="earnings-filter-needs-attention"
+            className={`px-3 py-1.5 text-sm rounded-md transition-colors ${filter === "needs-attention" ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground"}`}
           >
             Needs Attention
           </button>
           <button
             onClick={() => setFilter("all")}
-            className={`rounded-full px-3 py-1 text-sm font-medium ${
-              filter === "all"
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground"
-            }`}
+            data-testid="earnings-filter-all"
+            className={`px-3 py-1.5 text-sm rounded-md transition-colors ${filter === "all" ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground"}`}
           >
             All Bookings
           </button>
