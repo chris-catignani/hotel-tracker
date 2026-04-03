@@ -154,6 +154,7 @@ export function TravelMap({ stops, isPlaying, speed, onUpdate, onComplete }: Tra
   const speedRef = useRef(speed);
   const animationStartedRef = useRef(false);
   const completedArcFeaturesRef = useRef<Feature[]>([]);
+  const markersRef = useRef<maplibregl.Marker[]>([]);
 
   useEffect(() => {
     isPlayingRef.current = isPlaying;
@@ -212,6 +213,8 @@ export function TravelMap({ stops, isPlaying, speed, onUpdate, onComplete }: Tra
 
     return () => {
       cancelledRef.current = true;
+      markersRef.current.forEach((marker) => marker.remove());
+      markersRef.current = [];
       map.remove();
       mapRef.current = null;
     };
@@ -225,7 +228,10 @@ export function TravelMap({ stops, isPlaying, speed, onUpdate, onComplete }: Tra
 
     async function runAnimation() {
       const map = mapRef.current;
-      if (!map) return;
+      if (!map) {
+        console.warn("[TravelMap] runAnimation: map not initialized");
+        return;
+      }
 
       if (!map.isStyleLoaded()) {
         await new Promise<void>((resolve) => map.once("load", resolve));
@@ -247,7 +253,10 @@ export function TravelMap({ stops, isPlaying, speed, onUpdate, onComplete }: Tra
         const el = document.createElement("div");
         el.style.cssText =
           "width:10px;height:10px;border-radius:50%;background:#a78bfa;box-shadow:0 0 8px #a78bfa,0 0 16px #7c3aed;";
-        new maplibregl.Marker({ element: el }).setLngLat([stop.lng, stop.lat]).addTo(map);
+        const marker = new maplibregl.Marker({ element: el })
+          .setLngLat([stop.lng, stop.lat])
+          .addTo(map);
+        markersRef.current.push(marker);
 
         if (i > 0) {
           const prev = stops[i - 1];
