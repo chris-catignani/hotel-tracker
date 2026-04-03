@@ -13,7 +13,7 @@ export const NAV_ITEMS = [
   { href: "/bookings", label: "Bookings", icon: CalendarDays },
   { href: "/promotions", label: "Promotions", icon: Tag },
   { href: "/price-watch", label: "Price Watch", icon: Eye },
-  { href: "/posting-status", label: "Earnings Tracker", icon: CheckCircle },
+  { href: "/earnings-tracker", label: "Earnings Tracker", icon: CheckCircle },
   { href: "/settings", label: "Settings", icon: Settings },
   { href: "/health", label: "Health", icon: HeartPulse, adminOnly: true },
 ];

@@ -1,4 +1,4 @@
-import { PostingStatusGrid } from "@/components/posting-status/posting-status-grid";
+import { EarningsTrackerGrid } from "@/components/earnings-tracker/earnings-tracker-grid";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
@@ -75,7 +75,7 @@ async function getBookings(filter: string) {
   });
 }
 
-export default async function PostingStatusPage({
+export default async function EarningsTrackerPage({
   searchParams,
 }: {
   searchParams: Promise<{ filter?: string }>;
@@ -89,20 +89,20 @@ export default async function PostingStatusPage({
         <h1 className="text-2xl font-bold">Earnings Tracker</h1>
         <div className="flex gap-2">
           <a
-            href="/posting-status?filter=needs-attention"
+            href="/earnings-tracker?filter=needs-attention"
             className={`rounded-full px-3 py-1 text-sm font-medium ${filter === "needs-attention" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
           >
             Needs Attention
           </a>
           <a
-            href="/posting-status?filter=all"
+            href="/earnings-tracker?filter=all"
             className={`rounded-full px-3 py-1 text-sm font-medium ${filter === "all" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
           >
             All Bookings
           </a>
         </div>
       </div>
-      <PostingStatusGrid initialBookings={JSON.parse(JSON.stringify(bookings))} />
+      <EarningsTrackerGrid initialBookings={JSON.parse(JSON.stringify(bookings))} />
     </div>
   );
 }

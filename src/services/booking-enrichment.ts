@@ -223,7 +223,7 @@ export async function finalizeCheckedInBookings(userId?: string): Promise<string
  * Shared helper: fetches enabled partnership earns for a user once, then resolves
  * earned values for each booking. Replaces the normalize → enrich → partnership
  * pipeline that was duplicated across the bookings GET route, the single-booking
- * GET route, and the posting-status page.
+ * GET route, and the earnings-tracker page.
  */
 async function fetchEarnInputs(userId: string) {
   const enabledEarns = await prisma.userPartnershipEarn.findMany({

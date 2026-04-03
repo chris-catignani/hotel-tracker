@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { PostingStatus } from "@/lib/types";
-import { statusColorClass, statusIcon } from "@/lib/posting-status-utils";
+import { statusColorClass, statusIcon } from "@/lib/earnings-tracker-utils";
 
 interface SingleItemCell {
   kind: "single";
@@ -26,9 +26,9 @@ interface EmptyCell {
   kind: "empty";
 }
 
-export type PostingStatusCellProps = SingleItemCell | MultiItemCell | EmptyCell;
+export type EarningsTrackerCellProps = SingleItemCell | MultiItemCell | EmptyCell;
 
-export function PostingStatusCell(props: PostingStatusCellProps) {
+export function EarningsTrackerCell(props: EarningsTrackerCellProps) {
   if (props.kind === "empty") {
     return <span className="text-muted-foreground">—</span>;
   }

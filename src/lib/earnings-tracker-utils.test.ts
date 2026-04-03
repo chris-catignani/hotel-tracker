@@ -8,7 +8,7 @@ import {
   formatPartnershipValue,
   nextPostingStatus,
   statusIcon,
-} from "@/lib/posting-status-utils";
+} from "@/lib/earnings-tracker-utils";
 
 describe("nextPostingStatus", () => {
   it("cycles pending → posted → failed → pending", () => {
