@@ -62,7 +62,7 @@ export default function PromotionsPage() {
     refetchPromotions();
   };
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toLocaleDateString("en-CA");
 
   const typeFilteredPromotions =
     activeTab === "all" ? promotions : promotions.filter((p) => p.type === activeTab);
