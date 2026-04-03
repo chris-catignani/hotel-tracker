@@ -4,8 +4,10 @@ import { apiError } from "@/lib/api-error";
 import { AppError } from "@/lib/app-error";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
 import prisma from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { enrichBookingsWithPartnerships } from "@/services/booking-enrichment";
-import { getNetCostBreakdown } from "@/lib/net-cost";
+import { getNetCostBreakdown, type NetCostBooking } from "@/lib/net-cost";
+import type { PartnershipEarnResult } from "@/services/partnership-earns";
 
 const EARNINGS_TRACKER_INCLUDE = {
   property: true,
@@ -19,6 +21,18 @@ const EARNINGS_TRACKER_INCLUDE = {
   benefits: true,
   bookingPartnershipEarnStatuses: true,
 } as const;
+
+export type EarningsTrackerBooking = Prisma.BookingGetPayload<{
+  include: typeof EARNINGS_TRACKER_INCLUDE;
+}> & {
+  isFutureEstimate: boolean;
+  loyaltyPointsEstimated: boolean;
+  exchangeRateEstimated: boolean;
+  hotelChain: { calcCurrencyToUsdRate: number | null } | null;
+  partnershipEarns: PartnershipEarnResult[];
+  cardReward: number;
+  portalCashback: number;
+};
 
 export const GET = withObservability(async (request: NextRequest) => {
   try {
@@ -74,15 +88,13 @@ export const GET = withObservability(async (request: NextRequest) => {
       orderBy: { checkIn: "asc" },
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const enriched = await enrichBookingsWithPartnerships(bookings as any[], userId);
+    const enriched = await enrichBookingsWithPartnerships(bookings, userId);
 
-    const result = enriched.map((b) => {
+    const result: EarningsTrackerBooking[] = enriched.map((b) => {
       const { cardReward, portalCashback } = getNetCostBreakdown({
         ...b,
         certificates: [], // not fetched by this endpoint; cardReward/portalCashback don't depend on certs
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      } as unknown as NetCostBooking);
       return { ...b, cardReward, portalCashback };
     });
 

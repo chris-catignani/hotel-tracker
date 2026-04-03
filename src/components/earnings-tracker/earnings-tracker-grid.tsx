@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import type { EarningsTrackerBooking } from "@/app/api/earnings-tracker/route";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api-fetch";
 import { EarningsTrackerCell } from "./earnings-tracker-cell";
@@ -21,8 +22,12 @@ import { cn, formatDate, pruneHotelName } from "@/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-export function EarningsTrackerGrid({ initialBookings }: { initialBookings: any[] }) {
-  const [bookings, setBookings] = useState(initialBookings);
+export function EarningsTrackerGrid({
+  initialBookings,
+}: {
+  initialBookings: EarningsTrackerBooking[];
+}) {
+  const [bookings, setBookings] = useState<EarningsTrackerBooking[]>(initialBookings);
   const [expandedCells, setExpandedCells] = useState<Record<string, string | null>>({});
 
   function toggleCell(bookingId: string, column: string) {

@@ -5,6 +5,7 @@ import { EarningsTrackerGrid } from "@/components/earnings-tracker/earnings-trac
 import { PageSpinner } from "@/components/ui/page-spinner";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { ErrorBanner } from "@/components/ui/error-banner";
+import type { EarningsTrackerBooking } from "@/app/api/earnings-tracker/route";
 
 export default function EarningsTrackerPage() {
   const [filter, setFilter] = useState<"needs-attention" | "all">("needs-attention");
@@ -14,7 +15,7 @@ export default function EarningsTrackerPage() {
     loading,
     error,
     clearError,
-  } = useApiQuery<unknown[]>(`/api/earnings-tracker?filter=${filter}`);
+  } = useApiQuery<EarningsTrackerBooking[]>(`/api/earnings-tracker?filter=${filter}`);
 
   return (
     <div className="flex flex-col flex-1 min-h-0 space-y-6">

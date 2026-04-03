@@ -116,7 +116,6 @@ export function SettingsCrudTab<T extends { id: string }>({
   }, [fetchItems, fetchDependencies]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     refresh();
   }, [refresh]);
 
