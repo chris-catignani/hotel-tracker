@@ -30,16 +30,16 @@ import { HOMEBASE_STORAGE_KEY } from "./travel-map-utils";
 
 vi.mock("./travel-map-homebase-input", () => ({
   HomebaseInput: ({
-    initialAddress,
+    initialEntry,
     onSelect,
     onSkip,
   }: {
-    initialAddress: string;
+    initialEntry: HomebaseEntry | null;
     onSelect: (e: HomebaseEntry) => void;
     onSkip: () => void;
   }) => (
     <div data-testid="homebase-prompt">
-      <span data-testid="homebase-prefilled">{initialAddress}</span>
+      <span data-testid="homebase-prefilled">{initialEntry?.address ?? ""}</span>
       <button data-testid="homebase-skip" onClick={onSkip}>
         Skip
       </button>

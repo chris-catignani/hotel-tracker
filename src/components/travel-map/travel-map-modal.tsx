@@ -222,7 +222,7 @@ export function TravelMapModal({ open, onOpenChange }: TravelMapModalProps) {
             {/* Homebase prompt — shown after stops load, before countdown */}
             {homebasePromptVisible && (
               <HomebaseInput
-                initialAddress={homebase?.address ?? ""}
+                initialEntry={homebase}
                 onSelect={handleHomebaseSelect}
                 onSkip={handleHomebaseSkip}
               />

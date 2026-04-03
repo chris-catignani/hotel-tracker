@@ -5,16 +5,16 @@ import type { GeoResult } from "@/lib/types";
 import type { HomebaseEntry } from "./travel-map-utils";
 
 interface HomebaseInputProps {
-  initialAddress: string;
+  initialEntry: HomebaseEntry | null;
   onSelect: (entry: HomebaseEntry) => void;
   onSkip: () => void;
 }
 
-export function HomebaseInput({ initialAddress, onSelect, onSkip }: HomebaseInputProps) {
-  const [query, setQuery] = useState(initialAddress);
+export function HomebaseInput({ initialEntry, onSelect, onSkip }: HomebaseInputProps) {
+  const [query, setQuery] = useState(initialEntry?.address ?? "");
   const [suggestions, setSuggestions] = useState<GeoResult[]>([]);
   const [open, setOpen] = useState(false);
-  const [selectedEntry, setSelectedEntry] = useState<HomebaseEntry | null>(null);
+  const [selectedEntry, setSelectedEntry] = useState<HomebaseEntry | null>(initialEntry);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchSuggestions = useCallback(async (q: string) => {

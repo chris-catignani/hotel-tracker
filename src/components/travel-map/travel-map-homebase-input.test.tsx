@@ -25,6 +25,14 @@ const GEO_RESULTS = [
   },
 ];
 
+const SAVED_ENTRY: HomebaseEntry = {
+  address: "123 Main St, Chicago, Illinois, United States",
+  city: "Chicago",
+  countryCode: "US",
+  lat: 41.8,
+  lng: -87.6,
+};
+
 describe("HomebaseInput", () => {
   beforeEach(() => {
     global.fetch = vi.fn().mockResolvedValue({
@@ -38,38 +46,59 @@ describe("HomebaseInput", () => {
   });
 
   it("renders the prompt overlay with Skip and Done buttons", () => {
-    render(<HomebaseInput initialAddress="" onSelect={vi.fn()} onSkip={vi.fn()} />);
+    render(<HomebaseInput initialEntry={null} onSelect={vi.fn()} onSkip={vi.fn()} />);
     expect(screen.getByTestId("homebase-prompt")).toBeInTheDocument();
     expect(screen.getByTestId("homebase-address-input")).toBeInTheDocument();
     expect(screen.getByTestId("homebase-skip")).toBeInTheDocument();
     expect(screen.getByTestId("homebase-done")).toBeInTheDocument();
   });
 
-  it("prefills the input with initialAddress", () => {
-    render(<HomebaseInput initialAddress="Paris, France" onSelect={vi.fn()} onSkip={vi.fn()} />);
-    expect(screen.getByTestId("homebase-address-input")).toHaveValue("Paris, France");
+  it("prefills the input with the saved entry address", () => {
+    render(<HomebaseInput initialEntry={SAVED_ENTRY} onSelect={vi.fn()} onSkip={vi.fn()} />);
+    expect(screen.getByTestId("homebase-address-input")).toHaveValue(SAVED_ENTRY.address);
   });
 
-  it("Done button is disabled until a suggestion is selected", () => {
-    render(<HomebaseInput initialAddress="" onSelect={vi.fn()} onSkip={vi.fn()} />);
+  it("Done button is enabled when initialEntry is provided", () => {
+    render(<HomebaseInput initialEntry={SAVED_ENTRY} onSelect={vi.fn()} onSkip={vi.fn()} />);
+    expect(screen.getByTestId("homebase-done")).not.toBeDisabled();
+  });
+
+  it("Done button is disabled when no entry is provided and no suggestion selected", () => {
+    render(<HomebaseInput initialEntry={null} onSelect={vi.fn()} onSkip={vi.fn()} />);
     expect(screen.getByTestId("homebase-done")).toBeDisabled();
+  });
+
+  it("clicking Done with saved entry calls onSelect without needing a new selection", async () => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+    render(<HomebaseInput initialEntry={SAVED_ENTRY} onSelect={onSelect} onSkip={vi.fn()} />);
+    await user.click(screen.getByTestId("homebase-done"));
+    expect(onSelect).toHaveBeenCalledWith(SAVED_ENTRY);
   });
 
   it("calls onSkip when Skip is clicked", async () => {
     const user = userEvent.setup();
     const onSkip = vi.fn();
-    render(<HomebaseInput initialAddress="" onSelect={vi.fn()} onSkip={onSkip} />);
+    render(<HomebaseInput initialEntry={null} onSelect={vi.fn()} onSkip={onSkip} />);
     await user.click(screen.getByTestId("homebase-skip"));
     expect(onSkip).toHaveBeenCalledTimes(1);
   });
 
+  it("typing clears the selected entry and disables Done", async () => {
+    const user = userEvent.setup({ delay: null });
+    render(<HomebaseInput initialEntry={SAVED_ENTRY} onSelect={vi.fn()} onSkip={vi.fn()} />);
+    const input = screen.getByTestId("homebase-address-input");
+    await user.clear(input);
+    await user.type(input, "new");
+    expect(screen.getByTestId("homebase-done")).toBeDisabled();
+  });
+
   it("fetches suggestions after 300ms debounce when user types ≥3 chars", async () => {
     const user = userEvent.setup({ delay: null });
-    render(<HomebaseInput initialAddress="" onSelect={vi.fn()} onSkip={vi.fn()} />);
+    render(<HomebaseInput initialEntry={null} onSelect={vi.fn()} onSkip={vi.fn()} />);
     const input = screen.getByTestId("homebase-address-input");
     await user.type(input, "Spr");
     expect(global.fetch).not.toHaveBeenCalled();
-    // Wait for debounce to trigger
     await waitFor(
       () => {
         expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining("q=Spr"));
@@ -80,17 +109,16 @@ describe("HomebaseInput", () => {
 
   it("does not fetch when query is shorter than 3 chars", async () => {
     const user = userEvent.setup({ delay: null });
-    render(<HomebaseInput initialAddress="" onSelect={vi.fn()} onSkip={vi.fn()} />);
+    render(<HomebaseInput initialEntry={null} onSelect={vi.fn()} onSkip={vi.fn()} />);
     const input = screen.getByTestId("homebase-address-input");
     await user.type(input, "Sp");
-    // Wait for debounce delay
     await new Promise((resolve) => setTimeout(resolve, 350));
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
   it("shows suggestion dropdown after fetch resolves", async () => {
     const user = userEvent.setup({ delay: null });
-    render(<HomebaseInput initialAddress="" onSelect={vi.fn()} onSkip={vi.fn()} />);
+    render(<HomebaseInput initialEntry={null} onSelect={vi.fn()} onSkip={vi.fn()} />);
     const input = screen.getByTestId("homebase-address-input");
     await user.type(input, "Spr");
     await waitFor(() => expect(screen.getByTestId("homebase-suggestion-0")).toBeInTheDocument(), {
@@ -101,14 +129,13 @@ describe("HomebaseInput", () => {
 
   it("selecting a suggestion fills input with full address and enables Done", async () => {
     const user = userEvent.setup({ delay: null });
-    render(<HomebaseInput initialAddress="" onSelect={vi.fn()} onSkip={vi.fn()} />);
+    render(<HomebaseInput initialEntry={null} onSelect={vi.fn()} onSkip={vi.fn()} />);
     const input = screen.getByTestId("homebase-address-input");
     await user.type(input, "Spr");
     await waitFor(() => expect(screen.getByTestId("homebase-suggestion-0")).toBeInTheDocument(), {
       timeout: 500,
     });
     await user.click(screen.getByTestId("homebase-suggestion-0"));
-    // Full address (result.address) shown in input
     expect(input).toHaveValue("Springfield, Sangamon County, Illinois, United States");
     expect(screen.getByTestId("homebase-done")).not.toBeDisabled();
   });
@@ -116,7 +143,7 @@ describe("HomebaseInput", () => {
   it("selecting a suggestion does not immediately call onSelect", async () => {
     const user = userEvent.setup({ delay: null });
     const onSelect = vi.fn();
-    render(<HomebaseInput initialAddress="" onSelect={onSelect} onSkip={vi.fn()} />);
+    render(<HomebaseInput initialEntry={null} onSelect={onSelect} onSkip={vi.fn()} />);
     const input = screen.getByTestId("homebase-address-input");
     await user.type(input, "Spr");
     await waitFor(() => expect(screen.getByTestId("homebase-suggestion-0")).toBeInTheDocument(), {
@@ -129,7 +156,7 @@ describe("HomebaseInput", () => {
   it("calls onSelect with full address when Done is clicked after suggestion selected", async () => {
     const user = userEvent.setup({ delay: null });
     const onSelect = vi.fn();
-    render(<HomebaseInput initialAddress="" onSelect={onSelect} onSkip={vi.fn()} />);
+    render(<HomebaseInput initialEntry={null} onSelect={onSelect} onSkip={vi.fn()} />);
     const input = screen.getByTestId("homebase-address-input");
     await user.type(input, "Spr");
     await waitFor(() => expect(screen.getByTestId("homebase-suggestion-0")).toBeInTheDocument(), {
@@ -150,7 +177,7 @@ describe("HomebaseInput", () => {
   it("falls back to displayName when result.address is null", async () => {
     const user = userEvent.setup({ delay: null });
     const onSelect = vi.fn();
-    render(<HomebaseInput initialAddress="" onSelect={onSelect} onSkip={vi.fn()} />);
+    render(<HomebaseInput initialEntry={null} onSelect={onSelect} onSkip={vi.fn()} />);
     const input = screen.getByTestId("homebase-address-input");
     await user.type(input, "Par");
     await waitFor(() => expect(screen.getByTestId("homebase-suggestion-1")).toBeInTheDocument(), {
@@ -178,14 +205,13 @@ describe("HomebaseInput", () => {
     });
     const user = userEvent.setup({ delay: null });
     const onSelect = vi.fn();
-    render(<HomebaseInput initialAddress="" onSelect={onSelect} onSkip={vi.fn()} />);
+    render(<HomebaseInput initialEntry={null} onSelect={onSelect} onSkip={vi.fn()} />);
     const input = screen.getByTestId("homebase-address-input");
     await user.type(input, "Now");
     await waitFor(() => expect(screen.getByTestId("homebase-suggestion-0")).toBeInTheDocument(), {
       timeout: 500,
     });
     await user.click(screen.getByTestId("homebase-suggestion-0"));
-    // Done stays disabled since selectedEntry was never set
     expect(screen.getByTestId("homebase-done")).toBeDisabled();
     expect(onSelect).not.toHaveBeenCalled();
   });
