@@ -200,6 +200,15 @@ export function EarningsTrackerGrid({ initialBookings }: { initialBookings: any[
   );
 }
 
+// Column index map for aligning expansion rows under their header
+const COL_OFFSET: Record<string, number> = {
+  promotions: 2,
+  cardBenefits: 5,
+  partners: 6,
+  perks: 7,
+};
+const TOTAL_COLS = 8;
+
 function renderBookingRows(
   booking: any,
   expandedCol: string | null,
@@ -440,9 +449,7 @@ function renderBookingRows(
           <div className="absolute bottom-[-10px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-r-[8px] border-t-[10px] border-l-transparent border-r-transparent border-t-primary z-10" />
         )}
       </td>
-      <td className={cn("px-2 py-2 text-center", expandedCol === "loyalty" && "bg-primary/5")}>
-        {loyaltyCell}
-      </td>
+      <td className="px-2 py-2 text-center">{loyaltyCell}</td>
       <td className="px-2 py-2 text-center">{cardRewardCell}</td>
       <td
         className={cn(
@@ -476,15 +483,6 @@ function renderBookingRows(
       </td>
     </tr>
   );
-
-  // Column index map for aligning expansion rows under their header
-  const COL_OFFSET: Record<string, number> = {
-    promotions: 2,
-    cardBenefits: 5,
-    partners: 6,
-    perks: 7,
-  };
-  const TOTAL_COLS = 8;
 
   function expandRow(
     key: string,
