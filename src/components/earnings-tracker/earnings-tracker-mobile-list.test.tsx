@@ -4,9 +4,10 @@ import { EarningsTrackerMobileList } from "./earnings-tracker-mobile-list";
 import type { EarningsTrackerBooking } from "@/app/api/earnings-tracker/route";
 import type { EarningsTrackerGridProps } from "./earnings-tracker-grid";
 
-// Minimal booking factory
-function makeBooking(overrides: Partial<EarningsTrackerBooking> = {}): EarningsTrackerBooking {
-  return {
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// Minimal booking factory — base typed as any so partial test shapes don't need to satisfy the full Prisma type
+function makeBooking(overrides: Record<string, any> = {}): EarningsTrackerBooking {
+  const base: any = {
     id: "b1",
     property: { name: "Park Hyatt Chicago" },
     checkIn: "2024-06-01",
@@ -31,9 +32,10 @@ function makeBooking(overrides: Partial<EarningsTrackerBooking> = {}): EarningsT
     benefits: [],
     partnershipEarns: [],
     bookingPartnershipEarnStatuses: [],
-    ...overrides,
-  } as EarningsTrackerBooking;
+  };
+  return { ...base, ...overrides } as EarningsTrackerBooking;
 }
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 function makeProps(bookings: EarningsTrackerBooking[]): EarningsTrackerGridProps {
   return {

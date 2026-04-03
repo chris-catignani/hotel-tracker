@@ -106,7 +106,7 @@ function getEarningsItems(
         (booking as any).cardReward,
         cc.rewardType,
         cc.pointType?.shortName ?? null,
-        cc.pointType?.usdCentsPerPoint ?? null
+        cc.pointType?.usdCentsPerPoint != null ? Number(cc.pointType.usdCentsPerPoint) : null
       ),
       status: booking.cardRewardPostingStatus,
       onCycle: () =>
@@ -251,7 +251,7 @@ export function EarningsTrackerMobileList({
                   {pruneHotelName(booking.property?.name ?? "Unknown")}
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  {formatDate(booking.checkIn)} – {formatDate(booking.checkOut)}
+                  {formatDate((booking as any).checkIn)} – {formatDate((booking as any).checkOut)}
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0 ml-3">
