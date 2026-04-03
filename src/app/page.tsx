@@ -37,6 +37,13 @@ import { ErrorBanner } from "@/components/ui/error-banner";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { logger } from "@/lib/logger";
 import { PostingStatus } from "@/lib/types";
+import dynamic from "next/dynamic";
+import { TravelMapButton } from "@/components/travel-map/travel-map-button";
+
+const TravelMapModal = dynamic(
+  () => import("@/components/travel-map/travel-map-modal").then((m) => m.TravelMapModal),
+  { ssr: false }
+);
 
 interface BookingCertificate {
   id: string;
@@ -240,6 +247,7 @@ export default function DashboardPage() {
     onError: (err) => logger.error("Failed to fetch bookings", err.error, { status: err.status }),
   });
   const safeBookings = useMemo(() => bookings ?? [], [bookings]);
+  const [travelMapOpen, setTravelMapOpen] = useState(false);
   const [accommodationFilter, setAccommodationFilter] = useState<AccommodationFilter>("all");
   const [sortConfig, setSortConfig] = useState<{
     key: keyof HotelChainSummary;
@@ -492,6 +500,8 @@ export default function DashboardPage() {
               ))}
             </SelectContent>
           </Select>
+
+          <TravelMapButton onClick={() => setTravelMapOpen(true)} />
 
           {showFilter && (
             <div className="flex shrink-0 rounded-lg border p-0.5 gap-0.5">
@@ -978,6 +988,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       )}
+      <TravelMapModal open={travelMapOpen} onOpenChange={setTravelMapOpen} />
     </div>
   );
 }
