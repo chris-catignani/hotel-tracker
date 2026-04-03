@@ -28,6 +28,7 @@ import {
 } from "@/lib/promotion-utils";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { apiFetch } from "@/lib/api-fetch";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 export default function PromotionsPage() {
@@ -43,6 +44,9 @@ export default function PromotionsPage() {
   const promotions = useMemo(() => promotionsData ?? [], [promotionsData]);
 
   const [activeTab, setActiveTab] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "ongoing" | "expired" | "upcoming">(
+    "ongoing"
+  );
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this promotion?")) return;
@@ -58,19 +62,52 @@ export default function PromotionsPage() {
     refetchPromotions();
   };
 
-  const filteredPromotions =
+  const today = new Date().toISOString().split("T")[0];
+
+  const typeFilteredPromotions =
     activeTab === "all" ? promotions : promotions.filter((p) => p.type === activeTab);
+
+  const filteredPromotions =
+    statusFilter === "all"
+      ? typeFilteredPromotions
+      : typeFilteredPromotions.filter((p) => {
+          if (p.endDate && p.endDate < today) return statusFilter === "expired";
+          if (p.startDate && p.startDate > today) return statusFilter === "upcoming";
+          return statusFilter === "ongoing";
+        });
 
   return (
     <div className="flex flex-col flex-1 min-h-0 space-y-6">
       <div className="flex items-center justify-between shrink-0">
         <h1 className="text-2xl font-semibold tracking-tight">Promotions</h1>
-        <Button asChild>
-          <Link href="/promotions/new">
-            <Plus className="size-4" />
-            Add Promotion
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <div
+            className="flex shrink-0 rounded-lg border p-0.5 gap-0.5"
+            data-testid="status-filter"
+          >
+            {(["all", "upcoming", "ongoing", "expired"] as const).map((s) => (
+              <button
+                key={s}
+                onClick={() => setStatusFilter(s)}
+                className={cn(
+                  "px-3 py-1.5 text-sm rounded-md transition-colors",
+                  statusFilter === s
+                    ? "bg-background shadow-sm font-medium"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                data-testid={`status-filter-${s}`}
+              >
+                {s.charAt(0).toUpperCase() + s.slice(1)}
+              </button>
+            ))}
+          </div>
+          <Button asChild>
+            <Link href="/promotions/new">
+              <Plus className="size-4" />
+              Add Promotion
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <ErrorBanner
@@ -94,12 +131,12 @@ export default function PromotionsPage() {
               icon={Tag}
               title="No promotions found"
               description={
-                activeTab === "all"
+                activeTab === "all" && statusFilter === "all"
                   ? "Track extra savings and rewards by adding your first promotion."
-                  : `No ${typeLabel(activeTab).toLowerCase()} promotions found.`
+                  : `No ${statusFilter !== "all" ? statusFilter + " " : ""}${activeTab !== "all" ? typeLabel(activeTab).toLowerCase() + " " : ""}promotions found.`
               }
               action={
-                activeTab === "all"
+                activeTab === "all" && statusFilter === "all"
                   ? {
                       label: "Add Promotion",
                       href: "/promotions/new",
