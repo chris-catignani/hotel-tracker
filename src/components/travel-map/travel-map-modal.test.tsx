@@ -1,5 +1,5 @@
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { TravelMapModal } from "./travel-map-modal";
 import type { TravelStop } from "@/app/api/travel-map/route";
 import type { ApiFetchResult } from "@/lib/api-fetch";
@@ -89,6 +89,10 @@ describe("TravelMapModal", () => {
     mockApiFetch.mockReturnValue(new Promise(() => {}));
   });
 
+  afterEach(() => {
+    localStorage.clear();
+  });
+
   it("renders nothing when closed", () => {
     mockApiFetch.mockResolvedValue(makeOkResult([]));
     render(<TravelMapModal open={false} onOpenChange={vi.fn()} />);
@@ -169,7 +173,7 @@ describe("TravelMapModal", () => {
       expect(screen.getByTestId("homebase-prompt")).toBeInTheDocument();
     });
     // Countdown must NOT be showing yet
-    expect(screen.queryByText("5")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("travel-map-countdown")).not.toBeInTheDocument();
   });
 
   it("dismisses prompt and shows countdown when Skip is clicked", async () => {
@@ -179,7 +183,7 @@ describe("TravelMapModal", () => {
     fireEvent.click(screen.getByTestId("homebase-skip"));
     await waitFor(() => expect(screen.queryByTestId("homebase-prompt")).not.toBeInTheDocument());
     // Countdown "5" should now render
-    await waitFor(() => expect(screen.getByText("5")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByTestId("travel-map-countdown")).toHaveTextContent("5"));
   });
 
   it("dismisses prompt and shows countdown when homebase selected", async () => {
@@ -188,11 +192,10 @@ describe("TravelMapModal", () => {
     await waitFor(() => expect(screen.getByTestId("homebase-prompt")).toBeInTheDocument());
     fireEvent.click(screen.getByTestId("homebase-select"));
     await waitFor(() => expect(screen.queryByTestId("homebase-prompt")).not.toBeInTheDocument());
-    await waitFor(() => expect(screen.getByText("5")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByTestId("travel-map-countdown")).toHaveTextContent("5"));
   });
 
   it("saves homebase to localStorage when address is selected", async () => {
-    localStorage.clear();
     mockApiFetch.mockResolvedValue(makeOkResult([SAMPLE_STOP]));
     render(<TravelMapModal open={true} onOpenChange={vi.fn()} />);
     await waitFor(() => expect(screen.getByTestId("homebase-prompt")).toBeInTheDocument());
@@ -220,7 +223,6 @@ describe("TravelMapModal", () => {
     await waitFor(() =>
       expect(screen.getByTestId("homebase-prefilled")).toHaveTextContent("Paris, France")
     );
-    localStorage.clear();
   });
 
   it("does not show homebase prompt when stops are empty", async () => {
