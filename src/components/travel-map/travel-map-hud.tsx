@@ -26,12 +26,10 @@ export function TravelMapHud({
 }: TravelMapHudProps) {
   if (stopIndex === -1 && !isComplete) return null;
 
-  const progressPct = totalStops > 0 ? ((stopIndex + 1) / totalStops) * 100 : 0;
-
   if (isComplete) {
     return (
       <div
-        className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/85 to-transparent p-6 pt-16"
+        className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/85 to-transparent p-6 pb-10 pt-16"
         data-testid="travel-map-hud"
       >
         <div className="text-center" data-testid="hud-complete-summary">
@@ -52,7 +50,7 @@ export function TravelMapHud({
 
   return (
     <div
-      className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/85 to-transparent p-4 pt-16"
+      className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/85 to-transparent p-4 pb-10 pt-16"
       data-testid="travel-map-hud"
     >
       <div className="flex justify-between items-end mb-3">
@@ -78,13 +76,6 @@ export function TravelMapHud({
           </div>
           <div className="text-slate-500 text-xs uppercase tracking-widest">nights</div>
         </div>
-      </div>
-      <div className="h-0.5 bg-slate-800 rounded-full mb-1.5">
-        <div
-          className="h-0.5 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full"
-          style={{ width: `${progressPct}%` }}
-          data-testid="hud-progress-bar"
-        />
       </div>
       <div className="flex justify-between text-xs text-slate-500">
         <span data-testid="hud-stay-counter">

@@ -81,23 +81,6 @@ describe("TravelMapHud", () => {
     expect(screen.getByTestId("hud-total-nights")).toHaveTextContent("8 nights total");
   });
 
-  it("shows progress bar width proportional to stop index", () => {
-    render(
-      <TravelMapHud
-        currentStop={stop}
-        stopIndex={4}
-        totalStops={10}
-        tickedNights={3}
-        cumulativeNights={15}
-        totalNights={30}
-        totalCountries={3}
-        isComplete={false}
-      />
-    );
-    // (4+1)/10 = 50%
-    expect(screen.getByTestId("hud-progress-bar")).toHaveStyle({ width: "50%" });
-  });
-
   it("shows summary stats when complete", () => {
     render(
       <TravelMapHud

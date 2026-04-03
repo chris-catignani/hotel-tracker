@@ -172,7 +172,7 @@ export function TravelMapModal({ open, onOpenChange }: TravelMapModalProps) {
             />
             {/* Journey progress bar — bottom of screen, weighted by nights */}
             {totalNights > 0 && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-slate-800 z-30">
+              <div className="absolute bottom-8 left-0 right-0 h-0.5 bg-slate-800 z-30">
                 <div
                   className="h-full bg-gradient-to-r from-blue-400 to-purple-400"
                   style={{ width: `${(cumulativeNights / totalNights) * 100}%` }}

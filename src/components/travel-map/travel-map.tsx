@@ -2,8 +2,8 @@
 
 import { useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
-import type { Feature } from "geojson";
 import "maplibre-gl/dist/maplibre-gl.css";
+import type { Feature, FeatureCollection, LineString } from "geojson";
 import type { TravelStop } from "@/app/api/travel-map/route";
 
 export interface TravelMapProps {
@@ -17,7 +17,7 @@ export interface TravelMapProps {
 function greatCirclePoints(
   from: [number, number],
   to: [number, number],
-  numPoints = 50
+  numPoints = 100
 ): [number, number][] {
   const toRad = (d: number) => (d * Math.PI) / 180;
   const toDeg = (r: number) => (r * 180) / Math.PI;
@@ -86,28 +86,40 @@ function zoomForDistance(km: number): number {
   return 3;
 }
 
-const ARC_PAINT = {
-  "line-color": "#60a5fa",
-  "line-width": 4,
-  "line-opacity": 0.85,
-  "line-blur": 2,
-};
+const EMPTY_FC: FeatureCollection = { type: "FeatureCollection", features: [] };
+const ARC_COLOR = "#60a5fa";
+const ARC_LAYOUT = { "line-cap": "round", "line-join": "round" } as const;
 
-// Fly to a stop while drawing the current leg's arc progressively.
+// WHY THE CURRENT ARC IS DASHED (not solid like the completed arcs)
 //
-// Two separate GeoJSON sources keep the cost constant per frame:
-//   arcs-completed — all finished legs, uploaded once per leg (never touched during flyTo)
-//   arcs-current   — only the leg being drawn right now (≤51 points), updated on each move
+// The ideal UX is a solid line that progressively draws from origin to destination in sync
+// with the camera flyTo. We explored several approaches, all with fatal flaws in MapLibre:
 //
-// The key insight: previously we uploaded ALL arcs on every frame, so cost grew O(n legs).
-// Now only arcs-current is updated during animation — always a fixed small payload.
+// 1. line-trim-offset — a GPU paint property that reveals 0→t of a line without shader
+//    recompile (perfect for this). MapLibre v5 does not support it; it's Mapbox-only.
+//
+// 2. line-gradient + line-progress — requires lineMetrics:true on the source. Works visually,
+//    but setPaintProperty with a changing expression triggers a full shader recompile every
+//    call. At 60 fps this saturates the GPU; throttling to ~20 fps makes it visibly clunky.
+//
+// 3. CustomLayerInterface (WebGL point sprites) — compiled shaders once, uploaded geometry
+//    once per leg, changed only a draw-count integer each frame. Smooth GPU performance.
+//    Fatal flaw: gl.lineWidth() is capped at 1px by most browser/GPU drivers, so proper
+//    thick lines require triangle strips. Point sprites (gl.POINTS) gave a workaround but
+//    circles were visible at low density and vibrancy didn't match the solid completed arc
+//    even after MAX-blend tricks.
+//
+// Current approach: grow the arc by slicing coordinates and calling setData only when the
+// point count changes (≤100 calls per leg). A dashed style naturally disguises the discrete
+// steps. On moveend the dashed arc is replaced by the solid completed-arc GeoJSON layer.
+
 function flyToStopWithArc(
   map: maplibregl.Map,
   fromStop: TravelStop | null,
   toStop: TravelStop,
   zoom: number,
   durationMs: number,
-  completedFeatures: Feature[],
+  completedFeatures: Feature<LineString>[],
   cancelled: () => boolean
 ): Promise<void> {
   return new Promise((resolve) => {
@@ -121,16 +133,17 @@ function flyToStopWithArc(
       const completedSource = map.getSource("arcs-completed") as maplibregl.GeoJSONSource;
       const currentSource = map.getSource("arcs-current") as maplibregl.GeoJSONSource;
 
-      // Snapshot completed arcs once — won't change while this leg animates.
       completedSource.setData({ type: "FeatureCollection", features: completedFeatures });
 
+      // Grow the dashed arc in sync with the camera — only call setData when the point
+      // count actually changes (≤100 calls per leg, each a tiny GeoJSON payload).
       let lastCount = 0;
-      function updateCurrentArc() {
+      function updateArc() {
         if (cancelled()) return;
         const center = map.getCenter();
-        const t =
+        const progress =
           totalDist > 0 ? Math.min(gcDistanceKm(from, [center.lng, center.lat]) / totalDist, 1) : 1;
-        const count = Math.max(2, Math.ceil(t * arcPoints.length));
+        const count = Math.max(2, Math.round(progress * arcPoints.length));
         if (count === lastCount) return;
         lastCount = count;
         currentSource.setData({
@@ -145,18 +158,19 @@ function flyToStopWithArc(
         });
       }
 
-      map.on("move", updateCurrentArc);
+      updateArc();
+      map.on("move", updateArc);
 
       map.once("moveend", () => {
-        map.off("move", updateCurrentArc);
+        map.off("move", updateArc);
         if (!cancelled()) {
           completedFeatures.push({
-            type: "Feature" as const,
+            type: "Feature",
             properties: {},
-            geometry: { type: "LineString" as const, coordinates: arcPoints },
-          } satisfies Feature);
+            geometry: { type: "LineString", coordinates: arcPoints },
+          });
           completedSource.setData({ type: "FeatureCollection", features: completedFeatures });
-          currentSource.setData({ type: "FeatureCollection", features: [] });
+          currentSource.setData(EMPTY_FC);
         }
         resolve();
       });
@@ -212,7 +226,7 @@ export function TravelMap({ stops, isPlaying, speed, onUpdate, onComplete }: Tra
   const isPlayingRef = useRef(isPlaying);
   const speedRef = useRef(speed);
   const animationStartedRef = useRef(false);
-  const completedArcFeaturesRef = useRef<Feature[]>([]);
+  const completedArcFeaturesRef = useRef<Feature<LineString>[]>([]);
   const markersRef = useRef<maplibregl.Marker[]>([]);
 
   useEffect(() => {
@@ -253,28 +267,29 @@ export function TravelMap({ stops, isPlaying, speed, onUpdate, onComplete }: Tra
     mapRef.current = map;
 
     map.on("load", () => {
-      // Completed arcs — stable during each leg's animation.
-      map.addSource("arcs-completed", {
-        type: "geojson",
-        data: { type: "FeatureCollection", features: [] },
-      });
+      // Completed arcs — solid line, never changes during a leg's animation.
+      map.addSource("arcs-completed", { type: "geojson", data: EMPTY_FC });
       map.addLayer({
         id: "arcs-completed-layer",
         type: "line",
         source: "arcs-completed",
-        paint: ARC_PAINT,
+        layout: ARC_LAYOUT,
+        paint: { "line-color": ARC_COLOR, "line-width": 4, "line-opacity": 0.85 },
       });
 
-      // Current arc — only this source is updated during flyTo (≤51 points, constant cost).
-      map.addSource("arcs-current", {
-        type: "geojson",
-        data: { type: "FeatureCollection", features: [] },
-      });
+      // Current arc — dashed during flyTo, cleared on arrival (promoted to completed).
+      map.addSource("arcs-current", { type: "geojson", data: EMPTY_FC });
       map.addLayer({
         id: "arcs-current-layer",
         type: "line",
         source: "arcs-current",
-        paint: ARC_PAINT,
+        layout: ARC_LAYOUT,
+        paint: {
+          "line-color": ARC_COLOR,
+          "line-width": 4,
+          "line-opacity": 0.5,
+          "line-dasharray": [3, 2],
+        },
       });
     });
 
