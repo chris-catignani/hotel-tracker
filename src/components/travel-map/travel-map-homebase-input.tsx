@@ -65,6 +65,7 @@ export function HomebaseInput({ initialAddress, onSelect, onSkip }: HomebaseInpu
     <div
       className="absolute inset-0 flex items-center justify-center z-20 bg-black/50"
       data-testid="homebase-prompt"
+      onClick={(e) => e.stopPropagation()}
     >
       <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-md mx-4">
         <h2 className="text-white text-lg font-semibold mb-1">Where&apos;s home?</h2>
@@ -77,7 +78,7 @@ export function HomebaseInput({ initialAddress, onSelect, onSkip }: HomebaseInpu
             value={query}
             onChange={handleChange}
             placeholder="Search for your home address..."
-            className="w-full bg-slate-800 border border-slate-600 rounded-md px-3 py-2 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-400"
+            className="w-full bg-slate-800 border border-slate-600 rounded-md px-3 py-2 text-white placeholder-slate-500 text-base focus:outline-none focus:border-blue-400"
             data-testid="homebase-address-input"
             autoFocus
             autoComplete="off"

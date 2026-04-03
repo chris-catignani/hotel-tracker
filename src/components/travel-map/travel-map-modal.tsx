@@ -132,6 +132,7 @@ export function TravelMapModal({ open, onOpenChange }: TravelMapModalProps) {
   }, []);
 
   const handlePlayPause = useCallback(() => {
+    if (homebasePromptVisible) return;
     if (isComplete) {
       handleRestart();
     } else if (countdown !== null) {
@@ -140,7 +141,7 @@ export function TravelMapModal({ open, onOpenChange }: TravelMapModalProps) {
     } else {
       setIsPlaying((p) => !p);
     }
-  }, [isComplete, countdown, handleRestart]);
+  }, [isComplete, countdown, handleRestart, homebasePromptVisible]);
 
   const handleComplete = useCallback(() => {
     setIsPlaying(false);
@@ -167,7 +168,7 @@ export function TravelMapModal({ open, onOpenChange }: TravelMapModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="fixed inset-0 sm:inset-6 w-auto h-auto max-w-none sm:max-w-none translate-x-0 translate-y-0 m-0 p-0 border-0 rounded-none sm:rounded-xl overflow-hidden bg-[#0f172a] [&>button]:text-white [&>button]:top-10 [&>button]:right-4"
+        className="fixed inset-0 sm:inset-6 w-auto h-auto max-w-none sm:max-w-none translate-x-0 translate-y-0 m-0 p-0 border-0 rounded-none sm:rounded-xl overflow-hidden bg-[#0f172a] [&>button]:text-white [&>button]:top-10 [&>button]:right-4 [&>button]:size-10 [&>button]:rounded-full [&>button]:bg-black/40 [touch-action:manipulation]"
         data-testid="travel-map-modal"
       >
         <VisuallyHidden>
