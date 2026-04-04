@@ -106,7 +106,7 @@ export default function PromotionsPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="all">All statuses</SelectItem>
               <SelectItem value="upcoming">Upcoming</SelectItem>
               <SelectItem value="ongoing">Ongoing</SelectItem>
               <SelectItem value="expired">Expired</SelectItem>
@@ -117,7 +117,7 @@ export default function PromotionsPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="all">All types</SelectItem>
               <SelectItem value="credit_card">Credit Card</SelectItem>
               <SelectItem value="portal">Portal</SelectItem>
               <SelectItem value="loyalty">Loyalty</SelectItem>
