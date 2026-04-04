@@ -35,10 +35,10 @@ jobs:
         run: |
           echo "${{ secrets.OVPN_CONFIG }}" > /tmp/vpn.ovpn
           sudo apt-get install -y openvpn
-          sudo openvpn --config /tmp/vpn.ovpn --daemon --log /tmp/vpn.log
+          sudo openvpn --config /tmp/vpn.ovpn --log /tmp/vpn.log &
           rm /tmp/vpn.ovpn
-          sleep 10
-          sudo cat /tmp/vpn.log
+          sleep 15
+          cat /tmp/vpn.log
 
       - name: Run price watch refresh (with XVFB)
         run: xvfb-run npx tsx src/workers/refresh-price-watches.ts
