@@ -64,8 +64,6 @@ export function HomebaseInput({ initialEntry, onSelect }: HomebaseInputProps) {
     setOpen(false);
   };
 
-  const canConfirm = selectedEntry !== null || (initialEntry !== null && query.trim() === "");
-
   return (
     <div
       className="absolute inset-0 flex items-center justify-center z-20 bg-black/50"
@@ -116,8 +114,7 @@ export function HomebaseInput({ initialEntry, onSelect }: HomebaseInputProps) {
           <button
             type="button"
             onClick={() => onSelect(selectedEntry)}
-            disabled={!canConfirm}
-            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-500 transition-colors"
             data-testid="homebase-done"
           >
             Done
