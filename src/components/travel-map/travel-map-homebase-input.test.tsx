@@ -57,14 +57,9 @@ describe("HomebaseInput", () => {
     expect(screen.getByTestId("homebase-address-input")).toHaveValue(SAVED_ENTRY.address);
   });
 
-  it("Done button is enabled when initialEntry is provided", () => {
-    render(<HomebaseInput initialEntry={SAVED_ENTRY} onSelect={vi.fn()} />);
-    expect(screen.getByTestId("homebase-done")).not.toBeDisabled();
-  });
-
-  it("Done button is disabled when no entry is provided and no suggestion selected", () => {
+  it("Done button is always enabled", () => {
     render(<HomebaseInput initialEntry={null} onSelect={vi.fn()} />);
-    expect(screen.getByTestId("homebase-done")).toBeDisabled();
+    expect(screen.getByTestId("homebase-done")).not.toBeDisabled();
   });
 
   it("clicking Done with saved entry calls onSelect without needing a new selection", async () => {
@@ -75,23 +70,6 @@ describe("HomebaseInput", () => {
     expect(onSelect).toHaveBeenCalledWith(SAVED_ENTRY);
   });
 
-  it("typing (non-empty) clears the selected entry and disables Done", async () => {
-    const user = userEvent.setup({ delay: null });
-    render(<HomebaseInput initialEntry={SAVED_ENTRY} onSelect={vi.fn()} />);
-    const input = screen.getByTestId("homebase-address-input");
-    await user.clear(input);
-    await user.type(input, "new");
-    expect(screen.getByTestId("homebase-done")).toBeDisabled();
-  });
-
-  it("clearing the input enables Done when there was a saved entry", async () => {
-    const user = userEvent.setup({ delay: null });
-    render(<HomebaseInput initialEntry={SAVED_ENTRY} onSelect={vi.fn()} />);
-    const input = screen.getByTestId("homebase-address-input");
-    await user.clear(input);
-    expect(screen.getByTestId("homebase-done")).not.toBeDisabled();
-  });
-
   it("clicking Done with cleared input calls onSelect with null", async () => {
     const user = userEvent.setup({ delay: null });
     const onSelect = vi.fn();
@@ -100,12 +78,6 @@ describe("HomebaseInput", () => {
     await user.clear(input);
     await user.click(screen.getByTestId("homebase-done"));
     expect(onSelect).toHaveBeenCalledWith(null);
-  });
-
-  it("clearing the input keeps Done disabled when there was no saved entry", () => {
-    render(<HomebaseInput initialEntry={null} onSelect={vi.fn()} />);
-    // Input starts empty, Done should stay disabled
-    expect(screen.getByTestId("homebase-done")).toBeDisabled();
   });
 
   it("fetches suggestions after 300ms debounce when user types ≥3 chars", async () => {
@@ -227,7 +199,7 @@ describe("HomebaseInput", () => {
       timeout: 500,
     });
     await user.click(screen.getByTestId("homebase-suggestion-0"));
-    expect(screen.getByTestId("homebase-done")).toBeDisabled();
+    expect(screen.getByTestId("homebase-done")).not.toBeDisabled();
     expect(onSelect).not.toHaveBeenCalled();
   });
 });

@@ -168,7 +168,7 @@ export function TravelMapModal({ open, onOpenChange }: TravelMapModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="fixed inset-0 sm:inset-6 w-auto h-auto max-w-none sm:max-w-none translate-x-0 translate-y-0 m-0 p-0 border-0 rounded-none sm:rounded-xl overflow-hidden bg-[#0f172a] [&>button]:text-white [&>button]:top-10 [&>button]:right-4 [&>button]:size-10 [&>button]:rounded-full [&>button]:bg-black/40 [&>button]:flex [&>button]:items-center [&>button]:justify-center [&>button_svg]:size-6 [touch-action:manipulation]"
+        className="fixed inset-0 sm:inset-6 w-auto h-auto max-w-none sm:max-w-none translate-x-0 translate-y-0 m-0 p-0 border-0 rounded-none sm:rounded-xl overflow-hidden bg-[#0f172a] [&>button]:text-white [&>button]:top-10 [&>button]:right-4 [&>button]:size-10 [&>button]:rounded-full [&>button]:bg-black/40 [&>button]:flex [&>button]:items-center [&>button]:justify-center [&>button_svg]:size-6 [&>button]:z-50 [touch-action:manipulation]"
         data-testid="travel-map-modal"
       >
         <VisuallyHidden>
