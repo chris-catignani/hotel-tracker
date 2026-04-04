@@ -132,6 +132,8 @@ export async function runPriceWatchRefresh(fetchers: PriceFetcher[]): Promise<{
           });
           // result remains null
         }
+        // Small delay between fetch calls to reduce bot-detection risk
+        await new Promise((r) => setTimeout(r, 3000));
       }
 
       if (result) {
