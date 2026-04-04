@@ -140,42 +140,45 @@ export class HyattFetcher implements PriceFetcher {
       `[HyattFetcher] Launching browser for ${spiritCode} (App Mode)${rateFilter ? ` [${rateFilter}]` : ""}...`
     );
 
-    const context = await chromium.launchPersistentContext(userDataDir, {
-      // Always non-headless: the Kasada bypass relies on mimicking a real browser
-      // launch. In CI, xvfb-run in the GH Actions workflow provides a virtual display.
-      headless: false,
-      args: [
-        "--disable-blink-features=AutomationControlled",
-        "--no-sandbox",
-        "--use-gl=desktop",
-        `--app=${targetApiUrl}`,
-      ],
-      viewport: { width: 1280, height: 800 },
-    });
-
     try {
-      // --app= creates a page on launch; if it's not ready yet, wait for it.
-      // Register the response listener immediately — the network round-trip ensures
-      // we're always registered before the response can arrive.
-      const page = context.pages()[0] ?? (await context.waitForEvent("page", { timeout: 5000 }));
-      console.log(`[HyattFetcher] Waiting for rates response...`);
-      const responsePromise = page.waitForResponse(
-        (response) =>
-          response.url().includes(`/roomrates/${spiritCode}`) && response.status() === 200,
-        { timeout: 60000 }
-      );
+      const context = await chromium.launchPersistentContext(userDataDir, {
+        // Always non-headless: the Kasada bypass relies on mimicking a real browser
+        // launch. In CI, xvfb-run in the GH Actions workflow provides a virtual display.
+        headless: false,
+        args: [
+          "--disable-blink-features=AutomationControlled",
+          "--no-sandbox",
+          "--use-gl=desktop",
+          `--app=${targetApiUrl}`,
+        ],
+        viewport: { width: 1280, height: 800 },
+      });
 
-      const response = await responsePromise;
-      console.log(
-        `[HyattFetcher] Success for ${spiritCode}${rateFilter ? ` [${rateFilter}]` : ""}`
-      );
-      return (await response.json()) as HyattRatesResponse;
-    } catch (err) {
-      throw new Error(
-        `Hyatt fetch failed for ${spiritCode}${rateFilter ? ` [${rateFilter}]` : ""}: ${err instanceof Error ? err.message : String(err)}`
-      );
+      try {
+        // --app= creates a page on launch; if it's not ready yet, wait for it.
+        // Register the response listener immediately — the network round-trip ensures
+        // we're always registered before the response can arrive.
+        const page = context.pages()[0] ?? (await context.waitForEvent("page", { timeout: 5000 }));
+        console.log(`[HyattFetcher] Waiting for rates response...`);
+        const responsePromise = page.waitForResponse(
+          (response) =>
+            response.url().includes(`/roomrates/${spiritCode}`) && response.status() === 200,
+          { timeout: 60000 }
+        );
+
+        const response = await responsePromise;
+        console.log(
+          `[HyattFetcher] Success for ${spiritCode}${rateFilter ? ` [${rateFilter}]` : ""}`
+        );
+        return (await response.json()) as HyattRatesResponse;
+      } catch (err) {
+        throw new Error(
+          `Hyatt fetch failed for ${spiritCode}${rateFilter ? ` [${rateFilter}]` : ""}: ${err instanceof Error ? err.message : String(err)}`
+        );
+      } finally {
+        await context.close();
+      }
     } finally {
-      await context.close();
       try {
         fs.rmSync(userDataDir, { recursive: true, force: true });
       } catch {
