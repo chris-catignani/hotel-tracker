@@ -6,6 +6,7 @@ export const airbnbGuide: ChainGuide = {
   promptNotes:
     'Airbnb bookings are short-term rentals — set accommodationType to "apartment". ' +
     "Set hotelChain and subBrand to null. " +
+    "Always extract the full street address into propertyAddress (e.g. '123 Main St, Auckland 1010, New Zealand'); set to null only if no address is present in the email. " +
     'bookingType is always "cash". ' +
     'The "Confirmation code" is the confirmationNumber. ' +
     "Total cost is the full amount charged including all fees. " +

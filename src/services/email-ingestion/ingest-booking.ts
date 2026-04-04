@@ -74,9 +74,12 @@ export async function ingestBookingFromEmail(
       })
     : null;
 
-  // Geo-enrich the property via Google Places, mirroring the manual booking flow
+  // Geo-enrich the property via Google Places, mirroring the manual booking flow.
+  // Apartments: always geocode by address (listing names don't exist in Google Places).
+  // Hotels: geocode by property name with lodging type filter.
   const isHotel = (parsed.accommodationType ?? "hotel") !== "apartment";
-  const geoResults = await searchProperties(parsed.propertyName, isHotel);
+  const geoQuery = isHotel ? parsed.propertyName : (parsed.propertyAddress ?? parsed.propertyName);
+  const geoResults = await searchProperties(geoQuery, isHotel);
   const geo = geoResults[0] ?? null;
 
   // Resolve property

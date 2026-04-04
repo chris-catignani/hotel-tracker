@@ -71,6 +71,7 @@ vi.mock("@/services/email-ingestion/email-parser", () => ({
 
 const baseParsed: ParsedBookingData = {
   propertyName: "Hyatt Regency Salt Lake City",
+  propertyAddress: null,
   checkIn: "2027-01-14",
   checkOut: "2027-01-18",
   numNights: 4,
@@ -314,9 +315,24 @@ describe("ingestBookingFromEmail", () => {
     );
   });
 
-  it("uses isHotel=false for apartment geo lookup", async () => {
+  it("uses propertyAddress (not propertyName) for apartment geo lookup", async () => {
     const { searchProperties } = await import("@/services/geo-lookup");
-    await ingestBookingFromEmail({ ...baseParsed, accommodationType: "apartment" }, "user-1", null);
+    const address = "135 Hallenstein Street, Queenstown 9300, New Zealand";
+    await ingestBookingFromEmail(
+      { ...baseParsed, accommodationType: "apartment", propertyAddress: address },
+      "user-1",
+      null
+    );
+    expect(searchProperties).toHaveBeenCalledWith(address, false);
+  });
+
+  it("falls back to propertyName for apartment geo lookup when propertyAddress is null", async () => {
+    const { searchProperties } = await import("@/services/geo-lookup");
+    await ingestBookingFromEmail(
+      { ...baseParsed, accommodationType: "apartment", propertyAddress: null },
+      "user-1",
+      null
+    );
     expect(searchProperties).toHaveBeenCalledWith(baseParsed.propertyName, false);
   });
 

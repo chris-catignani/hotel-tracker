@@ -1,5 +1,9 @@
 import "@testing-library/jest-dom";
 import { vi } from "vitest";
+import { config } from "dotenv";
+
+// Load .env.local so integration tests can access secrets (e.g. ANTHROPIC_API_KEY)
+config({ path: ".env.local" });
 
 import React from "react";
 

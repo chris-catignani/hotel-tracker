@@ -46,6 +46,7 @@ next-env.d.ts
 
 # Test Results
 test-results.json
+src/services/email-ingestion/integration-test-results.json
 
 /src/generated/prisma
 
