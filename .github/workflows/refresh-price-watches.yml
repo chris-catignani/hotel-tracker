@@ -31,6 +31,11 @@ jobs:
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
 
+      - name: Connect to home VPN
+        uses: kota65535/github-openvpn-connect-action@v3
+        with:
+          config_file: ${{ secrets.OVPN_CONFIG }}
+
       - name: Run price watch refresh (with XVFB)
         run: xvfb-run npx tsx src/workers/refresh-price-watches.ts
         env:
