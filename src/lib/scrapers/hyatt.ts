@@ -160,6 +160,14 @@ export class HyattFetcher implements PriceFetcher {
         // we're always registered before the response can arrive.
         const page = context.pages()[0] ?? (await context.waitForEvent("page", { timeout: 5000 }));
         console.log(`[HyattFetcher] Waiting for rates response...`);
+
+        // Log all responses for the roomrates URL to diagnose bot-detection in CI
+        page.on("response", (r) => {
+          if (r.url().includes("/roomrates/")) {
+            console.log(`[HyattFetcher] Response: ${r.status()} ${r.url()}`);
+          }
+        });
+
         const responsePromise = page.waitForResponse(
           (response) =>
             response.url().includes(`/roomrates/${spiritCode}`) && response.status() === 200,
@@ -172,6 +180,17 @@ export class HyattFetcher implements PriceFetcher {
         );
         return (await response.json()) as HyattRatesResponse;
       } catch (err) {
+        // Screenshot on failure to diagnose what the browser is seeing (bot detection page, etc.)
+        try {
+          const pages = context.pages();
+          if (pages.length > 0) {
+            const screenshotPath = `hyatt-failure-${spiritCode}${rateFilter ? `-${rateFilter}` : ""}.png`;
+            await pages[0].screenshot({ path: screenshotPath, fullPage: true });
+            console.log(`[HyattFetcher] Screenshot saved: ${screenshotPath}`);
+          }
+        } catch {
+          // Ignore screenshot errors
+        }
         throw new Error(
           `Hyatt fetch failed for ${spiritCode}${rateFilter ? ` [${rateFilter}]` : ""}: ${err instanceof Error ? err.message : String(err)}`
         );
