@@ -32,9 +32,12 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Connect to home VPN
-        uses: kota65535/github-openvpn-connect-action@v3
-        with:
-          config_file: ${{ secrets.OVPN_CONFIG }}
+        run: |
+          echo "${{ secrets.OVPN_CONFIG }}" > /tmp/vpn.ovpn
+          sudo apt-get install -y openvpn
+          sudo openvpn --config /tmp/vpn.ovpn --daemon --log /tmp/vpn.log
+          sleep 10
+          cat /tmp/vpn.log
 
       - name: Run price watch refresh (with XVFB)
         run: xvfb-run npx tsx src/workers/refresh-price-watches.ts
