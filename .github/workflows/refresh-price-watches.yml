@@ -36,9 +36,24 @@ jobs:
           echo "${{ secrets.OVPN_CONFIG }}" > /tmp/vpn.ovpn
           sudo apt-get install -y openvpn
           sudo openvpn --config /tmp/vpn.ovpn --log /tmp/vpn.log &
-          rm /tmp/vpn.ovpn
-          sleep 15
-          cat /tmp/vpn.log
+          VPN_PID=$!
+          # Wait up to 30s for the tunnel to come up
+          for i in $(seq 1 30); do
+            sleep 1
+            if sudo grep -q "Initialization Sequence Completed" /tmp/vpn.log 2>/dev/null; then
+              echo "VPN connected after ${i}s"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "VPN failed to connect after 30s"
+              sudo cat /tmp/vpn.log 2>/dev/null || echo "(no log file)"
+              kill $VPN_PID 2>/dev/null || true
+              rm -f /tmp/vpn.ovpn
+              exit 1
+            fi
+          done
+          rm -f /tmp/vpn.ovpn
+          sudo cat /tmp/vpn.log
 
       - name: Run price watch refresh (with XVFB)
         run: xvfb-run npx tsx src/workers/refresh-price-watches.ts
