@@ -1,8 +1,12 @@
 // @vitest-environment node
-import { describe, it, expect, vi } from "vitest";
-import { readFileSync } from "fs";
+import { describe, it, expect, vi, afterAll } from "vitest";
+import { readFileSync, writeFileSync } from "fs";
 import { resolve } from "path";
-import { parseConfirmationEmail } from "@/services/email-ingestion/email-parser";
+import {
+  parseConfirmationEmail,
+  type ParseEmailDebug,
+} from "@/services/email-ingestion/email-parser";
+import type { ChainGuide } from "@/services/email-ingestion/types";
 import { hyattGuide } from "@/services/email-ingestion/chain-guides/hyatt";
 import { marriottGuide } from "@/services/email-ingestion/chain-guides/marriott";
 import { ihgGuide } from "@/services/email-ingestion/chain-guides/ihg";
@@ -17,12 +21,29 @@ vi.setConfig({ testTimeout: 30_000 });
 
 const fixture = (name: string) => readFileSync(resolve(__dirname, "./fixtures", name), "utf-8");
 
+const rawResponses: Record<string, ParseEmailDebug> = {};
+const RESULTS_PATH = resolve(__dirname, "./integration-test-results.json");
+
+async function parseAndCapture(fixtureName: string, guide: ChainGuide | null) {
+  const debug: ParseEmailDebug = {};
+  const result = await parseConfirmationEmail(fixture(fixtureName), guide, debug);
+  rawResponses[fixtureName] = debug;
+  return result;
+}
+
 const skipIf = describe.skipIf(!process.env.RUN_INTEGRATION_TESTS);
+
+afterAll(() => {
+  if (process.env.RUN_INTEGRATION_TESTS) {
+    writeFileSync(RESULTS_PATH, JSON.stringify(rawResponses, null, 2));
+    console.log(`\nIntegration results written to: ${RESULTS_PATH}`);
+  }
+});
 
 skipIf("Email parsing integration", () => {
   describe("Hyatt", () => {
     it("expands date-range nightly rates into per-night entries", async () => {
-      const result = await parseConfirmationEmail(fixture("hyatt-confirmation-cash"), hyattGuide);
+      const result = await parseAndCapture("hyatt-confirmation-cash", hyattGuide);
       expect(result).not.toBeNull();
       expect(result?.bookingType).toBe("cash");
       expect(result?.propertyName).toBe("Hyatt Regency Salt Lake City");
@@ -43,7 +64,7 @@ skipIf("Email parsing integration", () => {
     });
 
     it("parses points booking with null costs", async () => {
-      const result = await parseConfirmationEmail(fixture("hyatt-confirmation-points"), hyattGuide);
+      const result = await parseAndCapture("hyatt-confirmation-points", hyattGuide);
       expect(result).not.toBeNull();
       expect(result?.bookingType).toBe("points");
       expect(result?.propertyName).toBe("Hyatt Place Salt Lake City/Cottonwood");
@@ -60,10 +81,7 @@ skipIf("Email parsing integration", () => {
 
   describe("Marriott", () => {
     it("parses cash booking with SGD costs", async () => {
-      const result = await parseConfirmationEmail(
-        fixture("marriott-confirmation-cash"),
-        marriottGuide
-      );
+      const result = await parseAndCapture("marriott-confirmation-cash", marriottGuide);
       expect(result).not.toBeNull();
       expect(result?.bookingType).toBe("cash");
       expect(result?.propertyName).toBe(
@@ -86,10 +104,7 @@ skipIf("Email parsing integration", () => {
     });
 
     it("parses points booking with null costs", async () => {
-      const result = await parseConfirmationEmail(
-        fixture("marriott-confirmation-points"),
-        marriottGuide
-      );
+      const result = await parseAndCapture("marriott-confirmation-points", marriottGuide);
       expect(result).not.toBeNull();
       expect(result?.bookingType).toBe("points");
       expect(result?.propertyName).toBe("Moxy Munich Ostbahnhof");
@@ -105,10 +120,7 @@ skipIf("Email parsing integration", () => {
     });
 
     it("parses cert-only booking with null costs", async () => {
-      const result = await parseConfirmationEmail(
-        fixture("marriott-confirmation-cert"),
-        marriottGuide
-      );
+      const result = await parseAndCapture("marriott-confirmation-cert", marriottGuide);
       expect(result).not.toBeNull();
       expect(result?.bookingType).toBe("cert");
       expect(result?.propertyName).toBe("Duxton Reserve Singapore, Autograph Collection");
@@ -125,10 +137,7 @@ skipIf("Email parsing integration", () => {
     });
 
     it("parses cert+points top-off booking with null costs", async () => {
-      const result = await parseConfirmationEmail(
-        fixture("marriott-confirmation-cert-and-points"),
-        marriottGuide
-      );
+      const result = await parseAndCapture("marriott-confirmation-cert-and-points", marriottGuide);
       expect(result).not.toBeNull();
       expect(result?.bookingType).toBe("cert");
       expect(result?.propertyName).toBe("Duxton Reserve Singapore, Autograph Collection");
@@ -147,7 +156,7 @@ skipIf("Email parsing integration", () => {
 
   describe("IHG", () => {
     it("parses cash booking with MYR costs", async () => {
-      const result = await parseConfirmationEmail(fixture("ihg-confirmation-cash"), ihgGuide);
+      const result = await parseAndCapture("ihg-confirmation-cash", ihgGuide);
       expect(result).not.toBeNull();
       expect(result?.bookingType).toBe("cash");
       expect(result?.propertyName).toBe("Holiday Inn Express Kuala Lumpur City Centre");
@@ -168,7 +177,7 @@ skipIf("Email parsing integration", () => {
     });
 
     it("parses points booking with null costs", async () => {
-      const result = await parseConfirmationEmail(fixture("ihg-confirmation-points"), ihgGuide);
+      const result = await parseAndCapture("ihg-confirmation-points", ihgGuide);
       expect(result).not.toBeNull();
       expect(result?.bookingType).toBe("points");
       expect(result?.propertyName).toBe("Crowne Plaza Changi Airport");
@@ -185,7 +194,7 @@ skipIf("Email parsing integration", () => {
 
   describe("Accor", () => {
     it("parses cash booking with THB rates and free-night benefit", async () => {
-      const result = await parseConfirmationEmail(fixture("accor-confirmation-cash"), accorGuide);
+      const result = await parseAndCapture("accor-confirmation-cash", accorGuide);
       expect(result).not.toBeNull();
       expect(result?.bookingType).toBe("cash");
       expect(result?.propertyName).toBe("Novotel Bangkok Sukhumvit 20");
@@ -212,7 +221,7 @@ skipIf("Email parsing integration", () => {
 
   describe("GHA", () => {
     it("parses cash booking with GHA Discovery chain and MYR costs", async () => {
-      const result = await parseConfirmationEmail(fixture("gha-confirmation-cash"), ghaGuide);
+      const result = await parseAndCapture("gha-confirmation-cash", ghaGuide);
       expect(result).not.toBeNull();
       expect(result?.bookingType).toBe("cash");
       expect(result?.propertyName).toMatch(/^PARKROYAL COLLECTION Kuala Lumpur/);
@@ -231,9 +240,13 @@ skipIf("Email parsing integration", () => {
 
   describe("Airbnb", () => {
     it("parses apartment booking with USD costs and Airbnb OTA", async () => {
-      const result = await parseConfirmationEmail(fixture("airbnb-confirmation-cash"), airbnbGuide);
+      const result = await parseAndCapture("airbnb-confirmation-cash", airbnbGuide);
       expect(result).not.toBeNull();
       expect(result?.bookingType).toBe("cash");
+      expect(result?.propertyName).toBe("The 912 Suite @ 118 Residence");
+      expect(result?.propertyAddress).toBe(
+        "118-9-12B, Jalan Tanjung Tokong, 10470, Tanjung Tokong, Penang, Malaysia"
+      );
       expect(result?.checkIn).toBe("2026-02-02");
       expect(result?.checkOut).toBe("2026-03-02");
       expect(result?.numNights).toBe(28);
@@ -258,12 +271,13 @@ skipIf("Email parsing integration", () => {
     });
 
     it("parses apartment booking with special offer and monthly stay savings discounts", async () => {
-      const result = await parseConfirmationEmail(
-        fixture("airbnb-confirmation-cash-2"),
-        airbnbGuide
-      );
+      const result = await parseAndCapture("airbnb-confirmation-cash-2", airbnbGuide);
       expect(result).not.toBeNull();
       expect(result?.bookingType).toBe("cash");
+      expect(result?.propertyName).toContain("V'Vexa KLCC Arcade Studio @ Binjai 8");
+      expect(result?.propertyAddress).toBe(
+        "Binjai 8 Premium Soho, 2, Lorong Binjai, Kuala Lumpur, 50450, Malaysia"
+      );
       expect(result?.checkIn).toBe("2026-05-14");
       expect(result?.checkOut).toBe("2026-06-11");
       expect(result?.numNights).toBe(28);
@@ -296,13 +310,11 @@ skipIf("Email parsing integration", () => {
 
   describe("Booking.com", () => {
     it("parses apartment booking in NZD with Booking.com OTA", async () => {
-      const result = await parseConfirmationEmail(
-        fixture("bookingcom-confirmation-cash"),
-        bookingcomGuide
-      );
+      const result = await parseAndCapture("bookingcom-confirmation-cash", bookingcomGuide);
       expect(result).not.toBeNull();
       expect(result?.bookingType).toBe("cash");
-      expect(result?.propertyName).toBe(
+      expect(result?.propertyName).toBe("The Top Floor Hallenstein Apartment");
+      expect(result?.propertyAddress).toBe(
         "135 Hallenstein Street 26A, Queenstown, 9300, New Zealand"
       );
       expect(result?.checkIn).toBe("2026-09-01");
@@ -320,7 +332,7 @@ skipIf("Email parsing integration", () => {
 
   describe("Amex", () => {
     it("parses FHR booking with USD costs and AMEX FHR OTA", async () => {
-      const result = await parseConfirmationEmail(fixture("amex-fhr-confirmation-cash"), amexGuide);
+      const result = await parseAndCapture("amex-fhr-confirmation-cash", amexGuide);
       expect(result).not.toBeNull();
       expect(result?.bookingType).toBe("cash");
       expect(result?.propertyName).toBe("Mandarin Oriental, Kuala Lumpur");
@@ -330,13 +342,17 @@ skipIf("Email parsing integration", () => {
       expect(result?.confirmationNumber).toBe("1234567890123");
       expect(result?.otaAgencyName).toBe("AMEX FHR");
       expect(result?.currency).toBe("USD");
-      expect(result?.pretaxCost).toBe(286.83);
+      // 1-night stay: Claude may populate pretaxCost, nightlyRates, or both
+      const cost = result?.pretaxCost ?? result?.nightlyRates?.[0].amount;
+      expect(cost).toBe(286.83);
+      if (result?.pretaxCost !== null) expect(result?.pretaxCost).toBe(286.83);
+      if (result?.nightlyRates) expect(result?.nightlyRates[0].amount).toBe(286.83);
       expect(result?.taxLines?.reduce((s, l) => s + l.amount, 0)).toBeCloseTo(25.19, 1);
       expect(result?.totalCost).toBe(312.02);
     });
 
     it("parses THC booking with USD costs and AMEX THC OTA", async () => {
-      const result = await parseConfirmationEmail(fixture("amex-thc-confirmation-cash"), amexGuide);
+      const result = await parseAndCapture("amex-thc-confirmation-cash", amexGuide);
       expect(result).not.toBeNull();
       expect(result?.bookingType).toBe("cash");
       expect(result?.propertyName).toMatch(/Mondrian Hong Kong/i);
@@ -354,10 +370,7 @@ skipIf("Email parsing integration", () => {
 
   describe("Chase", () => {
     it("parses The Edit booking with USD total and Chase The Edit OTA", async () => {
-      const result = await parseConfirmationEmail(
-        fixture("chase-the-edit-confirmation-cash"),
-        chaseGuide
-      );
+      const result = await parseAndCapture("chase-the-edit-confirmation-cash", chaseGuide);
       expect(result).not.toBeNull();
       expect(result?.bookingType).toBe("cash");
       expect(result?.propertyName).toBe("Mondrian Seoul Itaewon");

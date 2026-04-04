@@ -6,6 +6,7 @@ export const bookingcomGuide: ChainGuide = {
   promptNotes:
     'Booking.com handles both hotels and apartments. Set accommodationType to "apartment" for apartments, serviced apartments, villas, or houses; "hotel" for hotels and traditional accommodations. ' +
     "For apartments set hotelChain and subBrand to null. " +
+    "For apartments, always extract the full street address into propertyAddress (e.g. '123 Main St, Auckland 1010, New Zealand'); set to null only if no address is present in the email. " +
     'bookingType is always "cash". ' +
     'Use "Booking number" as the confirmationNumber.',
 };

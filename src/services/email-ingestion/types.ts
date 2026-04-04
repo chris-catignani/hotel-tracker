@@ -11,6 +11,7 @@ export interface ChainGuide {
 
 export interface ParsedBookingData {
   propertyName: string;
+  propertyAddress: string | null; // full street address, used for geocoding apartments
   checkIn: string; // YYYY-MM-DD
   checkOut: string; // YYYY-MM-DD
   numNights: number;

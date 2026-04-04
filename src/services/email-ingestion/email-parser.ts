@@ -14,7 +14,8 @@ function buildPrompt(emailText: string, guide: ChainGuide | null): string {
 
 ${chainSection}Return ONLY valid JSON with these fields (no explanation, no markdown):
 {
-  "propertyName": string,        // required — for apartments/rentals use the full address if available (e.g. "135 Hallenstein Street 26A, Queenstown, 9300, New Zealand"); otherwise the property name
+  "propertyName": string,        // required — the listing or property name as shown in the email (e.g. "The Top Floor Hallenstein Apartment", "Grand Hyatt New York")
+  "propertyAddress": string | null,  // full street address for geocoding (e.g. "135 Hallenstein Street, Queenstown 9300, New Zealand"); required for apartments, null for hotels
   "checkIn": string,             // required — YYYY-MM-DD
   "checkOut": string,            // required — YYYY-MM-DD
   "numNights": number,           // required
@@ -39,6 +40,7 @@ Rules:
 - Never compute sums yourself — return the raw line items and leave the derived fields null
 - If the price breakdown includes any discount line items (special offers, savings, promotions), return pretaxCost: null — do not attempt to compute it; the system will derive it automatically. Still populate nightlyRates with the per-night amounts if they are shown. Always return taxLines if tax/fee lines are explicitly shown, even when discounts are present
 - taxLines must contain only positive fee/tax line items with known numeric amounts (e.g. "Taxes", "Service fee", "City tax"). Omit any line where the amount is unknown, not shown, or null — if no amounts are available, return taxLines: null. For points bookings (bookingType = "points"), taxLines must be null. Discount and savings lines belong in discounts[], never in taxLines
+- Free-night benefits (e.g. "Stay Plus", "Reward Night", "Free Night Award") must be represented as a 0.00 entry in nightlyRates — do NOT add them to discounts
 - Chase The Edit and American Express Travel (AMEX FHR/THC) always charge guests in USD — set currency to "USD" for these regardless of hotel location
 - For hotelChain, always use the parent group, not the sub-brand. Less obvious parent chains:
   IHG: Kimpton, Six Senses, Regent, voco, Vignette Collection, InterContinental, Crowne Plaza, Hotel Indigo, HUALUXE, Iberostar, avid, Staybridge Suites, Candlewood Suites
@@ -149,16 +151,23 @@ function preprocessEmail(text: string): string {
   );
 }
 
+export interface ParseEmailDebug {
+  rawResponse?: string;
+  error?: string;
+}
+
 /**
  * Parse a raw email string into structured booking data using Claude.
  * Returns null if parsing fails or required fields are missing.
  *
  * @param rawEmail - Plain text email content (pre-decoded by Resend)
  * @param guide - Chain-specific parsing guide, or null for a generic parse attempt
+ * @param debug - Optional container populated with Claude's raw response or error for diagnostics
  */
 export async function parseConfirmationEmail(
   rawEmail: string,
-  guide: ChainGuide | null
+  guide: ChainGuide | null,
+  debug?: ParseEmailDebug
 ): Promise<ParsedBookingData | null> {
   const emailText = preprocessEmail(rawEmail);
   if (emailText.length > 12000) {
@@ -177,8 +186,10 @@ export async function parseConfirmationEmail(
       .filter((b) => b.type === "text")
       .map((b) => (b as { type: "text"; text: string }).text)
       .join("");
+    if (debug) debug.rawResponse = responseText;
   } catch (e) {
     logger.warn("email-parser: Claude API call failed", { error: e });
+    if (debug) debug.error = String(e);
     return null;
   }
 
