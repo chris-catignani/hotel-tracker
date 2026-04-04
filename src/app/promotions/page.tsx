@@ -30,7 +30,16 @@ import {
 import { useApiQuery } from "@/hooks/use-api-query";
 import { apiFetch } from "@/lib/api-fetch";
 import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
+
+type StatusFilter = "all" | "ongoing" | "expired" | "upcoming";
 
 export default function PromotionsPage() {
   const {
@@ -45,9 +54,7 @@ export default function PromotionsPage() {
   const promotions = useMemo(() => promotionsData ?? [], [promotionsData]);
 
   const [activeTab, setActiveTab] = useState("all");
-  const [statusFilter, setStatusFilter] = useState<"all" | "ongoing" | "expired" | "upcoming">(
-    "ongoing"
-  );
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ongoing");
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this promotion?")) return;
@@ -79,7 +86,35 @@ export default function PromotionsPage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 space-y-6">
-      <div className="flex flex-wrap items-center justify-between shrink-0 gap-2">
+      {/* Mobile layout — hidden on sm+ */}
+      <div className="sm:hidden flex items-center justify-between shrink-0 gap-2">
+        <h1 className="text-2xl font-semibold tracking-tight">Promotions</h1>
+        <div className="flex items-center gap-2">
+          <Select
+            value={statusFilter}
+            onValueChange={(val) => setStatusFilter(val as StatusFilter)}
+          >
+            <SelectTrigger data-testid="status-filter-select">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="upcoming">Upcoming</SelectItem>
+              <SelectItem value="ongoing">Ongoing</SelectItem>
+              <SelectItem value="expired">Expired</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button asChild>
+            <Link href="/promotions/new">
+              <Plus className="size-4" />
+              Add Promotion
+            </Link>
+          </Button>
+        </div>
+      </div>
+
+      {/* Desktop layout — hidden below sm */}
+      <div className="hidden sm:flex flex-wrap items-center justify-between shrink-0 gap-2">
         <h1 className="text-2xl font-semibold tracking-tight">Promotions</h1>
         <div className="flex items-center gap-2">
           <div
