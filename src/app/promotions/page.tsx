@@ -102,7 +102,11 @@ export default function PromotionsPage() {
             value={statusFilter}
             onValueChange={(val) => setStatusFilter(val as StatusFilter)}
           >
-            <SelectTrigger className="flex-1" data-testid="status-filter-select">
+            <SelectTrigger
+              className="flex-1"
+              data-testid="status-filter-select"
+              aria-label="Filter by status"
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -113,7 +117,11 @@ export default function PromotionsPage() {
             </SelectContent>
           </Select>
           <Select value={activeTab} onValueChange={setActiveTab}>
-            <SelectTrigger className="flex-1" data-testid="type-filter-select">
+            <SelectTrigger
+              className="flex-1"
+              data-testid="type-filter-select"
+              aria-label="Filter by promotion type"
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

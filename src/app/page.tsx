@@ -488,13 +488,22 @@ export default function DashboardPage() {
             <h1 className="text-3xl font-bold">Dashboard</h1>
             <p className="text-muted-foreground">Overview of your bookings and savings</p>
           </div>
-          <Button variant="outline" size="icon" onClick={() => setTravelMapOpen(true)}>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setTravelMapOpen(true)}
+            aria-label="Open travel map"
+          >
             <Map className="h-4 w-4" />
           </Button>
         </div>
         <div className="flex gap-2">
           <Select value={String(yearFilter)} onValueChange={handleYearFilterChange}>
-            <SelectTrigger className="flex-1" data-testid="year-filter-select-mobile">
+            <SelectTrigger
+              className="flex-1"
+              data-testid="year-filter-select-mobile"
+              aria-label="Filter by year"
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -510,7 +519,11 @@ export default function DashboardPage() {
               value={accommodationFilter}
               onValueChange={(val) => handleFilterChange(val as AccommodationFilter)}
             >
-              <SelectTrigger className="flex-1" data-testid="dashboard-accommodation-select">
+              <SelectTrigger
+                className="flex-1"
+                data-testid="dashboard-accommodation-select"
+                aria-label="Filter by accommodation type"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -531,7 +544,11 @@ export default function DashboardPage() {
         </div>
         <div className="flex shrink-0 gap-2 items-center">
           <Select value={String(yearFilter)} onValueChange={handleYearFilterChange}>
-            <SelectTrigger className="w-40" data-testid="year-filter-select">
+            <SelectTrigger
+              className="w-40"
+              data-testid="year-filter-select"
+              aria-label="Filter by year"
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
