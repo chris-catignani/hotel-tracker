@@ -87,23 +87,9 @@ export default function PromotionsPage() {
   return (
     <div className="flex flex-col flex-1 min-h-0 space-y-6">
       {/* Mobile layout — hidden on sm+ */}
-      <div className="sm:hidden flex items-center justify-between shrink-0 gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Promotions</h1>
-        <div className="flex items-center gap-2">
-          <Select
-            value={statusFilter}
-            onValueChange={(val) => setStatusFilter(val as StatusFilter)}
-          >
-            <SelectTrigger data-testid="status-filter-select">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="upcoming">Upcoming</SelectItem>
-              <SelectItem value="ongoing">Ongoing</SelectItem>
-              <SelectItem value="expired">Expired</SelectItem>
-            </SelectContent>
-          </Select>
+      <div className="sm:hidden space-y-2 shrink-0">
+        <div className="flex items-center justify-between gap-2">
+          <h1 className="text-2xl font-semibold tracking-tight">Promotions</h1>
           <Button asChild>
             <Link href="/promotions/new">
               <Plus className="size-4" />
@@ -111,6 +97,17 @@ export default function PromotionsPage() {
             </Link>
           </Button>
         </div>
+        <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val as StatusFilter)}>
+          <SelectTrigger className="w-full" data-testid="status-filter-select">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="upcoming">Upcoming</SelectItem>
+            <SelectItem value="ongoing">Ongoing</SelectItem>
+            <SelectItem value="expired">Expired</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Desktop layout — hidden below sm */}
@@ -152,7 +149,20 @@ export default function PromotionsPage() {
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 min-h-0">
-        <TabsList className="shrink-0">
+        {/* Mobile type filter */}
+        <Select value={activeTab} onValueChange={setActiveTab}>
+          <SelectTrigger className="w-full sm:hidden shrink-0" data-testid="type-filter-select">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="credit_card">Credit Card</SelectItem>
+            <SelectItem value="portal">Portal</SelectItem>
+            <SelectItem value="loyalty">Loyalty</SelectItem>
+          </SelectContent>
+        </Select>
+        {/* Desktop type filter */}
+        <TabsList className="hidden sm:flex shrink-0">
           <TabsTrigger value="all">All</TabsTrigger>
           <TabsTrigger value="credit_card">Credit Card</TabsTrigger>
           <TabsTrigger value="portal">Portal</TabsTrigger>
