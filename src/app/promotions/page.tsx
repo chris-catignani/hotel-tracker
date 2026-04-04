@@ -30,7 +30,16 @@ import {
 import { useApiQuery } from "@/hooks/use-api-query";
 import { apiFetch } from "@/lib/api-fetch";
 import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
+
+type StatusFilter = "all" | "ongoing" | "expired" | "upcoming";
 
 export default function PromotionsPage() {
   const {
@@ -45,9 +54,7 @@ export default function PromotionsPage() {
   const promotions = useMemo(() => promotionsData ?? [], [promotionsData]);
 
   const [activeTab, setActiveTab] = useState("all");
-  const [statusFilter, setStatusFilter] = useState<"all" | "ongoing" | "expired" | "upcoming">(
-    "ongoing"
-  );
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ongoing");
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this promotion?")) return;
@@ -79,7 +86,56 @@ export default function PromotionsPage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 space-y-6">
-      <div className="flex flex-wrap items-center justify-between shrink-0 gap-2">
+      {/* Mobile layout — hidden on sm+ */}
+      <div className="sm:hidden space-y-2 shrink-0">
+        <div className="flex items-center justify-between gap-2">
+          <h1 className="text-2xl font-semibold tracking-tight">Promotions</h1>
+          <Button asChild>
+            <Link href="/promotions/new">
+              <Plus className="size-4" />
+              Add Promotion
+            </Link>
+          </Button>
+        </div>
+        <div className="flex gap-2">
+          <Select
+            value={statusFilter}
+            onValueChange={(val) => setStatusFilter(val as StatusFilter)}
+          >
+            <SelectTrigger
+              className="flex-1"
+              data-testid="status-filter-select"
+              aria-label="Filter by status"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All statuses</SelectItem>
+              <SelectItem value="upcoming">Upcoming</SelectItem>
+              <SelectItem value="ongoing">Ongoing</SelectItem>
+              <SelectItem value="expired">Expired</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={activeTab} onValueChange={setActiveTab}>
+            <SelectTrigger
+              className="flex-1"
+              data-testid="type-filter-select"
+              aria-label="Filter by promotion type"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All types</SelectItem>
+              <SelectItem value="credit_card">Credit Card</SelectItem>
+              <SelectItem value="portal">Portal</SelectItem>
+              <SelectItem value="loyalty">Loyalty</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Desktop layout — hidden below sm */}
+      <div className="hidden sm:flex flex-wrap items-center justify-between shrink-0 gap-2">
         <h1 className="text-2xl font-semibold tracking-tight">Promotions</h1>
         <div className="flex items-center gap-2">
           <div
@@ -117,7 +173,7 @@ export default function PromotionsPage() {
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 min-h-0">
-        <TabsList className="shrink-0">
+        <TabsList className="hidden sm:flex shrink-0">
           <TabsTrigger value="all">All</TabsTrigger>
           <TabsTrigger value="credit_card">Credit Card</TabsTrigger>
           <TabsTrigger value="portal">Portal</TabsTrigger>

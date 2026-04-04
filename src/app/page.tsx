@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageSpinner } from "@/components/ui/page-spinner";
-import { CalendarDays, Wallet, ChevronUp, ChevronDown } from "lucide-react";
+import { CalendarDays, Map, Wallet, ChevronUp, ChevronDown } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -270,6 +270,14 @@ export default function DashboardPage() {
     localStorage.setItem(FILTER_STORAGE_KEY, filter);
   };
 
+  const handleYearFilterChange = (val: string) => {
+    if (val === "all" || val === "upcoming") {
+      setYearFilter(val as YearFilter);
+    } else {
+      setYearFilter(parseInt(val, 10));
+    }
+  };
+
   // Year filter applied first on raw bookings (before accommodation filter)
   const yearFilteredBookings = useMemo(
     () => filterByYear(safeBookings),
@@ -473,23 +481,74 @@ export default function DashboardPage() {
           </Link>
         </div>
       )}
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      {/* Mobile layout — hidden on sm+ */}
+      <div className="sm:hidden space-y-2">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <h1 className="text-3xl font-bold">Dashboard</h1>
+            <p className="text-muted-foreground">Overview of your bookings and savings</p>
+          </div>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setTravelMapOpen(true)}
+            aria-label="Open travel map"
+          >
+            <Map className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="flex gap-2">
+          <Select value={String(yearFilter)} onValueChange={handleYearFilterChange}>
+            <SelectTrigger
+              className="flex-1"
+              data-testid="year-filter-select-mobile"
+              aria-label="Filter by year"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {yearOptions.map((opt) => (
+                <SelectItem key={String(opt.value)} value={String(opt.value)}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {showFilter && (
+            <Select
+              value={accommodationFilter}
+              onValueChange={(val) => handleFilterChange(val as AccommodationFilter)}
+            >
+              <SelectTrigger
+                className="flex-1"
+                data-testid="dashboard-accommodation-select"
+                aria-label="Filter by accommodation type"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All stays</SelectItem>
+                <SelectItem value="hotel">Hotels</SelectItem>
+                <SelectItem value="apartment">Apartments</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+      </div>
+
+      {/* Desktop layout — hidden below sm */}
+      <div className="hidden sm:flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">Dashboard</h1>
           <p className="text-muted-foreground">Overview of your bookings and savings</p>
         </div>
-        <div className="flex flex-col sm:flex-row shrink-0 gap-2 items-end sm:items-center">
-          <Select
-            value={String(yearFilter)}
-            onValueChange={(val) => {
-              if (val === "all" || val === "upcoming") {
-                setYearFilter(val as YearFilter);
-              } else {
-                setYearFilter(parseInt(val, 10));
-              }
-            }}
-          >
-            <SelectTrigger className="w-40" data-testid="year-filter-select">
+        <div className="flex shrink-0 gap-2 items-center">
+          <Select value={String(yearFilter)} onValueChange={handleYearFilterChange}>
+            <SelectTrigger
+              className="w-40"
+              data-testid="year-filter-select"
+              aria-label="Filter by year"
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
