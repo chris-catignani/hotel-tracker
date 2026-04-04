@@ -1,9 +1,13 @@
 /**
  * Hyatt price fetcher (Playwright Edition).
  *
- * Strategy: Launch a headed browser in "App Mode" directly to the API URL.
- * This bypasses Kasada bot detection by mimicking a direct user invocation
- * of the browser (like opening a PWA or a desktop shortcut).
+ * Strategy: Launch a headed browser in App Mode (--app=<url>) directly to the API URL.
+ * This bypasses Kasada bot detection by mimicking a direct user invocation of the browser
+ * (like opening a PWA or desktop shortcut). In CI, xvfb-run provides a virtual display.
+ *
+ * Important: register page.waitForResponse() BEFORE the browser can receive a response —
+ * i.e., immediately after the context is created, with no artificial delays before the
+ * listener. The remote round-trip is long enough that this is always safe.
  */
 
 import fs from "fs";
@@ -18,10 +22,7 @@ import type {
 } from "@/lib/price-fetcher";
 
 const HYATT_RATES_API_URL = "https://www.hyatt.com/shop/service/rooms/roomrates";
-
-// BROWSER_INITIALIZATION_WAIT_MS: It can take a moment for the browser's
-// app mode window to initialize and make the request.
-const BROWSER_INITIALIZATION_WAIT_MS = 1500;
+const AWARD_RATE_FILTER = "woh"; // World of Hyatt award rates
 
 // Rate plan constants for refundability checks
 const NON_REFUNDABLE_PENALTY_CODE = "CNR"; // Cancellation Not Refundable
@@ -70,14 +71,15 @@ export class HyattFetcher implements PriceFetcher {
     const spiritCode = params.property.chainPropertyId;
     if (!spiritCode) return null;
 
-    // Two parallel fetches:
+    // Two sequential fetches (intentionally not parallel — avoid triggering bot detection
+    // with simultaneous browser sessions from the same IP):
     // 1. No rateFilter — returns all room types with cash rates (no award prices)
     // 2. rateFilter=woh — returns only award-eligible rooms with points prices
-    console.log(`[HyattFetcher] Fetching cash and award rates in parallel for ${spiritCode}...`);
-    const [cashData, awardData] = await Promise.all([
-      this.fetchRawResponse(spiritCode, params),
-      this.fetchRawResponse(spiritCode, params, "woh"),
-    ]);
+    console.log(`[HyattFetcher] Fetching cash rates for ${spiritCode}...`);
+    const cashData = await this.fetchRawResponse(spiritCode, params);
+    await new Promise((r) => setTimeout(r, 3000));
+    console.log(`[HyattFetcher] Fetching award rates for ${spiritCode}...`);
+    const awardData = await this.fetchRawResponse(spiritCode, params, AWARD_RATE_FILTER);
 
     if (!cashData && !awardData) return null;
 
@@ -138,47 +140,47 @@ export class HyattFetcher implements PriceFetcher {
       `[HyattFetcher] Launching browser for ${spiritCode} (App Mode)${rateFilter ? ` [${rateFilter}]` : ""}...`
     );
 
-    const context = await chromium.launchPersistentContext(userDataDir, {
-      // Always non-headless: the Kasada bypass relies on mimicking a real browser
-      // launch. In CI, xvfb-run in the GH Actions workflow provides a virtual display.
-      headless: false,
-      args: [
-        "--disable-blink-features=AutomationControlled",
-        "--no-sandbox",
-        "--use-gl=desktop",
-        `--app=${targetApiUrl}`,
-      ],
-      viewport: { width: 1280, height: 800 },
-    });
-
     try {
-      await new Promise((r) => setTimeout(r, BROWSER_INITIALIZATION_WAIT_MS));
-      const pages = context.pages();
-      const page = pages.length > 0 ? pages[0] : await context.newPage();
+      const context = await chromium.launchPersistentContext(userDataDir, {
+        // Always non-headless: the Kasada bypass relies on mimicking a real browser
+        // launch. In CI, xvfb-run in the GH Actions workflow provides a virtual display.
+        headless: false,
+        args: [
+          "--disable-blink-features=AutomationControlled",
+          "--no-sandbox",
+          "--use-gl=desktop",
+          `--app=${targetApiUrl}`,
+        ],
+        viewport: { width: 1280, height: 800 },
+      });
 
-      console.log(`[HyattFetcher] Waiting for rates response...`);
-
-      const responsePromise = page.waitForResponse(
-        (response) =>
-          response.url().includes(`/roomrates/${spiritCode}`) && response.status() === 200,
-        { timeout: 60000 }
-      );
-
-      const response = await responsePromise;
-      console.log(
-        `[HyattFetcher] Success for ${spiritCode}${rateFilter ? ` [${rateFilter}]` : ""}`
-      );
-      return (await response.json()) as HyattRatesResponse;
-    } catch (err) {
-      throw new Error(
-        `Hyatt fetch failed for ${spiritCode}${rateFilter ? ` [${rateFilter}]` : ""}: ${err instanceof Error ? err.message : String(err)}`
-      );
-    } finally {
-      await context.close();
       try {
-        if (fs.existsSync(userDataDir)) {
-          fs.rmSync(userDataDir, { recursive: true, force: true });
-        }
+        // --app= creates a page on launch; if it's not ready yet, wait for it.
+        // Register the response listener immediately — the network round-trip ensures
+        // we're always registered before the response can arrive.
+        const page = context.pages()[0] ?? (await context.waitForEvent("page", { timeout: 5000 }));
+        console.log(`[HyattFetcher] Waiting for rates response...`);
+        const responsePromise = page.waitForResponse(
+          (response) =>
+            response.url().includes(`/roomrates/${spiritCode}`) && response.status() === 200,
+          { timeout: 60000 }
+        );
+
+        const response = await responsePromise;
+        console.log(
+          `[HyattFetcher] Success for ${spiritCode}${rateFilter ? ` [${rateFilter}]` : ""}`
+        );
+        return (await response.json()) as HyattRatesResponse;
+      } catch (err) {
+        throw new Error(
+          `Hyatt fetch failed for ${spiritCode}${rateFilter ? ` [${rateFilter}]` : ""}: ${err instanceof Error ? err.message : String(err)}`
+        );
+      } finally {
+        await context.close();
+      }
+    } finally {
+      try {
+        fs.rmSync(userDataDir, { recursive: true, force: true });
       } catch {
         // Ignore cleanup errors
       }
