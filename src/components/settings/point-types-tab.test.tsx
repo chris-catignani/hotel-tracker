@@ -154,7 +154,9 @@ describe("PointTypesTab", () => {
 
     await user.click(screen.getByRole("button", { name: "Save" }));
 
-    const postCall = fetchMock.mock.calls.find(([, opts]) => opts?.method === "POST");
+    const postCall = fetchMock.mock.calls.find(
+      ([url, opts]) => String(url) === "/api/point-types" && opts?.method === "POST"
+    );
     expect(postCall).toBeDefined();
     const body = JSON.parse(postCall![1]!.body as string);
     expect(body.usdCentsPerPoint).toBe(0.022);
