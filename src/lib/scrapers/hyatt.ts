@@ -26,9 +26,28 @@ const HYATT_RATES_API_URL = "https://www.hyatt.com/shop/service/rooms/roomrates"
 const HYATT_SHOP_URL = "https://www.hyatt.com/shop/rooms";
 const AWARD_RATE_FILTER = "woh"; // World of Hyatt award rates
 
-// Rate plan constants for refundability checks
-const NON_REFUNDABLE_PENALTY_CODE = "CNR"; // Cancellation Not Refundable
-const ADVANCE_PURCHASE_RATE_CODE = "ADPR"; // Advance Purchase
+// Matches time-window cancellation codes like "24H", "48HRS", "72H:1NT", "3D".
+// Used to allowlist refundable rates — anything not matching is treated as non-refundable.
+const PENALTY_CODE_PATTERN = /^(\d+)(H(?:RS?)?|D)/i;
+
+/**
+ * Parses a Hyatt penalty code into a refundability status.
+ *
+ * Allowlist approach: only codes with a cancellation window of ≤72 hours (or ≤3 days)
+ * are REFUNDABLE. Absent codes are also treated as REFUNDABLE (no penalty = free cancellation).
+ * Everything else — unrecognised strings, advance-purchase codes like "CNR", "NON", "13M" —
+ * is NON_REFUNDABLE.
+ */
+export function parseRefundability(
+  penaltyCode: string | undefined
+): "REFUNDABLE" | "NON_REFUNDABLE" {
+  if (!penaltyCode) return "REFUNDABLE";
+  const match = penaltyCode.match(PENALTY_CODE_PATTERN);
+  if (!match) return "NON_REFUNDABLE";
+  const value = Number(match[1]);
+  const hours = match[2][0].toLowerCase() === "h" ? value : value * 24;
+  return hours <= 72 ? "REFUNDABLE" : "NON_REFUNDABLE";
+}
 
 export class HyattFetchError extends Error {
   constructor(
@@ -212,9 +231,6 @@ export function parseCashRates(data: HyattRatesResponse): RoomRate[] {
     if (room.ratePlans && room.ratePlans.length > 0) {
       for (const plan of room.ratePlans) {
         if (plan.rate != null && plan.rate > 0) {
-          const isNonRefundable =
-            plan.penaltyCode === NON_REFUNDABLE_PENALTY_CODE ||
-            plan.id?.includes(ADVANCE_PURCHASE_RATE_CODE);
           result.push({
             roomId: roomKey,
             roomName,
@@ -223,7 +239,7 @@ export function parseCashRates(data: HyattRatesResponse): RoomRate[] {
             cashPrice: plan.rate,
             cashCurrency: plan.currencyCode ?? currency,
             awardPrice: null,
-            isRefundable: isNonRefundable ? "NON_REFUNDABLE" : "REFUNDABLE",
+            isRefundable: parseRefundability(plan.penaltyCode),
             isCorporate: false,
           });
         }
