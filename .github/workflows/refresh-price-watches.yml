@@ -73,6 +73,7 @@ jobs:
         run: xvfb-run npx tsx src/workers/refresh-price-watches.ts
         env:
           SCRAPERS: accor,gha,hilton,ihg,marriott
+          RUNNER_TYPE: remote
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           RESEND_FROM_EMAIL: ${{ vars.RESEND_FROM_EMAIL }}
@@ -99,6 +100,7 @@ jobs:
         run: npx tsx src/workers/refresh-price-watches.ts
         env:
           SCRAPERS: hyatt
+          RUNNER_TYPE: local
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           RESEND_FROM_EMAIL: ${{ vars.RESEND_FROM_EMAIL }}

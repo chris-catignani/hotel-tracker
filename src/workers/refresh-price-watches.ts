@@ -7,6 +7,7 @@ import * as Sentry from "@sentry/node";
 import { log } from "next-axiom";
 
 Sentry.init({ dsn: process.env.SENTRY_DSN, tracesSampleRate: 0 });
+Sentry.setTag("runner_type", process.env.RUNNER_TYPE ?? "unknown");
 
 import { PrismaClient } from "@prisma/client";
 import { createAccorFetcher } from "@/lib/scrapers/accor";
@@ -55,6 +56,7 @@ async function main() {
       { totalSnapshots: 0, totalAlerts: 0, totalFetchErrors: 0 }
     );
     log.info("price_watch:run_completed", {
+      runnerType: process.env.RUNNER_TYPE ?? "unknown",
       watchesChecked: result.watched,
       snapshotsCreated: totalSnapshots,
       alertsSent: totalAlerts,

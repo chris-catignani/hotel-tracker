@@ -141,17 +141,26 @@ async function main() {
       name: "Price Watch Runs",
       query: q(
         "where message == 'price_watch:run_completed'" +
-          " | project _time, ['fields.watchesChecked'], ['fields.snapshotsCreated']," +
+          " | project _time, ['fields.runnerType'], ['fields.watchesChecked'], ['fields.snapshotsCreated']," +
           " ['fields.alertsSent'], ['fields.fetchErrors'], ['fields.durationMs']"
       ),
     },
     {
       id: "price-watch-snapshots",
       type: "TimeSeries",
-      name: "Snapshots Created Over Time",
+      name: "Snapshots Created Over Time (by Runner)",
       query: q(
         "where message == 'price_watch:watch_completed'" +
-          " | summarize sum(toint(['fields.snapshots'])) by bin(_time, 1d)"
+          " | summarize sum(toint(['fields.snapshots'])) by bin(_time, 1d), tostring(['fields.runnerType'])"
+      ),
+    },
+    {
+      id: "price-watch-fetch-errors",
+      type: "TimeSeries",
+      name: "Fetch Errors Over Time (by Runner)",
+      query: q(
+        "where message == 'price_watch:run_completed' and toint(['fields.fetchErrors']) > 0" +
+          " | summarize sum(toint(['fields.fetchErrors'])) by bin(_time, 1d), tostring(['fields.runnerType'])"
       ),
     },
     {
@@ -212,9 +221,10 @@ async function main() {
     { i: "cron-errors", x: 6, y: 24, w: 6, h: 5 },
     // Price Watch
     { i: "price-watch-run-log", x: 0, y: 29, w: 12, h: 5 },
-    { i: "price-watch-snapshots", x: 0, y: 34, w: 8, h: 5 },
-    { i: "price-watch-alerts-stat", x: 8, y: 34, w: 2, h: 5 },
-    { i: "price-watch-errors-stat", x: 10, y: 34, w: 2, h: 5 },
+    { i: "price-watch-snapshots", x: 0, y: 34, w: 6, h: 5 },
+    { i: "price-watch-fetch-errors", x: 6, y: 34, w: 4, h: 5 },
+    { i: "price-watch-alerts-stat", x: 10, y: 34, w: 1, h: 5 },
+    { i: "price-watch-errors-stat", x: 11, y: 34, w: 1, h: 5 },
     // Bookings
     { i: "bookings-over-time", x: 0, y: 39, w: 8, h: 5 },
     { i: "bookings-by-method", x: 8, y: 39, w: 4, h: 5 },
