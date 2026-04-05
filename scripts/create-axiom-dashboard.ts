@@ -2,11 +2,15 @@
 /**
  * Creates the Hotel Tracker observability dashboard in Axiom.
  *
- * Run (sourcing your local env):
- *   source .env.local && npx tsx scripts/create-axiom-dashboard.ts
+ * Run:
+ *   npm run axiom:dashboard
  *
  * Idempotent: deletes the existing "Hotel Tracker" dashboard (if any) before creating.
  */
+
+import dotenv from "dotenv";
+dotenv.config();
+dotenv.config({ path: ".env.local", override: true });
 
 export {};
 
