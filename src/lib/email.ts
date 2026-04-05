@@ -73,12 +73,15 @@ export async function sendPriceDropAlert(params: PriceDropAlertParams): Promise<
     lines.push(`<p><a href="${appUrl}/bookings/${safeBookingId}">View Booking</a></p>`);
   }
 
-  await resend.emails.send({
+  const { error } = await resend.emails.send({
     from,
     to: params.to,
     subject: `Price drop detected: ${safePropertyName}`,
     html: lines.join("\n"),
   });
+  if (error) {
+    console.error("[email] Failed to send price drop alert", { to: params.to, error });
+  }
 }
 
 export async function sendIngestionConfirmation({
