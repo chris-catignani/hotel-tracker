@@ -143,7 +143,7 @@ export class HyattFetcher implements PriceFetcher {
         args: [
           "--no-sandbox",
           "--disable-dev-shm-usage",
-          "--use-gl=desktop",
+          "--use-gl=swiftshader",
           "--disable-blink-features=AutomationControlled",
         ],
         viewport: { width: 1280, height: 800 },
@@ -151,6 +151,11 @@ export class HyattFetcher implements PriceFetcher {
 
       try {
         const page = await context.newPage();
+
+        // Log all network responses for diagnosis
+        page.on("response", (response) => {
+          console.log(`[Network] ${response.status()} ${response.url()}`);
+        });
 
         // Navigate to hyatt.com homepage first to establish a normal-looking session
         // before hitting the booking page with the roomrates API call.
