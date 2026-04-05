@@ -80,7 +80,7 @@ export async function sendPriceDropAlert(params: PriceDropAlertParams): Promise<
     html: lines.join("\n"),
   });
   if (error) {
-    console.error("[email] Failed to send price drop alert", { to: params.to, error });
+    console.error("[email] Failed to send price drop alert", { error });
   }
 }
 
