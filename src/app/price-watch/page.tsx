@@ -266,7 +266,7 @@ export default function PriceWatchPage() {
     setEditingValue("");
   };
 
-  if (loading) {
+  if (loading && !watchesData) {
     return <PageSpinner />;
   }
 
