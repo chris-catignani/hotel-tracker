@@ -76,5 +76,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: hyatt-failure-screenshots
-          path: hyatt-failure-*.png
+          path: hyatt-*.png
           if-no-files-found: ignore

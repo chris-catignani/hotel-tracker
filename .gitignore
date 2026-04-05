@@ -4,8 +4,8 @@
 *.deb
 *.deb.*
 
-# Hyatt scraper failure screenshots (uploaded as CI artifacts, not committed)
-hyatt-failure-*.png
+# Hyatt scraper screenshots (uploaded as CI artifacts, not committed)
+hyatt-*.png
 
 # Superpowers planning artifacts (local scratch space only, not committed)
 docs/superpowers/

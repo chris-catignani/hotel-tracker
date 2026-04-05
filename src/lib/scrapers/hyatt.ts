@@ -151,6 +151,18 @@ export class HyattFetcher implements PriceFetcher {
 
       try {
         const page = await context.newPage();
+
+        // Navigate to hyatt.com homepage first to establish a normal-looking session
+        // before hitting the booking page with the roomrates API call.
+        console.log(`[HyattFetcher] Navigating to hyatt.com homepage...`);
+        await page.goto("https://www.hyatt.com", { waitUntil: "domcontentloaded" });
+        await page.screenshot({ path: `hyatt-debug-${spiritCode}-1-homepage.png`, fullPage: true });
+        await page.waitForTimeout(3000);
+        await page.screenshot({
+          path: `hyatt-debug-${spiritCode}-2-homepage-after-wait.png`,
+          fullPage: true,
+        });
+
         console.log(`[HyattFetcher] Navigating to booking page for ${spiritCode}...`);
 
         // Register listener BEFORE navigation — the page auto-triggers the roomrates API
@@ -162,6 +174,10 @@ export class HyattFetcher implements PriceFetcher {
         );
 
         await page.goto(shopUrl, { waitUntil: "domcontentloaded" });
+        await page.screenshot({
+          path: `hyatt-debug-${spiritCode}-3-booking-page.png`,
+          fullPage: true,
+        });
 
         const cashResponse = await cashResponsePromise;
         const cashData = (await cashResponse.json()) as HyattRatesResponse;
