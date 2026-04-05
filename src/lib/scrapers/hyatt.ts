@@ -28,7 +28,7 @@ const AWARD_RATE_FILTER = "woh"; // World of Hyatt award rates
 
 // Matches time-window cancellation codes like "24H", "48HRS", "72H:1NT", "3D".
 // Used to allowlist refundable rates — anything not matching is treated as non-refundable.
-const PENALTY_CODE_PATTERN = /^(\d+)(H(?:RS?)?|D)/i;
+const PENALTY_CODE_PATTERN = /^(\d+)(H(?:RS?)?|D)\b/i;
 
 /**
  * Parses a Hyatt penalty code into a refundability status.
