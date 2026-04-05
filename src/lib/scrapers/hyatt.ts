@@ -156,8 +156,17 @@ export class HyattFetcher implements PriceFetcher {
       const page = await context.newPage();
 
       // Log all network responses for diagnosis
-      page.on("response", (response) => {
-        console.log(`[Network] ${response.status()} ${response.url()}`);
+      page.on("response", async (response) => {
+        const url = response.url();
+        console.log(`[Network] ${response.status()} ${url}`);
+        if (url.includes("reporting.cdndex.io/error")) {
+          try {
+            const body = await response.text();
+            console.log(`[Kasada Error Body] ${body}`);
+          } catch {
+            // ignore
+          }
+        }
       });
 
       // Navigate to hyatt.com homepage first to establish a normal-looking session
