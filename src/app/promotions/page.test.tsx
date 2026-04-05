@@ -43,7 +43,7 @@ function mockFetchSuccess(promos = ALL_PROMOS) {
 async function renderAndWait(promos = ALL_PROMOS) {
   mockFetchSuccess(promos);
   render(<PromotionsPage />);
-  await waitFor(() => screen.getByTestId("status-filter"));
+  await waitFor(() => screen.getByTestId("promotions-list-desktop"));
   return within(screen.getByTestId("promotions-list-desktop"));
 }
 
