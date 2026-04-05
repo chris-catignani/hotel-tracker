@@ -34,6 +34,9 @@ jobs:
       - name: Install Google Chrome
         run: npx playwright install --with-deps chrome
 
+      - name: Check IP before VPN
+        run: echo "Pre-VPN IP $(curl -s https://api.ipify.org)"
+
       - name: Connect to home VPN
         run: |
           echo "${{ secrets.OVPN_CONFIG }}" > /tmp/vpn.ovpn
@@ -57,6 +60,9 @@ jobs:
           done
           rm -f /tmp/vpn.ovpn
           sudo cat /tmp/vpn.log
+
+      - name: Check IP after VPN
+        run: echo "Post-VPN IP $(curl -s https://api.ipify.org)"
 
       - name: Run price watch refresh (with XVFB)
         run: xvfb-run npx tsx src/workers/refresh-price-watches.ts
