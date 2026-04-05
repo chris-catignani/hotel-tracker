@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { HyattFetcher, parseHyattRates, parseCashRates, buildAwardMap } from "./hyatt";
+import {
+  HyattFetcher,
+  parseHyattRates,
+  parseCashRates,
+  buildAwardMap,
+  parseRefundability,
+} from "./hyatt";
 import { lowestRefundableCash, lowestAward } from "@/lib/price-fetcher";
 import { HOTEL_ID } from "@/lib/constants";
 
@@ -74,22 +80,28 @@ describe("parseCashRates", () => {
     expect(rates[0].roomName).toBe("KNGX");
   });
 
-  it("marks non-refundable plans correctly", () => {
+  it("excludes non-refundable plans from lowest cash (Melbourne integration)", () => {
+    // Covers both Melbourne properties: StandardX uses "NON", Hyatt Centric uses "13M"
     const data = {
       roomRates: {
-        "room-1": {
+        KING: {
+          currencyCode: "AUD",
           ratePlans: [
-            { id: "AP", rate: 200, penaltyCode: "CNR" },
-            { id: "STD", rate: 250, penaltyCode: "48H" },
+            { id: "MYHIAP", rate: 281.74, penaltyCode: "13M" }, // non-refundable advance purchase
+            { id: "MYHI", rate: 337.42, penaltyCode: "48H" }, // refundable
+            { id: "ADPR", rate: 200.5, penaltyCode: "NON" }, // non-refundable advance purchase
+            { id: "RACK", rate: 364.14, penaltyCode: "48H" }, // refundable
           ],
         },
       },
     };
     const rates = parseCashRates(data);
-    expect(rates.find((r) => r.ratePlanCode === "AP")?.isRefundable).toBe("NON_REFUNDABLE");
-    expect(rates.find((r) => r.ratePlanCode === "STD")?.isRefundable).toBe("REFUNDABLE");
+    expect(rates.find((r) => r.ratePlanCode === "MYHIAP")?.isRefundable).toBe("NON_REFUNDABLE");
+    expect(rates.find((r) => r.ratePlanCode === "ADPR")?.isRefundable).toBe("NON_REFUNDABLE");
+    expect(rates.find((r) => r.ratePlanCode === "MYHI")?.isRefundable).toBe("REFUNDABLE");
+    expect(rates.find((r) => r.ratePlanCode === "RACK")?.isRefundable).toBe("REFUNDABLE");
     const { price } = lowestRefundableCash(rates);
-    expect(price).toBe(250);
+    expect(price).toBe(337.42);
   });
 
   it("falls back to summary price when no ratePlans", () => {
@@ -103,6 +115,38 @@ describe("parseCashRates", () => {
 
   it("returns empty array when roomRates is empty", () => {
     expect(parseCashRates({ roomRates: {} })).toHaveLength(0);
+  });
+});
+
+describe("parseRefundability", () => {
+  // Refundable: time-window codes ≤72h seen in real API responses
+  it.each([
+    ["24H", "REFUNDABLE"], // Hyatt Centric Melbourne — Member Rate
+    ["48H", "REFUNDABLE"], // Hyatt Centric Melbourne — Standard Rate
+    ["72H", "REFUNDABLE"], // Hyatt Centric Melbourne — Pet Friendly
+    ["24H:1NT", "REFUNDABLE"], // StandardX Melbourne — Standard Rate (RACK)
+    ["48HRS:1NT", "REFUNDABLE"], // StandardX Melbourne — Member Rate (MYHI)
+    ["1D", "REFUNDABLE"], // hypothetical day-based code (24h)
+    ["2D", "REFUNDABLE"], // hypothetical day-based code (48h)
+    ["3D", "REFUNDABLE"], // hypothetical day-based code (72h)
+  ])("%s → REFUNDABLE", (code, expected) => {
+    expect(parseRefundability(code)).toBe(expected);
+  });
+
+  // Non-refundable: known codes + beyond-72h cases
+  it.each([
+    ["CNR", "NON_REFUNDABLE"], // Cancellation Not Refundable
+    ["NON", "NON_REFUNDABLE"], // Non-Refundable (StandardX Melbourne — PKG3, MYHIAP, ADPR)
+    ["13M", "NON_REFUNDABLE"], // 13-month advance purchase (Hyatt Centric Melbourne — MYHIAP)
+    ["96H", "NON_REFUNDABLE"], // 96h > 72h threshold
+    ["4D", "NON_REFUNDABLE"], // 4 days = 96h > 72h threshold
+    ["FLEX", "NON_REFUNDABLE"], // unrecognised code → conservative default
+  ])("%s → NON_REFUNDABLE", (code, expected) => {
+    expect(parseRefundability(code)).toBe(expected);
+  });
+
+  it("undefined → REFUNDABLE (no penalty = no cancellation fee)", () => {
+    expect(parseRefundability(undefined)).toBe("REFUNDABLE");
   });
 });
 
