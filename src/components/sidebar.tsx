@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { NavItemsList } from "@/components/nav-items-list";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
@@ -12,7 +13,9 @@ export function Sidebar() {
       data-testid="sidebar"
     >
       <div className="flex h-14 items-center border-b px-6">
-        <h1 className="text-lg font-semibold">Hotel Tracker</h1>
+        <Link href="/" className="text-lg font-semibold hover:opacity-80 transition-opacity">
+          Hotel Tracker
+        </Link>
       </div>
       <div className="flex-1 p-4 overflow-y-auto">
         <NavItemsList />

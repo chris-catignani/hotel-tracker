@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Loader2, Trash2, Pencil, Check, X } from "lucide-react";
+import { Loader2, Pencil, Check, X } from "lucide-react";
 import { PageSpinner } from "@/components/ui/page-spinner";
 import { ChainPropertyIdHint } from "@/components/price-watch/booking-price-watch";
 import { Input } from "@/components/ui/input";
@@ -385,14 +385,14 @@ export default function PriceWatchPage() {
 
                     <Button
                       size="sm"
-                      variant="ghost"
+                      variant="destructive"
                       onClick={() => handleDelete(watch)}
                       disabled={deletingId === watch.id}
                     >
                       {deletingId === watch.id ? (
                         <Loader2 className="h-3 w-3 animate-spin" />
                       ) : (
-                        <Trash2 className="h-3 w-3" />
+                        "Delete"
                       )}
                     </Button>
                   </CardContent>
@@ -494,7 +494,7 @@ export default function PriceWatchPage() {
                       <TableCell>
                         <Button
                           size="sm"
-                          variant="ghost"
+                          variant="destructive"
                           onClick={() => handleDelete(watch)}
                           disabled={deletingId === watch.id}
                           data-testid={`delete-watch-${watch.id}`}
@@ -502,7 +502,7 @@ export default function PriceWatchPage() {
                           {deletingId === watch.id ? (
                             <Loader2 className="h-3 w-3 animate-spin" />
                           ) : (
-                            <Trash2 className="h-3 w-3" />
+                            "Delete"
                           )}
                         </Button>
                       </TableCell>

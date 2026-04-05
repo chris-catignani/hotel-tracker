@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { logger } from "@/lib/logger";
 import { PromotionForm } from "@/components/promotions/promotion-form";
 import { ErrorBanner } from "@/components/ui/error-banner";
+import { PageSpinner } from "@/components/ui/page-spinner";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { apiFetch } from "@/lib/api-fetch";
 import { toast } from "sonner";
@@ -154,11 +155,7 @@ export default function EditPromotionPage() {
   };
 
   if (loading && !promo) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <p className="text-muted-foreground text-sm">Loading promotion...</p>
-      </div>
-    );
+    return <PageSpinner />;
   }
 
   return (

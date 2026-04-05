@@ -38,7 +38,6 @@ export function useApiQuery<T>(
     setLoading(true);
     const result = await apiFetch<T>(url);
     if (id !== fetchIdRef.current) return; // stale — a newer fetch is in flight
-    setLoading(false);
     if (result.ok) {
       setData(result.data);
       setError(null);
@@ -47,6 +46,7 @@ export function useApiQuery<T>(
       setError(queryError);
       onErrorRef.current?.(queryError);
     }
+    setLoading(false);
   }, [url]);
 
   useEffect(() => {
