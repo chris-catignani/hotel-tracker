@@ -2,83 +2,39 @@ name: Refresh Price Watches
 
 on:
   schedule:
-    - cron: "0 6 * * *" # 6am UTC daily
+    - cron: "0 2,8,14,20 * * *" # every 6 hours; active-hours check gates actual execution
   workflow_dispatch: # allow manual trigger
 
 jobs:
+  check-hours:
+    runs-on: [self-hosted, Windows, X64]
+    outputs:
+      active: ${{ steps.check.outputs.active }}
+    steps:
+      - name: Check active hours
+        id: check
+        shell: pwsh
+        run: |
+          $hour = (Get-Date).Hour
+          $active = ($hour -ge 9 -and $hour -le 22).ToString().ToLower()
+          "active=$active" >> $env:GITHUB_OUTPUT
+          Write-Host "Local hour: $hour — active: $active"
+
   refresh:
-    runs-on: ubuntu-latest
+    needs: check-hours
+    if: needs.check-hours.outputs.active == 'true'
+    runs-on: [self-hosted, Windows, X64]
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
-
       - name: Install dependencies
+        shell: pwsh
         run: npm ci
 
-      - name: Cache Playwright Browsers
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-playwright-
-
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps chromium
-
-      - name: Install Google Chrome
-        run: npx playwright install --with-deps chrome
-
-      - name: Install Brave Browser
-        run: curl -fsS https://dl.brave.com/install.sh | sh
-
-      - name: Check IP before VPN
-        run: echo "Pre-VPN IP $(curl -s https://api.ipify.org)"
-
-      - name: Connect to home VPN
-        run: |
-          echo "${{ secrets.OVPN_CONFIG }}" > /tmp/vpn.ovpn
-          sudo apt-get install -y openvpn
-          sudo openvpn --config /tmp/vpn.ovpn --log /tmp/vpn.log &
-          VPN_PID=$!
-          # Wait up to 30s for the tunnel to come up
-          for i in $(seq 1 30); do
-            sleep 1
-            if sudo grep -q "Initialization Sequence Completed" /tmp/vpn.log 2>/dev/null; then
-              echo "VPN connected after ${i}s"
-              break
-            fi
-            if [ $i -eq 30 ]; then
-              echo "VPN failed to connect after 30s"
-              sudo cat /tmp/vpn.log 2>/dev/null || echo "(no log file)"
-              kill $VPN_PID 2>/dev/null || true
-              rm -f /tmp/vpn.ovpn
-              exit 1
-            fi
-          done
-          rm -f /tmp/vpn.ovpn
-          sudo cat /tmp/vpn.log
-
-      - name: Check IP after VPN
-        run: echo "Post-VPN IP $(curl -s https://api.ipify.org)"
-
-      - name: Restore Hyatt browser profile
-        uses: actions/cache/restore@v4
-        with:
-          path: ~/.cache/hyatt-browser-profile
-          key: hyatt-browser-profile-${{ github.run_id }}
-          restore-keys: |
-            hyatt-browser-profile-
-
-      - name: Run price watch refresh (with XVFB)
-        run: xvfb-run npx tsx src/workers/refresh-price-watches.ts
+      - name: Run price watch refresh
+        shell: pwsh
+        run: npx tsx src/workers/refresh-price-watches.ts
         env:
-          # Screenshots on failure land in the working directory (uploaded as artifact below)
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
@@ -87,17 +43,9 @@ jobs:
           AXIOM_DATASET: ${{ vars.AXIOM_DATASET }}
           NEXT_PUBLIC_AXIOM_DATASET: ${{ vars.NEXT_PUBLIC_AXIOM_DATASET }}
           CI: true
-          HYATT_BROWSER_PROFILE_DIR: /home/runner/.cache/hyatt-browser-profile
-
-      - name: Save Hyatt browser profile
-        if: always()
-        uses: actions/cache/save@v4
-        with:
-          path: ~/.cache/hyatt-browser-profile
-          key: hyatt-browser-profile-${{ github.run_id }}
 
       - name: Upload failure screenshots
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: hyatt-failure-screenshots

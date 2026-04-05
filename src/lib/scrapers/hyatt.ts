@@ -128,8 +128,7 @@ export class HyattFetcher implements PriceFetcher {
 
     const shopUrl = `${HYATT_SHOP_URL}/${spiritCode}?${dateParams.toString()}`;
     const awardApiUrl = `${HYATT_RATES_API_URL}/${spiritCode}?${dateParams.toString()}&rateFilter=${AWARD_RATE_FILTER}`;
-    // Use a persistent profile dir so Kasada sees a "returning" browser with cookies/history.
-    // HYATT_BROWSER_PROFILE_DIR can be set to a cached path in CI.
+    // Persistent profile so Kasada sees a returning browser with accumulated cookies/history.
     const userDataDir =
       process.env.HYATT_BROWSER_PROFILE_DIR ??
       path.join(os.homedir(), ".cache", "hyatt-browser-profile");
@@ -137,48 +136,15 @@ export class HyattFetcher implements PriceFetcher {
     console.log(`[HyattFetcher] Launching browser for ${spiritCode}...`);
 
     const context = await chromium.launchPersistentContext(userDataDir, {
-      // Always non-headless: the Kasada bypass relies on a real browser session with
-      // JS execution. In CI, xvfb-run in the GH Actions workflow provides a virtual display.
+      // Non-headless: Kasada's JS challenge requires a real browser session with GPU rendering.
       headless: false,
-      // Use Brave browser — its built-in fingerprint randomization may produce a more
-      // convincing fingerprint than bare Chrome on a GitHub Actions runner.
-      executablePath: "/usr/bin/brave-browser",
-      args: [
-        "--no-sandbox",
-        "--disable-dev-shm-usage",
-        "--use-gl=desktop",
-        "--disable-blink-features=AutomationControlled",
-      ],
+      channel: "chrome",
+      args: ["--disable-blink-features=AutomationControlled", "--window-position=-10000,-10000"],
       viewport: { width: 1280, height: 800 },
     });
 
     try {
       const page = await context.newPage();
-
-      // Log all network responses for diagnosis
-      page.on("response", async (response) => {
-        const url = response.url();
-        console.log(`[Network] ${response.status()} ${url}`);
-        if (url.includes("reporting.cdndex.io/error")) {
-          try {
-            const body = await response.text();
-            console.log(`[Kasada Error Body] ${body}`);
-          } catch {
-            // ignore
-          }
-        }
-      });
-
-      // Navigate to hyatt.com homepage first to establish a normal-looking session
-      // before hitting the booking page with the roomrates API call.
-      console.log(`[HyattFetcher] Navigating to hyatt.com homepage...`);
-      await page.goto("https://www.hyatt.com", { waitUntil: "domcontentloaded" });
-      await page.screenshot({ path: `hyatt-debug-${spiritCode}-1-homepage.png`, fullPage: true });
-      await page.waitForTimeout(3000);
-      await page.screenshot({
-        path: `hyatt-debug-${spiritCode}-2-homepage-after-wait.png`,
-        fullPage: true,
-      });
 
       console.log(`[HyattFetcher] Navigating to booking page for ${spiritCode}...`);
 
@@ -191,10 +157,6 @@ export class HyattFetcher implements PriceFetcher {
       );
 
       await page.goto(shopUrl, { waitUntil: "domcontentloaded" });
-      await page.screenshot({
-        path: `hyatt-debug-${spiritCode}-3-booking-page.png`,
-        fullPage: true,
-      });
 
       const cashResponse = await cashResponsePromise;
       const cashData = (await cashResponse.json()) as HyattRatesResponse;
