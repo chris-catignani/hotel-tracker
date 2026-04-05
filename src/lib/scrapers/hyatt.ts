@@ -144,7 +144,7 @@ export class HyattFetcher implements PriceFetcher {
     });
 
     try {
-      const page = await context.newPage();
+      const page = context.pages()[0];
 
       console.log(`[HyattFetcher] Navigating to booking page for ${spiritCode}...`);
 
