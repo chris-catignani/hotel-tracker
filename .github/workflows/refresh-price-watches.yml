@@ -67,6 +67,14 @@ jobs:
       - name: Check IP after VPN
         run: echo "Post-VPN IP $(curl -s https://api.ipify.org)"
 
+      - name: Restore Hyatt browser profile
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.cache/hyatt-browser-profile
+          key: hyatt-browser-profile-${{ github.run_id }}
+          restore-keys: |
+            hyatt-browser-profile-
+
       - name: Run price watch refresh (with XVFB)
         run: xvfb-run npx tsx src/workers/refresh-price-watches.ts
         env:
@@ -79,6 +87,14 @@ jobs:
           AXIOM_DATASET: ${{ vars.AXIOM_DATASET }}
           NEXT_PUBLIC_AXIOM_DATASET: ${{ vars.NEXT_PUBLIC_AXIOM_DATASET }}
           CI: true
+          HYATT_BROWSER_PROFILE_DIR: /home/runner/.cache/hyatt-browser-profile
+
+      - name: Save Hyatt browser profile
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.cache/hyatt-browser-profile
+          key: hyatt-browser-profile-${{ github.run_id }}
 
       - name: Upload failure screenshots
         if: always()
