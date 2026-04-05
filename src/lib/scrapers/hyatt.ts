@@ -136,7 +136,16 @@ export class HyattFetcher implements PriceFetcher {
         // Always non-headless: the Kasada bypass relies on a real browser session with
         // JS execution. In CI, xvfb-run in the GH Actions workflow provides a virtual display.
         headless: false,
-        args: ["--disable-blink-features=AutomationControlled", "--no-sandbox", "--use-gl=desktop"],
+        // channel: "chrome" uses the system Chrome binary (pre-installed on GitHub Actions
+        // ubuntu-latest runners; installed locally via apt). Chrome passes Kasada's JS
+        // challenge more reliably than Playwright's bundled Chromium.
+        channel: "chrome",
+        args: [
+          "--no-sandbox",
+          "--disable-dev-shm-usage",
+          "--use-gl=desktop",
+          "--disable-blink-features=AutomationControlled",
+        ],
         viewport: { width: 1280, height: 800 },
       });
 

@@ -1,5 +1,12 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+# Downloaded installer packages
+*.deb
+*.deb.*
+
+# Hyatt scraper failure screenshots (uploaded as CI artifacts, not committed)
+hyatt-failure-*.png
+
 # Superpowers planning artifacts (local scratch space only, not committed)
 docs/superpowers/
 
