@@ -180,7 +180,7 @@ export class HyattFetcher implements PriceFetcher {
         const pages = context.pages();
         if (pages.length > 0) {
           const screenshotPath = `hyatt-failure-${spiritCode}.png`;
-          await pages[0].screenshot({ path: screenshotPath, fullPage: true });
+          await pages[pages.length - 1].screenshot({ path: screenshotPath, fullPage: true });
           console.log(`[HyattFetcher] Screenshot saved: ${screenshotPath}`);
         }
       } catch {

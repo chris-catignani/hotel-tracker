@@ -2,11 +2,11 @@ name: Refresh Price Watches
 
 on:
   schedule:
-    - cron: "0 2,8,14,20 * * *" # every 6 hours; active-hours check gates Hyatt execution
+    - cron: "0 6 * * *" # 6am UTC daily; active-hours check gates local execution
   workflow_dispatch: # allow manual trigger
 
 jobs:
-  # Gates the Hyatt job — only runs when the self-hosted machine is active.
+  # Gates the local job — only runs when the self-hosted machine is active.
   check-hours:
     runs-on: [self-hosted, Windows, X64]
     outputs:
@@ -21,8 +21,8 @@ jobs:
           "active=$active" >> $env:GITHUB_OUTPUT
           Write-Host "Local hour: $hour — active: $active"
 
-  # All non-Hyatt scrapers: runs on GitHub-hosted runner, always on schedule.
-  refresh-other:
+  # Remote scrapers: runs on GitHub-hosted runner, always on schedule.
+  refresh-remote:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -82,8 +82,8 @@ jobs:
           NEXT_PUBLIC_AXIOM_DATASET: ${{ vars.NEXT_PUBLIC_AXIOM_DATASET }}
           CI: true
 
-  # Hyatt only: runs on self-hosted Windows runner, gated by active-hours check.
-  refresh-hyatt:
+  # Local scrapers: runs on self-hosted Windows runner, gated by active-hours check.
+  refresh-local:
     needs: check-hours
     if: needs.check-hours.outputs.active == 'true'
     runs-on: [self-hosted, Windows, X64]
@@ -112,6 +112,6 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: hyatt-failure-screenshots
-          path: hyatt-*.png
+          name: local-failure-screenshots
+          path: "*.png"
           if-no-files-found: ignore
