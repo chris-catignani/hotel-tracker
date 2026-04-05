@@ -7,6 +7,7 @@ import * as Sentry from "@sentry/node";
 import { log } from "next-axiom";
 
 Sentry.init({ dsn: process.env.SENTRY_DSN, tracesSampleRate: 0 });
+Sentry.setTag("runner_type", process.env.RUNNER_TYPE ?? "unknown");
 
 import { PrismaClient } from "@prisma/client";
 import { createAccorFetcher } from "@/lib/scrapers/accor";
@@ -19,18 +20,31 @@ import { runPriceWatchRefresh } from "@/services/price-watch-refresh";
 
 const prisma = new PrismaClient();
 
+const allFetchers = {
+  accor: createAccorFetcher,
+  gha: createGhaFetcher,
+  hilton: createHiltonFetcher,
+  hyatt: createHyattFetcher,
+  ihg: createIhgFetcher,
+  marriott: createMarriottFetcher,
+};
+
+function buildFetchers() {
+  const filter = process.env.SCRAPERS?.split(",").map((s) => s.trim().toLowerCase());
+  const names = filter ?? (Object.keys(allFetchers) as (keyof typeof allFetchers)[]);
+  return names
+    .filter((name): name is keyof typeof allFetchers => name in allFetchers)
+    .map((name) => allFetchers[name]());
+}
+
 async function main() {
-  console.log("[RefreshScript] Starting daily price watch refresh...");
+  const fetchers = buildFetchers();
+  console.log(
+    `[RefreshScript] Starting price watch refresh (scrapers: ${fetchers.map((f) => f.constructor.name).join(", ")})...`
+  );
   const runStart = Date.now();
   try {
-    const result = await runPriceWatchRefresh([
-      createAccorFetcher(),
-      createGhaFetcher(),
-      createHiltonFetcher(),
-      createHyattFetcher(),
-      createIhgFetcher(),
-      createMarriottFetcher(),
-    ]);
+    const result = await runPriceWatchRefresh(fetchers);
     const durationMs = Date.now() - runStart;
     const { totalSnapshots, totalAlerts, totalFetchErrors } = result.results.reduce(
       (totals, r) => {
@@ -42,6 +56,7 @@ async function main() {
       { totalSnapshots: 0, totalAlerts: 0, totalFetchErrors: 0 }
     );
     log.info("price_watch:run_completed", {
+      runnerType: process.env.RUNNER_TYPE ?? "unknown",
       watchesChecked: result.watched,
       snapshotsCreated: totalSnapshots,
       alertsSent: totalAlerts,

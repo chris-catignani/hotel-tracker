@@ -2,11 +2,27 @@ name: Refresh Price Watches
 
 on:
   schedule:
-    - cron: "0 6 * * *" # 6am UTC daily
+    - cron: "0 6 * * *" # 6am UTC daily; active-hours check gates local execution
   workflow_dispatch: # allow manual trigger
 
 jobs:
-  refresh:
+  # Gates the local job — only runs when the self-hosted machine is active.
+  check-hours:
+    runs-on: [self-hosted, Windows, X64]
+    outputs:
+      active: ${{ steps.check.outputs.active }}
+    steps:
+      - name: Check active hours
+        id: check
+        shell: pwsh
+        run: |
+          $hour = (Get-Date).Hour
+          $active = ($hour -ge 9 -and $hour -le 22).ToString().ToLower()
+          "active=$active" >> $env:GITHUB_OUTPUT
+          Write-Host "Local hour: $hour — active: $active"
+
+  # Remote scrapers: runs on GitHub-hosted runner, always on schedule.
+  refresh-remote:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -31,14 +47,73 @@ jobs:
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
 
+      - name: Connect to home VPN
+        run: |
+          echo "${{ secrets.OVPN_CONFIG }}" > /tmp/vpn.ovpn
+          sudo apt-get install -y openvpn
+          sudo openvpn --config /tmp/vpn.ovpn --log /tmp/vpn.log &
+          VPN_PID=$!
+          for i in $(seq 1 30); do
+            sleep 1
+            if sudo grep -q "Initialization Sequence Completed" /tmp/vpn.log 2>/dev/null; then
+              echo "VPN connected after ${i}s"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "VPN failed to connect after 30s"
+              sudo cat /tmp/vpn.log 2>/dev/null || echo "(no log file)"
+              kill $VPN_PID 2>/dev/null || true
+              rm -f /tmp/vpn.ovpn
+              exit 1
+            fi
+          done
+          rm -f /tmp/vpn.ovpn
+
       - name: Run price watch refresh (with XVFB)
         run: xvfb-run npx tsx src/workers/refresh-price-watches.ts
         env:
+          SCRAPERS: accor,gha,hilton,ihg,marriott
+          RUNNER_TYPE: remote
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-          RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
+          RESEND_FROM_EMAIL: ${{ vars.RESEND_FROM_EMAIL }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           AXIOM_TOKEN: ${{ secrets.AXIOM_TOKEN }}
           AXIOM_DATASET: ${{ vars.AXIOM_DATASET }}
           NEXT_PUBLIC_AXIOM_DATASET: ${{ vars.NEXT_PUBLIC_AXIOM_DATASET }}
           CI: true
+
+  # Local scrapers: runs on self-hosted Windows runner, gated by active-hours check.
+  refresh-local:
+    needs: check-hours
+    if: needs.check-hours.outputs.active == 'true'
+    runs-on: [self-hosted, Windows, X64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        shell: pwsh
+        run: npm ci
+
+      - name: Run price watch refresh
+        shell: pwsh
+        run: npx tsx src/workers/refresh-price-watches.ts
+        env:
+          SCRAPERS: hyatt
+          RUNNER_TYPE: local
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_FROM_EMAIL: ${{ vars.RESEND_FROM_EMAIL }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          AXIOM_TOKEN: ${{ secrets.AXIOM_TOKEN }}
+          AXIOM_DATASET: ${{ vars.AXIOM_DATASET }}
+          NEXT_PUBLIC_AXIOM_DATASET: ${{ vars.NEXT_PUBLIC_AXIOM_DATASET }}
+          CI: true
+
+      - name: Upload failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: local-failure-screenshots
+          path: "*.png"
+          if-no-files-found: ignore

@@ -1,16 +1,17 @@
 /**
  * Hyatt price fetcher (Playwright Edition).
  *
- * Strategy: Launch a headed browser in App Mode (--app=<url>) directly to the API URL.
- * This bypasses Kasada bot detection by mimicking a direct user invocation of the browser
- * (like opening a PWA or desktop shortcut). In CI, xvfb-run provides a virtual display.
+ * Strategy: Navigate to the Hyatt booking page (/shop/rooms/{spiritCode}?...) using a
+ * real browser session. The page passes Kasada's JS challenge via normal page execution,
+ * and its own JavaScript automatically calls the roomrates API. We intercept that response
+ * for cash rates, then use fetch() within the same established session to get award rates.
  *
- * Important: register page.waitForResponse() BEFORE the browser can receive a response —
- * i.e., immediately after the context is created, with no artificial delays before the
- * listener. The remote round-trip is long enough that this is always safe.
+ * Important: register page.waitForResponse() BEFORE page.goto() to avoid a race condition
+ * where the response arrives before the listener is registered.
  */
 
-import fs from "fs";
+import os from "os";
+import path from "path";
 import { chromium } from "playwright";
 import { HOTEL_ID } from "@/lib/constants";
 import type {
@@ -22,6 +23,7 @@ import type {
 } from "@/lib/price-fetcher";
 
 const HYATT_RATES_API_URL = "https://www.hyatt.com/shop/service/rooms/roomrates";
+const HYATT_SHOP_URL = "https://www.hyatt.com/shop/rooms";
 const AWARD_RATE_FILTER = "woh"; // World of Hyatt award rates
 
 // Rate plan constants for refundability checks
@@ -71,15 +73,8 @@ export class HyattFetcher implements PriceFetcher {
     const spiritCode = params.property.chainPropertyId;
     if (!spiritCode) return null;
 
-    // Two sequential fetches (intentionally not parallel — avoid triggering bot detection
-    // with simultaneous browser sessions from the same IP):
-    // 1. No rateFilter — returns all room types with cash rates (no award prices)
-    // 2. rateFilter=woh — returns only award-eligible rooms with points prices
-    console.log(`[HyattFetcher] Fetching cash rates for ${spiritCode}...`);
-    const cashData = await this.fetchRawResponse(spiritCode, params);
-    await new Promise((r) => setTimeout(r, 3000));
-    console.log(`[HyattFetcher] Fetching award rates for ${spiritCode}...`);
-    const awardData = await this.fetchRawResponse(spiritCode, params, AWARD_RATE_FILTER);
+    console.log(`[HyattFetcher] Fetching rates for ${spiritCode}...`);
+    const { cashData, awardData } = await this.fetchAllRates(spiritCode, params);
 
     if (!cashData && !awardData) return null;
 
@@ -118,12 +113,11 @@ export class HyattFetcher implements PriceFetcher {
     return rates.length > 0 ? { rates, source: "hyatt_browser" } : null;
   }
 
-  private async fetchRawResponse(
+  private async fetchAllRates(
     spiritCode: string,
-    params: FetchParams,
-    rateFilter?: string
-  ): Promise<HyattRatesResponse | null> {
-    const query = new URLSearchParams({
+    params: FetchParams
+  ): Promise<{ cashData: HyattRatesResponse | null; awardData: HyattRatesResponse | null }> {
+    const dateParams = new URLSearchParams({
       rooms: "1",
       adults: String(params.adults ?? 1),
       kids: "0",
@@ -131,59 +125,72 @@ export class HyattFetcher implements PriceFetcher {
       checkoutDate: params.checkOut,
       rate: "Standard",
     });
-    if (rateFilter) query.set("rateFilter", rateFilter);
 
-    const targetApiUrl = `${HYATT_RATES_API_URL}/${spiritCode}?${query.toString()}`;
-    const userDataDir = `/tmp/hyatt-browser-${Math.random().toString(36).substring(7)}`;
+    const shopUrl = `${HYATT_SHOP_URL}/${spiritCode}?${dateParams.toString()}`;
+    const awardApiUrl = `${HYATT_RATES_API_URL}/${spiritCode}?${dateParams.toString()}&rateFilter=${AWARD_RATE_FILTER}`;
+    // Persistent profile so Kasada sees a returning browser with accumulated cookies/history.
+    const userDataDir =
+      process.env.HYATT_BROWSER_PROFILE_DIR ??
+      path.join(os.homedir(), ".cache", "hyatt-browser-profile");
 
-    console.log(
-      `[HyattFetcher] Launching browser for ${spiritCode} (App Mode)${rateFilter ? ` [${rateFilter}]` : ""}...`
-    );
+    console.log(`[HyattFetcher] Launching browser for ${spiritCode}...`);
+
+    const context = await chromium.launchPersistentContext(userDataDir, {
+      // Non-headless: Kasada's JS challenge requires a real browser session with GPU rendering.
+      headless: false,
+      channel: "chrome",
+      args: ["--disable-blink-features=AutomationControlled", "--window-position=-10000,-10000"],
+      viewport: { width: 1280, height: 800 },
+    });
 
     try {
-      const context = await chromium.launchPersistentContext(userDataDir, {
-        // Always non-headless: the Kasada bypass relies on mimicking a real browser
-        // launch. In CI, xvfb-run in the GH Actions workflow provides a virtual display.
-        headless: false,
-        args: [
-          "--disable-blink-features=AutomationControlled",
-          "--no-sandbox",
-          "--use-gl=desktop",
-          `--app=${targetApiUrl}`,
-        ],
-        viewport: { width: 1280, height: 800 },
-      });
+      const page = context.pages()[0];
 
-      try {
-        // --app= creates a page on launch; if it's not ready yet, wait for it.
-        // Register the response listener immediately — the network round-trip ensures
-        // we're always registered before the response can arrive.
-        const page = context.pages()[0] ?? (await context.waitForEvent("page", { timeout: 5000 }));
-        console.log(`[HyattFetcher] Waiting for rates response...`);
-        const responsePromise = page.waitForResponse(
-          (response) =>
-            response.url().includes(`/roomrates/${spiritCode}`) && response.status() === 200,
-          { timeout: 60000 }
-        );
+      console.log(`[HyattFetcher] Navigating to booking page for ${spiritCode}...`);
 
-        const response = await responsePromise;
-        console.log(
-          `[HyattFetcher] Success for ${spiritCode}${rateFilter ? ` [${rateFilter}]` : ""}`
-        );
-        return (await response.json()) as HyattRatesResponse;
-      } catch (err) {
-        throw new Error(
-          `Hyatt fetch failed for ${spiritCode}${rateFilter ? ` [${rateFilter}]` : ""}: ${err instanceof Error ? err.message : String(err)}`
-        );
-      } finally {
-        await context.close();
-      }
-    } finally {
+      // Register listener BEFORE navigation — the page auto-triggers the roomrates API
+      // call, and we must be listening before that response can arrive.
+      const cashResponsePromise = page.waitForResponse(
+        (response) =>
+          response.url().includes(`/roomrates/${spiritCode}`) && response.status() === 200,
+        { timeout: 60000 }
+      );
+
+      await page.goto(shopUrl, { waitUntil: "domcontentloaded" });
+
+      const cashResponse = await cashResponsePromise;
+      const cashData = (await cashResponse.json()) as HyattRatesResponse;
+      console.log(`[HyattFetcher] Got cash rates for ${spiritCode}`);
+
+      // Fetch award rates via the established session — Kasada has already validated
+      // this browser session, so a fetch() call from within the page context works.
+      console.log(`[HyattFetcher] Fetching award rates for ${spiritCode}...`);
+      const awardJson = await page.evaluate(async (url: string) => {
+        const response = await fetch(url, { credentials: "include" });
+        if (!response.ok) return null;
+        return response.json() as Promise<unknown>;
+      }, awardApiUrl);
+      const awardData = awardJson as HyattRatesResponse | null;
+      console.log(`[HyattFetcher] Got award rates for ${spiritCode}`);
+
+      return { cashData, awardData };
+    } catch (err) {
+      // Screenshot on failure to diagnose what the browser is seeing (bot detection page, etc.)
       try {
-        fs.rmSync(userDataDir, { recursive: true, force: true });
+        const pages = context.pages();
+        if (pages.length > 0) {
+          const screenshotPath = `hyatt-failure-${spiritCode}.png`;
+          await pages[pages.length - 1].screenshot({ path: screenshotPath, fullPage: true });
+          console.log(`[HyattFetcher] Screenshot saved: ${screenshotPath}`);
+        }
       } catch {
-        // Ignore cleanup errors
+        // Ignore screenshot errors
       }
+      throw new Error(
+        `Hyatt fetch failed for ${spiritCode}: ${err instanceof Error ? err.message : String(err)}`
+      );
+    } finally {
+      await context.close();
     }
   }
 }
