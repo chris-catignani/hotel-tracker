@@ -34,6 +34,9 @@ jobs:
       - name: Install Google Chrome
         run: npx playwright install --with-deps chrome
 
+      - name: Install Brave Browser
+        run: curl -fsS https://dl.brave.com/install.sh | sh
+
       - name: Check IP before VPN
         run: echo "Pre-VPN IP $(curl -s https://api.ipify.org)"
 
