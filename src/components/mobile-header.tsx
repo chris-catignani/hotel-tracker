@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Menu, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -53,9 +54,13 @@ export function MobileHeader() {
         </SheetContent>
       </Sheet>
       <div className="flex-1 flex justify-center lg:justify-start">
-        <h1 className="text-lg font-semibold" data-testid="mobile-header-title">
+        <Link
+          href="/"
+          className="text-lg font-semibold hover:opacity-80 transition-opacity"
+          data-testid="mobile-header-title"
+        >
           Hotel Tracker
-        </h1>
+        </Link>
       </div>
       <div className="w-9" /> {/* Spacer for centering title on mobile */}
     </header>
