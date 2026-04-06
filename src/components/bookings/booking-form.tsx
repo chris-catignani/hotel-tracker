@@ -79,6 +79,21 @@ function calcBenefitApproxValue(
 }
 
 // ---------------------------------------------------------------------------
+// Section Divider
+// ---------------------------------------------------------------------------
+
+function SectionDivider({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-2 pt-2">
+      <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground whitespace-nowrap">
+        {label}
+      </span>
+      <div className="flex-1 h-px bg-border" />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Booking Form Component
 // ---------------------------------------------------------------------------
 
@@ -412,6 +427,9 @@ export function BookingForm({
       </CardHeader>
       <CardContent>
         <form onSubmit={handleFormSubmit} className="space-y-6">
+          {/* ── Stay Details ─────────────────────────────── */}
+          <SectionDivider label="Stay Details" />
+
           {/* Accommodation Type */}
           <div className="space-y-2">
             <Label htmlFor="accommodationType">Accommodation Type</Label>
@@ -449,7 +467,6 @@ export function BookingForm({
               </div>
             )}
 
-            {/* Sub-brand selector — hotel only */}
             {isHotel && (
               <div className="space-y-2">
                 <Label htmlFor="hotelChainSubBrandId">Sub-brand</Label>
@@ -537,6 +554,9 @@ export function BookingForm({
             </div>
           </div>
 
+          {/* ── Payment ───────────────────────────────────── */}
+          <SectionDivider label="Payment" />
+
           {/* Payment Type */}
           <div className="space-y-2">
             <Label htmlFor="paymentType">Payment Type</Label>
@@ -550,7 +570,7 @@ export function BookingForm({
             />
           </div>
 
-          {/* Costs & Currency */}
+          {/* Costs & Currency — cash only */}
           {hasCash && (
             <div className="space-y-1">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -634,7 +654,7 @@ export function BookingForm({
             </div>
           )}
 
-          {/* Points Redeemed */}
+          {/* Points Redeemed — points only */}
           {hasPoints && (
             <div className="space-y-2">
               <Label htmlFor="pointsRedeemed">Points Redeemed *</Label>
@@ -652,7 +672,7 @@ export function BookingForm({
             </div>
           )}
 
-          {/* Certificates */}
+          {/* Certificates — cert only */}
           {hasCert && (
             <div className="space-y-2">
               <Label>Free Night Certificate(s) *</Label>
@@ -699,18 +719,8 @@ export function BookingForm({
             </div>
           )}
 
-          {/* Source & Credit Card */}
+          {/* Credit Card + Payment Timing */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="bookingSource">Booking Source</Label>
-              <AppSelect
-                value={bookingSource || "none"}
-                onValueChange={(v) => dispatch({ type: "SET_BOOKING_SOURCE", bookingSource: v })}
-                options={[{ label: "Not specified", value: "none" }, ...BOOKING_SOURCE_OPTIONS]}
-                placeholder="Where was this booked? (optional)"
-                data-testid="booking-source-select"
-              />
-            </div>
             <div className="space-y-2">
               <Label htmlFor="userCreditCardId">Credit Card</Label>
               <AppSelect
@@ -731,10 +741,6 @@ export function BookingForm({
                 data-testid="credit-card-select"
               />
             </div>
-          </div>
-
-          {/* Payment Timing */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="paymentTiming">Payment Timing</Label>
               <AppSelect
@@ -753,7 +759,12 @@ export function BookingForm({
                 data-testid="payment-timing-select"
               />
             </div>
-            {paymentTiming === "prepaid" && (
+          </div>
+
+          {/* Booking Date — col 2 only, prepaid only */}
+          {paymentTiming === "prepaid" && (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div />
               <div className="space-y-2">
                 <Label htmlFor="bookingDate">Booking Date</Label>
                 <DatePicker
@@ -770,31 +781,47 @@ export function BookingForm({
                   data-testid="booking-date-picker"
                 />
               </div>
-            )}
-          </div>
-
-          {bookingSource === "ota" && (
-            <div className="space-y-2">
-              <Label htmlFor="otaAgencyId">OTA Agency</Label>
-              <AppSelect
-                value={otaAgencyId}
-                onValueChange={(val) =>
-                  dispatch({ type: "SET_FIELD", field: "otaAgencyId", value: val })
-                }
-                options={[
-                  { label: "Not specified", value: "none" },
-                  ...otaAgencies.map((a) => ({
-                    label: a.name,
-                    value: a.id,
-                  })),
-                ]}
-                placeholder="Select agency..."
-                data-testid="ota-agency-select"
-              />
             </div>
           )}
 
-          {/* Portal & Rate */}
+          {/* ── Booking Context ───────────────────────────── */}
+          <SectionDivider label="Booking Context" />
+
+          {/* Booking Source + OTA Agency — adjacent pair */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="bookingSource">Booking Source</Label>
+              <AppSelect
+                value={bookingSource || "none"}
+                onValueChange={(v) => dispatch({ type: "SET_BOOKING_SOURCE", bookingSource: v })}
+                options={[{ label: "Not specified", value: "none" }, ...BOOKING_SOURCE_OPTIONS]}
+                placeholder="Where was this booked? (optional)"
+                data-testid="booking-source-select"
+              />
+            </div>
+            {bookingSource === "ota" && (
+              <div className="space-y-2">
+                <Label htmlFor="otaAgencyId">OTA Agency</Label>
+                <AppSelect
+                  value={otaAgencyId}
+                  onValueChange={(val) =>
+                    dispatch({ type: "SET_FIELD", field: "otaAgencyId", value: val })
+                  }
+                  options={[
+                    { label: "Not specified", value: "none" },
+                    ...otaAgencies.map((a) => ({
+                      label: a.name,
+                      value: a.id,
+                    })),
+                  ]}
+                  placeholder="Select agency..."
+                  data-testid="ota-agency-select"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Shopping Portal + Rate — adjacent pair */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="shoppingPortalId">Shopping Portal</Label>
@@ -863,25 +890,6 @@ export function BookingForm({
               </div>
             )}
           </div>
-
-          {/* Loyalty Points — hotel stays only */}
-          {isHotel && (
-            <div className="space-y-2">
-              <Label htmlFor="loyaltyPointsEarned">Loyalty Points Earned</Label>
-              <Input
-                id="loyaltyPointsEarned"
-                type="number"
-                min="0"
-                value={loyaltyPointsEarned}
-                readOnly
-                className="bg-muted text-muted-foreground"
-                placeholder="0"
-              />
-              <p className="text-xs text-muted-foreground">
-                Auto-calculated from hotel chain rates.
-              </p>
-            </div>
-          )}
 
           {/* Benefits */}
           {(() => {
@@ -1187,30 +1195,30 @@ export function BookingForm({
             );
           })()}
 
-          {/* Notes */}
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea
-              id="notes"
-              value={notes}
-              onChange={(e) =>
-                dispatch({ type: "SET_FIELD", field: "notes", value: e.target.value })
-              }
-              placeholder="Any additional notes..."
-              rows={3}
-            />
-          </div>
-
-          {/* Confirmation Number */}
-          <div className="space-y-2">
-            <Label htmlFor="confirmation-number">Confirmation Number</Label>
-            <Input
-              id="confirmation-number"
-              data-testid="confirmation-number-input"
-              placeholder="Optional"
-              value={confirmationNumber}
-              onChange={(e) => setConfirmationNumber(e.target.value)}
-            />
+          {/* Confirmation Number + Notes */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="confirmation-number">Confirmation Number</Label>
+              <Input
+                id="confirmation-number"
+                data-testid="confirmation-number-input"
+                placeholder="Optional"
+                value={confirmationNumber}
+                onChange={(e) => setConfirmationNumber(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                value={notes}
+                onChange={(e) =>
+                  dispatch({ type: "SET_FIELD", field: "notes", value: e.target.value })
+                }
+                placeholder="Any additional notes..."
+                rows={3}
+              />
+            </div>
           </div>
 
           {/* Actions */}
