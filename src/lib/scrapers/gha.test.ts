@@ -58,7 +58,7 @@ describe("parseGhaRates", () => {
     expect(parseGhaRates({ rooms: [] })).toEqual([]);
   });
 
-  it("sets isRefundable to UNKNOWN for all rates — GHA API provides no cancellation data", () => {
+  it("sets isRefundable to UNKNOWN for all rates — cancellable is resolved via a separate per-rate API call", () => {
     const data = {
       rooms: [
         makeRoom("D1D", "Superior Room", [
@@ -71,6 +71,8 @@ describe("parseGhaRates", () => {
       ],
     };
     const rates = parseGhaRates(data);
+    // parseGhaRates alone cannot determine refundability — enrichRefundability()
+    // must be called separately to populate isRefundable from the rate detail API.
     expect(rates.every((r) => r.isRefundable === "UNKNOWN")).toBe(true);
   });
 
@@ -156,20 +158,31 @@ describe("parseGhaRates", () => {
     expect(rates.map((r) => r.roomId)).toEqual(["D1D", "D1D", "D1D", "C1D", "C1D"]);
   });
 
-  it("lowestRefundableCash includes GHA rates (UNKNOWN treated as not excluded)", () => {
+  it("lowestRefundableCash excludes NON_REFUNDABLE rates and includes REFUNDABLE and UNKNOWN", () => {
     const data = {
       rooms: [
         makeRoom("D1D", "Superior Room", [
-          makeRate("GHAPREF", "GHA DISCOVERY Preferential Rate - Room Only", 1079, "AED"),
+          makeRate("EARLYBIRD", "Early Bird Rate", 800, "AED"),
+          makeRate("FLEXRATE", "Best Flexible Rate", 1079, "AED"),
         ]),
         makeRoom("C1D", "Deluxe Room", [
-          makeRate("DAILY", "Best Available Rate - Room Only", 1299, "AED"),
+          makeRate("FLEXRATE", "Best Flexible Rate", 1299, "AED"),
+          makeRate("UNKNOWN_RATE", "Some Rate", 900, "AED"),
         ]),
       ],
     };
     const rates = parseGhaRates(data);
+    // Simulate enrichment: early bird is non-refundable, flex is refundable
+    rates.find((r) => r.ratePlanCode === "EARLYBIRD")!.isRefundable = "NON_REFUNDABLE";
+    rates.find((r) => r.ratePlanCode === "FLEXRATE" && r.roomId === "D1D")!.isRefundable =
+      "REFUNDABLE";
+    rates.find((r) => r.ratePlanCode === "FLEXRATE" && r.roomId === "C1D")!.isRefundable =
+      "REFUNDABLE";
+    // UNKNOWN_RATE stays UNKNOWN
+
     const { price, currency } = lowestRefundableCash(rates);
-    expect(price).toBe(1079);
+    // Should pick the cheapest non-NON_REFUNDABLE rate (UNKNOWN_RATE at 900, not EARLYBIRD at 800)
+    expect(price).toBe(900);
     expect(currency).toBe("AED");
   });
 
