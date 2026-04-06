@@ -225,6 +225,13 @@ describe("BookingForm", () => {
     await user.type(confirmationInput, "ABC-123");
     expect(confirmationInput.value).toBe("ABC-123");
   });
+
+  it("renders three section labels: Stay Details, Payment, Booking Context", async () => {
+    render(<BookingForm {...defaultProps} />);
+    expect(screen.getByText("Stay Details")).toBeInTheDocument();
+    expect(screen.getByText("Payment")).toBeInTheDocument();
+    expect(screen.getByText("Booking Context")).toBeInTheDocument();
+  });
 });
 
 describe("BookingForm benefit approximate value", () => {
