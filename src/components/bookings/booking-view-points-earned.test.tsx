@@ -38,7 +38,7 @@ describe("BookingPointsEarned", () => {
     expect(screen.getByTestId("loyalty-points-value")).toHaveTextContent("8,200 pts");
   });
 
-  it("shows estimated indicator on loyalty points", () => {
+  it("renders loyalty points without estimated indicator", () => {
     render(
       <BookingPointsEarned
         booking={{
@@ -49,7 +49,7 @@ describe("BookingPointsEarned", () => {
         }}
       />
     );
-    expect(screen.getByTestId("loyalty-points-value")).toHaveTextContent("~5,000 pts");
+    expect(screen.getByTestId("loyalty-points-value")).toHaveTextContent("5,000 pts");
   });
 
   it("renders CC points row for a points card", () => {

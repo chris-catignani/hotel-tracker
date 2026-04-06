@@ -48,7 +48,6 @@ export function BookingPointsEarned({ booking }: { booking: PointsEarnedBooking 
                 {booking.hotelChain?.loyaltyProgram ?? booking.hotelChain?.name ?? "Loyalty"}
               </span>
               <span className="font-medium" data-testid="loyalty-points-value">
-                {booking.loyaltyPointsEstimated ? "~" : ""}
                 {loyaltyPoints.toLocaleString()} pts
               </span>
             </li>
