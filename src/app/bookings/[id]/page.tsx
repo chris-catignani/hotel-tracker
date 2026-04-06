@@ -27,7 +27,7 @@ import { toast } from "sonner";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { SectionDivider } from "@/components/ui/section-divider";
 import { BookingPointsEarned } from "@/components/bookings/booking-view-points-earned";
-import { PAYMENT_TYPES } from "@/lib/constants";
+import { PAYMENT_TYPES, ACCOMMODATION_TYPE_OPTIONS } from "@/lib/constants";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -489,6 +489,13 @@ export default function BookingDetailPage() {
         <CardContent className="space-y-4">
           <p className="text-base font-semibold">Payment Details</p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div>
+              <p className="text-sm text-muted-foreground">Accommodation Type</p>
+              <p className="font-medium" data-testid="accommodation-type">
+                {ACCOMMODATION_TYPE_OPTIONS.find((o) => o.value === booking.accommodationType)
+                  ?.label ?? booking.accommodationType}
+              </p>
+            </div>
             <div>
               <p className="text-sm text-muted-foreground">Payment Type</p>
               <p className="font-medium" data-testid="payment-type">
