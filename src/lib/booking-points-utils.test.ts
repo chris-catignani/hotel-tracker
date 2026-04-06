@@ -175,7 +175,6 @@ describe("calculateCCPointsEarned", () => {
     expect(
       calculateCCPointsEarned({
         totalCost: "200",
-        pretaxCost: "180",
         lockedExchangeRate: "1.1",
         hotelChainId: null,
         otaAgencyId: null,

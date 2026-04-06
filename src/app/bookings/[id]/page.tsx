@@ -672,6 +672,89 @@ export default function BookingDetailPage() {
           </Card>
         )}
 
+        {/* Applied Promotions */}
+        {booking.bookingPromotions.length > 0 && (
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-base font-semibold mb-4">Applied Promotions</p>
+              {/* Mobile View: Cards */}
+              <div className="flex flex-col gap-4 md:hidden" data-testid="applied-promos-mobile">
+                {booking.bookingPromotions.map((bp) => (
+                  <div
+                    key={bp.id}
+                    className="flex flex-col p-4 border rounded-lg space-y-3"
+                    data-testid={`applied-promo-card-${bp.id}`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-bold" data-testid="promo-name">
+                          {bp.promotion.name}
+                        </p>
+                        <Badge variant="secondary" className="mt-1" data-testid="promo-type">
+                          {bp.promotion.type}
+                        </Badge>
+                      </div>
+                      <div className="text-right">
+                        <p
+                          className="text-lg font-bold text-green-600"
+                          data-testid="promo-applied-value"
+                        >
+                          {formatCurrency(Number(bp.appliedValue))}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center pt-2 border-t">
+                      <Badge
+                        variant={bp.autoApplied ? "default" : "outline"}
+                        data-testid="promo-auto-applied"
+                      >
+                        {bp.autoApplied ? "Auto" : "Manual"}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop View: Table */}
+              <div className="hidden md:block" data-testid="applied-promos-desktop">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Promotion Name</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Applied Value</TableHead>
+                      <TableHead>Auto-applied</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {booking.bookingPromotions.map((bp) => (
+                      <TableRow key={bp.id} data-testid={`applied-promo-row-${bp.id}`}>
+                        <TableCell data-testid="promo-name">{bp.promotion.name}</TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" data-testid="promo-type">
+                            {bp.promotion.type}
+                          </Badge>
+                        </TableCell>
+                        <TableCell data-testid="promo-applied-value">
+                          {formatCurrency(Number(bp.appliedValue))}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={bp.autoApplied ? "default" : "outline"}
+                            data-testid="promo-auto-applied"
+                          >
+                            {bp.autoApplied ? "Yes" : "No"}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Partnership Earns */}
         {booking.partnershipEarns && booking.partnershipEarns.length > 0 && (
           <Card data-testid="partnership-earns-card">
@@ -691,89 +774,6 @@ export default function BookingDetailPage() {
           </Card>
         )}
       </div>
-
-      {/* Applied Promotions — full width */}
-      {booking.bookingPromotions.length > 0 && (
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-base font-semibold mb-4">Applied Promotions</p>
-            {/* Mobile View: Cards */}
-            <div className="flex flex-col gap-4 md:hidden" data-testid="applied-promos-mobile">
-              {booking.bookingPromotions.map((bp) => (
-                <div
-                  key={bp.id}
-                  className="flex flex-col p-4 border rounded-lg space-y-3"
-                  data-testid={`applied-promo-card-${bp.id}`}
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-bold" data-testid="promo-name">
-                        {bp.promotion.name}
-                      </p>
-                      <Badge variant="secondary" className="mt-1" data-testid="promo-type">
-                        {bp.promotion.type}
-                      </Badge>
-                    </div>
-                    <div className="text-right">
-                      <p
-                        className="text-lg font-bold text-green-600"
-                        data-testid="promo-applied-value"
-                      >
-                        {formatCurrency(Number(bp.appliedValue))}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center pt-2 border-t">
-                    <Badge
-                      variant={bp.autoApplied ? "default" : "outline"}
-                      data-testid="promo-auto-applied"
-                    >
-                      {bp.autoApplied ? "Auto" : "Manual"}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Desktop View: Table */}
-            <div className="hidden md:block" data-testid="applied-promos-desktop">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Promotion Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Applied Value</TableHead>
-                    <TableHead>Auto-applied</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {booking.bookingPromotions.map((bp) => (
-                    <TableRow key={bp.id} data-testid={`applied-promo-row-${bp.id}`}>
-                      <TableCell data-testid="promo-name">{bp.promotion.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" data-testid="promo-type">
-                          {bp.promotion.type}
-                        </Badge>
-                      </TableCell>
-                      <TableCell data-testid="promo-applied-value">
-                        {formatCurrency(Number(bp.appliedValue))}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={bp.autoApplied ? "default" : "outline"}
-                          data-testid="promo-auto-applied"
-                        >
-                          {bp.autoApplied ? "Yes" : "No"}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Price Watch — outside grid, full-width, future hotel stays only */}
       {booking.accommodationType === "hotel" && isFutureBooking && (
