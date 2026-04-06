@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { AppSelect } from "@/components/ui/app-select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
+import { SectionDivider } from "@/components/ui/section-divider";
 import { CERT_TYPE_OPTIONS } from "@/lib/cert-types";
 import { format, parseISO } from "date-fns";
 import { calculatePointsFromChain } from "@/lib/loyalty-utils";
@@ -76,21 +77,6 @@ function calcBenefitApproxValue(
     return extraPts * chainUsdCentsPerPoint;
   }
   return null;
-}
-
-// ---------------------------------------------------------------------------
-// Section Divider
-// ---------------------------------------------------------------------------
-
-function SectionDivider({ label }: { label: string }) {
-  return (
-    <div className="flex items-center gap-2 pt-2">
-      <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground whitespace-nowrap">
-        {label}
-      </span>
-      <div className="flex-1 h-px bg-border" />
-    </div>
-  );
 }
 
 // ---------------------------------------------------------------------------
@@ -705,6 +691,7 @@ export function BookingForm({
                         size="sm"
                         onClick={() => dispatch({ type: "REMOVE_CERTIFICATE", index: idx })}
                         className="shrink-0 h-7 w-7 p-0"
+                        data-testid={`certificate-remove-${idx}`}
                       >
                         ✕
                       </Button>
@@ -717,6 +704,7 @@ export function BookingForm({
                     variant="outline"
                     size="sm"
                     onClick={() => dispatch({ type: "ADD_CERTIFICATE" })}
+                    data-testid="add-certificate-button"
                   >
                     + Add Certificate
                   </Button>
@@ -1224,6 +1212,7 @@ export function BookingForm({
                 }
                 placeholder="Any additional notes..."
                 rows={3}
+                data-testid="notes-textarea"
               />
             </div>
           </div>
