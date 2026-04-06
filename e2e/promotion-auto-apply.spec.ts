@@ -114,9 +114,6 @@ test.describe("Promotion auto-apply on booking detail", () => {
       const promoRow = appliedSection.getByRole("row").filter({ hasText: promoName });
       await expect(promoRow.getByTestId("promo-name")).toHaveText(promoName);
       await expect(promoRow.getByTestId("promo-applied-value")).toHaveText("$75.00");
-
-      // Should be marked as auto-applied
-      await expect(promoRow.getByTestId("promo-auto-applied")).toHaveText("Yes");
     } finally {
       await request.delete(`/api/bookings/${booking.id}`);
       await request.delete(`/api/promotions/${promo.id}`);

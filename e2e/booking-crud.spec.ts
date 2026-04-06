@@ -144,13 +144,14 @@ test.describe("Booking Detail", () => {
   }) => {
     await testBooking.page.goto(`/bookings/${testBooking.id}`);
 
-    await expect(testBooking.page.getByRole("heading", { name: "Booking Details" })).toBeVisible();
-    // Property name appears in the card title
-    await expect(testBooking.page.getByText(testBooking.propertyName)).toBeVisible();
-    // Hotel chain name appears in the info grid (exact match to avoid partial matches against loyalty program names)
-    await expect(
-      testBooking.page.getByText(testBooking.hotelChainName, { exact: true })
-    ).toBeVisible();
+    // Property name appears in the hero card h1
+    await expect(testBooking.page.getByTestId("hero-property-name")).toHaveText(
+      testBooking.propertyName
+    );
+    // Hotel chain name appears in the hero subtitle
+    await expect(testBooking.page.getByTestId("hero-subtitle")).toContainText(
+      testBooking.hotelChainName
+    );
     // Total cost: fixture creates $480 USD
     await expect(testBooking.page.getByTestId("total-cost-usd")).toHaveText("$480.00");
     // Booking source: fixture uses direct_web
@@ -341,79 +342,6 @@ test.describe("Booking Create Form", () => {
 });
 
 test.describe("Booking Detail - Info Grid", () => {
-  const badgeTestCases = [
-    {
-      name: "award stay",
-      bookingData: {
-        checkIn: "2025-06-01",
-        checkOut: "2025-06-03",
-        numNights: 2,
-        pretaxCost: 0,
-        taxAmount: 0,
-        totalCost: 0,
-        pointsRedeemed: 30000,
-        loyaltyPointsEarned: 0,
-        currency: "USD",
-      },
-      badgeText: "Award",
-    },
-    {
-      name: "cert stay",
-      bookingData: {
-        checkIn: "2025-07-01",
-        checkOut: "2025-07-02",
-        numNights: 1,
-        pretaxCost: 0,
-        taxAmount: 0,
-        totalCost: 0,
-        certificates: ["hyatt_cat1_4"],
-        loyaltyPointsEarned: 0,
-        currency: "USD",
-      },
-      badgeText: "Cert",
-    },
-    {
-      name: "cash + points combo stay",
-      bookingData: {
-        checkIn: "2025-08-01",
-        checkOut: "2025-08-03",
-        numNights: 2,
-        pretaxCost: 160,
-        taxAmount: 40,
-        totalCost: 200,
-        pointsRedeemed: 10000,
-        loyaltyPointsEarned: 0,
-        currency: "USD",
-      },
-      badgeText: "Cash + Points",
-    },
-  ];
-
-  for (const { name, bookingData, badgeText } of badgeTestCases) {
-    test(`shows booking type badge for a ${name}`, async ({ isolatedUser }) => {
-      const { request, page } = isolatedUser;
-      const res = await request.post("/api/bookings", {
-        data: {
-          ...bookingData,
-          hotelChainId: HOTEL_ID.HYATT,
-          propertyName: `Badge ${name} ${crypto.randomUUID()}`,
-        },
-      });
-      const booking = await res.json();
-      try {
-        await page.goto(`/bookings/${booking.id}`);
-        await expect(page.getByTestId("booking-type-badge")).toHaveText(badgeText);
-      } finally {
-        await request.delete(`/api/bookings/${booking.id}`);
-      }
-    });
-  }
-
-  test("shows no badge for a plain cash stay", async ({ testBooking }) => {
-    await testBooking.page.goto(`/bookings/${testBooking.id}`);
-    await expect(testBooking.page.getByTestId("booking-type-badge")).not.toBeVisible();
-  });
-
   test("shows auto-calculated loyalty points earned", async ({ isolatedUser }) => {
     const { request, page } = isolatedUser;
     // Hyatt: 5 pts/$, pretax $300 → 1,500 base pts (no elite status for isolated user)
@@ -433,7 +361,7 @@ test.describe("Booking Detail - Info Grid", () => {
     const booking = await res.json();
     try {
       await page.goto(`/bookings/${booking.id}`);
-      await expect(page.getByTestId("loyalty-points-earned")).toHaveText("1,500");
+      await expect(page.getByTestId("loyalty-points-value")).toContainText("1,500");
     } finally {
       await request.delete(`/api/bookings/${booking.id}`);
     }
@@ -554,7 +482,8 @@ test.describe("Booking Detail - Info Grid", () => {
     const booking = await res.json();
     try {
       await page.goto(`/bookings/${booking.id}`);
-      await expect(page.getByTestId("booking-source")).toHaveText("OTA — AMEX FHR");
+      await expect(page.getByTestId("booking-source")).toHaveText("OTA");
+      await expect(page.getByTestId("booking-ota")).toHaveText("AMEX FHR");
     } finally {
       await request.delete(`/api/bookings/${booking.id}`);
     }
@@ -579,7 +508,7 @@ test.describe("Booking Detail - Info Grid", () => {
     const booking = await res.json();
     try {
       await page.goto(`/bookings/${booking.id}`);
-      await expect(page.getByTestId("booking-prepaid")).toHaveText("Prepaid");
+      await expect(page.getByTestId("booking-payment-timing")).toHaveText("Prepaid");
     } finally {
       await request.delete(`/api/bookings/${booking.id}`);
     }

@@ -5,8 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { PageSpinner } from "@/components/ui/page-spinner";
 import { certTypeLabel } from "@/lib/cert-types";
 import { getNetCostBreakdown, NetCostBooking, CalculationDetail } from "@/lib/net-cost";
@@ -26,6 +25,9 @@ import { apiFetch } from "@/lib/api-fetch";
 import { logger } from "@/lib/logger";
 import { toast } from "sonner";
 import { ErrorBanner } from "@/components/ui/error-banner";
+import { SectionDivider } from "@/components/ui/section-divider";
+import { BookingPointsEarned } from "@/components/bookings/booking-view-points-earned";
+import { PAYMENT_TYPES } from "@/lib/constants";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -132,6 +134,7 @@ interface Booking extends Omit<NetCostBooking, "bookingPromotions" | "userCredit
   id: string;
   hotelChainId: string | null;
   accommodationType: string;
+  confirmationNumber: string | null;
   hotelChainSubBrand: { id: string; name: string; basePointRate: string | number | null } | null;
   property: {
     id: string;
@@ -157,6 +160,7 @@ interface Booking extends Omit<NetCostBooking, "bookingPromotions" | "userCredit
     nickname: string | null;
     creditCard: {
       name: string;
+      rewardType: string;
       rewardRate: string | number;
       pointType: { name: string; usdCentsPerPoint: string | number } | null;
       rewardRules?: {
@@ -185,17 +189,14 @@ interface Booking extends Omit<NetCostBooking, "bookingPromotions" | "userCredit
 // Helpers
 // ---------------------------------------------------------------------------
 
-function formatBookingSource(booking: {
-  bookingSource: string | null;
-  otaAgency: { name: string } | null;
-}): string {
-  switch (booking.bookingSource) {
+function formatBookingSourceLabel(bookingSource: string | null): string {
+  switch (bookingSource) {
     case "direct_web":
       return "Direct — Hotel Chain Website";
     case "direct_app":
       return "Direct — Hotel Chain App";
     case "ota":
-      return booking.otaAgency ? `OTA — ${booking.otaAgency.name}` : "OTA";
+      return "OTA";
     case "other":
       return "Other";
     default:
@@ -214,24 +215,6 @@ function formatBenefitType(type: string): string {
     other: "Other",
   };
   return labels[type] ?? type;
-}
-
-function getBookingTypeBadge(booking: {
-  totalCost: string | number;
-  pointsRedeemed: number | null;
-  certificates: { id: string }[];
-}): string | null {
-  const hasCash = Number(booking.totalCost) > 0;
-  const hasPoints = !!booking.pointsRedeemed;
-  const hasCert = booking.certificates.length > 0;
-  if (!hasPoints && !hasCert) return null;
-  if (!hasCash && hasPoints && !hasCert) return "Award";
-  if (!hasCash && !hasPoints && hasCert) return "Cert";
-  if (!hasCash && hasPoints && hasCert) return "Award + Cert";
-  if (hasCash && hasPoints && !hasCert) return "Cash + Points";
-  if (hasCash && !hasPoints && hasCert) return "Cash + Cert";
-  if (hasCash && hasPoints && hasCert) return "Cash + Points + Cert";
-  return null;
 }
 
 // ---------------------------------------------------------------------------
@@ -303,12 +286,37 @@ export default function BookingDetailPage() {
   const today = new Date().toISOString().split("T")[0];
   const isFutureBooking = booking.checkIn.slice(0, 10) > today;
 
-  const typeBadge = getBookingTypeBadge(booking);
+  const hasCash = totalCost > 0;
+  const hasPoints = (booking.pointsRedeemed ?? 0) > 0;
+  const hasCert = booking.certificates.length > 0;
+
+  const derivedPaymentType =
+    [hasCash ? "cash" : null, hasPoints ? "points" : null, hasCert ? "cert" : null]
+      .filter(Boolean)
+      .join("_") || "cash";
+  const paymentTypeLabel =
+    PAYMENT_TYPES.find((pt) => pt.value === derivedPaymentType)?.label ?? derivedPaymentType;
+
+  const exchangeRate = booking.lockedExchangeRate ? Number(booking.lockedExchangeRate) : 1;
+  const usdTotalCost = totalCost * exchangeRate;
+
+  const isMultiCurrency = [hasCash, hasPoints, hasCert].filter(Boolean).length > 1;
+
+  const usdCost = breakdown.totalCost + breakdown.pointsRedeemedValue + breakdown.certsValue;
+  const savings = usdCost - breakdown.netCost;
+  const certGroups = Object.entries(
+    booking.certificates.reduce(
+      (acc, cert) => {
+        acc[cert.certType] = (acc[cert.certType] ?? 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    )
+  );
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Booking Details</h1>
+    <div className="space-y-6 pb-6">
+      <div className="flex items-center justify-end">
         <div className="flex gap-2">
           <Link href={`/bookings/${id}/edit`}>
             <Button>Edit</Button>
@@ -340,134 +348,222 @@ export default function BookingDetailPage() {
         </div>
       )}
 
-      {/* Booking Info Card */}
+      {/* ── Hero card ─────────────────────────────────────── */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            {booking.property.name}
-            {typeBadge && (
-              <Badge variant="secondary" data-testid="booking-type-badge">
-                {typeBadge}
-              </Badge>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {booking.accommodationType === "apartment" ? (
+        <CardContent>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            {/* Left: name + subtitle + dates */}
+            <div className="flex flex-col gap-3">
               <div>
-                <p className="text-sm text-muted-foreground">Accommodation Type</p>
-                <p className="font-medium">Apartment / Short-term Rental</p>
-              </div>
-            ) : booking.hotelChain ? (
-              <div>
-                <p className="text-sm text-muted-foreground">Hotel Chain</p>
-                <p className="font-medium">{booking.hotelChain.name}</p>
-              </div>
-            ) : null}
-            {booking.hotelChainSubBrand && (
-              <div>
-                <p className="text-sm text-muted-foreground">Sub-brand</p>
-                <p className="font-medium" data-testid="booking-sub-brand">
-                  {booking.hotelChainSubBrand.name}
-                </p>
-              </div>
-            )}
-            {booking.hotelChain?.loyaltyProgram && (
-              <div>
-                <p className="text-sm text-muted-foreground">Loyalty Program</p>
-                <p className="font-medium">{booking.hotelChain.loyaltyProgram}</p>
-              </div>
-            )}
-            {(booking.property.city || booking.property.countryCode) && (
-              <div>
-                <p className="text-sm text-muted-foreground">Location</p>
-                <p className="font-medium" data-testid="booking-location">
-                  {[booking.property.city, booking.property.countryCode].filter(Boolean).join(", ")}
-                </p>
-              </div>
-            )}
-            <div>
-              <p className="text-sm text-muted-foreground">Check-in</p>
-              <p className="font-medium">{formatDate(booking.checkIn)}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Check-out</p>
-              <p className="font-medium">{formatDate(booking.checkOut)}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Nights</p>
-              <p className="font-medium">{booking.numNights}</p>
-            </div>
-            {totalCost > 0 && (
-              <div>
-                <p className="text-sm text-muted-foreground">Pre-tax Cost</p>
-                {booking.currency !== "USD" ? (
-                  <>
-                    <p className="font-medium">
-                      {formatCurrency(Number(booking.pretaxCost), booking.currency)}
-                    </p>
-                    {booking.lockedExchangeRate != null && (
-                      <p className="text-sm text-muted-foreground">
-                        ≈{" "}
-                        {formatCurrency(
-                          Number(booking.pretaxCost) * Number(booking.lockedExchangeRate)
-                        )}
-                        {booking.isFutureEstimate ? " (est.)" : ""}
-                      </p>
-                    )}
-                    {booking.exchangeRateEstimated && (
-                      <p className="text-amber-600 text-xs mt-0.5">
-                        Historical rate unavailable — estimated using current rate
-                      </p>
-                    )}
-                  </>
-                ) : (
-                  <p className="font-medium">{formatCurrency(Number(booking.pretaxCost))}</p>
+                <h1 className="text-xl font-bold" data-testid="hero-property-name">
+                  {booking.property.name}
+                </h1>
+                {booking.accommodationType === "hotel" && (
+                  <p className="text-sm text-muted-foreground" data-testid="hero-subtitle">
+                    {[
+                      booking.hotelChain?.name,
+                      booking.hotelChainSubBrand?.name,
+                      [booking.property.city, booking.property.countryCode]
+                        .filter(Boolean)
+                        .join(", "),
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
                 )}
-              </div>
-            )}
-            {totalCost > 0 && booking.numNights > 0 && (
-              <div>
-                <p className="text-sm text-muted-foreground">Avg/Night (pre-tax)</p>
-                <p className="font-medium">
-                  {formatCurrency(
-                    Number(booking.pretaxCost) / booking.numNights,
-                    booking.currency !== "USD" ? booking.currency : "USD"
-                  )}
-                </p>
-              </div>
-            )}
-            {totalCost > 0 && (
-              <div>
-                <p className="text-sm text-muted-foreground">Total Cost</p>
-                {booking.currency !== "USD" ? (
-                  <>
-                    <p className="font-medium" data-testid="total-cost-native">
-                      {formatCurrency(totalCost, booking.currency)}
-                    </p>
-                    {booking.lockedExchangeRate != null && (
-                      <p
-                        className="text-sm text-muted-foreground"
-                        data-testid="total-cost-usd-equivalent"
-                      >
-                        ≈ {formatCurrency(totalCost * Number(booking.lockedExchangeRate))}
-                        {booking.isFutureEstimate ? " (est.)" : ""}
-                      </p>
-                    )}
-                    {booking.exchangeRateEstimated && (
-                      <p className="text-amber-600 text-xs mt-0.5">
-                        Historical rate unavailable — estimated using current rate
-                      </p>
-                    )}
-                  </>
-                ) : (
-                  <p className="font-medium" data-testid="total-cost-usd">
-                    {formatCurrency(totalCost)}
+                {booking.accommodationType === "apartment" && (
+                  <p className="text-sm text-muted-foreground" data-testid="hero-subtitle">
+                    {[
+                      "Apartment / Short-term Rental",
+                      [booking.property.city, booking.property.countryCode]
+                        .filter(Boolean)
+                        .join(", "),
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
                   </p>
                 )}
               </div>
+              {/* Dates */}
+              <div className="flex flex-wrap gap-4">
+                <div data-testid="hero-check-in">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Check-in
+                  </p>
+                  <p className="font-medium">{formatDate(booking.checkIn)}</p>
+                </div>
+                <div data-testid="hero-check-out">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Check-out
+                  </p>
+                  <p className="font-medium">{formatDate(booking.checkOut)}</p>
+                </div>
+                <div data-testid="hero-nights">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Nights
+                  </p>
+                  <p className="font-medium">{booking.numNights}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: cost summary — what you paid, in native units */}
+            <div
+              className="border-t pt-3 sm:border-t-0 sm:pt-0 sm:text-right"
+              data-testid="hero-net-cost"
+            >
+              {hasCash && (
+                <p className={`font-bold ${isMultiCurrency ? "text-xl" : "text-2xl"}`}>
+                  {booking.currency !== "USD"
+                    ? formatCurrency(Number(booking.totalCost), booking.currency)
+                    : `${formatCurrency(usdTotalCost)}${booking.isFutureEstimate ? " (est.)" : ""}`}
+                </p>
+              )}
+              {hasCash && booking.currency !== "USD" && (
+                <p className="text-sm text-muted-foreground">
+                  ≈ {formatCurrency(usdTotalCost)}
+                  {booking.isFutureEstimate ? " (est.)" : ""}
+                </p>
+              )}
+              {hasPoints && booking.pointsRedeemed != null && (
+                <p className={`font-bold ${isMultiCurrency ? "text-xl" : "text-2xl"}`}>
+                  {booking.pointsRedeemed.toLocaleString()} pts
+                </p>
+              )}
+              {hasPoints && breakdown.pointsRedeemedValue > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  ≈ {formatCurrency(breakdown.pointsRedeemedValue)}
+                </p>
+              )}
+              {hasCert &&
+                certGroups.map(([certType, count]) => (
+                  <p
+                    key={certType}
+                    className={`font-bold ${isMultiCurrency ? "text-xl" : "text-2xl"}`}
+                  >
+                    {count > 1 ? `${count} × ` : ""}
+                    {certTypeLabel(certType)}
+                  </p>
+                ))}
+              {hasCert && breakdown.certsValue > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  ≈ {formatCurrency(breakdown.certsValue)}
+                </p>
+              )}
+              {!hasCash && !hasPoints && !hasCert && <p className="text-2xl font-bold">—</p>}
+            </div>
+          </div>
+
+          {/* ── USD equivalent row ──────────────────────────── */}
+          <div className="border-t mt-2 pt-4 grid grid-cols-3 gap-4 text-center">
+            <div data-testid="usd-savings-row">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Savings
+              </p>
+              <p className={`font-medium ${savings > 0 ? "text-green-600" : ""}`}>
+                {savings > 0 ? `−${formatCurrency(savings)}` : "—"}
+              </p>
+            </div>
+            <div data-testid="usd-net-cost-row">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Net Cost
+              </p>
+              <p className="font-semibold">
+                {formatCurrency(breakdown.netCost)}
+                {booking.isFutureEstimate ? " (est.)" : ""}
+              </p>
+            </div>
+            <div data-testid="usd-per-night-row">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Per Night
+              </p>
+              <p className="font-medium">
+                {booking.numNights > 0
+                  ? formatCurrency(breakdown.netCost / booking.numNights)
+                  : "—"}
+                {booking.numNights > 0 && booking.isFutureEstimate ? " (est.)" : ""}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── Details card ──────────────────────────────────── */}
+      <Card>
+        <CardContent className="space-y-4">
+          <p className="text-base font-semibold">Payment Details</p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div>
+              <p className="text-sm text-muted-foreground">Payment Type</p>
+              <p className="font-medium" data-testid="payment-type">
+                {paymentTypeLabel}
+              </p>
+            </div>
+
+            {/* Cash sub-group */}
+            {hasCash && totalCost > 0 && (
+              <>
+                <div>
+                  <p className="text-sm text-muted-foreground">Pre-tax Cost</p>
+                  {booking.currency !== "USD" ? (
+                    <>
+                      <p className="font-medium">
+                        {formatCurrency(Number(booking.pretaxCost), booking.currency)}
+                      </p>
+                      {booking.lockedExchangeRate != null && (
+                        <p className="text-sm text-muted-foreground">
+                          ≈{" "}
+                          {formatCurrency(
+                            Number(booking.pretaxCost) * Number(booking.lockedExchangeRate)
+                          )}
+                          {booking.isFutureEstimate ? " (est.)" : ""}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="font-medium">{formatCurrency(Number(booking.pretaxCost))}</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Cost</p>
+                  {booking.currency !== "USD" ? (
+                    <>
+                      <p className="font-medium" data-testid="total-cost-native">
+                        {formatCurrency(totalCost, booking.currency)}
+                      </p>
+                      {booking.lockedExchangeRate != null && (
+                        <p
+                          className="text-sm text-muted-foreground"
+                          data-testid="total-cost-usd-equivalent"
+                        >
+                          ≈ {formatCurrency(totalCost * Number(booking.lockedExchangeRate))}
+                          {booking.isFutureEstimate ? " (est.)" : ""}
+                        </p>
+                      )}
+                      {booking.exchangeRateEstimated && (
+                        <p className="text-amber-600 text-xs mt-0.5">
+                          Historical rate unavailable — estimated using current rate
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="font-medium" data-testid="total-cost-usd">
+                      {formatCurrency(totalCost)}
+                    </p>
+                  )}
+                </div>
+              </>
             )}
+
+            {/* Points sub-group */}
+            {hasPoints && booking.pointsRedeemed != null && (
+              <div>
+                <p className="text-sm text-muted-foreground">Points Redeemed</p>
+                <p className="font-medium">{booking.pointsRedeemed.toLocaleString()}</p>
+              </div>
+            )}
+
+            {/* Credit Card */}
             {booking.userCreditCard && (
               <div>
                 <p className="text-sm text-muted-foreground">Credit Card</p>
@@ -478,6 +574,75 @@ export default function BookingDetailPage() {
                 </p>
               </div>
             )}
+
+            {/* Payment Timing */}
+            <div>
+              <p className="text-sm text-muted-foreground">Payment Timing</p>
+              <p className="font-medium" data-testid="booking-payment-timing">
+                {booking.paymentTiming === "prepaid" ? "Prepaid" : "Postpaid"}
+              </p>
+            </div>
+
+            {/* Booking Date — prepaid only */}
+            {booking.paymentTiming === "prepaid" && booking.bookingDate && (
+              <div>
+                <p className="text-sm text-muted-foreground">Booking Date</p>
+                <p className="font-medium" data-testid="booking-date">
+                  {formatDate(booking.bookingDate)}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Cert sub-group — full row */}
+          {hasCert && booking.certificates.length > 0 && (
+            <div>
+              <p className="text-sm text-muted-foreground">Certificates</p>
+              <div className="flex flex-wrap gap-1 mt-1" data-testid="cert-badges">
+                {certGroups.map(([certType, count]) => (
+                  <Badge key={certType} variant="outline">
+                    {count > 1 ? `${count} × ` : ""}
+                    {certTypeLabel(certType)}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <SectionDivider label="Booking Context" />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {booking.hotelChainSubBrand && (
+              <div>
+                <p className="text-sm text-muted-foreground">Sub-brand</p>
+                <p className="font-medium" data-testid="booking-sub-brand">
+                  {booking.hotelChainSubBrand.name}
+                </p>
+              </div>
+            )}
+            {(booking.property.city || booking.property.countryCode) && (
+              <div>
+                <p className="text-sm text-muted-foreground">Location</p>
+                <p className="font-medium" data-testid="booking-location">
+                  {[booking.property.city, booking.property.countryCode].filter(Boolean).join(", ")}
+                </p>
+              </div>
+            )}
+            {booking.bookingSource && (
+              <div>
+                <p className="text-sm text-muted-foreground">Booking Source</p>
+                <p className="font-medium" data-testid="booking-source">
+                  {formatBookingSourceLabel(booking.bookingSource)}
+                </p>
+              </div>
+            )}
+            {booking.bookingSource === "ota" && booking.otaAgency && (
+              <div>
+                <p className="text-sm text-muted-foreground">OTA</p>
+                <p className="font-medium" data-testid="booking-ota">
+                  {booking.otaAgency.name}
+                </p>
+              </div>
+            )}
             {booking.shoppingPortal && (
               <div>
                 <p className="text-sm text-muted-foreground">Shopping Portal</p>
@@ -485,246 +650,181 @@ export default function BookingDetailPage() {
                   {booking.shoppingPortal.name}
                   {booking.portalCashbackRate
                     ? booking.shoppingPortal.rewardType === "points"
-                      ? ` (${Number(booking.portalCashbackRate).toFixed(2)} pts/$ — ${booking.portalCashbackOnTotal ? "total cost basis" : "pre-tax basis"})`
-                      : ` (${(Number(booking.portalCashbackRate) * 100).toFixed(1)}% — ${booking.portalCashbackOnTotal ? "total cost basis" : "pre-tax basis"})`
+                      ? ` (${Number(booking.portalCashbackRate).toFixed(2)} pts/$ — ${booking.portalCashbackOnTotal ? "total" : "pre-tax"} basis)`
+                      : ` (${(Number(booking.portalCashbackRate) * 100).toFixed(1)}% — ${booking.portalCashbackOnTotal ? "total" : "pre-tax"} basis)`
                     : ""}
                 </p>
               </div>
             )}
-            {booking.loyaltyPointsEarned != null && (
+            {booking.confirmationNumber && (
               <div>
-                <p className="text-sm text-muted-foreground">Loyalty Points Earned</p>
-                <p className="font-medium" data-testid="loyalty-points-earned">
-                  {booking.loyaltyPointsEstimated ? "~" : ""}
-                  {booking.loyaltyPointsEarned.toLocaleString()}
-                  {booking.loyaltyPointsEstimated ? " (est.)" : ""}
+                <p className="text-sm text-muted-foreground">Confirmation Number</p>
+                <p className="font-medium" data-testid="confirmation-number">
+                  {booking.confirmationNumber}
                 </p>
-              </div>
-            )}
-            {booking.pointsRedeemed != null && (
-              <div>
-                <p className="text-sm text-muted-foreground">Points Redeemed</p>
-                <p className="font-medium">{booking.pointsRedeemed.toLocaleString()}</p>
-              </div>
-            )}
-            {booking.certificates.length > 0 && (
-              <div>
-                <p className="text-sm text-muted-foreground">Certificates</p>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {booking.certificates.map((cert) => (
-                    <Badge key={cert.id} variant="outline">
-                      {certTypeLabel(cert.certType)}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-            {booking.bookingSource && (
-              <div>
-                <p className="text-sm text-muted-foreground">Booking Source</p>
-                <p className="font-medium" data-testid="booking-source">
-                  {formatBookingSource(booking)}
-                </p>
-              </div>
-            )}
-            {booking.paymentTiming === "prepaid" && (
-              <div>
-                <p className="text-sm text-muted-foreground">Payment Timing</p>
-                <p className="font-medium" data-testid="booking-prepaid">
-                  Prepaid
-                </p>
-              </div>
-            )}
-            {booking.bookingDate && (
-              <div>
-                <p className="text-sm text-muted-foreground">Booking Date</p>
-                <p className="font-medium">{formatDate(booking.bookingDate)}</p>
               </div>
             )}
           </div>
+
           {booking.notes && (
-            <>
-              <Separator />
-              <div>
-                <p className="text-sm text-muted-foreground">Notes</p>
-                <p className="mt-1">{booking.notes}</p>
-              </div>
-            </>
+            <div>
+              <p className="text-sm text-muted-foreground">Notes</p>
+              <p className="mt-1">{booking.notes}</p>
+            </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Booking Benefits */}
-      {booking.benefits.length > 0 && (
-        <Card data-testid="booking-benefits-card">
-          <CardHeader>
-            <CardTitle>Booking Benefits</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2">
-              {booking.benefits.map((b) => (
-                <li key={b.id} className="flex items-center justify-between">
-                  <span>
-                    {formatBenefitType(b.benefitType)}
-                    {b.label ? ` — ${b.label}` : ""}
-                  </span>
-                  <span>
-                    {b.dollarValue != null ? (
-                      <span className="text-muted-foreground">
-                        {formatCurrency(Number(b.dollarValue), booking.currency)}
-                      </span>
-                    ) : b.pointsEarnType === "fixed_per_stay" && b.pointsAmount != null ? (
-                      <span className="text-muted-foreground">
-                        {Number(b.pointsAmount).toLocaleString()} pts
-                      </span>
-                    ) : b.pointsEarnType === "fixed_per_night" && b.pointsAmount != null ? (
-                      <span className="text-muted-foreground">
-                        {Number(b.pointsAmount).toLocaleString()} pts/night
-                      </span>
-                    ) : b.pointsEarnType === "multiplier_on_base" && b.pointsMultiplier != null ? (
-                      <span className="text-muted-foreground">
-                        {Number(b.pointsMultiplier)}× multiplier
-                      </span>
-                    ) : null}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      )}
+      {/* ── Secondary cards: 2-col grid on desktop ────────── */}
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <CostBreakdown breakdown={breakdown} />
+        <BookingPointsEarned booking={booking} />
 
-      {/* Cost Breakdown */}
-      <CostBreakdown breakdown={breakdown} />
-
-      {/* Applied Promotions */}
-      {booking.bookingPromotions.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Applied Promotions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {/* Mobile View: Cards */}
-            <div className="flex flex-col gap-4 md:hidden" data-testid="applied-promos-mobile">
-              {booking.bookingPromotions.map((bp) => (
-                <div
-                  key={bp.id}
-                  className="flex flex-col p-4 border rounded-lg space-y-3"
-                  data-testid={`applied-promo-card-${bp.id}`}
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-bold" data-testid="promo-name">
-                        {bp.promotion.name}
-                      </p>
-                      <Badge variant="secondary" className="mt-1" data-testid="promo-type">
-                        {bp.promotion.type}
-                      </Badge>
-                    </div>
-                    <div className="text-right">
-                      <p
-                        className="text-lg font-bold text-green-600"
-                        data-testid="promo-applied-value"
-                      >
-                        {formatCurrency(Number(bp.appliedValue))}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center pt-2 border-t">
-                    <Badge
-                      variant={bp.autoApplied ? "default" : "outline"}
-                      data-testid="promo-auto-applied"
-                    >
-                      {bp.autoApplied ? "Auto" : "Manual"}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Desktop View: Table */}
-            <div className="hidden md:block" data-testid="applied-promos-desktop">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Promotion Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Applied Value</TableHead>
-                    <TableHead>Auto-applied</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {booking.bookingPromotions.map((bp) => (
-                    <TableRow key={bp.id} data-testid={`applied-promo-row-${bp.id}`}>
-                      <TableCell data-testid="promo-name">{bp.promotion.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" data-testid="promo-type">
+        {/* Applied Promotions */}
+        {booking.bookingPromotions.length > 0 && (
+          <Card>
+            <CardContent>
+              <p className="text-base font-semibold mb-4">Applied Promotions</p>
+              {/* Mobile View: Cards */}
+              <div className="flex flex-col gap-4 md:hidden" data-testid="applied-promos-mobile">
+                {booking.bookingPromotions.map((bp) => (
+                  <div
+                    key={bp.id}
+                    className="flex flex-col p-4 border rounded-lg space-y-3"
+                    data-testid={`applied-promo-card-${bp.id}`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-bold" data-testid="promo-name">
+                          {bp.promotion.name}
+                        </p>
+                        <Badge variant="secondary" className="mt-1" data-testid="promo-type">
                           {bp.promotion.type}
                         </Badge>
-                      </TableCell>
-                      <TableCell data-testid="promo-applied-value">
-                        {formatCurrency(Number(bp.appliedValue))}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={bp.autoApplied ? "default" : "outline"}
-                          data-testid="promo-auto-applied"
+                      </div>
+                      <div className="text-right">
+                        <p
+                          className="text-lg font-bold text-green-600"
+                          data-testid="promo-applied-value"
                         >
-                          {bp.autoApplied ? "Yes" : "No"}
-                        </Badge>
-                      </TableCell>
+                          {formatCurrency(Number(bp.appliedValue))}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop View: Table */}
+              <div className="hidden md:block" data-testid="applied-promos-desktop">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Promotion Name</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Applied Value</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                  </TableHeader>
+                  <TableBody>
+                    {booking.bookingPromotions.map((bp) => (
+                      <TableRow key={bp.id} data-testid={`applied-promo-row-${bp.id}`}>
+                        <TableCell data-testid="promo-name">{bp.promotion.name}</TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" data-testid="promo-type">
+                            {bp.promotion.type}
+                          </Badge>
+                        </TableCell>
+                        <TableCell data-testid="promo-applied-value">
+                          {formatCurrency(Number(bp.appliedValue))}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-      {/* Card Benefits */}
-      {booking.bookingCardBenefits.length > 0 && (
-        <Card data-testid="card-benefits-card">
-          <CardHeader>
-            <CardTitle>Card Benefits</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2">
-              {booking.bookingCardBenefits.map((bcb) => (
-                <li key={bcb.id} className="flex items-center justify-between">
-                  <span>{bcb.cardBenefit.description}</span>
-                  <span className="text-muted-foreground">
-                    {formatCurrency(Number(bcb.appliedValue))}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      )}
+        {/* Booking Benefits */}
+        {booking.benefits.length > 0 && (
+          <Card data-testid="booking-benefits-card">
+            <CardContent>
+              <p className="text-base font-semibold mb-4">Booking Benefits</p>
+              <ul className="space-y-2">
+                {booking.benefits.map((b) => (
+                  <li key={b.id} className="flex items-center justify-between">
+                    <span>
+                      {formatBenefitType(b.benefitType)}
+                      {b.label ? ` — ${b.label}` : ""}
+                    </span>
+                    <span>
+                      {b.dollarValue != null ? (
+                        <span className="text-muted-foreground">
+                          {formatCurrency(Number(b.dollarValue), booking.currency)}
+                        </span>
+                      ) : b.pointsEarnType === "fixed_per_stay" && b.pointsAmount != null ? (
+                        <span className="text-muted-foreground">
+                          {Number(b.pointsAmount).toLocaleString()} pts
+                        </span>
+                      ) : b.pointsEarnType === "fixed_per_night" && b.pointsAmount != null ? (
+                        <span className="text-muted-foreground">
+                          {Number(b.pointsAmount).toLocaleString()} pts/night
+                        </span>
+                      ) : b.pointsEarnType === "multiplier_on_base" &&
+                        b.pointsMultiplier != null ? (
+                        <span className="text-muted-foreground">
+                          {Number(b.pointsMultiplier)}× multiplier
+                        </span>
+                      ) : null}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
 
-      {/* Partnership Earns */}
-      {booking.partnershipEarns && booking.partnershipEarns.length > 0 && (
-        <Card data-testid="partnership-earns-card">
-          <CardHeader>
-            <CardTitle>Partnership Earns</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2">
-              {booking.partnershipEarns.map((earn) => (
-                <li key={earn.id} className="flex items-center justify-between">
-                  <span>{earn.name}</span>
-                  <span className="text-muted-foreground">
-                    {Math.round(earn.pointsEarned).toLocaleString()} pts
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      )}
+        {/* Card Benefits */}
+        {booking.bookingCardBenefits.length > 0 && (
+          <Card data-testid="card-benefits-card">
+            <CardContent>
+              <p className="text-base font-semibold mb-4">Card Benefits</p>
+              <ul className="space-y-2">
+                {booking.bookingCardBenefits.map((bcb) => (
+                  <li key={bcb.id} className="flex items-center justify-between">
+                    <span>{bcb.cardBenefit.description}</span>
+                    <span className="text-muted-foreground">
+                      {formatCurrency(Number(bcb.appliedValue))}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
 
-      {/* Price Watch — future hotel stays only */}
+        {/* Partnership Earns */}
+        {booking.partnershipEarns && booking.partnershipEarns.length > 0 && (
+          <Card data-testid="partnership-earns-card">
+            <CardContent>
+              <p className="text-base font-semibold mb-4">Partnership Earns</p>
+              <ul className="space-y-2">
+                {booking.partnershipEarns.map((earn) => (
+                  <li key={earn.id} className="flex items-center justify-between">
+                    <span>{earn.name}</span>
+                    <span className="text-muted-foreground">
+                      {Math.round(earn.pointsEarned).toLocaleString()} pts
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {/* Price Watch — outside grid, full-width, future hotel stays only */}
       {booking.accommodationType === "hotel" && isFutureBooking && (
         <BookingPriceWatch
           bookingId={booking.id}
