@@ -72,9 +72,7 @@ test.describe("Geo Property Search — Booking with location data", () => {
 
     try {
       await isolatedUser.page.goto(`/bookings/${booking.id}`);
-      await expect(
-        isolatedUser.page.getByRole("heading", { name: "Booking Details" })
-      ).toBeVisible();
+      await expect(isolatedUser.page.getByTestId("hero-property-name")).toBeVisible();
       await expect(isolatedUser.page.getByTestId("booking-location")).not.toBeVisible();
     } finally {
       await isolatedUser.request.delete(`/api/bookings/${booking.id}`);

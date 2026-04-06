@@ -611,6 +611,22 @@ export default function BookingDetailPage() {
 
           <SectionDivider label="Booking Context" />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {booking.hotelChainSubBrand && (
+              <div>
+                <p className="text-sm text-muted-foreground">Sub-brand</p>
+                <p className="font-medium" data-testid="booking-sub-brand">
+                  {booking.hotelChainSubBrand.name}
+                </p>
+              </div>
+            )}
+            {(booking.property.city || booking.property.countryCode) && (
+              <div>
+                <p className="text-sm text-muted-foreground">Location</p>
+                <p className="font-medium" data-testid="booking-location">
+                  {[booking.property.city, booking.property.countryCode].filter(Boolean).join(", ")}
+                </p>
+              </div>
+            )}
             {booking.bookingSource && (
               <div>
                 <p className="text-sm text-muted-foreground">Booking Source</p>

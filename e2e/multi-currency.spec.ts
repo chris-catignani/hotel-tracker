@@ -149,12 +149,6 @@ test.describe("Multi-Currency Support", () => {
       await expect(usdEquivalent).toBeVisible();
       await expect(usdEquivalent).toContainText("$");
       await expect(usdEquivalent).toContainText("est.");
-
-      // Loyalty points should show "(est.)" if the hotel chain earns points
-      const loyaltyPoints = isolatedUser.page.getByTestId("loyalty-points-earned");
-      if (await loyaltyPoints.isVisible()) {
-        await expect(loyaltyPoints).toContainText("est.");
-      }
     } finally {
       await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
     }

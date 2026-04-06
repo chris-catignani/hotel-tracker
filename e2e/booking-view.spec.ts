@@ -52,6 +52,7 @@ test.describe("Booking View Page", () => {
         pretaxCost: 450,
         taxAmount: 90,
         totalCost: 540,
+        loyaltyPointsEarned: 0,
         currency: "USD",
         bookingSource: "direct_web",
       },

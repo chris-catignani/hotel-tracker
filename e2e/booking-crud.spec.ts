@@ -144,9 +144,10 @@ test.describe("Booking Detail", () => {
   }) => {
     await testBooking.page.goto(`/bookings/${testBooking.id}`);
 
-    await expect(testBooking.page.getByRole("heading", { name: "Booking Details" })).toBeVisible();
-    // Property name appears in the card title
-    await expect(testBooking.page.getByText(testBooking.propertyName)).toBeVisible();
+    // Property name appears in the hero card h1
+    await expect(testBooking.page.getByTestId("hero-property-name")).toHaveText(
+      testBooking.propertyName
+    );
     // Hotel chain name appears in the info grid (exact match to avoid partial matches against loyalty program names)
     await expect(
       testBooking.page.getByText(testBooking.hotelChainName, { exact: true })
@@ -360,7 +361,7 @@ test.describe("Booking Detail - Info Grid", () => {
     const booking = await res.json();
     try {
       await page.goto(`/bookings/${booking.id}`);
-      await expect(page.getByTestId("loyalty-points-earned")).toHaveText("1,500");
+      await expect(page.getByTestId("loyalty-points-value")).toContainText("1,500");
     } finally {
       await request.delete(`/api/bookings/${booking.id}`);
     }
@@ -481,7 +482,8 @@ test.describe("Booking Detail - Info Grid", () => {
     const booking = await res.json();
     try {
       await page.goto(`/bookings/${booking.id}`);
-      await expect(page.getByTestId("booking-source")).toHaveText("OTA — AMEX FHR");
+      await expect(page.getByTestId("booking-source")).toHaveText("OTA");
+      await expect(page.getByTestId("booking-ota")).toHaveText("AMEX FHR");
     } finally {
       await request.delete(`/api/bookings/${booking.id}`);
     }
@@ -506,7 +508,7 @@ test.describe("Booking Detail - Info Grid", () => {
     const booking = await res.json();
     try {
       await page.goto(`/bookings/${booking.id}`);
-      await expect(page.getByTestId("booking-prepaid")).toHaveText("Prepaid");
+      await expect(page.getByTestId("booking-payment-timing")).toHaveText("Prepaid");
     } finally {
       await request.delete(`/api/bookings/${booking.id}`);
     }
