@@ -148,10 +148,10 @@ test.describe("Booking Detail", () => {
     await expect(testBooking.page.getByTestId("hero-property-name")).toHaveText(
       testBooking.propertyName
     );
-    // Hotel chain name appears in the info grid (exact match to avoid partial matches against loyalty program names)
-    await expect(
-      testBooking.page.getByText(testBooking.hotelChainName, { exact: true })
-    ).toBeVisible();
+    // Hotel chain name appears in the hero subtitle
+    await expect(testBooking.page.getByTestId("hero-subtitle")).toContainText(
+      testBooking.hotelChainName
+    );
     // Total cost: fixture creates $480 USD
     await expect(testBooking.page.getByTestId("total-cost-usd")).toHaveText("$480.00");
     // Booking source: fixture uses direct_web
