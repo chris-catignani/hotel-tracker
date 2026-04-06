@@ -1,25 +1,27 @@
 /**
  * GHA Discovery price fetcher.
  *
- * Strategy: Two plain HTTP calls, no browser required.
+ * Strategy: Three plain HTTP calls, no browser required.
  *
  * Step 1 — CMS GraphQL lookup (cms.ghadiscovery.com/graphql):
  *   Given the hotel's CMS objectId (stored as chainPropertyId), fetch the
  *   Synxis chainId, hotelId, brandCode, and reservationsEngineCode needed for
  *   the rates call. Results are cached in memory for the lifetime of the fetcher.
  *
- * Step 2 — OSCP rates API (oscp.ghadiscovery.com/api/v3/booking/hotel/rooms/rates):
+ * Step 2 — OSCP rooms/rates API (oscp.ghadiscovery.com/api/v3/booking/hotel/rooms/rates):
  *   Plain POST with Basic auth — no member login required. Returns all room
- *   types with their cash rates.
+ *   types with their cash rates. Does NOT include cancellation policy data.
+ *
+ * Step 3 — OSCP room/rates API (oscp.ghadiscovery.com/api/v3/booking/hotel/room/rates):
+ *   One call per unique rate code (using a representative room code) to fetch
+ *   the cancellation policy. Returns a `cancellable` boolean. Calls are made in
+ *   parallel and failures fall back to "UNKNOWN".
  *
  * chainPropertyId format: numeric CMS objectId (e.g. "23084" for Kempinski Dubai).
  * Use the debug script (scripts/debug-gha.ts) to look up a hotel's objectId by name.
  *
  * GHA Discovery Dollars (D$) are a cashback program, not a points redemption currency.
  * There are no award/points bookings — awardPrice is always null.
- *
- * Refundability: The GHA rates API does not provide cancellation policy data.
- * All rates are therefore marked with isRefundable: "UNKNOWN".
  */
 
 import { HOTEL_ID } from "@/lib/constants";
@@ -33,6 +35,7 @@ import type {
 
 const CMS_URL = "https://cms.ghadiscovery.com/graphql";
 const RATES_URL = "https://oscp.ghadiscovery.com/api/v3/booking/hotel/rooms/rates";
+const RATE_DETAIL_URL = "https://oscp.ghadiscovery.com/api/v3/booking/hotel/room/rates";
 
 // Hardcoded public Basic auth embedded in GHA's web app JS.
 const GHA_BASIC_AUTH = "Basic Z2hhOnVFNlU4d253aExzVTVHa1k=";
@@ -76,6 +79,11 @@ interface GhaRoom {
 
 interface GhaRatesResponse {
   rooms?: GhaRoom[];
+}
+
+// OSCP room/rates (singular) response — per-rate cancellation policy detail
+interface GhaRateDetailResponse {
+  cancellable?: boolean;
 }
 
 // Resolved hotel metadata from the CMS, cached after first lookup.
@@ -143,7 +151,93 @@ export class GhaFetcher implements PriceFetcher {
       `[GhaFetcher] Parsed ${rates.length} rates for ${meta.hotelCode} (${numNights} night(s))`
     );
 
+    if (rates.length > 0) {
+      await this.enrichRefundability(rates, meta, params);
+    }
+
     return rates.length > 0 ? { rates, source: "gha_api" } : null;
+  }
+
+  /**
+   * Fetches cancellation policies for each unique rate code in parallel and
+   * updates isRefundable on the rates in-place. One request per unique rate
+   * code (using a representative roomId) keeps the call count minimal.
+   * Individual failures fall back to "UNKNOWN" rather than throwing.
+   */
+  private async enrichRefundability(
+    rates: RoomRate[],
+    meta: GhaHotelMeta,
+    params: FetchParams
+  ): Promise<void> {
+    // Collect one representative roomId per rateCode
+    const representativeRoom = new Map<string, string>();
+    for (const rate of rates) {
+      if (!representativeRoom.has(rate.ratePlanCode)) {
+        representativeRoom.set(rate.ratePlanCode, rate.roomId);
+      }
+    }
+
+    // Fetch policies in parallel
+    const policyResults = await Promise.allSettled(
+      Array.from(representativeRoom.entries()).map(async ([rateCode, roomCode]) => {
+        const res = await fetch(RATE_DETAIL_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: GHA_BASIC_AUTH,
+          },
+          body: JSON.stringify({
+            numberOfRooms: 1,
+            numberOfAdults: params.adults ?? 2,
+            startDate: params.checkIn,
+            endDate: params.checkOut,
+            hotelCode: meta.hotelCode,
+            brandCode: meta.brandCode,
+            chainId: meta.chainId,
+            hotelId: meta.hotelId,
+            numberOfChildren: 0,
+            childAges: [],
+            content: "full",
+            primaryChannel: "SYDC",
+            secondaryChannel: "DSCVRYLYLTY",
+            loyaltyProgram: "GHA",
+            loyaltyLevel: "RED",
+            rateCode,
+            roomCode,
+          }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const detail = (await res.json()) as GhaRateDetailResponse;
+        return { rateCode, cancellable: detail.cancellable };
+      })
+    );
+
+    // Build rateCode → isRefundable map
+    const refundabilityMap = new Map<string, RoomRate["isRefundable"]>();
+    for (const result of policyResults) {
+      if (result.status === "fulfilled") {
+        const { rateCode, cancellable } = result.value;
+        refundabilityMap.set(
+          rateCode,
+          typeof cancellable === "boolean"
+            ? cancellable
+              ? "REFUNDABLE"
+              : "NON_REFUNDABLE"
+            : "UNKNOWN"
+        );
+      }
+    }
+
+    // Update rates in-place
+    for (const rate of rates) {
+      const refundability = refundabilityMap.get(rate.ratePlanCode);
+      if (refundability) rate.isRefundable = refundability;
+    }
+
+    console.log(
+      `[GhaFetcher] Refundability: ${[...refundabilityMap.entries()].map(([k, v]) => `${k}=${v}`).join(", ")}`
+    );
   }
 
   private async resolveHotelMeta(objectId: string): Promise<GhaHotelMeta> {
