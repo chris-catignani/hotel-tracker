@@ -131,6 +131,13 @@ describe("BookingDetailPage", () => {
     await waitFor(() => expect(screen.getByTestId("booking-date")).toBeInTheDocument());
   });
 
+  it("hides booking date for postpaid booking even when bookingDate is set", async () => {
+    mockSuccess({ ...cashBooking, paymentTiming: "postpaid", bookingDate: "2026-05-01" });
+    render(<BookingDetailPage />);
+    await waitFor(() => screen.getByTestId("payment-type"));
+    expect(screen.queryByTestId("booking-date")).not.toBeInTheDocument();
+  });
+
   it("shows OTA field when booking source is ota", async () => {
     mockSuccess({
       ...cashBooking,

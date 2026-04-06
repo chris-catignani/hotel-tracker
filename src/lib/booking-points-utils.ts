@@ -1,6 +1,7 @@
 interface CCPointsInput {
   totalCost: string | number;
   lockedExchangeRate: string | number | null;
+  hotelChain?: { id?: string } | null;
   hotelChainId: string | null;
   otaAgencyId: string | null;
   userCreditCard: {
@@ -34,7 +35,8 @@ export function calculateCCPointsEarned(booking: CCPointsInput): number | null {
     if (booking.otaAgencyId) {
       return r.otaAgencyId === booking.otaAgencyId;
     }
-    return r.hotelChainId === booking.hotelChainId;
+    const chainId = booking.hotelChain?.id ?? booking.hotelChainId;
+    return r.hotelChainId === chainId;
   });
 
   const multiplierRules = applicableRules.filter((r) => r.rewardType === "multiplier");

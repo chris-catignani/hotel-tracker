@@ -4,7 +4,7 @@ import { calculateCCPointsEarned, calculatePortalPointsEarned } from "@/lib/book
 interface PointsEarnedBooking {
   loyaltyPointsEarned: number | null;
   loyaltyPointsEstimated?: boolean;
-  hotelChain: { name: string; loyaltyProgram: string | null } | null;
+  hotelChain: { id?: string; name: string; loyaltyProgram: string | null } | null;
   totalCost: string | number;
   pretaxCost: string | number;
   lockedExchangeRate: string | number | null;

@@ -134,7 +134,6 @@ interface Booking extends Omit<NetCostBooking, "bookingPromotions" | "userCredit
   id: string;
   hotelChainId: string | null;
   accommodationType: string;
-  paymentType: string;
   confirmationNumber: string | null;
   hotelChainSubBrand: { id: string; name: string; basePointRate: string | number | null } | null;
   property: {
@@ -218,14 +217,11 @@ function formatBenefitType(type: string): string {
   return labels[type] ?? type;
 }
 
-function getBookingTypeBadge(booking: {
-  totalCost: string | number;
-  pointsRedeemed: number | null;
-  certificates: { id: string }[];
-}): string | null {
-  const hasCash = Number(booking.totalCost) > 0;
-  const hasPoints = !!booking.pointsRedeemed;
-  const hasCert = booking.certificates.length > 0;
+function getBookingTypeBadge(
+  hasCash: boolean,
+  hasPoints: boolean,
+  hasCert: boolean
+): string | null {
   if (!hasPoints && !hasCert) return null;
   if (!hasCash && hasPoints && !hasCert) return "Award";
   if (!hasCash && !hasPoints && hasCert) return "Cert";
@@ -305,13 +301,18 @@ export default function BookingDetailPage() {
   const today = new Date().toISOString().split("T")[0];
   const isFutureBooking = booking.checkIn.slice(0, 10) > today;
 
-  const typeBadge = getBookingTypeBadge(booking);
+  const hasCash = totalCost > 0;
+  const hasPoints = (booking.pointsRedeemed ?? 0) > 0;
+  const hasCert = booking.certificates.length > 0;
 
-  const hasCash = booking.paymentType.includes("cash");
-  const hasPoints = booking.paymentType.includes("points");
-  const hasCert = booking.paymentType.includes("cert");
+  const typeBadge = getBookingTypeBadge(hasCash, hasPoints, hasCert);
+
+  const derivedPaymentType =
+    [hasCash ? "cash" : null, hasPoints ? "points" : null, hasCert ? "cert" : null]
+      .filter(Boolean)
+      .join("_") || "cash";
   const paymentTypeLabel =
-    PAYMENT_TYPES.find((pt) => pt.value === booking.paymentType)?.label ?? booking.paymentType;
+    PAYMENT_TYPES.find((pt) => pt.value === derivedPaymentType)?.label ?? derivedPaymentType;
 
   return (
     <div className="space-y-6">
@@ -535,7 +536,7 @@ export default function BookingDetailPage() {
             </div>
 
             {/* Booking Date — prepaid only */}
-            {booking.bookingDate && (
+            {booking.paymentTiming === "prepaid" && booking.bookingDate && (
               <div>
                 <p className="text-sm text-muted-foreground">Booking Date</p>
                 <p className="font-medium" data-testid="booking-date">
@@ -613,64 +614,6 @@ export default function BookingDetailPage() {
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
         <CostBreakdown breakdown={breakdown} />
         <BookingPointsEarned booking={booking} />
-
-        {/* Booking Benefits */}
-        {booking.benefits.length > 0 && (
-          <Card data-testid="booking-benefits-card">
-            <CardContent className="pt-6">
-              <p className="text-base font-semibold mb-4">Booking Benefits</p>
-              <ul className="space-y-2">
-                {booking.benefits.map((b) => (
-                  <li key={b.id} className="flex items-center justify-between">
-                    <span>
-                      {formatBenefitType(b.benefitType)}
-                      {b.label ? ` — ${b.label}` : ""}
-                    </span>
-                    <span>
-                      {b.dollarValue != null ? (
-                        <span className="text-muted-foreground">
-                          {formatCurrency(Number(b.dollarValue), booking.currency)}
-                        </span>
-                      ) : b.pointsEarnType === "fixed_per_stay" && b.pointsAmount != null ? (
-                        <span className="text-muted-foreground">
-                          {Number(b.pointsAmount).toLocaleString()} pts
-                        </span>
-                      ) : b.pointsEarnType === "fixed_per_night" && b.pointsAmount != null ? (
-                        <span className="text-muted-foreground">
-                          {Number(b.pointsAmount).toLocaleString()} pts/night
-                        </span>
-                      ) : b.pointsEarnType === "multiplier_on_base" &&
-                        b.pointsMultiplier != null ? (
-                        <span className="text-muted-foreground">
-                          {Number(b.pointsMultiplier)}× multiplier
-                        </span>
-                      ) : null}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Card Benefits */}
-        {booking.bookingCardBenefits.length > 0 && (
-          <Card data-testid="card-benefits-card">
-            <CardContent className="pt-6">
-              <p className="text-base font-semibold mb-4">Card Benefits</p>
-              <ul className="space-y-2">
-                {booking.bookingCardBenefits.map((bcb) => (
-                  <li key={bcb.id} className="flex items-center justify-between">
-                    <span>{bcb.cardBenefit.description}</span>
-                    <span className="text-muted-foreground">
-                      {formatCurrency(Number(bcb.appliedValue))}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Applied Promotions */}
         {booking.bookingPromotions.length > 0 && (
@@ -751,6 +694,64 @@ export default function BookingDetailPage() {
                   </TableBody>
                 </Table>
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Booking Benefits */}
+        {booking.benefits.length > 0 && (
+          <Card data-testid="booking-benefits-card">
+            <CardContent className="pt-6">
+              <p className="text-base font-semibold mb-4">Booking Benefits</p>
+              <ul className="space-y-2">
+                {booking.benefits.map((b) => (
+                  <li key={b.id} className="flex items-center justify-between">
+                    <span>
+                      {formatBenefitType(b.benefitType)}
+                      {b.label ? ` — ${b.label}` : ""}
+                    </span>
+                    <span>
+                      {b.dollarValue != null ? (
+                        <span className="text-muted-foreground">
+                          {formatCurrency(Number(b.dollarValue), booking.currency)}
+                        </span>
+                      ) : b.pointsEarnType === "fixed_per_stay" && b.pointsAmount != null ? (
+                        <span className="text-muted-foreground">
+                          {Number(b.pointsAmount).toLocaleString()} pts
+                        </span>
+                      ) : b.pointsEarnType === "fixed_per_night" && b.pointsAmount != null ? (
+                        <span className="text-muted-foreground">
+                          {Number(b.pointsAmount).toLocaleString()} pts/night
+                        </span>
+                      ) : b.pointsEarnType === "multiplier_on_base" &&
+                        b.pointsMultiplier != null ? (
+                        <span className="text-muted-foreground">
+                          {Number(b.pointsMultiplier)}× multiplier
+                        </span>
+                      ) : null}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Card Benefits */}
+        {booking.bookingCardBenefits.length > 0 && (
+          <Card data-testid="card-benefits-card">
+            <CardContent className="pt-6">
+              <p className="text-base font-semibold mb-4">Card Benefits</p>
+              <ul className="space-y-2">
+                {booking.bookingCardBenefits.map((bcb) => (
+                  <li key={bcb.id} className="flex items-center justify-between">
+                    <span>{bcb.cardBenefit.description}</span>
+                    <span className="text-muted-foreground">
+                      {formatCurrency(Number(bcb.appliedValue))}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             </CardContent>
           </Card>
         )}
