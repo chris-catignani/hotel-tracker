@@ -21,7 +21,7 @@ test.describe("Apartment / non-hotel stays", () => {
     await expect(apartmentBooking.page.getByText("Apartment / Short-term Rental")).toBeVisible();
 
     // Net cost section should still be visible
-    await expect(apartmentBooking.page.getByText("Net Cost")).toBeVisible();
+    await expect(apartmentBooking.page.getByTestId("usd-net-cost-row")).toBeVisible();
   });
 
   test("apartment booking is returned correctly from the API", async ({ apartmentBooking }) => {
