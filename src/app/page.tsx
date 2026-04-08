@@ -8,13 +8,13 @@ import { SubBrandBreakdown } from "@/components/sub-brand-breakdown";
 import { PriceDistribution } from "@/components/price-distribution";
 import { MonthlyTravelPattern } from "@/components/monthly-travel-pattern";
 import { GeoDistribution } from "@/components/geo-distribution";
-import { calculateNetCost, getNetCostBreakdown } from "@/lib/net-cost";
+import { calculateNetCost, getNetCostBreakdown, type CalculationDetail } from "@/lib/net-cost";
 import { certPointsValue } from "@/lib/cert-types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageSpinner } from "@/components/ui/page-spinner";
-import { CalendarDays, Map, Wallet, ChevronUp, ChevronDown } from "lucide-react";
+import { CalendarDays, Map as MapIcon, Wallet, ChevronUp, ChevronDown } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -165,6 +165,43 @@ interface BookingWithRelations {
     }[];
   }[];
   certificates: BookingCertificate[];
+  partnershipEarns: {
+    id: string;
+    name: string;
+    pointsEarned: number;
+    earnedValue: number;
+    pointTypeName: string;
+    calc?: CalculationDetail;
+  }[];
+  bookingCardBenefits: {
+    id: string;
+    cardBenefit: { description: string };
+    appliedValue: string | number;
+  }[];
+  benefits: {
+    id: string;
+    label: string | null;
+    dollarValue: string | number | null;
+    benefitType: string;
+    pointsEarnType: string | null;
+    pointsAmount: number | null;
+    pointsMultiplier: string | number | null;
+  }[];
+}
+
+export interface RawProgramEntry {
+  name: string;
+  nativeAmount: number;
+  nativeUnit: string; // e.g. "World of Hyatt pts", "cash"
+  isPoints: boolean;
+}
+
+export interface RawCategoryData {
+  label: string;
+  color: string;
+  usdValue: number;
+  programs: RawProgramEntry[];
+  testId: string;
 }
 
 export function calcTotalSavings(booking: BookingWithRelations): number {
@@ -186,6 +223,181 @@ export function calcTotalSavings(booking: BookingWithRelations): number {
     (cardBenefitSavings ?? 0) +
     partnershipEarnsValue
   );
+}
+
+type ProgramAcc = { nativeAmount: number; nativeUnit: string; isPoints: boolean; usdValue: number };
+
+export function buildRawBreakdown(bookings: BookingWithRelations[]): RawCategoryData[] {
+  const loyaltyMap = new Map<string, ProgramAcc>();
+  const cardMap = new Map<string, ProgramAcc>();
+  const portalMap = new Map<string, ProgramAcc>();
+  const partnerMap = new Map<string, ProgramAcc>();
+  const promoMap = new Map<string, ProgramAcc>();
+  const cardBenefitMap = new Map<string, ProgramAcc>();
+  const benefitMap = new Map<string, ProgramAcc>();
+
+  function accumulate(map: Map<string, ProgramAcc>, key: string, entry: ProgramAcc) {
+    const existing = map.get(key);
+    if (existing) {
+      existing.nativeAmount += entry.nativeAmount;
+      existing.usdValue += entry.usdValue;
+    } else {
+      map.set(key, { ...entry });
+    }
+  }
+
+  for (const b of bookings) {
+    const { cardReward, portalCashback, loyaltyPointsValue } = getNetCostBreakdown(b);
+
+    if ((b.loyaltyPointsEarned ?? 0) > 0 && b.hotelChain) {
+      accumulate(loyaltyMap, b.hotelChain.name, {
+        nativeAmount: b.loyaltyPointsEarned!,
+        nativeUnit: b.hotelChain.pointType?.name ?? "pts",
+        isPoints: true,
+        usdValue: loyaltyPointsValue,
+      });
+    }
+
+    if (cardReward > 0 && b.userCreditCard) {
+      const card = b.userCreditCard.creditCard;
+      const isPoints = card.rewardType === "points" && card.pointType != null;
+      const centsPerPoint = isPoints ? Number(card.pointType!.usdCentsPerPoint) : 0;
+      accumulate(cardMap, card.name, {
+        nativeAmount:
+          isPoints && centsPerPoint > 0
+            ? Math.round((cardReward * 100) / centsPerPoint)
+            : cardReward,
+        nativeUnit: isPoints ? (card.pointType!.name ?? "pts") : "cash",
+        isPoints,
+        usdValue: cardReward,
+      });
+    }
+
+    if (portalCashback > 0 && b.shoppingPortal) {
+      const portal = b.shoppingPortal;
+      const isPoints = portal.rewardType === "points" && portal.pointType != null;
+      const centsPerPoint = isPoints ? Number(portal.pointType!.usdCentsPerPoint) : 0;
+      accumulate(portalMap, portal.name, {
+        nativeAmount:
+          isPoints && centsPerPoint > 0
+            ? Math.round((portalCashback * 100) / centsPerPoint)
+            : portalCashback,
+        nativeUnit: isPoints ? (portal.pointType!.name ?? "pts") : "cash",
+        isPoints,
+        usdValue: portalCashback,
+      });
+    }
+
+    for (const earn of b.partnershipEarns) {
+      if (earn.earnedValue <= 0) continue;
+      accumulate(partnerMap, earn.name, {
+        nativeAmount: earn.pointsEarned,
+        nativeUnit: earn.pointTypeName ?? "pts",
+        isPoints: true,
+        usdValue: earn.earnedValue,
+      });
+    }
+
+    for (const bp of b.bookingPromotions) {
+      const val = Number(bp.appliedValue);
+      if (val <= 0) continue;
+      accumulate(promoMap, bp.promotion.name, {
+        nativeAmount: val,
+        nativeUnit: "cash",
+        isPoints: false,
+        usdValue: val,
+      });
+    }
+
+    for (const bcb of b.bookingCardBenefits) {
+      const val = Number(bcb.appliedValue);
+      if (val <= 0) continue;
+      accumulate(cardBenefitMap, bcb.cardBenefit.description, {
+        nativeAmount: val,
+        nativeUnit: "cash",
+        isPoints: false,
+        usdValue: val,
+      });
+    }
+
+    for (const ben of b.benefits) {
+      const val = Number(ben.dollarValue ?? 0);
+      if (val <= 0) continue;
+      accumulate(benefitMap, ben.label ?? "Benefit", {
+        nativeAmount: val,
+        nativeUnit: "cash",
+        isPoints: false,
+        usdValue: val,
+      });
+    }
+  }
+
+  function toPrograms(map: Map<string, ProgramAcc>): RawProgramEntry[] {
+    return Array.from(map.entries()).map(([name, acc]) => ({
+      name,
+      nativeAmount: acc.nativeAmount,
+      nativeUnit: acc.nativeUnit,
+      isPoints: acc.isPoints,
+    }));
+  }
+
+  function sumUsd(map: Map<string, ProgramAcc>): number {
+    return Array.from(map.values()).reduce((s, a) => s + a.usdValue, 0);
+  }
+
+  return [
+    {
+      label: "Loyalty Points Value",
+      color: "bg-orange-500",
+      usdValue: sumUsd(loyaltyMap),
+      programs: toPrograms(loyaltyMap),
+      testId: "savings-breakdown-loyalty",
+    },
+    {
+      label: "Card Rewards",
+      color: "bg-purple-500",
+      usdValue: sumUsd(cardMap),
+      programs: toPrograms(cardMap),
+      testId: "savings-breakdown-card",
+    },
+    {
+      label: "Portal Cashback",
+      color: "bg-green-500",
+      usdValue: sumUsd(portalMap),
+      programs: toPrograms(portalMap),
+      testId: "savings-breakdown-portal",
+    },
+    {
+      label: "Partnership Earns",
+      color: "bg-teal-500",
+      usdValue: sumUsd(partnerMap),
+      programs: toPrograms(partnerMap),
+      testId: "savings-breakdown-partnership",
+    },
+    {
+      label: "Promotion Savings",
+      color: "bg-blue-500",
+      usdValue: sumUsd(promoMap),
+      programs: toPrograms(promoMap),
+      testId: "savings-breakdown-promo",
+    },
+    {
+      label: "Card Benefits",
+      color: "bg-pink-500",
+      usdValue: sumUsd(cardBenefitMap),
+      programs: toPrograms(cardBenefitMap),
+      testId: "savings-breakdown-card-benefits",
+    },
+    {
+      label: "Booking Benefits",
+      color: "bg-yellow-500",
+      usdValue: sumUsd(benefitMap),
+      programs: toPrograms(benefitMap),
+      testId: "savings-breakdown-booking-benefits",
+    },
+  ]
+    .filter((c) => c.usdValue > 0)
+    .sort((a, b) => b.usdValue - a.usdValue);
 }
 
 interface HotelChainSummary {
@@ -494,7 +706,7 @@ export default function DashboardPage() {
             onClick={() => setTravelMapOpen(true)}
             aria-label="Open travel map"
           >
-            <Map className="h-4 w-4" />
+            <MapIcon className="h-4 w-4" />
           </Button>
         </div>
         <div className="flex gap-2">

@@ -118,7 +118,7 @@ export interface NetCostBooking {
     appliedValue: string | number;
     cardBenefit: { description: string };
   }[];
-  partnershipEarns?: { name: string; earnedValue: number; calc: CalculationDetail }[];
+  partnershipEarns?: { name: string; earnedValue: number; calc?: CalculationDetail }[];
   property?: { name?: string; countryCode?: string | null } | null;
   bookingPromotions: {
     id?: string;
@@ -196,7 +196,7 @@ export interface NetCostBreakdown {
   cardRewardCalc?: CalculationDetail;
   loyaltyPointsValue: number;
   loyaltyPointsCalc?: CalculationDetail;
-  partnershipEarns: { name: string; earnedValue: number; calc: CalculationDetail }[];
+  partnershipEarns: { name: string; earnedValue: number; calc?: CalculationDetail }[];
   partnershipEarnsValue: number;
   bookingBenefitsValue: number;
   bookingBenefitsCalc?: CalculationDetail;
