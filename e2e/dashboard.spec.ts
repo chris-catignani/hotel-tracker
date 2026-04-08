@@ -845,3 +845,67 @@ test.describe("Dashboard — mixed payment warning", () => {
     }
   });
 });
+
+test.describe("Dashboard — Savings Breakdown Raw mode", () => {
+  test("Value/Raw toggle shows per-program native earnings", async ({
+    isolatedUser,
+    adminRequest,
+  }) => {
+    const chains = await adminRequest.get("/api/hotel-chains");
+    const allChains = await chains.json();
+    // Use a chain that has a loyalty program with a pointType
+    const chain = allChains.find(
+      (c: { loyaltyProgram: string | null }) => c.loyaltyProgram !== null
+    );
+    if (!chain) throw new Error("No hotel chain with loyalty program found in seed data");
+
+    const propertyName = `Raw Mode Test ${crypto.randomUUID()}`;
+    const bookingRes = await isolatedUser.request.post("/api/bookings", {
+      data: {
+        hotelChainId: chain.id,
+        propertyName,
+        checkIn: `${YEAR}-01-10`,
+        checkOut: `${YEAR}-01-13`,
+        numNights: 3,
+        pretaxCost: 300,
+        taxAmount: 30,
+        totalCost: 330,
+        currency: "USD",
+        loyaltyPointsEarned: 1500,
+        bookingSource: "direct_web",
+        accommodationType: "hotel",
+      },
+    });
+    expect(bookingRes.ok()).toBeTruthy();
+    const booking = await bookingRes.json();
+
+    try {
+      await isolatedUser.page.goto("/");
+      await isolatedUser.page.waitForLoadState("networkidle");
+
+      // Value mode is default — toggle button should be present
+      await expect(isolatedUser.page.getByTestId("savings-view-raw")).toBeVisible();
+
+      await isolatedUser.page.getByTestId("savings-view-raw").click();
+
+      // Loyalty category should show the chain name and point count
+      const loyaltySection = isolatedUser.page.getByTestId("savings-breakdown-loyalty");
+      await expect(loyaltySection).toBeVisible();
+      await expect(loyaltySection).toContainText(chain.name);
+      await expect(loyaltySection).toContainText("1,500");
+
+      // Total Savings footer still shows USD
+      await expect(isolatedUser.page.getByTestId("savings-breakdown-total")).toBeVisible();
+
+      // Progress bars should not be present in Raw mode
+      const bars = loyaltySection.locator(".h-3.rounded-full.bg-secondary");
+      await expect(bars).toHaveCount(0);
+
+      // Switch back to Value mode — loyalty row still present (USD value)
+      await isolatedUser.page.getByTestId("savings-view-value").click();
+      await expect(isolatedUser.page.getByTestId("savings-breakdown-loyalty")).toBeVisible();
+    } finally {
+      await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
+    }
+  });
+});

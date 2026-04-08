@@ -8,13 +8,14 @@ import { SubBrandBreakdown } from "@/components/sub-brand-breakdown";
 import { PriceDistribution } from "@/components/price-distribution";
 import { MonthlyTravelPattern } from "@/components/monthly-travel-pattern";
 import { GeoDistribution } from "@/components/geo-distribution";
-import { calculateNetCost, getNetCostBreakdown } from "@/lib/net-cost";
+import { calculateNetCost, getNetCostBreakdown, type CalculationDetail } from "@/lib/net-cost";
+import { formatBenefitLabel } from "@/lib/earnings-tracker-utils";
 import { certPointsValue } from "@/lib/cert-types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageSpinner } from "@/components/ui/page-spinner";
-import { CalendarDays, Map, Wallet, ChevronUp, ChevronDown } from "lucide-react";
+import { CalendarDays, Map as MapIcon, Wallet, ChevronUp, ChevronDown } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -37,6 +38,7 @@ import { ErrorBanner } from "@/components/ui/error-banner";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { logger } from "@/lib/logger";
 import { PostingStatus } from "@/lib/types";
+import { DEFAULT_EQN_VALUE } from "@/lib/constants";
 import dynamic from "next/dynamic";
 import { TravelMapButton } from "@/components/travel-map/travel-map-button";
 
@@ -80,7 +82,7 @@ interface BookingWithRelations {
     name: string;
     loyaltyProgram: string | null;
     basePointRate: string | number | null;
-    pointType: { name: string; usdCentsPerPoint: string } | null;
+    pointType: { name: string; shortName: string; usdCentsPerPoint: string } | null;
     userStatus?: {
       eliteStatus: {
         name: string;
@@ -101,7 +103,7 @@ interface BookingWithRelations {
       name: string;
       rewardType: string;
       rewardRate: string | number;
-      pointType: { name: string; usdCentsPerPoint: string } | null;
+      pointType: { name: string; shortName: string; usdCentsPerPoint: string } | null;
       rewardRules?: {
         rewardType: string;
         rewardValue: string | number;
@@ -114,7 +116,7 @@ interface BookingWithRelations {
     id: string;
     name: string;
     rewardType: string;
-    pointType: { name: string; usdCentsPerPoint: string } | null;
+    pointType: { name: string; shortName: string; usdCentsPerPoint: string } | null;
   } | null;
   bookingPromotions: {
     id: string;
@@ -124,6 +126,7 @@ interface BookingWithRelations {
     eligibleNightsAtBooking?: number | null;
     eligibleStayCount?: number | null;
     eligibleNightCount?: number | null;
+    bonusPointsApplied?: number | null;
     autoApplied: boolean;
     postingStatus: PostingStatus;
     promotion: {
@@ -165,6 +168,44 @@ interface BookingWithRelations {
     }[];
   }[];
   certificates: BookingCertificate[];
+  partnershipEarns: {
+    id: string;
+    name: string;
+    pointsEarned: number;
+    earnedValue: number;
+    pointTypeName: string;
+    calc?: CalculationDetail;
+  }[];
+  bookingCardBenefits: {
+    id: string;
+    cardBenefit: { description: string };
+    appliedValue: string | number;
+  }[];
+  benefits: {
+    id: string;
+    label: string | null;
+    dollarValue: string | number | null;
+    benefitType: string;
+    pointsEarnType: string | null;
+    pointsAmount: number | null;
+    pointsMultiplier: string | number | null;
+  }[];
+}
+
+export interface RawProgramEntry {
+  id: string;
+  name: string;
+  nativeAmount: number;
+  nativeUnit: string; // e.g. "World of Hyatt pts", "cash"
+  isPoints: boolean;
+}
+
+export interface RawCategoryData {
+  label: string;
+  color: string;
+  usdValue: number;
+  programs: RawProgramEntry[];
+  testId: string;
 }
 
 export function calcTotalSavings(booking: BookingWithRelations): number {
@@ -186,6 +227,242 @@ export function calcTotalSavings(booking: BookingWithRelations): number {
     (cardBenefitSavings ?? 0) +
     partnershipEarnsValue
   );
+}
+
+type ProgramAcc = {
+  nativeAmount: number;
+  nativeUnit: string;
+  isPoints: boolean;
+  usdValue: number;
+  displayName?: string;
+};
+
+export function buildRawBreakdown(bookings: BookingWithRelations[]): RawCategoryData[] {
+  const loyaltyMap = new Map<string, ProgramAcc>();
+  const cardMap = new Map<string, ProgramAcc>();
+  const portalMap = new Map<string, ProgramAcc>();
+  const partnerMap = new Map<string, ProgramAcc>();
+  const promoMap = new Map<string, ProgramAcc>();
+  const cardBenefitMap = new Map<string, ProgramAcc>();
+  const benefitMap = new Map<string, ProgramAcc>();
+
+  function accumulate(map: Map<string, ProgramAcc>, key: string, entry: ProgramAcc) {
+    const existing = map.get(key);
+    if (existing) {
+      existing.nativeAmount += entry.nativeAmount;
+      existing.usdValue += entry.usdValue;
+    } else {
+      map.set(key, { ...entry });
+    }
+  }
+
+  for (const b of bookings) {
+    const { cardReward, portalCashback, loyaltyPointsValue } = getNetCostBreakdown(b);
+
+    if ((b.loyaltyPointsEarned ?? 0) > 0 && b.hotelChain) {
+      accumulate(loyaltyMap, b.hotelChain.name, {
+        nativeAmount: b.loyaltyPointsEarned!,
+        nativeUnit: b.hotelChain.pointType?.shortName ?? "pts",
+        isPoints: true,
+        usdValue: loyaltyPointsValue,
+      });
+    }
+
+    if (cardReward > 0 && b.userCreditCard) {
+      const card = b.userCreditCard.creditCard;
+      const isPoints = card.rewardType === "points" && card.pointType != null;
+      const centsPerPoint = isPoints ? Number(card.pointType!.usdCentsPerPoint) : 0;
+      const key = isPoints ? card.pointType!.name : "cash";
+      accumulate(cardMap, key, {
+        nativeAmount:
+          isPoints && centsPerPoint > 0 ? Math.round(cardReward / centsPerPoint) : cardReward,
+        nativeUnit: isPoints ? card.pointType!.shortName : "cash",
+        isPoints,
+        usdValue: cardReward,
+      });
+    }
+
+    if (portalCashback > 0 && b.shoppingPortal) {
+      const portal = b.shoppingPortal;
+      const isPoints = portal.rewardType === "points" && portal.pointType != null;
+      const centsPerPoint = isPoints ? Number(portal.pointType!.usdCentsPerPoint) : 0;
+      accumulate(portalMap, portal.name, {
+        nativeAmount:
+          isPoints && centsPerPoint > 0
+            ? Math.round(portalCashback / centsPerPoint)
+            : portalCashback,
+        nativeUnit: isPoints ? portal.pointType!.shortName : "cash",
+        isPoints,
+        usdValue: portalCashback,
+      });
+    }
+
+    for (const earn of b.partnershipEarns) {
+      if (earn.earnedValue <= 0) continue;
+      accumulate(partnerMap, earn.name, {
+        nativeAmount: Math.floor(earn.pointsEarned),
+        nativeUnit: earn.pointTypeName ?? "pts",
+        isPoints: true,
+        usdValue: earn.earnedValue,
+      });
+    }
+
+    for (const bp of b.bookingPromotions) {
+      const applications = bp.benefitApplications ?? [];
+
+      if (applications.length === 0) {
+        // No benefit-level data: fall back to promo-level appliedValue as cash
+        const val = Number(bp.appliedValue);
+        if (val > 0) {
+          accumulate(promoMap, bp.promotion.name, {
+            nativeAmount: val,
+            nativeUnit: "cash",
+            isPoints: false,
+            usdValue: val,
+          });
+        }
+        continue;
+      }
+
+      // Points portion: emitted once using bonusPointsApplied
+      const pointsUsdValue = applications
+        .filter((ba) => ba.promotionBenefit.rewardType === "points")
+        .reduce((s, ba) => s + Number(ba.appliedValue), 0);
+      if ((bp.bonusPointsApplied ?? 0) > 0 && pointsUsdValue > 0) {
+        let pointTypeShortName: string | null = null;
+        if (bp.promotion.type === "loyalty")
+          pointTypeShortName = b.hotelChain?.pointType?.shortName ?? null;
+        else if (bp.promotion.type === "credit_card")
+          pointTypeShortName = b.userCreditCard?.creditCard?.pointType?.shortName ?? null;
+        else if (bp.promotion.type === "portal")
+          pointTypeShortName = b.shoppingPortal?.pointType?.shortName ?? null;
+        accumulate(promoMap, `${bp.promotion.name}|points`, {
+          nativeAmount: bp.bonusPointsApplied!,
+          nativeUnit: pointTypeShortName ?? "pts",
+          isPoints: true,
+          usdValue: pointsUsdValue,
+          displayName: bp.promotion.name,
+        });
+      }
+
+      // Non-points portions: one entry per reward type
+      for (const ba of applications) {
+        if (ba.promotionBenefit.rewardType === "points") continue;
+        const val = Number(ba.appliedValue);
+        if (val <= 0) continue;
+        if (ba.promotionBenefit.rewardType === "eqn") {
+          accumulate(promoMap, `${bp.promotion.name}|eqn`, {
+            nativeAmount: Math.round(val / DEFAULT_EQN_VALUE),
+            nativeUnit: "EQN",
+            isPoints: true,
+            usdValue: val,
+            displayName: `${bp.promotion.name} (EQN)`,
+          });
+        } else {
+          accumulate(promoMap, `${bp.promotion.name}|${ba.promotionBenefit.rewardType}`, {
+            nativeAmount: val,
+            nativeUnit: "cash",
+            isPoints: false,
+            usdValue: val,
+            displayName: bp.promotion.name,
+          });
+        }
+      }
+    }
+
+    for (const bcb of b.bookingCardBenefits) {
+      const val = Number(bcb.appliedValue);
+      if (val <= 0) continue;
+      const key = bcb.cardBenefit.description.trim().toLowerCase();
+      const displayName = bcb.cardBenefit.description.trim();
+      accumulate(cardBenefitMap, key, {
+        nativeAmount: val,
+        nativeUnit: "cash",
+        isPoints: false,
+        usdValue: val,
+        displayName,
+      });
+    }
+
+    for (const ben of b.benefits) {
+      const val = Number(ben.dollarValue ?? 0);
+      if (val <= 0) continue;
+      accumulate(benefitMap, ben.label ?? formatBenefitLabel(ben.benefitType), {
+        nativeAmount: val,
+        nativeUnit: "cash",
+        isPoints: false,
+        usdValue: val,
+      });
+    }
+  }
+
+  function toPrograms(map: Map<string, ProgramAcc>): RawProgramEntry[] {
+    return Array.from(map.entries()).map(([key, acc]) => ({
+      id: key,
+      name: acc.displayName ?? key,
+      nativeAmount: acc.nativeAmount,
+      nativeUnit: acc.nativeUnit,
+      isPoints: acc.isPoints,
+    }));
+  }
+
+  function sumUsd(map: Map<string, ProgramAcc>): number {
+    return Array.from(map.values()).reduce((s, a) => s + a.usdValue, 0);
+  }
+
+  return [
+    {
+      label: "Loyalty Points Value",
+      color: "bg-orange-500",
+      usdValue: sumUsd(loyaltyMap),
+      programs: toPrograms(loyaltyMap),
+      testId: "savings-breakdown-loyalty",
+    },
+    {
+      label: "Card Rewards",
+      color: "bg-purple-500",
+      usdValue: sumUsd(cardMap),
+      programs: toPrograms(cardMap),
+      testId: "savings-breakdown-card",
+    },
+    {
+      label: "Portal Cashback",
+      color: "bg-green-500",
+      usdValue: sumUsd(portalMap),
+      programs: toPrograms(portalMap),
+      testId: "savings-breakdown-portal",
+    },
+    {
+      label: "Partnership Earns",
+      color: "bg-teal-500",
+      usdValue: sumUsd(partnerMap),
+      programs: toPrograms(partnerMap),
+      testId: "savings-breakdown-partnership",
+    },
+    {
+      label: "Promotion Savings",
+      color: "bg-blue-500",
+      usdValue: sumUsd(promoMap),
+      programs: toPrograms(promoMap),
+      testId: "savings-breakdown-promo",
+    },
+    {
+      label: "Card Benefits",
+      color: "bg-pink-500",
+      usdValue: sumUsd(cardBenefitMap),
+      programs: toPrograms(cardBenefitMap),
+      testId: "savings-breakdown-card-benefits",
+    },
+    {
+      label: "Booking Benefits",
+      color: "bg-yellow-500",
+      usdValue: sumUsd(benefitMap),
+      programs: toPrograms(benefitMap),
+      testId: "savings-breakdown-booking-benefits",
+    },
+  ]
+    .filter((c) => c.usdValue > 0)
+    .sort((a, b) => b.usdValue - a.usdValue);
 }
 
 interface HotelChainSummary {
@@ -256,6 +533,7 @@ export default function DashboardPage() {
     key: "count",
     direction: "desc",
   });
+  const [savingsViewMode, setSavingsViewMode] = useState<"value" | "raw">("value");
 
   const { yearFilter, setYearFilter, filterBookings: filterByYear } = useYearFilter();
 
@@ -330,6 +608,8 @@ export default function DashboardPage() {
     );
     return Object.values(summaries);
   }, [filteredBookings]);
+
+  const rawBreakdown = useMemo(() => buildRawBreakdown(filteredBookings), [filteredBookings]);
 
   const sortedHotelChainSummaries = useMemo(() => {
     return [...hotelChainSummaries].sort((a, b) => {
@@ -494,7 +774,7 @@ export default function DashboardPage() {
             onClick={() => setTravelMapOpen(true)}
             aria-label="Open travel map"
           >
-            <Map className="h-4 w-4" />
+            <MapIcon className="h-4 w-4" />
           </Button>
         </div>
         <div className="flex gap-2">
@@ -709,7 +989,25 @@ export default function DashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Savings Breakdown</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Savings Breakdown</CardTitle>
+              {filteredBookings.length > 0 && (
+                <div className="flex gap-1 bg-secondary p-1 rounded-md">
+                  {(["value", "raw"] as const).map((mode) => (
+                    <Button
+                      key={mode}
+                      variant={savingsViewMode === mode ? "default" : "ghost"}
+                      size="sm"
+                      className="h-7 text-xs px-2"
+                      onClick={() => setSavingsViewMode(mode)}
+                      data-testid={`savings-view-${mode}`}
+                    >
+                      {mode === "value" ? "Value" : "Raw"}
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             {filteredBookings.length === 0 ? (
@@ -811,27 +1109,58 @@ export default function DashboardPage() {
 
                   return (
                     <>
-                      {sortedItems.map((item) => (
-                        <div key={item.label} className="space-y-1">
-                          <div className="flex justify-between text-sm">
-                            <span>{item.label}</span>
-                            <span className="font-medium text-green-600" data-testid={item.testId}>
-                              {formatDollars(item.value, "USD", {
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0,
-                              })}
-                            </span>
-                          </div>
-                          <div className="h-3 rounded-full bg-secondary">
-                            <div
-                              className={`h-3 rounded-full ${item.color}`}
-                              style={{
-                                width: `${Math.max((item.value / maxValue) * 100, 0)}%`,
-                              }}
-                            />
-                          </div>
-                        </div>
-                      ))}
+                      {savingsViewMode === "value" ? (
+                        <>
+                          {sortedItems.map((item) => (
+                            <div key={item.label} className="space-y-1">
+                              <div className="flex justify-between text-sm">
+                                <span>{item.label}</span>
+                                <span
+                                  className="font-medium text-green-600"
+                                  data-testid={item.testId}
+                                >
+                                  {formatDollars(item.value, "USD", {
+                                    minimumFractionDigits: 0,
+                                    maximumFractionDigits: 0,
+                                  })}
+                                </span>
+                              </div>
+                              <div className="h-3 rounded-full bg-secondary">
+                                <div
+                                  className={`h-3 rounded-full ${item.color}`}
+                                  style={{
+                                    width: `${Math.max((item.value / maxValue) * 100, 0)}%`,
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </>
+                      ) : (
+                        <>
+                          {rawBreakdown.map((cat) => (
+                            <div key={cat.label} data-testid={cat.testId}>
+                              <div className="text-sm font-medium mb-1">{cat.label}</div>
+                              {cat.programs.map((prog) => (
+                                <div
+                                  key={prog.id}
+                                  className="flex justify-between text-sm pl-3 py-0.5"
+                                >
+                                  <span className="text-muted-foreground">{prog.name}</span>
+                                  <span>
+                                    {prog.isPoints
+                                      ? `${prog.nativeAmount.toLocaleString()} ${prog.nativeUnit}`
+                                      : formatDollars(prog.nativeAmount, "USD", {
+                                          minimumFractionDigits: 0,
+                                          maximumFractionDigits: 0,
+                                        })}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          ))}
+                        </>
+                      )}
                       <div className="pt-2 border-t">
                         <div className="flex justify-between font-medium">
                           <span>Total Savings</span>
