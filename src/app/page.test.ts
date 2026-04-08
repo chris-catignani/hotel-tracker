@@ -123,7 +123,7 @@ describe("buildRawBreakdown", () => {
         name: "Hyatt",
         loyaltyProgram: "World of Hyatt",
         basePointRate: "5",
-        pointType: { name: "World of Hyatt pts", usdCentsPerPoint: "1.25" },
+        pointType: { name: "World of Hyatt pts", shortName: "Hyatt", usdCentsPerPoint: "1.25" },
         userStatus: null,
         hotelChainSubBrands: [],
         eliteStatuses: [],
@@ -137,7 +137,7 @@ describe("buildRawBreakdown", () => {
     expect(cat!.programs[0]).toMatchObject({
       name: "Hyatt",
       nativeAmount: 2000,
-      nativeUnit: "World of Hyatt pts",
+      nativeUnit: "Hyatt",
       isPoints: true,
     });
   });
@@ -165,7 +165,7 @@ describe("buildRawBreakdown", () => {
       name: "Hyatt",
       loyaltyProgram: "World of Hyatt",
       basePointRate: "5",
-      pointType: { name: "World of Hyatt pts", usdCentsPerPoint: "1.25" },
+      pointType: { name: "World of Hyatt pts", shortName: "Hyatt", usdCentsPerPoint: "1.25" },
       userStatus: null,
       hotelChainSubBrands: [],
       eliteStatuses: [],
@@ -203,7 +203,7 @@ describe("buildRawBreakdown", () => {
         name: "Hyatt",
         loyaltyProgram: null,
         basePointRate: "5",
-        pointType: { name: "Hyatt pts", usdCentsPerPoint: "1.25" },
+        pointType: { name: "Hyatt pts", shortName: "Hyatt", usdCentsPerPoint: "1.25" },
         userStatus: null,
         hotelChainSubBrands: [],
         eliteStatuses: [],
@@ -217,7 +217,7 @@ describe("buildRawBreakdown", () => {
         name: "Marriott",
         loyaltyProgram: null,
         basePointRate: "10",
-        pointType: { name: "Marriott Bonvoy pts", usdCentsPerPoint: "0.6" },
+        pointType: { name: "Marriott Bonvoy pts", shortName: "Bonvoy", usdCentsPerPoint: "0.6" },
         userStatus: null,
         hotelChainSubBrands: [],
         eliteStatuses: [],
@@ -232,7 +232,7 @@ describe("buildRawBreakdown", () => {
     expect(names).toContain("Marriott");
   });
 
-  it("card rewards: shows points count for points-type card", () => {
+  it("card rewards: shows points count for points-type card, grouped by point type", () => {
     vi.mocked(getNetCostBreakdown).mockReturnValue({
       cardReward: 15,
       portalCashback: 0,
@@ -258,7 +258,7 @@ describe("buildRawBreakdown", () => {
           rewardType: "points",
           rewardRate: "5",
           pointTypeId: "pt1",
-          pointType: { name: "Amex MR pts", usdCentsPerPoint: "1.5" },
+          pointType: { name: "Amex MR pts", shortName: "MR", usdCentsPerPoint: "0.015" },
           rewardRules: [],
         },
         creditCardId: "cc1",
@@ -271,13 +271,76 @@ describe("buildRawBreakdown", () => {
     const result = buildRawBreakdown([booking]);
     const cat = result.find((c) => c.label === "Card Rewards");
     expect(cat).toBeDefined();
-    // 15 USD * 100 / 1.5 centsPerPoint = 1000 pts
+    // 15 USD / 0.015 USD-per-point = 1000 pts; keyed by point type name, unit uses shortName
     expect(cat!.programs[0]).toMatchObject({
-      name: "Amex Platinum",
+      name: "Amex MR pts",
       nativeAmount: 1000,
-      nativeUnit: "Amex MR pts",
+      nativeUnit: "MR",
       isPoints: true,
     });
+  });
+
+  it("card rewards: combines two cards with the same point type", () => {
+    vi.mocked(getNetCostBreakdown).mockReturnValue({
+      cardReward: 15,
+      portalCashback: 0,
+      loyaltyPointsValue: 0,
+      promoSavings: 0,
+      cardBenefitSavings: 0,
+      bookingBenefitsValue: 0,
+      partnershipEarnsValue: 0,
+      netCost: 205,
+      totalCost: 0,
+      pointsRedeemedValue: 0,
+      certsValue: 0,
+      partnershipEarns: [],
+      bookingBenefits: [],
+      promotions: [],
+    } as ReturnType<typeof getNetCostBreakdown>);
+
+    const amexPt = { name: "Amex MR pts", shortName: "MR", usdCentsPerPoint: "0.015" };
+    const b1 = makeBooking({
+      userCreditCard: {
+        creditCard: {
+          id: "cc1",
+          name: "Amex Platinum",
+          rewardType: "points",
+          rewardRate: "5",
+          pointTypeId: "pt1",
+          pointType: amexPt,
+          rewardRules: [],
+        },
+        creditCardId: "cc1",
+        id: "ucc1",
+        nickname: null,
+        userId: "u1",
+      },
+    });
+    const b2 = makeBooking({
+      id: "bk2",
+      userCreditCard: {
+        creditCard: {
+          id: "cc2",
+          name: "Amex Gold",
+          rewardType: "points",
+          rewardRate: "4",
+          pointTypeId: "pt1",
+          pointType: amexPt,
+          rewardRules: [],
+        },
+        creditCardId: "cc2",
+        id: "ucc2",
+        nickname: null,
+        userId: "u1",
+      },
+    });
+
+    const result = buildRawBreakdown([b1, b2]);
+    const cat = result.find((c) => c.label === "Card Rewards");
+    expect(cat!.programs).toHaveLength(1);
+    expect(cat!.programs[0].name).toBe("Amex MR pts");
+    // 2 bookings × 1000 pts each = 2000 pts
+    expect(cat!.programs[0].nativeAmount).toBe(2000);
   });
 
   it("card rewards: shows dollar amount for cash-type card", () => {
@@ -319,7 +382,7 @@ describe("buildRawBreakdown", () => {
     const result = buildRawBreakdown([booking]);
     const cat = result.find((c) => c.label === "Card Rewards");
     expect(cat!.programs[0]).toMatchObject({
-      name: "Citi Double Cash",
+      name: "cash",
       nativeAmount: 22,
       nativeUnit: "cash",
       isPoints: false,
@@ -350,17 +413,17 @@ describe("buildRawBreakdown", () => {
         name: "Chase Travel",
         rewardType: "points",
         pointTypeId: "pt2",
-        pointType: { name: "Chase UR pts", usdCentsPerPoint: "1.0" },
+        pointType: { name: "Chase UR pts", shortName: "UR", usdCentsPerPoint: "0.01" },
       },
     });
 
     const result = buildRawBreakdown([booking]);
     const cat = result.find((c) => c.label === "Portal Cashback");
-    // 10 USD * 100 / 1.0 = 1000 pts
+    // 10 USD / 0.01 USD-per-point = 1000 pts; nativeUnit uses shortName
     expect(cat!.programs[0]).toMatchObject({
       name: "Chase Travel",
       nativeAmount: 1000,
-      nativeUnit: "Chase UR pts",
+      nativeUnit: "UR",
       isPoints: true,
     });
   });
@@ -426,6 +489,162 @@ describe("buildRawBreakdown", () => {
     expect(cat!.programs.find((p) => p.name === "Hyatt Q1 Bonus")?.nativeAmount).toBe(40);
     expect(cat!.programs.find((p) => p.name === "Double Nights Promo")?.nativeAmount).toBe(20);
     expect(cat!.programs[0].isPoints).toBe(false);
+  });
+
+  it("promotions: shows points count for points-type promo", () => {
+    vi.mocked(getNetCostBreakdown).mockReturnValue({
+      cardReward: 0,
+      portalCashback: 0,
+      loyaltyPointsValue: 0,
+      promoSavings: 5,
+      cardBenefitSavings: 0,
+      bookingBenefitsValue: 0,
+      partnershipEarnsValue: 0,
+      netCost: 215,
+      totalCost: 0,
+      pointsRedeemedValue: 0,
+      certsValue: 0,
+      partnershipEarns: [],
+      bookingBenefits: [],
+      promotions: [],
+    } as ReturnType<typeof getNetCostBreakdown>);
+
+    const booking = makeBooking({
+      hotelChain: {
+        id: "hc1",
+        name: "IHG",
+        loyaltyProgram: "IHG One Rewards",
+        basePointRate: "10",
+        pointType: { name: "IHG pts", shortName: "IHG", usdCentsPerPoint: "0.005" },
+        userStatus: null,
+        hotelChainSubBrands: [],
+        eliteStatuses: [],
+      },
+      bookingPromotions: [
+        {
+          id: "bp1",
+          bookingId: "bk1",
+          promotionId: "p1",
+          appliedValue: "5",
+          bonusPointsApplied: 1000,
+          autoApplied: true,
+          postingStatus: "posted" as const,
+          promotion: {
+            id: "p1",
+            name: "IHG 2x Promo",
+            type: "loyalty",
+            value: "2",
+            valueType: "multiplier",
+            restrictions: null,
+          },
+          benefitApplications: [
+            {
+              appliedValue: "5",
+              promotionBenefit: {
+                rewardType: "points",
+                valueType: "multiplier",
+                value: "2",
+                certType: null,
+              },
+            },
+          ],
+        },
+      ],
+    });
+
+    const result = buildRawBreakdown([booking]);
+    const cat = result.find((c) => c.label === "Promotion Savings");
+    expect(cat!.programs[0]).toMatchObject({
+      name: "IHG 2x Promo",
+      nativeAmount: 1000,
+      nativeUnit: "IHG",
+      isPoints: true,
+    });
+  });
+
+  it("promotions: mixed points+eqn promo emits two separate entries", () => {
+    vi.mocked(getNetCostBreakdown).mockReturnValue({
+      cardReward: 0,
+      portalCashback: 0,
+      loyaltyPointsValue: 0,
+      promoSavings: 20.5,
+      cardBenefitSavings: 0,
+      bookingBenefitsValue: 0,
+      partnershipEarnsValue: 0,
+      netCost: 199.5,
+      totalCost: 0,
+      pointsRedeemedValue: 0,
+      certsValue: 0,
+      partnershipEarns: [],
+      bookingBenefits: [],
+      promotions: [],
+    } as ReturnType<typeof getNetCostBreakdown>);
+
+    const booking = makeBooking({
+      hotelChain: {
+        id: "hc1",
+        name: "Marriott",
+        loyaltyProgram: "Bonvoy",
+        basePointRate: "10",
+        pointType: { name: "Marriott Bonvoy pts", shortName: "Bonvoy", usdCentsPerPoint: "0.007" },
+        userStatus: null,
+        hotelChainSubBrands: [],
+        eliteStatuses: [],
+      },
+      bookingPromotions: [
+        {
+          id: "bp1",
+          bookingId: "bk1",
+          promotionId: "p1",
+          appliedValue: "20.5",
+          bonusPointsApplied: 1500,
+          autoApplied: true,
+          postingStatus: "posted" as const,
+          promotion: {
+            id: "p1",
+            name: "Marriott Global Q1",
+            type: "loyalty",
+            value: "0",
+            valueType: "fixed",
+            restrictions: null,
+          },
+          benefitApplications: [
+            {
+              appliedValue: "10.5",
+              promotionBenefit: {
+                rewardType: "points",
+                valueType: "fixed",
+                value: "1500",
+                certType: null,
+              },
+            },
+            {
+              appliedValue: "10",
+              promotionBenefit: {
+                rewardType: "eqn",
+                valueType: "fixed",
+                value: "1",
+                certType: null,
+              },
+            },
+          ],
+        },
+      ],
+    });
+
+    const result = buildRawBreakdown([booking]);
+    const cat = result.find((c) => c.label === "Promotion Savings");
+    expect(cat!.programs).toHaveLength(2);
+    expect(cat!.programs.find((p) => p.name === "Marriott Global Q1")).toMatchObject({
+      nativeAmount: 1500,
+      nativeUnit: "Bonvoy",
+      isPoints: true,
+    });
+    expect(cat!.programs.find((p) => p.name === "Marriott Global Q1 (EQN)")).toMatchObject({
+      nativeAmount: 1, // 10 USD / DEFAULT_EQN_VALUE ($10) = 1 EQN
+      nativeUnit: "EQN",
+      isPoints: true,
+    });
   });
 
   it("partnership earns: shows points by partner name", () => {
@@ -569,7 +788,7 @@ describe("buildRawBreakdown", () => {
         name: "Hyatt",
         loyaltyProgram: null,
         basePointRate: "5",
-        pointType: { name: "Hyatt pts", usdCentsPerPoint: "1.25" },
+        pointType: { name: "Hyatt pts", shortName: "Hyatt", usdCentsPerPoint: "0.0125" },
         userStatus: null,
         hotelChainSubBrands: [],
         eliteStatuses: [],
@@ -581,7 +800,7 @@ describe("buildRawBreakdown", () => {
           rewardType: "points",
           rewardRate: "5",
           pointTypeId: "pt1",
-          pointType: { name: "Amex MR pts", usdCentsPerPoint: "1.5" },
+          pointType: { name: "Amex MR pts", shortName: "MR", usdCentsPerPoint: "0.015" },
           rewardRules: [],
         },
         creditCardId: "cc1",
@@ -639,7 +858,7 @@ describe("buildRawBreakdown", () => {
         name: "Hyatt",
         loyaltyProgram: null,
         basePointRate: "5",
-        pointType: { name: "Hyatt pts", usdCentsPerPoint: "1.25" },
+        pointType: { name: "Hyatt pts", shortName: "Hyatt", usdCentsPerPoint: "1.25" },
         userStatus: null,
         hotelChainSubBrands: [],
         eliteStatuses: [],

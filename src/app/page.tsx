@@ -9,6 +9,7 @@ import { PriceDistribution } from "@/components/price-distribution";
 import { MonthlyTravelPattern } from "@/components/monthly-travel-pattern";
 import { GeoDistribution } from "@/components/geo-distribution";
 import { calculateNetCost, getNetCostBreakdown, type CalculationDetail } from "@/lib/net-cost";
+import { formatBenefitLabel } from "@/lib/earnings-tracker-utils";
 import { certPointsValue } from "@/lib/cert-types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,7 @@ import { ErrorBanner } from "@/components/ui/error-banner";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { logger } from "@/lib/logger";
 import { PostingStatus } from "@/lib/types";
+import { DEFAULT_EQN_VALUE } from "@/lib/constants";
 import dynamic from "next/dynamic";
 import { TravelMapButton } from "@/components/travel-map/travel-map-button";
 
@@ -80,7 +82,7 @@ interface BookingWithRelations {
     name: string;
     loyaltyProgram: string | null;
     basePointRate: string | number | null;
-    pointType: { name: string; usdCentsPerPoint: string } | null;
+    pointType: { name: string; shortName: string; usdCentsPerPoint: string } | null;
     userStatus?: {
       eliteStatus: {
         name: string;
@@ -101,7 +103,7 @@ interface BookingWithRelations {
       name: string;
       rewardType: string;
       rewardRate: string | number;
-      pointType: { name: string; usdCentsPerPoint: string } | null;
+      pointType: { name: string; shortName: string; usdCentsPerPoint: string } | null;
       rewardRules?: {
         rewardType: string;
         rewardValue: string | number;
@@ -114,7 +116,7 @@ interface BookingWithRelations {
     id: string;
     name: string;
     rewardType: string;
-    pointType: { name: string; usdCentsPerPoint: string } | null;
+    pointType: { name: string; shortName: string; usdCentsPerPoint: string } | null;
   } | null;
   bookingPromotions: {
     id: string;
@@ -124,6 +126,7 @@ interface BookingWithRelations {
     eligibleNightsAtBooking?: number | null;
     eligibleStayCount?: number | null;
     eligibleNightCount?: number | null;
+    bonusPointsApplied?: number | null;
     autoApplied: boolean;
     postingStatus: PostingStatus;
     promotion: {
@@ -225,7 +228,13 @@ export function calcTotalSavings(booking: BookingWithRelations): number {
   );
 }
 
-type ProgramAcc = { nativeAmount: number; nativeUnit: string; isPoints: boolean; usdValue: number };
+type ProgramAcc = {
+  nativeAmount: number;
+  nativeUnit: string;
+  isPoints: boolean;
+  usdValue: number;
+  displayName?: string;
+};
 
 export function buildRawBreakdown(bookings: BookingWithRelations[]): RawCategoryData[] {
   const loyaltyMap = new Map<string, ProgramAcc>();
@@ -252,7 +261,7 @@ export function buildRawBreakdown(bookings: BookingWithRelations[]): RawCategory
     if ((b.loyaltyPointsEarned ?? 0) > 0 && b.hotelChain) {
       accumulate(loyaltyMap, b.hotelChain.name, {
         nativeAmount: b.loyaltyPointsEarned!,
-        nativeUnit: b.hotelChain.pointType?.name ?? "pts",
+        nativeUnit: b.hotelChain.pointType?.shortName ?? "pts",
         isPoints: true,
         usdValue: loyaltyPointsValue,
       });
@@ -262,12 +271,11 @@ export function buildRawBreakdown(bookings: BookingWithRelations[]): RawCategory
       const card = b.userCreditCard.creditCard;
       const isPoints = card.rewardType === "points" && card.pointType != null;
       const centsPerPoint = isPoints ? Number(card.pointType!.usdCentsPerPoint) : 0;
-      accumulate(cardMap, card.name, {
+      const key = isPoints ? card.pointType!.name : "cash";
+      accumulate(cardMap, key, {
         nativeAmount:
-          isPoints && centsPerPoint > 0
-            ? Math.round((cardReward * 100) / centsPerPoint)
-            : cardReward,
-        nativeUnit: isPoints ? card.pointType!.name : "cash",
+          isPoints && centsPerPoint > 0 ? Math.round(cardReward / centsPerPoint) : cardReward,
+        nativeUnit: isPoints ? card.pointType!.shortName : "cash",
         isPoints,
         usdValue: cardReward,
       });
@@ -280,9 +288,9 @@ export function buildRawBreakdown(bookings: BookingWithRelations[]): RawCategory
       accumulate(portalMap, portal.name, {
         nativeAmount:
           isPoints && centsPerPoint > 0
-            ? Math.round((portalCashback * 100) / centsPerPoint)
+            ? Math.round(portalCashback / centsPerPoint)
             : portalCashback,
-        nativeUnit: isPoints ? portal.pointType!.name : "cash",
+        nativeUnit: isPoints ? portal.pointType!.shortName : "cash",
         isPoints,
         usdValue: portalCashback,
       });
@@ -291,7 +299,7 @@ export function buildRawBreakdown(bookings: BookingWithRelations[]): RawCategory
     for (const earn of b.partnershipEarns) {
       if (earn.earnedValue <= 0) continue;
       accumulate(partnerMap, earn.name, {
-        nativeAmount: earn.pointsEarned,
+        nativeAmount: Math.floor(earn.pointsEarned),
         nativeUnit: earn.pointTypeName ?? "pts",
         isPoints: true,
         usdValue: earn.earnedValue,
@@ -299,31 +307,86 @@ export function buildRawBreakdown(bookings: BookingWithRelations[]): RawCategory
     }
 
     for (const bp of b.bookingPromotions) {
-      const val = Number(bp.appliedValue);
-      if (val <= 0) continue;
-      accumulate(promoMap, bp.promotion.name, {
-        nativeAmount: val,
-        nativeUnit: "cash",
-        isPoints: false,
-        usdValue: val,
-      });
+      const applications = bp.benefitApplications ?? [];
+
+      if (applications.length === 0) {
+        // No benefit-level data: fall back to promo-level appliedValue as cash
+        const val = Number(bp.appliedValue);
+        if (val > 0) {
+          accumulate(promoMap, bp.promotion.name, {
+            nativeAmount: val,
+            nativeUnit: "cash",
+            isPoints: false,
+            usdValue: val,
+          });
+        }
+        continue;
+      }
+
+      // Points portion: emitted once using bonusPointsApplied
+      const pointsUsdValue = applications
+        .filter((ba) => ba.promotionBenefit.rewardType === "points")
+        .reduce((s, ba) => s + Number(ba.appliedValue), 0);
+      if ((bp.bonusPointsApplied ?? 0) > 0 && pointsUsdValue > 0) {
+        let pointTypeShortName: string | null = null;
+        if (bp.promotion.type === "loyalty")
+          pointTypeShortName = b.hotelChain?.pointType?.shortName ?? null;
+        else if (bp.promotion.type === "credit_card")
+          pointTypeShortName = b.userCreditCard?.creditCard?.pointType?.shortName ?? null;
+        else if (bp.promotion.type === "portal")
+          pointTypeShortName = b.shoppingPortal?.pointType?.shortName ?? null;
+        accumulate(promoMap, `${bp.promotion.name}|points`, {
+          nativeAmount: bp.bonusPointsApplied!,
+          nativeUnit: pointTypeShortName ?? "pts",
+          isPoints: true,
+          usdValue: pointsUsdValue,
+          displayName: bp.promotion.name,
+        });
+      }
+
+      // Non-points portions: one entry per reward type
+      for (const ba of applications) {
+        if (ba.promotionBenefit.rewardType === "points") continue;
+        const val = Number(ba.appliedValue);
+        if (val <= 0) continue;
+        if (ba.promotionBenefit.rewardType === "eqn") {
+          accumulate(promoMap, `${bp.promotion.name}|eqn`, {
+            nativeAmount: Math.round(val / DEFAULT_EQN_VALUE),
+            nativeUnit: "EQN",
+            isPoints: true,
+            usdValue: val,
+            displayName: `${bp.promotion.name} (EQN)`,
+          });
+        } else {
+          accumulate(promoMap, `${bp.promotion.name}|${ba.promotionBenefit.rewardType}`, {
+            nativeAmount: val,
+            nativeUnit: "cash",
+            isPoints: false,
+            usdValue: val,
+            displayName: bp.promotion.name,
+          });
+        }
+      }
     }
 
     for (const bcb of b.bookingCardBenefits) {
       const val = Number(bcb.appliedValue);
       if (val <= 0) continue;
-      accumulate(cardBenefitMap, bcb.cardBenefit.description, {
+      const key = bcb.cardBenefit.description.trim().toLowerCase();
+      const displayName = bcb.cardBenefit.description.trim();
+      accumulate(cardBenefitMap, key, {
         nativeAmount: val,
         nativeUnit: "cash",
         isPoints: false,
         usdValue: val,
+        displayName,
       });
     }
 
     for (const ben of b.benefits) {
       const val = Number(ben.dollarValue ?? 0);
       if (val <= 0) continue;
-      accumulate(benefitMap, ben.label ?? "Benefit", {
+      accumulate(benefitMap, ben.label ?? formatBenefitLabel(ben.benefitType), {
         nativeAmount: val,
         nativeUnit: "cash",
         isPoints: false,
@@ -334,7 +397,7 @@ export function buildRawBreakdown(bookings: BookingWithRelations[]): RawCategory
 
   function toPrograms(map: Map<string, ProgramAcc>): RawProgramEntry[] {
     return Array.from(map.entries()).map(([name, acc]) => ({
-      name,
+      name: acc.displayName ?? name,
       nativeAmount: acc.nativeAmount,
       nativeUnit: acc.nativeUnit,
       isPoints: acc.isPoints,
@@ -925,21 +988,18 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <CardTitle>Savings Breakdown</CardTitle>
               {filteredBookings.length > 0 && (
-                <div className="flex border border-border rounded-md overflow-hidden text-xs">
+                <div className="flex gap-1 bg-secondary p-1 rounded-md">
                   {(["value", "raw"] as const).map((mode) => (
-                    <button
+                    <Button
                       key={mode}
-                      className={cn(
-                        "px-3 py-1 transition-colors capitalize",
-                        savingsViewMode === mode
-                          ? "bg-foreground text-background"
-                          : "text-muted-foreground hover:text-foreground"
-                      )}
+                      variant={savingsViewMode === mode ? "default" : "ghost"}
+                      size="sm"
+                      className="h-7 text-xs px-2"
                       onClick={() => setSavingsViewMode(mode)}
                       data-testid={`savings-view-${mode}`}
                     >
                       {mode === "value" ? "Value" : "Raw"}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               )}
