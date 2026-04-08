@@ -267,7 +267,7 @@ export function buildRawBreakdown(bookings: BookingWithRelations[]): RawCategory
           isPoints && centsPerPoint > 0
             ? Math.round((cardReward * 100) / centsPerPoint)
             : cardReward,
-        nativeUnit: isPoints ? (card.pointType!.name ?? "pts") : "cash",
+        nativeUnit: isPoints ? card.pointType!.name : "cash",
         isPoints,
         usdValue: cardReward,
       });
@@ -282,7 +282,7 @@ export function buildRawBreakdown(bookings: BookingWithRelations[]): RawCategory
           isPoints && centsPerPoint > 0
             ? Math.round((portalCashback * 100) / centsPerPoint)
             : portalCashback,
-        nativeUnit: isPoints ? (portal.pointType!.name ?? "pts") : "cash",
+        nativeUnit: isPoints ? portal.pointType!.name : "cash",
         isPoints,
         usdValue: portalCashback,
       });
