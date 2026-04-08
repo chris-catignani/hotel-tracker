@@ -468,6 +468,7 @@ export default function DashboardPage() {
     key: "count",
     direction: "desc",
   });
+  const [savingsViewMode, setSavingsViewMode] = useState<"value" | "raw">("value");
 
   const { yearFilter, setYearFilter, filterBookings: filterByYear } = useYearFilter();
 
@@ -921,7 +922,28 @@ export default function DashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Savings Breakdown</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Savings Breakdown</CardTitle>
+              {filteredBookings.length > 0 && (
+                <div className="flex border border-border rounded-md overflow-hidden text-xs">
+                  {(["value", "raw"] as const).map((mode) => (
+                    <button
+                      key={mode}
+                      className={cn(
+                        "px-3 py-1 transition-colors capitalize",
+                        savingsViewMode === mode
+                          ? "bg-foreground text-background"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                      onClick={() => setSavingsViewMode(mode)}
+                      data-testid={`savings-view-${mode}`}
+                    >
+                      {mode === "value" ? "Value" : "Raw"}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             {filteredBookings.length === 0 ? (
@@ -1023,27 +1045,58 @@ export default function DashboardPage() {
 
                   return (
                     <>
-                      {sortedItems.map((item) => (
-                        <div key={item.label} className="space-y-1">
-                          <div className="flex justify-between text-sm">
-                            <span>{item.label}</span>
-                            <span className="font-medium text-green-600" data-testid={item.testId}>
-                              {formatDollars(item.value, "USD", {
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0,
-                              })}
-                            </span>
-                          </div>
-                          <div className="h-3 rounded-full bg-secondary">
-                            <div
-                              className={`h-3 rounded-full ${item.color}`}
-                              style={{
-                                width: `${Math.max((item.value / maxValue) * 100, 0)}%`,
-                              }}
-                            />
-                          </div>
-                        </div>
-                      ))}
+                      {savingsViewMode === "value" ? (
+                        <>
+                          {sortedItems.map((item) => (
+                            <div key={item.label} className="space-y-1">
+                              <div className="flex justify-between text-sm">
+                                <span>{item.label}</span>
+                                <span
+                                  className="font-medium text-green-600"
+                                  data-testid={item.testId}
+                                >
+                                  {formatDollars(item.value, "USD", {
+                                    minimumFractionDigits: 0,
+                                    maximumFractionDigits: 0,
+                                  })}
+                                </span>
+                              </div>
+                              <div className="h-3 rounded-full bg-secondary">
+                                <div
+                                  className={`h-3 rounded-full ${item.color}`}
+                                  style={{
+                                    width: `${Math.max((item.value / maxValue) * 100, 0)}%`,
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </>
+                      ) : (
+                        <>
+                          {buildRawBreakdown(filteredBookings).map((cat) => (
+                            <div key={cat.label} data-testid={cat.testId}>
+                              <div className="text-sm font-medium mb-1">{cat.label}</div>
+                              {cat.programs.map((prog) => (
+                                <div
+                                  key={prog.name}
+                                  className="flex justify-between text-sm pl-3 py-0.5"
+                                >
+                                  <span className="text-muted-foreground">{prog.name}</span>
+                                  <span>
+                                    {prog.isPoints
+                                      ? `${prog.nativeAmount.toLocaleString()} ${prog.nativeUnit}`
+                                      : formatDollars(prog.nativeAmount, "USD", {
+                                          minimumFractionDigits: 0,
+                                          maximumFractionDigits: 0,
+                                        })}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          ))}
+                        </>
+                      )}
                       <div className="pt-2 border-t">
                         <div className="flex justify-between font-medium">
                           <span>Total Savings</span>
