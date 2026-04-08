@@ -193,6 +193,7 @@ interface BookingWithRelations {
 }
 
 export interface RawProgramEntry {
+  id: string;
   name: string;
   nativeAmount: number;
   nativeUnit: string; // e.g. "World of Hyatt pts", "cash"
@@ -396,8 +397,9 @@ export function buildRawBreakdown(bookings: BookingWithRelations[]): RawCategory
   }
 
   function toPrograms(map: Map<string, ProgramAcc>): RawProgramEntry[] {
-    return Array.from(map.entries()).map(([name, acc]) => ({
-      name: acc.displayName ?? name,
+    return Array.from(map.entries()).map(([key, acc]) => ({
+      id: key,
+      name: acc.displayName ?? key,
       nativeAmount: acc.nativeAmount,
       nativeUnit: acc.nativeUnit,
       isPoints: acc.isPoints,
@@ -606,6 +608,8 @@ export default function DashboardPage() {
     );
     return Object.values(summaries);
   }, [filteredBookings]);
+
+  const rawBreakdown = useMemo(() => buildRawBreakdown(filteredBookings), [filteredBookings]);
 
   const sortedHotelChainSummaries = useMemo(() => {
     return [...hotelChainSummaries].sort((a, b) => {
@@ -1134,12 +1138,12 @@ export default function DashboardPage() {
                         </>
                       ) : (
                         <>
-                          {buildRawBreakdown(filteredBookings).map((cat) => (
+                          {rawBreakdown.map((cat) => (
                             <div key={cat.label} data-testid={cat.testId}>
                               <div className="text-sm font-medium mb-1">{cat.label}</div>
                               {cat.programs.map((prog) => (
                                 <div
-                                  key={prog.name}
+                                  key={prog.id}
                                   className="flex justify-between text-sm pl-3 py-0.5"
                                 >
                                   <span className="text-muted-foreground">{prog.name}</span>
