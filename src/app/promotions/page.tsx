@@ -258,7 +258,11 @@ export default function PromotionsPage() {
                   <TableBody>
                     {filteredPromotions.map((promo) => (
                       <TableRow key={promo.id}>
-                        <TableCell className="font-medium">{promo.name}</TableCell>
+                        <TableCell className="font-medium">
+                          <Link href={`/promotions/${promo.id}`} className="hover:underline">
+                            {promo.name}
+                          </Link>
+                        </TableCell>
                         <TableCell>
                           <Badge variant={typeBadgeVariant(promo.type)}>
                             {typeLabel(promo.type)}

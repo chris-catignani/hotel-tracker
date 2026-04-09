@@ -27,9 +27,13 @@ export function PromotionCard({ promotion, onDelete }: PromotionCardProps) {
           {/* Header: Name & Type Badge */}
           <div className="flex items-start justify-between gap-2">
             <div className="space-y-1">
-              <div className="font-bold line-clamp-1 text-base" data-testid="promotion-card-name">
+              <Link
+                href={`/promotions/${promotion.id}`}
+                className="font-bold line-clamp-1 text-base hover:underline block"
+                data-testid="promotion-card-name"
+              >
                 {promotion.name}
-              </div>
+              </Link>
               <div className="flex gap-1.5 items-center">
                 <Badge
                   variant={typeBadgeVariant(promotion.type)}
