@@ -23,7 +23,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageSpinner } from "@/components/ui/page-spinner";
-import { LucideIcon, Pencil, Plus, Trash2 } from "lucide-react";
+import { LucideIcon, Plus } from "lucide-react";
 import { ReactNode } from "react";
 
 export interface ColumnDef<T> {
@@ -280,28 +280,25 @@ export function SettingsCrudTab<T extends { id: string }>({
                       <TableCell key={col.header}>{col.render(item)}</TableCell>
                     ))}
                     <TableCell>
-                      <div className="flex gap-1">
+                      <div className="flex gap-2">
                         {editDialog && (
                           <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label="Edit"
+                            variant="outline"
+                            size="sm"
                             data-testid={testIds?.editButton}
                             onClick={() => handleEditClick(item)}
                           >
-                            <Pencil className="size-4" />
+                            Edit
                           </Button>
                         )}
                         {deleteDialog && (
                           <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label="Delete"
-                            className="text-destructive hover:text-destructive"
+                            variant="destructive"
+                            size="sm"
                             data-testid={testIds?.deleteButton}
                             onClick={() => handleDeleteClick(item)}
                           >
-                            <Trash2 className="size-4" />
+                            Delete
                           </Button>
                         )}
                       </div>

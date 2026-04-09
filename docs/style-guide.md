@@ -198,7 +198,7 @@ Use shadcn `<Button>` component exclusively. Do not style raw `<button>` element
 
 ### Row Actions
 
-All list tables should have a consistent Actions column:
+All list tables should have a consistent Actions column using **text buttons**:
 
 ```tsx
 <div className="flex gap-2">
@@ -214,8 +214,16 @@ All list tables should have a consistent Actions column:
 ```
 
 - **All** filter states (Ongoing, Expired, etc.) show the same actions.
-- Do not conditionally hide Edit/Delete based on status — the Promotions Expired/Ongoing inconsistency is a known deviation to fix.
-- Settings tabs currently use plain text "Edit" / "Delete" links — these should be normalized to `<Button>` components.
+- Do not conditionally hide Edit/Delete based on status.
+
+### Icon-only Buttons
+
+Reserve `variant="ghost"` + `size="icon"` for **inline field editing** — where a pencil appears next to an editable value within a row or card, not as a primary row action. Examples:
+
+- The pencil next to a Chain Property ID on the Price Watch page
+- The pencil next to a credit card name in the Credit Cards accordion
+
+Do **not** use icon-only buttons as the sole Edit/Delete actions in table rows — text is clearer in that context.
 
 ---
 

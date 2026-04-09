@@ -27,7 +27,7 @@ import {
   PointType,
   CardBenefit,
 } from "@/lib/types";
-import { ChevronDown, ChevronRight, Check, Pencil, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Check, Pencil, Plus } from "lucide-react";
 import { CardBenefitsSection } from "./card-benefits-section";
 
 // ---------------------------------------------------------------------------
@@ -569,13 +569,12 @@ export function CreditCardAccordionItem({
         <div className="shrink-0 ml-1" onClick={(e) => e.stopPropagation()}>
           <Button
             variant="ghost"
-            size="icon"
-            aria-label="Delete"
+            size="sm"
             className="text-destructive hover:text-destructive hover:bg-destructive/10"
             data-testid="delete-credit-card-button"
             onClick={() => setDeleteOpen(true)}
           >
-            <Trash2 className="size-4" />
+            Delete
           </Button>
         </div>
       </div>
