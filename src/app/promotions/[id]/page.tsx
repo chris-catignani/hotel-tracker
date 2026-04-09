@@ -19,24 +19,25 @@ import { useApiQuery } from "@/hooks/use-api-query";
 import { logger } from "@/lib/logger";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { formatBenefit, getLinkedName, typeLabel, typeBadgeVariant } from "@/lib/promotion-utils";
-import { BOOKING_SOURCE_LABELS } from "@/lib/constants";
+import {
+  BOOKING_SOURCE_LABELS,
+  BENEFIT_REWARD_TYPE_OPTIONS,
+  PAYMENT_TYPES,
+  ACCOMMODATION_TYPE_OPTIONS,
+} from "@/lib/constants";
 import { Promotion, PromotionBenefit, PromotionTier, PromotionRestrictionsData } from "@/lib/types";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+function labelFromOptions(
+  options: ReadonlyArray<{ value: string; label: string }>,
+  value: string
+): string {
+  return options.find((opt) => opt.value === value)?.label ?? value;
+}
+
 function rewardTypeLabel(type: string): string {
-  switch (type) {
-    case "points":
-      return "Points";
-    case "cashback":
-      return "Cashback";
-    case "certificate":
-      return "Certificate";
-    case "eqn":
-      return "EQN";
-    default:
-      return type;
-  }
+  return labelFromOptions(BENEFIT_REWARD_TYPE_OPTIONS, type);
 }
 
 function benefitBasis(
@@ -142,7 +143,7 @@ function getRestrictionItems(
   if (r.allowedPaymentTypes.length > 0)
     items.push({
       label: "Payment Types",
-      value: r.allowedPaymentTypes.join(", "),
+      value: r.allowedPaymentTypes.map((val) => labelFromOptions(PAYMENT_TYPES, val)).join(", "),
       testId: "restriction-payment-types",
     });
   if (r.allowedBookingSources.length > 0)
@@ -154,7 +155,9 @@ function getRestrictionItems(
   if (r.allowedAccommodationTypes.length > 0)
     items.push({
       label: "Accommodation Types",
-      value: r.allowedAccommodationTypes.join(", "),
+      value: r.allowedAccommodationTypes
+        .map((val) => labelFromOptions(ACCOMMODATION_TYPE_OPTIONS, val))
+        .join(", "),
       testId: "restriction-accommodation-types",
     });
   if (r.tieInRequiresPayment)
