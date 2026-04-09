@@ -65,7 +65,7 @@ export function getLinkedName(promo: Promotion): string {
   if (promo.hotelChain) return promo.hotelChain.name;
   if (promo.creditCard) return promo.creditCard.name;
   if (promo.shoppingPortal) return promo.shoppingPortal.name;
-  return "-";
+  return "—";
 }
 
 export function typeBadgeVariant(
