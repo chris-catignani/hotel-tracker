@@ -30,7 +30,7 @@ export default function NewPromotionPage() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="w-full mx-auto max-w-4xl space-y-6 pb-8">
       <h1 className="text-2xl font-bold">Add Promotion</h1>
 
       <ErrorBanner error={error} onDismiss={() => setError(null)} />
