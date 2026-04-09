@@ -285,6 +285,7 @@ export function SettingsCrudTab<T extends { id: string }>({
                           <Button
                             variant="ghost"
                             size="icon"
+                            aria-label="Edit"
                             data-testid={testIds?.editButton}
                             onClick={() => handleEditClick(item)}
                           >
@@ -295,6 +296,7 @@ export function SettingsCrudTab<T extends { id: string }>({
                           <Button
                             variant="ghost"
                             size="icon"
+                            aria-label="Delete"
                             className="text-destructive hover:text-destructive"
                             data-testid={testIds?.deleteButton}
                             onClick={() => handleDeleteClick(item)}
