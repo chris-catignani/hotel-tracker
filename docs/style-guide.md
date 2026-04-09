@@ -112,10 +112,10 @@ All pages use this as their outermost div:
 All single-entity create/edit forms use a centered container. The width is `max-w-4xl` — a middle ground between the cramped `max-w-2xl` (too narrow for booking's 3-column field grids) and the sprawling full-width layout currently used by booking forms:
 
 ```tsx
-<div className="mx-auto max-w-4xl space-y-6 pb-8">
+<div className="w-full mx-auto max-w-4xl space-y-6 pb-8">
 ```
 
-This should be verified visually after implementation — if the Booking form feels too wide or too narrow at `max-w-4xl`, adjust to `max-w-3xl` or `max-w-5xl` accordingly. The goal is a focused, readable layout that doesn't leave large empty gutters on wide screens.
+`w-full` is required. The app layout uses `flex flex-col`, and in a flex column container, `mx-auto` on both sides disables the default `align-items: stretch` behavior — the item shrinks to its content width instead of filling the container. `w-full` restores the explicit width so `max-w-4xl` caps it correctly.
 
 ---
 
