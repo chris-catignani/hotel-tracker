@@ -150,7 +150,7 @@ Rules:
 | Page            | H1 Title         | CTA Button                  |
 | --------------- | ---------------- | --------------------------- |
 | Bookings list   | "Bookings"       | "Add Booking"               |
-| New Booking     | "New Booking"    | "Create Booking" (submit)   |
+| New Booking     | "Add Booking"    | "Create Booking" (submit)   |
 | Edit Booking    | "Edit Booking"   | "Save Changes" (submit)     |
 | Promotions list | "Promotions"     | "Add Promotion"             |
 | New Promotion   | "Add Promotion"  | "Create Promotion" (submit) |
