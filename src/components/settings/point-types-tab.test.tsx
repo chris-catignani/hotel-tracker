@@ -70,7 +70,7 @@ describe("PointTypesTab", () => {
     render(<PointTypesTab />);
 
     const desktopView = await screen.findByTestId("point-types-desktop");
-    const deleteBtn = within(desktopView).getByRole("button", { name: "Delete" });
+    const deleteBtn = within(desktopView).getByTestId("point-type-delete-button");
     await user.click(deleteBtn);
 
     expect(screen.getByText("Delete Point Type?")).toBeInTheDocument();
@@ -95,7 +95,7 @@ describe("PointTypesTab", () => {
     render(<PointTypesTab />);
 
     const desktopView = await screen.findByTestId("point-types-desktop");
-    const deleteBtn = within(desktopView).getByRole("button", { name: "Delete" });
+    const deleteBtn = within(desktopView).getByTestId("point-type-delete-button");
     await user.click(deleteBtn);
 
     await user.click(screen.getByTestId("confirm-dialog-confirm-button"));
@@ -116,7 +116,7 @@ describe("PointTypesTab", () => {
     render(<PointTypesTab />);
 
     const desktopView = await screen.findByTestId("point-types-desktop");
-    const deleteBtn = within(desktopView).getByRole("button", { name: "Delete" });
+    const deleteBtn = within(desktopView).getByTestId("point-type-delete-button");
     await user.click(deleteBtn);
 
     await user.click(screen.getByRole("button", { name: "Cancel" }));

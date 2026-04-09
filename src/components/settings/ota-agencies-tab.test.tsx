@@ -58,7 +58,7 @@ describe("OtaAgenciesTab", () => {
 
     // Find delete button in the desktop view table
     const desktopView = await screen.findByTestId("agencies-desktop");
-    const deleteBtn = within(desktopView).getByRole("button", { name: "Delete" });
+    const deleteBtn = within(desktopView).getByTestId("agency-delete-button");
     await user.click(deleteBtn);
 
     expect(screen.getByText("Delete OTA Agency?")).toBeInTheDocument();
@@ -81,7 +81,7 @@ describe("OtaAgenciesTab", () => {
     render(<OtaAgenciesTab />);
 
     const desktopView = await screen.findByTestId("agencies-desktop");
-    const deleteBtn = within(desktopView).getByRole("button", { name: "Delete" });
+    const deleteBtn = within(desktopView).getByTestId("agency-delete-button");
     await user.click(deleteBtn);
 
     await user.click(screen.getByTestId("confirm-dialog-confirm-button"));
@@ -102,7 +102,7 @@ describe("OtaAgenciesTab", () => {
     render(<OtaAgenciesTab />);
 
     const desktopView = await screen.findByTestId("agencies-desktop");
-    const deleteBtn = within(desktopView).getByRole("button", { name: "Delete" });
+    const deleteBtn = within(desktopView).getByTestId("agency-delete-button");
     await user.click(deleteBtn);
 
     await user.click(screen.getByRole("button", { name: "Cancel" }));

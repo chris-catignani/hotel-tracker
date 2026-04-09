@@ -23,7 +23,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageSpinner } from "@/components/ui/page-spinner";
-import { LucideIcon } from "lucide-react";
+import { LucideIcon, Pencil, Plus, Trash2 } from "lucide-react";
 import { ReactNode } from "react";
 
 export interface ColumnDef<T> {
@@ -171,6 +171,7 @@ export function SettingsCrudTab<T extends { id: string }>({
         <h2 className="text-lg font-semibold">{title}</h2>
         {!open && (
           <Button data-testid={addButtonTestId} onClick={() => setOpen(true)}>
+            <Plus className="size-4" />
             {addButtonLabel}
           </Button>
         )}
@@ -279,25 +280,26 @@ export function SettingsCrudTab<T extends { id: string }>({
                       <TableCell key={col.header}>{col.render(item)}</TableCell>
                     ))}
                     <TableCell>
-                      <div className="flex gap-2">
+                      <div className="flex gap-1">
                         {editDialog && (
                           <Button
                             variant="ghost"
-                            size="sm"
+                            size="icon"
                             data-testid={testIds?.editButton}
                             onClick={() => handleEditClick(item)}
                           >
-                            Edit
+                            <Pencil className="size-4" />
                           </Button>
                         )}
                         {deleteDialog && (
                           <Button
                             variant="ghost"
-                            size="sm"
+                            size="icon"
+                            className="text-destructive hover:text-destructive"
                             data-testid={testIds?.deleteButton}
                             onClick={() => handleDeleteClick(item)}
                           >
-                            Delete
+                            <Trash2 className="size-4" />
                           </Button>
                         )}
                       </div>
