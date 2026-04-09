@@ -19,6 +19,7 @@ After schema changes: restart the dev server to pick up the new Prisma client.
 
 **Framework:** Next.js 16 App Router, TypeScript, Prisma 6, PostgreSQL, Tailwind CSS 4, shadcn/ui
 **Path alias:** `@/*` → `src/*`
+**UI/UX style guide:** `docs/style-guide.md` — canonical reference for colors, typography, layout, and component patterns. Follow it for all UI work.
 
 ### Data Model
 
