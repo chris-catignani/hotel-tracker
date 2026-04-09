@@ -75,27 +75,27 @@ function buildBenefitCreateData(b: PromotionBenefitFormData, i: number) {
 // Shared include + return type
 // ---------------------------------------------------------------------------
 
+const SUB_BRAND_RESTRICTIONS_INCLUDE = {
+  subBrandRestrictions: { include: { hotelChainSubBrand: { select: { name: true } } } },
+  tieInCards: true,
+  hotelChain: { select: { name: true } },
+} as const;
+
 const PROMOTION_INCLUDE = {
   hotelChain: true,
   creditCard: true,
   shoppingPortal: true,
-  restrictions: {
-    include: { subBrandRestrictions: true, tieInCards: true },
-  },
+  restrictions: { include: SUB_BRAND_RESTRICTIONS_INCLUDE },
   benefits: {
     orderBy: { sortOrder: "asc" as const },
-    include: {
-      restrictions: { include: { subBrandRestrictions: true, tieInCards: true } },
-    },
+    include: { restrictions: { include: SUB_BRAND_RESTRICTIONS_INCLUDE } },
   },
   tiers: {
     orderBy: { minStays: "asc" as const },
     include: {
       benefits: {
         orderBy: { sortOrder: "asc" as const },
-        include: {
-          restrictions: { include: { subBrandRestrictions: true, tieInCards: true } },
-        },
+        include: { restrictions: { include: SUB_BRAND_RESTRICTIONS_INCLUDE } },
       },
     },
   },

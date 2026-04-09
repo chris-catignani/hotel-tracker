@@ -258,7 +258,11 @@ export default function PromotionsPage() {
                   <TableBody>
                     {filteredPromotions.map((promo) => (
                       <TableRow key={promo.id}>
-                        <TableCell className="font-medium">{promo.name}</TableCell>
+                        <TableCell className="font-medium">
+                          <Link href={`/promotions/${promo.id}`} className="hover:underline">
+                            {promo.name}
+                          </Link>
+                        </TableCell>
                         <TableCell>
                           <Badge variant={typeBadgeVariant(promo.type)}>
                             {typeLabel(promo.type)}
@@ -270,7 +274,7 @@ export default function PromotionsPage() {
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
                             <Button variant="outline" size="sm" asChild>
-                              <Link href={`/promotions/${promo.id}/edit`}>Edit</Link>
+                              <Link href={`/promotions/${promo.id}`}>View</Link>
                             </Button>
                             <Button
                               variant="destructive"

@@ -24,27 +24,35 @@ test.describe("Promotions CRUD", () => {
     await expect(row.getByText("$25.00 cashback")).toBeVisible();
   });
 
-  test("should navigate to edit promotion page", async ({ testPromotion }) => {
+  test("should navigate to view page when clicking promotion name", async ({ testPromotion }) => {
     await testPromotion.page.goto("/promotions");
-
-    // Find the row with the test promotion and click Edit
     const desktopList = testPromotion.page.getByTestId("promotions-list-desktop");
     const row = desktopList.getByRole("row").filter({ hasText: testPromotion.name });
-    await row.getByRole("link", { name: "Edit" }).click();
+    await row.getByRole("link", { name: testPromotion.name }).click();
 
-    await expect(testPromotion.page).toHaveURL(/\/promotions\/[a-z0-9]+\/edit/);
+    await expect(testPromotion.page).toHaveURL(/\/promotions\/[^/]+$/);
+    await expect(testPromotion.page.getByTestId("hero-promo-name")).toHaveText(testPromotion.name);
+  });
+
+  test("should navigate to edit page via Edit button on view page", async ({ testPromotion }) => {
+    await testPromotion.page.goto(`/promotions/${testPromotion.id}`);
+    await expect(testPromotion.page.getByTestId("hero-promo-name")).toHaveText(testPromotion.name);
+
+    await testPromotion.page.getByRole("link", { name: "Edit" }).click();
+    await expect(testPromotion.page).toHaveURL(/\/promotions\/[^/]+\/edit$/);
     await expect(
       testPromotion.page.getByRole("heading", { name: /Edit Promotion/i })
     ).toBeVisible();
   });
 
-  test("should pre-populate edit form with existing benefit data", async ({ testPromotion }) => {
-    await testPromotion.page.goto(`/promotions`);
+  test("should show promotion details on view page", async ({ testPromotion }) => {
+    await testPromotion.page.goto(`/promotions/${testPromotion.id}`);
+    await expect(testPromotion.page.getByTestId("hero-promo-name")).toHaveText(testPromotion.name);
+    await expect(testPromotion.page.getByTestId("benefits-list")).toContainText("$25.00 cashback");
+  });
 
-    // Navigate to edit
-    const desktopList = testPromotion.page.getByTestId("promotions-list-desktop");
-    const row = desktopList.getByRole("row").filter({ hasText: testPromotion.name });
-    await row.getByRole("link", { name: "Edit" }).click();
+  test("should pre-populate edit form with existing benefit data", async ({ testPromotion }) => {
+    await testPromotion.page.goto(`/promotions/${testPromotion.id}/edit`);
 
     // Wait for form to load
     await expect(testPromotion.page.getByTestId("benefit-row-0")).toBeVisible();
@@ -878,7 +886,8 @@ test.describe("Promotions payment type restrictions", () => {
     await expect(row).toBeVisible({ timeout: 15000 });
 
     // Navigate to Edit to check persistence
-    await row.getByRole("link", { name: "Edit" }).click();
+    await row.getByRole("link", { name: "View" }).click();
+    await isolatedUser.page.getByRole("link", { name: "Edit" }).click();
 
     // Check persistence in Edit page
     await expect(isolatedUser.page).toHaveURL(/\/promotions\/.*\/edit/);
@@ -904,8 +913,9 @@ test.describe("Promotions payment type restrictions", () => {
     await desktopList
       .getByRole("row")
       .filter({ hasText: promoName })
-      .getByRole("link", { name: "Edit" })
+      .getByRole("link", { name: "View" })
       .click();
+    await isolatedUser.page.getByRole("link", { name: "Edit" }).click();
     await expect(isolatedUser.page.getByTestId("restriction-card-payment_type")).not.toBeVisible();
 
     // Cleanup

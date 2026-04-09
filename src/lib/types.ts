@@ -161,6 +161,7 @@ export interface SubBrandRestriction {
   id: string;
   hotelChainSubBrandId: string;
   mode: SubBrandRestrictionMode;
+  hotelChainSubBrand?: { name: string } | null;
 }
 
 export interface PromotionRestrictionsData {
@@ -183,6 +184,7 @@ export interface PromotionRestrictionsData {
   allowedCountryCodes: string[];
   allowedAccommodationTypes: AccommodationType[];
   hotelChainId: string | null;
+  hotelChain?: { name: string } | null;
   prerequisiteStayCount: number | null;
   prerequisiteNightCount: number | null;
   subBrandRestrictions: SubBrandRestriction[];
