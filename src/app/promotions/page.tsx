@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorBanner } from "@/components/ui/error-banner";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Plus, Tag } from "lucide-react";
 import { PromotionCard } from "@/components/promotions/promotion-card";
 import { Promotion } from "@/lib/types";
@@ -55,18 +56,27 @@ export default function PromotionsPage() {
 
   const [activeTab, setActiveTab] = useState("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ongoing");
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [promoToDelete, setPromoToDelete] = useState<string | null>(null);
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this promotion?")) return;
-    const result = await apiFetch(`/api/promotions/${id}`, { method: "DELETE" });
+  const handleDeleteClick = (id: string) => {
+    setPromoToDelete(id);
+    setDeleteOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!promoToDelete) return;
+    setDeleteOpen(false);
+    const result = await apiFetch(`/api/promotions/${promoToDelete}`, { method: "DELETE" });
     if (!result.ok) {
       logger.error("Failed to delete promotion", result.error, {
-        promotionId: id,
+        promotionId: promoToDelete,
         status: result.status,
       });
       toast.error("Failed to delete promotion. Please try again.");
       return;
     }
+    setPromoToDelete(null);
     refetchPromotions();
   };
 
@@ -182,6 +192,14 @@ export default function PromotionsPage() {
         onDismiss={clearError}
       />
 
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete Promotion?"
+        description="Are you sure you want to delete this promotion? This cannot be undone."
+        onConfirm={handleDeleteConfirm}
+      />
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 min-h-0">
         <TabsList className="hidden sm:flex shrink-0">
           <TabsTrigger value="all">All</TabsTrigger>
@@ -217,7 +235,7 @@ export default function PromotionsPage() {
               {/* Mobile View: Cards */}
               <div className="flex flex-col gap-4 md:hidden" data-testid="promotions-list-mobile">
                 {filteredPromotions.map((promo) => (
-                  <PromotionCard key={promo.id} promotion={promo} onDelete={handleDelete} />
+                  <PromotionCard key={promo.id} promotion={promo} onDelete={handleDeleteClick} />
                 ))}
               </div>
 
@@ -257,7 +275,7 @@ export default function PromotionsPage() {
                             <Button
                               variant="destructive"
                               size="sm"
-                              onClick={() => handleDelete(promo.id)}
+                              onClick={() => handleDeleteClick(promo.id)}
                             >
                               Delete
                             </Button>

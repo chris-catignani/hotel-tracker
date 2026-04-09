@@ -120,10 +120,11 @@ describe("SettingsCrudTab", () => {
         isValid: true,
         onOpen,
       },
+      testIds: { list: "things-desktop", empty: "things-empty", editButton: "edit-button" },
     });
     render(<SettingsCrudTab {...props} />);
     const desktop = await screen.findByTestId("things-desktop");
-    await user.click(within(desktop).getByRole("button", { name: "Edit" }));
+    await user.click(within(desktop).getByTestId("edit-button"));
     expect(onOpen).toHaveBeenCalledWith(items[0]);
     expect(screen.getByTestId("edit-name")).toBeInTheDocument();
   });
@@ -140,10 +141,11 @@ describe("SettingsCrudTab", () => {
         onConfirm: vi.fn().mockResolvedValue(undefined),
         onOpen,
       },
+      testIds: { list: "things-desktop", empty: "things-empty", deleteButton: "delete-button" },
     });
     render(<SettingsCrudTab {...props} />);
     const desktop = await screen.findByTestId("things-desktop");
-    await user.click(within(desktop).getByRole("button", { name: "Delete" }));
+    await user.click(within(desktop).getByTestId("delete-button"));
     expect(onOpen).toHaveBeenCalledWith(items[0]);
     expect(screen.getByText("Delete Thing?")).toBeInTheDocument();
     expect(screen.getByText('Delete "Alpha"?')).toBeInTheDocument();
@@ -162,10 +164,11 @@ describe("SettingsCrudTab", () => {
         onConfirm,
         onOpen: vi.fn(),
       },
+      testIds: { list: "things-desktop", empty: "things-empty", deleteButton: "delete-button" },
     });
     render(<SettingsCrudTab {...props} />);
     const desktop = await screen.findByTestId("things-desktop");
-    await user.click(within(desktop).getByRole("button", { name: "Delete" }));
+    await user.click(within(desktop).getByTestId("delete-button"));
     await user.click(screen.getByTestId("confirm-dialog-confirm-button"));
     await waitFor(() => expect(onConfirm).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(fetchItems).toHaveBeenCalledTimes(2));

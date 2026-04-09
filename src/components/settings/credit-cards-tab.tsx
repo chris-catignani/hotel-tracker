@@ -19,7 +19,7 @@ import { logger } from "@/lib/logger";
 import { CardBenefit, CreditCard, HotelChain, OtaAgency, PointType } from "@/lib/types";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { EmptyState } from "@/components/ui/empty-state";
-import { CreditCard as CreditCardIcon } from "lucide-react";
+import { CreditCard as CreditCardIcon, Plus } from "lucide-react";
 import { CreditCardAccordionItem } from "./credit-card-accordion-item";
 import { toast } from "sonner";
 import { PageSpinner } from "@/components/ui/page-spinner";
@@ -97,7 +97,10 @@ export function CreditCardsTab() {
         <h2 className="text-lg font-semibold">Credit Cards</h2>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button data-testid="add-credit-card-button">Add Credit Card</Button>
+            <Button data-testid="add-credit-card-button">
+              <Plus className="size-4" />
+              Add Credit Card
+            </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>

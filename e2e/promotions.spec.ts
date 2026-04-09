@@ -73,8 +73,8 @@ test.describe("Promotions CRUD", () => {
 
     // Delete the promotion
     const row = desktopList.getByRole("row").filter({ hasText: uniqueName });
-    isolatedUser.page.once("dialog", (dialog) => dialog.accept());
     await row.getByRole("button", { name: "Delete" }).click();
+    await isolatedUser.page.getByRole("dialog").getByRole("button", { name: "Delete" }).click();
 
     // Verify the promotion is gone
     await expect(isolatedUser.page.getByText(uniqueName)).toHaveCount(0);

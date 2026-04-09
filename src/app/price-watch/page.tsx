@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { formatCurrency, formatDate, pruneHotelName } from "@/lib/utils";
 import { ErrorBanner } from "@/components/ui/error-banner";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { HOTEL_ID } from "@/lib/constants";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { apiFetch } from "@/lib/api-fetch";
@@ -198,6 +199,8 @@ export default function PriceWatchPage() {
   const [editingPropertyId, setEditingPropertyId] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState("");
   const [savingPropertyId, setSavingPropertyId] = useState<string | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [watchToDelete, setWatchToDelete] = useState<PriceWatch | null>(null);
 
   const handleToggle = async (watch: PriceWatch, enabled: boolean) => {
     setTogglingId(watch.id);
@@ -217,19 +220,26 @@ export default function PriceWatchPage() {
     refetchWatches();
   };
 
-  const handleDelete = async (watch: PriceWatch) => {
-    if (!confirm(`Stop watching prices for ${pruneHotelName(watch.property.name)}?`)) return;
-    setDeletingId(watch.id);
-    const result = await apiFetch(`/api/price-watches/${watch.id}`, { method: "DELETE" });
+  const handleDeleteClick = (watch: PriceWatch) => {
+    setWatchToDelete(watch);
+    setDeleteOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!watchToDelete) return;
+    setDeleteOpen(false);
+    setDeletingId(watchToDelete.id);
+    const result = await apiFetch(`/api/price-watches/${watchToDelete.id}`, { method: "DELETE" });
     setDeletingId(null);
     if (!result.ok) {
       logger.error("Failed to delete price watch", result.error, {
-        priceWatchId: watch.id,
+        priceWatchId: watchToDelete.id,
         status: result.status,
       });
       toast.error("Failed to delete price watch. Please try again.");
       return;
     }
+    setWatchToDelete(null);
     refetchWatches();
   };
 
@@ -282,6 +292,15 @@ export default function PriceWatchPage() {
       <ErrorBanner
         error={fetchError ? "Failed to load price watches. Please try again." : null}
         onDismiss={clearError}
+      />
+
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Stop Price Watch?"
+        description={`Stop watching prices for ${watchToDelete ? pruneHotelName(watchToDelete.property.name) : ""}?`}
+        onConfirm={handleDeleteConfirm}
+        confirmLabel="Stop Watching"
       />
 
       {watches.length === 0 ? (
@@ -386,7 +405,7 @@ export default function PriceWatchPage() {
                     <Button
                       size="sm"
                       variant="destructive"
-                      onClick={() => handleDelete(watch)}
+                      onClick={() => handleDeleteClick(watch)}
                       disabled={deletingId === watch.id}
                     >
                       {deletingId === watch.id ? (
@@ -495,7 +514,7 @@ export default function PriceWatchPage() {
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() => handleDelete(watch)}
+                          onClick={() => handleDeleteClick(watch)}
                           disabled={deletingId === watch.id}
                           data-testid={`delete-watch-${watch.id}`}
                         >
