@@ -52,7 +52,11 @@ function hasNonDefaultRestrictions(r: PromotionRestrictionsData): boolean {
     r.allowedBookingSources.length > 0 ||
     r.allowedAccommodationTypes.length > 0 ||
     r.tieInCards.length > 0 ||
-    r.subBrandRestrictions.length > 0
+    r.subBrandRestrictions.length > 0 ||
+    r.tieInRequiresPayment ||
+    r.allowedCountryCodes.length > 0 ||
+    r.prerequisiteStayCount != null ||
+    r.prerequisiteNightCount != null
   );
 }
 
@@ -140,6 +144,30 @@ function RestrictionsDisplay({ restrictions: r }: { restrictions: PromotionRestr
       label: "Accommodation Types",
       value: r.allowedAccommodationTypes.join(", "),
       testId: "restriction-accommodation-types",
+    });
+  if (r.tieInRequiresPayment)
+    items.push({
+      label: "Tie-in Payment Required",
+      value: "Yes",
+      testId: "restriction-tie-in-payment",
+    });
+  if (r.allowedCountryCodes.length > 0)
+    items.push({
+      label: "Countries",
+      value: r.allowedCountryCodes.join(", "),
+      testId: "restriction-countries",
+    });
+  if (r.prerequisiteStayCount != null)
+    items.push({
+      label: "Prerequisite Stays",
+      value: String(r.prerequisiteStayCount),
+      testId: "restriction-prerequisite-stays",
+    });
+  if (r.prerequisiteNightCount != null)
+    items.push({
+      label: "Prerequisite Nights",
+      value: String(r.prerequisiteNightCount),
+      testId: "restriction-prerequisite-nights",
     });
   if (r.tieInCards.length > 0)
     items.push({

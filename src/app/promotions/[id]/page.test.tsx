@@ -165,4 +165,58 @@ describe("PromotionDetailPage", () => {
       expect(screen.getByText("Failed to load promotion. Please try again.")).toBeInTheDocument()
     );
   });
+
+  it("shows em-dash in hero linked-to when no chain, card, or portal", async () => {
+    mockSuccess({
+      ...BASE_PROMO,
+      hotelChain: null,
+      creditCard: null,
+      shoppingPortal: null,
+      hotelChainId: null,
+    });
+    render(<PromotionDetailPage />);
+    await waitFor(() => expect(screen.getByTestId("hero-linked-to")).toBeInTheDocument());
+    expect(screen.getByTestId("hero-linked-to")).toHaveTextContent("—");
+  });
+
+  it("renders tier requirement using nights when minNights/maxNights are set", async () => {
+    const promoWithNightTier = {
+      ...BASE_PROMO,
+      benefits: [],
+      tiers: [
+        {
+          id: "t2",
+          promotionId: "promo-1",
+          minStays: null,
+          maxStays: null,
+          minNights: 3,
+          maxNights: null,
+          benefits: [
+            {
+              id: "tb2",
+              promotionId: null,
+              promotionTierId: "t2",
+              rewardType: "points",
+              valueType: "multiplier",
+              value: "2",
+              certType: null,
+              sortOrder: 0,
+              restrictions: null,
+            },
+          ],
+        },
+      ],
+    };
+    mockSuccess(promoWithNightTier);
+    render(<PromotionDetailPage />);
+    await waitFor(() => expect(screen.getByTestId("tier-requirement-t2")).toBeInTheDocument());
+    expect(screen.getByTestId("tier-requirement-t2")).toHaveTextContent("3+ nights");
+  });
+
+  it("renders empty benefits list when no benefits and no tiers", async () => {
+    mockSuccess({ ...BASE_PROMO, benefits: [] });
+    render(<PromotionDetailPage />);
+    await waitFor(() => expect(screen.getByTestId("benefits-list")).toBeInTheDocument());
+    expect(screen.getByTestId("benefits-list")).toBeEmptyDOMElement();
+  });
 });
