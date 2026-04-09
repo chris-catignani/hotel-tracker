@@ -274,7 +274,7 @@ export default function PromotionsPage() {
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
                             <Button variant="outline" size="sm" asChild>
-                              <Link href={`/promotions/${promo.id}/edit`}>Edit</Link>
+                              <Link href={`/promotions/${promo.id}`}>View</Link>
                             </Button>
                             <Button
                               variant="destructive"

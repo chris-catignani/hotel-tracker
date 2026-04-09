@@ -19,103 +19,115 @@ import { useApiQuery } from "@/hooks/use-api-query";
 import { logger } from "@/lib/logger";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { formatBenefit, getLinkedName, typeLabel, typeBadgeVariant } from "@/lib/promotion-utils";
-import { Promotion, PromotionTier, PromotionRestrictionsData } from "@/lib/types";
+import { BOOKING_SOURCE_LABELS } from "@/lib/constants";
+import { Promotion, PromotionBenefit, PromotionTier, PromotionRestrictionsData } from "@/lib/types";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatTierRequirement(tier: PromotionTier): string {
-  if (tier.minNights != null || tier.maxNights != null) {
-    const min = tier.minNights ?? 0;
-    const max = tier.maxNights;
-    return max != null ? `${min}–${max} nights` : `${min}+ nights`;
+function rewardTypeLabel(type: string): string {
+  switch (type) {
+    case "points":
+      return "Points";
+    case "cashback":
+      return "Cashback";
+    case "certificate":
+      return "Certificate";
+    case "eqn":
+      return "EQN";
+    default:
+      return type;
   }
-  const min = tier.minStays ?? 0;
-  const max = tier.maxStays;
-  return max != null ? `${min}–${max} stays` : `${min}+ stays`;
 }
 
-function hasNonDefaultRestrictions(r: PromotionRestrictionsData): boolean {
-  return !!(
-    r.minSpend != null ||
-    r.minNightsRequired != null ||
-    r.bookByDate ||
-    r.registrationDeadline ||
-    r.maxStayCount != null ||
-    r.maxRewardCount != null ||
-    r.maxRedemptionValue != null ||
-    r.maxTotalBonusPoints != null ||
-    r.validDaysAfterRegistration != null ||
-    r.spanStays ||
-    r.nightsStackable ||
-    r.oncePerSubBrand ||
-    r.allowedPaymentTypes.length > 0 ||
-    r.allowedBookingSources.length > 0 ||
-    r.allowedAccommodationTypes.length > 0 ||
-    r.tieInCards.length > 0 ||
-    r.subBrandRestrictions.length > 0 ||
-    r.tieInRequiresPayment ||
-    r.allowedCountryCodes.length > 0 ||
-    r.prerequisiteStayCount != null ||
-    r.prerequisiteNightCount != null
-  );
+function benefitBasis(
+  b: PromotionBenefit,
+  promoRestrictions: PromotionRestrictionsData | null
+): string {
+  const br = b.restrictions;
+  const pr = promoRestrictions;
+  const stackingR =
+    br?.nightsStackable && br?.minNightsRequired != null
+      ? br
+      : pr?.nightsStackable && pr?.minNightsRequired != null
+        ? pr
+        : null;
+  if (!stackingR) return "Per stay";
+  return stackingR.minNightsRequired === 1
+    ? "Per night"
+    : `Per ${stackingR.minNightsRequired} nights`;
 }
 
-function RestrictionsDisplay({ restrictions: r }: { restrictions: PromotionRestrictionsData }) {
-  const items: { label: string; value: string; testId: string }[] = [];
+type RestrictionItem = { label: string; value: string; testId: string; compact?: string };
 
+// Single source of truth for all restriction fields.
+// omitNightsRequirement: true when nightsStackable is already shown as the benefit basis label.
+function getRestrictionItems(
+  r: PromotionRestrictionsData,
+  { omitNightsRequirement = false } = {}
+): RestrictionItem[] {
+  const items: RestrictionItem[] = [];
   if (r.minSpend != null)
     items.push({
       label: "Min Spend",
       value: formatCurrency(Number(r.minSpend)),
       testId: "restriction-min-spend",
+      compact: `Min spend ${formatCurrency(Number(r.minSpend))}`,
     });
-  if (r.minNightsRequired != null)
+  if (!omitNightsRequirement && r.minNightsRequired != null)
     items.push({
       label: "Min Nights",
       value: String(r.minNightsRequired),
       testId: "restriction-min-nights",
+      compact: `Min ${r.minNightsRequired} nights`,
     });
   if (r.bookByDate)
     items.push({
       label: "Book By",
       value: formatDate(r.bookByDate),
       testId: "restriction-book-by",
+      compact: `Book by ${formatDate(r.bookByDate)}`,
     });
   if (r.registrationDeadline)
     items.push({
       label: "Register By",
       value: formatDate(r.registrationDeadline),
       testId: "restriction-register-by",
+      compact: `Register by ${formatDate(r.registrationDeadline)}`,
     });
   if (r.maxStayCount != null)
     items.push({
       label: "Max Stays",
       value: String(r.maxStayCount),
       testId: "restriction-max-stays",
+      compact: `Max ${r.maxStayCount} stays`,
     });
   if (r.maxRewardCount != null)
     items.push({
       label: "Max Rewards",
       value: String(r.maxRewardCount),
       testId: "restriction-max-rewards",
+      compact: `Max ${r.maxRewardCount} rewards`,
     });
   if (r.maxRedemptionValue != null)
     items.push({
       label: "Max Value",
       value: formatCurrency(Number(r.maxRedemptionValue)),
       testId: "restriction-max-value",
+      compact: `Max ${formatCurrency(Number(r.maxRedemptionValue))}`,
     });
   if (r.maxTotalBonusPoints != null)
     items.push({
       label: "Max Bonus Points",
       value: Number(r.maxTotalBonusPoints).toLocaleString(),
       testId: "restriction-max-bonus-points",
+      compact: `Max ${Number(r.maxTotalBonusPoints).toLocaleString()} pts`,
     });
   if (r.validDaysAfterRegistration != null)
     items.push({
       label: "Valid Days After Registration",
       value: String(r.validDaysAfterRegistration),
       testId: "restriction-valid-days",
+      compact: `${r.validDaysAfterRegistration} days after registration`,
     });
   if (r.spanStays)
     items.push({ label: "Span Stays", value: "Yes", testId: "restriction-span-stays" });
@@ -136,7 +148,7 @@ function RestrictionsDisplay({ restrictions: r }: { restrictions: PromotionRestr
   if (r.allowedBookingSources.length > 0)
     items.push({
       label: "Booking Sources",
-      value: r.allowedBookingSources.join(", "),
+      value: r.allowedBookingSources.map((s) => BOOKING_SOURCE_LABELS[s] ?? s).join(", "),
       testId: "restriction-booking-sources",
     });
   if (r.allowedAccommodationTypes.length > 0)
@@ -157,17 +169,25 @@ function RestrictionsDisplay({ restrictions: r }: { restrictions: PromotionRestr
       value: r.allowedCountryCodes.join(", "),
       testId: "restriction-countries",
     });
+  if (r.hotelChainId != null)
+    items.push({
+      label: "Hotel Chain",
+      value: r.hotelChain?.name ?? r.hotelChainId,
+      testId: "restriction-hotel-chain",
+    });
   if (r.prerequisiteStayCount != null)
     items.push({
       label: "Prerequisite Stays",
       value: String(r.prerequisiteStayCount),
       testId: "restriction-prerequisite-stays",
+      compact: `Prereq: ${r.prerequisiteStayCount} stays`,
     });
   if (r.prerequisiteNightCount != null)
     items.push({
       label: "Prerequisite Nights",
       value: String(r.prerequisiteNightCount),
       testId: "restriction-prerequisite-nights",
+      compact: `Prereq: ${r.prerequisiteNightCount} nights`,
     });
   if (r.tieInCards.length > 0)
     items.push({
@@ -176,14 +196,45 @@ function RestrictionsDisplay({ restrictions: r }: { restrictions: PromotionRestr
       testId: "restriction-tie-in-cards",
     });
   if (r.subBrandRestrictions.length > 0) {
-    const included = r.subBrandRestrictions.filter((s) => s.mode === "include").length;
-    const excluded = r.subBrandRestrictions.filter((s) => s.mode === "exclude").length;
+    const included = r.subBrandRestrictions
+      .filter((s) => s.mode === "include")
+      .map((s) => s.hotelChainSubBrand?.name ?? s.hotelChainSubBrandId);
+    const excluded = r.subBrandRestrictions
+      .filter((s) => s.mode === "exclude")
+      .map((s) => s.hotelChainSubBrand?.name ?? s.hotelChainSubBrandId);
     const parts: string[] = [];
-    if (included > 0) parts.push(`${included} included`);
-    if (excluded > 0) parts.push(`${excluded} excluded`);
-    items.push({ label: "Sub-brands", value: parts.join(", "), testId: "restriction-sub-brands" });
+    if (included.length > 0) parts.push(`${included.join(", ")} only`);
+    if (excluded.length > 0) parts.push(`Excl. ${excluded.join(", ")}`);
+    items.push({ label: "Sub-brands", value: parts.join(" · "), testId: "restriction-sub-brands" });
   }
+  return items;
+}
 
+function hasNonDefaultRestrictions(r: PromotionRestrictionsData): boolean {
+  return getRestrictionItems(r).length > 0;
+}
+
+function ordinal(n: number): string {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] ?? s[v] ?? s[0]);
+}
+
+function formatTierRequirement(tier: PromotionTier): string {
+  if (tier.minNights != null || tier.maxNights != null) {
+    const min = tier.minNights ?? 0;
+    const max = tier.maxNights;
+    if (max != null && min === max) return `${ordinal(min)} night`;
+    return max != null ? `${min}–${max} nights` : `${min}+ nights`;
+  }
+  const min = tier.minStays ?? 0;
+  const max = tier.maxStays;
+  if (max != null && min === max) return `${ordinal(min)} stay`;
+  return max != null ? `${min}–${max} stays` : `${min}+ stays`;
+}
+
+function RestrictionsDisplay({ restrictions: r }: { restrictions: PromotionRestrictionsData }) {
+  const items = getRestrictionItems(r);
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       {items.map(({ label, value, testId }) => (
@@ -265,13 +316,13 @@ export default function PromotionDetailPage() {
               {typeLabel(promo.type)}
             </Badge>
           </div>
-          <div className="mb-4">
-            <p className="text-sm text-muted-foreground">Linked to</p>
-            <p className="font-medium" data-testid="hero-linked-to">
-              {linkedName}
-            </p>
-          </div>
           <div className="flex flex-wrap gap-4">
+            <div data-testid="hero-linked-to">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Linked To
+              </p>
+              <p className="font-medium">{linkedName}</p>
+            </div>
             <div data-testid="hero-start-date">
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Start Date
@@ -324,13 +375,40 @@ export default function PromotionDetailPage() {
                 </TableBody>
               </Table>
             ) : (
-              <ul className="space-y-2" data-testid="benefits-list">
-                {promo.benefits.map((b) => (
-                  <li key={b.id} className="text-sm" data-testid={`benefit-item-${b.id}`}>
-                    {formatBenefit(b)}
-                  </li>
-                ))}
-              </ul>
+              <Table data-testid="benefits-list">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Reward</TableHead>
+                    <TableHead>Value</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {promo.benefits.map((b) => {
+                    const basis = benefitBasis(b, promo.restrictions);
+                    const benefitItems = b.restrictions
+                      ? getRestrictionItems(b.restrictions, {
+                          omitNightsRequirement: b.restrictions.nightsStackable,
+                        })
+                      : [];
+                    const restrictionSummary =
+                      benefitItems.length > 0
+                        ? benefitItems
+                            .map((i) => i.compact ?? (i.value === "Yes" ? i.label : i.value))
+                            .join(" · ")
+                        : null;
+                    const note = [basis, restrictionSummary].filter(Boolean).join(" · ");
+                    return (
+                      <TableRow key={b.id} data-testid={`benefit-item-${b.id}`}>
+                        <TableCell>{rewardTypeLabel(b.rewardType)}</TableCell>
+                        <TableCell>
+                          {formatBenefit(b)}
+                          <p className="text-xs text-muted-foreground mt-0.5">{note}</p>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
             )}
           </CardContent>
         </Card>

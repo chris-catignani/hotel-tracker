@@ -68,11 +68,149 @@ describe("PromotionDetailPage", () => {
     expect(screen.getByTestId("hero-registration-date")).toHaveTextContent("—");
   });
 
-  it("renders simple benefits list when there are no tiers", async () => {
+  it("renders benefits as a table with reward label and value", async () => {
     mockSuccess();
     render(<PromotionDetailPage />);
     await waitFor(() => expect(screen.getByTestId("benefits-list")).toBeInTheDocument());
-    expect(screen.getByTestId("benefit-item-b1")).toHaveTextContent("$25.00 cashback");
+    const row = screen.getByTestId("benefit-item-b1");
+    expect(row).toHaveTextContent("Cashback");
+    expect(row).toHaveTextContent("$25.00 cashback");
+  });
+
+  it("shows Per stay basis note when promo has no nightsStackable restrictions", async () => {
+    mockSuccess();
+    render(<PromotionDetailPage />);
+    await waitFor(() => expect(screen.getByTestId("benefit-item-b1")).toBeInTheDocument());
+    expect(screen.getByTestId("benefit-item-b1")).toHaveTextContent("Per stay");
+  });
+
+  it("shows Per night basis when promo-level restrictions have nightsStackable and minNightsRequired=1", async () => {
+    const promoPerNight = {
+      ...BASE_PROMO,
+      restrictions: {
+        id: "r1",
+        minSpend: null,
+        minNightsRequired: 1,
+        nightsStackable: true,
+        spanStays: true,
+        maxStayCount: null,
+        maxRewardCount: null,
+        maxRedemptionValue: null,
+        maxTotalBonusPoints: null,
+        oncePerSubBrand: false,
+        bookByDate: null,
+        registrationDeadline: null,
+        validDaysAfterRegistration: null,
+        tieInRequiresPayment: false,
+        allowedPaymentTypes: [],
+        allowedBookingSources: [],
+        allowedCountryCodes: [],
+        allowedAccommodationTypes: [],
+        hotelChainId: null,
+        prerequisiteStayCount: null,
+        prerequisiteNightCount: null,
+        subBrandRestrictions: [],
+        tieInCards: [],
+      },
+    };
+    mockSuccess(promoPerNight);
+    render(<PromotionDetailPage />);
+    await waitFor(() => expect(screen.getByTestId("benefit-item-b1")).toBeInTheDocument());
+    expect(screen.getByTestId("benefit-item-b1")).toHaveTextContent("Per night");
+  });
+
+  it("shows Per N nights basis when benefit-level restrictions have nightsStackable and minNightsRequired>1", async () => {
+    const promoPerThreeNights = {
+      ...BASE_PROMO,
+      benefits: [
+        {
+          id: "b1",
+          promotionId: "promo-1",
+          rewardType: "points",
+          valueType: "fixed",
+          value: "3000",
+          certType: null,
+          sortOrder: 0,
+          restrictions: {
+            id: "br1",
+            minSpend: null,
+            minNightsRequired: 3,
+            nightsStackable: true,
+            spanStays: true,
+            maxStayCount: null,
+            maxRewardCount: null,
+            maxRedemptionValue: null,
+            maxTotalBonusPoints: 21000,
+            oncePerSubBrand: false,
+            bookByDate: null,
+            registrationDeadline: null,
+            validDaysAfterRegistration: null,
+            tieInRequiresPayment: false,
+            allowedPaymentTypes: [],
+            allowedBookingSources: [],
+            allowedCountryCodes: [],
+            allowedAccommodationTypes: [],
+            hotelChainId: null,
+            prerequisiteStayCount: null,
+            prerequisiteNightCount: null,
+            subBrandRestrictions: [],
+            tieInCards: [],
+          },
+        },
+      ],
+    };
+    mockSuccess(promoPerThreeNights);
+    render(<PromotionDetailPage />);
+    await waitFor(() => expect(screen.getByTestId("benefit-item-b1")).toBeInTheDocument());
+    expect(screen.getByTestId("benefit-item-b1")).toHaveTextContent("Per 3 nights");
+    expect(screen.getByTestId("benefit-item-b1")).toHaveTextContent("21,000");
+  });
+
+  it("shows benefit-level restriction note alongside basis", async () => {
+    const promoWithBenefitRestriction = {
+      ...BASE_PROMO,
+      benefits: [
+        {
+          id: "b1",
+          promotionId: "promo-1",
+          rewardType: "eqn",
+          valueType: "fixed",
+          value: "1",
+          certType: null,
+          sortOrder: 0,
+          restrictions: {
+            id: "br1",
+            minSpend: null,
+            minNightsRequired: null,
+            nightsStackable: false,
+            spanStays: false,
+            maxStayCount: null,
+            maxRewardCount: null,
+            maxRedemptionValue: null,
+            maxTotalBonusPoints: null,
+            oncePerSubBrand: true,
+            bookByDate: null,
+            registrationDeadline: null,
+            validDaysAfterRegistration: null,
+            tieInRequiresPayment: false,
+            allowedPaymentTypes: [],
+            allowedBookingSources: [],
+            allowedCountryCodes: [],
+            allowedAccommodationTypes: [],
+            hotelChainId: null,
+            prerequisiteStayCount: null,
+            prerequisiteNightCount: null,
+            subBrandRestrictions: [],
+            tieInCards: [],
+          },
+        },
+      ],
+    };
+    mockSuccess(promoWithBenefitRestriction);
+    render(<PromotionDetailPage />);
+    await waitFor(() => expect(screen.getByTestId("benefit-item-b1")).toBeInTheDocument());
+    expect(screen.getByTestId("benefit-item-b1")).toHaveTextContent("Per stay");
+    expect(screen.getByTestId("benefit-item-b1")).toHaveTextContent("Once Per Sub-brand");
   });
 
   it("renders tier table when tiers are present", async () => {
@@ -108,6 +246,40 @@ describe("PromotionDetailPage", () => {
     await waitFor(() => expect(screen.getByTestId("tier-requirement-t1")).toBeInTheDocument());
     expect(screen.getByTestId("tier-requirement-t1")).toHaveTextContent("2–3 stays");
     expect(screen.getByTestId("tier-benefits-t1")).toHaveTextContent("$50.00 cashback");
+  });
+
+  it("renders ordinal label when tier min and max are equal", async () => {
+    const promoWithSingleStayTier = {
+      ...BASE_PROMO,
+      benefits: [],
+      tiers: [
+        {
+          id: "t1",
+          promotionId: "promo-1",
+          minStays: 2,
+          maxStays: 2,
+          minNights: null,
+          maxNights: null,
+          benefits: [
+            {
+              id: "tb1",
+              promotionId: null,
+              promotionTierId: "t1",
+              rewardType: "cashback",
+              valueType: "fixed",
+              value: "5000.00",
+              certType: null,
+              sortOrder: 0,
+              restrictions: null,
+            },
+          ],
+        },
+      ],
+    };
+    mockSuccess(promoWithSingleStayTier);
+    render(<PromotionDetailPage />);
+    await waitFor(() => expect(screen.getByTestId("tier-requirement-t1")).toBeInTheDocument());
+    expect(screen.getByTestId("tier-requirement-t1")).toHaveTextContent("2nd stay");
   });
 
   it("omits restrictions card when restrictions is null", async () => {
@@ -152,6 +324,120 @@ describe("PromotionDetailPage", () => {
     expect(screen.getByTestId("restriction-min-nights")).toHaveTextContent("3");
     expect(screen.getByTestId("restriction-max-stays")).toHaveTextContent("5");
     expect(screen.queryByTestId("restriction-min-spend")).not.toBeInTheDocument();
+  });
+
+  it("shows hotel chain restriction when hotelChainId is set", async () => {
+    const promoWithChainRestriction = {
+      ...BASE_PROMO,
+      restrictions: {
+        id: "r1",
+        minSpend: null,
+        minNightsRequired: null,
+        nightsStackable: false,
+        spanStays: false,
+        maxStayCount: null,
+        maxRewardCount: null,
+        maxRedemptionValue: null,
+        maxTotalBonusPoints: null,
+        oncePerSubBrand: false,
+        bookByDate: null,
+        registrationDeadline: null,
+        validDaysAfterRegistration: null,
+        tieInRequiresPayment: false,
+        allowedPaymentTypes: [],
+        allowedBookingSources: [],
+        allowedCountryCodes: [],
+        allowedAccommodationTypes: [],
+        hotelChainId: "chain-1",
+        hotelChain: { name: "IHG" },
+        prerequisiteStayCount: null,
+        prerequisiteNightCount: null,
+        subBrandRestrictions: [],
+        tieInCards: [],
+      },
+    };
+    mockSuccess(promoWithChainRestriction);
+    render(<PromotionDetailPage />);
+    await waitFor(() => expect(screen.getByTestId("restrictions-card")).toBeInTheDocument());
+    expect(screen.getByTestId("restriction-hotel-chain")).toHaveTextContent("IHG");
+  });
+
+  it("shows human-readable booking source labels", async () => {
+    const promoWithBookingSource = {
+      ...BASE_PROMO,
+      restrictions: {
+        id: "r1",
+        minSpend: null,
+        minNightsRequired: null,
+        nightsStackable: false,
+        spanStays: false,
+        maxStayCount: null,
+        maxRewardCount: null,
+        maxRedemptionValue: null,
+        maxTotalBonusPoints: null,
+        oncePerSubBrand: false,
+        bookByDate: null,
+        registrationDeadline: null,
+        validDaysAfterRegistration: null,
+        tieInRequiresPayment: false,
+        allowedPaymentTypes: [],
+        allowedBookingSources: ["direct_app"],
+        allowedCountryCodes: [],
+        allowedAccommodationTypes: [],
+        hotelChainId: null,
+        prerequisiteStayCount: null,
+        prerequisiteNightCount: null,
+        subBrandRestrictions: [],
+        tieInCards: [],
+      },
+    };
+    mockSuccess(promoWithBookingSource);
+    render(<PromotionDetailPage />);
+    await waitFor(() => expect(screen.getByTestId("restrictions-card")).toBeInTheDocument());
+    expect(screen.getByTestId("restriction-booking-sources")).toHaveTextContent("Mobile App");
+    expect(screen.getByTestId("restriction-booking-sources")).not.toHaveTextContent("direct_app");
+  });
+
+  it("shows sub-brand names instead of counts", async () => {
+    const promoWithSubBrands = {
+      ...BASE_PROMO,
+      restrictions: {
+        id: "r1",
+        minSpend: null,
+        minNightsRequired: null,
+        nightsStackable: false,
+        spanStays: false,
+        maxStayCount: null,
+        maxRewardCount: null,
+        maxRedemptionValue: null,
+        maxTotalBonusPoints: null,
+        oncePerSubBrand: false,
+        bookByDate: null,
+        registrationDeadline: null,
+        validDaysAfterRegistration: null,
+        tieInRequiresPayment: false,
+        allowedPaymentTypes: [],
+        allowedBookingSources: [],
+        allowedCountryCodes: [],
+        allowedAccommodationTypes: [],
+        hotelChainId: null,
+        prerequisiteStayCount: null,
+        prerequisiteNightCount: null,
+        subBrandRestrictions: [
+          {
+            id: "sr1",
+            hotelChainSubBrandId: "sub-1",
+            mode: "include",
+            hotelChainSubBrand: { name: "Aloft" },
+          },
+        ],
+        tieInCards: [],
+      },
+    };
+    mockSuccess(promoWithSubBrands);
+    render(<PromotionDetailPage />);
+    await waitFor(() => expect(screen.getByTestId("restrictions-card")).toBeInTheDocument());
+    expect(screen.getByTestId("restriction-sub-brands")).toHaveTextContent("Aloft only");
   });
 
   it("shows error banner when fetch fails", async () => {
@@ -213,10 +499,10 @@ describe("PromotionDetailPage", () => {
     expect(screen.getByTestId("tier-requirement-t2")).toHaveTextContent("3+ nights");
   });
 
-  it("renders empty benefits list when no benefits and no tiers", async () => {
+  it("renders benefits table with no rows when no benefits and no tiers", async () => {
     mockSuccess({ ...BASE_PROMO, benefits: [] });
     render(<PromotionDetailPage />);
     await waitFor(() => expect(screen.getByTestId("benefits-list")).toBeInTheDocument());
-    expect(screen.getByTestId("benefits-list")).toBeEmptyDOMElement();
+    expect(screen.queryByTestId(/^benefit-item-/)).not.toBeInTheDocument();
   });
 });
