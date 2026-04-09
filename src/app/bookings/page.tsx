@@ -187,8 +187,11 @@ function BookingsPageInner() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-bold">Bookings</h1>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <h1 className="text-2xl font-bold">Bookings</h1>
+          <p className="text-muted-foreground">All your hotel and apartment stays.</p>
+        </div>
         <div className="flex items-center gap-2">
           <Select
             value={String(yearFilter)}

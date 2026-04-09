@@ -31,7 +31,7 @@ export default function NewPromotionPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Add Promotion</h1>
+      <h1 className="text-2xl font-bold">Add Promotion</h1>
 
       <ErrorBanner error={error} onDismiss={() => setError(null)} />
 

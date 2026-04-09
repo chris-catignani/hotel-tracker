@@ -17,7 +17,10 @@ export default function SettingsPage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 space-y-6">
-      <h1 className="text-2xl font-bold shrink-0">Settings</h1>
+      <div className="shrink-0">
+        <h1 className="text-2xl font-bold">Settings</h1>
+        <p className="text-muted-foreground">Manage your cards, statuses, and reference data.</p>
+      </div>
       <Tabs defaultValue="my-status" className="w-full flex-1 min-h-0">
         <div className="overflow-x-auto pb-1">
           <TabsList className="w-full justify-start md:w-auto md:inline-flex min-w-max">

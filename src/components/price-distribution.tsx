@@ -3,8 +3,8 @@
 import { useState, useMemo } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { BarChart2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/ui/empty-state";
 import { calculateNetCost, getNetCostBreakdown } from "@/lib/net-cost";
 
@@ -89,41 +89,37 @@ export function PriceDistribution({ bookings }: PriceDistributionProps) {
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
         <CardTitle className="text-base font-semibold mt-1">Price Distribution</CardTitle>
         <div className="flex flex-row flex-wrap gap-1.5 items-center justify-end">
-          <div className="flex gap-1 bg-secondary p-1 rounded-md">
-            <Button
-              variant={mode === "stays" ? "default" : "ghost"}
-              size="sm"
-              className="h-7 text-xs px-2"
-              onClick={() => setMode("stays")}
-            >
-              Stays
-            </Button>
-            <Button
-              variant={mode === "nights" ? "default" : "ghost"}
-              size="sm"
-              className="h-7 text-xs px-2"
-              onClick={() => setMode("nights")}
-            >
-              Nights
-            </Button>
+          <div className="flex shrink-0 rounded-lg border p-0.5 gap-0.5">
+            {(["stays", "nights"] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => setMode(m)}
+                className={cn(
+                  "px-3 py-1.5 text-sm rounded-md transition-colors",
+                  mode === m
+                    ? "bg-background shadow-sm font-medium"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {m === "stays" ? "Stays" : "Nights"}
+              </button>
+            ))}
           </div>
-          <div className="flex gap-1 bg-secondary p-1 rounded-md">
-            <Button
-              variant={metric === "net" ? "default" : "ghost"}
-              size="sm"
-              className="h-7 text-xs px-2"
-              onClick={() => setMetric("net")}
-            >
-              Net/Night
-            </Button>
-            <Button
-              variant={metric === "total" ? "default" : "ghost"}
-              size="sm"
-              className="h-7 text-xs px-2"
-              onClick={() => setMetric("total")}
-            >
-              Total/Night
-            </Button>
+          <div className="flex shrink-0 rounded-lg border p-0.5 gap-0.5">
+            {(["net", "total"] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => setMetric(m)}
+                className={cn(
+                  "px-3 py-1.5 text-sm rounded-md transition-colors",
+                  metric === m
+                    ? "bg-background shadow-sm font-medium"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {m === "net" ? "Net/Night" : "Total/Night"}
+              </button>
+            ))}
           </div>
         </div>
       </CardHeader>

@@ -160,7 +160,7 @@ export default function EditPromotionPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Edit Promotion</h1>
+      <h1 className="text-2xl font-bold">Edit Promotion</h1>
 
       <ErrorBanner
         error={fetchError ? "Failed to load promotion. Please try again." : null}

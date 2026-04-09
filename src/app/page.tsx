@@ -765,7 +765,7 @@ export default function DashboardPage() {
       <div className="sm:hidden space-y-2">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <h1 className="text-3xl font-bold">Dashboard</h1>
+            <h1 className="text-2xl font-bold">Dashboard</h1>
             <p className="text-muted-foreground">Overview of your bookings and savings</p>
           </div>
           <Button
@@ -819,7 +819,7 @@ export default function DashboardPage() {
       {/* Desktop layout — hidden below sm */}
       <div className="hidden sm:flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <h1 className="text-2xl font-bold">Dashboard</h1>
           <p className="text-muted-foreground">Overview of your bookings and savings</p>
         </div>
         <div className="flex shrink-0 gap-2 items-center">
@@ -992,18 +992,21 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <CardTitle>Savings Breakdown</CardTitle>
               {filteredBookings.length > 0 && (
-                <div className="flex gap-1 bg-secondary p-1 rounded-md">
+                <div className="flex shrink-0 rounded-lg border p-0.5 gap-0.5">
                   {(["value", "raw"] as const).map((mode) => (
-                    <Button
+                    <button
                       key={mode}
-                      variant={savingsViewMode === mode ? "default" : "ghost"}
-                      size="sm"
-                      className="h-7 text-xs px-2"
                       onClick={() => setSavingsViewMode(mode)}
+                      className={cn(
+                        "px-3 py-1.5 text-sm rounded-md transition-colors",
+                        savingsViewMode === mode
+                          ? "bg-background shadow-sm font-medium"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
                       data-testid={`savings-view-${mode}`}
                     >
                       {mode === "value" ? "Value" : "Raw"}
-                    </Button>
+                    </button>
                   ))}
                 </div>
               )}
