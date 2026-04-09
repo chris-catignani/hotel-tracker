@@ -10,6 +10,7 @@ import { apiFetch } from "@/lib/api-fetch";
 import { toast } from "sonner";
 import { PostingStatus, BookingPartnershipEarnStatus } from "@/lib/types";
 import { nextPostingStatus } from "@/lib/earnings-tracker-utils";
+import { cn } from "@/lib/utils";
 import type { EarningsTrackerBooking } from "@/app/api/earnings-tracker/route";
 import type { EarningsTrackerGridProps } from "@/components/earnings-tracker/earnings-tracker-grid";
 
@@ -176,20 +177,35 @@ export default function EarningsTrackerPage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Earnings Tracker</h1>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Earnings Tracker</h1>
+          <p className="text-muted-foreground">
+            Track points, cashback, and promotion postings across stays.
+          </p>
+        </div>
         <div className="flex shrink-0 rounded-lg border p-0.5 gap-0.5">
           <button
             onClick={() => setFilter("needs-attention")}
             data-testid="earnings-filter-needs-attention"
-            className={`px-3 py-1.5 text-sm rounded-md transition-colors ${filter === "needs-attention" ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground"}`}
+            className={cn(
+              "px-3 py-1.5 text-sm rounded-md transition-colors",
+              filter === "needs-attention"
+                ? "bg-background shadow-sm font-medium"
+                : "text-muted-foreground hover:text-foreground"
+            )}
           >
             Needs Attention
           </button>
           <button
             onClick={() => setFilter("all")}
             data-testid="earnings-filter-all"
-            className={`px-3 py-1.5 text-sm rounded-md transition-colors ${filter === "all" ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground"}`}
+            className={cn(
+              "px-3 py-1.5 text-sm rounded-md transition-colors",
+              filter === "all"
+                ? "bg-background shadow-sm font-medium"
+                : "text-muted-foreground hover:text-foreground"
+            )}
           >
             All Bookings
           </button>

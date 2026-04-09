@@ -69,7 +69,7 @@ export default function NewBookingPage() {
   return (
     <div className="space-y-6 pb-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">New Booking</h1>
+        <h1 className="text-2xl font-bold">Add Booking</h1>
       </div>
 
       <ErrorBanner error={error} onDismiss={() => setError(null)} />

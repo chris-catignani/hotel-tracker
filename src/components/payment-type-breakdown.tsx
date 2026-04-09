@@ -3,8 +3,8 @@
 import { useState, useMemo } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { AlertTriangle, PieChart as PieChartIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/ui/empty-state";
 
 interface BookingCertificate {
@@ -137,23 +137,21 @@ export function PaymentTypeBreakdown({ bookings }: PaymentTypeBreakdownProps) {
     <Card className="flex flex-col h-full" data-testid="payment-type-card">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-base font-semibold">Payment Type</CardTitle>
-        <div className="flex gap-1 bg-secondary p-1 rounded-md">
-          <Button
-            variant={mode === "stays" ? "default" : "ghost"}
-            size="sm"
-            className="h-7 text-xs px-2"
-            onClick={() => setMode("stays")}
-          >
-            Stays
-          </Button>
-          <Button
-            variant={mode === "nights" ? "default" : "ghost"}
-            size="sm"
-            className="h-7 text-xs px-2"
-            onClick={() => setMode("nights")}
-          >
-            Nights
-          </Button>
+        <div className="flex shrink-0 rounded-lg border p-0.5 gap-0.5">
+          {(["stays", "nights"] as const).map((m) => (
+            <button
+              key={m}
+              onClick={() => setMode(m)}
+              className={cn(
+                "px-3 py-1.5 text-sm rounded-md transition-colors",
+                mode === m
+                  ? "bg-background shadow-sm font-medium"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {m === "stays" ? "Stays" : "Nights"}
+            </button>
+          ))}
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col pt-0">

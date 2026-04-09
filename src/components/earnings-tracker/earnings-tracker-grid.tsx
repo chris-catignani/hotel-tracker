@@ -68,7 +68,7 @@ export function EarningsTrackerGrid({
     <div className="flex-1 min-h-0 overflow-auto">
       <table className="w-full text-sm border-collapse">
         <thead>
-          <tr className="border-b text-xs uppercase text-muted-foreground font-semibold sticky top-0 bg-background z-20">
+          <tr className="border-b text-xs text-muted-foreground font-semibold sticky top-0 bg-background z-20">
             <th className="text-left px-3 py-2 whitespace-nowrap sticky left-0 bg-background z-10">
               Booking
             </th>

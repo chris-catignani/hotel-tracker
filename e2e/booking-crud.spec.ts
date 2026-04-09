@@ -312,7 +312,7 @@ test.describe("Booking Detail - Cost Breakdown Varieties", () => {
 test.describe("Booking Create Form", () => {
   test("shows validation errors when submitted empty", async ({ isolatedUser }) => {
     await isolatedUser.page.goto("/bookings/new");
-    await expect(isolatedUser.page.getByRole("heading", { name: "New Booking" })).toBeVisible();
+    await expect(isolatedUser.page.getByRole("heading", { name: "Add Booking" })).toBeVisible();
 
     await isolatedUser.page.getByTestId("booking-form-submit").click();
 

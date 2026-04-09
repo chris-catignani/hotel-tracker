@@ -89,7 +89,7 @@ export default function PromotionsPage() {
       {/* Mobile layout — hidden on sm+ */}
       <div className="sm:hidden space-y-2 shrink-0">
         <div className="flex items-center justify-between gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight">Promotions</h1>
+          <h1 className="text-2xl font-bold">Promotions</h1>
           <Button asChild>
             <Link href="/promotions/new">
               <Plus className="size-4" />
@@ -135,8 +135,13 @@ export default function PromotionsPage() {
       </div>
 
       {/* Desktop layout — hidden below sm */}
-      <div className="hidden sm:flex flex-wrap items-center justify-between shrink-0 gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Promotions</h1>
+      <div className="hidden sm:flex flex-wrap items-start justify-between shrink-0 gap-2">
+        <div>
+          <h1 className="text-2xl font-bold">Promotions</h1>
+          <p className="text-muted-foreground">
+            Track loyalty, credit card, and portal promotions.
+          </p>
+        </div>
         <div className="flex items-center gap-2">
           <div
             className="flex shrink-0 rounded-lg border p-0.5 gap-0.5"
