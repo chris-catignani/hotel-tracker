@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageSpinner } from "@/components/ui/page-spinner";
-import { CalendarDays, Eye, EyeOff } from "lucide-react";
+import { CalendarDays, Eye, EyeOff, Plus } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { calculateNetCost } from "@/lib/net-cost";
@@ -214,9 +214,12 @@ function BookingsPageInner() {
               ))}
             </SelectContent>
           </Select>
-          <Link href="/bookings/new">
-            <Button>Add Booking</Button>
-          </Link>
+          <Button asChild>
+            <Link href="/bookings/new">
+              <Plus className="size-4" />
+              Add Booking
+            </Link>
+          </Button>
         </div>
       </div>
 
