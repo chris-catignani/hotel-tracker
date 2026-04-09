@@ -88,8 +88,13 @@ export default function PromotionsPage() {
     <div className="flex flex-col flex-1 min-h-0 space-y-6">
       {/* Mobile layout — hidden on sm+ */}
       <div className="sm:hidden space-y-2 shrink-0">
-        <div className="flex items-center justify-between gap-2">
-          <h1 className="text-2xl font-bold">Promotions</h1>
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <h1 className="text-2xl font-bold">Promotions</h1>
+            <p className="text-muted-foreground">
+              Track loyalty, credit card, and portal promotions.
+            </p>
+          </div>
           <Button asChild>
             <Link href="/promotions/new">
               <Plus className="size-4" />
