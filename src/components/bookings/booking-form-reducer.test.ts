@@ -179,6 +179,7 @@ describe("buildInitialState", () => {
     } as Partial<Booking>);
     const state = buildInitialState(booking, []);
     expect(state.benefits).toHaveLength(1);
+    expect(state.benefits[0].id).toBe("ben-1");
     expect(state.benefits[0].type).toBe("free_breakfast");
     expect(state.benefits[0].dollarValue).toBe("25");
     expect(state.benefits[0]._id).toBeDefined();
