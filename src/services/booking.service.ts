@@ -566,6 +566,11 @@ export async function preserveBenefitPostingStatuses<T extends { id?: string }>(
   bookingId: string,
   incomingBenefits: T[]
 ): Promise<(T & { postingStatus: PostingStatus })[]> {
+  // Skip the DB round-trip when all benefits are new (no existing row to look up).
+  if (!incomingBenefits.some((b) => b.id)) {
+    return incomingBenefits.map((b) => ({ ...b, postingStatus: "pending" as PostingStatus }));
+  }
+
   const existing = await prisma.bookingBenefit.findMany({
     where: { bookingId },
     select: { id: true, postingStatus: true },
@@ -797,6 +802,7 @@ export async function updateBooking(id: string, userId: string, input: UpdateBoo
     const benefitsWithStatus =
       validBenefits.length > 0 ? await preserveBenefitPostingStatuses(id, validBenefits) : [];
 
+    // Must run after preserveBenefitPostingStatuses — snapshot reads rows being replaced.
     await prisma.bookingBenefit.deleteMany({ where: { bookingId: id } });
 
     if (benefitsWithStatus.length > 0) {
