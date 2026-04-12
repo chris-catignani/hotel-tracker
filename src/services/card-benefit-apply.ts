@@ -1,6 +1,6 @@
 import prisma from "@/lib/prisma";
 import { getPeriodKey } from "@/lib/card-benefit-matching";
-import { BenefitPeriod } from "@prisma/client";
+import { BenefitPeriod, PostingStatus } from "@prisma/client";
 
 /**
  * Returns the date on which the booking is charged.
@@ -33,7 +33,8 @@ export function getChargeDate(booking: {
 export async function reapplyBenefitForPeriod(
   benefitId: string,
   periodKey: string,
-  userCreditCardId: string
+  userCreditCardId: string,
+  statusSnapshot?: Map<string, PostingStatus>
 ): Promise<void> {
   const benefit = await prisma.cardBenefit.findUnique({
     where: { id: benefitId },
@@ -105,6 +106,19 @@ export async function reapplyBenefitForPeriod(
       return diff !== 0 ? diff : a.createdAt.getTime() - b.createdAt.getTime();
     });
 
+  // Snapshot existing postingStatuses before deleting — either use a provided snapshot
+  // (from reapplyBenefitForAllUsers which already bulk-deleted) or fetch our own.
+  let postingStatusByBookingId: Map<string, PostingStatus>;
+  if (statusSnapshot) {
+    postingStatusByBookingId = statusSnapshot;
+  } else {
+    const existingRows = await prisma.bookingCardBenefit.findMany({
+      where: { cardBenefitId: benefitId, periodKey, booking: { userCreditCardId } },
+      select: { bookingId: true, postingStatus: true },
+    });
+    postingStatusByBookingId = new Map(existingRows.map((r) => [r.bookingId, r.postingStatus]));
+  }
+
   // Replace existing rows for this (benefit, period, card instance)
   await prisma.bookingCardBenefit.deleteMany({
     where: { cardBenefitId: benefitId, periodKey, booking: { userCreditCardId } },
@@ -119,6 +133,7 @@ export async function reapplyBenefitForPeriod(
     cardBenefitId: string;
     appliedValue: number;
     periodKey: string;
+    postingStatus: PostingStatus;
   }[] = [];
 
   for (const booking of eligible) {
@@ -130,7 +145,13 @@ export async function reapplyBenefitForPeriod(
         : Math.min(remaining, totalCostUSD);
     const appliedValue = cap;
     if (appliedValue > 0) {
-      toCreate.push({ bookingId: booking.id, cardBenefitId: benefitId, appliedValue, periodKey });
+      toCreate.push({
+        bookingId: booking.id,
+        cardBenefitId: benefitId,
+        appliedValue,
+        periodKey,
+        postingStatus: postingStatusByBookingId.get(booking.id) ?? "pending",
+      });
       remaining -= appliedValue;
     }
   }

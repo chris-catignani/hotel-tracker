@@ -11,14 +11,14 @@ vi.mock("@/lib/prisma", () => ({
   default: {
     cardBenefit: { findUnique: vi.fn() },
     booking: { findMany: vi.fn(), findUnique: vi.fn() },
-    bookingCardBenefit: { deleteMany: vi.fn(), createMany: vi.fn() },
+    bookingCardBenefit: { findMany: vi.fn(), deleteMany: vi.fn(), createMany: vi.fn() },
   },
 }));
 
 const prismaMock = prisma as unknown as {
   cardBenefit: { findUnique: Mock };
   booking: { findMany: Mock; findUnique: Mock };
-  bookingCardBenefit: { deleteMany: Mock; createMany: Mock };
+  bookingCardBenefit: { findMany: Mock; deleteMany: Mock; createMany: Mock };
 };
 
 // ---------------------------------------------------------------------------
@@ -106,6 +106,7 @@ function makeBooking(overrides: Partial<BookingShape> = {}): BookingShape {
 
 describe("reapplyBenefitForPeriod", () => {
   beforeEach(() => {
+    prismaMock.bookingCardBenefit.findMany.mockResolvedValue([]);
     prismaMock.bookingCardBenefit.deleteMany.mockResolvedValue({ count: 0 });
     prismaMock.bookingCardBenefit.createMany.mockResolvedValue({ count: 0 });
   });
@@ -149,7 +150,13 @@ describe("reapplyBenefitForPeriod", () => {
     await reapplyBenefitForPeriod("benefit-1", "2025", "ucc-chris-codes");
     expect(prismaMock.bookingCardBenefit.createMany).toHaveBeenCalledWith({
       data: [
-        { bookingId: "b-codes", cardBenefitId: "benefit-1", appliedValue: 200, periodKey: "2025" },
+        {
+          bookingId: "b-codes",
+          cardBenefitId: "benefit-1",
+          appliedValue: 200,
+          periodKey: "2025",
+          postingStatus: "pending",
+        },
       ],
     });
 
@@ -162,7 +169,13 @@ describe("reapplyBenefitForPeriod", () => {
     await reapplyBenefitForPeriod("benefit-1", "2025", "ucc-chris-sells");
     expect(prismaMock.bookingCardBenefit.createMany).toHaveBeenCalledWith({
       data: [
-        { bookingId: "b-sells", cardBenefitId: "benefit-1", appliedValue: 200, periodKey: "2025" },
+        {
+          bookingId: "b-sells",
+          cardBenefitId: "benefit-1",
+          appliedValue: 200,
+          periodKey: "2025",
+          postingStatus: "pending",
+        },
       ],
     });
   });
@@ -190,8 +203,20 @@ describe("reapplyBenefitForPeriod", () => {
 
     expect(prismaMock.bookingCardBenefit.createMany).toHaveBeenCalledWith({
       data: [
-        { bookingId: "b1", cardBenefitId: "benefit-1", appliedValue: 150, periodKey: "2025" },
-        { bookingId: "b2", cardBenefitId: "benefit-1", appliedValue: 50, periodKey: "2025" },
+        {
+          bookingId: "b1",
+          cardBenefitId: "benefit-1",
+          appliedValue: 150,
+          periodKey: "2025",
+          postingStatus: "pending",
+        },
+        {
+          bookingId: "b2",
+          cardBenefitId: "benefit-1",
+          appliedValue: 50,
+          periodKey: "2025",
+          postingStatus: "pending",
+        },
       ],
     });
   });
@@ -222,8 +247,20 @@ describe("reapplyBenefitForPeriod", () => {
 
     expect(prismaMock.bookingCardBenefit.createMany).toHaveBeenCalledWith({
       data: [
-        { bookingId: "b1", cardBenefitId: "benefit-1", appliedValue: 250, periodKey: "2025" },
-        { bookingId: "b2", cardBenefitId: "benefit-1", appliedValue: 250, periodKey: "2025" },
+        {
+          bookingId: "b1",
+          cardBenefitId: "benefit-1",
+          appliedValue: 250,
+          periodKey: "2025",
+          postingStatus: "pending",
+        },
+        {
+          bookingId: "b2",
+          cardBenefitId: "benefit-1",
+          appliedValue: 250,
+          periodKey: "2025",
+          postingStatus: "pending",
+        },
       ],
     });
   });
@@ -251,7 +288,13 @@ describe("reapplyBenefitForPeriod", () => {
 
     expect(prismaMock.bookingCardBenefit.createMany).toHaveBeenCalledWith({
       data: [
-        { bookingId: "b-late", cardBenefitId: "benefit-1", appliedValue: 200, periodKey: "2025" },
+        {
+          bookingId: "b-late",
+          cardBenefitId: "benefit-1",
+          appliedValue: 200,
+          periodKey: "2025",
+          postingStatus: "pending",
+        },
       ],
     });
   });
@@ -279,7 +322,13 @@ describe("reapplyBenefitForPeriod", () => {
 
     expect(prismaMock.bookingCardBenefit.createMany).toHaveBeenCalledWith({
       data: [
-        { bookingId: "b-early", cardBenefitId: "benefit-1", appliedValue: 200, periodKey: "2025" },
+        {
+          bookingId: "b-early",
+          cardBenefitId: "benefit-1",
+          appliedValue: 200,
+          periodKey: "2025",
+          postingStatus: "pending",
+        },
       ],
     });
   });
@@ -313,7 +362,13 @@ describe("reapplyBenefitForPeriod", () => {
 
     expect(prismaMock.bookingCardBenefit.createMany).toHaveBeenCalledWith({
       data: [
-        { bookingId: "b-valid", cardBenefitId: "benefit-1", appliedValue: 200, periodKey: "2025" },
+        {
+          bookingId: "b-valid",
+          cardBenefitId: "benefit-1",
+          appliedValue: 200,
+          periodKey: "2025",
+          postingStatus: "pending",
+        },
       ],
     });
   });
@@ -347,7 +402,13 @@ describe("reapplyBenefitForPeriod", () => {
 
     expect(prismaMock.bookingCardBenefit.createMany).toHaveBeenCalledWith({
       data: [
-        { bookingId: "b-valid", cardBenefitId: "benefit-1", appliedValue: 200, periodKey: "2025" },
+        {
+          bookingId: "b-valid",
+          cardBenefitId: "benefit-1",
+          appliedValue: 200,
+          periodKey: "2025",
+          postingStatus: "pending",
+        },
       ],
     });
   });
@@ -450,5 +511,64 @@ describe("reapplyCardBenefitsAffectedByBooking", () => {
         }),
       })
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// reapplyBenefitForPeriod — postingStatus preservation
+// ---------------------------------------------------------------------------
+
+describe("reapplyBenefitForPeriod — postingStatus preservation", () => {
+  beforeEach(() => {
+    prismaMock.bookingCardBenefit.deleteMany.mockResolvedValue({ count: 0 });
+    prismaMock.bookingCardBenefit.createMany.mockResolvedValue({ count: 0 });
+  });
+
+  it("preserves postingStatus from an existing row when the booking is re-applied", async () => {
+    prismaMock.cardBenefit.findUnique.mockResolvedValue(makeBenefit({ value: "200" }));
+    prismaMock.booking.findMany.mockResolvedValue([
+      makeBooking({ id: "b1", totalCost: "200", lockedExchangeRate: "1" }),
+    ]);
+    // b1 was previously marked "posted"
+    prismaMock.bookingCardBenefit.findMany.mockResolvedValueOnce([
+      { bookingId: "b1", postingStatus: "posted" },
+    ]);
+
+    await reapplyBenefitForPeriod("benefit-1", "2025", "ucc-1");
+
+    expect(prismaMock.bookingCardBenefit.createMany).toHaveBeenCalledWith({
+      data: [expect.objectContaining({ bookingId: "b1", postingStatus: "posted" })],
+    });
+  });
+
+  it("defaults to pending for a newly applied booking with no prior row", async () => {
+    prismaMock.cardBenefit.findUnique.mockResolvedValue(makeBenefit({ value: "200" }));
+    prismaMock.booking.findMany.mockResolvedValue([
+      makeBooking({ id: "b-new", totalCost: "200", lockedExchangeRate: "1" }),
+    ]);
+    // No prior row for b-new
+    prismaMock.bookingCardBenefit.findMany.mockResolvedValueOnce([]);
+
+    await reapplyBenefitForPeriod("benefit-1", "2025", "ucc-1");
+
+    expect(prismaMock.bookingCardBenefit.createMany).toHaveBeenCalledWith({
+      data: [expect.objectContaining({ bookingId: "b-new", postingStatus: "pending" })],
+    });
+  });
+
+  it("uses a pre-built statusSnapshot when provided (no extra findMany)", async () => {
+    prismaMock.cardBenefit.findUnique.mockResolvedValue(makeBenefit({ value: "200" }));
+    prismaMock.booking.findMany.mockResolvedValue([
+      makeBooking({ id: "b1", totalCost: "200", lockedExchangeRate: "1" }),
+    ]);
+    const snapshot = new Map([["b1", "posted" as const]]);
+
+    await reapplyBenefitForPeriod("benefit-1", "2025", "ucc-1", snapshot);
+
+    // findMany should NOT have been called — snapshot was provided
+    expect(prismaMock.bookingCardBenefit.findMany).not.toHaveBeenCalled();
+    expect(prismaMock.bookingCardBenefit.createMany).toHaveBeenCalledWith({
+      data: [expect.objectContaining({ bookingId: "b1", postingStatus: "posted" })],
+    });
   });
 });
