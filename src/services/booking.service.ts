@@ -48,6 +48,7 @@ import {
 // ---------------------------------------------------------------------------
 
 export interface BenefitInput {
+  id?: string;
   benefitType: string;
   label?: string;
   dollarValue?: number | null;
@@ -561,17 +562,10 @@ export async function createBooking(userId: string, input: CreateBookingInput) {
  * for this booking and returns the incoming list annotated with the preserved postingStatus
  * for each benefit that has a matching DB id. New benefits (no id) get "pending".
  */
-export async function preserveBenefitPostingStatuses<
-  T extends {
-    id?: string;
-    benefitType: string;
-    label?: string | null;
-    dollarValue?: number | null;
-    pointsEarnType?: string | null;
-    pointsAmount?: number | null;
-    pointsMultiplier?: number | null;
-  },
->(bookingId: string, incomingBenefits: T[]): Promise<(T & { postingStatus: PostingStatus })[]> {
+export async function preserveBenefitPostingStatuses<T extends { id?: string }>(
+  bookingId: string,
+  incomingBenefits: T[]
+): Promise<(T & { postingStatus: PostingStatus })[]> {
   const existing = await prisma.bookingBenefit.findMany({
     where: { bookingId },
     select: { id: true, postingStatus: true },
