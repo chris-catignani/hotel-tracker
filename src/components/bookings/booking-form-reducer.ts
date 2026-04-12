@@ -12,6 +12,7 @@ import { CERT_TYPE_OPTIONS } from "@/lib/cert-types";
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export type BenefitItem = {
+  id?: string; // undefined for new (unsaved) benefits; DB id for existing ones
   type: string;
   label: string;
   // valueType tracks the selected radio button intent explicitly, avoiding ambiguity
@@ -180,6 +181,7 @@ export function buildInitialState(
           ? "cash"
           : "";
       return makeBenefitItem({
+        id: b.id,
         type: b.benefitType,
         label: b.label || "",
         valueType,

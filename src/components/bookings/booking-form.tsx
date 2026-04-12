@@ -384,6 +384,7 @@ export function BookingForm({
       benefits: benefits
         .filter((b) => b.type)
         .map((b) => ({
+          id: b.id,
           benefitType: b.type,
           label: b.label || null,
           // Use valueType to determine which fields to send — avoids sending stale

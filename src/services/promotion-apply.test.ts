@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, type Mock } from "vitest";
 import prisma from "@/lib/prisma";
+import { calculateMatchedPromotions } from "@/lib/promotion-matching";
 import {
   reevaluateSubsequentBookings,
   getSubsequentBookingIds,
@@ -19,6 +20,7 @@ vi.mock("@/lib/prisma", () => ({
       findMany: vi.fn(),
     },
     bookingPromotion: {
+      findMany: vi.fn(),
       deleteMany: vi.fn(),
       create: vi.fn(),
     },
@@ -51,6 +53,7 @@ const prismaMock = prisma as unknown as {
     findMany: Mock;
   };
   bookingPromotion: {
+    findMany: Mock;
     deleteMany: Mock;
     create: Mock;
   };
@@ -218,6 +221,76 @@ describe("getAffectedBookingIds-userId-scoping", () => {
     expect(prismaMock.booking.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({ userId }),
+      })
+    );
+  });
+});
+
+describe("applyMatchedPromotions-preserves-posting-status", () => {
+  const userId = "user1";
+  const bookingId = "b1";
+
+  const makeMatch = (promotionId: string) => ({
+    promotionId,
+    appliedValue: 50,
+    bonusPointsApplied: 0,
+    eligibleNightsAtBooking: null,
+    isOrphaned: false,
+    isPreQualifying: false,
+    benefitApplications: [],
+  });
+
+  it("should restore postingStatus from an existing record when the promotion still matches", async () => {
+    // PromoA was posted; after re-eval it still matches — status must be preserved
+    (calculateMatchedPromotions as Mock).mockReturnValueOnce([makeMatch("p1")]);
+    prismaMock.promotion.findMany.mockResolvedValueOnce([]);
+    prismaMock.booking.findMany.mockResolvedValueOnce([{ id: bookingId, checkIn: new Date() }]);
+    prismaMock.booking.findUnique.mockResolvedValueOnce({ id: bookingId });
+    prismaMock.$transaction.mockImplementation((fn: (tx: typeof prisma) => Promise<unknown>) =>
+      fn(prisma)
+    );
+    prismaMock.bookingPromotion.findMany.mockResolvedValueOnce([
+      { promotionId: "p1", postingStatus: "posted" },
+      { promotionId: "p2", postingStatus: "pending" },
+    ]);
+    prismaMock.bookingPromotion.deleteMany.mockResolvedValueOnce({});
+    prismaMock.bookingPromotion.create.mockResolvedValueOnce({ id: "bp1" });
+
+    await reevaluateBookings([bookingId], userId);
+
+    expect(prismaMock.bookingPromotion.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          promotionId: "p1",
+          postingStatus: "posted",
+        }),
+      })
+    );
+  });
+
+  it("should default to pending for a promotion with no prior posting status", async () => {
+    // PromoC is newly matched — no prior record, must default to pending
+    (calculateMatchedPromotions as Mock).mockReturnValueOnce([makeMatch("p-new")]);
+    prismaMock.promotion.findMany.mockResolvedValueOnce([]);
+    prismaMock.booking.findMany.mockResolvedValueOnce([{ id: bookingId, checkIn: new Date() }]);
+    prismaMock.booking.findUnique.mockResolvedValueOnce({ id: bookingId });
+    prismaMock.$transaction.mockImplementation((fn: (tx: typeof prisma) => Promise<unknown>) =>
+      fn(prisma)
+    );
+    prismaMock.bookingPromotion.findMany.mockResolvedValueOnce([
+      { promotionId: "p1", postingStatus: "posted" },
+    ]);
+    prismaMock.bookingPromotion.deleteMany.mockResolvedValueOnce({});
+    prismaMock.bookingPromotion.create.mockResolvedValueOnce({ id: "bp2" });
+
+    await reevaluateBookings([bookingId], userId);
+
+    expect(prismaMock.bookingPromotion.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          promotionId: "p-new",
+          postingStatus: "pending",
+        }),
       })
     );
   });

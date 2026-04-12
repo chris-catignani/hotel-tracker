@@ -518,6 +518,7 @@ export interface BookingFormData {
   bookingSource: string | null;
   otaAgencyId: string | null;
   benefits: {
+    id?: string; // present for existing DB rows, absent for new ones
     benefitType: string;
     label: string | null;
     dollarValue: number | null;

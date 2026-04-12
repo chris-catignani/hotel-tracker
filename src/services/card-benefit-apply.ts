@@ -1,6 +1,6 @@
 import prisma from "@/lib/prisma";
 import { getPeriodKey } from "@/lib/card-benefit-matching";
-import { BenefitPeriod } from "@prisma/client";
+import { BenefitPeriod, PostingStatus } from "@prisma/client";
 
 /**
  * Returns the date on which the booking is charged.
@@ -33,7 +33,8 @@ export function getChargeDate(booking: {
 export async function reapplyBenefitForPeriod(
   benefitId: string,
   periodKey: string,
-  userCreditCardId: string
+  userCreditCardId: string,
+  statusSnapshot?: Map<string, PostingStatus>
 ): Promise<void> {
   const benefit = await prisma.cardBenefit.findUnique({
     where: { id: benefitId },
@@ -105,6 +106,19 @@ export async function reapplyBenefitForPeriod(
       return diff !== 0 ? diff : a.createdAt.getTime() - b.createdAt.getTime();
     });
 
+  // Snapshot existing postingStatuses before deleting — either use a provided snapshot
+  // (from reapplyBenefitForAllUsers which already bulk-deleted) or fetch our own.
+  let postingStatusByBookingId: Map<string, PostingStatus>;
+  if (statusSnapshot) {
+    postingStatusByBookingId = statusSnapshot;
+  } else {
+    const existingRows = await prisma.bookingCardBenefit.findMany({
+      where: { cardBenefitId: benefitId, periodKey, booking: { userCreditCardId } },
+      select: { bookingId: true, postingStatus: true },
+    });
+    postingStatusByBookingId = new Map(existingRows.map((r) => [r.bookingId, r.postingStatus]));
+  }
+
   // Replace existing rows for this (benefit, period, card instance)
   await prisma.bookingCardBenefit.deleteMany({
     where: { cardBenefitId: benefitId, periodKey, booking: { userCreditCardId } },
@@ -119,6 +133,7 @@ export async function reapplyBenefitForPeriod(
     cardBenefitId: string;
     appliedValue: number;
     periodKey: string;
+    postingStatus: PostingStatus;
   }[] = [];
 
   for (const booking of eligible) {
@@ -130,7 +145,13 @@ export async function reapplyBenefitForPeriod(
         : Math.min(remaining, totalCostUSD);
     const appliedValue = cap;
     if (appliedValue > 0) {
-      toCreate.push({ bookingId: booking.id, cardBenefitId: benefitId, appliedValue, periodKey });
+      toCreate.push({
+        bookingId: booking.id,
+        cardBenefitId: benefitId,
+        appliedValue,
+        periodKey,
+        postingStatus: postingStatusByBookingId.get(booking.id) ?? "pending",
+      });
       remaining -= appliedValue;
     }
   }
@@ -229,7 +250,18 @@ export async function reapplyBenefitForAllUsers(benefitId: string): Promise<void
     return;
   }
 
+  // Snapshot all existing postingStatuses for this benefit BEFORE the bulk delete.
+  // These are passed to reapplyBenefitForPeriod so it doesn't need to query a now-empty table.
+  const existingRows = await prisma.bookingCardBenefit.findMany({
+    where: { cardBenefitId: benefitId },
+    select: { bookingId: true, postingStatus: true },
+  });
+  const statusSnapshot = new Map<string, PostingStatus>(
+    existingRows.map((r) => [r.bookingId, r.postingStatus])
+  );
+
   // Delete ALL existing rows for this benefit first — handles criteria changes
+  // (e.g. hotel chain restriction added: old rows for non-matching bookings must go)
   await prisma.bookingCardBenefit.deleteMany({ where: { cardBenefitId: benefitId } });
 
   const otaAgencyIds = benefit.otaAgencies.map((o) => o.otaAgencyId);
@@ -257,7 +289,7 @@ export async function reapplyBenefitForAllUsers(benefitId: string): Promise<void
   }
 
   for (const { userCreditCardId, periodKey } of pairs.values()) {
-    await reapplyBenefitForPeriod(benefitId, periodKey, userCreditCardId);
+    await reapplyBenefitForPeriod(benefitId, periodKey, userCreditCardId, statusSnapshot);
   }
 }
 
