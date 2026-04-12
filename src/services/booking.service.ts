@@ -556,6 +556,34 @@ export async function createBooking(userId: string, input: CreateBookingInput) {
   return normalized ? await enrichBookingWithRate(normalized) : null;
 }
 
+/**
+ * Given an incoming list of benefit objects (from the form), fetches the existing DB rows
+ * for this booking and returns the incoming list annotated with the preserved postingStatus
+ * for each benefit that has a matching DB id. New benefits (no id) get "pending".
+ */
+export async function preserveBenefitPostingStatuses<
+  T extends {
+    id?: string;
+    benefitType: string;
+    label?: string | null;
+    dollarValue?: number | null;
+    pointsEarnType?: string | null;
+    pointsAmount?: number | null;
+    pointsMultiplier?: number | null;
+  },
+>(bookingId: string, incomingBenefits: T[]): Promise<(T & { postingStatus: PostingStatus })[]> {
+  const existing = await prisma.bookingBenefit.findMany({
+    where: { bookingId },
+    select: { id: true, postingStatus: true },
+  });
+  const statusById = new Map(existing.map((r) => [r.id, r.postingStatus]));
+
+  return incomingBenefits.map((b) => ({
+    ...b,
+    postingStatus: (b.id ? statusById.get(b.id) : undefined) ?? "pending",
+  }));
+}
+
 export async function updateBooking(id: string, userId: string, input: UpdateBookingInput) {
   const current = await prisma.booking.findFirst({
     where: { id, userId },
@@ -771,11 +799,15 @@ export async function updateBooking(id: string, userId: string, input: UpdateBoo
     );
     if (benefitValidationError) throw new AppError(benefitValidationError, 400);
 
-    await prisma.bookingBenefit.deleteMany({ where: { bookingId: id } });
     const validBenefits = input.benefits.filter((b) => b.benefitType);
-    if (validBenefits.length > 0) {
+    const benefitsWithStatus =
+      validBenefits.length > 0 ? await preserveBenefitPostingStatuses(id, validBenefits) : [];
+
+    await prisma.bookingBenefit.deleteMany({ where: { bookingId: id } });
+
+    if (benefitsWithStatus.length > 0) {
       await prisma.bookingBenefit.createMany({
-        data: validBenefits.map((b) => ({
+        data: benefitsWithStatus.map((b) => ({
           bookingId: id,
           benefitType: b.benefitType as BenefitType,
           label: b.label || null,
@@ -783,6 +815,7 @@ export async function updateBooking(id: string, userId: string, input: UpdateBoo
           pointsEarnType: (b.pointsEarnType as BenefitPointsEarnType) || null,
           pointsAmount: b.pointsAmount != null ? Number(b.pointsAmount) : null,
           pointsMultiplier: b.pointsMultiplier != null ? Number(b.pointsMultiplier) : null,
+          postingStatus: b.postingStatus,
         })),
       });
     }
