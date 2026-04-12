@@ -470,6 +470,7 @@ describe("reapplyBenefitForPeriod", () => {
 
 describe("reapplyCardBenefitsAffectedByBooking", () => {
   beforeEach(() => {
+    prismaMock.bookingCardBenefit.findMany.mockResolvedValue([]);
     prismaMock.bookingCardBenefit.deleteMany.mockResolvedValue({ count: 0 });
     prismaMock.bookingCardBenefit.createMany.mockResolvedValue({ count: 0 });
   });
