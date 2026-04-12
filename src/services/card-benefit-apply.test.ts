@@ -619,4 +619,29 @@ describe("reapplyBenefitForAllUsers — postingStatus preservation across bulk d
       data: [expect.objectContaining({ bookingId: "b1", postingStatus: "posted" })],
     });
   });
+
+  it("defaults to pending for a booking not in the pre-delete snapshot", async () => {
+    prismaMock.cardBenefit.findUnique.mockResolvedValue(
+      makeBenefit({ id: "benefit-1", creditCardId: "card-1", period: "annual", isActive: true })
+    );
+    // Snapshot is empty — no rows existed before
+    prismaMock.bookingCardBenefit.findMany.mockResolvedValueOnce([]);
+    prismaMock.booking.findMany.mockResolvedValueOnce([
+      {
+        userCreditCardId: "ucc-1",
+        checkIn: new Date("2025-06-01T00:00:00Z"),
+        bookingDate: null,
+        paymentTiming: "postpaid",
+      },
+    ]);
+    prismaMock.booking.findMany.mockResolvedValueOnce([
+      makeBooking({ id: "b-new", totalCost: "200", lockedExchangeRate: "1" }),
+    ]);
+
+    await reapplyBenefitForAllUsers("benefit-1");
+
+    expect(prismaMock.bookingCardBenefit.createMany).toHaveBeenCalledWith({
+      data: [expect.objectContaining({ bookingId: "b-new", postingStatus: "pending" })],
+    });
+  });
 });
