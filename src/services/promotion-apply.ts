@@ -32,6 +32,15 @@ async function applyMatchedPromotions(
 
   try {
     return await prisma.$transaction(async (tx) => {
+      // Preserve user-set posting statuses before deleting so they survive re-evaluation
+      const existingStatuses = await tx.bookingPromotion.findMany({
+        where: { bookingId, autoApplied: true },
+        select: { promotionId: true, postingStatus: true },
+      });
+      const postingStatusByPromoId = new Map(
+        existingStatuses.map((bp) => [bp.promotionId, bp.postingStatus])
+      );
+
       // Delete existing auto-applied BookingPromotions for this booking
       await tx.bookingPromotion.deleteMany({
         where: {
@@ -50,6 +59,7 @@ async function applyMatchedPromotions(
             appliedValue: match.appliedValue,
             bonusPointsApplied: match.bonusPointsApplied > 0 ? match.bonusPointsApplied : null,
             autoApplied: true,
+            postingStatus: postingStatusByPromoId.get(match.promotionId) ?? "pending",
             eligibleNightsAtBooking: match.eligibleNightsAtBooking,
             isOrphaned: match.isOrphaned ?? false,
             isPreQualifying: match.isPreQualifying ?? false,
