@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import {
   getChargeDate,
   reapplyBenefitForPeriod,
+  reapplyBenefitForAllUsers,
   reapplyCardBenefitsAffectedByBooking,
 } from "./card-benefit-apply";
 import prisma from "@/lib/prisma";
@@ -568,6 +569,52 @@ describe("reapplyBenefitForPeriod — postingStatus preservation", () => {
 
     // findMany should NOT have been called — snapshot was provided
     expect(prismaMock.bookingCardBenefit.findMany).not.toHaveBeenCalled();
+    expect(prismaMock.bookingCardBenefit.createMany).toHaveBeenCalledWith({
+      data: [expect.objectContaining({ bookingId: "b1", postingStatus: "posted" })],
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// reapplyBenefitForAllUsers — postingStatus preservation across bulk delete
+// ---------------------------------------------------------------------------
+
+describe("reapplyBenefitForAllUsers — postingStatus preservation across bulk delete", () => {
+  beforeEach(() => {
+    prismaMock.bookingCardBenefit.findMany.mockResolvedValue([]);
+    prismaMock.bookingCardBenefit.deleteMany.mockResolvedValue({ count: 0 });
+    prismaMock.bookingCardBenefit.createMany.mockResolvedValue({ count: 0 });
+  });
+
+  it("preserves postingStatus even though the bulk delete runs before reapplyBenefitForPeriod", async () => {
+    // Benefit matches booking b1 (annual period "2025")
+    prismaMock.cardBenefit.findUnique.mockResolvedValue(
+      makeBenefit({ id: "benefit-1", creditCardId: "card-1", period: "annual", isActive: true })
+    );
+
+    // First findMany call: snapshot — b1 was posted
+    prismaMock.bookingCardBenefit.findMany.mockResolvedValueOnce([
+      { bookingId: "b1", postingStatus: "posted" },
+    ]);
+
+    // Bookings matching the benefit criteria (for collecting (cardInstance, period) pairs)
+    prismaMock.booking.findMany.mockResolvedValueOnce([
+      {
+        userCreditCardId: "ucc-1",
+        checkIn: new Date("2025-06-01T00:00:00Z"),
+        bookingDate: null,
+        paymentTiming: "postpaid",
+      },
+    ]);
+
+    // Inside reapplyBenefitForPeriod: eligible bookings for ucc-1 / 2025
+    prismaMock.booking.findMany.mockResolvedValueOnce([
+      makeBooking({ id: "b1", totalCost: "200", lockedExchangeRate: "1" }),
+    ]);
+
+    await reapplyBenefitForAllUsers("benefit-1");
+
+    // The createMany must carry postingStatus: "posted" for b1
     expect(prismaMock.bookingCardBenefit.createMany).toHaveBeenCalledWith({
       data: [expect.objectContaining({ bookingId: "b1", postingStatus: "posted" })],
     });
