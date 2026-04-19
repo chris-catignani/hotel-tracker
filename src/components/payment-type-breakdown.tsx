@@ -85,16 +85,7 @@ export function PaymentTypeBreakdown({ bookings }: PaymentTypeBreakdownProps) {
           else if (type === "certs") certsCount += numNights;
           deduced = true;
         }
-        // 2. Number of nights matches number of payment types (1 night each)
-        else if (typesCount === numNights) {
-          effectiveTypes.forEach((t) => {
-            if (t === "cash") cashCount += 1;
-            else if (t === "points") pointsCount += 1;
-            else if (t === "certs") certsCount += 1;
-          });
-          deduced = true;
-        }
-        // 3. Certificates + one other effective type
+        // 2. Certificates + one other effective type
         else if (hasCerts && typesCount === 2) {
           const certNights = Math.min(numCerts, numNights);
           const remainingNights = numNights - certNights;
@@ -102,6 +93,15 @@ export function PaymentTypeBreakdown({ bookings }: PaymentTypeBreakdownProps) {
           certsCount += certNights;
           if (hasPoints) pointsCount += remainingNights;
           else cashCount += remainingNights;
+          deduced = true;
+        }
+        // 3. Number of nights matches number of payment types (1 night each)
+        else if (typesCount === numNights) {
+          effectiveTypes.forEach((t) => {
+            if (t === "cash") cashCount += 1;
+            else if (t === "points") pointsCount += 1;
+            else if (t === "certs") certsCount += 1;
+          });
           deduced = true;
         }
 

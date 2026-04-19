@@ -153,6 +153,28 @@ describe("PaymentTypeBreakdown", () => {
     expect(screen.getByTestId("payment-type-empty")).toBeInTheDocument();
   });
 
+  it("uses cert count for nights when certs + one other type equals numNights", async () => {
+    const user = userEvent.setup();
+    const certPlusPoints = [
+      {
+        id: "8",
+        numNights: 2,
+        totalCost: 0,
+        pointsRedeemed: 4000, // supplemental points co-pay
+        certificates: [
+          { id: "c1", certType: "marriott_35k" },
+          { id: "c2", certType: "marriott_40k" },
+        ],
+      },
+    ];
+    render(<PaymentTypeBreakdown bookings={certPlusPoints} />);
+    await user.click(screen.getByText("Nights"));
+
+    // Both nights are cert nights (2 certs for 2 nights); points are a co-pay, not a separate night
+    expect(screen.getByTestId("pie-slice-Certificates")).toHaveTextContent("Certificates: 2");
+    expect(screen.queryByTestId("pie-slice-Points")).not.toBeInTheDocument();
+  });
+
   it("shows empty state when no bookings", async () => {
     render(<PaymentTypeBreakdown bookings={[]} />);
 
