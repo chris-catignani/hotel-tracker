@@ -72,7 +72,7 @@ describe("PaymentTypeBreakdown", () => {
     const combinationBookings = [
       {
         id: "4",
-        numNights: 3, // Changed from 2 to 3
+        numNights: 3,
         totalCost: 100, // Cash
         pointsRedeemed: 10000, // Points
         certificates: [],
@@ -80,27 +80,14 @@ describe("PaymentTypeBreakdown", () => {
     ];
     render(<PaymentTypeBreakdown bookings={combinationBookings} />);
 
+    // Stays mode: 1 combination stay
     expect(screen.getByTestId("pie-slice-Combination")).toHaveTextContent("Combination: 1");
 
-    // Switch to Nights - this specific combo (cash + points, 3 nights) is not
-    // automatically deduced (2 types vs 3 nights) and should be ignored.
+    // Nights mode: cash + points with 3 nights can't be deduced per-night,
+    // so all 3 nights appear as Combination.
     await user.click(screen.getByText("Nights"));
-    expect(screen.queryByTestId("pie-chart")).not.toBeInTheDocument();
-
-    // Use a custom matcher because the text is split across elements
-    expect(
-      screen.getByText((content, element) => {
-        const hasText = (node: Element | null) =>
-          node?.textContent?.includes(
-            "1 combination booking ignored because nightly breakdown is unavailable"
-          ) ?? false;
-        const nodeHasText = hasText(element);
-        const childrenDontHaveText = Array.from(element?.children || []).every(
-          (child) => !hasText(child as Element)
-        );
-        return nodeHasText && childrenDontHaveText;
-      })
-    ).toBeInTheDocument();
+    expect(screen.getByTestId("pie-slice-Combination")).toHaveTextContent("Combination: 3");
+    expect(screen.queryByText(/ignored/)).not.toBeInTheDocument();
   });
 
   it("applies the $20 significant cash rule", async () => {
@@ -142,6 +129,28 @@ describe("PaymentTypeBreakdown", () => {
     // Deduction: 1 cert night, 2 cash nights
     expect(screen.getByTestId("pie-slice-Certificates")).toHaveTextContent("Certificates: 1");
     expect(screen.getByTestId("pie-slice-Cash")).toHaveTextContent("Cash: 2");
+  });
+
+  it("ignores no-payment bookings in nights mode", async () => {
+    const user = userEvent.setup();
+    const noPaymentBooking = [
+      {
+        id: "7",
+        numNights: 7,
+        totalCost: 0,
+        pointsRedeemed: null,
+        certificates: [],
+      },
+    ];
+    render(<PaymentTypeBreakdown bookings={noPaymentBooking} />);
+
+    // Stays mode: not counted as any type (typesCount === 0)
+    expect(screen.getByTestId("payment-type-empty")).toBeInTheDocument();
+
+    // Nights mode: should also be invisible, not show as Combination
+    await user.click(screen.getByText("Nights"));
+    expect(screen.queryByTestId("pie-slice-Combination")).not.toBeInTheDocument();
+    expect(screen.getByTestId("payment-type-empty")).toBeInTheDocument();
   });
 
   it("shows empty state when no bookings", async () => {

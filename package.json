@@ -38,6 +38,7 @@
     "@anthropic-ai/sdk": "^0.80.0",
     "@auth/prisma-adapter": "^2.11.1",
     "@prisma/client": "^6.19.2",
+    "@react-input/mask": "^2.0.4",
     "@sentry/nextjs": "^10.43.0",
     "@sentry/node": "^10.43.0",
     "bcryptjs": "^3.0.3",
