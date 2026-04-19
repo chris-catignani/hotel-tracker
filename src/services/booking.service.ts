@@ -625,16 +625,24 @@ export async function updateBooking(id: string, userId: string, input: UpdateBoo
 
   // When the booking's hotel chain changes, keep the property in sync so the
   // price watch fetcher selects the correct scraper.
-  if (resolvedPropertyId && input.hotelChainId) {
+  // Fall back to current.propertyId so a chain-only update (no propertyId in payload) is covered.
+  const propertyIdToSync = resolvedPropertyId ?? current.propertyId;
+  const isNewProperty = !input.propertyId && !!input.propertyName; // findOrCreateProperty already used the new chain
+  if (
+    propertyIdToSync &&
+    input.hotelChainId &&
+    input.hotelChainId !== current.hotelChainId &&
+    !isNewProperty
+  ) {
     try {
       await prisma.property.update({
-        where: { id: resolvedPropertyId },
+        where: { id: propertyIdToSync },
         data: { hotelChainId: input.hotelChainId },
       });
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
         // A property with the same name + new chain already exists — point the booking there.
-        const prop = await prisma.property.findUniqueOrThrow({ where: { id: resolvedPropertyId } });
+        const prop = await prisma.property.findUniqueOrThrow({ where: { id: propertyIdToSync } });
         const target = await prisma.property.findFirst({
           where: { name: prop.name, hotelChainId: input.hotelChainId },
         });

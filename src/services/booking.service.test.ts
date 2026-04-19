@@ -402,6 +402,31 @@ describe("updateBooking — property chain sync", () => {
     });
   });
 
+  it("syncs property chain using current.propertyId when propertyId is not in the update payload", async () => {
+    mockPropertyUpdate.mockResolvedValue({});
+
+    await updateBooking("booking-1", "user-1", {
+      hotelChainId: "marriott-id",
+      // no propertyId — chain-only update
+    });
+
+    expect(mockPropertyUpdate).toHaveBeenCalledWith({
+      where: { id: "prop-1" }, // falls back to current.propertyId
+      data: { hotelChainId: "marriott-id" },
+    });
+  });
+
+  it("skips property sync when hotelChainId is unchanged", async () => {
+    mockPropertyUpdate.mockResolvedValue({});
+
+    await updateBooking("booking-1", "user-1", {
+      hotelChainId: "accor-id", // same as currentBooking.hotelChainId
+      propertyId: "prop-1",
+    });
+
+    expect(mockPropertyUpdate).not.toHaveBeenCalled();
+  });
+
   it("uses existing target property when (name, chain) uniqueness collision occurs", async () => {
     const p2002 = new Prisma.PrismaClientKnownRequestError("Unique constraint violation", {
       code: "P2002",
