@@ -1,8 +1,14 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { DatePicker } from "./date-picker";
 import { format } from "date-fns";
+
+vi.mock("@react-input/mask", () => ({
+  InputMask: ({ component: _c, mask: _m, replacement: _r, ...props }: Record<string, unknown>) => (
+    <input {...(props as React.InputHTMLAttributes<HTMLInputElement>)} />
+  ),
+}));
 
 describe("DatePicker", () => {
   const mockSetDate = vi.fn();
@@ -27,56 +33,24 @@ describe("DatePicker", () => {
     const input = screen.getByTestId("date-picker-input") as HTMLInputElement;
     expect(input).toBeInTheDocument();
 
-    await user.type(input, "02/24/2026");
+    await user.type(input, "02/24/26");
     expect(mockSetDate).toHaveBeenCalled();
 
-    // Check if the final date passed to setDate is correct
     const calledDate = mockSetDate.mock.calls[mockSetDate.mock.calls.length - 1][0];
     expect(format(calledDate, "yyyy-MM-dd")).toBe("2026-02-24");
   });
 
-  it("auto-formats MMDDYYYY typing", async () => {
+  it("does NOT parse incomplete input while typing", async () => {
     const user = userEvent.setup();
     render(<DatePicker date={undefined} setDate={mockSetDate} />);
 
     const input = screen.getByTestId("date-picker-input") as HTMLInputElement;
-    await user.type(input, "02242026");
+    await user.type(input, "02/24");
 
-    expect(input.value).toBe("02/24/2026");
-    expect(mockSetDate).toHaveBeenCalled();
-    const calledDate = mockSetDate.mock.calls[mockSetDate.mock.calls.length - 1][0];
-    expect(format(calledDate, "yyyy-MM-dd")).toBe("2026-02-24");
-  });
-
-  it("does NOT parse MMDDYY typing WHILE typing", async () => {
-    const user = userEvent.setup();
-    render(<DatePicker date={undefined} setDate={mockSetDate} />);
-
-    const input = screen.getByTestId("date-picker-input") as HTMLInputElement;
-    await user.type(input, "022426");
-
-    expect(input.value).toBe("02/24/26");
-    // Should NOT be called because it only parses length 10 while typing
     expect(mockSetDate).not.toHaveBeenCalled();
   });
 
-  it("parses MMDDYY on blur", async () => {
-    const user = userEvent.setup();
-    render(<DatePicker date={undefined} setDate={mockSetDate} />);
-
-    const input = screen.getByTestId("date-picker-input") as HTMLInputElement;
-    await user.type(input, "022426");
-
-    // Trigger blur
-    fireEvent.blur(input);
-
-    expect(mockSetDate).toHaveBeenCalled();
-    const calledDate = mockSetDate.mock.calls[0][0];
-    expect(format(calledDate, "MM/dd/yy")).toBe("02/24/26");
-  });
-
   it("renders a button on mobile", async () => {
-    // Override matchMedia to return false for desktop
     vi.mocked(window.matchMedia).mockImplementation((query) => ({
       matches: false,
       media: query,

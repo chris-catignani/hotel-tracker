@@ -729,9 +729,9 @@ export default function DashboardPage() {
   const needsReviewCount = safeBookings.filter((b) => b.needsReview).length;
 
   const today = new Date().toISOString().split("T")[0];
-  const recentBookings = filteredBookings
-    .filter((b) => b.checkOut.slice(0, 10) >= today)
-    .slice(0, 5);
+  const upcomingBookings = filteredBookings.filter((b) => b.checkOut.slice(0, 10) >= today);
+  const recentBookings = upcomingBookings.slice(0, 5);
+  const recentBookingsDesktop = upcomingBookings.slice(0, 7);
 
   return (
     <div className="space-y-6">
@@ -926,7 +926,7 @@ export default function DashboardPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {recentBookings.map((booking) => {
+                      {recentBookingsDesktop.map((booking) => {
                         const netCost = calculateNetCost(booking);
                         const total = Number(booking.totalCost);
                         return (

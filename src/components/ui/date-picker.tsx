@@ -3,6 +3,7 @@
 import * as React from "react";
 import { format, isValid, parse } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
+import { InputMask } from "@react-input/mask";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -38,40 +39,10 @@ function useMediaQuery(query: string) {
   return value;
 }
 
-/**
- * Auto-formats numeric input into MM/DD/YYYY.
- * e.g. "022426" -> "02/24/26", "02242026" -> "02/24/2026"
- */
-function formatInputString(value: string): string {
-  const digits = value.replace(/\D/g, "").slice(0, 8);
-  let formatted = digits;
-  if (digits.length >= 3 && digits.length <= 4) {
-    formatted = `${digits.slice(0, 2)}/${digits.slice(2)}`;
-  } else if (digits.length >= 5) {
-    formatted = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
-  }
-  return formatted;
-}
-
-/**
- * Tries parsing several potential input formats.
- */
-function parseDateInput(value: string, allowShortYear = false): Date | undefined {
-  const formats = allowShortYear ? ["MM/dd/yyyy", "MM/dd/yy"] : ["MM/dd/yyyy"];
-  // Only parse if it looks like a full date (8 chars for MM/DD/YY or 10 chars for MM/DD/YYYY)
-  if (value.length !== 10 && !(allowShortYear && value.length === 8)) {
-    return undefined;
-  }
-
-  for (const f of formats) {
-    const parsed = parse(value, f, new Date());
-    if (isValid(parsed)) {
-      if (parsed.getFullYear() > 1000) {
-        return parsed;
-      }
-    }
-  }
-  return undefined;
+function parseDateInput(value: string): Date | undefined {
+  if (value.length !== 8) return undefined;
+  const parsed = parse(value, "MM/dd/yy", new Date());
+  return isValid(parsed) && parsed.getFullYear() > 1000 ? parsed : undefined;
 }
 
 export function DatePicker({
@@ -86,10 +57,9 @@ export function DatePicker({
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const [inputValue, setInputValue] = React.useState("");
 
-  // Sync state with prop
   React.useEffect(() => {
     if (date) {
-      setInputValue(format(date, "MM/dd/yyyy"));
+      setInputValue(format(date, "MM/dd/yy"));
     } else {
       setInputValue("");
     }
@@ -97,24 +67,14 @@ export function DatePicker({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
-    const formatted = formatInputString(raw);
-    setInputValue(formatted);
+    setInputValue(raw);
 
-    if (!formatted) {
+    if (!raw) {
       setDate(undefined);
       return;
     }
 
-    // Only parse MMDDYYYY while typing (length 10)
-    const parsedDate = parseDateInput(formatted, false);
-    if (parsedDate) {
-      setDate(parsedDate);
-    }
-  };
-
-  const handleBlur = () => {
-    // On blur, allow parsing MMDDYY (length 8)
-    const parsedDate = parseDateInput(inputValue, true);
+    const parsedDate = parseDateInput(raw);
     if (parsedDate) {
       setDate(parsedDate);
     }
@@ -122,14 +82,16 @@ export function DatePicker({
 
   const desktopTrigger = (
     <div className="relative w-full">
-      <Input
+      <InputMask
+        component={Input}
+        mask="mm/dd/yy"
+        replacement={{ m: /\d/, d: /\d/, y: /\d/ }}
         id={id}
         value={inputValue}
         onChange={handleInputChange}
-        onBlur={handleBlur}
         onFocus={() => setOpen(true)}
         onClick={() => setOpen(true)}
-        placeholder="MM/DD/YYYY"
+        placeholder="MM/DD/YY"
         aria-invalid={!!error}
         className={cn(
           "w-full justify-start text-left font-normal h-11 md:h-9 text-base md:text-sm pl-9",
