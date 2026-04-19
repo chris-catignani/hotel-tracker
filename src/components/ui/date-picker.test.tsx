@@ -40,14 +40,17 @@ describe("DatePicker", () => {
     expect(format(calledDate, "yyyy-MM-dd")).toBe("2026-02-24");
   });
 
-  it("does NOT parse incomplete input while typing", async () => {
+  it("clears a stale date when input becomes incomplete while typing", async () => {
     const user = userEvent.setup();
-    render(<DatePicker date={undefined} setDate={mockSetDate} />);
+    const initialDate = new Date(2026, 1, 24);
+    render(<DatePicker date={initialDate} setDate={mockSetDate} />);
 
     const input = screen.getByTestId("date-picker-input") as HTMLInputElement;
     await user.type(input, "02/24");
 
-    expect(mockSetDate).not.toHaveBeenCalled();
+    const validDateCalls = mockSetDate.mock.calls.filter(([d]) => d instanceof Date);
+    expect(validDateCalls).toHaveLength(0);
+    expect(mockSetDate).toHaveBeenLastCalledWith(undefined);
   });
 
   it("renders a button on mobile", async () => {

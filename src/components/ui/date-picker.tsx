@@ -68,16 +68,7 @@ export function DatePicker({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
     setInputValue(raw);
-
-    if (!raw) {
-      setDate(undefined);
-      return;
-    }
-
-    const parsedDate = parseDateInput(raw);
-    if (parsedDate) {
-      setDate(parsedDate);
-    }
+    setDate(parseDateInput(raw));
   };
 
   const desktopTrigger = (
