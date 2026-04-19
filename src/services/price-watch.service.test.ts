@@ -66,6 +66,24 @@ describe("listPriceWatches", () => {
     );
     expect(result).toEqual([mockWatch]);
   });
+
+  it("includes hotel chain name in property query", async () => {
+    prismaMock.priceWatch.findMany.mockResolvedValueOnce([]);
+
+    await listPriceWatches("user-1");
+
+    expect(prismaMock.priceWatch.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: expect.objectContaining({
+          property: expect.objectContaining({
+            include: expect.objectContaining({
+              hotelChain: expect.anything(),
+            }),
+          }),
+        }),
+      })
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------

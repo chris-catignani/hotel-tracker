@@ -61,6 +61,7 @@ interface PriceWatch {
     name: string;
     chainPropertyId: string | null;
     hotelChainId: string | null;
+    hotelChain: { name: string } | null;
     countryCode: string | null;
     city: string | null;
   };
@@ -93,6 +94,7 @@ function ChainPropertyIdEditor({
   hotelChainId,
   chainPropertyId,
   propertyName,
+  chainName,
   isEditing,
   editingValue,
   isSaving,
@@ -106,6 +108,7 @@ function ChainPropertyIdEditor({
   hotelChainId: string | null;
   chainPropertyId: string | null;
   propertyName: string;
+  chainName?: string | null;
   isEditing: boolean;
   editingValue: string;
   isSaving: boolean;
@@ -151,6 +154,7 @@ function ChainPropertyIdEditor({
 
   return (
     <div className={`flex items-center gap-1 ${className ?? ""}`}>
+      {chainName && <span className="text-xs text-muted-foreground">{chainName} ·</span>}
       {chainPropertyId ? (
         <span className="text-xs text-muted-foreground font-mono">{chainPropertyId}</span>
       ) : (
@@ -391,6 +395,7 @@ export default function PriceWatchPage() {
                       hotelChainId={watch.property.hotelChainId}
                       chainPropertyId={watch.property.chainPropertyId}
                       propertyName={watch.property.name}
+                      chainName={watch.property.hotelChain?.name}
                       isEditing={editingPropertyId === watch.property.id}
                       editingValue={editingValue}
                       isSaving={savingPropertyId === watch.property.id}
@@ -454,6 +459,7 @@ export default function PriceWatchPage() {
                           hotelChainId={watch.property.hotelChainId}
                           chainPropertyId={watch.property.chainPropertyId}
                           propertyName={watch.property.name}
+                          chainName={watch.property.hotelChain?.name}
                           isEditing={editingPropertyId === watch.property.id}
                           editingValue={editingValue}
                           isSaving={savingPropertyId === watch.property.id}

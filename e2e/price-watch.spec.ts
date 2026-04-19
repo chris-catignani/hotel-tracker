@@ -94,6 +94,26 @@ test.describe("Price Watch API", () => {
     await testBooking.request.delete(`/api/price-watches/${watch1.id}`);
   });
 
+  test("list response includes hotel chain name on property", async ({ testBooking }) => {
+    const bookingRes = await testBooking.request.get(`/api/bookings/${testBooking.id}`);
+    const booking = await bookingRes.json();
+
+    const createRes = await testBooking.request.post("/api/price-watches", {
+      data: { propertyId: booking.propertyId, isEnabled: true, bookingId: testBooking.id },
+    });
+    const watch = await createRes.json();
+
+    const listRes = await testBooking.request.get("/api/price-watches");
+    const list = await listRes.json();
+    const found = list.find((w: { id: string }) => w.id === watch.id);
+
+    expect(found.property.hotelChain).not.toBeNull();
+    expect(typeof found.property.hotelChain.name).toBe("string");
+
+    // Cleanup
+    await testBooking.request.delete(`/api/price-watches/${watch.id}`);
+  });
+
   test("snapshots endpoint returns empty array before any fetches", async ({ testBooking }) => {
     const bookingRes = await testBooking.request.get(`/api/bookings/${testBooking.id}`);
     const booking = await bookingRes.json();
@@ -254,6 +274,98 @@ test.describe("Price watch on booking detail page", () => {
 
     // Cleanup
     await testBooking.request.delete(`/api/price-watches/${watch.id}`);
+  });
+});
+
+test.describe("Chain name display", () => {
+  test("price watch page shows hotel chain name in property column", async ({
+    adminPage,
+    adminRequest,
+  }) => {
+    const chains = await adminRequest.get("/api/hotel-chains");
+    const chain = (await chains.json())[0];
+
+    const bookingRes = await adminRequest.post("/api/bookings", {
+      data: {
+        hotelChainId: chain.id,
+        propertyName: `Chain Name Display Test ${crypto.randomUUID()}`,
+        checkIn: `${new Date().getFullYear()}-10-01`,
+        checkOut: `${new Date().getFullYear()}-10-03`,
+        numNights: 2,
+        pretaxCost: 200,
+        taxAmount: 20,
+        totalCost: 220,
+        currency: "USD",
+        bookingSource: "direct_web",
+        countryCode: "US",
+        city: "Chicago",
+      },
+    });
+    const booking = await bookingRes.json();
+
+    const createRes = await adminRequest.post("/api/price-watches", {
+      data: { propertyId: booking.propertyId, isEnabled: true, bookingId: booking.id },
+    });
+    const watch = await createRes.json();
+
+    await adminPage.goto("/price-watch");
+
+    const row = adminPage.getByTestId(`price-watch-row-${watch.id}`);
+    await expect(row.getByText(chain.name)).toBeVisible();
+
+    // Cleanup
+    await adminRequest.delete(`/api/price-watches/${watch.id}`);
+    await adminRequest.delete(`/api/bookings/${booking.id}`);
+  });
+});
+
+test.describe("Booking chain sync", () => {
+  test("updating booking hotel chain updates the property chain visible on the price watch list", async ({
+    isolatedUser,
+    adminRequest,
+  }) => {
+    const chains = await adminRequest.get("/api/hotel-chains");
+    const chainList = await chains.json();
+    const chainA = chainList[0];
+    const chainB = chainList[1];
+
+    const bookingRes = await isolatedUser.request.post("/api/bookings", {
+      data: {
+        hotelChainId: chainA.id,
+        propertyName: `Chain Sync Test ${crypto.randomUUID()}`,
+        checkIn: `${new Date().getFullYear() + 1}-03-01`,
+        checkOut: `${new Date().getFullYear() + 1}-03-03`,
+        numNights: 2,
+        pretaxCost: 0,
+        taxAmount: 0,
+        totalCost: 0,
+        currency: "USD",
+      },
+    });
+    const booking = await bookingRes.json();
+
+    const watchRes = await isolatedUser.request.post("/api/price-watches", {
+      data: { propertyId: booking.propertyId, isEnabled: true, bookingId: booking.id },
+    });
+    const watch = await watchRes.json();
+
+    // Verify initial chain
+    const listBefore = await (await isolatedUser.request.get("/api/price-watches")).json();
+    const watchBefore = listBefore.find((w: { id: string }) => w.id === watch.id);
+    expect(watchBefore.property.hotelChain.name).toBe(chainA.name);
+
+    // Update booking to chain B — this should also update the property's chain
+    await isolatedUser.request.put(`/api/bookings/${booking.id}`, {
+      data: { hotelChainId: chainB.id, propertyId: booking.propertyId },
+    });
+
+    const listAfter = await (await isolatedUser.request.get("/api/price-watches")).json();
+    const watchAfter = listAfter.find((w: { id: string }) => w.id === watch.id);
+    expect(watchAfter.property.hotelChain.name).toBe(chainB.name);
+
+    // Cleanup
+    await isolatedUser.request.delete(`/api/price-watches/${watch.id}`);
+    await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
   });
 });
 

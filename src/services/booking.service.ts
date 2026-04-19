@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { logger } from "@/lib/logger";
 import { AppError } from "@/lib/app-error";
 import {
@@ -620,6 +621,29 @@ export async function updateBooking(id: string, userId: string, input: UpdateBoo
       latitude: input.latitude ?? null,
       longitude: input.longitude ?? null,
     });
+  }
+
+  // When the booking's hotel chain changes, keep the property in sync so the
+  // price watch fetcher selects the correct scraper.
+  if (resolvedPropertyId && input.hotelChainId) {
+    try {
+      await prisma.property.update({
+        where: { id: resolvedPropertyId },
+        data: { hotelChainId: input.hotelChainId },
+      });
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+        // A property with the same name + new chain already exists — point the booking there.
+        const prop = await prisma.property.findUniqueOrThrow({ where: { id: resolvedPropertyId } });
+        const target = await prisma.property.findFirst({
+          where: { name: prop.name, hotelChainId: input.hotelChainId },
+        });
+        if (target) resolvedPropertyId = target.id;
+        else throw err;
+      } else {
+        throw err;
+      }
+    }
   }
 
   const data: Record<string, unknown> = {};

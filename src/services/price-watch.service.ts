@@ -16,9 +16,13 @@ const BOOKING_SELECT = {
   hotelChain: { select: { name: true } },
 } as const;
 
+const PROPERTY_INCLUDE = {
+  include: { hotelChain: { select: { name: true } } },
+} as const;
+
 /** Used by listPriceWatches — latest snapshot only, no room ordering */
 const PRICE_WATCH_LIST_INCLUDE = {
-  property: true,
+  property: PROPERTY_INCLUDE,
   bookings: {
     include: { booking: { select: BOOKING_SELECT } },
   },
@@ -31,7 +35,7 @@ const PRICE_WATCH_LIST_INCLUDE = {
 
 /** Used by getPriceWatch / upsertPriceWatch / updatePriceWatch — last 5 snapshots with room ordering */
 const PRICE_WATCH_DETAIL_INCLUDE = {
-  property: true,
+  property: PROPERTY_INCLUDE,
   bookings: {
     include: { booking: { select: BOOKING_SELECT } },
   },
