@@ -7,7 +7,7 @@
  * for cash rates, then use fetch() within the same established session to get award rates.
  *
  * chainPropertyId format: Hyatt Spirit code — a short alphanumeric identifier for the
- * property in Hyatt's Spirit reservation system (e.g. "ORDHY"). This is the same code
+ * property in Hyatt's Spirit reservation system (e.g. "chiph"). This is the same code
  * that appears in hyatt.com/shop/rooms/{spiritCode} URLs.
  *
  * Self-hosted runner required: Kasada fingerprints cloud VM environments (GitHub-hosted
