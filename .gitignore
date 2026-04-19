@@ -69,3 +69,6 @@ e2e/.auth/
 
 # Superpowers brainstorming sessions
 .superpowers/
+
+# Local MCP server config (personal/prod tooling)
+.mcp.json

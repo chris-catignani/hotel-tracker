@@ -6,6 +6,14 @@
  * and its own JavaScript automatically calls the roomrates API. We intercept that response
  * for cash rates, then use fetch() within the same established session to get award rates.
  *
+ * chainPropertyId format: Hyatt Spirit code — a short alphanumeric identifier for the
+ * property in Hyatt's Spirit reservation system (e.g. "chiph"). This is the same code
+ * that appears in hyatt.com/shop/rooms/{spiritCode} URLs.
+ *
+ * Self-hosted runner required: Kasada fingerprints cloud VM environments (GitHub-hosted
+ * runners, AWS/GCP instances) and blocks them regardless of headless setting. This scraper
+ * must run on a personal machine or self-hosted runner.
+ *
  * Important: register page.waitForResponse() BEFORE page.goto() to avoid a race condition
  * where the response arrives before the listener is registered.
  */
@@ -155,7 +163,7 @@ export class HyattFetcher implements PriceFetcher {
     console.log(`[HyattFetcher] Launching browser for ${spiritCode}...`);
 
     const context = await chromium.launchPersistentContext(userDataDir, {
-      // Non-headless: Kasada's JS challenge requires a real browser session with GPU rendering.
+      // Non-headless: Kasada's bot detection requires GPU rendering — headless mode is always blocked.
       headless: false,
       channel: "chrome",
       args: ["--disable-blink-features=AutomationControlled", "--window-position=-10000,-10000"],
