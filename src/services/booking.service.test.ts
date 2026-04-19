@@ -1,5 +1,33 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { Prisma } from "@prisma/client";
 
+const {
+  mockBookingFindFirst,
+  mockPropertyUpdate,
+  mockPropertyFindUniqueOrThrow,
+  mockPropertyFindFirst,
+  mockBookingCardBenefitFindMany,
+  mockBookingUpdate,
+} = vi.hoisted(() => ({
+  mockBookingFindFirst: vi.fn(),
+  mockPropertyUpdate: vi.fn(),
+  mockPropertyFindUniqueOrThrow: vi.fn(),
+  mockPropertyFindFirst: vi.fn(),
+  mockBookingCardBenefitFindMany: vi.fn().mockResolvedValue([]),
+  mockBookingUpdate: vi.fn().mockResolvedValue({ id: "booking-1" }),
+}));
+
+vi.mock("@/lib/prisma", () => ({
+  default: {
+    booking: { findFirst: mockBookingFindFirst, update: mockBookingUpdate },
+    property: {
+      update: mockPropertyUpdate,
+      findUniqueOrThrow: mockPropertyFindUniqueOrThrow,
+      findFirst: mockPropertyFindFirst,
+    },
+    bookingCardBenefit: { findMany: mockBookingCardBenefitFindMany },
+  },
+}));
 vi.mock("@/services/promotion-apply", () => ({
   matchPromotionsForBooking: vi.fn().mockResolvedValue(["promo-1"]),
   reevaluateSubsequentBookings: vi.fn().mockResolvedValue(undefined),
@@ -15,6 +43,7 @@ import {
   runPostBookingCreate,
   derivePostingStatusesForCreate,
   derivePostingStatusesForUpdate,
+  updateBooking,
 } from "./booking.service";
 import {
   matchPromotionsForBooking,
@@ -330,5 +359,92 @@ describe("derivePostingStatusesForUpdate", () => {
       {}
     );
     expect(portalCashbackPostingStatus).toBe("pending");
+  });
+});
+
+describe("updateBooking — property chain sync", () => {
+  const currentBooking = {
+    id: "booking-1",
+    currency: "THB",
+    checkIn: new Date("2027-01-01"),
+    hotelChainId: "accor-id",
+    pretaxCost: "0",
+    hotelChainSubBrandId: null,
+    lockedExchangeRate: null,
+    propertyId: "prop-1",
+    loyaltyPointsEarned: null,
+    accommodationType: "hotel",
+    userCreditCardId: null,
+    shoppingPortalId: null,
+    loyaltyPostingStatus: null,
+    cardRewardPostingStatus: null,
+    portalCashbackPostingStatus: null,
+  };
+
+  beforeEach(() => {
+    mockBookingCardBenefitFindMany.mockResolvedValue([]);
+    mockBookingUpdate.mockResolvedValue({ id: "booking-1" });
+    // Second findFirst call (getBookingWithUsage) returns null to short-circuit enrichment
+    mockBookingFindFirst.mockResolvedValueOnce(currentBooking).mockResolvedValue(null);
+  });
+
+  it("updates property hotelChainId when booking chain changes", async () => {
+    mockPropertyUpdate.mockResolvedValue({});
+
+    await updateBooking("booking-1", "user-1", {
+      hotelChainId: "marriott-id",
+      propertyId: "prop-1",
+    });
+
+    expect(mockPropertyUpdate).toHaveBeenCalledWith({
+      where: { id: "prop-1" },
+      data: { hotelChainId: "marriott-id" },
+    });
+  });
+
+  it("syncs property chain using current.propertyId when propertyId is not in the update payload", async () => {
+    mockPropertyUpdate.mockResolvedValue({});
+
+    await updateBooking("booking-1", "user-1", {
+      hotelChainId: "marriott-id",
+      // no propertyId — chain-only update
+    });
+
+    expect(mockPropertyUpdate).toHaveBeenCalledWith({
+      where: { id: "prop-1" }, // falls back to current.propertyId
+      data: { hotelChainId: "marriott-id" },
+    });
+  });
+
+  it("skips property sync when hotelChainId is unchanged", async () => {
+    mockPropertyUpdate.mockResolvedValue({});
+
+    await updateBooking("booking-1", "user-1", {
+      hotelChainId: "accor-id", // same as currentBooking.hotelChainId
+      propertyId: "prop-1",
+    });
+
+    expect(mockPropertyUpdate).not.toHaveBeenCalled();
+  });
+
+  it("uses existing target property when (name, chain) uniqueness collision occurs", async () => {
+    const p2002 = new Prisma.PrismaClientKnownRequestError("Unique constraint violation", {
+      code: "P2002",
+      clientVersion: "test",
+    });
+    mockPropertyUpdate.mockRejectedValueOnce(p2002);
+    mockPropertyFindUniqueOrThrow.mockResolvedValue({ id: "prop-1", name: "Le Méridien Bangkok" });
+    mockPropertyFindFirst.mockResolvedValue({ id: "prop-marriott" });
+
+    await updateBooking("booking-1", "user-1", {
+      hotelChainId: "marriott-id",
+      propertyId: "prop-1",
+    });
+
+    expect(mockBookingUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ propertyId: "prop-marriott" }),
+      })
+    );
   });
 });
