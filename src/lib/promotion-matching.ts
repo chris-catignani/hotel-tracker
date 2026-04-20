@@ -560,29 +560,33 @@ export function calculateMatchedPromotions(
     let activeBenefits: MatchingBenefit[];
     if (promo.tiers.length > 0) {
       const priorMatchedStays = usage?.eligibleStayCount ?? 0;
-      const priorMatchedNights = usage?.eligibleNightCount ?? 0;
-
       const currentStayNumber = priorMatchedStays + 1;
-      const currentNightNumber = priorMatchedNights + 1; // Tier check is based on the START of the current stay/night sequence
+
+      // Night-based tiers use per-stay semantics: tier selected by this booking's numNights.
+      // Stay-based tiers use cumulative semantics: tier selected by the stay sequence number.
+      const isNightBasedTiers = promo.tiers.some((t) => t.minNights !== null);
 
       const applicableTier = promo.tiers.find((tier) => {
-        // Stay-based tier check
         if (tier.minStays !== null) {
           const minMatch = currentStayNumber >= tier.minStays;
           const maxMatch = tier.maxStays === null || currentStayNumber <= tier.maxStays;
           if (minMatch && maxMatch) return true;
         }
-        // Night-based tier check
         if (tier.minNights !== null) {
-          const minMatch = currentNightNumber >= tier.minNights;
-          const maxMatch = tier.maxNights === null || currentNightNumber <= tier.maxNights;
+          const minMatch = booking.numNights >= tier.minNights;
+          const maxMatch = tier.maxNights === null || booking.numNights <= tier.maxNights;
           if (minMatch && maxMatch) return true;
         }
         return false;
       });
 
       if (!applicableTier) {
-        // Check if we will EVER reach a tier (pre-qualifying vs orphaned detection for tiers)
+        if (isNightBasedTiers) {
+          // booking.numNights is fixed — no future state can move a stay into a night tier
+          continue;
+        }
+
+        // Stay-based: check if we will EVER reach a tier (pre-qualifying vs orphaned detection)
         if (
           !isPromoOrphaned &&
           !isPromoPreQualifying &&
