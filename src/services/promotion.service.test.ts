@@ -276,6 +276,46 @@ describe("createPromotion", () => {
       expect.objectContaining({ where: { id: "promo-1" } })
     );
   });
+
+  it("persists requireBookedAfterRegistration through restrictions create payload", async () => {
+    const inputWithFlag = {
+      ...baseInput,
+      restrictions: {
+        minSpend: "",
+        minNightsRequired: "",
+        nightsStackable: false,
+        spanStays: false,
+        maxStayCount: "",
+        maxRewardCount: "",
+        maxRedemptionValue: "",
+        maxTotalBonusPoints: "",
+        oncePerSubBrand: false,
+        bookByDate: "",
+        registrationDeadline: "",
+        validDaysAfterRegistration: "",
+        requireBookedAfterRegistration: true,
+        registrationDate: "",
+        tieInRequiresPayment: false,
+        allowedPaymentTypes: [],
+        allowedBookingSources: [],
+        allowedCountryCodes: [],
+        allowedAccommodationTypes: [],
+        hotelChainId: "",
+        prerequisiteStayCount: "",
+        prerequisiteNightCount: "",
+        subBrandIncludeIds: [],
+        subBrandExcludeIds: [],
+        tieInCreditCardIds: [],
+      },
+    };
+
+    await createPromotion("user-1", inputWithFlag);
+
+    const callArg = prismaMock.promotion.create.mock.calls[0][0];
+    expect(callArg.data.restrictions.create).toEqual(
+      expect.objectContaining({ requireBookedAfterRegistration: true })
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -333,6 +373,7 @@ describe("updatePromotion", () => {
         bookByDate: "",
         registrationDeadline: "",
         validDaysAfterRegistration: "",
+        requireBookedAfterRegistration: false,
         registrationDate: "",
         tieInRequiresPayment: false,
         allowedPaymentTypes: [],
@@ -379,6 +420,7 @@ describe("updatePromotion", () => {
         bookByDate: "",
         registrationDeadline: "",
         validDaysAfterRegistration: "",
+        requireBookedAfterRegistration: false,
         registrationDate: "",
         tieInRequiresPayment: false,
         allowedPaymentTypes: [],
@@ -503,6 +545,7 @@ describe("updatePromotion", () => {
         bookByDate: "",
         registrationDeadline: "",
         validDaysAfterRegistration: "",
+        requireBookedAfterRegistration: false,
         registrationDate: "2026-07-01",
         tieInRequiresPayment: false,
         allowedPaymentTypes: [],
@@ -547,6 +590,7 @@ describe("updatePromotion", () => {
         bookByDate: "",
         registrationDeadline: "",
         validDaysAfterRegistration: "",
+        requireBookedAfterRegistration: false,
         registrationDate: "",
         tieInRequiresPayment: false,
         allowedPaymentTypes: [],
@@ -582,6 +626,49 @@ describe("updatePromotion", () => {
 
     const updateCall = prismaMock.promotion.update.mock.calls[0][0];
     expect(updateCall.data.hotelChain).toEqual({ disconnect: true });
+  });
+
+  it("persists requireBookedAfterRegistration through restrictions create payload", async () => {
+    prismaMock.promotion.findUnique.mockResolvedValueOnce({ restrictionsId: null });
+    prismaMock.promotionRestrictions.create.mockResolvedValueOnce({ id: "new-restr-1" });
+    const input = {
+      ...baseUpdateInput,
+      restrictions: {
+        minSpend: "",
+        minNightsRequired: "",
+        nightsStackable: false,
+        spanStays: false,
+        maxStayCount: "",
+        maxRewardCount: "",
+        maxRedemptionValue: "",
+        maxTotalBonusPoints: "",
+        oncePerSubBrand: false,
+        bookByDate: "",
+        registrationDeadline: "",
+        validDaysAfterRegistration: "",
+        requireBookedAfterRegistration: true,
+        registrationDate: "",
+        tieInRequiresPayment: false,
+        allowedPaymentTypes: [],
+        allowedBookingSources: [],
+        allowedCountryCodes: [],
+        allowedAccommodationTypes: [],
+        hotelChainId: "",
+        prerequisiteStayCount: "",
+        prerequisiteNightCount: "",
+        subBrandIncludeIds: [],
+        subBrandExcludeIds: [],
+        tieInCreditCardIds: [],
+      },
+    };
+
+    await updatePromotion("promo-1", "user-1", input);
+
+    expect(prismaMock.promotionRestrictions.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ requireBookedAfterRegistration: true }),
+      })
+    );
   });
 
   it("deletes benefit-level restrictions before replacing benefits", async () => {

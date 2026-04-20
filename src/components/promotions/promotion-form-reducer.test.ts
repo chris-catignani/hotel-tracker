@@ -7,6 +7,7 @@ import {
   PromotionFormState,
 } from "./promotion-form-reducer";
 import { DEFAULT_BENEFIT } from "./benefit-row";
+import { EMPTY_RESTRICTIONS } from "@/lib/types";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -290,6 +291,41 @@ describe("REMOVE_RESTRICTION", () => {
     expect(next.restrictions.maxRewardCount).toBe("");
     expect(next.restrictions.maxRedemptionValue).toBe("");
     expect(next.restrictions.maxTotalBonusPoints).toBe("");
+  });
+});
+
+describe("booked_after_registration restriction", () => {
+  it("ADD_RESTRICTION sets requireBookedAfterRegistration to true and adds the key to activeRestrictions", () => {
+    const state = buildInitialState();
+    const next = promotionFormReducer(state, {
+      type: "ADD_RESTRICTION",
+      key: "booked_after_registration",
+    });
+    expect(next.activeRestrictions.has("booked_after_registration")).toBe(true);
+    expect(next.restrictions.requireBookedAfterRegistration).toBe(true);
+  });
+
+  it("REMOVE_RESTRICTION resets requireBookedAfterRegistration to false and drops the key", () => {
+    const initial = buildInitialState({
+      restrictions: { ...EMPTY_RESTRICTIONS, requireBookedAfterRegistration: true },
+    });
+    const seeded = promotionFormReducer(initial, {
+      type: "ADD_RESTRICTION",
+      key: "booked_after_registration",
+    });
+    const next = promotionFormReducer(seeded, {
+      type: "REMOVE_RESTRICTION",
+      key: "booked_after_registration",
+    });
+    expect(next.activeRestrictions.has("booked_after_registration")).toBe(false);
+    expect(next.restrictions.requireBookedAfterRegistration).toBe(false);
+  });
+
+  it("mapApiRestrictionsToForm carries the flag through", () => {
+    const initial = buildInitialState({
+      restrictions: { ...EMPTY_RESTRICTIONS, requireBookedAfterRegistration: true },
+    });
+    expect(initial.restrictions.requireBookedAfterRegistration).toBe(true);
   });
 });
 

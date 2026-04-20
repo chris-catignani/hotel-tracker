@@ -47,6 +47,7 @@ function mapApiRestrictionsToForm(
     validDaysAfterRegistration: r.validDaysAfterRegistration
       ? String(r.validDaysAfterRegistration)
       : "",
+    requireBookedAfterRegistration: r.requireBookedAfterRegistration ?? false,
     registrationDate: "",
     tieInRequiresPayment: r.tieInRequiresPayment ?? false,
     allowedPaymentTypes: r.allowedPaymentTypes ?? [],

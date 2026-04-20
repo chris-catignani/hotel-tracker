@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { BookingForm } from "./booking-form";
@@ -57,22 +57,27 @@ vi.mock("@/components/ui/date-picker", () => ({
     setDate,
     id,
     date,
+    "data-testid": testId,
   }: {
     setDate: (date?: Date) => void;
     id?: string;
     date?: Date;
+    "data-testid"?: string;
   }) => (
     <input
       id={id}
+      data-testid={testId}
       type="date"
       value={date ? date.toISOString().split("T")[0] : ""}
       onChange={(e) => {
         const val = e.target.value;
         if (val) {
-          const d = new Date(val);
-          // Set to noon to avoid timezone issues during testing
-          d.setHours(12, 0, 0, 0);
-          setDate(d);
+          // Parse YYYY-MM-DD as a LOCAL date at noon to avoid timezone drift
+          // (bare "YYYY-MM-DD" is parsed as UTC midnight, which can roll back
+          // a day in negative-offset TZs before format() converts to local).
+          const [y, m, d] = val.split("-").map(Number);
+          const local = new Date(y, m - 1, d, 12, 0, 0, 0);
+          setDate(local);
         } else {
           setDate(undefined);
         }
@@ -231,6 +236,113 @@ describe("BookingForm", () => {
     expect(screen.getByText("Stay Details")).toBeInTheDocument();
     expect(screen.getByText("Payment")).toBeInTheDocument();
     expect(screen.getByText("Booking Context")).toBeInTheDocument();
+  });
+
+  it("shows Booking Date picker for postpaid bookings (new-booking mode defaults to postpaid)", async () => {
+    render(<BookingForm {...defaultProps} />);
+    // In new-booking mode, paymentTiming defaults to "postpaid". The picker
+    // must still be rendered (it now lives in Booking Context, not Payment).
+    const picker = screen.getByTestId("booking-date-picker");
+    expect(picker).toBeInTheDocument();
+  });
+
+  it("submits bookingDate regardless of paymentTiming (postpaid booking)", async () => {
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+
+    // Use initialData to bypass the geo-confirmation gate (edit mode has
+    // geoConfirmed=true). Booking starts as postpaid with no bookingDate.
+    const booking: Booking = {
+      id: "booking-1",
+      hotelChainId: "chain-1",
+      accommodationType: "hotel",
+      hotelChainSubBrandId: null,
+      propertyId: "prop-1",
+      property: {
+        id: "prop-1",
+        name: "Test Hotel",
+        placeId: null,
+        chainPropertyId: null,
+        hotelChainId: "chain-1",
+        countryCode: "US",
+        city: "NYC",
+        address: null,
+        latitude: null,
+        longitude: null,
+        starRating: null,
+        createdAt: "2025-01-01",
+      },
+      checkIn: "2026-06-01",
+      checkOut: "2026-06-03",
+      numNights: 2,
+      pretaxCost: 100,
+      taxAmount: 10,
+      totalCost: 110,
+      currency: "USD",
+      lockedExchangeRate: null,
+      lockedLoyaltyUsdCentsPerPoint: null,
+      userCreditCardId: null,
+      userCreditCard: null,
+      bookingDate: null,
+      paymentTiming: "postpaid",
+      shoppingPortalId: null,
+      portalCashbackRate: null,
+      portalCashbackOnTotal: false,
+      loyaltyPointsEarned: null,
+      pointsRedeemed: null,
+      notes: null,
+      certificates: [],
+      bookingSource: null,
+      otaAgencyId: null,
+      loyaltyPostingStatus: null,
+      cardRewardPostingStatus: null,
+      portalCashbackPostingStatus: null,
+      bookingPartnershipEarnStatuses: [],
+      benefits: [],
+      bookingCardBenefits: [],
+      confirmationNumber: null,
+      ingestionMethod: "manual",
+      needsReview: false,
+    } as unknown as Booking;
+
+    // Must mock /api/portals as non-empty so LOAD_INITIAL_DATA fires
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url === "/api/hotel-chains") {
+        return Promise.resolve({ ok: true, json: async () => mockHotelChains });
+      }
+      if (url === "/api/portals") {
+        return Promise.resolve({
+          ok: true,
+          json: async () => [
+            { id: "p1", name: "Test Portal", rewardType: "cashback", pointTypeId: null },
+          ],
+        });
+      }
+      return Promise.resolve({ ok: true, json: async () => [] });
+    });
+
+    render(<BookingForm {...defaultProps} onSubmit={onSubmit} initialData={booking} />);
+
+    // Wait for initial data to be loaded (booking renders property name)
+    await waitFor(() => {
+      expect(screen.getByTestId("property-name-input-confirmed")).toBeInTheDocument();
+    });
+
+    // Set the bookingDate picker using the mocked DatePicker (renders as <input type="date">)
+    const picker = screen.getByTestId("booking-date-picker") as HTMLInputElement;
+    fireEvent.change(picker, { target: { value: "2026-04-20" } });
+
+    // Submit — paymentTiming remains postpaid
+    const submitButton = screen.getByTestId("booking-form-submit");
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          bookingDate: "2026-04-20",
+          paymentTiming: "postpaid",
+        })
+      );
+    });
   });
 });
 

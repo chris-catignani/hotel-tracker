@@ -62,6 +62,7 @@ export type MatchingRestrictions = {
   bookByDate: Date | null;
   registrationDeadline: Date | null;
   validDaysAfterRegistration: number | null;
+  requireBookedAfterRegistration: boolean;
   tieInRequiresPayment: boolean;
   allowedPaymentTypes: string[];
   allowedBookingSources: string[];
@@ -129,6 +130,7 @@ export interface MatchingBooking {
   bookingSource: string | null;
   checkIn: Date | string;
   createdAt: Date | string;
+  bookingDate?: Date | string | null;
   numNights: number;
   pretaxCost: string | number | Prisma.Decimal;
   totalCost: string | number | Prisma.Decimal;
@@ -449,6 +451,32 @@ const FulfillmentPromotionRules: Record<string, PromotionRule> = {
 };
 
 /**
+ * Campaign-level check that evaluates whether this booking was placed on or
+ * after the user's registration date for the promotion. Produces either an
+ * "orphaned" or "pre_qualifying" reason when the rule is violated.
+ */
+function evaluateBookedAfterRegistration(
+  booking: MatchingBooking,
+  promo: MatchingPromotion
+): ValidationResult {
+  if (!promo.restrictions?.requireBookedAfterRegistration) {
+    return { valid: true };
+  }
+  const regDate = ensureDate(promo.registrationDate);
+  if (!regDate) {
+    return { valid: false, reason: "pre_qualifying" };
+  }
+  const bookDate = ensureDate(booking.bookingDate);
+  if (!bookDate) {
+    return { valid: false, reason: "orphaned" };
+  }
+  if (bookDate < regDate) {
+    return { valid: false, reason: "orphaned" };
+  }
+  return { valid: true };
+}
+
+/**
  * Calculates which promotions match a given booking without side effects.
  */
 export function calculateMatchedPromotions(
@@ -483,6 +511,20 @@ export function calculateMatchedPromotions(
       isMaxedOut = Object.values(HardCapPromotionRules).some((rule) => {
         return !rule(booking, promo, usage).valid;
       });
+    }
+
+    // 2.5 Booked-After-Registration check (campaign-level, fulfillment tier).
+    //     Pre-qualifying if the user hasn't registered yet; orphaned if the
+    //     booking predates the registration or lacks a booking date.
+    if (!isPromoOrphaned && !isMaxedOut) {
+      const result = evaluateBookedAfterRegistration(booking, promo);
+      if (!result.valid) {
+        if (result.reason === "pre_qualifying") {
+          isPromoPreQualifying = true;
+        } else {
+          isPromoOrphaned = true;
+        }
+      }
     }
 
     // 3. Per-stay hide rules (minNights no-span, minSpend) → hide entirely

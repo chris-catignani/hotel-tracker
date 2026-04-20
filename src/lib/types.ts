@@ -178,6 +178,7 @@ export interface PromotionRestrictionsData {
   bookByDate: string | null;
   registrationDeadline: string | null;
   validDaysAfterRegistration: number | null;
+  requireBookedAfterRegistration: boolean;
   tieInRequiresPayment: boolean;
   allowedPaymentTypes: string[];
   allowedBookingSources: string[];
@@ -204,6 +205,7 @@ export interface PromotionRestrictionsFormData {
   bookByDate: string;
   registrationDeadline: string;
   validDaysAfterRegistration: string;
+  requireBookedAfterRegistration: boolean;
   registrationDate: string; // form convenience; maps to UserPromotion on the promotion
   tieInRequiresPayment: boolean;
   allowedPaymentTypes: string[];
@@ -231,6 +233,7 @@ export const EMPTY_RESTRICTIONS: PromotionRestrictionsFormData = {
   bookByDate: "",
   registrationDeadline: "",
   validDaysAfterRegistration: "",
+  requireBookedAfterRegistration: false,
   registrationDate: "",
   tieInRequiresPayment: false,
   allowedPaymentTypes: [],

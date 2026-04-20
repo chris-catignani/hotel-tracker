@@ -33,7 +33,7 @@ import {
   ShoppingPortal,
   UserCreditCard,
 } from "@/lib/types";
-import { bookingFormReducer, INITIAL_STATE, BenefitItem } from "./booking-form-reducer";
+import { bookingFormReducer, buildNewBookingState, BenefitItem } from "./booking-form-reducer";
 import { formatCurrency, nightsBetween } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
@@ -106,7 +106,7 @@ export function BookingForm({
   const [exchangeRates, setExchangeRates] = useState<Record<string, number>>({});
 
   // Form state
-  const [state, dispatch] = useReducer(bookingFormReducer, INITIAL_STATE);
+  const [state, dispatch] = useReducer(bookingFormReducer, undefined, buildNewBookingState);
 
   const [confirmationNumber, setConfirmationNumber] = useState<string>(
     initialData?.confirmationNumber ?? ""
@@ -359,7 +359,7 @@ export function BookingForm({
       pointsRedeemed: hasPoints && pointsRedeemed ? Number(pointsRedeemed) : null,
       certificates: hasCert ? certificates.filter((c) => c.trim()) : [],
       userCreditCardId: userCreditCardId === "none" ? null : userCreditCardId,
-      bookingDate: paymentTiming === "prepaid" && bookingDate ? bookingDate : null,
+      bookingDate: bookingDate || null,
       paymentTiming,
       shoppingPortalId: shoppingPortalId === "none" ? null : shoppingPortalId,
       portalCashbackRate: (() => {
@@ -711,8 +711,8 @@ export function BookingForm({
             </div>
           )}
 
-          {/* Credit Card + Payment Timing + Booking Date (prepaid only) */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {/* Credit Card + Payment Timing */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="userCreditCardId">Credit Card</Label>
               <AppSelect
@@ -751,28 +751,29 @@ export function BookingForm({
                 data-testid="payment-timing-select"
               />
             </div>
-            {paymentTiming === "prepaid" && (
-              <div className="space-y-2">
-                <Label htmlFor="bookingDate">Booking Date</Label>
-                <DatePicker
-                  id="bookingDate"
-                  date={bookingDate ? parseISO(bookingDate) : undefined}
-                  setDate={(date) =>
-                    dispatch({
-                      type: "SET_FIELD",
-                      field: "bookingDate",
-                      value: date ? format(date, "yyyy-MM-dd") : "",
-                    })
-                  }
-                  placeholder="Select booking date"
-                  data-testid="booking-date-picker"
-                />
-              </div>
-            )}
           </div>
 
           {/* ── Booking Context ───────────────────────────── */}
           <SectionDivider label="Booking Context" />
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="bookingDate">Booking Date</Label>
+              <DatePicker
+                id="bookingDate"
+                date={bookingDate ? parseISO(bookingDate) : undefined}
+                setDate={(date) =>
+                  dispatch({
+                    type: "SET_FIELD",
+                    field: "bookingDate",
+                    value: date ? format(date, "yyyy-MM-dd") : "",
+                  })
+                }
+                placeholder="Select booking date"
+                data-testid="booking-date-picker"
+              />
+            </div>
+          </div>
 
           {/* Booking Source + OTA Agency — adjacent pair */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

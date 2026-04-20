@@ -46,6 +46,7 @@ function makeRestrictions(overrides: Partial<TestRestrictions> = {}): TestRestri
     bookByDate: null,
     registrationDeadline: null,
     validDaysAfterRegistration: null,
+    requireBookedAfterRegistration: false,
     tieInRequiresPayment: false,
     allowedPaymentTypes: [],
     allowedBookingSources: [],
@@ -2250,5 +2251,102 @@ describe("accommodation type restriction", () => {
     const matched = calculateMatchedPromotions(usdBooking, [promo]);
     expect(matched[0].appliedValue).toBeCloseTo(24, 2);
     expect(matched[0].bonusPointsApplied).toBe(1600);
+  });
+});
+
+describe("requireBookedAfterRegistration", () => {
+  function makeBooking(bookingDate: Date | null): MatchingBooking {
+    return {
+      ...mockBooking,
+      hotelChainId: "chain-1",
+      bookingDate,
+    };
+  }
+
+  const registrationDate = new Date("2026-04-15");
+
+  it("is inert when the rule is off", () => {
+    const promo = makePromo({
+      type: PromotionType.loyalty,
+      creditCardId: null,
+      hotelChainId: "chain-1",
+      restrictions: makeRestrictions({ hotelChainId: "chain-1" }),
+      registrationDate,
+    });
+    const booking = makeBooking(new Date("2026-04-10"));
+    const matched = calculateMatchedPromotions(booking, [promo]);
+    expect(matched).toHaveLength(1);
+    expect(matched[0].isOrphaned).not.toBe(true);
+    expect(matched[0].isPreQualifying).not.toBe(true);
+  });
+
+  it("is pre-qualifying when the rule is on and the user has not registered", () => {
+    const promo = makePromo({
+      type: PromotionType.loyalty,
+      creditCardId: null,
+      hotelChainId: "chain-1",
+      restrictions: makeRestrictions({
+        hotelChainId: "chain-1",
+        requireBookedAfterRegistration: true,
+      }),
+      registrationDate: null,
+    });
+    const booking = makeBooking(new Date("2026-04-20"));
+    const matched = calculateMatchedPromotions(booking, [promo]);
+    expect(matched).toHaveLength(1);
+    expect(matched[0].isPreQualifying).toBe(true);
+    expect(matched[0].isOrphaned).not.toBe(true);
+  });
+
+  it("is orphaned when the rule is on, user is registered, and bookingDate is null", () => {
+    const promo = makePromo({
+      type: PromotionType.loyalty,
+      creditCardId: null,
+      hotelChainId: "chain-1",
+      restrictions: makeRestrictions({
+        hotelChainId: "chain-1",
+        requireBookedAfterRegistration: true,
+      }),
+      registrationDate,
+    });
+    const booking = makeBooking(null);
+    const matched = calculateMatchedPromotions(booking, [promo]);
+    expect(matched).toHaveLength(1);
+    expect(matched[0].isOrphaned).toBe(true);
+  });
+
+  it("is orphaned when bookingDate is before registrationDate", () => {
+    const promo = makePromo({
+      type: PromotionType.loyalty,
+      creditCardId: null,
+      hotelChainId: "chain-1",
+      restrictions: makeRestrictions({
+        hotelChainId: "chain-1",
+        requireBookedAfterRegistration: true,
+      }),
+      registrationDate,
+    });
+    const booking = makeBooking(new Date("2026-04-10"));
+    const matched = calculateMatchedPromotions(booking, [promo]);
+    expect(matched).toHaveLength(1);
+    expect(matched[0].isOrphaned).toBe(true);
+  });
+
+  it("passes cleanly when bookingDate is on or after registrationDate", () => {
+    const promo = makePromo({
+      type: PromotionType.loyalty,
+      creditCardId: null,
+      hotelChainId: "chain-1",
+      restrictions: makeRestrictions({
+        hotelChainId: "chain-1",
+        requireBookedAfterRegistration: true,
+      }),
+      registrationDate,
+    });
+    const booking = makeBooking(new Date("2026-04-20"));
+    const matched = calculateMatchedPromotions(booking, [promo]);
+    expect(matched).toHaveLength(1);
+    expect(matched[0].isOrphaned).not.toBe(true);
+    expect(matched[0].isPreQualifying).not.toBe(true);
   });
 });
