@@ -59,8 +59,9 @@ export function pruneHotelName(name: string): string {
 
 /** Returns the number of nights between two YYYY-MM-DD date strings. */
 export function nightsBetween(checkIn: string, checkOut: string): number {
-  return Math.round(
-    (new Date(checkOut).getTime() - new Date(checkIn).getTime()) / (24 * 60 * 60 * 1000)
+  return Math.max(
+    0,
+    Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / (24 * 60 * 60 * 1000))
   );
 }
 

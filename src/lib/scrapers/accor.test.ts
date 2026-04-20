@@ -268,6 +268,21 @@ describe("parseAccorRates", () => {
     expect(rates[0].cashPrice).toBe(266000);
   });
 
+  it("deduplicates correctly for multi-night stays (compares per-night prices, not totals)", () => {
+    // 2-night stay: first offer total 400 (200/night), second total 300 (150/night) — keep second
+    const data = makeResponse([
+      makeOffer("Superior room", 400, "FREE_CANCELLATION", "Cancel free", {
+        rateLabel: "FLEXIBLE RATE",
+      }),
+      makeOffer("Superior room", 300, "FREE_CANCELLATION", "Cancel free", {
+        rateLabel: "FLEXIBLE RATE",
+      }),
+    ]);
+    const rates = parseAccorRates(data, 2);
+    expect(rates).toHaveLength(1);
+    expect(rates[0].cashPrice).toBe(150);
+  });
+
   it("keeps separate entries for different room types", () => {
     const data = makeResponse([
       makeOffer("Superior room, 1 king bed", 87.29, "NO_CANCELLATION", "Non-refundable", {

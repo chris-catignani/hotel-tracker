@@ -51,6 +51,10 @@ describe("utils", () => {
     it("handles month boundaries", () => {
       expect(nightsBetween("2026-03-29", "2026-04-02")).toBe(4);
     });
+
+    it("returns 0 when checkOut is before checkIn", () => {
+      expect(nightsBetween("2026-04-17", "2026-04-14")).toBe(0);
+    });
   });
 
   describe("pruneHotelName", () => {

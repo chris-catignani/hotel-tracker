@@ -176,8 +176,6 @@ export class AccorFetcher implements PriceFetcher {
     console.log(`[AccorFetcher] Response for ${hotelId}: ${offerCount} raw offers`);
 
     const nights = nightsBetween(params.checkIn, params.checkOut);
-    if (nights <= 0) return null;
-
     const rates = parseAccorRates(data, nights);
     console.log(`[AccorFetcher] Parsed ${rates.length} rates for ${hotelId}`);
 
@@ -229,15 +227,17 @@ export function parseAccorRates(data: unknown, nights: number): RoomRate[] {
     // vs non-refundable variants of the same rate (rare but defensive).
     const key = `${roomName}|${offerType}|${ratePlanName}|${cancellationCode}`;
 
+    const cashPrice = amount / Math.max(nights, 1);
+
     const existing = seen.get(key);
-    if (existing && Number(existing.cashPrice) <= amount) continue;
+    if (existing && Number(existing.cashPrice) <= cashPrice) continue;
 
     seen.set(key, {
       roomId: roomName,
       roomName,
       ratePlanCode: `${offerType}|${mealPlanCode}|${cancellationCode}`,
       ratePlanName,
-      cashPrice: amount / nights,
+      cashPrice,
       cashCurrency: currency,
       awardPrice: null, // Accor ALL is cashback, not points redemption
       isRefundable:
