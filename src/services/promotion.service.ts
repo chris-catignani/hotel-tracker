@@ -56,6 +56,20 @@ function buildRestrictionsCreateData(r: PromotionRestrictionsFormData) {
   };
 }
 
+function buildTierCreateData(tier: PromotionTierFormData) {
+  return {
+    minStays: tier.minStays,
+    maxStays: tier.maxStays ?? null,
+    minNights: tier.minNights,
+    maxNights: tier.maxNights ?? null,
+    benefits: {
+      create: (tier.benefits || []).map((b: PromotionBenefitFormData, i: number) =>
+        buildBenefitCreateData(b, i)
+      ),
+    },
+  };
+}
+
 function buildBenefitCreateData(b: PromotionBenefitFormData, i: number) {
   const base = {
     rewardType: b.rewardType,
@@ -91,7 +105,10 @@ const PROMOTION_INCLUDE = {
     include: { restrictions: { include: SUB_BRAND_RESTRICTIONS_INCLUDE } },
   },
   tiers: {
-    orderBy: { minStays: "asc" as const },
+    orderBy: [{ minStays: "asc" }, { minNights: "asc" }] as {
+      minStays?: "asc" | "desc";
+      minNights?: "asc" | "desc";
+    }[],
     include: {
       benefits: {
         orderBy: { sortOrder: "asc" as const },
@@ -160,15 +177,7 @@ export async function createPromotion(
         ...(hasTiers
           ? {
               tiers: {
-                create: (tiers as PromotionTierFormData[]).map((tier) => ({
-                  minStays: tier.minStays,
-                  maxStays: tier.maxStays ?? null,
-                  benefits: {
-                    create: (tier.benefits || []).map((b: PromotionBenefitFormData, i: number) =>
-                      buildBenefitCreateData(b, i)
-                    ),
-                  },
-                })),
+                create: (tiers as PromotionTierFormData[]).map(buildTierCreateData),
               },
             }
           : {
@@ -328,15 +337,7 @@ export async function updatePromotion(
 
     if (tiers !== undefined && Array.isArray(tiers) && tiers.length > 0) {
       updateData.tiers = {
-        create: (tiers as PromotionTierFormData[]).map((tier) => ({
-          minStays: tier.minStays,
-          maxStays: tier.maxStays ?? null,
-          benefits: {
-            create: (tier.benefits || []).map((b: PromotionBenefitFormData, i: number) =>
-              buildBenefitCreateData(b, i)
-            ),
-          },
-        })),
+        create: (tiers as PromotionTierFormData[]).map(buildTierCreateData),
       };
     } else if (benefits !== undefined && !hasTiers) {
       updateData.benefits = {

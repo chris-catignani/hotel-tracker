@@ -213,6 +213,33 @@ describe("createPromotion", () => {
     expect(callArg.data).not.toHaveProperty("benefits");
   });
 
+  it("persists minNights and maxNights when creating night-based tiers", async () => {
+    const inputWithNightTiers = {
+      ...baseInput,
+      tiers: [
+        { minStays: null, maxStays: null, minNights: 1, maxNights: 2, benefits: [] },
+        { minStays: null, maxStays: null, minNights: 3, maxNights: null, benefits: [] },
+      ],
+    };
+
+    await createPromotion("user-1", inputWithNightTiers);
+
+    const callArg = prismaMock.promotion.create.mock.calls[0][0];
+    const createdTiers = callArg.data.tiers.create;
+    expect(createdTiers[0]).toMatchObject({
+      minNights: 1,
+      maxNights: 2,
+      minStays: null,
+      maxStays: null,
+    });
+    expect(createdTiers[1]).toMatchObject({
+      minNights: 3,
+      maxNights: null,
+      minStays: null,
+      maxStays: null,
+    });
+  });
+
   it("creates UserPromotion when registrationDate is provided", async () => {
     const inputWithReg = {
       ...baseInput,
@@ -430,6 +457,34 @@ describe("updatePromotion", () => {
     });
     const updateCall = prismaMock.promotion.update.mock.calls[0][0];
     expect(updateCall.data.tiers).toEqual(expect.objectContaining({ create: expect.any(Array) }));
+  });
+
+  it("persists minNights and maxNights when updating night-based tiers", async () => {
+    prismaMock.promotionTier.findMany.mockResolvedValueOnce([{ id: "t-1", benefits: [] }]);
+    const input = {
+      ...baseUpdateInput,
+      tiers: [
+        { minStays: null, maxStays: null, minNights: 1, maxNights: 2, benefits: [] },
+        { minStays: null, maxStays: null, minNights: 3, maxNights: null, benefits: [] },
+      ],
+    };
+
+    await updatePromotion("promo-1", "user-1", input);
+
+    const updateCall = prismaMock.promotion.update.mock.calls[0][0];
+    const createdTiers = updateCall.data.tiers.create;
+    expect(createdTiers[0]).toMatchObject({
+      minNights: 1,
+      maxNights: 2,
+      minStays: null,
+      maxStays: null,
+    });
+    expect(createdTiers[1]).toMatchObject({
+      minNights: 3,
+      maxNights: null,
+      minStays: null,
+      maxStays: null,
+    });
   });
 
   it("upserts UserPromotion when registrationDate is provided in restrictions", async () => {

@@ -889,6 +889,75 @@ describe("promotion-matching", () => {
     expect(matched[0].appliedValue).toBe(10);
   });
 
+  // night-based tier tests (per-stay: tier selected by booking.numNights)
+  function makeNightTieredPromo() {
+    return makePromo({
+      benefits: [],
+      tiers: [
+        {
+          id: "night-tier-1",
+          minStays: null,
+          maxStays: null,
+          minNights: 1,
+          maxNights: 2,
+          benefits: [tier1Benefit], // $50
+        },
+        {
+          id: "night-tier-2",
+          minStays: null,
+          maxStays: null,
+          minNights: 3,
+          maxNights: null,
+          benefits: [tier3Benefit], // $100
+        },
+      ],
+    });
+  }
+
+  it("night-based tier: 1-night stay selects tier with maxNights=2 ($50)", () => {
+    const booking = { ...mockBooking, numNights: 1 };
+    const matched = calculateMatchedPromotions(booking, [makeNightTieredPromo()]);
+    expect(matched).toHaveLength(1);
+    expect(matched[0].benefitApplications[0].promotionBenefitId).toBe("benefit-101");
+    expect(matched[0].appliedValue).toBe(50);
+  });
+
+  it("night-based tier: 2-night stay selects tier with maxNights=2 ($50)", () => {
+    const booking = { ...mockBooking, numNights: 2 };
+    const matched = calculateMatchedPromotions(booking, [makeNightTieredPromo()]);
+    expect(matched).toHaveLength(1);
+    expect(matched[0].benefitApplications[0].promotionBenefitId).toBe("benefit-101");
+    expect(matched[0].appliedValue).toBe(50);
+  });
+
+  it("night-based tier: 3-night stay selects tier with minNights=3 ($100)", () => {
+    const booking = { ...mockBooking, numNights: 3 };
+    const matched = calculateMatchedPromotions(booking, [makeNightTieredPromo()]);
+    expect(matched).toHaveLength(1);
+    expect(matched[0].benefitApplications[0].promotionBenefitId).toBe("benefit-103");
+    expect(matched[0].appliedValue).toBe(100);
+  });
+
+  it("night-based tier: 5-night stay selects tier with minNights=3 ($100)", () => {
+    const booking = { ...mockBooking, numNights: 5 };
+    const matched = calculateMatchedPromotions(booking, [makeNightTieredPromo()]);
+    expect(matched).toHaveLength(1);
+    expect(matched[0].benefitApplications[0].promotionBenefitId).toBe("benefit-103");
+    expect(matched[0].appliedValue).toBe(100);
+  });
+
+  it("night-based tier: prior stay count does not affect tier selection", () => {
+    // Night tiers are per-stay, not cumulative — prior usage should not shift the tier
+    const promo = makeNightTieredPromo();
+    const priorUsage: PromotionUsageMap = new Map([
+      [promo.id, { count: 5, totalValue: 500, totalBonusPoints: 0, eligibleNightCount: 20 }],
+    ]);
+    const booking = { ...mockBooking, numNights: 1 };
+    const matched = calculateMatchedPromotions(booking, [promo], priorUsage);
+    expect(matched).toHaveLength(1);
+    expect(matched[0].benefitApplications[0].promotionBenefitId).toBe("benefit-101");
+  });
+
   // oncePerSubBrand tests
   it("should apply when oncePerSubBrand=true and appliedSubBrandIds is empty", () => {
     const promo = makePromo({
