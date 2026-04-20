@@ -83,4 +83,89 @@ describe("PromotionForm", () => {
     const submittedData = handleSubmit.mock.calls[0][0] as PromotionFormData;
     expect(submittedData.restrictions?.validDaysAfterRegistration).toBe("90");
   });
+
+  describe("Booked After Registration restriction", () => {
+    it("exposes the option in the Add-Restriction picker", async () => {
+      const user = userEvent.setup();
+      render(
+        <PromotionForm
+          onSubmit={async () => {}}
+          submitting={false}
+          title="Test"
+          description="Test"
+          submitLabel="Submit"
+        />
+      );
+      await user.click(screen.getByTestId("restriction-picker-button"));
+      expect(
+        screen.getByTestId("restriction-option-booked_after_registration")
+      ).toBeInTheDocument();
+    });
+
+    it("adds the card and the UserRegistrationSection when selected", async () => {
+      const user = userEvent.setup();
+      render(
+        <PromotionForm
+          onSubmit={async () => {}}
+          submitting={false}
+          title="Test"
+          description="Test"
+          submitLabel="Submit"
+        />
+      );
+      await user.click(screen.getByTestId("restriction-picker-button"));
+      await user.click(screen.getByTestId("restriction-option-booked_after_registration"));
+      expect(screen.getByTestId("restriction-card-booked-after-registration")).toBeInTheDocument();
+      expect(screen.getByTestId("user-registration-section")).toBeInTheDocument();
+    });
+
+    it("keeps UserRegistrationSection visible while either registration card is active", async () => {
+      const user = userEvent.setup();
+      render(
+        <PromotionForm
+          onSubmit={async () => {}}
+          submitting={false}
+          title="Test"
+          description="Test"
+          submitLabel="Submit"
+        />
+      );
+      await user.click(screen.getByTestId("restriction-picker-button"));
+      await user.click(screen.getByTestId("restriction-option-registration"));
+      await user.click(screen.getByTestId("restriction-picker-button"));
+      await user.click(screen.getByTestId("restriction-option-booked_after_registration"));
+
+      await user.click(screen.getByTestId("restriction-remove-registration"));
+      expect(screen.getByTestId("user-registration-section")).toBeInTheDocument();
+
+      await user.click(screen.getByTestId("restriction-remove-booked-after-registration"));
+      expect(screen.queryByTestId("user-registration-section")).not.toBeInTheDocument();
+    });
+
+    it("persists requireBookedAfterRegistration in the submit payload", async () => {
+      const handleSubmit = vi.fn();
+      const user = userEvent.setup();
+      render(
+        <PromotionForm
+          onSubmit={handleSubmit}
+          submitting={false}
+          title="Test"
+          description="Test"
+          submitLabel="Submit"
+          initialData={{ hotelChainId: "dummy-chain" }}
+        />
+      );
+
+      await user.type(screen.getByLabelText(/Name/i), "Book-after-reg promo");
+      await user.click(screen.getByTestId("restriction-picker-button"));
+      await user.click(screen.getByTestId("restriction-option-booked_after_registration"));
+      const benefitValueInput = screen.getByTestId("benefit-value-0");
+      await user.type(benefitValueInput, "25");
+      await user.click(screen.getByTestId("promotion-form-submit"));
+
+      expect(handleSubmit).toHaveBeenCalled();
+      const submittedData = handleSubmit.mock.calls[0][0] as PromotionFormData;
+      expect(submittedData.restrictions?.requireBookedAfterRegistration).toBe(true);
+    });
+  });
 });

@@ -34,6 +34,8 @@ import {
   OncePerSubBrandCard,
   TieInCardsCard,
   RegistrationCard,
+  BookedAfterRegistrationCard,
+  UserRegistrationSection,
   SubBrandScopeCard,
   PrerequisitesCard,
   BookingSourceCard,
@@ -244,9 +246,12 @@ export function PromotionForm({
         validDaysAfterRegistration: activeRestrictions.has("registration")
           ? restrictions.validDaysAfterRegistration
           : "",
-        registrationDate: activeRestrictions.has("registration")
-          ? restrictions.registrationDate
-          : "",
+        requireBookedAfterRegistration: activeRestrictions.has("booked_after_registration"),
+        registrationDate:
+          activeRestrictions.has("registration") ||
+          activeRestrictions.has("booked_after_registration")
+            ? restrictions.registrationDate
+            : "",
         prerequisiteStayCount: activeRestrictions.has("prerequisite")
           ? restrictions.prerequisiteStayCount
           : "",
@@ -851,7 +856,12 @@ export function PromotionForm({
                         <p className="px-2 pb-1 text-[11px] font-medium text-muted-foreground/70">
                           Timing & validity
                         </p>
-                        {["book_by_date", "registration", "prerequisite"].map((key) => {
+                        {[
+                          "book_by_date",
+                          "registration",
+                          "booked_after_registration",
+                          "prerequisite",
+                        ].map((key) => {
                           const k = key as RestrictionKey;
                           const isActive = activeRestrictions.has(k);
                           return (
@@ -1176,7 +1186,6 @@ export function PromotionForm({
                         key={key}
                         registrationDeadline={restrictions.registrationDeadline}
                         validDaysAfterRegistration={restrictions.validDaysAfterRegistration}
-                        registrationDate={restrictions.registrationDate}
                         onRegistrationDeadlineChange={(date) =>
                           dispatch({
                             type: "UPDATE_RESTRICTIONS",
@@ -1191,14 +1200,21 @@ export function PromotionForm({
                             updates: { validDaysAfterRegistration: v },
                           })
                         }
-                        onRegistrationDateChange={(date) =>
-                          dispatch({
-                            type: "UPDATE_RESTRICTIONS",
-                            updates: { registrationDate: date ? format(date, "yyyy-MM-dd") : "" },
-                          })
-                        }
                         onRemove={() =>
                           dispatch({ type: "REMOVE_RESTRICTION", key: "registration" })
+                        }
+                      />
+                    );
+
+                  if (key === "booked_after_registration")
+                    return (
+                      <BookedAfterRegistrationCard
+                        key={key}
+                        onRemove={() =>
+                          dispatch({
+                            type: "REMOVE_RESTRICTION",
+                            key: "booked_after_registration",
+                          })
                         }
                       />
                     );
@@ -1230,6 +1246,19 @@ export function PromotionForm({
 
                   return null;
                 })}
+
+                {(activeRestrictions.has("registration") ||
+                  activeRestrictions.has("booked_after_registration")) && (
+                  <UserRegistrationSection
+                    registrationDate={restrictions.registrationDate}
+                    onRegistrationDateChange={(date) =>
+                      dispatch({
+                        type: "UPDATE_RESTRICTIONS",
+                        updates: { registrationDate: date ? format(date, "yyyy-MM-dd") : "" },
+                      })
+                    }
+                  />
+                )}
               </div>
             </div>
           </CardContent>

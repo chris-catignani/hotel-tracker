@@ -7,7 +7,7 @@ import {
   PromotionFormState,
 } from "./promotion-form-reducer";
 import { DEFAULT_BENEFIT } from "./benefit-row";
-import { EMPTY_RESTRICTIONS, PromotionRestrictionsData } from "@/lib/types";
+import { EMPTY_RESTRICTIONS } from "@/lib/types";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -322,33 +322,9 @@ describe("booked_after_registration restriction", () => {
   });
 
   it("mapApiRestrictionsToForm carries the flag through", () => {
-    const apiRestrictions = {
-      minSpend: null,
-      minNightsRequired: null,
-      nightsStackable: false,
-      spanStays: false,
-      maxStayCount: null,
-      maxRewardCount: null,
-      maxRedemptionValue: null,
-      maxTotalBonusPoints: null,
-      oncePerSubBrand: false,
-      bookByDate: null,
-      registrationDeadline: null,
-      validDaysAfterRegistration: null,
-      requireBookedAfterRegistration: true,
-      tieInRequiresPayment: false,
-      allowedPaymentTypes: [],
-      allowedBookingSources: [],
-      allowedCountryCodes: [],
-      allowedAccommodationTypes: [],
-      hotelChainId: null,
-      prerequisiteStayCount: null,
-      prerequisiteNightCount: null,
-      subBrandRestrictions: [],
-      tieInCards: [],
-    } as unknown as PromotionRestrictionsData;
-
-    const initial = buildInitialState({ restrictions: apiRestrictions });
+    const initial = buildInitialState({
+      restrictions: { ...EMPTY_RESTRICTIONS, requireBookedAfterRegistration: true },
+    });
     expect(initial.restrictions.requireBookedAfterRegistration).toBe(true);
   });
 });

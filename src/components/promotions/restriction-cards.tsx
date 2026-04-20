@@ -23,6 +23,7 @@ export type RestrictionKey =
   | "once_per_sub_brand"
   | "tie_in_cards"
   | "registration"
+  | "booked_after_registration"
   | "sub_brand_scope"
   | "payment_type"
   | "prerequisite"
@@ -45,6 +46,7 @@ export const RESTRICTION_ORDER: RestrictionKey[] = [
   "once_per_sub_brand",
   "tie_in_cards",
   "registration",
+  "booked_after_registration",
   "sub_brand_scope",
   "prerequisite",
 ];
@@ -73,6 +75,7 @@ export const RESTRICTION_LABELS: Record<RestrictionKey, string> = {
   once_per_sub_brand: "Once Per Sub-Brand",
   tie_in_cards: "Tie-In Credit Cards",
   registration: "Registration & Validity",
+  booked_after_registration: "Booked After Registration",
   sub_brand_scope: "Sub-Brand Scope",
   prerequisite: "Promotion Prerequisites",
   booking_source: "Booking Source",
@@ -98,8 +101,8 @@ export function deriveActiveRestrictions(
     keys.add("redemption_caps");
   if (r.oncePerSubBrand === true) keys.add("once_per_sub_brand");
   if (r.tieInCreditCardIds && r.tieInCreditCardIds.length > 0) keys.add("tie_in_cards");
-  if (r.registrationDeadline || r.validDaysAfterRegistration || r.registrationDate)
-    keys.add("registration");
+  if (r.registrationDeadline || r.validDaysAfterRegistration) keys.add("registration");
+  if (r.requireBookedAfterRegistration) keys.add("booked_after_registration");
   if (r.subBrandIncludeIds.length > 0 || r.subBrandExcludeIds.length > 0)
     keys.add("sub_brand_scope");
   if (r.prerequisiteStayCount || r.prerequisiteNightCount) keys.add("prerequisite");
@@ -543,24 +546,17 @@ export function TieInCardsCard({
 export function RegistrationCard({
   registrationDeadline,
   validDaysAfterRegistration,
-  registrationDate,
   onRegistrationDeadlineChange,
   onValidDaysChange,
-  onRegistrationDateChange,
   onRemove,
-  showRegistrationDate = true,
 }: {
   registrationDeadline: string;
   validDaysAfterRegistration: string;
-  registrationDate: string;
   onRegistrationDeadlineChange: (date?: Date) => void;
   onValidDaysChange: (val: string) => void;
-  onRegistrationDateChange: (date?: Date) => void;
   onRemove: () => void;
-  showRegistrationDate?: boolean;
 }) {
   const registrationDeadlineObj = registrationDeadline ? parseISO(registrationDeadline) : undefined;
-  const registrationDateObj = registrationDate ? parseISO(registrationDate) : undefined;
   return (
     <RestrictionCard title="Registration & Validity" testId="registration" onRemove={onRemove}>
       <p className="text-xs text-muted-foreground">
@@ -592,22 +588,51 @@ export function RegistrationCard({
           If set, matching logic will use Registration Date + Duration as the effective end date.
         </p>
       </div>
-      {showRegistrationDate && (
-        <div className="space-y-2">
-          <Label htmlFor="registrationDate">Your Registration Date</Label>
-          <DatePicker
-            id="registrationDate"
-            date={registrationDateObj}
-            setDate={onRegistrationDateChange}
-            placeholder="When did you register?"
-            data-testid="promotion-registration-date"
-          />
-          <p className="text-[0.7rem] text-muted-foreground">
-            Recording your registration date activates the personal validity window.
-          </p>
-        </div>
-      )}
     </RestrictionCard>
+  );
+}
+
+export function BookedAfterRegistrationCard({ onRemove }: { onRemove: () => void }) {
+  return (
+    <RestrictionCard
+      title="Booked After Registration"
+      testId="booked-after-registration"
+      onRemove={onRemove}
+    >
+      <p className="text-xs text-muted-foreground">
+        Only bookings made on or after your registration date will qualify for this promotion.
+        Bookings placed before registration — or with no booking date on file — will be shown as
+        Orphaned.
+      </p>
+    </RestrictionCard>
+  );
+}
+
+export function UserRegistrationSection({
+  registrationDate,
+  onRegistrationDateChange,
+}: {
+  registrationDate: string;
+  onRegistrationDateChange: (date?: Date) => void;
+}) {
+  const registrationDateObj = registrationDate ? parseISO(registrationDate) : undefined;
+  return (
+    <div
+      className="rounded-md border border-dashed bg-muted/20 p-4 space-y-2"
+      data-testid="user-registration-section"
+    >
+      <Label htmlFor="registrationDate">Your Registration Date</Label>
+      <p className="text-xs text-muted-foreground">
+        Optional. Only needed if you have actually registered for this promotion.
+      </p>
+      <DatePicker
+        id="registrationDate"
+        date={registrationDateObj}
+        setDate={onRegistrationDateChange}
+        placeholder="When did you register?"
+        data-testid="promotion-registration-date"
+      />
+    </div>
   );
 }
 
