@@ -16,6 +16,7 @@
 
 import { randomUUID } from "crypto";
 import { HOTEL_ID } from "@/lib/constants";
+import { nightsBetween } from "@/lib/utils";
 import type {
   FetchableProperty,
   FetchParams,
@@ -92,10 +93,7 @@ export class IhgFetcher implements PriceFetcher {
     const mnemonic = params.property.chainPropertyId?.toUpperCase();
     if (!mnemonic) return null;
 
-    const numNights = Math.round(
-      (new Date(params.checkOut).getTime() - new Date(params.checkIn).getTime()) /
-        (1000 * 60 * 60 * 24)
-    );
+    const numNights = nightsBetween(params.checkIn, params.checkOut);
 
     console.log(`[IhgFetcher] Fetching rates for ${mnemonic}...`);
 

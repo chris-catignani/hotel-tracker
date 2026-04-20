@@ -25,6 +25,7 @@
  */
 
 import { HOTEL_ID } from "@/lib/constants";
+import { nightsBetween } from "@/lib/utils";
 import type {
   FetchableProperty,
   FetchParams,
@@ -140,10 +141,7 @@ export class GhaFetcher implements PriceFetcher {
       throw new Error(`GHA Rates API error for ${meta.hotelCode}: HTTP ${res.status}`);
     }
 
-    const numNights = Math.round(
-      (new Date(params.checkOut).getTime() - new Date(params.checkIn).getTime()) /
-        (1000 * 60 * 60 * 24)
-    );
+    const numNights = nightsBetween(params.checkIn, params.checkOut);
 
     const data = (await res.json()) as GhaRatesResponse;
     const rates = parseGhaRates(data, numNights);
