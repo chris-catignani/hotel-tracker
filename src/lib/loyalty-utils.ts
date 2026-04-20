@@ -11,6 +11,24 @@ export function resolveBasePointRate(chain: RateHolder, subBrand?: RateHolder): 
   return raw != null ? Number(raw) : null;
 }
 
+/**
+ * Converts a USD pretax cost to the hotel chain's calculation currency (e.g. EUR for Accor).
+ * Returns usdPretaxCost unchanged when the chain earns in USD or no rate is available.
+ */
+export function convertToCalcCurrency(
+  usdPretaxCost: number,
+  hotelChain:
+    | { calculationCurrency?: string | null; calcCurrencyToUsdRate?: number | null }
+    | null
+    | undefined
+): number {
+  const calcCurrency = hotelChain?.calculationCurrency;
+  const calcCurrencyToUsdRate = hotelChain?.calcCurrencyToUsdRate;
+  return calcCurrency && calcCurrency !== "USD" && calcCurrencyToUsdRate != null
+    ? usdPretaxCost / calcCurrencyToUsdRate
+    : usdPretaxCost;
+}
+
 interface CalculationInput {
   pretaxCost: number; // always in USD
   basePointRate: number | null;
@@ -40,11 +58,10 @@ export function calculatePoints({
     return 0;
   }
 
-  // Convert to calculation currency if needed (e.g., USD → EUR for Accor)
-  const effectivePretaxCost =
-    calculationCurrency && calculationCurrency !== "USD" && calcCurrencyToUsdRate
-      ? pretaxCost / calcCurrencyToUsdRate
-      : pretaxCost;
+  const effectivePretaxCost = convertToCalcCurrency(pretaxCost, {
+    calculationCurrency,
+    calcCurrencyToUsdRate,
+  });
 
   const baseRate = Number(basePointRate || 0);
 

@@ -2184,4 +2184,71 @@ describe("accommodation type restriction", () => {
       calculateMatchedPromotions(apartmentBooking, [unrestrictedPromo], new Map())
     ).toHaveLength(1);
   });
+
+  it("converts usdPretaxCost to calculationCurrency for base-only multiplier basisPoints", () => {
+    // Accor earns 2.5 pts/EUR; usdPretaxCost=500, calcCurrencyToUsdRate=1.25 → EUR=400
+    // basisPoints = 400 × 2.5 = 1000; bonus = 1000 × (3-1) = 2000; value = 2000 × 0.01 = 20
+    const accorBooking = {
+      ...mockBooking,
+      hotelChainId: "accor-chain",
+      pretaxCost: 500,
+      hotelChain: {
+        basePointRate: 2.5,
+        calculationCurrency: "EUR",
+        calcCurrencyToUsdRate: 1.25,
+        pointType: { usdCentsPerPoint: 0.01 },
+      },
+    } as MatchingBooking;
+    const promo = makePromo({
+      type: PromotionType.loyalty,
+      creditCardId: null,
+      hotelChainId: "accor-chain",
+      benefits: [
+        {
+          id: "benefit-10",
+          rewardType: PromotionRewardType.points,
+          valueType: PromotionBenefitValueType.multiplier,
+          value: new Prisma.Decimal(3),
+          certType: null,
+          pointsMultiplierBasis: null,
+          sortOrder: 0,
+          restrictions: null,
+        },
+      ],
+    });
+    const matched = calculateMatchedPromotions(accorBooking, [promo]);
+    expect(matched).toHaveLength(1);
+    expect(matched[0].appliedValue).toBeCloseTo(20, 2);
+    expect(matched[0].bonusPointsApplied).toBe(2000);
+  });
+
+  it("does not convert pretaxCost when calculationCurrency is USD", () => {
+    // USD chain: usdPretaxCost=80, basePointRate=10 → basisPoints=800 × (3-1) × 0.015 = 24
+    const usdBooking = {
+      ...mockBooking,
+      hotelChain: {
+        basePointRate: 10,
+        calculationCurrency: "USD",
+        calcCurrencyToUsdRate: null,
+        pointType: { usdCentsPerPoint: 0.015 },
+      },
+    } as MatchingBooking;
+    const promo = makePromo({
+      benefits: [
+        {
+          id: "benefit-10",
+          rewardType: PromotionRewardType.points,
+          valueType: PromotionBenefitValueType.multiplier,
+          value: new Prisma.Decimal(3),
+          certType: null,
+          pointsMultiplierBasis: null,
+          sortOrder: 0,
+          restrictions: null,
+        },
+      ],
+    });
+    const matched = calculateMatchedPromotions(usdBooking, [promo]);
+    expect(matched[0].appliedValue).toBeCloseTo(24, 2);
+    expect(matched[0].bonusPointsApplied).toBe(1600);
+  });
 });
