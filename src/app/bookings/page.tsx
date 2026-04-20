@@ -203,10 +203,10 @@ function BookingsPageInner() {
               }
             }}
           >
-            <SelectTrigger className="w-40" data-testid="year-filter-select">
+            <SelectTrigger className="w-48" data-testid="year-filter-select">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent position="popper">
               {yearOptions.map((opt) => (
                 <SelectItem key={String(opt.value)} value={String(opt.value)}>
                   {opt.label}

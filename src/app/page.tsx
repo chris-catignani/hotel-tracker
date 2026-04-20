@@ -786,7 +786,7 @@ export default function DashboardPage() {
             >
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent position="popper">
               {yearOptions.map((opt) => (
                 <SelectItem key={String(opt.value)} value={String(opt.value)}>
                   {opt.label}
@@ -825,13 +825,13 @@ export default function DashboardPage() {
         <div className="flex shrink-0 gap-2 items-center">
           <Select value={String(yearFilter)} onValueChange={handleYearFilterChange}>
             <SelectTrigger
-              className="w-40"
+              className="w-48"
               data-testid="year-filter-select"
               aria-label="Filter by year"
             >
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent position="popper">
               {yearOptions.map((opt) => (
                 <SelectItem key={String(opt.value)} value={String(opt.value)}>
                   {opt.label}
