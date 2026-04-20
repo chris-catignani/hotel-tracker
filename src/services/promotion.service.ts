@@ -32,6 +32,7 @@ function buildRestrictionsCreateData(r: PromotionRestrictionsFormData) {
     validDaysAfterRegistration: r.validDaysAfterRegistration
       ? Number(r.validDaysAfterRegistration)
       : null,
+    requireBookedAfterRegistration: r.requireBookedAfterRegistration ?? false,
     tieInRequiresPayment: r.tieInRequiresPayment ?? false,
     allowedPaymentTypes: r.allowedPaymentTypes ?? [],
     allowedBookingSources: r.allowedBookingSources ?? [],
