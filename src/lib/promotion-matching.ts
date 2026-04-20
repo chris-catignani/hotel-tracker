@@ -96,7 +96,10 @@ export const PROMOTIONS_INCLUDE = {
     include: { restrictions: { include: RESTRICTIONS_INCLUDE } },
   },
   tiers: {
-    orderBy: { minStays: "asc" as const },
+    orderBy: [{ minStays: "asc" }, { minNights: "asc" }] as {
+      minStays?: "asc" | "desc";
+      minNights?: "asc" | "desc";
+    }[],
     include: {
       benefits: {
         orderBy: { sortOrder: "asc" as const },
@@ -564,7 +567,7 @@ export function calculateMatchedPromotions(
 
       // Night-based tiers use per-stay semantics: tier selected by this booking's numNights.
       // Stay-based tiers use cumulative semantics: tier selected by the stay sequence number.
-      const isNightBasedTiers = promo.tiers.some((t) => t.minNights !== null);
+      const hasStayBasedTiers = promo.tiers.some((t) => t.minStays !== null);
 
       const applicableTier = promo.tiers.find((tier) => {
         if (tier.minStays !== null) {
@@ -581,7 +584,7 @@ export function calculateMatchedPromotions(
       });
 
       if (!applicableTier) {
-        if (isNightBasedTiers) {
+        if (!hasStayBasedTiers) {
           // booking.numNights is fixed — no future state can move a stay into a night tier
           continue;
         }

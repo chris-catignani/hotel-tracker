@@ -105,7 +105,10 @@ const PROMOTION_INCLUDE = {
     include: { restrictions: { include: SUB_BRAND_RESTRICTIONS_INCLUDE } },
   },
   tiers: {
-    orderBy: { minStays: "asc" as const },
+    orderBy: [{ minStays: "asc" }, { minNights: "asc" }] as {
+      minStays?: "asc" | "desc";
+      minNights?: "asc" | "desc";
+    }[],
     include: {
       benefits: {
         orderBy: { sortOrder: "asc" as const },
