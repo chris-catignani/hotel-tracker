@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, type Mock } from "vitest";
 import prisma from "@/lib/prisma";
 import { calculateMatchedPromotions } from "@/lib/promotion-matching";
+import { getCurrentRate, resolveCalcCurrencyRate } from "./exchange-rate";
 import {
   reevaluateSubsequentBookings,
   getSubsequentBookingIds,
@@ -41,6 +42,7 @@ vi.mock("@/lib/promotion-matching", () => ({
 
 vi.mock("./exchange-rate", () => ({
   getCurrentRate: vi.fn().mockResolvedValue(1),
+  resolveCalcCurrencyRate: vi.fn().mockResolvedValue(null),
 }));
 
 const prismaMock = prisma as unknown as {
@@ -222,6 +224,56 @@ describe("getAffectedBookingIds-userId-scoping", () => {
       expect.objectContaining({
         where: expect.objectContaining({ userId }),
       })
+    );
+  });
+});
+
+describe("reevaluateBookings-exchange-rate-resolution", () => {
+  it("resolves exchange rate for future non-USD booking with null lockedExchangeRate", async () => {
+    const userId = "user1";
+    const booking = {
+      id: "b1",
+      currency: "NZD",
+      lockedExchangeRate: null,
+      checkIn: new Date("2027-01-01"),
+      hotelChain: null,
+    };
+    vi.mocked(getCurrentRate).mockResolvedValueOnce(0.592);
+    prismaMock.promotion.findMany.mockResolvedValueOnce([]);
+    prismaMock.booking.findMany.mockResolvedValueOnce([booking]);
+    prismaMock.booking.findUnique.mockResolvedValueOnce(null);
+
+    await reevaluateBookings(["b1"], userId);
+
+    expect(calculateMatchedPromotions).toHaveBeenCalledWith(
+      expect.objectContaining({ lockedExchangeRate: 0.592 }),
+      expect.anything(),
+      expect.anything()
+    );
+  });
+
+  it("resolves calcCurrencyToUsdRate for non-USD hotel chain and passes it in booking", async () => {
+    const userId = "user1";
+    const booking = {
+      id: "b1",
+      currency: "USD",
+      lockedExchangeRate: null,
+      checkIn: new Date("2027-01-01"),
+      hotelChain: { calculationCurrency: "EUR", basePointRate: 2.5, pointType: null },
+    };
+    vi.mocked(resolveCalcCurrencyRate).mockResolvedValueOnce(1.25);
+    prismaMock.promotion.findMany.mockResolvedValueOnce([]);
+    prismaMock.booking.findMany.mockResolvedValueOnce([booking]);
+    prismaMock.booking.findUnique.mockResolvedValueOnce(null);
+
+    await reevaluateBookings(["b1"], userId);
+
+    expect(calculateMatchedPromotions).toHaveBeenCalledWith(
+      expect.objectContaining({
+        hotelChain: expect.objectContaining({ calcCurrencyToUsdRate: 1.25 }),
+      }),
+      expect.anything(),
+      expect.anything()
     );
   });
 });

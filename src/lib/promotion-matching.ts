@@ -140,6 +140,8 @@ export interface MatchingBooking {
   _count?: { certificates: number };
   hotelChain?: {
     basePointRate?: string | number | Prisma.Decimal | null;
+    calculationCurrency?: string | null;
+    calcCurrencyToUsdRate?: number | null;
     pointType?: {
       usdCentsPerPoint: string | number | Prisma.Decimal | null;
     } | null;
@@ -445,6 +447,21 @@ const FulfillmentPromotionRules: Record<string, PromotionRule> = {
     return { valid: true };
   },
 };
+
+/**
+ * Converts a USD pretax cost to the hotel chain's calculation currency (e.g. EUR for Accor).
+ * Returns usdPretaxCost unchanged when the chain earns in USD or no rate is available.
+ */
+function toCalcCurrencyPretaxCost(
+  usdPretaxCost: number,
+  hotelChain: MatchingBooking["hotelChain"]
+): number {
+  const calcCurrency = hotelChain?.calculationCurrency;
+  const calcCurrencyToUsdRate = hotelChain?.calcCurrencyToUsdRate;
+  return calcCurrency && calcCurrency !== "USD" && calcCurrencyToUsdRate
+    ? usdPretaxCost / calcCurrencyToUsdRate
+    : usdPretaxCost;
+}
 
 /**
  * Calculates which promotions match a given booking without side effects.
@@ -828,9 +845,10 @@ export function calculateMatchedPromotions(
               const isBaseOnly =
                 !benefit.pointsMultiplierBasis || benefit.pointsMultiplierBasis === "base_only";
               const baseRate = resolveBasePointRate(booking.hotelChain, booking.hotelChainSubBrand);
+              const basisPretaxCost = toCalcCurrencyPretaxCost(usdPretaxCost, booking.hotelChain);
               const basisPoints =
                 isBaseOnly && baseRate != null
-                  ? usdPretaxCost * Number(baseRate)
+                  ? basisPretaxCost * Number(baseRate)
                   : Number(booking.loyaltyPointsEarned || 0);
               appliedValue = basisPoints * (benefitValue - 1) * centsPerPoint;
               benefitBonusPoints = Math.round(basisPoints * (benefitValue - 1));
@@ -929,13 +947,17 @@ export function calculateMatchedPromotions(
               if (benefit.valueType === PromotionBenefitValueType.multiplier) {
                 const isBaseOnly =
                   !benefit.pointsMultiplierBasis || benefit.pointsMultiplierBasis === "base_only";
-                const baseRate =
-                  booking.hotelChainSubBrand?.basePointRate != null
-                    ? booking.hotelChainSubBrand.basePointRate
-                    : booking.hotelChain?.basePointRate;
+                const baseRate = resolveBasePointRate(
+                  booking.hotelChain,
+                  booking.hotelChainSubBrand
+                );
+                const basisPretaxCostSpan = toCalcCurrencyPretaxCost(
+                  usdPretaxCostSpan,
+                  booking.hotelChain
+                );
                 const basisPoints =
                   isBaseOnly && baseRate != null
-                    ? usdPretaxCostSpan * Number(baseRate)
+                    ? basisPretaxCostSpan * Number(baseRate)
                     : Number(booking.loyaltyPointsEarned || 0);
                 appliedValue = basisPoints * (benefitValue - 1) * centsPerPoint;
                 benefitBonusPoints = Math.round(basisPoints * (benefitValue - 1));
