@@ -405,6 +405,7 @@ model PromotionRestrictions {
   bookByDate                 DateTime?                     @map("book_by_date") @db.Date
   registrationDeadline       DateTime?                     @map("registration_deadline") @db.Date
   validDaysAfterRegistration Int?                          @map("valid_days_after_registration")
+  requireBookedAfterRegistration Boolean                   @default(false) @map("require_booked_after_registration")
   tieInRequiresPayment       Boolean                       @default(false) @map("tie_in_requires_payment")
   allowedPaymentTypes        String[]                      @default([]) @map("allowed_payment_types")
   allowedBookingSources      String[]                      @default([]) @map("allowed_booking_sources")
