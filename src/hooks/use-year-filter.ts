@@ -30,8 +30,8 @@ export function buildYearOptions<T extends { checkOut: string }>(bookings: T[]):
   ].sort((a, b) => b - a);
 
   return [
-    { value: "upcoming", label: `${currentYear} — Upcoming` },
     { value: "all", label: "All Years" },
+    { value: "upcoming", label: `${currentYear} — Upcoming` },
     ...years.map((y) => ({ value: y as YearFilter, label: String(y) })),
   ];
 }

@@ -17,18 +17,18 @@ const NEXT_YEAR = Y + 1;
 // ── buildYearOptions ────────────────────────────────────────────────────────
 
 describe("buildYearOptions", () => {
-  it("returns [Upcoming, All Years] for empty input", () => {
+  it("returns [All Years, Upcoming] for empty input", () => {
     expect(buildYearOptions([])).toEqual([
-      { value: "upcoming", label: `${Y} — Upcoming` },
       { value: "all", label: "All Years" },
+      { value: "upcoming", label: `${Y} — Upcoming` },
     ]);
   });
 
-  it("returns complete ordered array: Upcoming → All Years → descending years", () => {
+  it("returns complete ordered array: All Years → Upcoming → descending years", () => {
     const bookings = [b(`${PAST_YEAR}-06-01`), b(`${Y}-06-01`), b(`${PAST_YEAR - 1}-06-01`)];
     expect(buildYearOptions(bookings)).toEqual([
-      { value: "upcoming", label: `${Y} — Upcoming` },
       { value: "all", label: "All Years" },
+      { value: "upcoming", label: `${Y} — Upcoming` },
       { value: Y, label: String(Y) },
       { value: PAST_YEAR, label: String(PAST_YEAR) },
       { value: PAST_YEAR - 1, label: String(PAST_YEAR - 1) },
@@ -43,7 +43,7 @@ describe("buildYearOptions", () => {
   });
 
   it("Upcoming label contains the actual current year", () => {
-    expect(buildYearOptions([])[0].label).toBe(`${Y} — Upcoming`);
+    expect(buildYearOptions([])[1].label).toBe(`${Y} — Upcoming`);
   });
 });
 

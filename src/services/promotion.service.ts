@@ -138,7 +138,11 @@ export async function getPromotion(id: string, userId: string): Promise<FullProm
 export async function listPromotions(_userId: string, type?: string): Promise<FullPromotion[]> {
   const where: Record<string, unknown> = {};
   if (type) where.type = type as PromotionType;
-  return prisma.promotion.findMany({ where, include: PROMOTION_INCLUDE });
+  return prisma.promotion.findMany({
+    where,
+    include: PROMOTION_INCLUDE,
+    orderBy: { startDate: "asc" },
+  });
 }
 
 export async function createPromotion(
