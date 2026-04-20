@@ -1,7 +1,7 @@
 import { certPointsValue } from "@/lib/cert-types";
 import { formatCurrency } from "@/lib/utils";
 import { DEFAULT_EQN_VALUE } from "@/lib/constants";
-import { resolveBasePointRate } from "@/lib/loyalty-utils";
+import { resolveBasePointRate, convertToCalcCurrency } from "@/lib/loyalty-utils";
 import { formatBenefitLabel } from "@/lib/earnings-tracker-utils";
 
 const DEFAULT_CENTS_PER_POINT = 0.01;
@@ -742,9 +742,10 @@ function calcPromotionBreakdowns(
             const isBaseOnly = !b.pointsMultiplierBasis || b.pointsMultiplierBasis === "base_only";
             const effectiveBaseRate =
               resolveBasePointRate(booking.hotelChain ?? null, booking.hotelChainSubBrand) ?? 0;
+            const basisPretaxCost = convertToCalcCurrency(pretaxCost, booking.hotelChain);
             const basisPoints =
               isBaseOnly && effectiveBaseRate > 0
-                ? Math.round(pretaxCost * effectiveBaseRate)
+                ? Math.round(basisPretaxCost * effectiveBaseRate)
                 : booking.loyaltyPointsEarned || 0;
             const basisLabel = isBaseOnly ? "(base rate only)" : "(incl. elite bonus)";
             benefitFormula = `${basisPoints.toLocaleString()} pts ${basisLabel} × (${bValue} - 1) × ${centsStr}¢${capSuffix}`;

@@ -5,7 +5,7 @@ import {
   Prisma,
 } from "@prisma/client";
 import { DEFAULT_EQN_VALUE } from "./constants";
-import { resolveBasePointRate } from "./loyalty-utils";
+import { resolveBasePointRate, convertToCalcCurrency } from "./loyalty-utils";
 import { certPointsValue } from "./cert-types";
 
 export type PromotionUsage = {
@@ -449,21 +449,6 @@ const FulfillmentPromotionRules: Record<string, PromotionRule> = {
 };
 
 /**
- * Converts a USD pretax cost to the hotel chain's calculation currency (e.g. EUR for Accor).
- * Returns usdPretaxCost unchanged when the chain earns in USD or no rate is available.
- */
-function toCalcCurrencyPretaxCost(
-  usdPretaxCost: number,
-  hotelChain: MatchingBooking["hotelChain"]
-): number {
-  const calcCurrency = hotelChain?.calculationCurrency;
-  const calcCurrencyToUsdRate = hotelChain?.calcCurrencyToUsdRate;
-  return calcCurrency && calcCurrency !== "USD" && calcCurrencyToUsdRate
-    ? usdPretaxCost / calcCurrencyToUsdRate
-    : usdPretaxCost;
-}
-
-/**
  * Calculates which promotions match a given booking without side effects.
  */
 export function calculateMatchedPromotions(
@@ -845,7 +830,7 @@ export function calculateMatchedPromotions(
               const isBaseOnly =
                 !benefit.pointsMultiplierBasis || benefit.pointsMultiplierBasis === "base_only";
               const baseRate = resolveBasePointRate(booking.hotelChain, booking.hotelChainSubBrand);
-              const basisPretaxCost = toCalcCurrencyPretaxCost(usdPretaxCost, booking.hotelChain);
+              const basisPretaxCost = convertToCalcCurrency(usdPretaxCost, booking.hotelChain);
               const basisPoints =
                 isBaseOnly && baseRate != null
                   ? basisPretaxCost * Number(baseRate)
@@ -951,7 +936,7 @@ export function calculateMatchedPromotions(
                   booking.hotelChain,
                   booking.hotelChainSubBrand
                 );
-                const basisPretaxCostSpan = toCalcCurrencyPretaxCost(
+                const basisPretaxCostSpan = convertToCalcCurrency(
                   usdPretaxCostSpan,
                   booking.hotelChain
                 );
