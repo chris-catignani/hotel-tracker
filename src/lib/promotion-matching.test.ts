@@ -46,6 +46,7 @@ function makeRestrictions(overrides: Partial<TestRestrictions> = {}): TestRestri
     bookByDate: null,
     registrationDeadline: null,
     validDaysAfterRegistration: null,
+    requireBookedAfterRegistration: false,
     tieInRequiresPayment: false,
     allowedPaymentTypes: [],
     allowedBookingSources: [],

@@ -62,6 +62,7 @@ export type MatchingRestrictions = {
   bookByDate: Date | null;
   registrationDeadline: Date | null;
   validDaysAfterRegistration: number | null;
+  requireBookedAfterRegistration: boolean;
   tieInRequiresPayment: boolean;
   allowedPaymentTypes: string[];
   allowedBookingSources: string[];
@@ -129,6 +130,7 @@ export interface MatchingBooking {
   bookingSource: string | null;
   checkIn: Date | string;
   createdAt: Date | string;
+  bookingDate?: Date | string | null;
   numNights: number;
   pretaxCost: string | number | Prisma.Decimal;
   totalCost: string | number | Prisma.Decimal;
