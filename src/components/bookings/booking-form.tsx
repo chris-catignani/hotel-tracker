@@ -34,19 +34,11 @@ import {
   UserCreditCard,
 } from "@/lib/types";
 import { bookingFormReducer, INITIAL_STATE, BenefitItem } from "./booking-form-reducer";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, nightsBetween } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function diffDays(checkIn: string, checkOut: string): number {
-  if (!checkIn || !checkOut) return 0;
-  const start = new Date(checkIn);
-  const end = new Date(checkOut);
-  const diff = end.getTime() - start.getTime();
-  return Math.max(0, Math.round(diff / (1000 * 60 * 60 * 24)));
-}
 
 function calcBenefitApproxValue(
   benefit: BenefitItem,
@@ -227,7 +219,7 @@ export function BookingForm({
   const hasCert = paymentType.includes("cert");
 
   // Derived state
-  const numNights = checkIn && checkOut ? String(diffDays(checkIn, checkOut)) : "0";
+  const numNights = checkIn && checkOut ? String(nightsBetween(checkIn, checkOut)) : "0";
   const taxAmount =
     pretaxCost && totalCost ? (Number(totalCost) - Number(pretaxCost)).toFixed(2) : "0.00";
 

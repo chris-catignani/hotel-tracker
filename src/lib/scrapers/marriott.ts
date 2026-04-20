@@ -24,6 +24,7 @@
 import fs from "fs";
 import { chromium } from "playwright";
 import { HOTEL_ID } from "@/lib/constants";
+import { nightsBetween } from "@/lib/utils";
 import type {
   FetchableProperty,
   FetchParams,
@@ -196,9 +197,7 @@ export class MarriottFetcher implements PriceFetcher {
       console.log(`[MarriottFetcher] Received ${callCount} rate response(s) for ${marshaCode}`);
       if (callCount === 0) return null;
 
-      const checkInDate = new Date(`${params.checkIn}T00:00:00Z`);
-      const checkOutDate = new Date(`${params.checkOut}T00:00:00Z`);
-      const numNights = (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24);
+      const numNights = nightsBetween(params.checkIn, params.checkOut);
       const rates = parseMarriottRates(rateResponses, numNights);
       console.log(`[MarriottFetcher] Parsed ${rates.length} rates for ${marshaCode}`);
       return rates.length > 0 ? { rates, source: "marriott_browser" } : null;

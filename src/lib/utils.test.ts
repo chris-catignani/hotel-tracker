@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { cn, formatCurrency, formatDate, pruneHotelName } from "./utils";
+import { cn, formatCurrency, formatDate, nightsBetween, pruneHotelName } from "./utils";
 
 describe("utils", () => {
   describe("cn", () => {
@@ -36,6 +36,20 @@ describe("utils", () => {
       expect(formatDate("2026-03-09")).toBe("03/09/26");
       expect(formatDate("1999-12-31")).toBe("12/31/99");
       expect(formatDate("2000-01-01")).toBe("01/01/00");
+    });
+  });
+
+  describe("nightsBetween", () => {
+    it("returns the number of nights between two dates", () => {
+      expect(nightsBetween("2026-04-14", "2026-04-17")).toBe(3);
+    });
+
+    it("returns 1 for a single-night stay", () => {
+      expect(nightsBetween("2026-04-14", "2026-04-15")).toBe(1);
+    });
+
+    it("handles month boundaries", () => {
+      expect(nightsBetween("2026-03-29", "2026-04-02")).toBe(4);
     });
   });
 
