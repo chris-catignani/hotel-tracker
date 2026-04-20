@@ -1,7 +1,9 @@
 import { describe, it, expect } from "vitest";
+import { format } from "date-fns";
 import {
   bookingFormReducer,
   buildInitialState,
+  buildNewBookingState,
   INITIAL_STATE,
   toPaymentType,
   BookingFormState,
@@ -587,6 +589,22 @@ describe("bookingFormReducer", () => {
       const booking = makeBooking();
       const state = buildInitialState(booking, []);
       expect(state.accommodationType).toBe("hotel");
+    });
+  });
+
+  describe("buildNewBookingState", () => {
+    it("defaults bookingDate to today in YYYY-MM-DD form", () => {
+      const state = buildNewBookingState();
+      const today = format(new Date(), "yyyy-MM-dd");
+      expect(state.bookingDate).toBe(today);
+    });
+
+    it("leaves all other fields identical to INITIAL_STATE", () => {
+      const state = buildNewBookingState();
+      expect(state).toEqual({
+        ...INITIAL_STATE,
+        bookingDate: format(new Date(), "yyyy-MM-dd"),
+      });
     });
   });
 });

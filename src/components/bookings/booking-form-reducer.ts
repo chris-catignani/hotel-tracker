@@ -128,6 +128,13 @@ export const INITIAL_STATE: BookingFormState = {
   showErrors: false,
 };
 
+export function buildNewBookingState(): BookingFormState {
+  return {
+    ...INITIAL_STATE,
+    bookingDate: format(new Date(), "yyyy-MM-dd"),
+  };
+}
+
 export function buildInitialState(
   initialData: Booking,
   portals: ShoppingPortal[]
