@@ -1,6 +1,6 @@
 import prisma from "@/lib/prisma";
 import { BookingPromotion, Prisma } from "@prisma/client";
-import { getCurrentRate, resolveCalcCurrencyRate } from "./exchange-rate";
+import { resolveCalcCurrencyRate } from "./exchange-rate";
 import {
   calculateMatchedPromotions,
   getConstrainedPromotions,
@@ -117,15 +117,20 @@ export async function reevaluateBookings(bookingIds: string[], userId: string): 
   // Get all promotions with constraints (including tier-based stay counting)
   const constrainedPromos = getConstrainedPromotions(activePromotions);
 
-  // Pre-compute once per unique calculationCurrency; bookings at the same chain share the rate
-  const uniqueCalcCurrencies = new Set(
-    bookings
-      .map((b) => b.hotelChain?.calculationCurrency)
-      .filter((c): c is string => !!c && c !== "USD")
-  );
-  const calcCurrencyRateCache = new Map<string, number | null>();
-  for (const currency of uniqueCalcCurrencies) {
-    calcCurrencyRateCache.set(currency, await resolveCalcCurrencyRate(currency));
+  // Pre-fetch all needed rates in parallel before the loop (booking currencies for future
+  // non-USD stays, and chain calculationCurrencies for chains like Accor that earn in EUR)
+  const currenciesToResolve = new Set<string>();
+  for (const b of bookings) {
+    if (b.currency !== "USD" && b.lockedExchangeRate == null) currenciesToResolve.add(b.currency);
+    const cc = b.hotelChain?.calculationCurrency;
+    if (cc && cc !== "USD") currenciesToResolve.add(cc);
+  }
+  const rateCache = new Map<string, number | null>();
+  const currencyList = Array.from(currenciesToResolve);
+  const rateResults = await Promise.allSettled(currencyList.map((c) => resolveCalcCurrencyRate(c)));
+  for (let i = 0; i < currencyList.length; i++) {
+    const result = rateResults[i];
+    rateCache.set(currencyList[i], result.status === "fulfilled" ? result.value : null);
   }
 
   // Process sequentially to ensure accurate constraint checks
@@ -137,14 +142,11 @@ export async function reevaluateBookings(bookingIds: string[], userId: string): 
     } else if (booking.lockedExchangeRate != null) {
       resolvedExchangeRate = Number(booking.lockedExchangeRate);
     } else {
-      resolvedExchangeRate = (await getCurrentRate(booking.currency)) ?? 1;
+      resolvedExchangeRate = rateCache.get(booking.currency) ?? 1;
     }
 
     const calcCurrency = booking.hotelChain?.calculationCurrency;
-    const calcCurrencyToUsdRate =
-      calcCurrency && calcCurrency !== "USD"
-        ? (calcCurrencyRateCache.get(calcCurrency) ?? null)
-        : null;
+    const calcCurrencyToUsdRate = calcCurrency ? (rateCache.get(calcCurrency) ?? null) : null;
 
     const bookingWithRate = {
       ...booking,
@@ -191,7 +193,7 @@ export async function matchPromotionsForBooking(
   } else if (booking.lockedExchangeRate != null) {
     resolvedExchangeRate = Number(booking.lockedExchangeRate);
   } else {
-    resolvedExchangeRate = (await getCurrentRate(booking.currency)) ?? 1;
+    resolvedExchangeRate = (await resolveCalcCurrencyRate(booking.currency)) ?? 1;
   }
   const calcCurrency = booking.hotelChain?.calculationCurrency;
   const calcCurrencyToUsdRate =

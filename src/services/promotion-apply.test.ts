@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, type Mock } from "vitest";
 import prisma from "@/lib/prisma";
 import { calculateMatchedPromotions } from "@/lib/promotion-matching";
-import { getCurrentRate, resolveCalcCurrencyRate } from "./exchange-rate";
+import { resolveCalcCurrencyRate } from "./exchange-rate";
 import {
   reevaluateSubsequentBookings,
   getSubsequentBookingIds,
@@ -41,7 +41,6 @@ vi.mock("@/lib/promotion-matching", () => ({
 }));
 
 vi.mock("./exchange-rate", () => ({
-  getCurrentRate: vi.fn().mockResolvedValue(1),
   resolveCalcCurrencyRate: vi.fn().mockResolvedValue(null),
 }));
 
@@ -238,7 +237,7 @@ describe("reevaluateBookings-exchange-rate-resolution", () => {
       checkIn: new Date("2027-01-01"),
       hotelChain: null,
     };
-    vi.mocked(getCurrentRate).mockResolvedValueOnce(0.592);
+    vi.mocked(resolveCalcCurrencyRate).mockResolvedValueOnce(0.592);
     prismaMock.promotion.findMany.mockResolvedValueOnce([]);
     prismaMock.booking.findMany.mockResolvedValueOnce([booking]);
     prismaMock.booking.findUnique.mockResolvedValueOnce(null);
