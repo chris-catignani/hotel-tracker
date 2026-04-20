@@ -582,16 +582,6 @@ export default function BookingDetailPage() {
                 {booking.paymentTiming === "prepaid" ? "Prepaid" : "Postpaid"}
               </p>
             </div>
-
-            {/* Booking Date — prepaid only */}
-            {booking.paymentTiming === "prepaid" && booking.bookingDate && (
-              <div>
-                <p className="text-sm text-muted-foreground">Booking Date</p>
-                <p className="font-medium" data-testid="booking-date">
-                  {formatDate(booking.bookingDate)}
-                </p>
-              </div>
-            )}
           </div>
 
           {/* Cert sub-group — full row */}
@@ -611,6 +601,14 @@ export default function BookingDetailPage() {
 
           <SectionDivider label="Booking Context" />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {booking.bookingDate && (
+              <div>
+                <p className="text-sm text-muted-foreground">Booking Date</p>
+                <p className="font-medium" data-testid="booking-date">
+                  {formatDate(booking.bookingDate)}
+                </p>
+              </div>
+            )}
             {booking.hotelChainSubBrand && (
               <div>
                 <p className="text-sm text-muted-foreground">Sub-brand</p>

@@ -118,21 +118,20 @@ describe("BookingDetailPage", () => {
     await waitFor(() => expect(screen.getByTestId("total-cost-usd")).toBeInTheDocument());
   });
 
-  it("hides booking date for postpaid booking", async () => {
-    mockSuccess(cashBooking);
+  it("shows booking date for postpaid bookings in Booking Context", async () => {
+    mockSuccess({ ...cashBooking, paymentTiming: "postpaid", bookingDate: "2026-04-20" });
     render(<BookingDetailPage />);
-    await waitFor(() => screen.getByTestId("payment-type"));
-    expect(screen.queryByTestId("booking-date")).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByTestId("booking-date")).toBeInTheDocument());
   });
 
-  it("shows booking date for prepaid booking", async () => {
+  it("shows booking date for prepaid bookings", async () => {
     mockSuccess({ ...cashBooking, paymentTiming: "prepaid", bookingDate: "2026-05-01" });
     render(<BookingDetailPage />);
     await waitFor(() => expect(screen.getByTestId("booking-date")).toBeInTheDocument());
   });
 
-  it("hides booking date for postpaid booking even when bookingDate is set", async () => {
-    mockSuccess({ ...cashBooking, paymentTiming: "postpaid", bookingDate: "2026-05-01" });
+  it("omits Booking Date when the field is null", async () => {
+    mockSuccess({ ...cashBooking, paymentTiming: "postpaid", bookingDate: null });
     render(<BookingDetailPage />);
     await waitFor(() => screen.getByTestId("payment-type"));
     expect(screen.queryByTestId("booking-date")).not.toBeInTheDocument();
