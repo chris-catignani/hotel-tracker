@@ -1844,4 +1844,56 @@ describe("net-cost", () => {
       expect(result.netCost).toBeCloseTo(100 - 40);
     });
   });
+
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  describe("Orphan description reflects promotion restriction reason", () => {
+    const makeOrphanedBooking = (
+      requireBookedAfterRegistration: boolean | null
+    ): NetCostBooking => ({
+      ...mockBaseBooking,
+      bookingPromotions: [
+        {
+          id: "bp-reg",
+          promotionId: "p-reg",
+          promotion: {
+            name: "Register-then-book",
+            restrictions: requireBookedAfterRegistration
+              ? ({ requireBookedAfterRegistration: true } as any)
+              : ({} as any),
+            benefits: [{ rewardType: "cashback", valueType: "fixed", value: 25, certType: null }],
+          } as any,
+          appliedValue: 0,
+          isOrphaned: true,
+          benefitApplications: [
+            {
+              promotionBenefit: {
+                rewardType: "cashback",
+                valueType: "fixed",
+                value: 25,
+                certType: null,
+              } as any,
+              appliedValue: 0,
+              isOrphaned: true,
+            },
+          ] as any[],
+        },
+      ],
+    });
+
+    it("uses booked-before-registration description when requireBookedAfterRegistration is set", () => {
+      const breakdown = getNetCostBreakdown(makeOrphanedBooking(true));
+      const segmentDescription = breakdown.promotions[0].groups[0].segments[0].description;
+      expect(segmentDescription).toBe(
+        "This promotion requires the booking to be placed on or after your registration date. This booking doesn't meet that requirement."
+      );
+    });
+
+    it("falls back to 'not enough future bookings' description for other orphan causes", () => {
+      const breakdown = getNetCostBreakdown(makeOrphanedBooking(null));
+      const segmentDescription = breakdown.promotions[0].groups[0].segments[0].description;
+      expect(segmentDescription).toBe(
+        "There are not enough future bookings to fulfill this promotion."
+      );
+    });
+  });
 });

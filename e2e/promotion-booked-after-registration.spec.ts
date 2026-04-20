@@ -73,18 +73,24 @@ test.describe("promotion: booked after registration", () => {
         type: promo.type,
         hotelChainId: testHotelChain.id,
         benefits: promo.benefits.map(
-          (b: {
+          ({
+            rewardType,
+            valueType,
+            value,
+            certType,
+            sortOrder,
+          }: {
             rewardType: string;
             valueType: string;
             value: number;
             certType: string | null;
             sortOrder: number;
           }) => ({
-            rewardType: b.rewardType,
-            valueType: b.valueType,
-            value: b.value,
-            certType: b.certType,
-            sortOrder: b.sortOrder,
+            rewardType,
+            valueType,
+            value,
+            certType,
+            sortOrder,
             restrictions: null,
           })
         ),

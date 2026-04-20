@@ -5,8 +5,28 @@ import { resolveBasePointRate, convertToCalcCurrency } from "@/lib/loyalty-utils
 import { formatBenefitLabel } from "@/lib/earnings-tracker-utils";
 
 const DEFAULT_CENTS_PER_POINT = 0.01;
-const ORPHANED_PROMOTION_DESCRIPTION =
+const ORPHANED_NOT_ENOUGH_FUTURE_BOOKINGS =
   "There are not enough future bookings to fulfill this promotion.";
+const ORPHANED_BOOKED_BEFORE_REGISTRATION =
+  "This promotion requires the booking to be placed on or after your registration date. This booking doesn't meet that requirement.";
+
+function orphanDescriptionFor(
+  restrictions: { requireBookedAfterRegistration?: boolean | null } | null | undefined
+): string {
+  if (restrictions?.requireBookedAfterRegistration) {
+    return ORPHANED_BOOKED_BEFORE_REGISTRATION;
+  }
+  return ORPHANED_NOT_ENOUGH_FUTURE_BOOKINGS;
+}
+
+function orphanSuffixFor(
+  restrictions: { requireBookedAfterRegistration?: boolean | null } | null | undefined
+): string {
+  if (restrictions?.requireBookedAfterRegistration) {
+    return " (Booked before your registration date)";
+  }
+  return " (Not enough future bookings to fulfill)";
+}
 
 export interface CalculationSegment {
   label: string;
@@ -144,6 +164,7 @@ export interface NetCostBooking {
         allowedBookingSources?: string[] | null;
         maxTotalBonusPoints?: number | null;
         maxRedemptionValue?: string | number | null;
+        requireBookedAfterRegistration?: boolean | null;
       } | null;
       benefits?: {
         rewardType: string;
@@ -651,7 +672,7 @@ function calcPromotionBreakdowns(
             description: isMaxedOut
               ? "This segment no longer applies because the promotion has been maxed out."
               : isSegmentOrphaned
-                ? ORPHANED_PROMOTION_DESCRIPTION
+                ? orphanDescriptionFor(bp.promotion.restrictions)
                 : description +
                   (isCycleFinished
                     ? " (Goal Met!)"
@@ -683,7 +704,7 @@ function calcPromotionBreakdowns(
         const proportionalSuffix =
           pendingRatio && !isMaxedOutOverall
             ? isOrphaned
-              ? " (Not enough future bookings to fulfill)"
+              ? orphanSuffixFor(bp.promotion.restrictions)
               : isPreQualifying
                 ? ` A future booked stay will complete this cycle${pendingRatio}.`
                 : ` This bonus is pending additional stays${pendingRatio}.`
@@ -692,7 +713,7 @@ function calcPromotionBreakdowns(
         benefitDescriptionLine = isMaxedOutOverall
           ? "This promotion has been maxed out and no further rewards apply."
           : isOrphaned
-            ? ORPHANED_PROMOTION_DESCRIPTION
+            ? orphanDescriptionFor(bp.promotion.restrictions)
             : isPreQualifying
               ? `Pre-qualifying: earned proportional rewards for ${nightsInStay} nights towards a ${minNights}-night requirement. Will be fully earned when the campaign completes.${proportionalSuffix}`
               : `Earned proportional rewards for ${nightsInStay} nights towards a ${minNights}-night requirement.${proportionalSuffix}`;
@@ -779,7 +800,7 @@ function calcPromotionBreakdowns(
         benefitDescriptionLine = isMaxedOutOverall
           ? "This promotion has been maxed out and no further rewards apply."
           : isOrphaned
-            ? ORPHANED_PROMOTION_DESCRIPTION
+            ? orphanDescriptionFor(bp.promotion.restrictions)
             : isPreQualifying
               ? `Pre-qualifying — will be earned when campaign completes. ${benefitDescription}`
               : benefitDescription;
@@ -796,7 +817,7 @@ function calcPromotionBreakdowns(
           description: isMaxedOutOverall
             ? "This segment no longer applies because the promotion has been maxed out."
             : isOrphaned
-              ? ORPHANED_PROMOTION_DESCRIPTION
+              ? orphanDescriptionFor(bp.promotion.restrictions)
               : isPreQualifying
                 ? `Pre-qualifying — will be earned when campaign completes. ${benefitDescription}`
                 : benefitDescription,
