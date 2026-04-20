@@ -7,6 +7,7 @@ import {
   PromotionFormState,
 } from "./promotion-form-reducer";
 import { DEFAULT_BENEFIT } from "./benefit-row";
+import { EMPTY_RESTRICTIONS, PromotionRestrictionsData } from "@/lib/types";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -290,6 +291,65 @@ describe("REMOVE_RESTRICTION", () => {
     expect(next.restrictions.maxRewardCount).toBe("");
     expect(next.restrictions.maxRedemptionValue).toBe("");
     expect(next.restrictions.maxTotalBonusPoints).toBe("");
+  });
+});
+
+describe("booked_after_registration restriction", () => {
+  it("ADD_RESTRICTION sets requireBookedAfterRegistration to true and adds the key to activeRestrictions", () => {
+    const state = buildInitialState();
+    const next = promotionFormReducer(state, {
+      type: "ADD_RESTRICTION",
+      key: "booked_after_registration",
+    });
+    expect(next.activeRestrictions.has("booked_after_registration")).toBe(true);
+    expect(next.restrictions.requireBookedAfterRegistration).toBe(true);
+  });
+
+  it("REMOVE_RESTRICTION resets requireBookedAfterRegistration to false and drops the key", () => {
+    const initial = buildInitialState({
+      restrictions: { ...EMPTY_RESTRICTIONS, requireBookedAfterRegistration: true },
+    });
+    const seeded = promotionFormReducer(initial, {
+      type: "ADD_RESTRICTION",
+      key: "booked_after_registration",
+    });
+    const next = promotionFormReducer(seeded, {
+      type: "REMOVE_RESTRICTION",
+      key: "booked_after_registration",
+    });
+    expect(next.activeRestrictions.has("booked_after_registration")).toBe(false);
+    expect(next.restrictions.requireBookedAfterRegistration).toBe(false);
+  });
+
+  it("mapApiRestrictionsToForm carries the flag through", () => {
+    const apiRestrictions = {
+      minSpend: null,
+      minNightsRequired: null,
+      nightsStackable: false,
+      spanStays: false,
+      maxStayCount: null,
+      maxRewardCount: null,
+      maxRedemptionValue: null,
+      maxTotalBonusPoints: null,
+      oncePerSubBrand: false,
+      bookByDate: null,
+      registrationDeadline: null,
+      validDaysAfterRegistration: null,
+      requireBookedAfterRegistration: true,
+      tieInRequiresPayment: false,
+      allowedPaymentTypes: [],
+      allowedBookingSources: [],
+      allowedCountryCodes: [],
+      allowedAccommodationTypes: [],
+      hotelChainId: null,
+      prerequisiteStayCount: null,
+      prerequisiteNightCount: null,
+      subBrandRestrictions: [],
+      tieInCards: [],
+    } as unknown as PromotionRestrictionsData;
+
+    const initial = buildInitialState({ restrictions: apiRestrictions });
+    expect(initial.restrictions.requireBookedAfterRegistration).toBe(true);
   });
 });
 

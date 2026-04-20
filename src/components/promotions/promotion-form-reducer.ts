@@ -87,6 +87,7 @@ export function mapApiRestrictionsToForm(
       : "",
     validDaysAfterRegistration:
       r.validDaysAfterRegistration != null ? String(r.validDaysAfterRegistration) : "",
+    requireBookedAfterRegistration: r.requireBookedAfterRegistration ?? false,
     registrationDate: "",
     tieInRequiresPayment: r.tieInRequiresPayment ?? false,
     allowedPaymentTypes: r.allowedPaymentTypes ?? [],
@@ -299,11 +300,17 @@ export function promotionFormReducer(
 
     // ── Restrictions ────────────────────────────────────────────────────────
 
-    case "ADD_RESTRICTION":
+    case "ADD_RESTRICTION": {
+      const nextRestrictions = { ...state.restrictions };
+      if (action.key === "booked_after_registration") {
+        nextRestrictions.requireBookedAfterRegistration = true;
+      }
       return {
         ...state,
         activeRestrictions: new Set([...state.activeRestrictions, action.key]),
+        restrictions: nextRestrictions,
       };
+    }
 
     case "REMOVE_RESTRICTION": {
       const next = new Set(state.activeRestrictions);
@@ -347,6 +354,8 @@ function restrictionClearedValues(key: RestrictionKey): Partial<PromotionRestric
       return { tieInCreditCardIds: [], tieInRequiresPayment: false };
     case "registration":
       return { registrationDeadline: "", validDaysAfterRegistration: "", registrationDate: "" };
+    case "booked_after_registration":
+      return { requireBookedAfterRegistration: false };
     case "payment_type":
       return { allowedPaymentTypes: [] };
     case "booking_source":
