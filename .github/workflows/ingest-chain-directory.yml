@@ -5,8 +5,8 @@ on:
     - cron: "0 6 1 * *" # 6am UTC on the 1st of each month; active-hours check gates local execution
   workflow_dispatch: # allow manual trigger
     inputs:
-      chain:
-        description: "Chain to ingest (e.g. gha, hyatt)"
+      chains:
+        description: "Comma-separated chains to ingest (e.g. gha, hyatt)"
         required: true
         default: "gha"
       runner:
@@ -65,7 +65,7 @@ jobs:
       - name: Run chain directory ingest
         run: xvfb-run npx tsx src/workers/ingest-chain-directory.ts
         env:
-          CHAIN: ${{ github.event.inputs.chain || 'gha' }}
+          CHAINS: ${{ github.event.inputs.chains || 'gha' }}
           LIMIT: ${{ github.event.inputs.limit }}
           RUNNER_TYPE: remote
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -91,7 +91,7 @@ jobs:
         shell: pwsh
         run: npx tsx src/workers/ingest-chain-directory.ts
         env:
-          CHAIN: ${{ github.event.inputs.chain || 'hyatt' }}
+          CHAINS: ${{ github.event.inputs.chains || 'hyatt' }}
           RUNNER_TYPE: local
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}

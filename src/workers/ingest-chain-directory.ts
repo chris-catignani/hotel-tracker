@@ -12,37 +12,43 @@ Sentry.setTag("runner_type", process.env.RUNNER_TYPE ?? "ingest-chain-directory"
 import { ingestGhaDirectory } from "@/services/gha-directory-ingest";
 import { ingestHyattDirectory } from "@/services/hyatt-directory-ingest";
 
+async function runChain(chain: string, forceFullRefetch: boolean, limit: number | undefined) {
+  if (chain === "gha") {
+    return await ingestGhaDirectory({ forceFullRefetch, limit });
+  } else if (chain === "hyatt") {
+    return await ingestHyattDirectory();
+  } else {
+    throw new Error(`Unsupported chain=${chain}; supported values: 'gha', 'hyatt'`);
+  }
+}
+
 async function main() {
-  const chain = process.env.CHAIN ?? "gha";
+  const chains = (process.env.CHAINS ?? "gha")
+    .split(",")
+    .map((c) => c.trim())
+    .filter(Boolean);
   const forceFullRefetch = process.env.FORCE_FULL === "1";
   const limit = process.env.LIMIT ? parseInt(process.env.LIMIT, 10) : undefined;
   console.log(
-    `[IngestChainDirectory] chain=${chain} forceFullRefetch=${forceFullRefetch} limit=${limit ?? "none"}`
+    `[IngestChainDirectory] chains=${chains.join(",")} forceFullRefetch=${forceFullRefetch} limit=${limit ?? "none"}`
   );
-  const runStart = Date.now();
 
   let exitCode = 0;
-  try {
-    if (chain === "gha") {
-      const result = await ingestGhaDirectory({ forceFullRefetch, limit });
+  for (const chain of chains) {
+    const runStart = Date.now();
+    try {
+      const result = await runChain(chain, forceFullRefetch, limit);
       const durationMs = Date.now() - runStart;
       log.info("chain_directory_ingest:completed", { chain, durationMs, ...result });
-      console.log(`[IngestChainDirectory] Done in ${durationMs}ms`, result);
-    } else if (chain === "hyatt") {
-      const result = await ingestHyattDirectory();
-      const durationMs = Date.now() - runStart;
-      log.info("chain_directory_ingest:completed", { chain, durationMs, ...result });
-      console.log(`[IngestChainDirectory] Done in ${durationMs}ms`, result);
-    } else {
-      throw new Error(`Unsupported CHAIN=${chain}; supported values: 'gha', 'hyatt'`);
+      console.log(`[IngestChainDirectory] ${chain} done in ${durationMs}ms`, result);
+    } catch (error) {
+      console.error(`[IngestChainDirectory] ${chain} ERROR:`, error);
+      Sentry.captureException(error);
+      exitCode = 1;
     }
-  } catch (error) {
-    console.error("[IngestChainDirectory] ERROR:", error);
-    Sentry.captureException(error);
-    exitCode = 1;
-  } finally {
-    await Promise.all([Sentry.flush(2000), log.flush()]);
   }
+
+  await Promise.all([Sentry.flush(2000), log.flush()]);
   if (exitCode) process.exit(exitCode);
 }
 
