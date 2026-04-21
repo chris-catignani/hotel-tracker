@@ -6,10 +6,6 @@
     {
       "path": "/api/cron/refresh-exchange-rates",
       "schedule": "0 0 * * *"
-    },
-    {
-      "path": "/api/cron/ingest-chain-directory",
-      "schedule": "0 2 1 * *"
     }
   ]
 }

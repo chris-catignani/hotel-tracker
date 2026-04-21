@@ -1,7 +1,7 @@
 import { countryNameToCode } from "./country-name-to-code";
 
 export interface GhaParsedProperty {
-  chainPropertyId: string;
+  chainPropertyId: string | null;
   chainUrlPath: string;
   name: string;
   subBrandSlug: string;
@@ -55,7 +55,7 @@ export function parseGhaPropertyNextData(html: string, urlPath: string): GhaPars
   const countryName = city?._location?.parentLocation?.content?.name ?? null;
 
   return {
-    chainPropertyId: info?.id != null ? String(info.id) : "",
+    chainPropertyId: info?.id != null ? String(info.id) : null,
     chainUrlPath: urlPath,
     name: typeof page.name === "string" ? page.name : "",
     subBrandSlug,

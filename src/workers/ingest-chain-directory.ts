@@ -9,10 +9,7 @@ import { log } from "next-axiom";
 Sentry.init({ dsn: process.env.SENTRY_DSN, tracesSampleRate: 0 });
 Sentry.setTag("runner_type", process.env.RUNNER_TYPE ?? "ingest-chain-directory");
 
-import { PrismaClient } from "@prisma/client";
 import { ingestGhaDirectory } from "@/services/gha-directory-ingest";
-
-const prisma = new PrismaClient();
 
 async function main() {
   const chain = process.env.CHAIN ?? "gha";
@@ -38,8 +35,6 @@ async function main() {
     Sentry.captureException(error);
     await Promise.all([Sentry.flush(2000), log.flush()]);
     process.exit(1);
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
