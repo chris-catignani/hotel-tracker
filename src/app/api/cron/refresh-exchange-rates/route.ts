@@ -4,30 +4,7 @@ import { refreshAllExchangeRates, refreshPointTypeUsdValues } from "@/services/e
 import { finalizeCheckedInBookings } from "@/services/booking-enrichment";
 import { apiError } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
-
-async function withRetry<T>(
-  fn: () => Promise<T>,
-  context: string,
-  maxAttempts = 3,
-  baseDelayMs = 1000
-): Promise<T> {
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      return await fn();
-    } catch (err) {
-      if (attempt === maxAttempts) throw err;
-      const message = err instanceof Error ? err.message : String(err);
-      logger.warn(`Cron retrying after transient failure`, {
-        context,
-        attempt,
-        maxAttempts,
-        error: message,
-      });
-      await new Promise((resolve) => setTimeout(resolve, baseDelayMs * attempt));
-    }
-  }
-  throw new Error("unreachable");
-}
+import { withRetry } from "@/lib/retry";
 
 async function handler(request: NextRequest) {
   try {

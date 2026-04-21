@@ -190,6 +190,51 @@ async function main() {
       errorThresholdValue: "0",
     },
 
+    // ─── Chain Directory Ingestion ────────────────────────────────────────────
+    {
+      id: "dir-ingest-run-log",
+      type: "LogStream",
+      name: "Chain Directory Ingest Runs",
+      query: q(
+        "where message == 'chain_directory_ingest:completed'" +
+          " | project _time, ['fields.chain'], ['fields.harvestedCount'], ['fields.fetchedCount']," +
+          " ['fields.upsertedCount'], ['fields.skippedCount'], ['fields.durationMs']"
+      ),
+    },
+    {
+      id: "dir-ingest-upserted-over-time",
+      type: "TimeSeries",
+      name: "Properties Upserted Over Time (by Chain)",
+      query: q(
+        "where message == 'chain_directory_ingest:completed'" +
+          " | summarize sum(toint(['fields.upsertedCount'])) by bin(_time, 1d), tostring(['fields.chain'])"
+      ),
+    },
+    {
+      id: "dir-ingest-upserted-stat",
+      type: "Statistic",
+      name: "Total Properties Upserted",
+      query: q(
+        "where message == 'chain_directory_ingest:completed'" +
+          " | summarize sum(toint(['fields.upsertedCount']))"
+      ),
+      colorScheme: "Green",
+      showChart: true,
+    },
+    {
+      id: "dir-ingest-errors-stat",
+      type: "Statistic",
+      name: "Ingest Runs with Errors",
+      query: q(
+        "where message == 'chain_directory_ingest:completed' and array_length(['fields.errors']) > 0" +
+          " | summarize count()"
+      ),
+      colorScheme: "Red",
+      showChart: true,
+      errorThreshold: "Above",
+      errorThresholdValue: "0",
+    },
+
     // ─── Bookings ─────────────────────────────────────────────────────────────
     {
       id: "bookings-over-time",
@@ -229,14 +274,20 @@ async function main() {
     { i: "price-watch-fetch-errors", x: 6, y: 34, w: 4, h: 5 },
     { i: "price-watch-alerts-stat", x: 10, y: 34, w: 1, h: 5 },
     { i: "price-watch-errors-stat", x: 11, y: 34, w: 1, h: 5 },
+    // Chain Directory Ingestion
+    { i: "dir-ingest-run-log", x: 0, y: 39, w: 12, h: 5 },
+    { i: "dir-ingest-upserted-over-time", x: 0, y: 44, w: 8, h: 5 },
+    { i: "dir-ingest-upserted-stat", x: 8, y: 44, w: 2, h: 5 },
+    { i: "dir-ingest-errors-stat", x: 10, y: 44, w: 2, h: 5 },
     // Bookings
-    { i: "bookings-over-time", x: 0, y: 39, w: 8, h: 5 },
-    { i: "bookings-by-method", x: 8, y: 39, w: 4, h: 5 },
+    { i: "bookings-over-time", x: 0, y: 49, w: 8, h: 5 },
+    { i: "bookings-by-method", x: 8, y: 49, w: 4, h: 5 },
   ];
 
   const dashboardDoc = {
     name: "Hotel Tracker",
-    description: "API health, email ingestion, cron jobs, price watch, and booking activity",
+    description:
+      "API health, email ingestion, cron jobs, price watch, chain directory ingestion, and booking activity",
     owner: "X-AXIOM-EVERYONE",
     charts,
     layout,

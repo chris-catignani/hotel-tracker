@@ -11,7 +11,7 @@ Sentry.setTag("runner_type", process.env.RUNNER_TYPE ?? "unknown");
 
 import { PrismaClient } from "@prisma/client";
 import { createAccorFetcher } from "@/lib/scrapers/accor";
-import { createGhaFetcher } from "@/lib/scrapers/gha";
+import { createGhaFetcher } from "@/lib/scrapers/gha/price-watch";
 import { createHiltonFetcher } from "@/lib/scrapers/hilton";
 import { createHyattFetcher } from "@/lib/scrapers/hyatt";
 import { createIhgFetcher } from "@/lib/scrapers/ihg";

@@ -10,12 +10,13 @@ interface PropertyInput {
   address?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  chainPropertyId?: string | null;
+  chainUrlPath?: string | null;
+  chainCategories?: string[];
+  detailLastFetchedAt?: Date | null;
+  lastSeenAt?: Date | null;
 }
 
-/**
- * Finds an existing Property by placeId or (name + hotelChainId), or creates one.
- * Returns the property id.
- */
 export async function findOrCreateProperty(input: PropertyInput): Promise<string> {
   const existing = input.placeId
     ? await prisma.property.findUnique({ where: { placeId: input.placeId } })
@@ -36,14 +37,16 @@ export async function findOrCreateProperty(input: PropertyInput): Promise<string
         address: input.address || null,
         latitude: input.latitude ?? null,
         longitude: input.longitude ?? null,
+        chainPropertyId: input.chainPropertyId || null,
+        chainUrlPath: input.chainUrlPath || null,
+        chainCategories: input.chainCategories ?? [],
+        detailLastFetchedAt: input.detailLastFetchedAt ?? null,
+        lastSeenAt: input.lastSeenAt ?? null,
       },
     });
     return created.id;
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
-      // The (name, hotel_chain_id) unique constraint was violated — the property exists.
-      // Always look up by name+hotelChainId since that's what the constraint is on,
-      // regardless of whether a placeId was provided in this request.
       const race = await prisma.property.findFirst({
         where: { name: input.propertyName, hotelChainId: input.hotelChainId ?? undefined },
       });
