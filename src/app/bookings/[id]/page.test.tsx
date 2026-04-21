@@ -40,7 +40,7 @@ const cashBooking = {
   bookingPromotions: [],
   bookingCardBenefits: [],
   partnershipEarns: [],
-  priceWatchBooking: null,
+  priceWatchBookings: [],
   shoppingPortalId: null,
   shoppingPortal: null,
   portalCashbackRate: null,

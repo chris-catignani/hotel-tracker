@@ -373,7 +373,6 @@ export interface PriceWatchBooking {
   id: string;
   priceWatchId: string;
   bookingId: string;
-  dateFlexibilityDays: number;
   cashThreshold: string | number | null;
   awardThreshold: number | null;
   createdAt: string;
@@ -487,7 +486,7 @@ export interface Booking {
   otaAgencyId: string | null;
   benefits: BookingBenefit[];
   bookingCardBenefits: BookingCardBenefit[];
-  priceWatchBooking?: PriceWatchBooking | null;
+  priceWatchBookings?: PriceWatchBooking[];
 }
 
 export interface BookingFormData {

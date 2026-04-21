@@ -71,7 +71,7 @@ describe("BookingsPage", () => {
           needsReview: true,
           ingestionMethod: "email",
           confirmationNumber: "12345",
-          priceWatchBooking: null,
+          priceWatchBookings: [],
         },
       ],
     });
@@ -127,7 +127,7 @@ describe("BookingsPage", () => {
           needsReview: false,
           ingestionMethod: "manual",
           confirmationNumber: null,
-          priceWatchBooking: null,
+          priceWatchBookings: [],
         },
       ],
     });
@@ -183,6 +183,7 @@ describe("BookingsPage", () => {
           },
           partnershipEarns: [],
           accommodationType: "hotel",
+          priceWatchBookings: [],
         },
       ],
     });
@@ -252,7 +253,7 @@ describe("BookingsPage", () => {
           needsReview: false,
           ingestionMethod: "email",
           confirmationNumber: "ABC123",
-          priceWatchBooking: null,
+          priceWatchBookings: [],
         },
       ],
     });
@@ -310,7 +311,7 @@ describe("BookingsPage", () => {
           needsReview: false,
           ingestionMethod: "email",
           confirmationNumber: "ABC456",
-          priceWatchBooking: null,
+          priceWatchBookings: [],
         },
       ],
     });

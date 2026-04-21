@@ -65,7 +65,10 @@ export interface WatchResult {
   durationMs: number;
 }
 
-export async function runPriceWatchRefresh(fetchers: PriceFetcher[]): Promise<{
+export async function runPriceWatchRefresh(
+  fetchers: PriceFetcher[],
+  watchId?: string
+): Promise<{
   watched: number;
   results: WatchResult[];
 }> {
@@ -78,7 +81,9 @@ export async function runPriceWatchRefresh(fetchers: PriceFetcher[]): Promise<{
       bookings: {
         some: { booking: { checkIn: { gte: today } } },
       },
+      ...(watchId ? { id: watchId } : {}),
     },
+    orderBy: [{ priority: "desc" }, { updatedAt: "asc" }],
     include: {
       property: true,
       bookings: {

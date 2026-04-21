@@ -19,6 +19,7 @@ type AppSelectProps = React.ComponentPropsWithoutRef<typeof Button> & {
   searchPlaceholder?: string;
   emptyMessage?: string;
   disabled?: boolean;
+  disableSort?: boolean;
   className?: string;
   error?: string;
 } & (
@@ -44,6 +45,7 @@ export function AppSelect({
   emptyMessage = "No item found.",
   className,
   disabled,
+  disableSort = false,
   error,
   ...props
 }: AppSelectProps) {
@@ -52,6 +54,7 @@ export function AppSelect({
 
   // Sort options alphabetically, ignoring case, but keep special options at top
   const sortedOptions = React.useMemo(() => {
+    if (disableSort) return options;
     const specialValues = ["none", "", "all"];
     const specialOptions = options.filter((opt) => specialValues.includes(opt.value));
     const regularOptions = options.filter((opt) => !specialValues.includes(opt.value));
@@ -61,7 +64,7 @@ export function AppSelect({
     );
 
     return [...specialOptions, ...regularOptions];
-  }, [options]);
+  }, [options, disableSort]);
 
   const filteredOptions = React.useMemo(() => {
     if (!searchQuery) return sortedOptions;

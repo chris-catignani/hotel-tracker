@@ -49,8 +49,8 @@ test.describe("Price Watch API", () => {
     // Booking now has priceWatchBooking
     const bookingRes2 = await testBooking.request.get(`/api/bookings/${testBooking.id}`);
     const updatedBooking = await bookingRes2.json();
-    expect(updatedBooking.priceWatchBooking).not.toBeNull();
-    expect(updatedBooking.priceWatchBooking.priceWatchId).toBe(watch.id);
+    expect(updatedBooking.priceWatchBookings).toHaveLength(1);
+    expect(updatedBooking.priceWatchBookings[0].priceWatchId).toBe(watch.id);
 
     // Toggle disabled
     const putRes = await testBooking.request.put(`/api/price-watches/${watch.id}`, {

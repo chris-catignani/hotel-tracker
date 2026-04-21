@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/table";
 import { CostBreakdown } from "@/components/cost-breakdown";
 import { BookingPriceWatch } from "@/components/price-watch/booking-price-watch";
+import { AlternateHotelsSection } from "@/components/alternate-hotels/alternate-hotels-section";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { apiFetch } from "@/lib/api-fetch";
 import { logger } from "@/lib/logger";
@@ -127,7 +128,6 @@ interface PriceWatchBookingData {
   priceWatchId: string;
   cashThreshold: string | number | null;
   awardThreshold: number | null;
-  dateFlexibilityDays: number;
 }
 
 interface Booking extends Omit<NetCostBooking, "bookingPromotions" | "userCreditCard"> {
@@ -142,6 +142,8 @@ interface Booking extends Omit<NetCostBooking, "bookingPromotions" | "userCredit
     city: string | null;
     countryCode: string | null;
     chainPropertyId: string | null;
+    latitude: number | null;
+    longitude: number | null;
   };
   propertyId: string;
   checkIn: string;
@@ -182,7 +184,7 @@ interface Booking extends Omit<NetCostBooking, "bookingPromotions" | "userCredit
   bookingPromotions: BookingPromotion[];
   bookingCardBenefits: BookingCardBenefitLocal[];
   partnershipEarns: PartnershipEarn[];
-  priceWatchBooking: PriceWatchBookingData | null;
+  priceWatchBookings: PriceWatchBookingData[];
 }
 
 // ---------------------------------------------------------------------------
@@ -835,7 +837,16 @@ export default function BookingDetailPage() {
           totalCost={booking.totalCost}
           currency={booking.currency}
           pointsRedeemed={booking.pointsRedeemed}
-          initialWatchBooking={booking.priceWatchBooking}
+          initialWatchBooking={booking.priceWatchBookings[0] ?? null}
+        />
+      )}
+
+      {/* Alternate Hotels — outside grid, full-width, future hotel stays only */}
+      {booking.accommodationType === "hotel" && isFutureBooking && booking.hotelChainId && (
+        <AlternateHotelsSection
+          bookingId={booking.id}
+          anchorHasGps={booking.property.latitude !== null && booking.property.longitude !== null}
+          currency={booking.currency}
         />
       )}
     </div>

@@ -126,7 +126,7 @@ interface Booking {
   } | null;
   bookingPromotions: BookingPromotion[];
   certificates: BookingCertificate[];
-  priceWatchBooking: { priceWatch: { isEnabled: boolean } } | null;
+  priceWatchBookings: { priceWatch: { isEnabled: boolean } }[];
   accommodationType: string;
   needsReview: boolean;
 }
@@ -324,7 +324,7 @@ function BookingsPageInner() {
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <span className="mt-0.5 shrink-0 cursor-default">
-                                    {booking.priceWatchBooking?.priceWatch.isEnabled ? (
+                                    {booking.priceWatchBookings[0]?.priceWatch.isEnabled ? (
                                       <Eye className="h-3.5 w-3.5 text-green-600" />
                                     ) : (
                                       <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />
@@ -332,8 +332,8 @@ function BookingsPageInner() {
                                   </span>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                  {booking.priceWatchBooking
-                                    ? booking.priceWatchBooking.priceWatch.isEnabled
+                                  {booking.priceWatchBookings[0]
+                                    ? booking.priceWatchBookings[0]?.priceWatch.isEnabled
                                       ? "Price watch enabled — you'll be alerted when rates drop"
                                       : "Price watch disabled"
                                     : "No price watch set up for this booking"}

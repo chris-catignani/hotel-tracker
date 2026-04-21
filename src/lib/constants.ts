@@ -211,3 +211,8 @@ export const ACCOMMODATION_TYPE_OPTIONS = [
   { value: "hotel", label: "Hotel" },
   { value: "apartment", label: "Apartment / Short-term Rental" },
 ] as const;
+
+export const PRICE_WATCH_PRIORITY = {
+  ANCHOR: 100,
+  ALTERNATE: 50,
+} as const;

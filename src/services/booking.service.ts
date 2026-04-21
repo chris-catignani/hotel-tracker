@@ -7,6 +7,7 @@ import {
   type MatchingPromotion,
   type MatchingBooking,
 } from "@/lib/promotion-matching";
+import { PRICE_WATCH_PRIORITY } from "@/lib/constants";
 import { fetchPromotionUsage } from "@/services/promotion-usage";
 import {
   enrichBookingWithPartnerships,
@@ -207,7 +208,11 @@ const BOOKING_INCLUDE = (userId: string) =>
     otaAgency: true,
     benefits: true,
     property: true,
-    priceWatchBooking: { include: { priceWatch: { select: { isEnabled: true } } } },
+    priceWatchBookings: {
+      where: { priceWatch: { priority: PRICE_WATCH_PRIORITY.ANCHOR } },
+      include: { priceWatch: { select: { isEnabled: true } } },
+      take: 1,
+    },
     bookingCardBenefits: { include: { cardBenefit: true } },
     bookingPartnershipEarnStatuses: true,
   }) as const;

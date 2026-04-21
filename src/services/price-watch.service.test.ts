@@ -14,6 +14,8 @@ vi.mock("@/lib/prisma", () => ({
     },
     priceWatchBooking: {
       upsert: vi.fn(),
+      count: vi.fn(),
+      findUnique: vi.fn(),
     },
   },
 }));
@@ -36,7 +38,7 @@ const prismaMock = prisma as unknown as {
     delete: Mock;
   };
   booking: { findFirst: Mock };
-  priceWatchBooking: { upsert: Mock };
+  priceWatchBooking: { upsert: Mock; count: Mock; findUnique: Mock };
 };
 
 const mockWatch = {
@@ -143,14 +145,15 @@ describe("upsertPriceWatch", () => {
   });
 
   it("links a booking when bookingId is provided", async () => {
-    prismaMock.booking.findFirst.mockResolvedValueOnce({ id: "booking-1" });
+    prismaMock.booking.findFirst.mockResolvedValueOnce({ id: "booking-1", propertyId: "prop-1" });
+    prismaMock.priceWatchBooking.count.mockResolvedValue(0);
+    prismaMock.priceWatchBooking.findUnique.mockResolvedValue(null);
 
     await upsertPriceWatch("user-1", {
       ...baseInput,
       bookingId: "booking-1",
       cashThreshold: 200,
       awardThreshold: 15000,
-      dateFlexibilityDays: 2,
     });
 
     expect(prismaMock.booking.findFirst).toHaveBeenCalledWith(
@@ -158,15 +161,89 @@ describe("upsertPriceWatch", () => {
     );
     expect(prismaMock.priceWatchBooking.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { bookingId: "booking-1" },
+        where: { priceWatchId_bookingId: { priceWatchId: "watch-1", bookingId: "booking-1" } },
         create: expect.objectContaining({
           priceWatchId: "watch-1",
           cashThreshold: 200,
           awardThreshold: 15000,
-          dateFlexibilityDays: 2,
         }),
       })
     );
+  });
+
+  it("sets priority=ANCHOR when booking.propertyId matches upsert propertyId", async () => {
+    prismaMock.booking.findFirst.mockResolvedValueOnce({ id: "booking-1", propertyId: "prop-1" });
+    prismaMock.priceWatchBooking.count.mockResolvedValue(0);
+    prismaMock.priceWatchBooking.findUnique.mockResolvedValue(null);
+
+    await upsertPriceWatch("user-1", { ...baseInput, bookingId: "booking-1" });
+
+    expect(prismaMock.priceWatch.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ priority: 100 }),
+      })
+    );
+  });
+
+  it("sets priority=ALTERNATE when booking.propertyId differs from upsert propertyId", async () => {
+    prismaMock.booking.findFirst.mockResolvedValueOnce({
+      id: "booking-1",
+      propertyId: "other-prop",
+    });
+    prismaMock.priceWatchBooking.count.mockResolvedValue(0);
+    prismaMock.priceWatchBooking.findUnique.mockResolvedValue(null);
+
+    await upsertPriceWatch("user-1", { ...baseInput, bookingId: "booking-1" });
+
+    expect(prismaMock.priceWatch.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ priority: 50 }),
+      })
+    );
+  });
+
+  it("does not include priority in the update branch", async () => {
+    prismaMock.booking.findFirst.mockResolvedValueOnce({ id: "booking-1", propertyId: "prop-1" });
+    prismaMock.priceWatchBooking.count.mockResolvedValue(0);
+    prismaMock.priceWatchBooking.findUnique.mockResolvedValue(null);
+
+    await upsertPriceWatch("user-1", { ...baseInput, bookingId: "booking-1" });
+
+    const updateArg = prismaMock.priceWatch.upsert.mock.calls[0][0].update;
+    expect(updateArg).not.toHaveProperty("priority");
+  });
+
+  it("creates a second PriceWatchBooking row for the same booking (alternate watch)", async () => {
+    prismaMock.booking.findFirst.mockResolvedValueOnce({
+      id: "booking-1",
+      propertyId: "other-prop",
+    });
+    prismaMock.priceWatchBooking.count.mockResolvedValue(0);
+    prismaMock.priceWatchBooking.findUnique.mockResolvedValue(null);
+
+    await upsertPriceWatch("user-1", {
+      propertyId: "prop-2",
+      bookingId: "booking-1",
+    });
+
+    expect(prismaMock.priceWatchBooking.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { priceWatchId_bookingId: { priceWatchId: "watch-1", bookingId: "booking-1" } },
+      })
+    );
+  });
+
+  it("rejects the 6th alternate watch for a single booking", async () => {
+    prismaMock.booking.findFirst.mockResolvedValueOnce({
+      id: "booking-1",
+      propertyId: "other-prop",
+    });
+    prismaMock.priceWatchBooking.count.mockResolvedValue(5);
+    prismaMock.priceWatchBooking.findUnique.mockResolvedValue(null);
+
+    await expect(
+      upsertPriceWatch("user-1", { propertyId: "prop-new", bookingId: "booking-1" })
+    ).rejects.toMatchObject({ statusCode: 400 });
   });
 
   it("throws AppError(404) when bookingId not owned by user", async () => {
