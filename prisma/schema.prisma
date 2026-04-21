@@ -672,23 +672,28 @@ model BookingCardBenefit {
 }
 
 model Property {
-  id              String      @id @default(cuid())
-  name            String
-  placeId         String?     @unique @map("place_id")
-  chainPropertyId String?     @map("chain_property_id") // spiritCode for Hyatt, Amadeus ID for others
-  hotelChainId    String?     @map("hotel_chain_id")
-  hotelChain      HotelChain? @relation(fields: [hotelChainId], references: [id])
-  countryCode     String?     @map("country_code")
-  city            String?
-  address         String?
-  latitude        Float?
-  longitude       Float?
-  starRating      Float?      @map("star_rating")
-  createdAt       DateTime    @default(now()) @map("created_at")
+  id                  String      @id @default(cuid())
+  name                String
+  placeId             String?     @unique @map("place_id")
+  chainPropertyId     String?     @map("chain_property_id")
+  chainUrlPath        String?     @map("chain_url_path")
+  chainCategories     String[]    @default([]) @map("chain_categories")
+  lastSeenAt          DateTime?   @map("last_seen_at")
+  detailLastFetchedAt DateTime?   @map("detail_last_fetched_at")
+  hotelChainId        String?     @map("hotel_chain_id")
+  hotelChain          HotelChain? @relation(fields: [hotelChainId], references: [id])
+  countryCode         String?     @map("country_code")
+  city                String?
+  address             String?
+  latitude            Float?
+  longitude           Float?
+  starRating          Float?      @map("star_rating")
+  createdAt           DateTime    @default(now()) @map("created_at")
   bookings     Booking[]
   priceWatches PriceWatch[]
 
   @@unique([name, hotelChainId])
+  @@index([hotelChainId, latitude, longitude])
   @@map("properties")
 }
 
