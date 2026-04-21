@@ -143,7 +143,9 @@ export async function upsertPriceWatch(
     };
 
     await prisma.priceWatchBooking.upsert({
-      where: { bookingId },
+      where: {
+        priceWatchId_bookingId: { priceWatchId: watch.id, bookingId },
+      },
       update: bookingData,
       create: { ...bookingData, bookingId },
     });

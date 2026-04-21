@@ -335,7 +335,7 @@ model Booking {
   bookingCardBenefits   BookingCardBenefit[]
   certificates          BookingCertificate[]
   benefits              BookingBenefit[]
-  priceWatchBooking     PriceWatchBooking?
+  priceWatchBookings    PriceWatchBooking[]
   bookingPartnershipEarnStatuses BookingPartnershipEarnStatus[]
 
   @@index([checkIn])
@@ -716,12 +716,15 @@ model PriceWatch {
   propertyId    String              @map("property_id")
   property      Property            @relation(fields: [propertyId], references: [id])
   isEnabled     Boolean             @default(true) @map("is_enabled")
+  priority      Int                 @default(50)
   lastCheckedAt DateTime?           @map("last_checked_at")
   createdAt     DateTime            @default(now()) @map("created_at")
+  updatedAt     DateTime            @updatedAt @map("updated_at")
   bookings      PriceWatchBooking[]
   snapshots     PriceSnapshot[]
 
   @@unique([userId, propertyId])
+  @@index([priority, updatedAt])
   @@map("price_watches")
 }
 
@@ -729,13 +732,14 @@ model PriceWatchBooking {
   id                  String     @id @default(cuid())
   priceWatchId        String     @map("price_watch_id")
   priceWatch          PriceWatch @relation(fields: [priceWatchId], references: [id], onDelete: Cascade)
-  bookingId           String     @unique @map("booking_id")
+  bookingId           String     @map("booking_id")
   booking             Booking    @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   dateFlexibilityDays Int        @default(0) @map("date_flexibility_days")
   cashThreshold       Decimal?   @map("cash_threshold") @db.Decimal(10, 2)
   awardThreshold      Int?       @map("award_threshold")
   createdAt           DateTime   @default(now()) @map("created_at")
 
+  @@unique([priceWatchId, bookingId])
   @@map("price_watch_bookings")
 }
 

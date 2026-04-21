@@ -158,7 +158,7 @@ describe("upsertPriceWatch", () => {
     );
     expect(prismaMock.priceWatchBooking.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { bookingId: "booking-1" },
+        where: { priceWatchId_bookingId: { priceWatchId: "watch-1", bookingId: "booking-1" } },
         create: expect.objectContaining({
           priceWatchId: "watch-1",
           cashThreshold: 200,
