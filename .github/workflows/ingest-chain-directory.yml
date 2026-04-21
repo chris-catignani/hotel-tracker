@@ -6,9 +6,13 @@ on:
   workflow_dispatch: # allow manual trigger
     inputs:
       chain:
-        description: "Chain to ingest (gha or hyatt)"
+        description: "Chain to ingest (e.g. gha, hyatt)"
         required: true
         default: "gha"
+      runner:
+        description: "Runner type: remote or local"
+        required: true
+        default: "remote"
       limit:
         description: "Max properties to fetch page details for (omit for full run, gha only)"
         required: false
@@ -17,7 +21,7 @@ on:
 jobs:
   # Gates the local job — only runs when the self-hosted machine is active.
   check-hours:
-    if: ${{ github.event_name == 'schedule' || github.event.inputs.chain == 'hyatt' }}
+    if: ${{ github.event_name == 'schedule' || github.event.inputs.runner == 'local' }}
     runs-on: [self-hosted, Windows, X64]
     outputs:
       active: ${{ steps.check.outputs.active }}
@@ -33,7 +37,7 @@ jobs:
 
   # Remote chains: runs on GitHub-hosted runner; triggered by schedule or manual dispatch.
   ingest-remote:
-    if: ${{ github.event.inputs.chain == 'gha' || github.event_name == 'schedule' }}
+    if: ${{ github.event_name == 'schedule' || github.event.inputs.runner == 'remote' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -61,7 +65,7 @@ jobs:
       - name: Run chain directory ingest
         run: xvfb-run npx tsx src/workers/ingest-chain-directory.ts
         env:
-          CHAIN: gha
+          CHAIN: ${{ github.event.inputs.chain || 'gha' }}
           LIMIT: ${{ github.event.inputs.limit }}
           RUNNER_TYPE: remote
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -74,7 +78,7 @@ jobs:
   # Local chains: runs on self-hosted Windows runner, gated by active-hours check.
   ingest-local:
     needs: check-hours
-    if: ${{ needs.check-hours.outputs.active == 'true' && (github.event_name == 'schedule' || github.event.inputs.chain == 'hyatt') }}
+    if: ${{ needs.check-hours.outputs.active == 'true' && (github.event_name == 'schedule' || github.event.inputs.runner == 'local') }}
     runs-on: [self-hosted, Windows, X64]
     steps:
       - uses: actions/checkout@v4
@@ -87,7 +91,7 @@ jobs:
         shell: pwsh
         run: npx tsx src/workers/ingest-chain-directory.ts
         env:
-          CHAIN: hyatt
+          CHAIN: ${{ github.event.inputs.chain || 'hyatt' }}
           RUNNER_TYPE: local
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
