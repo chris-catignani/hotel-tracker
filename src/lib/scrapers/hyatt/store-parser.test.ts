@@ -96,4 +96,12 @@ describe("parseHyattStore", () => {
     const { properties } = parseHyattStore(wrapStore(store));
     expect(properties[0].chainUrlPath).toBeNull();
   });
+
+  it("returns empty result when STORE has trailing JS in the same script block", () => {
+    // The extraction takes from the opening { to </script>, so trailing JS breaks JSON.parse.
+    // This documents a known assumption: window.STORE must be the only assignment in its script block.
+    const html = `<html><head><script>window.STORE = ${JSON.stringify(storeWith([PROPERTY_OK]))};window.OTHER = 1;</script></head></html>`;
+    const result = parseHyattStore(html);
+    expect(result).toEqual({ properties: [], skippedCount: 0 });
+  });
 });

@@ -81,10 +81,10 @@ export function parseHyattStore(html: string): ParseResult {
   const properties: HyattParsedProperty[] = [];
   let skippedCount = 0;
 
-  for (const byBrand of Object.values(storeProperties)) {
-    for (const byCountry of Object.values(byBrand)) {
-      for (const byState of Object.values(byCountry)) {
-        for (const rawList of Object.values(byState)) {
+  for (const regionValue of Object.values(storeProperties)) {
+    for (const brandValue of Object.values(regionValue)) {
+      for (const countryValue of Object.values(brandValue)) {
+        for (const rawList of Object.values(countryValue)) {
           for (const raw of rawList) {
             if (raw.openStatus === "NOT_BOOKABLE") {
               skippedCount++;
