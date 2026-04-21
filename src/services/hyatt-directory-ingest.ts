@@ -25,7 +25,7 @@ async function fetchWithPlaywright(): Promise<string> {
   try {
     page = context.pages()[0] ?? (await context.newPage());
 
-    await page.goto("https://www.hyatt.com", { waitUntil: "networkidle", timeout: 60_000 });
+    await page.goto("https://www.hyatt.com", { waitUntil: "domcontentloaded", timeout: 60_000 });
     await page.screenshot({ path: "hyatt-ingest-homepage.png" });
     logger.info("hyatt_ingest:homepage_loaded", { url: page.url(), title: await page.title() });
 
@@ -36,7 +36,7 @@ async function fetchWithPlaywright(): Promise<string> {
       responses.push({ url: response.url(), status: response.status(), contentType });
     });
 
-    await page.goto(FETCH_URL, { waitUntil: "networkidle", timeout: 60_000 });
+    await page.goto(FETCH_URL, { waitUntil: "domcontentloaded", timeout: 60_000 });
     await page.screenshot({ path: "hyatt-ingest-explore.png" });
 
     const redirects = responses.filter((r) => r.status >= 300 && r.status < 400);
