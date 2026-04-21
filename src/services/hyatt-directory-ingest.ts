@@ -31,7 +31,7 @@ async function ensureSubBrand(hotelChainId: string, name: string): Promise<strin
 
 async function upsertProperty(
   prop: HyattParsedProperty,
-  subBrandId: string,
+  subBrandId: string | null,
   now: Date
 ): Promise<void> {
   const hotelChainId = HOTEL_ID.HYATT;
@@ -105,7 +105,7 @@ export async function ingestHyattDirectory(opts: IngestOptions = {}): Promise<In
 
     const results = await Promise.allSettled(
       batch.map(async (prop) => {
-        const subBrandId = subBrandCache.get(prop.subBrandName)!;
+        const subBrandId = subBrandCache.get(prop.subBrandName) ?? null;
         await upsertProperty(prop, subBrandId, now);
       })
     );

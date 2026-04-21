@@ -98,4 +98,51 @@ describe("ingestHyattDirectory", () => {
 
     expect(prisma.hotelChainSubBrand.upsert).toHaveBeenCalledTimes(1);
   });
+
+  it("sets hotelChainSubBrandId to null for properties with no brand label", async () => {
+    // Build a store with a property that has no brand label (empty string fallback from parser)
+    const noBrandHtml = `<html><head><script>window.STORE = ${JSON.stringify({
+      properties: {
+        "United States & Canada": {
+          "": {
+            "United States": {
+              PA: [
+                {
+                  spiritCode: "nobrand",
+                  openStatus: "FULLY_BOOKABLE",
+                  name: "No Brand Hotel",
+                  brand: { label: "" },
+                  location: {
+                    addressLine1: "1 Main St",
+                    city: "City",
+                    country: { key: "US" },
+                    geolocation: { latitude: 40.0, longitude: -75.0 },
+                  },
+                  url: "https://www.hyatt.com/en-US/nobrand",
+                },
+              ],
+            },
+          },
+        },
+      },
+    })};</script></head></html>`;
+
+    (prisma.hotelChainSubBrand.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "sb1" });
+    (prisma.property.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    (prisma.property.create as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
+    (prisma.property.update as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
+
+    const result = await ingestHyattDirectory({ fetchHtml: async () => noBrandHtml });
+
+    expect(result.upsertedCount).toBe(1);
+    expect(result.errors).toHaveLength(0);
+    // hotelChainSubBrand.upsert should NOT be called for empty brand name
+    expect(prisma.hotelChainSubBrand.upsert).not.toHaveBeenCalled();
+    // property.update should be called with hotelChainSubBrandId: null
+    expect(prisma.property.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ hotelChainSubBrandId: null }),
+      })
+    );
+  });
 });
