@@ -24,6 +24,8 @@ async function fetchWithPlaywright(): Promise<string> {
   let page: Awaited<ReturnType<typeof context.newPage>> | undefined;
   try {
     page = context.pages()[0] ?? (await context.newPage());
+    await page.goto("https://www.hyatt.com", { waitUntil: "networkidle", timeout: 60_000 });
+    await page.screenshot({ path: "hyatt-ingest-homepage.png" });
     await page.goto(FETCH_URL, { waitUntil: "networkidle", timeout: 60_000 });
     const storeJson = await page.evaluate(() =>
       JSON.stringify((window as { STORE?: unknown }).STORE)
