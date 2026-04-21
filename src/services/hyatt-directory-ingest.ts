@@ -21,8 +21,9 @@ async function fetchWithPlaywright(): Promise<string> {
     args: ["--disable-blink-features=AutomationControlled"],
     viewport: { width: 1280, height: 800 },
   });
+  let page: Awaited<ReturnType<typeof context.newPage>> | undefined;
   try {
-    const page = context.pages()[0] ?? (await context.newPage());
+    page = context.pages()[0] ?? (await context.newPage());
     await page.goto(FETCH_URL, { waitUntil: "networkidle", timeout: 60_000 });
     const storeJson = await page.evaluate(() =>
       JSON.stringify((window as { STORE?: unknown }).STORE)
@@ -32,6 +33,13 @@ async function fetchWithPlaywright(): Promise<string> {
       throw new Error(`window.STORE not populated after page load — url=${url}, title=${title}`);
     }
     return `<script>window.STORE = ${storeJson};</script>`;
+  } catch (err) {
+    try {
+      if (page) await page.screenshot({ path: "hyatt-ingest-failure.png", fullPage: true });
+    } catch {
+      // ignore screenshot errors
+    }
+    throw err;
   } finally {
     await context.close();
   }
