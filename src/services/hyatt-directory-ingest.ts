@@ -1,3 +1,5 @@
+import os from "os";
+import path from "path";
 import { chromium } from "playwright";
 import prisma from "@/lib/prisma";
 import { logger } from "@/lib/logger";
@@ -9,10 +11,11 @@ const FETCH_URL = "https://www.hyatt.com/explore-hotels";
 
 async function fetchWithPlaywright(): Promise<string> {
   // Kasada bot protection requires GPU rendering — headless mode is always blocked.
-  const context = await chromium.launchPersistentContext("", {
+  const userDataDir = path.join(os.homedir(), ".cache", "hyatt-directory-browser-profile");
+  const context = await chromium.launchPersistentContext(userDataDir, {
     headless: false,
     channel: "chrome",
-    args: ["--disable-blink-features=AutomationControlled", "--window-position=-10000,-10000"],
+    args: ["--disable-blink-features=AutomationControlled"],
     viewport: { width: 1280, height: 800 },
   });
   try {
@@ -21,6 +24,10 @@ async function fetchWithPlaywright(): Promise<string> {
     const storeJson = await page.evaluate(() =>
       JSON.stringify((window as { STORE?: unknown }).STORE)
     );
+    if (!storeJson || storeJson === "null") {
+      const [url, title] = await Promise.all([page.url(), page.title()]);
+      throw new Error(`window.STORE not populated after page load — url=${url}, title=${title}`);
+    }
     return `<script>window.STORE = ${storeJson};</script>`;
   } finally {
     await context.close();
