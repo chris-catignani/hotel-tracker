@@ -58,17 +58,23 @@ export async function findAlternateCandidates(
     const box = boundingBox(anchor.latitude, anchor.longitude, filters.radiusMiles);
     whereGeo = {
       ...whereBase,
-      OR: [
+      OR: undefined,
+      AND: [
+        { OR: whereBase.OR },
         {
-          AND: [
-            { latitude: { gte: box.minLat } },
-            { latitude: { lte: box.maxLat } },
-            { longitude: { gte: box.minLng } },
-            { longitude: { lte: box.maxLng } },
+          OR: [
+            {
+              AND: [
+                { latitude: { gte: box.minLat } },
+                { latitude: { lte: box.maxLat } },
+                { longitude: { gte: box.minLng } },
+                { longitude: { lte: box.maxLng } },
+              ],
+            },
+            {
+              AND: [{ latitude: null }, { countryCode: anchor.countryCode ?? "__none__" }],
+            },
           ],
-        },
-        {
-          AND: [{ latitude: null }, { countryCode: anchor.countryCode ?? "__none__" }],
         },
       ],
     };

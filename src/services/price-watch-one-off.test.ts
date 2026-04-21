@@ -30,7 +30,7 @@ describe("scrapeSinglePriceWatch", () => {
       results: [],
     });
     await scrapeSinglePriceWatch("pw1", "u1");
-    expect(runPriceWatchRefresh).toHaveBeenCalled();
+    expect(runPriceWatchRefresh).toHaveBeenCalledWith(expect.any(Array), "pw1");
   });
 
   it("throws 404 when the watch is not owned by userId", async () => {

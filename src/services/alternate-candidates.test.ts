@@ -77,6 +77,25 @@ describe("findAlternateCandidates", () => {
     expect(out[1].distanceMiles).toBeNull();
   });
 
+  it("includes staleness filter in the geo where clause when coordinates are present", async () => {
+    (prisma.booking.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(anchorBooking);
+    (prisma.property.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+
+    await findAlternateCandidates("u1", "b1", {
+      hotelChainIds: ["c1"],
+      radiusMiles: 10,
+    });
+
+    const whereArg = (prisma.property.findMany as ReturnType<typeof vi.fn>).mock.calls[0][0].where;
+    // When geo path is taken, staleness is expressed as AND[0].OR
+    // containing lastSeenAt constraints (not silently dropped by spread overwrite).
+    const andClause: { OR?: unknown }[] = whereArg.AND;
+    expect(Array.isArray(andClause)).toBe(true);
+    const staleCondition = andClause[0].OR as { lastSeenAt?: unknown }[];
+    expect(Array.isArray(staleCondition)).toBe(true);
+    expect(staleCondition.some((c) => "lastSeenAt" in c)).toBe(true);
+  });
+
   it("caps results at 50", async () => {
     (prisma.booking.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(anchorBooking);
     const many = Array.from({ length: 80 }).map((_, i) => ({

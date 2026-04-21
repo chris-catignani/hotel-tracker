@@ -27,5 +27,5 @@ export async function scrapeSinglePriceWatch(priceWatchId: string, userId: strin
     select: { id: true, property: { select: { hotelChainId: true } } },
   });
   if (!watch) throw new AppError("Price watch not found", 404);
-  await runPriceWatchRefresh(allFetchers());
+  await runPriceWatchRefresh(allFetchers(), watch.id);
 }
