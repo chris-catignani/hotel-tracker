@@ -30,7 +30,6 @@ jobs:
         run: npm ci
 
       - name: Cache Playwright Browsers
-        if: ${{ github.event.inputs.chain == 'gha' || github.event_name == 'schedule' }}
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
@@ -39,11 +38,10 @@ jobs:
             ${{ runner.os }}-playwright-
 
       - name: Install Playwright Browsers
-        if: ${{ github.event.inputs.chain == 'gha' || github.event_name == 'schedule' }}
         run: npx playwright install --with-deps chromium
 
       - name: Run chain directory ingest
-        run: ${{ (github.event.inputs.chain == 'gha' || github.event_name == 'schedule') && 'xvfb-run' || '' }} npx tsx src/workers/ingest-chain-directory.ts
+        run: xvfb-run npx tsx src/workers/ingest-chain-directory.ts
         env:
           CHAIN: ${{ github.event.inputs.chain || 'gha' }}
           LIMIT: ${{ github.event.inputs.limit }} # gha only; hyatt ignores this

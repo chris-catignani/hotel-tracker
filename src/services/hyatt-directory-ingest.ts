@@ -1,3 +1,4 @@
+import { chromium } from "playwright";
 import prisma from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { HOTEL_ID } from "@/lib/constants";
@@ -5,6 +6,34 @@ import { parseHyattStore, type HyattParsedProperty } from "@/lib/scrapers/hyatt/
 import { findOrCreateProperty } from "./property-utils";
 
 const FETCH_URL = "https://www.hyatt.com/explore-hotels";
+
+async function fetchWithPlaywright(): Promise<string> {
+  const browser = await chromium.launch({
+    args: ["--disable-blink-features=AutomationControlled"],
+  });
+  try {
+    const context = await browser.newContext({
+      userAgent:
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      viewport: { width: 1920, height: 1080 },
+    });
+    await context.addInitScript(() => {
+      Object.defineProperty(navigator, "webdriver", { get: () => undefined });
+    });
+    const page = await context.newPage();
+    try {
+      await page.goto(FETCH_URL, { waitUntil: "networkidle", timeout: 60_000 });
+      const storeJson = await page.evaluate(() =>
+        JSON.stringify((window as { STORE?: unknown }).STORE)
+      );
+      return `<script>window.STORE = ${storeJson};</script>`;
+    } finally {
+      await context.close();
+    }
+  } finally {
+    await browser.close();
+  }
+}
 const DEFAULT_BATCH_SIZE = 50;
 
 export interface IngestResult {
@@ -60,13 +89,7 @@ async function upsertProperty(prop: HyattParsedProperty, now: Date): Promise<voi
 }
 
 export async function ingestHyattDirectory(opts: IngestOptions = {}): Promise<IngestResult> {
-  const fetchHtml =
-    opts.fetchHtml ??
-    (async () => {
-      const res = await fetch(FETCH_URL);
-      if (!res.ok) throw new Error(`GET ${FETCH_URL} → ${res.status}`);
-      return res.text();
-    });
+  const fetchHtml = opts.fetchHtml ?? fetchWithPlaywright;
   const now = opts.now ?? new Date();
   const batchSize = opts.batchSize ?? DEFAULT_BATCH_SIZE;
   const hotelChainId = HOTEL_ID.HYATT;
