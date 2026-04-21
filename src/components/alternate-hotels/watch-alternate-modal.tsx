@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -28,7 +28,7 @@ export function WatchAlternateModal({ bookingId, property, onClose, onSaved }: P
   const [dateFlex, setDateFlex] = useState("0");
   const [saving, setSaving] = useState(false);
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     setSaving(true);
     const result = await apiFetch<{ id: string }>("/api/price-watches", {
       method: "POST",
@@ -48,7 +48,7 @@ export function WatchAlternateModal({ bookingId, property, onClose, onSaved }: P
     }
     toast.success(`Watching ${property.name}`);
     onSaved();
-  };
+  }, [cashThreshold, awardThreshold, dateFlex, bookingId, property.id, property.name, onSaved]);
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
