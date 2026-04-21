@@ -1,51 +1,10 @@
-import os from "os";
-import path from "path";
-import { chromium } from "playwright";
 import prisma from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { HOTEL_ID } from "@/lib/constants";
 import { parseHyattStore, type HyattParsedProperty } from "@/lib/scrapers/hyatt/store-parser";
+import { fetchExploreHotelsHtml } from "@/lib/scrapers/hyatt/explore-hotels";
 import { findOrCreateProperty } from "./property-utils";
 
-const FETCH_URL = "https://www.hyatt.com/explore-hotels";
-
-async function fetchWithPlaywright(): Promise<string> {
-  // Kasada bot protection requires GPU rendering — headless mode is always blocked.
-  // Share the same profile as the price watch scraper so Kasada trusts the session.
-  const userDataDir =
-    process.env.HYATT_BROWSER_PROFILE_DIR ??
-    path.join(os.homedir(), ".cache", "hyatt-browser-profile");
-  const context = await chromium.launchPersistentContext(userDataDir, {
-    headless: false,
-    channel: "chrome",
-    args: ["--disable-blink-features=AutomationControlled"],
-    viewport: { width: 1280, height: 800 },
-  });
-  let page: Awaited<ReturnType<typeof context.newPage>> | undefined;
-  try {
-    page = context.pages()[0] ?? (await context.newPage());
-    // domcontentloaded rather than networkidle — Hyatt's page has continuous background
-    // requests (analytics, chat widgets) that prevent networkidle from ever being reached.
-    await page.goto(FETCH_URL, { waitUntil: "domcontentloaded", timeout: 60_000 });
-    const storeJson = await page.evaluate(() =>
-      JSON.stringify((window as { STORE?: unknown }).STORE)
-    );
-    if (!storeJson || storeJson === "null") {
-      const [url, title] = await Promise.all([page.url(), page.title()]);
-      throw new Error(`window.STORE not populated after page load — url=${url}, title=${title}`);
-    }
-    return `<script>window.STORE = ${storeJson};</script>`;
-  } catch (err) {
-    try {
-      if (page) await page.screenshot({ path: "hyatt-ingest-failure.png", fullPage: true });
-    } catch {
-      // ignore screenshot errors
-    }
-    throw err;
-  } finally {
-    await context.close();
-  }
-}
 const DEFAULT_BATCH_SIZE = 50;
 
 export interface IngestResult {
@@ -101,7 +60,7 @@ async function upsertProperty(prop: HyattParsedProperty, now: Date): Promise<voi
 }
 
 export async function ingestHyattDirectory(opts: IngestOptions = {}): Promise<IngestResult> {
-  const fetchHtml = opts.fetchHtml ?? fetchWithPlaywright;
+  const fetchHtml = opts.fetchHtml ?? fetchExploreHotelsHtml;
   const now = opts.now ?? new Date();
   const batchSize = opts.batchSize ?? DEFAULT_BATCH_SIZE;
   const hotelChainId = HOTEL_ID.HYATT;

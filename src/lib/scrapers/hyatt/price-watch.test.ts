@@ -5,7 +5,7 @@ import {
   parseCashRates,
   buildAwardMap,
   parseRefundability,
-} from "./hyatt";
+} from "./price-watch";
 import { lowestRefundableCash, lowestAward } from "@/lib/price-fetcher";
 import { HOTEL_ID } from "@/lib/constants";
 
