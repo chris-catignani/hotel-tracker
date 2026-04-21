@@ -14,7 +14,10 @@ import { ingestGhaDirectory } from "@/services/gha-directory-ingest";
 async function main() {
   const chain = process.env.CHAIN ?? "gha";
   const forceFullRefetch = process.env.FORCE_FULL === "1";
-  console.log(`[IngestChainDirectory] chain=${chain} forceFullRefetch=${forceFullRefetch}`);
+  const limit = process.env.LIMIT ? parseInt(process.env.LIMIT, 10) : undefined;
+  console.log(
+    `[IngestChainDirectory] chain=${chain} forceFullRefetch=${forceFullRefetch} limit=${limit ?? "none"}`
+  );
   const runStart = Date.now();
 
   let exitCode = 0;
@@ -22,7 +25,7 @@ async function main() {
     if (chain !== "gha") {
       throw new Error(`Unsupported CHAIN=${chain}; only 'gha' is supported`);
     }
-    const result = await ingestGhaDirectory({ forceFullRefetch });
+    const result = await ingestGhaDirectory({ forceFullRefetch, limit });
     const durationMs = Date.now() - runStart;
     log.info("chain_directory_ingest:completed", {
       chain,

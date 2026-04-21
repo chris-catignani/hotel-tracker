@@ -32,6 +32,7 @@ async function ensureSubBrand(hotelChainId: string, slug: string) {
 
 interface IngestOptions {
   forceFullRefetch?: boolean;
+  limit?: number;
   harvest?: () => Promise<string[]>;
   fetchHtml?: (url: string) => Promise<string>;
   now?: Date;
@@ -75,7 +76,10 @@ export async function ingestGhaDirectory(opts: IngestOptions = {}): Promise<Inge
     data: { lastSeenAt: now },
   });
 
-  const toFetch = opts.forceFullRefetch ? urls : decideUrlsToFetch(urls, knownMap, now);
+  const decided = opts.forceFullRefetch ? urls : decideUrlsToFetch(urls, knownMap, now);
+  const toFetch = opts.limit != null ? decided.slice(0, opts.limit) : decided;
+  if (opts.limit != null)
+    logger.info("gha_ingest:limit_applied", { limit: opts.limit, decided: decided.length });
 
   const subBrandCache = new Map<string, string>();
   const errors: string[] = [];
