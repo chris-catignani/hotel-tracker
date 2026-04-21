@@ -1,0 +1,46 @@
+import dotenv from "dotenv";
+// Load .env first, then override with .env.local to mirror Next.js behavior.
+dotenv.config();
+dotenv.config({ path: ".env.local", override: true });
+
+import * as Sentry from "@sentry/node";
+import { log } from "next-axiom";
+
+Sentry.init({ dsn: process.env.SENTRY_DSN, tracesSampleRate: 0 });
+Sentry.setTag("runner_type", process.env.RUNNER_TYPE ?? "ingest-chain-directory");
+
+import { PrismaClient } from "@prisma/client";
+import { ingestGhaDirectory } from "@/services/gha-directory-ingest";
+
+const prisma = new PrismaClient();
+
+async function main() {
+  const chain = process.env.CHAIN ?? "gha";
+  const forceFullRefetch = process.env.FORCE_FULL === "1";
+  console.log(`[IngestChainDirectory] chain=${chain} forceFullRefetch=${forceFullRefetch}`);
+  const runStart = Date.now();
+
+  try {
+    if (chain !== "gha") {
+      throw new Error(`Unsupported CHAIN=${chain}; only 'gha' is supported`);
+    }
+    const result = await ingestGhaDirectory({ forceFullRefetch });
+    const durationMs = Date.now() - runStart;
+    log.info("chain_directory_ingest:completed", {
+      chain,
+      durationMs,
+      ...result,
+    });
+    console.log(`[IngestChainDirectory] Done in ${durationMs}ms`, result);
+    await Promise.all([Sentry.flush(2000), log.flush()]);
+  } catch (error) {
+    console.error("[IngestChainDirectory] ERROR:", error);
+    Sentry.captureException(error);
+    await Promise.all([Sentry.flush(2000), log.flush()]);
+    process.exit(1);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+main();
