@@ -8,7 +8,6 @@ const MAX_STALE_DAYS = 90;
 
 export interface AlternateCandidateFilters {
   hotelChainIds: string[];
-  subBrandIds?: string[];
   radiusMiles: number;
 }
 

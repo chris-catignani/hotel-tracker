@@ -19,16 +19,11 @@ export const GET = withObservability(
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean);
-      const subBrandIds = (sp.get("subBrandIds") ?? "")
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
       const radiusRaw = Number(sp.get("radiusMiles") ?? "10");
       const radiusMiles = Number.isFinite(radiusRaw) && radiusRaw > 0 ? radiusRaw : 10;
 
       const candidates = await findAlternateCandidates(userId, id, {
         hotelChainIds,
-        subBrandIds,
         radiusMiles,
       });
       return NextResponse.json(candidates);

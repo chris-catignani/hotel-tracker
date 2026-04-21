@@ -37,7 +37,6 @@ describe("GET /api/bookings/[id]/alternates", () => {
     expect(findAlternateCandidates).toHaveBeenCalledWith("u1", "b1", {
       hotelChainIds: ["c1", "c2"],
       radiusMiles: 25,
-      subBrandIds: [],
     });
     const body = await res.json();
     expect(body).toEqual([{ propertyId: "p1", name: "X", distanceMiles: 2.3 }]);
