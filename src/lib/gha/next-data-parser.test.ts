@@ -12,7 +12,7 @@ describe("parseGhaPropertyNextData", () => {
         page: {
           name: "Anantara Convento di Amalfi Grand Hotel",
           zipCode: "84011",
-          _info: { id: 286138, type: "hotel" },
+          _info: { id: 286138 },
           location: {
             address: "Via Annunziatella, 46",
             latitude: 40.624123,
@@ -49,9 +49,9 @@ describe("parseGhaPropertyNextData", () => {
     });
   });
 
-  it("returns null for non-hotel pages", () => {
+  it("returns null for pages without a property id", () => {
     const payload = structuredClone(ok);
-    payload.props.pageProps.page._info.type = "restaurant";
+    delete payload.props.pageProps.page._info.id;
     expect(parseGhaPropertyNextData(wrap(payload), "/x/y")).toBeNull();
   });
 

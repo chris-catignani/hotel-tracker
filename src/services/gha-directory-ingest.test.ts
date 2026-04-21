@@ -38,8 +38,7 @@ vi.mock("@/lib/prisma", () => ({
       findFirst: vi.fn(),
     },
     hotelChainSubBrand: {
-      findFirst: vi.fn(),
-      create: vi.fn(),
+      upsert: vi.fn(),
     },
   },
 }));
@@ -61,7 +60,7 @@ describe("ingestGhaDirectory orchestration", () => {
     (prisma.property.updateMany as ReturnType<typeof vi.fn>).mockResolvedValue({ count: 2 });
     (prisma.property.update as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p2" });
     (prisma.property.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p2" });
-    (prisma.hotelChainSubBrand.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({
+    (prisma.hotelChainSubBrand.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: "sb1",
     });
 
@@ -71,7 +70,7 @@ describe("ingestGhaDirectory orchestration", () => {
           page: {
             name: "Test Stale",
             zipCode: null,
-            _info: { id: 1, type: "hotel" },
+            _info: { id: 1 },
             location: { address: "addr", latitude: 1, longitude: 2 },
             city: {
               name: "City",

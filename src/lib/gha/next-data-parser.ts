@@ -31,8 +31,8 @@ export function parseGhaPropertyNextData(html: string, urlPath: string): GhaPars
     ?.pageProps?.page;
   if (!page) return null;
 
-  const info = page._info as { id?: unknown; type?: unknown } | undefined;
-  if (info?.type !== "hotel") return null;
+  const info = page._info as { id?: unknown } | undefined;
+  if (info?.id == null) return null;
 
   const subBrandSlug = urlPath.split("/").filter(Boolean)[0] ?? "";
   if (!subBrandSlug) return null;
