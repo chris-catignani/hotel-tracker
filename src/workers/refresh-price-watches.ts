@@ -10,31 +10,18 @@ Sentry.init({ dsn: process.env.SENTRY_DSN, tracesSampleRate: 0 });
 Sentry.setTag("runner_type", process.env.RUNNER_TYPE ?? "unknown");
 
 import { PrismaClient } from "@prisma/client";
-import { createAccorFetcher } from "@/lib/scrapers/accor";
-import { createGhaFetcher } from "@/lib/scrapers/gha/price-watch";
-import { createHiltonFetcher } from "@/lib/scrapers/hilton";
-import { createHyattFetcher } from "@/lib/scrapers/hyatt";
-import { createIhgFetcher } from "@/lib/scrapers/ihg";
-import { createMarriottFetcher } from "@/lib/scrapers/marriott";
+import { PRICE_FETCHER_FACTORIES } from "@/lib/price-fetchers";
 import { runPriceWatchRefresh } from "@/services/price-watch-refresh";
 
 const prisma = new PrismaClient();
 
-const allFetchers = {
-  accor: createAccorFetcher,
-  gha: createGhaFetcher,
-  hilton: createHiltonFetcher,
-  hyatt: createHyattFetcher,
-  ihg: createIhgFetcher,
-  marriott: createMarriottFetcher,
-};
-
 function buildFetchers() {
   const filter = process.env.SCRAPERS?.split(",").map((s) => s.trim().toLowerCase());
-  const names = filter ?? (Object.keys(allFetchers) as (keyof typeof allFetchers)[]);
+  const names =
+    filter ?? (Object.keys(PRICE_FETCHER_FACTORIES) as (keyof typeof PRICE_FETCHER_FACTORIES)[]);
   return names
-    .filter((name): name is keyof typeof allFetchers => name in allFetchers)
-    .map((name) => allFetchers[name]());
+    .filter((name): name is keyof typeof PRICE_FETCHER_FACTORIES => name in PRICE_FETCHER_FACTORIES)
+    .map((name) => PRICE_FETCHER_FACTORIES[name]());
 }
 
 async function main() {

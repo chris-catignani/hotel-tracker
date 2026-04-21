@@ -26,7 +26,6 @@ interface PriceWatchBookingData {
   priceWatchId: string;
   cashThreshold: string | number | null;
   awardThreshold: number | null;
-  dateFlexibilityDays: number;
 }
 
 interface PriceSnapshotRoom {

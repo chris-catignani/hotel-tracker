@@ -12,6 +12,8 @@ const ALIASES: Record<string, string> = {
   russia: "RU",
   vietnam: "VN",
   "viet nam": "VN",
+  "republic of djibouti": "DJ",
+  "st lucia": "LC",
 };
 
 const NAME_TO_CODE: Map<string, string> = (() => {

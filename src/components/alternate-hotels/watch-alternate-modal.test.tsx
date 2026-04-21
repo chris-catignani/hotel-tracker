@@ -21,6 +21,7 @@ describe("WatchAlternateModal", () => {
       <WatchAlternateModal
         bookingId="b1"
         property={{ id: "p1", name: "Alt" }}
+        currency="USD"
         onClose={() => {}}
         onSaved={onSaved}
       />
@@ -38,10 +39,28 @@ describe("WatchAlternateModal", () => {
         bookingId: "b1",
         cashThreshold: 200,
         awardThreshold: 30000,
-        dateFlexibilityDays: 0,
       },
     });
-    expect(onSaved).toHaveBeenCalled();
+    expect(onSaved).toHaveBeenCalledWith({
+      priceWatchId: "pw1",
+      cashThreshold: 200,
+      awardThreshold: 30000,
+    });
+  });
+
+  it("shows a validation error when no threshold is set", async () => {
+    render(
+      <WatchAlternateModal
+        bookingId="b1"
+        property={{ id: "p1", name: "Alt" }}
+        currency="USD"
+        onClose={() => {}}
+        onSaved={vi.fn()}
+      />
+    );
+    fireEvent.click(screen.getByTestId("alt-save-button"));
+    expect(screen.getByTestId("alt-validation-error")).toBeInTheDocument();
+    expect(apiFetch).not.toHaveBeenCalled();
   });
 
   it("shows an error toast when the API call fails", async () => {
@@ -50,10 +69,12 @@ describe("WatchAlternateModal", () => {
       <WatchAlternateModal
         bookingId="b1"
         property={{ id: "p1", name: "Alt" }}
+        currency="USD"
         onClose={() => {}}
         onSaved={vi.fn()}
       />
     );
+    fireEvent.change(screen.getByTestId("alt-cash-threshold"), { target: { value: "100" } });
     fireEvent.click(screen.getByTestId("alt-save-button"));
     await waitFor(() => expect(apiFetch).toHaveBeenCalled());
     expect(toast.error).toHaveBeenCalledWith("Failed to watch this alternate. Please try again.");

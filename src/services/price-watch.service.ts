@@ -74,7 +74,6 @@ export interface UpsertPriceWatchInput {
   bookingId?: string;
   cashThreshold?: number | null;
   awardThreshold?: number | null;
-  dateFlexibilityDays?: number;
 }
 
 export interface UpdatePriceWatchInput {
@@ -117,14 +116,7 @@ export async function upsertPriceWatch(
   userId: string,
   data: UpsertPriceWatchInput
 ): Promise<FullPriceWatch> {
-  const {
-    propertyId,
-    isEnabled = true,
-    bookingId,
-    cashThreshold,
-    awardThreshold,
-    dateFlexibilityDays = 0,
-  } = data;
+  const { propertyId, isEnabled = true, bookingId, cashThreshold, awardThreshold } = data;
 
   if (!propertyId) throw new AppError("propertyId is required", 400);
 
@@ -169,7 +161,6 @@ export async function upsertPriceWatch(
       priceWatchId: watch.id,
       cashThreshold: cashThreshold != null ? Number(cashThreshold) : null,
       awardThreshold: awardThreshold != null ? Number(awardThreshold) : null,
-      dateFlexibilityDays: Number(dateFlexibilityDays) || 0,
     };
 
     await prisma.priceWatchBooking.upsert({

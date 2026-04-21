@@ -18,13 +18,28 @@ interface PropertyInput {
 }
 
 export async function findOrCreateProperty(input: PropertyInput): Promise<string> {
-  const existing = input.placeId
-    ? await prisma.property.findUnique({ where: { placeId: input.placeId } })
-    : await prisma.property.findFirst({
-        where: { name: input.propertyName, hotelChainId: input.hotelChainId ?? undefined },
-      });
+  const existing =
+    (input.placeId
+      ? await prisma.property.findUnique({ where: { placeId: input.placeId } })
+      : null) ??
+    (await prisma.property.findFirst({
+      where: { name: input.propertyName, hotelChainId: input.hotelChainId ?? undefined },
+    }));
 
-  if (existing) return existing.id;
+  if (existing) {
+    const updates: Prisma.PropertyUpdateInput = {};
+    if (existing.latitude === null && input.latitude != null) {
+      updates.latitude = input.latitude;
+      updates.longitude = input.longitude ?? null;
+    }
+    if (!existing.placeId && input.placeId) {
+      updates.placeId = input.placeId;
+    }
+    if (Object.keys(updates).length > 0) {
+      await prisma.property.update({ where: { id: existing.id }, data: updates });
+    }
+    return existing.id;
+  }
 
   try {
     const created = await prisma.property.create({

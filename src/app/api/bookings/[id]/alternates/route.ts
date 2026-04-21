@@ -25,13 +25,11 @@ export const GET = withObservability(
         .filter(Boolean);
       const radiusRaw = Number(sp.get("radiusMiles") ?? "10");
       const radiusMiles = Number.isFinite(radiusRaw) && radiusRaw > 0 ? radiusRaw : 10;
-      const countryWide = sp.get("countryWide") === "true";
 
       const candidates = await findAlternateCandidates(userId, id, {
         hotelChainIds,
         subBrandIds,
         radiusMiles,
-        countryWide,
       });
       return NextResponse.json(candidates);
     } catch (error) {

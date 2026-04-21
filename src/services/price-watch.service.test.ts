@@ -154,7 +154,6 @@ describe("upsertPriceWatch", () => {
       bookingId: "booking-1",
       cashThreshold: 200,
       awardThreshold: 15000,
-      dateFlexibilityDays: 2,
     });
 
     expect(prismaMock.booking.findFirst).toHaveBeenCalledWith(
@@ -167,7 +166,6 @@ describe("upsertPriceWatch", () => {
           priceWatchId: "watch-1",
           cashThreshold: 200,
           awardThreshold: 15000,
-          dateFlexibilityDays: 2,
         }),
       })
     );

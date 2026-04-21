@@ -5,14 +5,15 @@ import prisma from "../src/lib/prisma";
 import { searchProperties } from "../src/services/geo-lookup";
 
 /**
- * One-time backfill: geocode all properties missing lat/lng using Google Places API.
+ * Backfill: geocode all properties missing lat/lng using Google Places API.
  * Takes the top search result for each property name.
+ * Also backfills placeId when the property doesn't have one.
  * Run with: npx tsx scripts/backfill-property-coords.ts
  */
 async function main() {
   const properties = await prisma.property.findMany({
     where: { latitude: null },
-    select: { id: true, name: true, city: true, countryCode: true },
+    select: { id: true, name: true, city: true, countryCode: true, placeId: true },
     orderBy: { name: "asc" },
   });
 
@@ -23,7 +24,8 @@ async function main() {
   let failed = 0;
 
   for (const property of properties) {
-    const query = property.city ? `${property.name} ${property.city}` : property.name;
+    const parts = [property.name, property.city, property.countryCode].filter(Boolean);
+    const query = parts.join(" ");
 
     process.stdout.write(`  ${property.name} ... `);
 
@@ -37,7 +39,11 @@ async function main() {
       } else {
         await prisma.property.update({
           where: { id: property.id },
-          data: { latitude: top.latitude, longitude: top.longitude },
+          data: {
+            latitude: top.latitude,
+            longitude: top.longitude,
+            ...(!property.placeId && top.placeId ? { placeId: top.placeId } : {}),
+          },
         });
         console.log(
           `✓ (${top.latitude!.toFixed(4)}, ${top.longitude!.toFixed(4)}) matched as "${top.displayName}"`

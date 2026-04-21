@@ -128,7 +128,6 @@ interface PriceWatchBookingData {
   priceWatchId: string;
   cashThreshold: string | number | null;
   awardThreshold: number | null;
-  dateFlexibilityDays: number;
 }
 
 interface Booking extends Omit<NetCostBooking, "bookingPromotions" | "userCreditCard"> {
@@ -143,6 +142,8 @@ interface Booking extends Omit<NetCostBooking, "bookingPromotions" | "userCredit
     city: string | null;
     countryCode: string | null;
     chainPropertyId: string | null;
+    latitude: number | null;
+    longitude: number | null;
   };
   propertyId: string;
   checkIn: string;
@@ -842,7 +843,11 @@ export default function BookingDetailPage() {
 
       {/* Alternate Hotels — outside grid, full-width, future hotel stays only */}
       {booking.accommodationType === "hotel" && isFutureBooking && booking.hotelChainId && (
-        <AlternateHotelsSection bookingId={booking.id} hotelChainId={booking.hotelChainId} />
+        <AlternateHotelsSection
+          bookingId={booking.id}
+          anchorHasGps={booking.property.latitude !== null && booking.property.longitude !== null}
+          currency={booking.currency}
+        />
       )}
     </div>
   );

@@ -100,6 +100,15 @@ export async function ingestGhaDirectory(opts: IngestOptions = {}): Promise<Inge
   let skippedCount = 0;
 
   for (const [i, url] of toFetch.entries()) {
+    if (i > 0 && i % 50 === 0) {
+      logger.info("gha_ingest:progress", {
+        processed: i,
+        total: toFetch.length,
+        upsertedCount,
+        skippedCount,
+        errors: errors.length,
+      });
+    }
     if (i > 0 && requestDelayMs > 0) await sleep(requestDelayMs);
     try {
       const html = await fetchHtml(url);

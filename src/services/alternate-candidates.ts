@@ -10,7 +10,6 @@ export interface AlternateCandidateFilters {
   hotelChainIds: string[];
   subBrandIds?: string[];
   radiusMiles: number;
-  countryWide?: boolean;
 }
 
 export interface AlternateCandidate {
@@ -21,7 +20,12 @@ export interface AlternateCandidate {
   countryCode: string | null;
   distanceMiles: number | null;
   hotelChainId: string | null;
+  hotelChainName: string | null;
   chainCategories: string[];
+  isWatched: boolean;
+  priceWatchId: string | null;
+  cashThreshold: number | null;
+  awardThreshold: number | null;
 }
 
 export async function findAlternateCandidates(
@@ -47,14 +51,15 @@ export async function findAlternateCandidates(
   const anchor = booking.property;
   const staleCutoff = new Date(Date.now() - MAX_STALE_DAYS * 24 * 3600_000);
 
-  const whereBase = {
-    hotelChainId: { in: filters.hotelChainIds },
+  const whereBase: Prisma.PropertyWhereInput = {
+    ...(filters.hotelChainIds.length > 0 && { hotelChainId: { in: filters.hotelChainIds } }),
+    ...(anchor.countryCode && { countryCode: anchor.countryCode }),
     id: { not: anchor.id },
     OR: [{ lastSeenAt: { gte: staleCutoff } }, { lastSeenAt: null }],
   };
 
   let whereGeo: Prisma.PropertyWhereInput = { ...whereBase };
-  if (!filters.countryWide && anchor.latitude !== null && anchor.longitude !== null) {
+  if (anchor.latitude !== null && anchor.longitude !== null) {
     const box = boundingBox(anchor.latitude, anchor.longitude, filters.radiusMiles);
     whereGeo = {
       ...whereBase,
@@ -71,9 +76,7 @@ export async function findAlternateCandidates(
                 { longitude: { lte: box.maxLng } },
               ],
             },
-            {
-              AND: [{ latitude: null }, { countryCode: anchor.countryCode ?? "__none__" }],
-            },
+            { latitude: null },
           ],
         },
       ],
@@ -89,12 +92,18 @@ export async function findAlternateCandidates(
       longitude: true,
       countryCode: true,
       hotelChainId: true,
+      hotelChain: { select: { name: true } },
       chainCategories: true,
     },
+    orderBy: { id: "asc" },
     take: 500,
   });
 
-  const scored: AlternateCandidate[] = [];
+  type CandidateBase = Omit<
+    AlternateCandidate,
+    "isWatched" | "priceWatchId" | "cashThreshold" | "awardThreshold"
+  >;
+  const scored: CandidateBase[] = [];
   for (const r of rows) {
     if (r.id === anchor.id) continue;
     let distance: number | null = null;
@@ -105,9 +114,7 @@ export async function findAlternateCandidates(
       r.longitude !== null
     ) {
       distance = haversineMiles(anchor.latitude, anchor.longitude, r.latitude, r.longitude);
-      if (!filters.countryWide && distance > filters.radiusMiles) continue;
-    } else {
-      if (r.countryCode !== anchor.countryCode) continue;
+      if (distance > filters.radiusMiles) continue;
     }
     scored.push({
       propertyId: r.id,
@@ -117,6 +124,7 @@ export async function findAlternateCandidates(
       countryCode: r.countryCode,
       distanceMiles: distance,
       hotelChainId: r.hotelChainId,
+      hotelChainName: r.hotelChain?.name ?? null,
       chainCategories: r.chainCategories,
     });
   }
@@ -128,5 +136,38 @@ export async function findAlternateCandidates(
     return a.distanceMiles - b.distanceMiles;
   });
 
-  return scored.slice(0, MAX_RESULTS);
+  const page = scored.slice(0, MAX_RESULTS);
+
+  const watchedRows = await prisma.priceWatchBooking.findMany({
+    where: {
+      bookingId,
+      priceWatch: { userId, propertyId: { in: page.map((c) => c.propertyId) } },
+    },
+    select: {
+      cashThreshold: true,
+      awardThreshold: true,
+      priceWatch: { select: { id: true, propertyId: true } },
+    },
+  });
+  const watchedMap = new Map(
+    watchedRows.map((w) => [
+      w.priceWatch.propertyId,
+      {
+        priceWatchId: w.priceWatch.id,
+        cashThreshold: w.cashThreshold !== null ? Number(w.cashThreshold) : null,
+        awardThreshold: w.awardThreshold,
+      },
+    ])
+  );
+
+  return page.map((c) => {
+    const watch = watchedMap.get(c.propertyId);
+    return {
+      ...c,
+      isWatched: watch !== undefined,
+      priceWatchId: watch?.priceWatchId ?? null,
+      cashThreshold: watch?.cashThreshold ?? null,
+      awardThreshold: watch?.awardThreshold ?? null,
+    };
+  });
 }

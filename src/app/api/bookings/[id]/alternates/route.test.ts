@@ -37,7 +37,6 @@ describe("GET /api/bookings/[id]/alternates", () => {
     expect(findAlternateCandidates).toHaveBeenCalledWith("u1", "b1", {
       hotelChainIds: ["c1", "c2"],
       radiusMiles: 25,
-      countryWide: false,
       subBrandIds: [],
     });
     const body = await res.json();
@@ -53,6 +52,18 @@ describe("GET /api/bookings/[id]/alternates", () => {
       "u1",
       "b1",
       expect.objectContaining({ radiusMiles: 10 })
+    );
+  });
+
+  it("passes empty hotelChainIds when param is omitted (all chains)", async () => {
+    (getAuthenticatedUserId as ReturnType<typeof vi.fn>).mockResolvedValue("u1");
+    (findAlternateCandidates as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    const req = new NextRequest("http://localhost/api/bookings/b1/alternates");
+    await GET(req, { params: Promise.resolve({ id: "b1" }) });
+    expect(findAlternateCandidates).toHaveBeenCalledWith(
+      "u1",
+      "b1",
+      expect.objectContaining({ hotelChainIds: [] })
     );
   });
 });

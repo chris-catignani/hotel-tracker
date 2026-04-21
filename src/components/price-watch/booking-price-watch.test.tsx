@@ -146,7 +146,6 @@ const initialWatchBooking = {
   priceWatchId: "watch-1",
   cashThreshold: null,
   awardThreshold: null,
-  dateFlexibilityDays: 0,
 };
 
 describe("BookingPriceWatch", () => {

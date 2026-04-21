@@ -373,7 +373,6 @@ export interface PriceWatchBooking {
   id: string;
   priceWatchId: string;
   bookingId: string;
-  dateFlexibilityDays: number;
   cashThreshold: string | number | null;
   awardThreshold: number | null;
   createdAt: string;
