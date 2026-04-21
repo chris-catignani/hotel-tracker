@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { AppError } from "@/lib/app-error";
+import { PRICE_WATCH_PRIORITY } from "@/lib/constants";
 
 // ---------------------------------------------------------------------------
 // Include constants
@@ -125,15 +126,42 @@ export async function upsertPriceWatch(
 
   if (!propertyId) throw new AppError("propertyId is required", 400);
 
+  let bookingForPriority: { propertyId: string } | null = null;
+  if (bookingId) {
+    bookingForPriority = await prisma.booking.findFirst({
+      where: { id: bookingId, userId },
+      select: { propertyId: true },
+    });
+    if (!bookingForPriority) throw new AppError("Booking not found", 404);
+  }
+
+  const priority = bookingForPriority
+    ? bookingForPriority.propertyId === propertyId
+      ? PRICE_WATCH_PRIORITY.ANCHOR
+      : PRICE_WATCH_PRIORITY.ALTERNATE
+    : PRICE_WATCH_PRIORITY.ANCHOR;
+
   const watch = await prisma.priceWatch.upsert({
     where: { userId_propertyId: { userId, propertyId } },
     update: { isEnabled },
-    create: { userId, propertyId, isEnabled },
+    create: { userId, propertyId, isEnabled, priority },
   });
 
   if (bookingId) {
-    const booking = await prisma.booking.findFirst({ where: { id: bookingId, userId } });
-    if (!booking) throw new AppError("Booking not found", 404);
+    if (priority === PRICE_WATCH_PRIORITY.ALTERNATE) {
+      const count = await prisma.priceWatchBooking.count({
+        where: {
+          bookingId,
+          priceWatch: { propertyId: { not: bookingForPriority!.propertyId } },
+        },
+      });
+      const alreadyLinked = await prisma.priceWatchBooking.findUnique({
+        where: { priceWatchId_bookingId: { priceWatchId: watch.id, bookingId } },
+      });
+      if (!alreadyLinked && count >= 5) {
+        throw new AppError("Alternate watch limit (5) reached for this booking", 400);
+      }
+    }
 
     const bookingData = {
       priceWatchId: watch.id,
