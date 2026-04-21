@@ -11,7 +11,10 @@ const FETCH_URL = "https://www.hyatt.com/explore-hotels";
 
 async function fetchWithPlaywright(): Promise<string> {
   // Kasada bot protection requires GPU rendering — headless mode is always blocked.
-  const userDataDir = path.join(os.homedir(), ".cache", "hyatt-directory-browser-profile");
+  // Share the same profile as the price watch scraper so Kasada trusts the session.
+  const userDataDir =
+    process.env.HYATT_BROWSER_PROFILE_DIR ??
+    path.join(os.homedir(), ".cache", "hyatt-browser-profile");
   const context = await chromium.launchPersistentContext(userDataDir, {
     headless: false,
     channel: "chrome",
