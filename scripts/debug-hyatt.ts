@@ -1,4 +1,4 @@
-import { HyattFetcher } from "../src/lib/scrapers/hyatt";
+import { HyattFetcher } from "../src/lib/scrapers/hyatt/price-watch";
 import { HOTEL_ID } from "../src/lib/constants";
 import { FetchParams } from "../src/lib/price-fetcher";
 

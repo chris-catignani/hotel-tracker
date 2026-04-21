@@ -26,7 +26,7 @@
     "db:populate-uccs": "npx tsx prisma/scripts/populate-user-credit-cards.ts",
     "db:export-bookings": "npx tsx prisma/scripts/export-prod-bookings.ts",
     "axiom:dashboard": "tsx scripts/create-axiom-dashboard.ts",
-    "ingest:chain-directory": "tsx src/workers/ingest-chain-directory.ts"
+    "ingest:chain-properties": "tsx src/workers/ingest-chain-properties.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"

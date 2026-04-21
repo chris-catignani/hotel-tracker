@@ -1,0 +1,109 @@
+name: Ingest Chain Properties
+
+on:
+  schedule:
+    - cron: "0 6 1 * *" # 6am UTC on the 1st of each month; active-hours check gates local execution
+  workflow_dispatch: # allow manual trigger
+    inputs:
+      chains:
+        description: "Comma-separated chains to ingest (e.g. gha, hyatt)"
+        required: true
+        default: "gha"
+      runner:
+        description: "Runner type: remote or local"
+        required: true
+        default: "remote"
+      limit:
+        description: "Max properties to fetch page details for (omit for full run, gha only)"
+        required: false
+        default: ""
+
+jobs:
+  # Gates the local job — only runs when the self-hosted machine is active.
+  check-hours:
+    if: ${{ github.event_name == 'schedule' || github.event.inputs.runner == 'local' }}
+    runs-on: [self-hosted, Windows, X64]
+    outputs:
+      active: ${{ steps.check.outputs.active }}
+    steps:
+      - name: Check active hours
+        id: check
+        shell: pwsh
+        run: |
+          $hour = (Get-Date).Hour
+          $active = ($hour -ge 9 -and $hour -le 22).ToString().ToLower()
+          "active=$active" >> $env:GITHUB_OUTPUT
+          Write-Host "Local hour: $hour — active: $active"
+
+  # Remote chains: runs on GitHub-hosted runner; triggered by schedule or manual dispatch.
+  ingest-remote:
+    if: ${{ github.event_name == 'schedule' || github.event.inputs.runner == 'remote' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cache Playwright Browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run chain property ingest
+        run: xvfb-run npx tsx src/workers/ingest-chain-properties.ts
+        env:
+          CHAINS: ${{ github.event.inputs.chains || 'gha' }}
+          LIMIT: ${{ github.event.inputs.limit }}
+          RUNNER_TYPE: remote
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          AXIOM_TOKEN: ${{ secrets.AXIOM_TOKEN }}
+          AXIOM_DATASET: ${{ vars.AXIOM_DATASET }}
+          NEXT_PUBLIC_AXIOM_DATASET: ${{ vars.NEXT_PUBLIC_AXIOM_DATASET }}
+          CI: true
+
+  # Local chains: runs on self-hosted Windows runner, gated by active-hours check.
+  ingest-local:
+    needs: check-hours
+    if: ${{ needs.check-hours.outputs.active == 'true' && (github.event_name == 'schedule' || github.event.inputs.runner == 'local') }}
+    runs-on: [self-hosted, Windows, X64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        shell: pwsh
+        run: npm ci
+
+      - name: Run chain property ingest
+        shell: pwsh
+        run: npx tsx src/workers/ingest-chain-properties.ts
+        env:
+          CHAINS: ${{ github.event.inputs.chains || 'hyatt' }}
+          RUNNER_TYPE: local
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          AXIOM_TOKEN: ${{ secrets.AXIOM_TOKEN }}
+          AXIOM_DATASET: ${{ vars.AXIOM_DATASET }}
+          NEXT_PUBLIC_AXIOM_DATASET: ${{ vars.NEXT_PUBLIC_AXIOM_DATASET }}
+          CI: true
+
+      - name: Upload failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: local-failure-screenshots
+          path: "*.png"
+          if-no-files-found: ignore
