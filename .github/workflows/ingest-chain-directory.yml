@@ -80,10 +80,10 @@ jobs:
           NEXT_PUBLIC_AXIOM_DATASET: ${{ vars.NEXT_PUBLIC_AXIOM_DATASET }}
           CI: true
 
-      - name: Upload screenshots
-        if: always()
+      - name: Upload failure screenshots
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: local-screenshots
+          name: local-failure-screenshots
           path: "*.png"
           if-no-files-found: ignore

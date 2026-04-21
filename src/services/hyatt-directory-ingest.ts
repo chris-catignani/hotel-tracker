@@ -24,89 +24,15 @@ async function fetchWithPlaywright(): Promise<string> {
   let page: Awaited<ReturnType<typeof context.newPage>> | undefined;
   try {
     page = context.pages()[0] ?? (await context.newPage());
-
-    // Log all page console messages (errors, warnings, Kasada challenge output, etc.)
-    page.on("console", (msg) => {
-      console.log(`[HyattIngest] page:console [${msg.type()}] ${msg.text()}`);
-    });
-
-    // Log all failed requests
-    page.on("requestfailed", (request) => {
-      console.log(
-        `[HyattIngest] page:requestfailed ${request.method()} ${request.url()} — ${request.failure()?.errorText}`
-      );
-    });
-
-    console.log("[HyattIngest] Navigating to homepage...");
-    await page.goto("https://www.hyatt.com", { waitUntil: "domcontentloaded", timeout: 60_000 });
-    await page.screenshot({ path: "hyatt-ingest-homepage.png" });
-    console.log(`[HyattIngest] Homepage loaded — url=${page.url()}, title=${await page.title()}`);
-
-    // Capture all network activity on the explore-hotels navigation.
-    type ResponseEntry = { url: string; status: number; contentType: string; bodyPreview?: string };
-    const capturedResponses: ResponseEntry[] = [];
-    page.on("response", (response) => {
-      const contentType = response.headers()["content-type"] ?? "";
-      const entry: ResponseEntry = { url: response.url(), status: response.status(), contentType };
-      capturedResponses.push(entry);
-      // Eagerly read JSON bodies while the response is still available
-      if (contentType.includes("application/json")) {
-        response
-          .text()
-          .then((text) => {
-            entry.bodyPreview = text.slice(0, 5000);
-          })
-          .catch(() => {});
-      }
-    });
-
-    console.log("[HyattIngest] Navigating to explore-hotels...");
+    // domcontentloaded rather than networkidle — Hyatt's page has continuous background
+    // requests (analytics, chat widgets) that prevent networkidle from ever being reached.
     await page.goto(FETCH_URL, { waitUntil: "domcontentloaded", timeout: 60_000 });
-    // Wait briefly for any post-DOMContentLoaded scripts to settle
-    await page.waitForTimeout(3000);
-    await page.screenshot({ path: "hyatt-ingest-explore.png" });
-
-    const finalUrl = page.url();
-    const title = await page.title();
-    console.log(`[HyattIngest] explore-hotels loaded — url=${finalUrl}, title=${title}`);
-
-    // Log full response list: every URL + status
-    console.log(`[HyattIngest] Total responses captured: ${capturedResponses.length}`);
-    for (const r of capturedResponses) {
-      console.log(`[HyattIngest] response: ${r.status} ${r.contentType.split(";")[0]} ${r.url}`);
-    }
-
-    // Log redirect chain
-    const redirects = capturedResponses.filter((r) => r.status >= 300 && r.status < 400);
-    console.log(`[HyattIngest] Redirects (${redirects.length}):`, JSON.stringify(redirects));
-
-    // Log blocked requests
-    const blocked = capturedResponses.filter((r) => r.status === 403 || r.status === 429);
-    console.log(`[HyattIngest] Blocked 403/429 (${blocked.length}):`, JSON.stringify(blocked));
-
-    // Log JSON API responses with body previews — these are candidates to intercept
-    const jsonResponses = capturedResponses.filter((r) =>
-      r.contentType.includes("application/json")
-    );
-    console.log(`[HyattIngest] JSON responses (${jsonResponses.length}):`);
-    for (const r of jsonResponses) {
-      console.log(`  ${r.status} ${r.url}`);
-      if (r.bodyPreview) console.log(`  body preview: ${r.bodyPreview.slice(0, 1000)}`);
-    }
-
-    // Log page HTML source preview
-    const pageSource = await page.content();
-    console.log(`[HyattIngest] Page source length: ${pageSource.length}`);
-    console.log(`[HyattIngest] Page source preview:\n${pageSource.slice(0, 3000)}`);
-
     const storeJson = await page.evaluate(() =>
       JSON.stringify((window as { STORE?: unknown }).STORE)
     );
-    console.log(`[HyattIngest] window.STORE present: ${storeJson !== "null" && !!storeJson}`);
     if (!storeJson || storeJson === "null") {
-      throw new Error(
-        `window.STORE not populated after page load — url=${finalUrl}, title=${title}`
-      );
+      const [url, title] = await Promise.all([page.url(), page.title()]);
+      throw new Error(`window.STORE not populated after page load — url=${url}, title=${title}`);
     }
     return `<script>window.STORE = ${storeJson};</script>`;
   } catch (err) {
