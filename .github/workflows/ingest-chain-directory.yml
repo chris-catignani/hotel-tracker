@@ -2,7 +2,7 @@ name: Ingest Chain Directory
 
 on:
   schedule:
-    - cron: "0 2 1 * *" # 2am UTC on the 1st of each month (GHA only — Hyatt requires self-hosted runner)
+    - cron: "0 2 1 * *" # 2am UTC on the 1st of each month (remote chains only — local chains require self-hosted runner)
   workflow_dispatch: # allow manual trigger
     inputs:
       chain:
@@ -15,7 +15,8 @@ on:
         default: ""
 
 jobs:
-  ingest-gha:
+  # Remote chains (github-hosted runner): gha
+  ingest-remote:
     if: ${{ github.event.inputs.chain == 'gha' || github.event_name == 'schedule' }}
     runs-on: ubuntu-latest
     steps:
@@ -54,7 +55,9 @@ jobs:
           NEXT_PUBLIC_AXIOM_DATASET: ${{ vars.NEXT_PUBLIC_AXIOM_DATASET }}
           CI: true
 
-  ingest-hyatt:
+  # Local chains (self-hosted runner): hyatt
+  # Requires residential IP to bypass Kasada bot protection.
+  ingest-local:
     if: ${{ github.event.inputs.chain == 'hyatt' }}
     runs-on: [self-hosted, Windows, X64]
     steps:
@@ -68,7 +71,7 @@ jobs:
         shell: pwsh
         run: npx tsx src/workers/ingest-chain-directory.ts
         env:
-          CHAIN: hyatt
+          CHAIN: ${{ github.event.inputs.chain }}
           RUNNER_TYPE: local
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
