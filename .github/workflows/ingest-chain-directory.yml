@@ -2,7 +2,7 @@ name: Ingest Chain Directory
 
 on:
   schedule:
-    - cron: "0 2 1 * *" # 2am UTC on the 1st of each month
+    - cron: "0 2 1 * *" # 2am UTC on the 1st of each month (GHA only — Hyatt requires self-hosted runner)
   workflow_dispatch: # allow manual trigger
     inputs:
       chain:
@@ -15,7 +15,8 @@ on:
         default: ""
 
 jobs:
-  ingest:
+  ingest-gha:
+    if: ${{ github.event.inputs.chain == 'gha' || github.event_name == 'schedule' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -43,9 +44,32 @@ jobs:
       - name: Run chain directory ingest
         run: xvfb-run npx tsx src/workers/ingest-chain-directory.ts
         env:
-          CHAIN: ${{ github.event.inputs.chain || 'gha' }}
-          LIMIT: ${{ github.event.inputs.limit }} # gha only; hyatt ignores this
+          CHAIN: gha
+          LIMIT: ${{ github.event.inputs.limit }} # gha only
           RUNNER_TYPE: remote
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          AXIOM_TOKEN: ${{ secrets.AXIOM_TOKEN }}
+          AXIOM_DATASET: ${{ vars.AXIOM_DATASET }}
+          NEXT_PUBLIC_AXIOM_DATASET: ${{ vars.NEXT_PUBLIC_AXIOM_DATASET }}
+          CI: true
+
+  ingest-hyatt:
+    if: ${{ github.event.inputs.chain == 'hyatt' }}
+    runs-on: [self-hosted, Windows, X64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        shell: pwsh
+        run: npm ci
+
+      - name: Run chain directory ingest
+        shell: pwsh
+        run: npx tsx src/workers/ingest-chain-directory.ts
+        env:
+          CHAIN: hyatt
+          RUNNER_TYPE: local
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           AXIOM_TOKEN: ${{ secrets.AXIOM_TOKEN }}
