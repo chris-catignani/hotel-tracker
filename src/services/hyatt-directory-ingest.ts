@@ -24,9 +24,32 @@ async function fetchWithPlaywright(): Promise<string> {
   let page: Awaited<ReturnType<typeof context.newPage>> | undefined;
   try {
     page = context.pages()[0] ?? (await context.newPage());
+
     await page.goto("https://www.hyatt.com", { waitUntil: "networkidle", timeout: 60_000 });
     await page.screenshot({ path: "hyatt-ingest-homepage.png" });
+    logger.info("hyatt_ingest:homepage_loaded", { url: page.url(), title: await page.title() });
+
+    // Capture all network activity on the explore-hotels navigation to diagnose Kasada behavior.
+    const responses: Array<{ url: string; status: number; contentType: string }> = [];
+    page.on("response", (response) => {
+      const contentType = response.headers()["content-type"] ?? "";
+      responses.push({ url: response.url(), status: response.status(), contentType });
+    });
+
     await page.goto(FETCH_URL, { waitUntil: "networkidle", timeout: 60_000 });
+    await page.screenshot({ path: "hyatt-ingest-explore.png" });
+
+    const redirects = responses.filter((r) => r.status >= 300 && r.status < 400);
+    const jsonResponses = responses.filter((r) => r.contentType.includes("application/json"));
+
+    logger.info("hyatt_ingest:explore_hotels_loaded", {
+      finalUrl: page.url(),
+      title: await page.title(),
+      totalResponses: responses.length,
+      redirects,
+      jsonResponseUrls: jsonResponses.map((r) => ({ url: r.url, status: r.status })),
+    });
+
     const storeJson = await page.evaluate(() =>
       JSON.stringify((window as { STORE?: unknown }).STORE)
     );
