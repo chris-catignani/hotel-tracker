@@ -16,20 +16,17 @@ export function decideUrlsToFetch(
   const cutoff = new Date(now.getTime() - STALE_AFTER_DAYS * 24 * 3600_000);
   return harvested.filter((url) => {
     const lastFetched = known.get(url);
-    if (lastFetched === undefined) return true;
-    if (lastFetched === null) return true;
+    if (lastFetched == null) return true;
     return lastFetched < cutoff;
   });
 }
 
 async function ensureSubBrand(hotelChainId: string, slug: string) {
   const name = subBrandNameForSlug(slug);
-  const existing = await prisma.hotelChainSubBrand.findFirst({
-    where: { hotelChainId, name },
-  });
-  if (existing) return existing;
-  return prisma.hotelChainSubBrand.create({
-    data: { hotelChainId, name },
+  return prisma.hotelChainSubBrand.upsert({
+    where: { hotelChainId_name: { hotelChainId, name } },
+    update: {},
+    create: { hotelChainId, name },
   });
 }
 
@@ -67,14 +64,14 @@ export async function ingestGhaDirectory(opts: IngestOptions = {}): Promise<Inge
 
   const known = await prisma.property.findMany({
     where: { hotelChainId, chainUrlPath: { in: urls } },
-    select: { id: true, chainUrlPath: true, detailLastFetchedAt: true },
+    select: { chainUrlPath: true, detailLastFetchedAt: true },
   });
   const knownMap = new Map<string, Date | null>();
   for (const row of known) {
     if (row.chainUrlPath) knownMap.set(row.chainUrlPath, row.detailLastFetchedAt);
   }
   await prisma.property.updateMany({
-    where: { id: { in: known.map((r) => r.id) } },
+    where: { hotelChainId, chainUrlPath: { in: urls } },
     data: { lastSeenAt: now },
   });
 

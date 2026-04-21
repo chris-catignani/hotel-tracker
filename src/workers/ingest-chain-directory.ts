@@ -17,6 +17,7 @@ async function main() {
   console.log(`[IngestChainDirectory] chain=${chain} forceFullRefetch=${forceFullRefetch}`);
   const runStart = Date.now();
 
+  let exitCode = 0;
   try {
     if (chain !== "gha") {
       throw new Error(`Unsupported CHAIN=${chain}; only 'gha' is supported`);
@@ -29,13 +30,14 @@ async function main() {
       ...result,
     });
     console.log(`[IngestChainDirectory] Done in ${durationMs}ms`, result);
-    await Promise.all([Sentry.flush(2000), log.flush()]);
   } catch (error) {
     console.error("[IngestChainDirectory] ERROR:", error);
     Sentry.captureException(error);
+    exitCode = 1;
+  } finally {
     await Promise.all([Sentry.flush(2000), log.flush()]);
-    process.exit(1);
   }
+  if (exitCode) process.exit(exitCode);
 }
 
 main();
