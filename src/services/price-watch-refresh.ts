@@ -79,6 +79,7 @@ export async function runPriceWatchRefresh(fetchers: PriceFetcher[]): Promise<{
         some: { booking: { checkIn: { gte: today } } },
       },
     },
+    orderBy: [{ priority: "desc" }, { updatedAt: "asc" }],
     include: {
       property: true,
       bookings: {

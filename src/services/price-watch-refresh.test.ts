@@ -436,3 +436,17 @@ describe("fixedRateAwardPoints", () => {
     });
   });
 });
+
+describe("runPriceWatchRefresh ordering", () => {
+  it("queries watches ordered by priority DESC, updatedAt ASC", async () => {
+    vi.mocked(prisma.priceWatch.findMany).mockResolvedValue([]);
+
+    await runPriceWatchRefresh([]);
+
+    expect(prisma.priceWatch.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: [{ priority: "desc" }, { updatedAt: "asc" }],
+      })
+    );
+  });
+});
