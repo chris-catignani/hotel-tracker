@@ -2,7 +2,7 @@ name: Ingest Chain Directory
 
 on:
   schedule:
-    - cron: "0 2 1 * *" # 2am UTC on the 1st of each month (remote chains only — local chains require self-hosted runner)
+    - cron: "0 2 1 * *" # 2am UTC on the 1st of each month; runs remote chains only
   workflow_dispatch: # allow manual trigger
     inputs:
       chain:
@@ -15,7 +15,7 @@ on:
         default: ""
 
 jobs:
-  # Remote chains (github-hosted runner): gha
+  # Remote chains: runs on GitHub-hosted runner; triggered by schedule or manual dispatch.
   ingest-remote:
     if: ${{ github.event.inputs.chain == 'gha' || github.event_name == 'schedule' }}
     runs-on: ubuntu-latest
@@ -46,7 +46,7 @@ jobs:
         run: xvfb-run npx tsx src/workers/ingest-chain-directory.ts
         env:
           CHAIN: gha
-          LIMIT: ${{ github.event.inputs.limit }} # gha only
+          LIMIT: ${{ github.event.inputs.limit }}
           RUNNER_TYPE: remote
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
@@ -55,8 +55,7 @@ jobs:
           NEXT_PUBLIC_AXIOM_DATASET: ${{ vars.NEXT_PUBLIC_AXIOM_DATASET }}
           CI: true
 
-  # Local chains (self-hosted runner): hyatt
-  # Requires residential IP to bypass Kasada bot protection.
+  # Local chains: runs on self-hosted Windows runner; requires shared Chrome profile for Kasada session trust.
   ingest-local:
     if: ${{ github.event.inputs.chain == 'hyatt' }}
     runs-on: [self-hosted, Windows, X64]
