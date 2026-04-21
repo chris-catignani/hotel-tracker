@@ -2,7 +2,7 @@ name: Ingest Chain Directory
 
 on:
   schedule:
-    - cron: "0 2 1 * *" # 2am UTC on the 1st of each month; runs remote chains only
+    - cron: "0 6 1 * *" # 6am UTC on the 1st of each month; active-hours check gates local execution
   workflow_dispatch: # allow manual trigger
     inputs:
       chain:
@@ -15,6 +15,22 @@ on:
         default: ""
 
 jobs:
+  # Gates the local job — only runs when the self-hosted machine is active.
+  check-hours:
+    if: ${{ github.event_name == 'schedule' || github.event.inputs.chain == 'hyatt' }}
+    runs-on: [self-hosted, Windows, X64]
+    outputs:
+      active: ${{ steps.check.outputs.active }}
+    steps:
+      - name: Check active hours
+        id: check
+        shell: pwsh
+        run: |
+          $hour = (Get-Date).Hour
+          $active = ($hour -ge 9 -and $hour -le 22).ToString().ToLower()
+          "active=$active" >> $env:GITHUB_OUTPUT
+          Write-Host "Local hour: $hour — active: $active"
+
   # Remote chains: runs on GitHub-hosted runner; triggered by schedule or manual dispatch.
   ingest-remote:
     if: ${{ github.event.inputs.chain == 'gha' || github.event_name == 'schedule' }}
@@ -55,9 +71,10 @@ jobs:
           NEXT_PUBLIC_AXIOM_DATASET: ${{ vars.NEXT_PUBLIC_AXIOM_DATASET }}
           CI: true
 
-  # Local chains: runs on self-hosted Windows runner; requires shared Chrome profile for Kasada session trust.
+  # Local chains: runs on self-hosted Windows runner, gated by active-hours check.
   ingest-local:
-    if: ${{ github.event.inputs.chain == 'hyatt' }}
+    needs: check-hours
+    if: ${{ needs.check-hours.outputs.active == 'true' && (github.event_name == 'schedule' || github.event.inputs.chain == 'hyatt') }}
     runs-on: [self-hosted, Windows, X64]
     steps:
       - uses: actions/checkout@v4
@@ -70,7 +87,7 @@ jobs:
         shell: pwsh
         run: npx tsx src/workers/ingest-chain-directory.ts
         env:
-          CHAIN: ${{ github.event.inputs.chain }}
+          CHAIN: hyatt
           RUNNER_TYPE: local
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
