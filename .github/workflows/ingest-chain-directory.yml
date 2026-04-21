@@ -46,7 +46,7 @@ jobs:
         run: ${{ (github.event.inputs.chain == 'gha' || github.event_name == 'schedule') && 'xvfb-run' || '' }} npx tsx src/workers/ingest-chain-directory.ts
         env:
           CHAIN: ${{ github.event.inputs.chain || 'gha' }}
-          LIMIT: ${{ github.event.inputs.limit }}
+          LIMIT: ${{ github.event.inputs.limit }} # gha only; hyatt ignores this
           RUNNER_TYPE: remote
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
