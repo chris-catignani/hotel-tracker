@@ -43,6 +43,8 @@ interface WatchBooking {
   awardThreshold: number | null;
   booking: {
     id: string;
+    propertyId: string;
+    property: { name: string };
     checkIn: string;
     checkOut: string;
     numNights: number;
@@ -54,6 +56,7 @@ interface WatchBooking {
 
 interface PriceWatch {
   id: string;
+  propertyId: string;
   isEnabled: boolean;
   lastCheckedAt: string | null;
   property: {
@@ -351,16 +354,35 @@ export default function PriceWatchPage() {
                     </div>
 
                     {upcomingBookings.length > 0 && (
-                      <div className="text-xs text-muted-foreground">
-                        {upcomingBookings.map((b) => (
-                          <Link
-                            key={b.bookingId}
-                            href={`/bookings/${b.bookingId}`}
-                            className="underline block"
-                          >
-                            {formatDate(b.booking.checkIn)} → {formatDate(b.booking.checkOut)}
-                          </Link>
-                        ))}
+                      <div className="space-y-1">
+                        {upcomingBookings.map((b) => {
+                          const isAlternate = b.booking.propertyId !== watch.propertyId;
+                          return (
+                            <div key={b.bookingId}>
+                              <Link
+                                href={`/bookings/${b.bookingId}`}
+                                className="text-xs underline block"
+                              >
+                                {formatDate(b.booking.checkIn)} → {formatDate(b.booking.checkOut)}
+                              </Link>
+                              <div className="text-xs text-muted-foreground">
+                                {isAlternate ? (
+                                  <>
+                                    <Badge variant="outline" className="mr-1 text-xs">
+                                      Alternate
+                                    </Badge>
+                                    for booking at <strong>{b.booking.property.name}</strong>
+                                  </>
+                                ) : (
+                                  <>
+                                    Anchor watch for booking at{" "}
+                                    <strong>{b.booking.property.name}</strong>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
 
@@ -480,15 +502,35 @@ export default function PriceWatchPage() {
                           {upcomingBookings.length === 0 ? (
                             <span className="text-xs text-muted-foreground">No upcoming stays</span>
                           ) : (
-                            upcomingBookings.map((b) => (
-                              <Link
-                                key={b.bookingId}
-                                href={`/bookings/${b.bookingId}`}
-                                className="text-xs underline block"
-                              >
-                                {formatDate(b.booking.checkIn)} → {formatDate(b.booking.checkOut)}
-                              </Link>
-                            ))
+                            upcomingBookings.map((b) => {
+                              const isAlternate = b.booking.propertyId !== watch.propertyId;
+                              return (
+                                <div key={b.bookingId}>
+                                  <Link
+                                    href={`/bookings/${b.bookingId}`}
+                                    className="text-xs underline block"
+                                  >
+                                    {formatDate(b.booking.checkIn)} →{" "}
+                                    {formatDate(b.booking.checkOut)}
+                                  </Link>
+                                  <div className="text-xs text-muted-foreground">
+                                    {isAlternate ? (
+                                      <>
+                                        <Badge variant="outline" className="mr-1 text-xs">
+                                          Alternate
+                                        </Badge>
+                                        for booking at <strong>{b.booking.property.name}</strong>
+                                      </>
+                                    ) : (
+                                      <>
+                                        Anchor watch for booking at{" "}
+                                        <strong>{b.booking.property.name}</strong>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })
                           )}
                         </div>
                       </TableCell>

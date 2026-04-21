@@ -9,6 +9,8 @@ import { PRICE_WATCH_PRIORITY } from "@/lib/constants";
 
 const BOOKING_SELECT = {
   id: true,
+  propertyId: true,
+  property: { select: { name: true } },
   checkIn: true,
   checkOut: true,
   numNights: true,
