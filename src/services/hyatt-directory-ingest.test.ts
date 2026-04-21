@@ -6,6 +6,7 @@ vi.mock("@/lib/prisma", () => ({
     property: {
       update: vi.fn(),
       findFirst: vi.fn(),
+      findUnique: vi.fn(),
       create: vi.fn(),
     },
     hotelChainSubBrand: {
@@ -99,8 +100,7 @@ describe("ingestHyattDirectory", () => {
     expect(prisma.hotelChainSubBrand.upsert).toHaveBeenCalledTimes(1);
   });
 
-  it("sets hotelChainSubBrandId to null for properties with no brand label", async () => {
-    // Build a store with a property that has no brand label (empty string fallback from parser)
+  it("upserts brand-less properties without error", async () => {
     const noBrandHtml = `<html><head><script>window.STORE = ${JSON.stringify({
       properties: {
         "United States & Canada": {
@@ -136,13 +136,7 @@ describe("ingestHyattDirectory", () => {
 
     expect(result.upsertedCount).toBe(1);
     expect(result.errors).toHaveLength(0);
-    // hotelChainSubBrand.upsert should NOT be called for empty brand name
+    // No sub-brand upsert for empty label
     expect(prisma.hotelChainSubBrand.upsert).not.toHaveBeenCalled();
-    // property.update should be called with hotelChainSubBrandId: null
-    expect(prisma.property.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({ hotelChainSubBrandId: null }),
-      })
-    );
   });
 });

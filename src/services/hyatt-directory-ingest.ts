@@ -29,11 +29,7 @@ async function ensureSubBrand(hotelChainId: string, name: string): Promise<strin
   return row.id;
 }
 
-async function upsertProperty(
-  prop: HyattParsedProperty,
-  subBrandId: string | null,
-  now: Date
-): Promise<void> {
+async function upsertProperty(prop: HyattParsedProperty, now: Date): Promise<void> {
   const hotelChainId = HOTEL_ID.HYATT;
   const propertyId = await findOrCreateProperty({
     propertyName: prop.name,
@@ -58,7 +54,6 @@ async function upsertProperty(
       longitude: prop.longitude,
       chainPropertyId: prop.chainPropertyId,
       chainUrlPath: prop.chainUrlPath,
-      hotelChainSubBrandId: subBrandId,
       lastSeenAt: now,
     },
   });
@@ -81,11 +76,11 @@ export async function ingestHyattDirectory(opts: IngestOptions = {}): Promise<In
 
   logger.info("hyatt_ingest:parsed", { total: properties.length, skippedCount });
 
-  // Pre-create all sub-brands upfront so concurrent batch processing never races on upsert.
-  const subBrandCache = new Map<string, string>();
+  // Pre-create sub-brand reference rows so they exist for booking ingestion.
+  // Property has no hotelChainSubBrandId column — sub-brand association happens at booking time.
   const uniqueBrandNames = [...new Set(properties.map((p) => p.subBrandName).filter(Boolean))];
   for (const name of uniqueBrandNames) {
-    subBrandCache.set(name, await ensureSubBrand(hotelChainId, name));
+    await ensureSubBrand(hotelChainId, name);
   }
 
   const errors: string[] = [];
@@ -105,8 +100,7 @@ export async function ingestHyattDirectory(opts: IngestOptions = {}): Promise<In
 
     const results = await Promise.allSettled(
       batch.map(async (prop) => {
-        const subBrandId = subBrandCache.get(prop.subBrandName) ?? null;
-        await upsertProperty(prop, subBrandId, now);
+        await upsertProperty(prop, now);
       })
     );
 
