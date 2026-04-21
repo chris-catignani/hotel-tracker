@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { AppError } from "@/lib/app-error";
 import { boundingBox, haversineMiles } from "@/lib/geo/distance";
 
@@ -52,7 +53,7 @@ export async function findAlternateCandidates(
     OR: [{ lastSeenAt: { gte: staleCutoff } }, { lastSeenAt: null }],
   };
 
-  let whereGeo: typeof whereBase & { OR?: unknown } = { ...whereBase };
+  let whereGeo: Prisma.PropertyWhereInput = { ...whereBase };
   if (!filters.countryWide && anchor.latitude !== null && anchor.longitude !== null) {
     const box = boundingBox(anchor.latitude, anchor.longitude, filters.radiusMiles);
     whereGeo = {
@@ -74,7 +75,7 @@ export async function findAlternateCandidates(
   }
 
   const rows = await prisma.property.findMany({
-    where: whereGeo as Parameters<typeof prisma.property.findMany>[0]["where"],
+    where: whereGeo,
     select: {
       id: true,
       name: true,

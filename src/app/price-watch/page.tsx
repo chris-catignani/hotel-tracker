@@ -197,7 +197,7 @@ function BookingLabel({
 }) {
   if (isAlternate) {
     return (
-      <div className="text-xs text-muted-foreground">
+      <div className="text-xs text-muted-foreground" data-testid="alternate-booking-label">
         <Badge variant="outline" className="mr-1 text-xs">
           Alternate
         </Badge>
