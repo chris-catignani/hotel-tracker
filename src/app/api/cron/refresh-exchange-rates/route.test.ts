@@ -89,7 +89,7 @@ describe("GET /api/cron/refresh-exchange-rates", () => {
 
       expect(res.status).toBe(200);
       expect(finalizeCheckedInBookings).toHaveBeenCalledTimes(2);
-      expect(mockLoggerWarn).toHaveBeenCalledWith("Cron retrying after transient failure", {
+      expect(mockLoggerWarn).toHaveBeenCalledWith("Retrying after transient failure", {
         context: "FINALIZE_BOOKINGS",
         attempt: 1,
         maxAttempts: 3,

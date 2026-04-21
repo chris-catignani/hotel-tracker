@@ -6,6 +6,7 @@ const ALIASES: Record<string, string> = {
   usa: "US",
   "czech republic": "CZ",
   czechia: "CZ",
+  korea: "KR",
   "south korea": "KR",
   "korea, republic of": "KR",
   russia: "RU",

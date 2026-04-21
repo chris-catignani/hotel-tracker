@@ -121,6 +121,46 @@ npm run prices:refresh
 ./scripts/trigger-price-refresh.sh
 ```
 
+## Hotel Chain Directory Ingestion
+
+The app maintains a property directory for supported hotel chains, populated by scraping each chain's public website. This powers property autocomplete and enables future rate monitoring without relying solely on user-entered data.
+
+### Cron Schedule (GitHub Actions)
+
+The GHA Discovery directory runs on the **1st of each month at 2am UTC** via GitHub Actions (`.github/workflows/ingest-chain-directory.yml`). Like the price watch scraper, this requires Playwright + a virtual display and cannot run in Vercel serverless.
+
+Add these secrets to your GitHub repository (**Settings → Secrets → Actions**):
+
+| Secret         | Value                                      |
+| -------------- | ------------------------------------------ |
+| `DATABASE_URL` | Your production Postgres connection string |
+| `SENTRY_DSN`   | Your Sentry DSN (optional)                 |
+| `AXIOM_TOKEN`  | Your Axiom token (optional)                |
+
+And these variables (**Settings → Variables → Actions**):
+
+| Variable                    | Value                   |
+| --------------------------- | ----------------------- |
+| `AXIOM_DATASET`             | Your Axiom dataset name |
+| `NEXT_PUBLIC_AXIOM_DATASET` | Your Axiom dataset name |
+
+### Running Manually
+
+```bash
+# Smoke test — fetch 10 properties and inspect DB output before a full run
+CHAIN=gha LIMIT=10 npm run ingest:chain-directory
+
+# Re-fetch already-ingested properties (bypasses staleness check)
+CHAIN=gha LIMIT=10 FORCE_FULL=1 npm run ingest:chain-directory
+
+# Full run
+CHAIN=gha npm run ingest:chain-directory
+```
+
+You can also trigger a run from GitHub Actions via **Actions → Ingest Chain Directory → Run workflow**, with an optional `limit` input for a partial run.
+
+> **Note:** `DATABASE_URL` must be in your environment. In WSL, run `set -a && source .env.local && set +a` before the command if it isn't already exported.
+
 ## Email Ingestion
 
 Users can forward hotel confirmation emails to a designated address and have bookings created automatically. Parsing is handled by the Claude API (Anthropic).

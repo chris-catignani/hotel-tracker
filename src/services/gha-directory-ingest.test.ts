@@ -88,6 +88,7 @@ describe("ingestGhaDirectory orchestration", () => {
       harvest: async () => ["/anantara/fresh", "/anantara/stale", "/anantara/new"],
       fetchHtml,
       now,
+      requestDelayMs: 0,
     });
 
     // Only /anantara/stale and /anantara/new should be fetched — /anantara/fresh is fresh.

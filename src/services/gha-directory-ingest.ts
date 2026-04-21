@@ -4,6 +4,7 @@ import { HOTEL_ID } from "@/lib/constants";
 import { harvestGhaSitemap } from "@/lib/gha/sitemap-harvest";
 import { parseGhaPropertyNextData } from "@/lib/gha/next-data-parser";
 import { subBrandNameForSlug } from "@/lib/gha/sub-brand-slugs";
+import { withRetry, sleep } from "@/lib/retry";
 import { findOrCreateProperty } from "./property-utils";
 
 export const STALE_AFTER_DAYS = 180;
@@ -36,6 +37,7 @@ interface IngestOptions {
   harvest?: () => Promise<string[]>;
   fetchHtml?: (url: string) => Promise<string>;
   now?: Date;
+  requestDelayMs?: number;
 }
 
 export interface IngestResult {
@@ -51,11 +53,18 @@ export async function ingestGhaDirectory(opts: IngestOptions = {}): Promise<Inge
   const harvest = opts.harvest ?? harvestGhaSitemap;
   const fetchHtml =
     opts.fetchHtml ??
-    (async (url: string) => {
-      const res = await fetch(`https://www.ghadiscovery.com${url}`);
-      if (!res.ok) throw new Error(`GET ${url} -> ${res.status}`);
-      return res.text();
-    });
+    ((url: string) =>
+      withRetry(
+        async () => {
+          const res = await fetch(`https://www.ghadiscovery.com${url}`);
+          if (!res.ok) throw new Error(`GET ${url} -> ${res.status}`);
+          return res.text();
+        },
+        url,
+        3,
+        2000
+      ));
+  const requestDelayMs = opts.requestDelayMs ?? 300;
   const now = opts.now ?? new Date();
 
   const hotelChainId = HOTEL_ID.GHA_DISCOVERY;
@@ -87,7 +96,8 @@ export async function ingestGhaDirectory(opts: IngestOptions = {}): Promise<Inge
   let upsertedCount = 0;
   let skippedCount = 0;
 
-  for (const url of toFetch) {
+  for (const [i, url] of toFetch.entries()) {
+    if (i > 0 && requestDelayMs > 0) await sleep(requestDelayMs);
     try {
       const html = await fetchHtml(url);
       fetchedCount++;

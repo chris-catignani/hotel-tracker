@@ -15,8 +15,8 @@ describe("parseGhaPropertyNextData", () => {
           _info: { id: 286138 },
           location: {
             address: "Via Annunziatella, 46",
-            latitude: 40.624123,
-            longitude: 14.605552,
+            latitude: "40.624123",
+            longitude: "14.605552",
           },
           city: {
             name: "Amalfi",
@@ -51,7 +51,7 @@ describe("parseGhaPropertyNextData", () => {
 
   it("returns null for pages without a property id", () => {
     const payload = structuredClone(ok);
-    delete payload.props.pageProps.page._info.id;
+    delete (payload.props.pageProps.page._info as Record<string, unknown>).id;
     expect(parseGhaPropertyNextData(wrap(payload), "/x/y")).toBeNull();
   });
 
@@ -66,6 +66,20 @@ describe("parseGhaPropertyNextData", () => {
         "/x/y"
       )
     ).toBeNull();
+  });
+
+  it("resolves country name when location hierarchy has an intermediate level", () => {
+    const payload = structuredClone(ok);
+    (payload.props.pageProps.page.city as Record<string, unknown>)._location = {
+      parentLocation: {
+        content: {
+          _info: { id: 9078 },
+          _location: { parentLocation: { content: { _info: { id: 5272 }, name: "Malaysia" } } },
+        },
+      },
+    };
+    const r = parseGhaPropertyNextData(wrap(payload), "/anantara/x");
+    expect(r?.countryCode).toBe("MY");
   });
 
   it("handles unknown country by emitting null countryCode but still returning a record", () => {
