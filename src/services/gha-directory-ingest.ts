@@ -1,9 +1,9 @@
 import prisma from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { HOTEL_ID } from "@/lib/constants";
-import { harvestGhaSitemap } from "@/lib/gha/sitemap-harvest";
-import { parseGhaPropertyNextData } from "@/lib/gha/next-data-parser";
-import { subBrandNameForSlug } from "@/lib/gha/sub-brand-slugs";
+import { harvestGhaSitemap } from "@/lib/scrapers/gha/sitemap-harvest";
+import { parseGhaPropertyNextData } from "@/lib/scrapers/gha/next-data-parser";
+import { subBrandNameForSlug } from "@/lib/scrapers/gha/sub-brand-slugs";
 import { withRetry, sleep } from "@/lib/retry";
 import { findOrCreateProperty } from "./property-utils";
 

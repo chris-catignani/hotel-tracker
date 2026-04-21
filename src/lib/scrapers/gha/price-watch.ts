@@ -109,7 +109,6 @@ export class GhaFetcher implements PriceFetcher {
     console.log(`[GhaFetcher] Fetching rates for objectId=${objectId}...`);
 
     const meta = await this.resolveHotelMeta(objectId);
-    // resolveHotelMeta now throws if it fails, so we don't need to check null here
 
     const res = await fetch(RATES_URL, {
       method: "POST",
