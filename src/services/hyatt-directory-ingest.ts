@@ -1,0 +1,128 @@
+import prisma from "@/lib/prisma";
+import { logger } from "@/lib/logger";
+import { HOTEL_ID } from "@/lib/constants";
+import { parseHyattStore, type HyattParsedProperty } from "@/lib/scrapers/hyatt/store-parser";
+import { findOrCreateProperty } from "./property-utils";
+
+const FETCH_URL = "https://www.hyatt.com/explore-hotels";
+const DEFAULT_BATCH_SIZE = 50;
+
+export interface IngestResult {
+  fetchedCount: number;
+  upsertedCount: number;
+  skippedCount: number;
+  errors: string[];
+}
+
+interface IngestOptions {
+  fetchHtml?: () => Promise<string>;
+  now?: Date;
+  batchSize?: number;
+}
+
+async function ensureSubBrand(hotelChainId: string, name: string): Promise<string> {
+  const row = await prisma.hotelChainSubBrand.upsert({
+    where: { hotelChainId_name: { hotelChainId, name } },
+    update: {},
+    create: { hotelChainId, name },
+  });
+  return row.id;
+}
+
+async function upsertProperty(
+  prop: HyattParsedProperty,
+  subBrandId: string,
+  now: Date
+): Promise<void> {
+  const hotelChainId = HOTEL_ID.HYATT;
+  const propertyId = await findOrCreateProperty({
+    propertyName: prop.name,
+    hotelChainId,
+    countryCode: prop.countryCode,
+    city: prop.city,
+    address: prop.address,
+    latitude: prop.latitude,
+    longitude: prop.longitude,
+    chainPropertyId: prop.chainPropertyId,
+    chainUrlPath: prop.chainUrlPath,
+    lastSeenAt: now,
+  });
+
+  await prisma.property.update({
+    where: { id: propertyId },
+    data: {
+      countryCode: prop.countryCode,
+      city: prop.city,
+      address: prop.address,
+      latitude: prop.latitude,
+      longitude: prop.longitude,
+      chainPropertyId: prop.chainPropertyId,
+      chainUrlPath: prop.chainUrlPath,
+      hotelChainSubBrandId: subBrandId,
+      lastSeenAt: now,
+    },
+  });
+}
+
+export async function ingestHyattDirectory(opts: IngestOptions = {}): Promise<IngestResult> {
+  const fetchHtml =
+    opts.fetchHtml ??
+    (async () => {
+      const res = await fetch(FETCH_URL);
+      if (!res.ok) throw new Error(`GET ${FETCH_URL} → ${res.status}`);
+      return res.text();
+    });
+  const now = opts.now ?? new Date();
+  const batchSize = opts.batchSize ?? DEFAULT_BATCH_SIZE;
+  const hotelChainId = HOTEL_ID.HYATT;
+
+  const html = await fetchHtml();
+  const { properties, skippedCount } = parseHyattStore(html);
+
+  logger.info("hyatt_ingest:parsed", { total: properties.length, skippedCount });
+
+  // Pre-create all sub-brands upfront so concurrent batch processing never races on upsert.
+  const subBrandCache = new Map<string, string>();
+  const uniqueBrandNames = [...new Set(properties.map((p) => p.subBrandName).filter(Boolean))];
+  for (const name of uniqueBrandNames) {
+    subBrandCache.set(name, await ensureSubBrand(hotelChainId, name));
+  }
+
+  const errors: string[] = [];
+  let upsertedCount = 0;
+
+  for (let i = 0; i < properties.length; i += batchSize) {
+    const batch = properties.slice(i, i + batchSize);
+
+    if (i > 0 && i % 250 === 0) {
+      logger.info("hyatt_ingest:progress", {
+        processed: i,
+        total: properties.length,
+        upsertedCount,
+        errors: errors.length,
+      });
+    }
+
+    const results = await Promise.allSettled(
+      batch.map(async (prop) => {
+        const subBrandId = subBrandCache.get(prop.subBrandName)!;
+        await upsertProperty(prop, subBrandId, now);
+      })
+    );
+
+    for (let j = 0; j < results.length; j++) {
+      const r = results[j];
+      if (r.status === "fulfilled") {
+        upsertedCount++;
+      } else {
+        const msg = r.reason instanceof Error ? r.reason.message : String(r.reason);
+        errors.push(`${batch[j].chainPropertyId}: ${msg}`);
+        logger.error("hyatt_ingest:property_error", r.reason, {
+          spiritCode: batch[j].chainPropertyId,
+        });
+      }
+    }
+  }
+
+  return { fetchedCount: properties.length, upsertedCount, skippedCount, errors };
+}
