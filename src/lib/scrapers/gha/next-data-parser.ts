@@ -10,6 +10,7 @@ export interface GhaParsedProperty {
   longitude: number | null;
   city: string | null;
   countryCode: string | null;
+  unknownCountryName: string | null;
   zipCode: string | null;
   chainCategories: string[];
 }
@@ -17,6 +18,11 @@ export interface GhaParsedProperty {
 const SCRIPT_RE = /<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/;
 
 type LocationNode = { parentLocation?: { content?: { name?: string; _location?: unknown } } };
+
+function parseCoord(val: string | number | null | undefined): number | null {
+  const n = parseFloat(String(val));
+  return isFinite(n) ? n : null;
+}
 
 function extractCountryName(location: unknown): string | null {
   if (!location || typeof location !== "object") return null;
@@ -63,6 +69,7 @@ export function parseGhaPropertyNextData(html: string, urlPath: string): GhaPars
     : [];
 
   const countryName = extractCountryName(city?._location);
+  const countryCode = countryName ? countryNameToCode(countryName) : null;
 
   return {
     chainPropertyId: info?.id != null ? String(info.id) : null,
@@ -70,10 +77,11 @@ export function parseGhaPropertyNextData(html: string, urlPath: string): GhaPars
     name: typeof page.name === "string" ? page.name : "",
     subBrandSlug,
     address: typeof location?.address === "string" ? location.address : null,
-    latitude: location?.latitude != null ? parseFloat(String(location.latitude)) || null : null,
-    longitude: location?.longitude != null ? parseFloat(String(location.longitude)) || null : null,
+    latitude: parseCoord(location?.latitude),
+    longitude: parseCoord(location?.longitude),
     city: typeof city?.name === "string" ? city.name : null,
-    countryCode: countryName ? countryNameToCode(countryName) : null,
+    countryCode,
+    unknownCountryName: countryName && countryCode === null ? countryName : null,
     zipCode: typeof page.zipCode === "string" ? page.zipCode : null,
     chainCategories: categories,
   };

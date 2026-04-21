@@ -44,6 +44,7 @@ describe("parseGhaPropertyNextData", () => {
       longitude: 14.605552,
       city: "Amalfi",
       countryCode: "IT",
+      unknownCountryName: null,
       zipCode: "84011",
       chainCategories: ["Ultratravel Collection", "Green Collection"],
     });
@@ -87,6 +88,7 @@ describe("parseGhaPropertyNextData", () => {
     payload.props.pageProps.page.city._location.parentLocation.content.name = "Atlantis";
     const r = parseGhaPropertyNextData(wrap(payload), "/anantara/x");
     expect(r?.countryCode).toBeNull();
+    expect(r?.unknownCountryName).toBe("Atlantis");
     expect(r?.name).toBe("Anantara Convento di Amalfi Grand Hotel");
   });
 });

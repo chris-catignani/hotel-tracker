@@ -3,7 +3,7 @@ import { logger } from "@/lib/logger";
 import { HOTEL_ID } from "@/lib/constants";
 import { harvestGhaSitemap } from "@/lib/scrapers/gha/sitemap-harvest";
 import { parseGhaPropertyNextData } from "@/lib/scrapers/gha/next-data-parser";
-import { subBrandNameForSlug } from "@/lib/scrapers/gha/sub-brand-slugs";
+import { GHA_SUB_BRAND_SLUGS, subBrandNameForSlug } from "@/lib/scrapers/gha/sub-brand-slugs";
 import { withRetry, sleep } from "@/lib/retry";
 import { findOrCreateProperty } from "./property-utils";
 
@@ -24,6 +24,9 @@ export function decideUrlsToFetch(
 
 async function ensureSubBrand(hotelChainId: string, slug: string) {
   const name = subBrandNameForSlug(slug);
+  if (!(slug in GHA_SUB_BRAND_SLUGS)) {
+    logger.warn("gha_ingest:unknown_sub_brand", { slug, derivedName: name });
+  }
   return prisma.hotelChainSubBrand.upsert({
     where: { hotelChainId_name: { hotelChainId, name } },
     update: {},
@@ -106,6 +109,10 @@ export async function ingestGhaDirectory(opts: IngestOptions = {}): Promise<Inge
         skippedCount++;
         logger.warn("gha_ingest:skip", { url, reason: "no __NEXT_DATA__ or not a hotel" });
         continue;
+      }
+
+      if (parsed.unknownCountryName) {
+        logger.warn("gha_ingest:unknown_country", { url, countryName: parsed.unknownCountryName });
       }
 
       let subBrandId = subBrandCache.get(parsed.subBrandSlug);
