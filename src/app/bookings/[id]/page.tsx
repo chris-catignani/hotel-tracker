@@ -183,7 +183,7 @@ interface Booking extends Omit<NetCostBooking, "bookingPromotions" | "userCredit
   bookingPromotions: BookingPromotion[];
   bookingCardBenefits: BookingCardBenefitLocal[];
   partnershipEarns: PartnershipEarn[];
-  priceWatchBooking: PriceWatchBookingData | null;
+  priceWatchBookings: PriceWatchBookingData[];
 }
 
 // ---------------------------------------------------------------------------
@@ -836,7 +836,7 @@ export default function BookingDetailPage() {
           totalCost={booking.totalCost}
           currency={booking.currency}
           pointsRedeemed={booking.pointsRedeemed}
-          initialWatchBooking={booking.priceWatchBooking}
+          initialWatchBooking={booking.priceWatchBookings[0] ?? null}
         />
       )}
 

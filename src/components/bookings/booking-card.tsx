@@ -20,7 +20,7 @@ interface BookingCardProps {
     isFutureEstimate?: boolean;
     exchangeRateEstimated?: boolean;
     hotelChainSubBrand?: { name: string } | null;
-    priceWatchBooking?: { priceWatch: { isEnabled: boolean } } | null;
+    priceWatchBookings?: { priceWatch: { isEnabled: boolean } }[];
     accommodationType?: string;
   };
   onDelete?: (id: string) => void;
@@ -68,7 +68,7 @@ export function BookingCard({ booking, onDelete, showActions = false }: BookingC
                 )}
                 {booking.accommodationType !== "apartment" &&
                   isFutureBooking &&
-                  (booking.priceWatchBooking?.priceWatch.isEnabled ? (
+                  (booking.priceWatchBookings?.[0]?.priceWatch.isEnabled ? (
                     <Badge className="font-normal px-1.5 py-0 bg-green-100 text-green-700 border-green-200 hover:bg-green-100">
                       Watching Price
                     </Badge>
@@ -77,7 +77,7 @@ export function BookingCard({ booking, onDelete, showActions = false }: BookingC
                       variant="outline"
                       className="font-normal px-1.5 py-0 text-muted-foreground"
                     >
-                      {booking.priceWatchBooking ? "Price Watch Off" : "No Price Watch"}
+                      {booking.priceWatchBookings?.[0] ? "Price Watch Off" : "No Price Watch"}
                     </Badge>
                   ))}
               </div>

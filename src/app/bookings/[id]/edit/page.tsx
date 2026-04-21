@@ -86,7 +86,7 @@ export default function EditBookingPage() {
               totalCost={booking.totalCost}
               currency={booking.currency}
               pointsRedeemed={booking.pointsRedeemed}
-              initialWatchBooking={booking.priceWatchBooking ?? null}
+              initialWatchBooking={booking.priceWatchBookings?.[0] ?? null}
             />
           )}
         </>

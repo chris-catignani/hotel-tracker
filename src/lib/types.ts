@@ -487,7 +487,7 @@ export interface Booking {
   otaAgencyId: string | null;
   benefits: BookingBenefit[];
   bookingCardBenefits: BookingCardBenefit[];
-  priceWatchBooking?: PriceWatchBooking | null;
+  priceWatchBookings?: PriceWatchBooking[];
 }
 
 export interface BookingFormData {
