@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/table";
 import { CostBreakdown } from "@/components/cost-breakdown";
 import { BookingPriceWatch } from "@/components/price-watch/booking-price-watch";
+import { AlternateHotelsSection } from "@/components/alternate-hotels/alternate-hotels-section";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { apiFetch } from "@/lib/api-fetch";
 import { logger } from "@/lib/logger";
@@ -837,6 +838,11 @@ export default function BookingDetailPage() {
           pointsRedeemed={booking.pointsRedeemed}
           initialWatchBooking={booking.priceWatchBooking}
         />
+      )}
+
+      {/* Alternate Hotels — outside grid, full-width, future hotel stays only */}
+      {booking.accommodationType === "hotel" && isFutureBooking && booking.hotelChainId && (
+        <AlternateHotelsSection bookingId={booking.id} hotelChainId={booking.hotelChainId} />
       )}
     </div>
   );
