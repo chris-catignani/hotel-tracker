@@ -5,10 +5,13 @@ vi.mock("@/lib/logger", () => ({
 }));
 
 import { fetchAllBrands } from "./property-fetcher";
+import { BRAND_CODE_MAP } from "./property-parser";
 import { logger } from "@/lib/logger";
 
+const KNOWN_CODE_COUNT = Object.keys(BRAND_CODE_MAP).length;
+
 describe("fetchAllBrands", () => {
-  it("generates all 676 two-letter codes from AA to ZZ", async () => {
+  it("fetches exactly the known brand codes from BRAND_CODE_MAP", async () => {
     const called: string[] = [];
     const fetchBrand = vi.fn().mockImplementation(async (code: string) => {
       called.push(code);
@@ -17,12 +20,11 @@ describe("fetchAllBrands", () => {
 
     await fetchAllBrands(fetchBrand, 0);
 
-    expect(called).toHaveLength(676);
-    expect(called[0]).toBe("AA");
-    expect(called[called.length - 1]).toBe("ZZ");
+    expect(called).toHaveLength(KNOWN_CODE_COUNT);
     expect(called).toContain("RZ");
     expect(called).toContain("MC");
-    expect(new Set(called).size).toBe(676);
+    expect(called).toContain("FI");
+    expect(new Set(called).size).toBe(KNOWN_CODE_COUNT);
   });
 
   it("includes successful responses and silently drops null (404) responses", async () => {
@@ -36,7 +38,7 @@ describe("fetchAllBrands", () => {
 
     expect(result.responses).toHaveLength(2);
     expect(result.responses.map((r) => r.brandCode)).toEqual(expect.arrayContaining(["RZ", "MC"]));
-    expect(result.sweptCount).toBe(676);
+    expect(result.sweptCount).toBe(KNOWN_CODE_COUNT);
     expect(result.errors).toHaveLength(0);
   });
 
@@ -58,16 +60,16 @@ describe("fetchAllBrands", () => {
     );
   });
 
-  it("reports sweptCount as 676 regardless of success/failure mix", async () => {
+  it("reports sweptCount equal to known brand code count regardless of success/failure mix", async () => {
     const fetchBrand = vi.fn().mockImplementation(async (code: string) => {
-      if (code === "AA") return { regions: [] };
-      if (code === "AB") throw new Error("oops");
+      if (code === "FI") return { regions: [] };
+      if (code === "CY") throw new Error("oops");
       return null;
     });
 
     const result = await fetchAllBrands(fetchBrand, 0);
 
-    expect(result.sweptCount).toBe(676);
+    expect(result.sweptCount).toBe(KNOWN_CODE_COUNT);
     expect(result.responses).toHaveLength(1);
     expect(result.errors).toHaveLength(1);
   });

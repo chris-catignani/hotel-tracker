@@ -1,4 +1,5 @@
 import { logger } from "@/lib/logger";
+import { BRAND_CODE_MAP } from "./property-parser";
 
 export interface BrandResponse {
   brandCode: string;
@@ -16,16 +17,6 @@ export type FetchBrandFn = (brandCode: string) => Promise<unknown>;
 const PACSYS_BASE = "https://pacsys.marriott.com/data/marriott_properties";
 const FETCH_BATCH_SIZE = 5;
 const BATCH_SLEEP_MS = 500;
-
-function generateBrandCodes(): string[] {
-  const codes: string[] = [];
-  for (let i = 65; i <= 90; i++) {
-    for (let j = 65; j <= 90; j++) {
-      codes.push(String.fromCharCode(i) + String.fromCharCode(j));
-    }
-  }
-  return codes;
-}
 
 const FETCH_HEADERS = {
   "User-Agent":
@@ -47,7 +38,7 @@ export async function fetchAllBrands(
   fetchBrand: FetchBrandFn = defaultFetchBrand,
   sleepMs: number = BATCH_SLEEP_MS
 ): Promise<FetchAllBrandsResult> {
-  const allCodes = generateBrandCodes();
+  const allCodes = Object.keys(BRAND_CODE_MAP);
   const responses: BrandResponse[] = [];
   const errors: string[] = [];
 
