@@ -95,7 +95,7 @@ export async function ingestMarriottProperties(opts: IngestOptions = {}): Promis
     skippedCount,
   });
 
-  const uniqueBrandNames = [...new Set(properties.map((p) => p.subBrandName).filter(Boolean))];
+  const uniqueBrandNames = [...new Set(properties.map((p) => p.subBrandName))];
   await Promise.allSettled(uniqueBrandNames.map((name) => ensureSubBrand(hotelChainId, name)));
 
   let upsertedCount = 0;

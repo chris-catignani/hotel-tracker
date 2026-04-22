@@ -8,8 +8,9 @@ import { fetchAllBrands } from "./property-fetcher";
 import { BRAND_CODE_MAP } from "./property-parser";
 import { logger } from "@/lib/logger";
 
-const KNOWN_COUNT = Object.keys(BRAND_CODE_MAP).length; // 33
-const DISCOVERY_COUNT = 676 - KNOWN_COUNT; // 643
+const ALL_TWO_LETTER_COUNT = 26 * 26; // 676
+const KNOWN_COUNT = Object.keys(BRAND_CODE_MAP).length;
+const DISCOVERY_COUNT = ALL_TWO_LETTER_COUNT - KNOWN_COUNT;
 
 describe("fetchAllBrands", () => {
   it("calls knownFetchBrand for all known brand codes and discoveryFetchBrand for all others", async () => {
@@ -49,7 +50,7 @@ describe("fetchAllBrands", () => {
 
     expect(result.responses).toHaveLength(2);
     expect(result.responses.map((r) => r.brandCode)).toEqual(expect.arrayContaining(["RZ", "AA"]));
-    expect(result.sweptCount).toBe(676);
+    expect(result.sweptCount).toBe(ALL_TWO_LETTER_COUNT);
     expect(result.errors).toHaveLength(0);
   });
 
@@ -81,7 +82,7 @@ describe("fetchAllBrands", () => {
 
     const result = await fetchAllBrands(knownFetchBrand, discoveryFetchBrand, 0);
 
-    expect(result.sweptCount).toBe(676);
+    expect(result.sweptCount).toBe(ALL_TWO_LETTER_COUNT);
     expect(result.responses).toHaveLength(1);
     expect(result.errors).toHaveLength(1);
   });

@@ -99,9 +99,7 @@ function flattenRaw(data: PacsysResponse): RawProperty[] {
     for (const country of region.region_countries) {
       for (const state of country.country_states) {
         for (const city of state.state_cities) {
-          for (const prop of city.city_properties) {
-            props.push(prop);
-          }
+          props.push(...city.city_properties);
         }
       }
     }

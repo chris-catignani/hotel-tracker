@@ -6,7 +6,6 @@ vi.mock("@/lib/prisma", () => ({
     property: {
       update: vi.fn(),
       findFirst: vi.fn(),
-      findUnique: vi.fn(),
       create: vi.fn(),
     },
     hotelChainSubBrand: {

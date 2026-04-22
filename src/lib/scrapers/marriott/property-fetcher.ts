@@ -1,4 +1,5 @@
 import { logger } from "@/lib/logger";
+import { sleep } from "@/lib/retry";
 import { BRAND_CODE_MAP } from "./property-parser";
 
 export interface BrandResponse {
@@ -70,7 +71,7 @@ async function sweep(
   errors: string[]
 ): Promise<void> {
   for (let i = 0; i < codes.length; i += batchSize) {
-    if (i > 0 && sleepMs > 0) await new Promise((resolve) => setTimeout(resolve, sleepMs));
+    if (i > 0 && sleepMs > 0) await sleep(sleepMs);
 
     const batch = codes.slice(i, i + batchSize);
     const results = await Promise.allSettled(batch.map((code) => fetchBrand(code)));
