@@ -194,9 +194,9 @@ async function main() {
     {
       id: "dir-ingest-run-log",
       type: "LogStream",
-      name: "Chain Directory Ingest Runs",
+      name: "Chain Property Ingest Runs",
       query: q(
-        "where message == 'chain_directory_ingest:completed'" +
+        "where message == 'chain_property_ingest:completed'" +
           " | project _time, ['fields.chain'], ['fields.harvestedCount'], ['fields.fetchedCount']," +
           " ['fields.upsertedCount'], ['fields.skippedCount'], ['fields.durationMs']"
       ),
@@ -206,7 +206,7 @@ async function main() {
       type: "TimeSeries",
       name: "Properties Upserted Over Time (by Chain)",
       query: q(
-        "where message == 'chain_directory_ingest:completed'" +
+        "where message == 'chain_property_ingest:completed'" +
           " | summarize sum(toint(['fields.upsertedCount'])) by bin(_time, 1d), tostring(['fields.chain'])"
       ),
     },
@@ -215,7 +215,7 @@ async function main() {
       type: "Statistic",
       name: "Total Properties Upserted",
       query: q(
-        "where message == 'chain_directory_ingest:completed'" +
+        "where message == 'chain_property_ingest:completed'" +
           " | summarize sum(toint(['fields.upsertedCount']))"
       ),
       colorScheme: "Green",
@@ -226,7 +226,7 @@ async function main() {
       type: "Statistic",
       name: "Ingest Runs with Errors",
       query: q(
-        "where message == 'chain_directory_ingest:completed' and array_length(['fields.errors']) > 0" +
+        "where message == 'chain_property_ingest:completed' and array_length(['fields.errors']) > 0" +
           " | summarize count()"
       ),
       colorScheme: "Red",
@@ -287,7 +287,7 @@ async function main() {
   const dashboardDoc = {
     name: "Hotel Tracker",
     description:
-      "API health, email ingestion, cron jobs, price watch, chain directory ingestion, and booking activity",
+      "API health, email ingestion, cron jobs, price watch, chain property ingestion, and booking activity",
     owner: "X-AXIOM-EVERYONE",
     charts,
     layout,

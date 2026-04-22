@@ -1,4 +1,4 @@
-import { HyattFetcher } from "../src/lib/scrapers/hyatt";
+import { HyattFetcher } from "../src/lib/scrapers/hyatt/price-watch";
 
 const TEST_PROPERTIES = [
   { spiritCode: "melct", name: "Melrose Georgetown" },

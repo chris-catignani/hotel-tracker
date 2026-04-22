@@ -52,7 +52,7 @@ export interface IngestResult {
   errors: string[];
 }
 
-export async function ingestGhaDirectory(opts: IngestOptions = {}): Promise<IngestResult> {
+export async function ingestGhaProperties(opts: IngestOptions = {}): Promise<IngestResult> {
   const harvest = opts.harvest ?? harvestGhaSitemap;
   const fetchHtml =
     opts.fetchHtml ??
