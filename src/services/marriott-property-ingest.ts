@@ -21,6 +21,7 @@ export interface IngestResult {
 
 interface IngestOptions {
   fetchBrand?: FetchBrandFn;
+  sleepMs?: number;
   now?: Date;
   batchSize?: number;
   limit?: number;
@@ -69,7 +70,11 @@ export async function ingestMarriottProperties(opts: IngestOptions = {}): Promis
   const batchSize = opts.batchSize ?? DEFAULT_BATCH_SIZE;
   const hotelChainId = HOTEL_ID.MARRIOTT;
 
-  const { responses, sweptCount, errors: fetchErrors } = await fetchAllBrands(opts.fetchBrand);
+  const {
+    responses,
+    sweptCount,
+    errors: fetchErrors,
+  } = await fetchAllBrands(opts.fetchBrand, opts.sleepMs);
 
   const allProperties: MarriottParsedProperty[] = [];
   let skippedCount = 0;

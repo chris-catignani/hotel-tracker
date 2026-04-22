@@ -14,7 +14,8 @@ export interface FetchAllBrandsResult {
 export type FetchBrandFn = (brandCode: string) => Promise<unknown>;
 
 const PACSYS_BASE = "https://pacsys.marriott.com/data/marriott_properties";
-const FETCH_BATCH_SIZE = 20;
+const FETCH_BATCH_SIZE = 5;
+const BATCH_SLEEP_MS = 500;
 
 function generateBrandCodes(): string[] {
   const codes: string[] = [];
@@ -35,13 +36,16 @@ async function defaultFetchBrand(brandCode: string): Promise<unknown> {
 }
 
 export async function fetchAllBrands(
-  fetchBrand: FetchBrandFn = defaultFetchBrand
+  fetchBrand: FetchBrandFn = defaultFetchBrand,
+  sleepMs: number = BATCH_SLEEP_MS
 ): Promise<FetchAllBrandsResult> {
   const allCodes = generateBrandCodes();
   const responses: BrandResponse[] = [];
   const errors: string[] = [];
 
   for (let i = 0; i < allCodes.length; i += FETCH_BATCH_SIZE) {
+    if (i > 0 && sleepMs > 0) await new Promise((resolve) => setTimeout(resolve, sleepMs));
+
     const batch = allCodes.slice(i, i + FETCH_BATCH_SIZE);
     const results = await Promise.allSettled(batch.map((code) => fetchBrand(code)));
 

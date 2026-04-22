@@ -15,7 +15,7 @@ describe("fetchAllBrands", () => {
       return null;
     });
 
-    await fetchAllBrands(fetchBrand);
+    await fetchAllBrands(fetchBrand, 0);
 
     expect(called).toHaveLength(676);
     expect(called[0]).toBe("AA");
@@ -32,7 +32,7 @@ describe("fetchAllBrands", () => {
       return null;
     });
 
-    const result = await fetchAllBrands(fetchBrand);
+    const result = await fetchAllBrands(fetchBrand, 0);
 
     expect(result.responses).toHaveLength(2);
     expect(result.responses.map((r) => r.brandCode)).toEqual(expect.arrayContaining(["RZ", "MC"]));
@@ -46,7 +46,7 @@ describe("fetchAllBrands", () => {
       return null;
     });
 
-    const result = await fetchAllBrands(fetchBrand);
+    const result = await fetchAllBrands(fetchBrand, 0);
 
     expect(result.responses).toHaveLength(0);
     expect(result.errors).toHaveLength(1);
@@ -65,7 +65,7 @@ describe("fetchAllBrands", () => {
       return null;
     });
 
-    const result = await fetchAllBrands(fetchBrand);
+    const result = await fetchAllBrands(fetchBrand, 0);
 
     expect(result.sweptCount).toBe(676);
     expect(result.responses).toHaveLength(1);

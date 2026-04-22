@@ -83,7 +83,7 @@ describe("ingestMarriottProperties", () => {
       ]),
     });
 
-    const result = await ingestMarriottProperties({ fetchBrand });
+    const result = await ingestMarriottProperties({ fetchBrand, sleepMs: 0 });
 
     expect(result.fetchedCount).toBe(1);
     expect(result.skippedCount).toBe(2);
@@ -103,7 +103,7 @@ describe("ingestMarriottProperties", () => {
       RZ: makeBrandData([{ marsha_code: "P1" }, { marsha_code: "P2" }, { marsha_code: "P3" }]),
     });
 
-    await ingestMarriottProperties({ fetchBrand });
+    await ingestMarriottProperties({ fetchBrand, sleepMs: 0 });
 
     expect(prisma.hotelChainSubBrand.upsert).toHaveBeenCalledTimes(1);
     expect(prisma.hotelChainSubBrand.upsert).toHaveBeenCalledWith(
@@ -124,7 +124,7 @@ describe("ingestMarriottProperties", () => {
       RZ: makeBrandData([{ marsha_code: "FAILS" }]),
     });
 
-    const result = await ingestMarriottProperties({ fetchBrand });
+    const result = await ingestMarriottProperties({ fetchBrand, sleepMs: 0 });
 
     expect(result.errors).toHaveLength(1);
     expect(result.errors[0]).toContain("FAILS");
@@ -147,7 +147,7 @@ describe("ingestMarriottProperties", () => {
       ]),
     });
 
-    const result = await ingestMarriottProperties({ fetchBrand, limit: 2 });
+    const result = await ingestMarriottProperties({ fetchBrand, sleepMs: 0, limit: 2 });
 
     expect(result.fetchedCount).toBe(2);
     expect(result.upsertedCount).toBe(2);
@@ -170,7 +170,7 @@ describe("ingestMarriottProperties", () => {
       MC: makeBrandData([{ marsha_code: "P3" }]),
     });
 
-    const result = await ingestMarriottProperties({ fetchBrand });
+    const result = await ingestMarriottProperties({ fetchBrand, sleepMs: 0 });
 
     expect(result.sweptCount).toBe(676);
     expect(result.activeBrandCount).toBe(2);
@@ -192,7 +192,7 @@ describe("ingestMarriottProperties", () => {
       return null;
     };
 
-    const result = await ingestMarriottProperties({ fetchBrand });
+    const result = await ingestMarriottProperties({ fetchBrand, sleepMs: 0 });
 
     expect(result.errors.length).toBeGreaterThanOrEqual(1);
     expect(result.errors.some((e) => e.includes("RZ") && e.includes("HTTP 503"))).toBe(true);
@@ -216,7 +216,7 @@ describe("ingestMarriottProperties", () => {
     });
 
     // batchSize: 2 forces 3 batches for 5 properties
-    const result = await ingestMarriottProperties({ fetchBrand, batchSize: 2 });
+    const result = await ingestMarriottProperties({ fetchBrand, sleepMs: 0, batchSize: 2 });
 
     expect(result.upsertedCount).toBe(5);
     expect(prisma.property.update).toHaveBeenCalledTimes(5);
