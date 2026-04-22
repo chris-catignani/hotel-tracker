@@ -5,6 +5,7 @@ vi.mock("@/lib/logger", () => ({
 }));
 
 import { fetchAllBrands } from "./property-fetcher";
+import { logger } from "@/lib/logger";
 
 describe("fetchAllBrands", () => {
   it("generates all 676 two-letter codes from AA to ZZ", async () => {
@@ -21,6 +22,7 @@ describe("fetchAllBrands", () => {
     expect(called[called.length - 1]).toBe("ZZ");
     expect(called).toContain("RZ");
     expect(called).toContain("MC");
+    expect(new Set(called).size).toBe(676);
   });
 
   it("includes successful responses and silently drops null (404) responses", async () => {
@@ -50,6 +52,10 @@ describe("fetchAllBrands", () => {
     expect(result.errors).toHaveLength(1);
     expect(result.errors[0]).toContain("RZ");
     expect(result.errors[0]).toContain("HTTP 503");
+    expect(logger.warn).toHaveBeenCalledWith(
+      "marriott_fetch:brand_error",
+      expect.objectContaining({ brandCode: "RZ" })
+    );
   });
 
   it("reports sweepedCount as 676 regardless of success/failure mix", async () => {
