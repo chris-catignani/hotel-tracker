@@ -27,9 +27,17 @@ function generateBrandCodes(): string[] {
   return codes;
 }
 
+const FETCH_HEADERS = {
+  "User-Agent":
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+  Accept: "application/json, */*",
+  "Accept-Language": "en-US,en;q=0.9",
+  Referer: "https://www.marriott.com/",
+};
+
 async function defaultFetchBrand(brandCode: string): Promise<unknown> {
   const url = `${PACSYS_BASE}_${brandCode}_en-US.json`;
-  const response = await fetch(url);
+  const response = await fetch(url, { headers: FETCH_HEADERS });
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(`HTTP ${response.status} for brand ${brandCode}`);
   return response.json();
