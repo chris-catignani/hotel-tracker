@@ -151,6 +151,13 @@ describe("parseMarriottBrand", () => {
     );
   });
 
+  it("handles missing latitude and longitude gracefully", () => {
+    const data = wrapInRegions([{ ...PROPERTY_OK, latitude: "", longitude: "" }]);
+    const { properties } = parseMarriottBrand("RZ", data);
+    expect(properties[0].latitude).toBeNull();
+    expect(properties[0].longitude).toBeNull();
+  });
+
   it("returns empty result for malformed data", () => {
     const { properties, skippedCount } = parseMarriottBrand("RZ", null);
     expect(properties).toHaveLength(0);

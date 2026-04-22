@@ -56,7 +56,6 @@ export const BRAND_CODE_MAP: Record<string, string> = {
 interface RawProperty {
   marsha_code: string;
   name: string;
-  brand_code: string;
   country_code: string;
   city: string;
   address: string;
