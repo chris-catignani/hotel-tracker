@@ -172,7 +172,7 @@ describe("ingestMarriottProperties", () => {
 
     const result = await ingestMarriottProperties({ fetchBrand, sleepMs: 0 });
 
-    expect(result.sweptCount).toBe(33);
+    expect(result.sweptCount).toBe(676);
     expect(result.activeBrandCount).toBe(2);
     expect(result.fetchedCount).toBe(2); // 1 (RZ) + 1 (MC), after status filter
     expect(result.skippedCount).toBe(1); // the P-status one from RZ

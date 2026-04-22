@@ -8,49 +8,60 @@ import { fetchAllBrands } from "./property-fetcher";
 import { BRAND_CODE_MAP } from "./property-parser";
 import { logger } from "@/lib/logger";
 
-const KNOWN_CODE_COUNT = Object.keys(BRAND_CODE_MAP).length;
+const KNOWN_COUNT = Object.keys(BRAND_CODE_MAP).length; // 33
+const DISCOVERY_COUNT = 676 - KNOWN_COUNT; // 643
 
 describe("fetchAllBrands", () => {
-  it("fetches exactly the known brand codes from BRAND_CODE_MAP", async () => {
-    const called: string[] = [];
-    const fetchBrand = vi.fn().mockImplementation(async (code: string) => {
-      called.push(code);
+  it("calls knownFetchBrand for all known brand codes and discoveryFetchBrand for all others", async () => {
+    const knownCalled: string[] = [];
+    const discoveryCalled: string[] = [];
+
+    const knownFetchBrand = vi.fn().mockImplementation(async (code: string) => {
+      knownCalled.push(code);
+      return null;
+    });
+    const discoveryFetchBrand = vi.fn().mockImplementation(async (code: string) => {
+      discoveryCalled.push(code);
       return null;
     });
 
-    await fetchAllBrands(fetchBrand, 0);
+    await fetchAllBrands(knownFetchBrand, discoveryFetchBrand, 0);
 
-    expect(called).toHaveLength(KNOWN_CODE_COUNT);
-    expect(called).toContain("RZ");
-    expect(called).toContain("MC");
-    expect(called).toContain("FI");
-    expect(new Set(called).size).toBe(KNOWN_CODE_COUNT);
+    expect(knownCalled).toHaveLength(KNOWN_COUNT);
+    expect(discoveryCalled).toHaveLength(DISCOVERY_COUNT);
+    expect(knownCalled).toContain("RZ");
+    expect(knownCalled).toContain("MC");
+    expect(discoveryCalled).not.toContain("RZ");
+    expect(new Set([...knownCalled, ...discoveryCalled]).size).toBe(676);
   });
 
-  it("includes successful responses and silently drops null (404) responses", async () => {
-    const fetchBrand = vi.fn().mockImplementation(async (code: string) => {
+  it("collects successful responses from both phases", async () => {
+    const knownFetchBrand = vi.fn().mockImplementation(async (code: string) => {
       if (code === "RZ") return { regions: [] };
-      if (code === "MC") return { regions: [] };
+      return null;
+    });
+    const discoveryFetchBrand = vi.fn().mockImplementation(async (code: string) => {
+      if (code === "AA") return { regions: [] }; // simulates a newly discovered brand
       return null;
     });
 
-    const result = await fetchAllBrands(fetchBrand, 0);
+    const result = await fetchAllBrands(knownFetchBrand, discoveryFetchBrand, 0);
 
     expect(result.responses).toHaveLength(2);
-    expect(result.responses.map((r) => r.brandCode)).toEqual(expect.arrayContaining(["RZ", "MC"]));
-    expect(result.sweptCount).toBe(KNOWN_CODE_COUNT);
+    expect(result.responses.map((r) => r.brandCode)).toEqual(expect.arrayContaining(["RZ", "AA"]));
+    expect(result.sweptCount).toBe(676);
     expect(result.errors).toHaveLength(0);
   });
 
-  it("adds to errors and continues sweep when fetchBrand throws", async () => {
-    const fetchBrand = vi.fn().mockImplementation(async (code: string) => {
+  it("captures errors from the known phase", async () => {
+    const knownFetchBrand = vi.fn().mockImplementation(async (code: string) => {
       if (code === "RZ") throw new Error("HTTP 503");
       return null;
     });
+    const discoveryFetchBrand = vi.fn().mockResolvedValue(null);
 
-    const result = await fetchAllBrands(fetchBrand, 0);
+    const result = await fetchAllBrands(knownFetchBrand, discoveryFetchBrand, 0);
 
-    expect(result.responses).toHaveLength(0);
     expect(result.errors).toHaveLength(1);
     expect(result.errors[0]).toContain("RZ");
     expect(result.errors[0]).toContain("HTTP 503");
@@ -60,16 +71,17 @@ describe("fetchAllBrands", () => {
     );
   });
 
-  it("reports sweptCount equal to known brand code count regardless of success/failure mix", async () => {
-    const fetchBrand = vi.fn().mockImplementation(async (code: string) => {
+  it("sweptCount is 676 regardless of success/failure mix", async () => {
+    const knownFetchBrand = vi.fn().mockImplementation(async (code: string) => {
       if (code === "FI") return { regions: [] };
       if (code === "CY") throw new Error("oops");
       return null;
     });
+    const discoveryFetchBrand = vi.fn().mockResolvedValue(null);
 
-    const result = await fetchAllBrands(fetchBrand, 0);
+    const result = await fetchAllBrands(knownFetchBrand, discoveryFetchBrand, 0);
 
-    expect(result.sweptCount).toBe(KNOWN_CODE_COUNT);
+    expect(result.sweptCount).toBe(676);
     expect(result.responses).toHaveLength(1);
     expect(result.errors).toHaveLength(1);
   });

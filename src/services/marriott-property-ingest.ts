@@ -74,7 +74,7 @@ export async function ingestMarriottProperties(opts: IngestOptions = {}): Promis
     responses,
     sweptCount,
     errors: fetchErrors,
-  } = await fetchAllBrands(opts.fetchBrand, opts.sleepMs);
+  } = await fetchAllBrands(opts.fetchBrand, opts.fetchBrand, opts.sleepMs);
 
   const allProperties: MarriottParsedProperty[] = [];
   let skippedCount = 0;
