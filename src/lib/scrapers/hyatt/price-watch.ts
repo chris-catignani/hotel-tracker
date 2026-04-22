@@ -166,7 +166,7 @@ export class HyattFetcher implements PriceFetcher {
       // Non-headless: Kasada's bot detection requires GPU rendering — headless mode is always blocked.
       headless: false,
       channel: "chrome",
-      args: ["--disable-blink-features=AutomationControlled", "--window-position=-10000,-10000"],
+      args: ["--disable-blink-features=AutomationControlled"],
       viewport: { width: 1280, height: 800 },
     });
 
