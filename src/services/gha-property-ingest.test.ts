@@ -44,9 +44,9 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 import prisma from "@/lib/prisma";
-import { ingestGhaDirectory } from "./gha-property-ingest";
+import { ingestGhaProperties } from "./gha-property-ingest";
 
-describe("ingestGhaDirectory orchestration", () => {
+describe("ingestGhaProperties orchestration", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("stamps lastSeenAt on every known URL and fetches only new/stale", async () => {
@@ -84,7 +84,7 @@ describe("ingestGhaDirectory orchestration", () => {
 
     const fetchHtml = vi.fn().mockResolvedValue(html);
 
-    const result = await ingestGhaDirectory({
+    const result = await ingestGhaProperties({
       harvest: async () => ["/anantara/fresh", "/anantara/stale", "/anantara/new"],
       fetchHtml,
       now,

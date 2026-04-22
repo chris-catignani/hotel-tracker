@@ -16,7 +16,7 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 import prisma from "@/lib/prisma";
-import { ingestHyattDirectory } from "./hyatt-property-ingest";
+import { ingestHyattProperties } from "./hyatt-property-ingest";
 
 function makeStoreHtml(entries: Array<{ spiritCode: string; openStatus?: string }>): string {
   const properties = entries.map((e) => ({
@@ -40,7 +40,7 @@ function makeStoreHtml(entries: Array<{ spiritCode: string; openStatus?: string 
   })};</script></head></html>`;
 }
 
-describe("ingestHyattDirectory", () => {
+describe("ingestHyattProperties", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("upserts FULLY_BOOKABLE properties and skips NOT_BOOKABLE", async () => {
@@ -55,7 +55,7 @@ describe("ingestHyattDirectory", () => {
       { spiritCode: "good2", openStatus: "PRECONSTRUCTION_BOOKABLE" },
     ]);
 
-    const result = await ingestHyattDirectory({ fetchHtml: async () => html });
+    const result = await ingestHyattProperties({ fetchHtml: async () => html });
 
     expect(result.fetchedCount).toBe(2);
     expect(result.skippedCount).toBe(1);
@@ -72,7 +72,7 @@ describe("ingestHyattDirectory", () => {
     );
 
     const html = makeStoreHtml([{ spiritCode: "abexa" }]);
-    const result = await ingestHyattDirectory({ fetchHtml: async () => html });
+    const result = await ingestHyattProperties({ fetchHtml: async () => html });
 
     expect(result.errors).toHaveLength(1);
     expect(result.errors[0]).toContain("abexa");
@@ -80,7 +80,7 @@ describe("ingestHyattDirectory", () => {
   });
 
   it("returns empty result when HTML has no STORE payload", async () => {
-    const result = await ingestHyattDirectory({
+    const result = await ingestHyattProperties({
       fetchHtml: async () => "<html><body>no store</body></html>",
     });
     expect(result).toEqual({ fetchedCount: 0, upsertedCount: 0, skippedCount: 0, errors: [] });
@@ -95,7 +95,7 @@ describe("ingestHyattDirectory", () => {
     // 3 properties all sharing the same brand — upsert should be called exactly once
     const html = makeStoreHtml([{ spiritCode: "a1" }, { spiritCode: "a2" }, { spiritCode: "a3" }]);
 
-    await ingestHyattDirectory({ fetchHtml: async () => html, batchSize: 2 });
+    await ingestHyattProperties({ fetchHtml: async () => html, batchSize: 2 });
 
     expect(prisma.hotelChainSubBrand.upsert).toHaveBeenCalledTimes(1);
   });
@@ -132,7 +132,7 @@ describe("ingestHyattDirectory", () => {
     (prisma.property.create as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
     (prisma.property.update as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
 
-    const result = await ingestHyattDirectory({ fetchHtml: async () => noBrandHtml });
+    const result = await ingestHyattProperties({ fetchHtml: async () => noBrandHtml });
 
     expect(result.upsertedCount).toBe(1);
     expect(result.errors).toHaveLength(0);

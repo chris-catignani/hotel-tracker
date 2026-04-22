@@ -9,14 +9,14 @@ import { log } from "next-axiom";
 Sentry.init({ dsn: process.env.SENTRY_DSN, tracesSampleRate: 0 });
 Sentry.setTag("runner_type", process.env.RUNNER_TYPE ?? "ingest-chain-properties");
 
-import { ingestGhaDirectory } from "@/services/gha-property-ingest";
-import { ingestHyattDirectory } from "@/services/hyatt-property-ingest";
+import { ingestGhaProperties } from "@/services/gha-property-ingest";
+import { ingestHyattProperties } from "@/services/hyatt-property-ingest";
 
 async function runChain(chain: string, forceFullRefetch: boolean, limit: number | undefined) {
   if (chain === "gha") {
-    return await ingestGhaDirectory({ forceFullRefetch, limit });
+    return await ingestGhaProperties({ forceFullRefetch, limit });
   } else if (chain === "hyatt") {
-    return await ingestHyattDirectory();
+    return await ingestHyattProperties();
   } else {
     throw new Error(`Unsupported chain=${chain}; supported values: 'gha', 'hyatt'`);
   }

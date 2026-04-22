@@ -59,7 +59,7 @@ async function upsertProperty(prop: HyattParsedProperty, now: Date): Promise<voi
   });
 }
 
-export async function ingestHyattDirectory(opts: IngestOptions = {}): Promise<IngestResult> {
+export async function ingestHyattProperties(opts: IngestOptions = {}): Promise<IngestResult> {
   const fetchHtml = opts.fetchHtml ?? fetchExploreHotelsHtml;
   const now = opts.now ?? new Date();
   const batchSize = opts.batchSize ?? DEFAULT_BATCH_SIZE;
