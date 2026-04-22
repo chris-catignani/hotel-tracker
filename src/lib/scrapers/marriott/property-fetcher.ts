@@ -7,7 +7,7 @@ export interface BrandResponse {
 
 export interface FetchAllBrandsResult {
   responses: BrandResponse[];
-  sweepedCount: number;
+  sweptCount: number;
   errors: string[];
 }
 
@@ -57,5 +57,5 @@ export async function fetchAllBrands(
     }
   }
 
-  return { responses, sweepedCount: allCodes.length, errors };
+  return { responses, sweptCount: allCodes.length, errors };
 }

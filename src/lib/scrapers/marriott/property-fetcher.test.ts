@@ -36,7 +36,7 @@ describe("fetchAllBrands", () => {
 
     expect(result.responses).toHaveLength(2);
     expect(result.responses.map((r) => r.brandCode)).toEqual(expect.arrayContaining(["RZ", "MC"]));
-    expect(result.sweepedCount).toBe(676);
+    expect(result.sweptCount).toBe(676);
     expect(result.errors).toHaveLength(0);
   });
 
@@ -58,7 +58,7 @@ describe("fetchAllBrands", () => {
     );
   });
 
-  it("reports sweepedCount as 676 regardless of success/failure mix", async () => {
+  it("reports sweptCount as 676 regardless of success/failure mix", async () => {
     const fetchBrand = vi.fn().mockImplementation(async (code: string) => {
       if (code === "AA") return { regions: [] };
       if (code === "AB") throw new Error("oops");
@@ -67,7 +67,7 @@ describe("fetchAllBrands", () => {
 
     const result = await fetchAllBrands(fetchBrand);
 
-    expect(result.sweepedCount).toBe(676);
+    expect(result.sweptCount).toBe(676);
     expect(result.responses).toHaveLength(1);
     expect(result.errors).toHaveLength(1);
   });

@@ -9,7 +9,7 @@ export interface MarriottParsedProperty {
   countryCode: string | null;
   latitude: number | null;
   longitude: number | null;
-  chainUrlPath: null;
+  chainUrlPath: string | null;
 }
 
 export interface ParseResult {

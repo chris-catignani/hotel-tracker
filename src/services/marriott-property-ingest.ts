@@ -11,7 +11,7 @@ import { findOrCreateProperty } from "./property-utils";
 const DEFAULT_BATCH_SIZE = 50;
 
 export interface IngestResult {
-  sweepedCount: number;
+  sweptCount: number;
   activeBrandCount: number;
   fetchedCount: number;
   skippedCount: number;
@@ -69,7 +69,7 @@ export async function ingestMarriottProperties(opts: IngestOptions = {}): Promis
   const batchSize = opts.batchSize ?? DEFAULT_BATCH_SIZE;
   const hotelChainId = HOTEL_ID.MARRIOTT;
 
-  const { responses, sweepedCount, errors: fetchErrors } = await fetchAllBrands(opts.fetchBrand);
+  const { responses, sweptCount, errors: fetchErrors } = await fetchAllBrands(opts.fetchBrand);
 
   const allProperties: MarriottParsedProperty[] = [];
   let skippedCount = 0;
@@ -128,7 +128,7 @@ export async function ingestMarriottProperties(opts: IngestOptions = {}): Promis
   }
 
   return {
-    sweepedCount,
+    sweptCount,
     activeBrandCount: responses.length,
     fetchedCount: properties.length,
     skippedCount,
