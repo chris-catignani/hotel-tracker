@@ -11,14 +11,17 @@ Sentry.setTag("runner_type", process.env.RUNNER_TYPE ?? "ingest-chain-properties
 
 import { ingestGhaProperties } from "@/services/gha-property-ingest";
 import { ingestHyattProperties } from "@/services/hyatt-property-ingest";
+import { ingestMarriottProperties } from "@/services/marriott-property-ingest";
 
 async function runChain(chain: string, forceFullRefetch: boolean, limit: number | undefined) {
   if (chain === "gha") {
     return await ingestGhaProperties({ forceFullRefetch, limit });
   } else if (chain === "hyatt") {
     return await ingestHyattProperties({ limit });
+  } else if (chain === "marriott") {
+    return await ingestMarriottProperties({ limit });
   } else {
-    throw new Error(`Unsupported chain=${chain}; supported values: 'gha', 'hyatt'`);
+    throw new Error(`Unsupported chain=${chain}; supported values: 'gha', 'hyatt', 'marriott'`);
   }
 }
 

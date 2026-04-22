@@ -65,7 +65,7 @@ jobs:
       - name: Run chain property ingest
         run: xvfb-run npx tsx src/workers/ingest-chain-properties.ts
         env:
-          CHAINS: ${{ github.event.inputs.chains || 'gha' }}
+          CHAINS: ${{ github.event.inputs.chains || 'gha,marriott' }}
           LIMIT: ${{ github.event.inputs.limit }}
           RUNNER_TYPE: remote
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
