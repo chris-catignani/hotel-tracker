@@ -16,7 +16,7 @@ async function runChain(chain: string, forceFullRefetch: boolean, limit: number 
   if (chain === "gha") {
     return await ingestGhaProperties({ forceFullRefetch, limit });
   } else if (chain === "hyatt") {
-    return await ingestHyattProperties();
+    return await ingestHyattProperties({ limit });
   } else {
     throw new Error(`Unsupported chain=${chain}; supported values: 'gha', 'hyatt'`);
   }

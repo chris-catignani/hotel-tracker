@@ -18,6 +18,7 @@ interface IngestOptions {
   fetchHtml?: () => Promise<string>;
   now?: Date;
   batchSize?: number;
+  limit?: number;
 }
 
 async function ensureSubBrand(hotelChainId: string, name: string): Promise<string> {
@@ -66,16 +67,17 @@ export async function ingestHyattProperties(opts: IngestOptions = {}): Promise<I
   const hotelChainId = HOTEL_ID.HYATT;
 
   const html = await fetchHtml();
-  const { properties, skippedCount } = parseHyattStore(html);
+  const parsed = parseHyattStore(html);
+  const { skippedCount } = parsed;
+  let properties = parsed.properties;
+  if (opts.limit != null) properties = properties.slice(0, opts.limit);
 
   logger.info("hyatt_ingest:parsed", { total: properties.length, skippedCount });
 
   // Pre-create sub-brand reference rows so they exist for booking ingestion.
   // Property has no hotelChainSubBrandId column — sub-brand association happens at booking time.
   const uniqueBrandNames = [...new Set(properties.map((p) => p.subBrandName).filter(Boolean))];
-  for (const name of uniqueBrandNames) {
-    await ensureSubBrand(hotelChainId, name);
-  }
+  await Promise.allSettled(uniqueBrandNames.map((name) => ensureSubBrand(hotelChainId, name)));
 
   const errors: string[] = [];
   let upsertedCount = 0;

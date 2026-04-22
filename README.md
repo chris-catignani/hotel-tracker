@@ -148,13 +148,13 @@ And these variables (**Settings → Variables → Actions**):
 
 ```bash
 # Smoke test — fetch 10 properties and inspect DB output before a full run
-CHAIN=gha LIMIT=10 npm run ingest:chain-properties
+CHAINS=gha LIMIT=10 npm run ingest:chain-properties
 
 # Re-fetch already-ingested properties (bypasses staleness check)
-CHAIN=gha LIMIT=10 FORCE_FULL=1 npm run ingest:chain-properties
+CHAINS=gha LIMIT=10 FORCE_FULL=1 npm run ingest:chain-properties
 
 # Full run
-CHAIN=gha npm run ingest:chain-properties
+CHAINS=gha npm run ingest:chain-properties
 ```
 
 You can also trigger a run from GitHub Actions via **Actions → Ingest Chain Properties → Run workflow**, with an optional `limit` input for a partial run.
