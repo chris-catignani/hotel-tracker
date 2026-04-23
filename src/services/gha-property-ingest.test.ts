@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { decideUrlsToFetch, STALE_AFTER_DAYS } from "./gha-property-ingest";
+import { HOTEL_ID } from "@/lib/constants";
 
 describe("decideUrlsToFetch", () => {
   const now = new Date("2026-04-20T00:00:00Z");
@@ -212,5 +213,130 @@ describe("ingestGhaProperties orchestration", () => {
     );
     expect(result.errors).toHaveLength(0);
     expect(result.upsertedCount).toBe(1);
+  });
+
+  it("continues loop on fetch error and records in errors array", async () => {
+    const now = new Date("2026-04-20T00:00:00Z");
+
+    (prisma.property.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (prisma.property.updateMany as ReturnType<typeof vi.fn>).mockResolvedValue({ count: 0 });
+    (prisma.property.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
+    (prisma.hotelChainSubBrand.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "sb1" });
+
+    const fetchHtml = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("Network Failure"))
+      .mockResolvedValueOnce(
+        `<script id="__NEXT_DATA__" type="application/json">${JSON.stringify({
+          props: {
+            pageProps: {
+              page: {
+                name: "Success",
+                _info: { id: 1 },
+                location: { address: "addr", latitude: 1, longitude: 2 },
+                city: { name: "City", _location: {} },
+              },
+            },
+          },
+        })}</script>`
+      );
+
+    const result = await ingestGhaProperties({
+      harvest: async () => ["/fail", "/success"],
+      fetchHtml,
+      now,
+      requestDelayMs: 0,
+    });
+
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]).toContain("Network Failure");
+    expect(result.upsertedCount).toBe(1);
+    expect(result.fetchedCount).toBe(1);
+  });
+
+  it("increments skippedCount when parser returns null (non-hotel page)", async () => {
+    const now = new Date("2026-04-20T00:00:00Z");
+
+    (prisma.property.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (prisma.property.updateMany as ReturnType<typeof vi.fn>).mockResolvedValue({ count: 0 });
+
+    const fetchHtml = vi.fn().mockResolvedValue("<html><body>Not a hotel page</body></html>");
+
+    const result = await ingestGhaProperties({
+      harvest: async () => ["/not-a-hotel"],
+      fetchHtml,
+      now,
+      requestDelayMs: 0,
+    });
+
+    expect(result.skippedCount).toBe(1);
+    expect(result.upsertedCount).toBe(0);
+    expect(result.fetchedCount).toBe(1); // It was fetched, but then skipped by parser
+  });
+
+  it("calls prisma.property.upsert with correct parsed fields", async () => {
+    const now = new Date("2026-04-20T00:00:00Z");
+
+    (prisma.property.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (prisma.property.updateMany as ReturnType<typeof vi.fn>).mockResolvedValue({ count: 0 });
+    (prisma.hotelChainSubBrand.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "sb1" });
+
+    const html = `<script id="__NEXT_DATA__" type="application/json">${JSON.stringify({
+      props: {
+        pageProps: {
+          page: {
+            name: "Grand Hotel",
+            zipCode: "12345",
+            _info: { id: "GHA123" },
+            location: { address: "123 Main St", latitude: 45.0, longitude: 9.0 },
+            city: {
+              name: "Milan",
+              _location: { parentLocation: { content: { name: "Italy" } } },
+            },
+            categories: [{ name: "Luxury" }, { name: "Business" }],
+          },
+        },
+      },
+    })}</script>`;
+
+    await ingestGhaProperties({
+      harvest: async () => ["/anantara/grand-hotel"],
+      fetchHtml: vi.fn().mockResolvedValue(html),
+      now,
+      requestDelayMs: 0,
+    });
+
+    expect(prisma.property.upsert).toHaveBeenCalledWith({
+      where: {
+        hotelChainId_chainUrlPath: {
+          hotelChainId: HOTEL_ID.GHA_DISCOVERY,
+          chainUrlPath: "/anantara/grand-hotel",
+        },
+      },
+      update: expect.objectContaining({
+        name: "Grand Hotel",
+        countryCode: "IT",
+        city: "Milan",
+        address: "123 Main St",
+        latitude: 45.0,
+        longitude: 9.0,
+        chainPropertyId: "GHA123",
+        chainCategories: ["Luxury", "Business"],
+        detailLastFetchedAt: now,
+      }),
+      create: expect.objectContaining({
+        name: "Grand Hotel",
+        hotelChainId: HOTEL_ID.GHA_DISCOVERY,
+        chainUrlPath: "/anantara/grand-hotel",
+        countryCode: "IT",
+        city: "Milan",
+        address: "123 Main St",
+        latitude: 45.0,
+        longitude: 9.0,
+        chainPropertyId: "GHA123",
+        chainCategories: ["Luxury", "Business"],
+        detailLastFetchedAt: now,
+      }),
+    });
   });
 });
