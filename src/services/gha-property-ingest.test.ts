@@ -98,4 +98,24 @@ describe("ingestGhaProperties orchestration", () => {
     expect(result.harvestedCount).toBe(3);
     expect(result.fetchedCount).toBe(2);
   });
+
+  it("counts 404 URLs as skipped, not errors, and does not increment fetchedCount", async () => {
+    const now = new Date("2026-04-20T00:00:00Z");
+
+    (prisma.property.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (prisma.property.updateMany as ReturnType<typeof vi.fn>).mockResolvedValue({ count: 0 });
+
+    const fetchHtml = vi.fn().mockResolvedValue(null);
+
+    const result = await ingestGhaProperties({
+      harvest: async () => ["/anantara/gone"],
+      fetchHtml,
+      now,
+      requestDelayMs: 0,
+    });
+
+    expect(result.fetchedCount).toBe(0);
+    expect(result.skippedCount).toBe(1);
+    expect(result.errors).toHaveLength(0);
+  });
 });
