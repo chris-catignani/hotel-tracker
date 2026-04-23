@@ -22,6 +22,22 @@ async function globalSetup(_config: FullConfig) {
     });
     console.log(pushOutput.toString());
 
+    const extensionOutput = execSync(
+      "npx prisma db execute --stdin --schema prisma/schema.prisma",
+      {
+        input:
+          "CREATE EXTENSION IF NOT EXISTS pg_trgm;\n" +
+          "CREATE INDEX IF NOT EXISTS properties_name_trgm ON properties USING GIN(name gin_trgm_ops);\n",
+        stdio: "pipe",
+        env: {
+          ...process.env,
+          DATABASE_URL: testDbUrl,
+          PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION: "yes, i consent to prisma dangerous actions",
+        },
+      }
+    );
+    console.log(extensionOutput.toString());
+
     const seedOutput = execSync("npm run db:seed:e2e", {
       stdio: "pipe",
       env: {

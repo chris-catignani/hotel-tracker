@@ -154,8 +154,6 @@ test.describe("Geo Property Search — Booking with location data", () => {
 });
 
 test.describe("Local Property Search — combobox behavior", () => {
-  test.setTimeout(90_000);
-
   test("typing a hotel name returns local results and selecting one confirms the property", async ({
     isolatedUser,
     adminRequest,
