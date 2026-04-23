@@ -8,7 +8,7 @@ import {
   toPaymentType,
   BookingFormState,
 } from "./booking-form-reducer";
-import type { Booking, ShoppingPortal } from "@/lib/types";
+import type { Booking, LocalPropertyResult, PlacesResult, ShoppingPortal } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -448,18 +448,33 @@ describe("bookingFormReducer", () => {
   });
 
   describe("geo actions", () => {
-    it("SET_PROPERTY_GEO sets all geo fields and marks geoConfirmed", () => {
+    const placesResult: PlacesResult = {
+      source: "places",
+      placeId: "abc123",
+      displayName: "Park Hyatt Kuala Lumpur",
+      city: "Kuala Lumpur",
+      countryCode: "MY",
+      address: "123 Jalan Test, Kuala Lumpur",
+      latitude: 3.1419,
+      longitude: 101.7008,
+    };
+
+    const localResult: LocalPropertyResult = {
+      source: "local",
+      propertyId: "prop-99",
+      hotelChainId: "hyatt-chain-id",
+      displayName: "Hyatt Regency Chicago",
+      city: "Chicago",
+      countryCode: "US",
+      address: "151 E Wacker Dr",
+      latitude: 41.886,
+      longitude: -87.621,
+    };
+
+    it("SET_PROPERTY_GEO with PlacesResult sets geo fields and marks geoConfirmed", () => {
       const next = bookingFormReducer(INITIAL_STATE, {
         type: "SET_PROPERTY_GEO",
-        result: {
-          placeId: "abc123",
-          displayName: "Park Hyatt Kuala Lumpur",
-          city: "Kuala Lumpur",
-          countryCode: "MY",
-          address: "123 Jalan Test, Kuala Lumpur",
-          latitude: 3.1419,
-          longitude: 101.7008,
-        },
+        result: placesResult,
       });
       expect(next.propertyName).toBe("Park Hyatt Kuala Lumpur");
       expect(next.countryCode).toBe("MY");
@@ -467,12 +482,40 @@ describe("bookingFormReducer", () => {
       expect(next.latitude).toBe(3.1419);
       expect(next.longitude).toBe(101.7008);
       expect(next.geoConfirmed).toBe(true);
+      expect(next.propertyId).toBeNull();
+      expect(next.placeId).toBe("abc123");
+      expect(next.hotelChainId).toBe("");
+    });
+
+    it("SET_PROPERTY_GEO with LocalPropertyResult sets propertyId and hotelChainId directly", () => {
+      const next = bookingFormReducer(INITIAL_STATE, {
+        type: "SET_PROPERTY_GEO",
+        result: localResult,
+      });
+      expect(next.propertyName).toBe("Hyatt Regency Chicago");
+      expect(next.propertyId).toBe("prop-99");
+      expect(next.hotelChainId).toBe("hyatt-chain-id");
+      expect(next.geoConfirmed).toBe(true);
+      expect(next.city).toBe("Chicago");
+      expect(next.countryCode).toBe("US");
+      expect(next.placeId).toBeNull();
+    });
+
+    it("SET_PROPERTY_GEO with LocalPropertyResult does not overwrite an already-selected hotelChainId", () => {
+      const stateWithChain = { ...INITIAL_STATE, hotelChainId: "existing-chain-id" };
+      const next = bookingFormReducer(stateWithChain, {
+        type: "SET_PROPERTY_GEO",
+        result: localResult,
+      });
+      expect(next.hotelChainId).toBe("existing-chain-id");
+      expect(next.propertyId).toBe("prop-99");
     });
 
     it("CLEAR_GEO clears geo fields and sets geoConfirmed to false", () => {
       const confirmed = bookingFormReducer(INITIAL_STATE, {
         type: "SET_PROPERTY_GEO",
         result: {
+          source: "places",
           placeId: null,
           displayName: "Some Hotel",
           city: "London",
@@ -498,6 +541,7 @@ describe("bookingFormReducer", () => {
       const confirmed = bookingFormReducer(INITIAL_STATE, {
         type: "SET_PROPERTY_GEO",
         result: {
+          source: "places",
           placeId: null,
           displayName: "Some Hotel",
           city: "London",

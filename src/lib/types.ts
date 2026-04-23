@@ -332,7 +332,20 @@ export interface PromotionFormData {
 // Geo Types
 // ---------------------------------------------------------------------------
 
-export interface GeoResult {
+export interface LocalPropertyResult {
+  source: "local";
+  propertyId: string;
+  hotelChainId: string;
+  displayName: string;
+  city: string;
+  countryCode: string;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+}
+
+export interface PlacesResult {
+  source: "places";
   placeId: string | null;
   displayName: string;
   city: string;
@@ -341,6 +354,8 @@ export interface GeoResult {
   latitude: number | null;
   longitude: number | null;
 }
+
+export type GeoResult = LocalPropertyResult | PlacesResult;
 
 export interface Property {
   id: string;

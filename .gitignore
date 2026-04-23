@@ -72,3 +72,6 @@ e2e/.auth/
 
 # Local MCP server config (personal/prod tooling)
 .mcp.json
+
+# Local Codex workspace artifact
+.codex

@@ -1,6 +1,7 @@
 import { logger } from "@/lib/logger";
 import prisma from "@/lib/prisma";
-import { GeoResult } from "@/lib/types";
+import { Prisma } from "@prisma/client";
+import { LocalPropertyResult, PlacesResult } from "@/lib/types";
 
 const GOOGLE_PLACES_URL = "https://places.googleapis.com/v1/places:searchText";
 
@@ -36,7 +37,7 @@ function extractComponent(
   }
 }
 
-function mapGooglePlace(place: GooglePlace): GeoResult {
+function mapGooglePlace(place: GooglePlace): PlacesResult {
   const components = place.addressComponents ?? [];
   const city =
     extractComponent(components, [
@@ -48,6 +49,7 @@ function mapGooglePlace(place: GooglePlace): GeoResult {
   const countryCode = extractComponent(components, ["country"])?.shortText ?? ""; // already ISO alpha-2
 
   return {
+    source: "places",
     placeId: place.id ?? null,
     displayName: place.displayName.text,
     city,
@@ -58,7 +60,7 @@ function mapGooglePlace(place: GooglePlace): GeoResult {
   };
 }
 
-export async function searchProperties(query: string, isHotel = true): Promise<GeoResult[]> {
+export async function searchPlaces(query: string, isHotel = true): Promise<PlacesResult[]> {
   const normalized = query.trim().toLowerCase();
   if (normalized.length < 3) return [];
 
@@ -68,7 +70,7 @@ export async function searchProperties(query: string, isHotel = true): Promise<G
   // Check cache first
   const cached = await prisma.geoCache.findUnique({ where: { queryKey: cacheKey } });
   if (cached) {
-    return cached.results as unknown as GeoResult[];
+    return cached.results as unknown as PlacesResult[];
   }
 
   const apiKey = process.env.GOOGLE_PLACES_API_KEY;
@@ -99,7 +101,7 @@ export async function searchProperties(query: string, isHotel = true): Promise<G
   }
 
   const data = (await res.json()) as GooglePlacesResponse;
-  const results: GeoResult[] = (data.places ?? []).map(mapGooglePlace);
+  const results: PlacesResult[] = (data.places ?? []).map(mapGooglePlace);
 
   // Cache results
   await prisma.geoCache.upsert({
@@ -115,4 +117,49 @@ export async function searchProperties(query: string, isHotel = true): Promise<G
   });
 
   return results;
+}
+
+interface PropertyRow {
+  id: string;
+  name: string;
+  hotel_chain_id: string;
+  city: string | null;
+  country_code: string | null;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+}
+
+export async function searchLocalProperties(
+  query: string,
+  hotelChainId?: string
+): Promise<LocalPropertyResult[]> {
+  const normalized = query.trim();
+  if (normalized.length < 3) return [];
+
+  const chainFilter = hotelChainId
+    ? Prisma.sql`AND hotel_chain_id = ${hotelChainId}`
+    : Prisma.empty;
+
+  const rows = await prisma.$queryRaw<PropertyRow[]>`
+    SELECT id, name, hotel_chain_id, city, country_code, address, latitude, longitude
+    FROM properties
+    WHERE hotel_chain_id IS NOT NULL
+      ${chainFilter}
+      AND word_similarity(${normalized}, name) > 0.2
+    ORDER BY word_similarity(${normalized}, name) DESC
+    LIMIT 8
+  `;
+
+  return rows.map((row) => ({
+    source: "local" as const,
+    propertyId: row.id,
+    hotelChainId: row.hotel_chain_id,
+    displayName: row.name,
+    city: row.city ?? "",
+    countryCode: row.country_code ?? "",
+    address: row.address,
+    latitude: row.latitude,
+    longitude: row.longitude,
+  }));
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withObservability } from "@/lib/observability";
 import { getAuthenticatedUserId } from "@/lib/auth-utils";
-import { searchPlaces } from "@/services/geo-lookup";
+import { searchLocalProperties } from "@/services/geo-lookup";
 import { apiError } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
 
@@ -16,19 +16,18 @@ export const GET = withObservability(async (request: NextRequest) => {
       return NextResponse.json([]);
     }
 
-    const accommodationType = request.nextUrl.searchParams.get("accommodationType");
-    const isHotel = accommodationType === "hotel";
+    const hotelChainId = request.nextUrl.searchParams.get("hotelChainId") ?? undefined;
     const start = Date.now();
-    const results = await searchPlaces(q, isHotel);
-    logger.info("geo:searched", {
+    const results = await searchLocalProperties(q, hotelChainId);
+    logger.info("geo:local_searched", {
       userId,
-      accommodationType: accommodationType ?? null,
-      triggeredBy: accommodationType === "apartment" ? "apartment" : "search_more",
+      query: q,
+      hotelChainId: hotelChainId ?? null,
       resultCount: results.length,
       durationMs: Date.now() - start,
     });
     return NextResponse.json(results);
   } catch (error) {
-    return apiError("Failed to search properties", error, 500, request);
+    return apiError("Failed to search local properties", error, 500, request);
   }
 });

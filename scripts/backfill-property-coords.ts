@@ -2,7 +2,7 @@ import { config } from "dotenv";
 config({ path: ".env.local" });
 
 import prisma from "../src/lib/prisma";
-import { searchProperties } from "../src/services/geo-lookup";
+import { searchPlaces } from "../src/services/geo-lookup";
 
 /**
  * Backfill: geocode all properties missing lat/lng using Google Places API.
@@ -30,7 +30,7 @@ async function main() {
     process.stdout.write(`  ${property.name} ... `);
 
     try {
-      const results = await searchProperties(query);
+      const results = await searchPlaces(query);
       const top = results[0];
 
       if (!top) {
