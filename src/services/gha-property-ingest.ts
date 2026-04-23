@@ -38,7 +38,7 @@ interface IngestOptions {
   forceFullRefetch?: boolean;
   limit?: number;
   harvest?: () => Promise<string[]>;
-  fetchHtml?: (url: string) => Promise<string>;
+  fetchHtml?: (url: string) => Promise<string | null>;
   now?: Date;
   requestDelayMs?: number;
 }
@@ -60,6 +60,7 @@ export async function ingestGhaProperties(opts: IngestOptions = {}): Promise<Ing
       withRetry(
         async () => {
           const res = await fetch(`https://www.ghadiscovery.com${url}`);
+          if (res.status === 404) return null; // expected — don't retry, don't send to Sentry
           if (!res.ok) throw new Error(`GET ${url} -> ${res.status}`);
           return res.text();
         },
@@ -112,6 +113,11 @@ export async function ingestGhaProperties(opts: IngestOptions = {}): Promise<Ing
     if (i > 0 && requestDelayMs > 0) await sleep(requestDelayMs);
     try {
       const html = await fetchHtml(url);
+      if (html === null) {
+        skippedCount++;
+        logger.info("gha_ingest:skip_404", { url });
+        continue;
+      }
       fetchedCount++;
       const parsed = parseGhaPropertyNextData(html, url);
       if (!parsed) {
