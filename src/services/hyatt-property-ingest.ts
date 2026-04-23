@@ -1,9 +1,9 @@
+import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { HOTEL_ID } from "@/lib/constants";
 import { parseHyattStore, type HyattParsedProperty } from "@/lib/scrapers/hyatt/property-parser";
 import { fetchExploreHotelsHtml } from "@/lib/scrapers/hyatt/explore-hotels";
-import { findOrCreateProperty } from "./property-utils";
 
 const DEFAULT_BATCH_SIZE = 50;
 
@@ -32,32 +32,52 @@ async function ensureSubBrand(hotelChainId: string, name: string): Promise<strin
 
 async function upsertProperty(prop: HyattParsedProperty, now: Date): Promise<void> {
   const hotelChainId = HOTEL_ID.HYATT;
-  const propertyId = await findOrCreateProperty({
-    propertyName: prop.name,
-    hotelChainId,
-    countryCode: prop.countryCode,
-    city: prop.city,
-    address: prop.address,
-    latitude: prop.latitude,
-    longitude: prop.longitude,
-    chainPropertyId: prop.chainPropertyId,
-    chainUrlPath: prop.chainUrlPath,
-    lastSeenAt: now,
-  });
-
-  await prisma.property.update({
-    where: { id: propertyId },
-    data: {
-      countryCode: prop.countryCode,
-      city: prop.city,
-      address: prop.address,
-      latitude: prop.latitude,
-      longitude: prop.longitude,
-      chainPropertyId: prop.chainPropertyId,
-      chainUrlPath: prop.chainUrlPath,
-      lastSeenAt: now,
-    },
-  });
+  try {
+    await prisma.property.upsert({
+      where: {
+        hotelChainId_chainPropertyId: { hotelChainId, chainPropertyId: prop.chainPropertyId },
+      },
+      update: {
+        name: prop.name,
+        countryCode: prop.countryCode,
+        city: prop.city,
+        address: prop.address,
+        latitude: prop.latitude,
+        longitude: prop.longitude,
+        chainUrlPath: prop.chainUrlPath,
+        lastSeenAt: now,
+      },
+      create: {
+        name: prop.name,
+        hotelChainId,
+        countryCode: prop.countryCode,
+        city: prop.city,
+        address: prop.address,
+        latitude: prop.latitude,
+        longitude: prop.longitude,
+        chainPropertyId: prop.chainPropertyId,
+        chainUrlPath: prop.chainUrlPath,
+        lastSeenAt: now,
+      },
+    });
+  } catch (err) {
+    if (!(err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002")) throw err;
+    const existing = await prisma.property.findFirst({ where: { name: prop.name, hotelChainId } });
+    if (!existing) throw err;
+    await prisma.property.update({
+      where: { id: existing.id },
+      data: {
+        chainPropertyId: prop.chainPropertyId,
+        chainUrlPath: prop.chainUrlPath,
+        countryCode: prop.countryCode,
+        city: prop.city,
+        address: prop.address,
+        latitude: prop.latitude,
+        longitude: prop.longitude,
+        lastSeenAt: now,
+      },
+    });
+  }
 }
 
 export async function ingestHyattProperties(opts: IngestOptions = {}): Promise<IngestResult> {

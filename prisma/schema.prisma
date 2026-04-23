@@ -693,6 +693,8 @@ model Property {
   priceWatches PriceWatch[]
 
   @@unique([name, hotelChainId])
+  @@unique([hotelChainId, chainPropertyId])
+  @@unique([hotelChainId, chainUrlPath])
   @@index([hotelChainId, latitude, longitude])
   @@map("properties")
 }
