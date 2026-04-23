@@ -326,6 +326,7 @@ describe("ingestGhaProperties orchestration", () => {
       }),
       create: expect.objectContaining({
         name: "Grand Hotel",
+        hotelChainId: HOTEL_ID.GHA_DISCOVERY,
         chainUrlPath: "/anantara/grand-hotel",
         countryCode: "IT",
         city: "Milan",
