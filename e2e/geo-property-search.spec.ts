@@ -154,7 +154,6 @@ test.describe("Geo Property Search — Booking with location data", () => {
 });
 
 test.describe("Local Property Search — combobox behavior", () => {
-  test.describe.configure({ mode: "serial" });
   test.setTimeout(90_000);
 
   test("typing a hotel name returns local results and selecting one confirms the property", async ({
@@ -210,6 +209,28 @@ test.describe("Local Property Search — combobox behavior", () => {
   }) => {
     const chains = await adminRequest.get("/api/hotel-chains");
     const chain = (await chains.json())[0];
+
+    await isolatedUser.page.route(
+      (url) => url.pathname === "/api/geo/search",
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([
+            {
+              source: "places",
+              placeId: "mocked-place-1",
+              displayName: "Marriott Times Square",
+              city: "New York",
+              countryCode: "US",
+              address: "1535 Broadway",
+              latitude: 40.758,
+              longitude: -73.985,
+            },
+          ]),
+        });
+      }
+    );
 
     await isolatedUser.page.goto("/bookings/new");
     await expect(isolatedUser.page.getByTestId("hotel-chain-select")).toBeVisible();
@@ -273,6 +294,28 @@ test.describe("Local Property Search — combobox behavior", () => {
   test("apartment search skips local and shows Places results directly", async ({
     isolatedUser,
   }) => {
+    await isolatedUser.page.route(
+      (url) => url.pathname === "/api/geo/search",
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([
+            {
+              source: "places",
+              placeId: "mocked-place-2",
+              displayName: "123 Main Street, Chicago",
+              city: "Chicago",
+              countryCode: "US",
+              address: "123 Main Street",
+              latitude: 41.878,
+              longitude: -87.629,
+            },
+          ]),
+        });
+      }
+    );
+
     await isolatedUser.page.goto("/bookings/new");
     await expect(isolatedUser.page.getByTestId("property-name-input")).toBeVisible();
     await expect(isolatedUser.page.getByTestId("accommodation-type-select")).toBeVisible();
