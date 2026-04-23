@@ -318,10 +318,14 @@ export function bookingFormReducer(state: BookingFormState, action: Action): Boo
     case "SET_PROPERTY_GEO":
       return {
         ...state,
-        propertyId: null, // will be resolved by API on submit
+        propertyId: action.result.source === "local" ? action.result.propertyId : null,
         propertyName: action.result.displayName,
-        placeId: action.result.placeId ?? null,
+        placeId: action.result.source === "places" ? (action.result.placeId ?? null) : null,
         geoConfirmed: true,
+        hotelChainId:
+          action.result.source === "local" && !state.hotelChainId
+            ? action.result.hotelChainId
+            : state.hotelChainId,
         countryCode: action.result.countryCode || null,
         city: action.result.city || null,
         address: action.result.address ?? null,

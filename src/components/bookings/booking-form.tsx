@@ -170,6 +170,7 @@ export function BookingForm({
     dispatch({
       type: "SET_PROPERTY_GEO",
       result: {
+        source: "places",
         placeId: null,
         displayName: manualPropertyName,
         countryCode: manualCountryCode,
