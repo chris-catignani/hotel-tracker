@@ -22,6 +22,19 @@ async function globalSetup(_config: FullConfig) {
     });
     console.log(pushOutput.toString());
 
+    const extensionOutput = execSync(
+      "npx prisma db execute --file prisma/migrations/20260423130000_add_pg_trgm_property_search/migration.sql --schema prisma/schema.prisma",
+      {
+        stdio: "pipe",
+        env: {
+          ...process.env,
+          DATABASE_URL: testDbUrl,
+          PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION: "yes, i consent to prisma dangerous actions",
+        },
+      }
+    );
+    console.log(extensionOutput.toString());
+
     const seedOutput = execSync("npm run db:seed:e2e", {
       stdio: "pipe",
       env: {
