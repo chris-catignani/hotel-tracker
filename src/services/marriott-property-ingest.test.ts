@@ -4,9 +4,9 @@ vi.mock("@/lib/prisma", () => ({
   __esModule: true,
   default: {
     property: {
-      update: vi.fn(),
+      upsert: vi.fn(),
       findFirst: vi.fn(),
-      create: vi.fn(),
+      update: vi.fn(),
     },
     hotelChainSubBrand: {
       upsert: vi.fn(),
@@ -70,9 +70,7 @@ describe("ingestMarriottProperties", () => {
 
   it("upserts active/bookable properties and skips filtered ones", async () => {
     (prisma.hotelChainSubBrand.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "sb1" });
-    (prisma.property.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
-    (prisma.property.create as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
-    (prisma.property.update as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
+    (prisma.property.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
 
     const fetchBrand = makeFetchBrand({
       RZ: makeBrandData([
@@ -88,16 +86,13 @@ describe("ingestMarriottProperties", () => {
     expect(result.skippedCount).toBe(2);
     expect(result.upsertedCount).toBe(1);
     expect(result.errors).toHaveLength(0);
-    expect(prisma.property.update).toHaveBeenCalledTimes(1);
+    expect(prisma.property.upsert).toHaveBeenCalledTimes(1);
   });
 
   it("pre-creates each unique sub-brand exactly once regardless of property count", async () => {
     (prisma.hotelChainSubBrand.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "sb1" });
-    (prisma.property.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
-    (prisma.property.create as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
-    (prisma.property.update as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
+    (prisma.property.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
 
-    // 3 RZ properties — sub-brand upsert should fire exactly once
     const fetchBrand = makeFetchBrand({
       RZ: makeBrandData([{ marsha_code: "P1" }, { marsha_code: "P2" }, { marsha_code: "P3" }]),
     });
@@ -114,8 +109,7 @@ describe("ingestMarriottProperties", () => {
 
   it("records per-property upsert errors without aborting the run", async () => {
     (prisma.hotelChainSubBrand.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "sb1" });
-    (prisma.property.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
-    (prisma.property.create as ReturnType<typeof vi.fn>).mockRejectedValue(
+    (prisma.property.upsert as ReturnType<typeof vi.fn>).mockRejectedValue(
       new Error("DB connection lost")
     );
 
@@ -132,9 +126,7 @@ describe("ingestMarriottProperties", () => {
 
   it("respects the limit option — slices total property list before upserting", async () => {
     (prisma.hotelChainSubBrand.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "sb1" });
-    (prisma.property.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
-    (prisma.property.create as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
-    (prisma.property.update as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
+    (prisma.property.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
 
     const fetchBrand = makeFetchBrand({
       RZ: makeBrandData([
@@ -150,17 +142,13 @@ describe("ingestMarriottProperties", () => {
 
     expect(result.fetchedCount).toBe(2);
     expect(result.upsertedCount).toBe(2);
-    expect(prisma.property.update).toHaveBeenCalledTimes(2);
+    expect(prisma.property.upsert).toHaveBeenCalledTimes(2);
   });
 
   it("returns correct counts in IngestResult", async () => {
     (prisma.hotelChainSubBrand.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "sb1" });
-    (prisma.property.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
-    (prisma.property.create as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
-    (prisma.property.update as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
+    (prisma.property.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
 
-    // RZ: 1 active+bookable, 1 pre-opening (status P) → skipped
-    // MC: 1 active+bookable
     const fetchBrand = makeFetchBrand({
       RZ: makeBrandData([
         { marsha_code: "P1", status: "A", bookable: true },
@@ -173,19 +161,16 @@ describe("ingestMarriottProperties", () => {
 
     expect(result.sweptCount).toBe(676);
     expect(result.activeBrandCount).toBe(2);
-    expect(result.fetchedCount).toBe(2); // 1 (RZ) + 1 (MC), after status filter
-    expect(result.skippedCount).toBe(1); // the P-status one from RZ
+    expect(result.fetchedCount).toBe(2);
+    expect(result.skippedCount).toBe(1);
     expect(result.upsertedCount).toBe(2);
     expect(result.errors).toHaveLength(0);
   });
 
   it("includes fetch-level errors from fetchAllBrands in result errors", async () => {
     (prisma.hotelChainSubBrand.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "sb1" });
-    (prisma.property.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
-    (prisma.property.create as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
-    (prisma.property.update as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
+    (prisma.property.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
 
-    // This fetchBrand throws for "RZ" — fetchAllBrands will add that to its errors[]
     const fetchBrand = async (code: string): Promise<unknown | null> => {
       if (code === "RZ") throw new Error("HTTP 503");
       return null;
@@ -200,9 +185,7 @@ describe("ingestMarriottProperties", () => {
 
   it("processes all properties across multiple batches when batchSize is small", async () => {
     (prisma.hotelChainSubBrand.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "sb1" });
-    (prisma.property.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
-    (prisma.property.create as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
-    (prisma.property.update as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
+    (prisma.property.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
 
     const fetchBrand = makeFetchBrand({
       RZ: makeBrandData([
@@ -214,11 +197,30 @@ describe("ingestMarriottProperties", () => {
       ]),
     });
 
-    // batchSize: 2 forces 3 batches for 5 properties
     const result = await ingestMarriottProperties({ fetchBrand, sleepMs: 0, batchSize: 2 });
 
     expect(result.upsertedCount).toBe(5);
-    expect(prisma.property.update).toHaveBeenCalledTimes(5);
+    expect(prisma.property.upsert).toHaveBeenCalledTimes(5);
     expect(result.errors).toHaveLength(0);
+  });
+
+  it("upserts by chainPropertyId key and includes name in update arm", async () => {
+    (prisma.hotelChainSubBrand.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "sb1" });
+    (prisma.property.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
+
+    const fetchBrand = makeFetchBrand({
+      RZ: makeBrandData([{ marsha_code: "TESTM" }]),
+    });
+
+    await ingestMarriottProperties({ fetchBrand, sleepMs: 0 });
+
+    expect(prisma.property.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          hotelChainId_chainPropertyId: expect.objectContaining({ chainPropertyId: "TESTM" }),
+        },
+        update: expect.objectContaining({ name: "Hotel TESTM" }),
+      })
+    );
   });
 });
