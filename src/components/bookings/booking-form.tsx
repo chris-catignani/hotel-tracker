@@ -487,6 +487,7 @@ export function BookingForm({
                 confirmed={geoConfirmed}
                 countryCode={countryCode}
                 city={city}
+                hotelChainId={isHotel ? hotelChainId || null : null}
                 onValueChange={(val) =>
                   dispatch({ type: "SET_FIELD", field: "propertyName", value: val })
                 }

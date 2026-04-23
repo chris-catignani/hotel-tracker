@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Input } from "@/components/ui/input";
-import { GeoResult } from "@/lib/types";
+import { GeoResult, LocalPropertyResult, PlacesResult } from "@/lib/types";
 import { countryName } from "@/lib/countries";
 import { cn } from "@/lib/utils";
-import { MapPin, X, HelpCircle } from "lucide-react";
+import { MapPin, X, HelpCircle, Search } from "lucide-react";
 
 interface PropertyNameComboboxProps {
   id?: string;
@@ -13,6 +13,7 @@ interface PropertyNameComboboxProps {
   confirmed: boolean;
   countryCode: string | null;
   city: string | null;
+  hotelChainId?: string | null;
   onValueChange: (value: string) => void;
   onGeoSelect: (result: GeoResult) => void;
   onManualEdit: () => void;
@@ -30,6 +31,7 @@ export function PropertyNameCombobox({
   confirmed,
   countryCode,
   city,
+  hotelChainId,
   onValueChange,
   onGeoSelect,
   onManualEdit,
@@ -41,28 +43,110 @@ export function PropertyNameCombobox({
   "data-testid": testId,
 }: PropertyNameComboboxProps) {
   const [suggestions, setSuggestions] = useState<GeoResult[]>([]);
+  const [searchMode, setSearchMode] = useState<"local" | "places">("local");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [searchError, setSearchError] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const fetchSuggestions = useCallback(async (query: string, type?: string) => {
-    if (query.trim().length < 3) {
-      setSuggestions([]);
-      setOpen(false);
+  const isApartment = accommodationType === "apartment";
+
+  const fetchLocalSuggestions = useCallback(
+    async (query: string) => {
+      if (query.trim().length < 3) {
+        setSuggestions([]);
+        setOpen(false);
+        setSearchError(false);
+        return;
+      }
+      setLoading(true);
       setSearchError(false);
-      return;
-    }
+      try {
+        const url = new URL("/api/geo/search/local", window.location.origin);
+        url.searchParams.set("q", query);
+        if (hotelChainId) url.searchParams.set("hotelChainId", hotelChainId);
+        const res = await fetch(url.toString());
+        if (res.ok) {
+          const data: LocalPropertyResult[] = await res.json();
+          setSuggestions(data);
+        } else {
+          setSuggestions([]);
+          setSearchError(true);
+        }
+      } catch {
+        setSuggestions([]);
+        setSearchError(true);
+      } finally {
+        setLoading(false);
+        setOpen(true);
+      }
+    },
+    [hotelChainId]
+  );
+
+  const fetchPlacesSuggestions = useCallback(
+    async (query: string) => {
+      if (query.trim().length < 3) {
+        setSuggestions([]);
+        setOpen(false);
+        setSearchError(false);
+        return;
+      }
+      setLoading(true);
+      setSearchError(false);
+      try {
+        const url = new URL("/api/geo/search", window.location.origin);
+        url.searchParams.set("q", query);
+        if (accommodationType) url.searchParams.set("accommodationType", accommodationType);
+        const res = await fetch(url.toString());
+        if (res.ok) {
+          const data: PlacesResult[] = await res.json();
+          setSuggestions(data);
+          setOpen(true);
+        } else {
+          setSuggestions([]);
+          setSearchError(true);
+          setOpen(false);
+        }
+      } catch {
+        setSuggestions([]);
+        setSearchError(true);
+        setOpen(false);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [accommodationType]
+  );
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    onValueChange(newValue);
+    onManualEdit();
+    setSearchMode("local");
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      if (isApartment) {
+        fetchPlacesSuggestions(newValue);
+      } else {
+        fetchLocalSuggestions(newValue);
+      }
+    }, 300);
+  };
+
+  const handleSearchMore = async () => {
+    setSearchMode("places");
     setLoading(true);
     setSearchError(false);
     try {
       const url = new URL("/api/geo/search", window.location.origin);
-      url.searchParams.set("q", query);
-      if (type) url.searchParams.set("accommodationType", type);
+      url.searchParams.set("q", value);
+      url.searchParams.set("accommodationType", "hotel");
       const res = await fetch(url.toString());
       if (res.ok) {
-        const data: GeoResult[] = await res.json();
+        const data: PlacesResult[] = await res.json();
         setSuggestions(data);
         setOpen(true);
       } else {
@@ -77,17 +161,6 @@ export function PropertyNameCombobox({
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    onValueChange(newValue);
-    onManualEdit();
-
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      fetchSuggestions(newValue, accommodationType);
-    }, 300);
   };
 
   const handleSelect = (result: GeoResult) => {
@@ -110,6 +183,12 @@ export function PropertyNameCombobox({
     };
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
   }, []);
 
   // Confirmed state: read-only display with reset button
@@ -149,7 +228,6 @@ export function PropertyNameCombobox({
     );
   }
 
-  // Unconfirmed state: search input with dropdown
   const showDropdown = open && value.trim().length >= 3;
 
   return (
@@ -163,7 +241,9 @@ export function PropertyNameCombobox({
         data-testid={testId}
         autoComplete="off"
         onFocus={() => {
-          if (value.trim().length >= 3 && suggestions.length > 0) setOpen(true);
+          if (value.trim().length >= 3 && (searchMode === "local" || suggestions.length > 0)) {
+            setOpen(true);
+          }
         }}
       />
       {loading && (
@@ -171,12 +251,10 @@ export function PropertyNameCombobox({
           <div className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
         </div>
       )}
-      {searchError && (
+      {searchError && searchMode === "places" && (
         <p className="mt-1 text-sm text-destructive">
           Property search unavailable — use &ldquo;
-          {accommodationType === "apartment"
-            ? "Can\u2019t find your rental?"
-            : "Can\u2019t find your hotel?"}
+          {isApartment ? "Can\u2019t find your rental?" : "Can\u2019t find your hotel?"}
           &rdquo; to enter details manually.
         </p>
       )}
@@ -204,20 +282,33 @@ export function PropertyNameCombobox({
               </div>
             </button>
           ))}
-          <button
-            type="button"
-            className="flex w-full items-center gap-2 border-t px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer"
-            onMouseDown={(e) => {
-              e.preventDefault();
-              handleCantFind();
-            }}
-            data-testid="geo-cant-find"
-          >
-            <HelpCircle className="h-4 w-4 shrink-0" />
-            {accommodationType === "apartment"
-              ? "Can\u2019t find your rental?"
-              : "Can\u2019t find your hotel?"}
-          </button>
+          {!isApartment && searchMode === "local" ? (
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 border-t px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                handleSearchMore();
+              }}
+              data-testid="geo-search-more"
+            >
+              <Search className="h-4 w-4 shrink-0" />
+              Search more...
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 border-t px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                handleCantFind();
+              }}
+              data-testid="geo-cant-find"
+            >
+              <HelpCircle className="h-4 w-4 shrink-0" />
+              {isApartment ? "Can\u2019t find your rental?" : "Can\u2019t find your hotel?"}
+            </button>
+          )}
         </div>
       )}
     </div>
