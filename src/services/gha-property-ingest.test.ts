@@ -33,9 +33,9 @@ vi.mock("@/lib/prisma", () => ({
     property: {
       findMany: vi.fn(),
       updateMany: vi.fn(),
-      update: vi.fn(),
-      create: vi.fn(),
+      upsert: vi.fn(),
       findFirst: vi.fn(),
+      update: vi.fn(),
     },
     hotelChainSubBrand: {
       upsert: vi.fn(),
@@ -58,11 +58,8 @@ describe("ingestGhaProperties orchestration", () => {
       { id: "p2", chainUrlPath: "/anantara/stale", detailLastFetchedAt: stale },
     ]);
     (prisma.property.updateMany as ReturnType<typeof vi.fn>).mockResolvedValue({ count: 2 });
-    (prisma.property.update as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p2" });
-    (prisma.property.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p2" });
-    (prisma.hotelChainSubBrand.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({
-      id: "sb1",
-    });
+    (prisma.property.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p2" });
+    (prisma.hotelChainSubBrand.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "sb1" });
 
     const html = `<script id="__NEXT_DATA__" type="application/json">${JSON.stringify({
       props: {
@@ -91,7 +88,6 @@ describe("ingestGhaProperties orchestration", () => {
       requestDelayMs: 0,
     });
 
-    // Only /anantara/stale and /anantara/new should be fetched — /anantara/fresh is fresh.
     expect(fetchHtml).toHaveBeenCalledTimes(2);
     expect(fetchHtml).toHaveBeenCalledWith("/anantara/stale");
     expect(fetchHtml).toHaveBeenCalledWith("/anantara/new");
@@ -117,5 +113,104 @@ describe("ingestGhaProperties orchestration", () => {
     expect(result.fetchedCount).toBe(0);
     expect(result.skippedCount).toBe(1);
     expect(result.errors).toHaveLength(0);
+  });
+
+  it("upserts by chainUrlPath key and includes name in update arm", async () => {
+    const now = new Date("2026-04-20T00:00:00Z");
+
+    (prisma.property.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (prisma.property.updateMany as ReturnType<typeof vi.fn>).mockResolvedValue({ count: 0 });
+    (prisma.property.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
+    (prisma.hotelChainSubBrand.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "sb1" });
+
+    const html = `<script id="__NEXT_DATA__" type="application/json">${JSON.stringify({
+      props: {
+        pageProps: {
+          page: {
+            name: "Canonical Hotel Name",
+            zipCode: null,
+            _info: { id: 999 },
+            location: { address: "addr", latitude: 1, longitude: 2 },
+            city: {
+              name: "City",
+              _location: { parentLocation: { content: { name: "Italy" } } },
+            },
+            categories: [],
+          },
+        },
+      },
+    })}</script>`;
+
+    await ingestGhaProperties({
+      harvest: async () => ["/sub-brand/canonical-hotel"],
+      fetchHtml: vi.fn().mockResolvedValue(html),
+      now,
+      requestDelayMs: 0,
+    });
+
+    expect(prisma.property.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          hotelChainId_chainUrlPath: expect.objectContaining({
+            chainUrlPath: "/sub-brand/canonical-hotel",
+          }),
+        },
+        update: expect.objectContaining({ name: "Canonical Hotel Name" }),
+      })
+    );
+  });
+
+  it("falls back to name-lookup when upsert hits P2002 (user row with canonical name)", async () => {
+    const now = new Date("2026-04-20T00:00:00Z");
+    const { Prisma } = await import("@prisma/client");
+    const p2002 = new Prisma.PrismaClientKnownRequestError("Unique constraint failed", {
+      code: "P2002",
+      clientVersion: "6.0.0",
+      meta: { target: ["hotel_chain_id", "chain_url_path"] },
+    });
+
+    (prisma.property.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (prisma.property.updateMany as ReturnType<typeof vi.fn>).mockResolvedValue({ count: 0 });
+    (prisma.property.upsert as ReturnType<typeof vi.fn>).mockRejectedValue(p2002);
+    (prisma.property.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "existing-1" });
+    (prisma.property.update as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "existing-1" });
+    (prisma.hotelChainSubBrand.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "sb1" });
+
+    const html = `<script id="__NEXT_DATA__" type="application/json">${JSON.stringify({
+      props: {
+        pageProps: {
+          page: {
+            name: "Canonical Hotel Name",
+            zipCode: null,
+            _info: { id: 999 },
+            location: { address: "addr", latitude: 1, longitude: 2 },
+            city: {
+              name: "City",
+              _location: { parentLocation: { content: { name: "Italy" } } },
+            },
+            categories: [],
+          },
+        },
+      },
+    })}</script>`;
+
+    const result = await ingestGhaProperties({
+      harvest: async () => ["/sub-brand/canonical-hotel"],
+      fetchHtml: vi.fn().mockResolvedValue(html),
+      now,
+      requestDelayMs: 0,
+    });
+
+    expect(prisma.property.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ name: "Canonical Hotel Name" }) })
+    );
+    expect(prisma.property.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "existing-1" },
+        data: expect.objectContaining({ chainUrlPath: "/sub-brand/canonical-hotel" }),
+      })
+    );
+    expect(result.errors).toHaveLength(0);
+    expect(result.upsertedCount).toBe(1);
   });
 });

@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { HOTEL_ID } from "@/lib/constants";
@@ -5,7 +6,6 @@ import { harvestGhaSitemap } from "@/lib/scrapers/gha/sitemap-harvest";
 import { parseGhaPropertyNextData } from "@/lib/scrapers/gha/next-data-parser";
 import { GHA_SUB_BRAND_SLUGS, subBrandNameForSlug } from "@/lib/scrapers/gha/sub-brand-slugs";
 import { withRetry, sleep } from "@/lib/retry";
-import { findOrCreateProperty } from "./property-utils";
 
 export const STALE_AFTER_DAYS = 180;
 
@@ -137,36 +137,62 @@ export async function ingestGhaProperties(opts: IngestOptions = {}): Promise<Ing
         subBrandCache.set(parsed.subBrandSlug, subBrandId);
       }
 
-      const propertyId = await findOrCreateProperty({
-        propertyName: parsed.name,
-        hotelChainId,
-        countryCode: parsed.countryCode,
-        city: parsed.city,
-        address: parsed.address,
-        latitude: parsed.latitude,
-        longitude: parsed.longitude,
-        chainPropertyId: parsed.chainPropertyId,
-        chainUrlPath: parsed.chainUrlPath,
-        chainCategories: parsed.chainCategories,
-        detailLastFetchedAt: now,
-        lastSeenAt: now,
-      });
-
-      await prisma.property.update({
-        where: { id: propertyId },
-        data: {
-          countryCode: parsed.countryCode,
-          city: parsed.city,
-          address: parsed.address,
-          latitude: parsed.latitude,
-          longitude: parsed.longitude,
-          chainPropertyId: parsed.chainPropertyId,
-          chainUrlPath: parsed.chainUrlPath,
-          chainCategories: parsed.chainCategories,
-          detailLastFetchedAt: now,
-          lastSeenAt: now,
-        },
-      });
+      try {
+        await prisma.property.upsert({
+          where: { hotelChainId_chainUrlPath: { hotelChainId, chainUrlPath: parsed.chainUrlPath } },
+          update: {
+            name: parsed.name,
+            countryCode: parsed.countryCode,
+            city: parsed.city,
+            address: parsed.address,
+            latitude: parsed.latitude,
+            longitude: parsed.longitude,
+            chainPropertyId: parsed.chainPropertyId,
+            chainCategories: parsed.chainCategories,
+            detailLastFetchedAt: now,
+            lastSeenAt: now,
+          },
+          create: {
+            name: parsed.name,
+            hotelChainId,
+            countryCode: parsed.countryCode,
+            city: parsed.city,
+            address: parsed.address,
+            latitude: parsed.latitude,
+            longitude: parsed.longitude,
+            chainPropertyId: parsed.chainPropertyId,
+            chainUrlPath: parsed.chainUrlPath,
+            chainCategories: parsed.chainCategories,
+            detailLastFetchedAt: now,
+            lastSeenAt: now,
+          },
+        });
+      } catch (upsertErr) {
+        if (
+          !(upsertErr instanceof Prisma.PrismaClientKnownRequestError && upsertErr.code === "P2002")
+        ) {
+          throw upsertErr;
+        }
+        const existing = await prisma.property.findFirst({
+          where: { name: parsed.name, hotelChainId },
+        });
+        if (!existing) throw upsertErr;
+        await prisma.property.update({
+          where: { id: existing.id },
+          data: {
+            chainUrlPath: parsed.chainUrlPath,
+            chainPropertyId: parsed.chainPropertyId,
+            chainCategories: parsed.chainCategories,
+            countryCode: parsed.countryCode,
+            city: parsed.city,
+            address: parsed.address,
+            latitude: parsed.latitude,
+            longitude: parsed.longitude,
+            detailLastFetchedAt: now,
+            lastSeenAt: now,
+          },
+        });
+      }
 
       upsertedCount++;
     } catch (err) {
