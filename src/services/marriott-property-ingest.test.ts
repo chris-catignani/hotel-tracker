@@ -93,6 +93,7 @@ describe("ingestMarriottProperties", () => {
     (prisma.hotelChainSubBrand.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "sb1" });
     (prisma.property.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
 
+    // 3 RZ properties — sub-brand upsert should fire exactly once
     const fetchBrand = makeFetchBrand({
       RZ: makeBrandData([{ marsha_code: "P1" }, { marsha_code: "P2" }, { marsha_code: "P3" }]),
     });
@@ -149,6 +150,8 @@ describe("ingestMarriottProperties", () => {
     (prisma.hotelChainSubBrand.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "sb1" });
     (prisma.property.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
 
+    // RZ: 1 active+bookable, 1 pre-opening (status P) → skipped
+    // MC: 1 active+bookable
     const fetchBrand = makeFetchBrand({
       RZ: makeBrandData([
         { marsha_code: "P1", status: "A", bookable: true },
@@ -161,8 +164,8 @@ describe("ingestMarriottProperties", () => {
 
     expect(result.sweptCount).toBe(676);
     expect(result.activeBrandCount).toBe(2);
-    expect(result.fetchedCount).toBe(2);
-    expect(result.skippedCount).toBe(1);
+    expect(result.fetchedCount).toBe(2); // 1 (RZ) + 1 (MC), after status filter
+    expect(result.skippedCount).toBe(1); // the P-status one from RZ
     expect(result.upsertedCount).toBe(2);
     expect(result.errors).toHaveLength(0);
   });
