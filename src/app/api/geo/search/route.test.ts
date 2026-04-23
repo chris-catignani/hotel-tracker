@@ -11,9 +11,9 @@ vi.mock("@/lib/logger", () => ({ logger: { info: vi.fn() } }));
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
 import { auth } from "@/auth";
 
-const mockSearchProperties = vi.hoisted(() => vi.fn().mockResolvedValue([]));
+const mockSearchPlaces = vi.hoisted(() => vi.fn().mockResolvedValue([]));
 vi.mock("@/services/geo-lookup", () => ({
-  searchProperties: mockSearchProperties,
+  searchPlaces: mockSearchPlaces,
 }));
 
 function authed() {
@@ -32,13 +32,13 @@ describe("GET /api/geo/search — isHotel flag", () => {
   it("passes isHotel=false when accommodationType param is omitted", async () => {
     const req = new NextRequest("http://localhost/api/geo/search?q=paris");
     await GET(req);
-    expect(mockSearchProperties).toHaveBeenCalledWith("paris", false);
+    expect(mockSearchPlaces).toHaveBeenCalledWith("paris", false);
   });
 
   it("passes isHotel=true when accommodationType=hotel", async () => {
     const req = new NextRequest("http://localhost/api/geo/search?q=paris&accommodationType=hotel");
     await GET(req);
-    expect(mockSearchProperties).toHaveBeenCalledWith("paris", true);
+    expect(mockSearchPlaces).toHaveBeenCalledWith("paris", true);
   });
 
   it("passes isHotel=false when accommodationType=apartment", async () => {
@@ -46,7 +46,7 @@ describe("GET /api/geo/search — isHotel flag", () => {
       "http://localhost/api/geo/search?q=paris&accommodationType=apartment"
     );
     await GET(req);
-    expect(mockSearchProperties).toHaveBeenCalledWith("paris", false);
+    expect(mockSearchPlaces).toHaveBeenCalledWith("paris", false);
   });
 
   it("returns empty array when query is shorter than 3 chars", async () => {
@@ -54,6 +54,6 @@ describe("GET /api/geo/search — isHotel flag", () => {
     const res = await GET(req);
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual([]);
-    expect(mockSearchProperties).not.toHaveBeenCalled();
+    expect(mockSearchPlaces).not.toHaveBeenCalled();
   });
 });

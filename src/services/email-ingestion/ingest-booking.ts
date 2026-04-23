@@ -1,6 +1,6 @@
 import prisma from "@/lib/prisma";
 import { findOrCreateProperty } from "@/services/property-utils";
-import { searchProperties } from "@/services/geo-lookup";
+import { searchPlaces } from "@/services/geo-lookup";
 import { resolveBookingFinancials } from "@/services/booking-financials";
 import { runPostBookingCreate } from "@/services/booking.service";
 import { matchSubBrand } from "@/services/email-ingestion/email-parser";
@@ -79,7 +79,7 @@ export async function ingestBookingFromEmail(
   // Hotels: geocode by property name with lodging type filter.
   const isHotel = (parsed.accommodationType ?? "hotel") !== "apartment";
   const geoQuery = isHotel ? parsed.propertyName : (parsed.propertyAddress ?? parsed.propertyName);
-  const geoResults = await searchProperties(geoQuery, isHotel);
+  const geoResults = await searchPlaces(geoQuery, isHotel);
   const geo = geoResults[0] ?? null;
 
   // Resolve property

@@ -39,7 +39,7 @@ vi.mock("@/services/property-utils", () => ({
   findOrCreateProperty: vi.fn().mockResolvedValue("prop-123"),
 }));
 vi.mock("@/services/geo-lookup", () => ({
-  searchProperties: vi.fn().mockResolvedValue([]),
+  searchPlaces: vi.fn().mockResolvedValue([]),
 }));
 vi.mock("@/lib/loyalty-utils", () => ({
   calculatePoints: vi.fn().mockReturnValue(1200),
@@ -276,11 +276,12 @@ describe("ingestBookingFromEmail", () => {
     expect(data.accommodationType).toBe("apartment");
   });
 
-  it("geo-enriches the property using searchProperties and passes geo fields to findOrCreateProperty", async () => {
-    const { searchProperties } = await import("@/services/geo-lookup");
+  it("geo-enriches the property using searchPlaces and passes geo fields to findOrCreateProperty", async () => {
+    const { searchPlaces } = await import("@/services/geo-lookup");
     const { findOrCreateProperty } = await import("@/services/property-utils");
-    vi.mocked(searchProperties).mockResolvedValueOnce([
+    vi.mocked(searchPlaces).mockResolvedValueOnce([
       {
+        source: "places",
         placeId: "gplace-123",
         displayName: "Kimpton Margot Sydney",
         city: "Sydney",
@@ -293,7 +294,7 @@ describe("ingestBookingFromEmail", () => {
 
     await ingestBookingFromEmail(baseParsed, "user-1", null);
 
-    expect(searchProperties).toHaveBeenCalledWith(baseParsed.propertyName, true);
+    expect(searchPlaces).toHaveBeenCalledWith(baseParsed.propertyName, true);
     expect(findOrCreateProperty).toHaveBeenCalledWith(
       expect.objectContaining({
         propertyName: "Kimpton Margot Sydney",
@@ -316,24 +317,24 @@ describe("ingestBookingFromEmail", () => {
   });
 
   it("uses propertyAddress (not propertyName) for apartment geo lookup", async () => {
-    const { searchProperties } = await import("@/services/geo-lookup");
+    const { searchPlaces } = await import("@/services/geo-lookup");
     const address = "135 Hallenstein Street, Queenstown 9300, New Zealand";
     await ingestBookingFromEmail(
       { ...baseParsed, accommodationType: "apartment", propertyAddress: address },
       "user-1",
       null
     );
-    expect(searchProperties).toHaveBeenCalledWith(address, false);
+    expect(searchPlaces).toHaveBeenCalledWith(address, false);
   });
 
   it("falls back to propertyName for apartment geo lookup when propertyAddress is null", async () => {
-    const { searchProperties } = await import("@/services/geo-lookup");
+    const { searchPlaces } = await import("@/services/geo-lookup");
     await ingestBookingFromEmail(
       { ...baseParsed, accommodationType: "apartment", propertyAddress: null },
       "user-1",
       null
     );
-    expect(searchProperties).toHaveBeenCalledWith(baseParsed.propertyName, false);
+    expect(searchPlaces).toHaveBeenCalledWith(baseParsed.propertyName, false);
   });
 
   it("sets bookingSource to ota and resolves otaAgencyId when otaAgencyName is provided", async () => {

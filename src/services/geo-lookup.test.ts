@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { GeoResult } from "@/lib/types";
+import { LocalPropertyResult, PlacesResult } from "@/lib/types";
 
 vi.mock("@/lib/prisma", () => ({
   default: {
+    $queryRaw: vi.fn(),
     geoCache: {
       findUnique: vi.fn(),
       upsert: vi.fn(),
@@ -11,10 +12,11 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 import prisma from "@/lib/prisma";
-import { searchProperties } from "@/services/geo-lookup";
+import { searchPlaces, searchLocalProperties } from "@/services/geo-lookup";
 
 const mockFindUnique = vi.mocked(prisma.geoCache.findUnique);
 const mockUpsert = vi.mocked(prisma.geoCache.upsert);
+const mockQueryRaw = vi.mocked(prisma.$queryRaw);
 
 const GOOGLE_RESPONSE = {
   places: [
@@ -29,7 +31,8 @@ const GOOGLE_RESPONSE = {
   ],
 };
 
-const EXPECTED_RESULT: GeoResult = {
+const EXPECTED_PLACES_RESULT: PlacesResult = {
+  source: "places",
   placeId: null,
   displayName: "Marriott Times Square",
   city: "New York",
@@ -39,7 +42,7 @@ const EXPECTED_RESULT: GeoResult = {
   longitude: -73.9855,
 };
 
-describe("searchProperties", () => {
+describe("searchPlaces", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mockUpsert.mockResolvedValue({} as never);
@@ -47,7 +50,7 @@ describe("searchProperties", () => {
   });
 
   it("returns empty array for short queries", async () => {
-    const result = await searchProperties("ab");
+    const result = await searchPlaces("ab");
     expect(result).toEqual([]);
     expect(mockFindUnique).not.toHaveBeenCalled();
   });
@@ -56,12 +59,12 @@ describe("searchProperties", () => {
     mockFindUnique.mockResolvedValue({
       id: 1,
       queryKey: "marriott times",
-      results: [EXPECTED_RESULT],
+      results: [EXPECTED_PLACES_RESULT],
       resolvedAt: new Date(),
     } as never);
 
-    const results = await searchProperties("Marriott Times");
-    expect(results).toEqual([EXPECTED_RESULT]);
+    const results = await searchPlaces("Marriott Times");
+    expect(results).toEqual([EXPECTED_PLACES_RESULT]);
     expect(mockFindUnique).toHaveBeenCalledWith({ where: { queryKey: "marriott times" } });
   });
 
@@ -74,7 +77,7 @@ describe("searchProperties", () => {
     });
     vi.stubGlobal("fetch", mockFetch);
 
-    const results = await searchProperties("Marriott Times Square");
+    const results = await searchPlaces("Marriott Times Square");
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("places.googleapis.com"),
@@ -87,6 +90,7 @@ describe("searchProperties", () => {
     expect(results[0].displayName).toBe("Marriott Times Square");
     expect(results[0].countryCode).toBe("US");
     expect(results[0].city).toBe("New York");
+    expect(results[0].source).toBe("places");
     expect(mockUpsert).toHaveBeenCalled();
   });
 
@@ -99,7 +103,7 @@ describe("searchProperties", () => {
     });
     vi.stubGlobal("fetch", mockFetch);
 
-    await searchProperties("Park Hyatt Kuala Lumpur");
+    await searchPlaces("Park Hyatt Kuala Lumpur");
 
     const body = JSON.parse(mockFetch.mock.calls[0][1].body);
     expect(body.includedType).toBe("lodging");
@@ -136,7 +140,7 @@ describe("searchProperties", () => {
       })
     );
 
-    const results = await searchProperties("Park Hyatt");
+    const results = await searchPlaces("Park Hyatt");
     expect(results[0].countryCode).toBe("MY");
     expect(results[1].countryCode).toBe("SG");
   });
@@ -148,7 +152,7 @@ describe("searchProperties", () => {
       vi.fn().mockResolvedValue({ ok: false, status: 403, statusText: "Forbidden" })
     );
 
-    const results = await searchProperties("Marriott Times Square");
+    const results = await searchPlaces("Marriott Times Square");
     expect(results).toEqual([]);
   });
 
@@ -156,7 +160,7 @@ describe("searchProperties", () => {
     vi.stubEnv("GOOGLE_PLACES_API_KEY", "");
     mockFindUnique.mockResolvedValue(null);
 
-    const results = await searchProperties("Marriott Times Square");
+    const results = await searchPlaces("Marriott Times Square");
     expect(results).toEqual([]);
   });
 
@@ -164,7 +168,7 @@ describe("searchProperties", () => {
     mockFindUnique.mockResolvedValue(null);
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) }));
 
-    const results = await searchProperties("xyzzy hotel nonexistent");
+    const results = await searchPlaces("xyzzy hotel nonexistent");
     expect(results).toEqual([]);
   });
 
@@ -190,8 +194,75 @@ describe("searchProperties", () => {
       })
     );
 
-    const results = await searchProperties("Some Country Hotel Surrey");
+    const results = await searchPlaces("Some Country Hotel Surrey");
     expect(results[0].city).toBe("Surrey");
     expect(results[0].countryCode).toBe("GB");
+  });
+});
+
+describe("searchLocalProperties", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  const DB_ROW = {
+    id: "prop-1",
+    name: "Hyatt Regency Chicago",
+    hotel_chain_id: "hyatt-chain-id",
+    city: "Chicago",
+    country_code: "US",
+    address: "151 E Wacker Dr, Chicago, IL 60601",
+    latitude: 41.8866,
+    longitude: -87.6209,
+  };
+
+  it("returns empty array for short queries", async () => {
+    const result = await searchLocalProperties("ab");
+    expect(result).toEqual([]);
+    expect(mockQueryRaw).not.toHaveBeenCalled();
+  });
+
+  it("returns LocalPropertyResult[] mapped from DB rows", async () => {
+    mockQueryRaw.mockResolvedValue([DB_ROW] as never);
+
+    const results = await searchLocalProperties("Hyatt Chicago");
+
+    expect(results).toHaveLength(1);
+    expect(results[0]).toEqual<LocalPropertyResult>({
+      source: "local",
+      propertyId: "prop-1",
+      hotelChainId: "hyatt-chain-id",
+      displayName: "Hyatt Regency Chicago",
+      city: "Chicago",
+      countryCode: "US",
+      address: "151 E Wacker Dr, Chicago, IL 60601",
+      latitude: 41.8866,
+      longitude: -87.6209,
+    });
+  });
+
+  it("returns empty array when DB returns no rows", async () => {
+    mockQueryRaw.mockResolvedValue([] as never);
+
+    const results = await searchLocalProperties("xyzzy nonexistent hotel");
+    expect(results).toEqual([]);
+  });
+
+  it("passes hotelChainId filter in the query when provided", async () => {
+    mockQueryRaw.mockResolvedValue([] as never);
+
+    await searchLocalProperties("Hyatt Chicago", "hyatt-chain-id");
+
+    expect(mockQueryRaw).toHaveBeenCalledTimes(1);
+    const callArg = mockQueryRaw.mock.calls[0];
+    expect(callArg).toBeDefined();
+  });
+
+  it("handles null city and country_code gracefully", async () => {
+    mockQueryRaw.mockResolvedValue([{ ...DB_ROW, city: null, country_code: null }] as never);
+
+    const results = await searchLocalProperties("Hyatt Chicago");
+    expect(results[0].city).toBe("");
+    expect(results[0].countryCode).toBe("");
   });
 });
