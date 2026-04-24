@@ -90,7 +90,7 @@ export async function ingestIhgProperties(opts: IngestOptions = {}): Promise<Ing
     const context = await browser.newContext();
     const page = await context.newPage();
 
-    // Phase 1: harvest mnemonics from IHG sitemap XML (no page navigation — fetch-only)
+    // Phase 1: harvest mnemonics from IHG sitemap XML
     const allMnemonics = await harvestMnemonicsFromSitemap(page);
     logger.info("ihg_ingest:mnemonics_discovered", { count: allMnemonics.size });
 

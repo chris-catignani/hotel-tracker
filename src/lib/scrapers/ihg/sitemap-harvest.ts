@@ -42,16 +42,16 @@ export async function harvestMnemonicsFromSitemap(page: Page): Promise<Set<strin
 
   const mnemonics = new Set<string>();
 
-  for (const sitemapUrl of brandSitemapUrls) {
-    try {
-      const xml = await fetchXml(page, sitemapUrl);
-      const hotelUrls = parseBrandSitemap(xml);
-      for (const hotelUrl of hotelUrls) {
-        const mnemonic = extractMnemonicFromUrl(hotelUrl);
-        if (mnemonic) mnemonics.add(mnemonic);
-      }
-    } catch (err) {
-      logger.error("ihg_ingest:sitemap_fetch_error", err, { sitemapUrl });
+  const results = await Promise.allSettled(brandSitemapUrls.map((url) => fetchXml(page, url)));
+  for (let i = 0; i < results.length; i++) {
+    const r = results[i];
+    if (r.status === "rejected") {
+      logger.error("ihg_ingest:sitemap_fetch_error", r.reason, { sitemapUrl: brandSitemapUrls[i] });
+      continue;
+    }
+    for (const hotelUrl of parseBrandSitemap(r.value)) {
+      const mnemonic = extractMnemonicFromUrl(hotelUrl);
+      if (mnemonic) mnemonics.add(mnemonic);
     }
   }
 
