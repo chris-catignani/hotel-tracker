@@ -11,8 +11,8 @@
 import { chromium } from "playwright";
 import { HOTEL_ID } from "../src/lib/constants";
 import type { FetchParams } from "../src/lib/price-fetcher";
-import type { MarriottSearchResponse } from "../src/lib/scrapers/marriott";
-import { MarriottFetcher } from "../src/lib/scrapers/marriott";
+import type { MarriottSearchResponse } from "../src/lib/scrapers/marriott/price-watch";
+import { MarriottFetcher } from "../src/lib/scrapers/marriott/price-watch";
 
 const marshaCode = (process.argv[2] ?? "ATLMQ").toUpperCase();
 const checkIn = process.argv[3] ?? "2026-05-01";
