@@ -321,8 +321,6 @@ describe("ingestGhaProperties orchestration", () => {
         latitude: 45.0,
         longitude: 9.0,
         chainPropertyId: "GHA123",
-        chainCategories: ["Luxury", "Business"],
-        detailLastFetchedAt: now,
       }),
       create: expect.objectContaining({
         name: "Grand Hotel",
@@ -334,8 +332,6 @@ describe("ingestGhaProperties orchestration", () => {
         latitude: 45.0,
         longitude: 9.0,
         chainPropertyId: "GHA123",
-        chainCategories: ["Luxury", "Business"],
-        detailLastFetchedAt: now,
       }),
     });
   });
