@@ -20,7 +20,6 @@ export interface AlternateCandidate {
   distanceMiles: number | null;
   hotelChainId: string | null;
   hotelChainName: string | null;
-  chainCategories: string[];
   isWatched: boolean;
   priceWatchId: string | null;
   cashThreshold: number | null;
@@ -92,7 +91,6 @@ export async function findAlternateCandidates(
       countryCode: true,
       hotelChainId: true,
       hotelChain: { select: { name: true } },
-      chainCategories: true,
     },
     orderBy: { id: "asc" },
     take: 500,
@@ -124,7 +122,6 @@ export async function findAlternateCandidates(
       distanceMiles: distance,
       hotelChainId: r.hotelChainId,
       hotelChainName: r.hotelChain?.name ?? null,
-      chainCategories: r.chainCategories,
     });
   }
 
