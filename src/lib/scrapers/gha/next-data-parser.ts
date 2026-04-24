@@ -12,7 +12,6 @@ export interface GhaParsedProperty {
   countryCode: string | null;
   unknownCountryName: string | null;
   zipCode: string | null;
-  chainCategories: string[];
 }
 
 const SCRIPT_RE = /<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/;
@@ -62,11 +61,6 @@ export function parseGhaPropertyNextData(html: string, urlPath: string): GhaPars
         _location?: unknown;
       }
     | undefined;
-  const categories = Array.isArray(page.categories)
-    ? (page.categories as { name?: unknown }[])
-        .map((c) => (typeof c.name === "string" ? c.name : null))
-        .filter((s): s is string => s !== null)
-    : [];
 
   const countryName = extractCountryName(city?._location);
   const countryCode = countryName ? countryNameToCode(countryName) : null;
@@ -83,6 +77,5 @@ export function parseGhaPropertyNextData(html: string, urlPath: string): GhaPars
     countryCode,
     unknownCountryName: countryName && countryCode === null ? countryName : null,
     zipCode: typeof page.zipCode === "string" ? page.zipCode : null,
-    chainCategories: categories,
   };
 }

@@ -23,7 +23,6 @@ describe("parseGhaPropertyNextData", () => {
             timezone: "Europe/Rome",
             _location: { parentLocation: { content: { name: "Italy" } } },
           },
-          categories: [{ name: "Ultratravel Collection" }, { name: "Green Collection" }],
         },
       },
     },
@@ -46,7 +45,6 @@ describe("parseGhaPropertyNextData", () => {
       countryCode: "IT",
       unknownCountryName: null,
       zipCode: "84011",
-      chainCategories: ["Ultratravel Collection", "Green Collection"],
     });
   });
 
