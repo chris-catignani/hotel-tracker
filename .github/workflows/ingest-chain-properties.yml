@@ -6,7 +6,7 @@ on:
   workflow_dispatch: # allow manual trigger
     inputs:
       chains:
-        description: "Comma-separated chains to ingest (e.g. gha, hyatt)"
+        description: "Comma-separated chains to ingest (e.g. gha, hyatt, ihg)"
         required: true
         default: "gha,marriott"
       runner:
@@ -65,7 +65,7 @@ jobs:
       - name: Run chain property ingest
         run: xvfb-run npx tsx src/workers/ingest-chain-properties.ts
         env:
-          CHAINS: ${{ github.event.inputs.chains || 'gha,marriott' }}
+          CHAINS: ${{ github.event.inputs.chains || 'gha,marriott,ihg' }}
           LIMIT: ${{ github.event.inputs.limit }}
           RUNNER_TYPE: remote
           DATABASE_URL: ${{ secrets.DATABASE_URL }}

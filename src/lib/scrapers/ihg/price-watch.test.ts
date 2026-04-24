@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { IhgFetcher, parseIhgRates } from "./ihg";
+import { IhgFetcher, parseIhgRates } from "./price-watch";
 import { lowestRefundableCash, lowestAward } from "@/lib/price-fetcher";
 import { HOTEL_ID } from "@/lib/constants";
 
