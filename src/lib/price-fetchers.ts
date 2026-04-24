@@ -2,7 +2,7 @@ import { createAccorFetcher } from "@/lib/scrapers/accor";
 import { createGhaFetcher } from "@/lib/scrapers/gha/price-watch";
 import { createHiltonFetcher } from "@/lib/scrapers/hilton";
 import { createHyattFetcher } from "@/lib/scrapers/hyatt/price-watch";
-import { createIhgFetcher } from "@/lib/scrapers/ihg";
+import { createIhgFetcher } from "@/lib/scrapers/ihg/price-watch";
 import { createMarriottFetcher } from "@/lib/scrapers/marriott";
 
 export const PRICE_FETCHER_FACTORIES = {
