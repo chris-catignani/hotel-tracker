@@ -4,18 +4,15 @@ import prisma from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { HOTEL_ID } from "@/lib/constants";
 import { sleep } from "@/lib/retry";
-import { discoverBrands } from "@/lib/scrapers/ihg/brand-registry";
-import { harvestMnemonics } from "@/lib/scrapers/ihg/brand-page";
+import { harvestMnemonicsFromSitemap } from "@/lib/scrapers/ihg/sitemap-harvest";
 import { fetchPropertyProfile } from "@/lib/scrapers/ihg/property-fetcher";
 import { parseIhgProfile, type IhgParsedProperty } from "@/lib/scrapers/ihg/property-parser";
 
-const DEFAULT_PAGE_SLEEP_MS = 1500;
 const DEFAULT_BATCH_SLEEP_MS = 2000;
 const DEFAULT_BATCH_SIZE = 50;
 
 export interface IngestOptions {
   browser?: Browser;
-  pageSleepMs?: number;
   batchSleepMs?: number;
   batchSize?: number;
   now?: Date;
@@ -75,14 +72,13 @@ async function upsertProperty(prop: IhgParsedProperty, now: Date): Promise<void>
 }
 
 export async function ingestIhgProperties(opts: IngestOptions = {}): Promise<IngestResult> {
-  const pageSleepMs = opts.pageSleepMs ?? DEFAULT_PAGE_SLEEP_MS;
   const batchSleepMs = opts.batchSleepMs ?? DEFAULT_BATCH_SLEEP_MS;
   const batchSize = opts.batchSize ?? DEFAULT_BATCH_SIZE;
   const now = opts.now ?? new Date();
   const hotelChainId = HOTEL_ID.IHG;
 
   const ownBrowser = !opts.browser;
-  const browser = opts.browser ?? (await chromium.launch());
+  const browser = opts.browser ?? (await chromium.launch({ headless: false }));
 
   const errors: string[] = [];
   let fetchedCount = 0;
@@ -94,25 +90,8 @@ export async function ingestIhgProperties(opts: IngestOptions = {}): Promise<Ing
     const context = await browser.newContext();
     const page = await context.newPage();
 
-    // Phase 1: dynamic brand discovery + mnemonic harvest
-    const brands = await discoverBrands(page);
-    logger.info("ihg_ingest:brands_discovered", { count: brands.length });
-
-    const allMnemonics = new Set<string>();
-    for (let i = 0; i < brands.length; i++) {
-      if (i > 0 && pageSleepMs > 0) await sleep(pageSleepMs);
-      try {
-        const mnemonics = await harvestMnemonics(page, brands[i], { pageSleepMs });
-        for (const m of mnemonics) allMnemonics.add(m);
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        errors.push(`brand ${brands[i].listingPath}: ${msg}`);
-        logger.error("ihg_ingest:brand_harvest_error", err, {
-          listingPath: brands[i].listingPath,
-        });
-      }
-    }
-
+    // Phase 1: harvest mnemonics from IHG sitemap XML (no page navigation — fetch-only)
+    const allMnemonics = await harvestMnemonicsFromSitemap(page);
     logger.info("ihg_ingest:mnemonics_discovered", { count: allMnemonics.size });
 
     // Phase 2: Profile API enrichment
