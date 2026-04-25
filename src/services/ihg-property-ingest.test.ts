@@ -139,6 +139,7 @@ describe("ingestIhgProperties", () => {
     expect(result.properties[0]).toMatchObject({
       name: "Hotel HERCT",
       chainPropertyId: "HERCT",
+      chainUrlPath: null,
       subBrandName: "InterContinental",
       countryCode: "US",
       city: "City",

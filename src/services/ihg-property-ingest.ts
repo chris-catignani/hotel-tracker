@@ -21,7 +21,7 @@ export async function ingestIhgProperties(opts: IngestOptions = {}): Promise<Cha
   const batchSize = opts.batchSize ?? DEFAULT_BATCH_SIZE;
 
   const ownBrowser = !opts.browser;
-  const browser = opts.browser ?? (await chromium.launch({ headless: false }));
+  const browser = opts.browser ?? (await chromium.launch({ headless: true }));
 
   const errors: string[] = [];
   let skippedCount = 0;
