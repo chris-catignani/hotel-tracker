@@ -126,7 +126,7 @@ describe("writeProperties", () => {
     expect(sql).toContain("chain_url_path = v.chain_url_path");
   });
 
-  it("returns upsertedCount equal to total properties across all batches", async () => {
+  it("returns processedCount equal to total properties across all batches", async () => {
     (prisma.hotelChainSubBrand.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "sb1" });
     (prisma.property.createMany as ReturnType<typeof vi.fn>).mockResolvedValue({ count: 2 });
     (prisma.$executeRawUnsafe as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
@@ -137,7 +137,7 @@ describe("writeProperties", () => {
       { conflictKey: "chainPropertyId" }
     );
 
-    expect(result.upsertedCount).toBe(2);
+    expect(result.processedCount).toBe(2);
     expect(result.errors).toHaveLength(0);
   });
 
@@ -182,6 +182,6 @@ describe("writeProperties", () => {
 
     expect(result.errors).toHaveLength(1);
     expect(result.errors[0]).toContain("batch[0]");
-    expect(result.upsertedCount).toBe(1);
+    expect(result.processedCount).toBe(1);
   });
 });

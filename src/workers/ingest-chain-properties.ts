@@ -55,18 +55,28 @@ function getChainConfig(chain: string): ChainConfig {
   }
 }
 
+interface ChainSummary {
+  chain: string;
+  durationMs: number;
+  fetchedCount: number;
+  skippedCount: number;
+  processedCount: number;
+  dbOperationCount: number;
+  errorCount: number;
+  errors: string[];
+}
+
 async function main() {
-  const chains = (process.env.CHAINS ?? "gha")
+  const chains = (process.env.CHAINS ?? "gha,hyatt,marriott,ihg")
     .split(",")
     .map((c) => c.trim())
     .filter(Boolean);
   const limit = process.env.LIMIT ? parseInt(process.env.LIMIT, 10) : undefined;
   console.log(`[IngestChainProperties] chains=${chains.join(",")} limit=${limit ?? "none"}`);
 
-  let exitCode = 0;
-  for (const chain of chains) {
-    const runStart = Date.now();
-    try {
+  const settled = await Promise.allSettled(
+    chains.map(async (chain): Promise<ChainSummary> => {
+      const runStart = Date.now();
       const config = getChainConfig(chain);
       const { properties, skippedCount, errors: fetchErrors } = await config.fetch(limit);
       const writeResult = await writeProperties(config.hotelChainId, properties, {
@@ -74,28 +84,34 @@ async function main() {
       });
       const durationMs = Date.now() - runStart;
       const allErrors = [...fetchErrors, ...writeResult.errors];
-      log.info("chain_property_ingest:completed", {
+      return {
         chain,
         durationMs,
         fetchedCount: properties.length,
         skippedCount,
-        upsertedCount: writeResult.upsertedCount,
+        processedCount: writeResult.processedCount,
         dbOperationCount: writeResult.dbOperationCount,
         errorCount: allErrors.length,
-      });
-      console.log(`[IngestChainProperties] ${chain} done in ${durationMs}ms`, {
-        fetchedCount: properties.length,
-        skippedCount,
-        upsertedCount: writeResult.upsertedCount,
-        dbOperationCount: writeResult.dbOperationCount,
         errors: allErrors,
-      });
-    } catch (error) {
-      console.error(`[IngestChainProperties] ${chain} ERROR:`, error);
-      Sentry.captureException(error);
+      };
+    })
+  );
+
+  let exitCode = 0;
+  const summary: Record<string, ChainSummary | { error: string }> = {};
+  for (const [i, result] of settled.entries()) {
+    if (result.status === "fulfilled") {
+      summary[result.value.chain] = result.value;
+    } else {
+      const error = result.reason instanceof Error ? result.reason.message : String(result.reason);
+      summary[chains[i]] = { error };
+      Sentry.captureException(result.reason);
       exitCode = 1;
     }
   }
+
+  log.info("chain_property_ingest:summary", summary);
+  console.log("[IngestChainProperties] summary", summary);
 
   await Promise.all([Sentry.flush(2000), log.flush()]);
   if (exitCode) process.exit(exitCode);
