@@ -14,7 +14,7 @@ on:
         required: true
         default: "remote"
       limit:
-        description: "Max properties to fetch page details for (omit for full run, gha only)"
+        description: "Max properties to fetch per chain (omit for full run)"
         required: false
         default: ""
 
