@@ -18,13 +18,13 @@ export async function ingestHyattProperties(opts: IngestOptions = {}): Promise<C
   let properties: ParsedProperty[] = parsed.properties.map((p) => ({
     name: p.name,
     chainPropertyId: p.chainPropertyId,
-    chainUrlPath: p.chainUrlPath ?? null,
+    chainUrlPath: p.chainUrlPath,
     countryCode: p.countryCode,
     city: p.city,
     address: p.address,
     latitude: p.latitude,
     longitude: p.longitude,
-    subBrandName: p.subBrandName ?? null,
+    subBrandName: p.subBrandName,
   }));
 
   if (opts.limit != null) properties = properties.slice(0, opts.limit);

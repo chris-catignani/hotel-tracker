@@ -74,6 +74,7 @@ describe("ingestHyattProperties", () => {
       address: "1 Main St",
       latitude: 40.0,
       longitude: -75.0,
+      subBrandName: "Hyatt Place",
     });
   });
 });
