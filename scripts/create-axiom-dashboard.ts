@@ -196,27 +196,30 @@ async function main() {
       type: "LogStream",
       name: "Chain Property Ingest Runs",
       query: q(
-        "where message == 'chain_property_ingest:completed'" +
-          " | project _time, ['fields.chain'], ['fields.harvestedCount'], ['fields.fetchedCount']," +
-          " ['fields.upsertedCount'], ['fields.skippedCount'], ['fields.durationMs']"
+        "where message == 'chain_property_ingest:summary'" +
+          " | project _time, ['fields.gha'], ['fields.hyatt'], ['fields.marriott'], ['fields.ihg']"
       ),
     },
     {
       id: "dir-ingest-upserted-over-time",
       type: "TimeSeries",
-      name: "Properties Upserted Over Time (by Chain)",
+      name: "Properties Processed Over Time (by Chain)",
       query: q(
-        "where message == 'chain_property_ingest:completed'" +
-          " | summarize sum(toint(['fields.upsertedCount'])) by bin(_time, 1d), tostring(['fields.chain'])"
+        "where message == 'chain_property_ingest:summary'" +
+          " | extend gha=toint(['fields.gha.processedCount']), hyatt=toint(['fields.hyatt.processedCount'])," +
+          " marriott=toint(['fields.marriott.processedCount']), ihg=toint(['fields.ihg.processedCount'])" +
+          " | summarize sum(gha), sum(hyatt), sum(marriott), sum(ihg) by bin(_time, 1d)"
       ),
     },
     {
       id: "dir-ingest-upserted-stat",
       type: "Statistic",
-      name: "Total Properties Upserted",
+      name: "Total Properties Processed",
       query: q(
-        "where message == 'chain_property_ingest:completed'" +
-          " | summarize sum(toint(['fields.upsertedCount']))"
+        "where message == 'chain_property_ingest:summary'" +
+          " | extend total=toint(['fields.gha.processedCount']) + toint(['fields.hyatt.processedCount'])" +
+          " + toint(['fields.marriott.processedCount']) + toint(['fields.ihg.processedCount'])" +
+          " | summarize sum(total)"
       ),
       colorScheme: "Green",
       showChart: true,
@@ -226,7 +229,9 @@ async function main() {
       type: "Statistic",
       name: "Ingest Runs with Errors",
       query: q(
-        "where message == 'chain_property_ingest:completed' and array_length(['fields.errors']) > 0" +
+        "where message == 'chain_property_ingest:summary'" +
+          " and (toint(['fields.gha.errorCount']) > 0 or toint(['fields.hyatt.errorCount']) > 0" +
+          " or toint(['fields.marriott.errorCount']) > 0 or toint(['fields.ihg.errorCount']) > 0)" +
           " | summarize count()"
       ),
       colorScheme: "Red",

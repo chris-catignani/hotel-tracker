@@ -1,21 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-
-vi.mock("@/lib/prisma", () => ({
-  __esModule: true,
-  default: {
-    property: {
-      upsert: vi.fn(),
-      findFirst: vi.fn(),
-      update: vi.fn(),
-    },
-    hotelChainSubBrand: {
-      upsert: vi.fn(),
-    },
-  },
-}));
-
-import prisma from "@/lib/prisma";
+import { describe, it, expect } from "vitest";
 import { ingestHyattProperties } from "./hyatt-property-ingest";
+import type { ChainFetchResult } from "./property-ingest-orchestrator";
 
 function makeStoreHtml(entries: Array<{ spiritCode: string; openStatus?: string }>): string {
   const properties = entries.map((e) => ({
@@ -40,110 +25,56 @@ function makeStoreHtml(entries: Array<{ spiritCode: string; openStatus?: string 
 }
 
 describe("ingestHyattProperties", () => {
-  beforeEach(() => vi.clearAllMocks());
-
-  it("upserts FULLY_BOOKABLE properties and skips NOT_BOOKABLE", async () => {
-    (prisma.hotelChainSubBrand.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "sb1" });
-    (prisma.property.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
-
+  it("returns FULLY_BOOKABLE properties and counts NOT_BOOKABLE as skipped", async () => {
     const html = makeStoreHtml([
       { spiritCode: "good1", openStatus: "FULLY_BOOKABLE" },
       { spiritCode: "bad1", openStatus: "NOT_BOOKABLE" },
       { spiritCode: "good2", openStatus: "PRECONSTRUCTION_BOOKABLE" },
     ]);
 
-    const result = await ingestHyattProperties({ fetchHtml: async () => html });
+    const result: ChainFetchResult = await ingestHyattProperties({ fetchHtml: async () => html });
 
-    expect(result.fetchedCount).toBe(2);
+    expect(result.properties).toHaveLength(2);
     expect(result.skippedCount).toBe(1);
-    expect(result.upsertedCount).toBe(2);
     expect(result.errors).toHaveLength(0);
-    expect(prisma.property.upsert).toHaveBeenCalledTimes(2);
-  });
-
-  it("records an error per property that throws during upsert without aborting the batch", async () => {
-    (prisma.hotelChainSubBrand.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "sb1" });
-    (prisma.property.upsert as ReturnType<typeof vi.fn>).mockRejectedValue(
-      new Error("DB connection lost")
-    );
-
-    const html = makeStoreHtml([{ spiritCode: "abexa" }]);
-    const result = await ingestHyattProperties({ fetchHtml: async () => html });
-
-    expect(result.errors).toHaveLength(1);
-    expect(result.errors[0]).toContain("abexa");
-    expect(result.upsertedCount).toBe(0);
   });
 
   it("returns empty result when HTML has no STORE payload", async () => {
-    const result = await ingestHyattProperties({
+    const result: ChainFetchResult = await ingestHyattProperties({
       fetchHtml: async () => "<html><body>no store</body></html>",
     });
-    expect(result).toEqual({ fetchedCount: 0, upsertedCount: 0, skippedCount: 0, errors: [] });
-  });
-
-  it("pre-creates each unique sub-brand once regardless of batch size", async () => {
-    (prisma.hotelChainSubBrand.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "sb1" });
-    (prisma.property.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
-
-    const html = makeStoreHtml([{ spiritCode: "a1" }, { spiritCode: "a2" }, { spiritCode: "a3" }]);
-
-    await ingestHyattProperties({ fetchHtml: async () => html, batchSize: 2 });
-
-    expect(prisma.hotelChainSubBrand.upsert).toHaveBeenCalledTimes(1);
-  });
-
-  it("upserts brand-less properties without error", async () => {
-    const noBrandHtml = `<html><head><script>window.STORE = ${JSON.stringify({
-      properties: {
-        "United States & Canada": {
-          "": {
-            "United States": {
-              PA: [
-                {
-                  spiritCode: "nobrand",
-                  openStatus: "FULLY_BOOKABLE",
-                  name: "No Brand Hotel",
-                  brand: { label: "" },
-                  location: {
-                    addressLine1: "1 Main St",
-                    city: "City",
-                    country: { key: "US" },
-                    geolocation: { latitude: 40.0, longitude: -75.0 },
-                  },
-                  url: "https://www.hyatt.com/en-US/nobrand",
-                },
-              ],
-            },
-          },
-        },
-      },
-    })};</script></head></html>`;
-
-    (prisma.hotelChainSubBrand.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "sb1" });
-    (prisma.property.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
-
-    const result = await ingestHyattProperties({ fetchHtml: async () => noBrandHtml });
-
-    expect(result.upsertedCount).toBe(1);
+    expect(result.properties).toHaveLength(0);
+    expect(result.skippedCount).toBe(0);
     expect(result.errors).toHaveLength(0);
-    expect(prisma.hotelChainSubBrand.upsert).not.toHaveBeenCalled();
   });
 
-  it("upserts by chainPropertyId key and includes name in update arm", async () => {
-    (prisma.hotelChainSubBrand.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "sb1" });
-    (prisma.property.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
+  it("respects the limit option", async () => {
+    const html = makeStoreHtml([{ spiritCode: "P1" }, { spiritCode: "P2" }, { spiritCode: "P3" }]);
 
+    const result: ChainFetchResult = await ingestHyattProperties({
+      fetchHtml: async () => html,
+      limit: 2,
+    });
+
+    expect(result.properties).toHaveLength(2);
+  });
+
+  it("maps all ParsedProperty fields correctly", async () => {
     const html = makeStoreHtml([{ spiritCode: "testh1" }]);
-    await ingestHyattProperties({ fetchHtml: async () => html });
 
-    expect(prisma.property.upsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {
-          hotelChainId_chainPropertyId: expect.objectContaining({ chainPropertyId: "testh1" }),
-        },
-        update: expect.objectContaining({ name: "Hotel testh1" }),
-      })
-    );
+    const result: ChainFetchResult = await ingestHyattProperties({
+      fetchHtml: async () => html,
+    });
+
+    expect(result.properties[0]).toMatchObject({
+      name: "Hotel testh1",
+      chainPropertyId: "testh1",
+      countryCode: "US",
+      city: "City",
+      address: "1 Main St",
+      latitude: 40.0,
+      longitude: -75.0,
+      subBrandName: "Hyatt Place",
+    });
   });
 });
