@@ -82,6 +82,7 @@ async function updateBatch(
   if (conflictKey === "chainPropertyId") {
     const ids = batch.map((p) => p.chainPropertyId ?? null);
     const urlPaths = batch.map((p) => p.chainUrlPath ?? null);
+    // Parameter order must match unnest column list exactly: $2=ids, $3=names, $4=countryCodes, $5=cities, $6=addresses, $7=latitudes, $8=longitudes, $9=urlPaths
     await prisma.$executeRawUnsafe(
       `UPDATE properties AS p
        SET name            = v.name,
@@ -110,6 +111,7 @@ async function updateBatch(
   } else {
     const urlPaths = batch.map((p) => p.chainUrlPath ?? null);
     const chainPropertyIds = batch.map((p) => p.chainPropertyId ?? null);
+    // Parameter order must match unnest column list exactly: $2=urlPaths, $3=names, $4=countryCodes, $5=cities, $6=addresses, $7=latitudes, $8=longitudes, $9=chainPropertyIds
     await prisma.$executeRawUnsafe(
       `UPDATE properties AS p
        SET name              = v.name,
