@@ -31,7 +31,6 @@ export function parseAccorProperty(
 
   const brandCode = props.types?.[0] ?? "";
   const coords = f.geometry?.coordinates;
-  const addressLine = props.address?.lines?.[0] ?? null;
 
   return {
     name: props.name ?? props.store_id,
@@ -39,7 +38,7 @@ export function parseAccorProperty(
     chainUrlPath: null,
     city: null,
     countryCode: props.address?.country_code ?? null,
-    address: addressLine || null,
+    address: props.address?.lines?.[0] ?? null,
     latitude: coords ? coords[1] : null,
     longitude: coords ? coords[0] : null,
     subBrandName: subBrandNameForCode(brandCode, logger),
