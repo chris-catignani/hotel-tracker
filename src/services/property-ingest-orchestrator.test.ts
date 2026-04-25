@@ -141,12 +141,11 @@ describe("writeProperties", () => {
     expect(result.errors).toHaveLength(0);
   });
 
-  it("counts dbOperationCount as uniqueSubBrands + 2 per batch", async () => {
+  it("counts dbOperationCount as globally unique subBrands + 2 per batch", async () => {
     (prisma.hotelChainSubBrand.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "sb1" });
     (prisma.property.createMany as ReturnType<typeof vi.fn>).mockResolvedValue({ count: 2 });
     (prisma.$executeRawUnsafe as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
 
-    // 4 properties: 2 sub-brands, batchSize=2 → 2 batches × (1 sub-brand + 2) = 6
     const result = await writeProperties(
       "chain-1",
       [
@@ -158,9 +157,8 @@ describe("writeProperties", () => {
       { conflictKey: "chainPropertyId", batchSize: 2 }
     );
 
-    // batch 0: BrandA + BrandB = 2 sub-brands + 2 = 4
-    // batch 1: BrandA + BrandB = 2 sub-brands + 2 = 4
-    expect(result.dbOperationCount).toBe(8);
+    // 2 globally unique sub-brands + 2 batches × 2 = 6
+    expect(result.dbOperationCount).toBe(6);
   });
 
   it("captures individual sub-brand upsert failures without aborting the batch", async () => {

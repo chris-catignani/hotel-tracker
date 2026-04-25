@@ -163,18 +163,18 @@ export async function writeProperties(
   let processedCount = 0;
   let dbOperationCount = 0;
 
+  const subBrandErrors = await ensureSubBrands(hotelChainId, properties);
+  errors.push(...subBrandErrors);
+  dbOperationCount += new Set(properties.map((p) => p.subBrandName).filter((n): n is string => !!n))
+    .size;
+
   for (let i = 0; i < properties.length; i += batchSize) {
     const batch = properties.slice(i, i + batchSize);
-    const uniqueSubBrandCount = new Set(
-      batch.map((p) => p.subBrandName).filter((n): n is string => !!n)
-    ).size;
     try {
-      const subBrandErrors = await ensureSubBrands(hotelChainId, batch);
-      errors.push(...subBrandErrors);
       await insertBatch(hotelChainId, batch, now);
       await updateBatch(hotelChainId, batch, opts.conflictKey, now);
       processedCount += batch.length;
-      dbOperationCount += uniqueSubBrandCount + 2;
+      dbOperationCount += 2;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       errors.push(`batch[${i}]: ${msg}`);
