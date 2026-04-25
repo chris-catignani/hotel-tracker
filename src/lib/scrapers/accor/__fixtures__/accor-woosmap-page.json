@@ -1,0 +1,66 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "store_id": "0338",
+        "name": "ibis Alès Centre-Ville",
+        "contact": {},
+        "address": {
+          "lines": ["18, rue Edgar Quinet, 30100 ALES"],
+          "country_code": "FR",
+          "city": null,
+          "zipcode": null
+        },
+        "user_properties": { "active": true, "status": "Open" },
+        "tags": [],
+        "types": ["IBH"],
+        "last_updated": "2026-04-25T06:28:09.314297+00:00",
+        "localized_names": {}
+      },
+      "geometry": { "type": "Point", "coordinates": [4.082268, 44.123816] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "store_id": "0339",
+        "name": "Test Hotel for the helpdesk resynch",
+        "contact": {},
+        "address": {
+          "lines": ["Sun Avenue 16, CB12GA EVRY"],
+          "country_code": "FR",
+          "city": null,
+          "zipcode": null
+        },
+        "user_properties": { "active": true, "status": "Open" },
+        "tags": [],
+        "types": ["TST"],
+        "last_updated": "2026-04-25T06:28:11.001359+00:00",
+        "localized_names": {}
+      },
+      "geometry": { "type": "Point", "coordinates": [10.0, 20.0] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "store_id": "C3M1",
+        "name": "Novotel Kuala Lumpur City Centre",
+        "contact": {},
+        "address": {
+          "lines": [],
+          "country_code": "MY",
+          "city": null,
+          "zipcode": null
+        },
+        "user_properties": { "active": true, "status": "Open" },
+        "tags": [],
+        "types": ["NOV"],
+        "last_updated": "2026-04-25T06:28:09.314297+00:00",
+        "localized_names": {}
+      },
+      "geometry": { "type": "Point", "coordinates": [101.7167, 3.1569] }
+    }
+  ],
+  "pagination": { "page": 1, "pageCount": 1 }
+}
