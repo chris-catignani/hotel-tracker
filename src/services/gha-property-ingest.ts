@@ -43,7 +43,7 @@ export async function ingestGhaProperties(opts: IngestOptions = {}): Promise<Ing
       withRetry(
         async () => {
           const res = await fetch(`https://www.ghadiscovery.com${url}`);
-          if (res.status === 404) return null;
+          if (res.status === 404) return null; // expected — don't retry, don't send to Sentry
           if (!res.ok) throw new Error(`GET ${url} -> ${res.status}`);
           return res.text();
         },
@@ -58,6 +58,8 @@ export async function ingestGhaProperties(opts: IngestOptions = {}): Promise<Ing
   const urls = await harvest();
   const toFetch = opts.limit != null ? urls.slice(0, opts.limit) : urls;
   logger.info("gha_ingest:harvested", { count: urls.length });
+  if (opts.limit != null)
+    logger.info("gha_ingest:limit_applied", { limit: opts.limit, toFetch: toFetch.length });
 
   const subBrandCache = new Map<string, string>();
   const errors: string[] = [];
