@@ -73,6 +73,7 @@ jobs:
         run: xvfb-run npx tsx src/workers/refresh-price-watches.ts
         env:
           SCRAPERS: accor,gha,hilton,ihg,marriott
+          NODE_ENV: production
           RUNNER_TYPE: remote
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
@@ -100,6 +101,7 @@ jobs:
         run: npx tsx src/workers/refresh-price-watches.ts
         env:
           SCRAPERS: hyatt
+          NODE_ENV: production
           RUNNER_TYPE: local
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
