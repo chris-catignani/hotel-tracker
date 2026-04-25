@@ -1,22 +1,19 @@
+import pLimit from "p-limit";
 import { logger } from "@/lib/logger";
-import { sleep } from "@/lib/retry";
 import { harvestMnemonicsFromSitemap } from "@/lib/scrapers/ihg/sitemap-harvest";
 import { fetchPropertyProfile } from "@/lib/scrapers/ihg/property-fetcher";
 import { parseIhgProfile } from "@/lib/scrapers/ihg/property-parser";
 import { type ChainFetchResult, type ParsedProperty } from "./property-ingest-orchestrator";
 
-const DEFAULT_BATCH_SLEEP_MS = 2000;
-const DEFAULT_BATCH_SIZE = 50;
+const DEFAULT_CONCURRENCY = 10;
 
 export interface IngestOptions {
-  batchSleepMs?: number;
-  batchSize?: number;
+  concurrency?: number;
   limit?: number;
 }
 
 export async function ingestIhgProperties(opts: IngestOptions = {}): Promise<ChainFetchResult> {
-  const batchSleepMs = opts.batchSleepMs ?? DEFAULT_BATCH_SLEEP_MS;
-  const batchSize = opts.batchSize ?? DEFAULT_BATCH_SIZE;
+  const concurrency = opts.concurrency ?? DEFAULT_CONCURRENCY;
 
   const errors: string[] = [];
   let skippedCount = 0;
@@ -28,49 +25,49 @@ export async function ingestIhgProperties(opts: IngestOptions = {}): Promise<Cha
   let mnemonicList = [...allMnemonics];
   if (opts.limit != null) mnemonicList = mnemonicList.slice(0, opts.limit);
 
-  for (let i = 0; i < mnemonicList.length; i += batchSize) {
-    if (i > 0 && batchSleepMs > 0) await sleep(batchSleepMs);
+  const limit = pLimit(concurrency);
+  let processed = 0;
 
-    const batch = mnemonicList.slice(i, i + batchSize);
-    const results = await Promise.allSettled(batch.map((m) => fetchPropertyProfile(m)));
+  await Promise.all(
+    mnemonicList.map((mnemonic) =>
+      limit(async () => {
+        try {
+          const raw = await fetchPropertyProfile(mnemonic);
+          const parsed = parseIhgProfile(raw);
+          if (!parsed) {
+            skippedCount++;
+          } else {
+            properties.push({
+              name: parsed.name,
+              chainPropertyId: parsed.chainPropertyId,
+              chainUrlPath: null,
+              countryCode: parsed.countryCode,
+              city: parsed.city,
+              address: parsed.address,
+              latitude: parsed.latitude,
+              longitude: parsed.longitude,
+              subBrandName: parsed.subBrandName,
+            });
+          }
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          errors.push(`${mnemonic}: ${msg}`);
+          logger.error("ihg_ingest:fetch_error", err, { mnemonic });
+        }
 
-    for (let j = 0; j < results.length; j++) {
-      const r = results[j];
-      const mnemonic = batch[j];
-      if (r.status === "rejected") {
-        const msg = r.reason instanceof Error ? r.reason.message : String(r.reason);
-        errors.push(`${mnemonic}: ${msg}`);
-        logger.error("ihg_ingest:fetch_error", r.reason, { mnemonic });
-        continue;
-      }
-      const parsed = parseIhgProfile(r.value);
-      if (!parsed) {
-        skippedCount++;
-        continue;
-      }
-      properties.push({
-        name: parsed.name,
-        chainPropertyId: parsed.chainPropertyId,
-        chainUrlPath: null,
-        countryCode: parsed.countryCode,
-        city: parsed.city,
-        address: parsed.address,
-        latitude: parsed.latitude,
-        longitude: parsed.longitude,
-        subBrandName: parsed.subBrandName,
-      });
-    }
-
-    if (i > 0 && i % 500 === 0) {
-      logger.info("ihg_ingest:progress", {
-        processed: i,
-        total: mnemonicList.length,
-        fetchedCount: properties.length,
-        skippedCount,
-        errors: errors.length,
-      });
-    }
-  }
+        processed++;
+        if (processed % 500 === 0) {
+          logger.info("ihg_ingest:progress", {
+            processed,
+            total: mnemonicList.length,
+            fetchedCount: properties.length,
+            skippedCount,
+            errors: errors.length,
+          });
+        }
+      })
+    )
+  );
 
   logger.info("ihg_ingest:done", { fetchedCount: properties.length, skippedCount });
 
