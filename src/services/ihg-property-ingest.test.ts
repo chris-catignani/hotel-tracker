@@ -43,7 +43,7 @@ describe("ingestIhgProperties", () => {
       .mockReturnValueOnce(makeParsedProperty("HERCT"))
       .mockReturnValueOnce(makeParsedProperty("NYCPC"));
 
-    const result: ChainFetchResult = await ingestIhgProperties({ batchSleepMs: 0 });
+    const result: ChainFetchResult = await ingestIhgProperties();
 
     expect(result.properties).toHaveLength(2);
     expect(result.skippedCount).toBe(0);
@@ -57,13 +57,13 @@ describe("ingestIhgProperties", () => {
     (fetchPropertyProfile as ReturnType<typeof vi.fn>).mockResolvedValue({});
     (parseIhgProfile as ReturnType<typeof vi.fn>).mockReturnValue(null);
 
-    const result: ChainFetchResult = await ingestIhgProperties({ batchSleepMs: 0 });
+    const result: ChainFetchResult = await ingestIhgProperties();
 
     expect(result.skippedCount).toBe(1);
     expect(result.properties).toHaveLength(0);
   });
 
-  it("records error when fetchPropertyProfile throws, does not abort batch", async () => {
+  it("records error when fetchPropertyProfile throws, does not abort other requests", async () => {
     (harvestMnemonicsFromSitemap as ReturnType<typeof vi.fn>).mockResolvedValue(
       new Set(["ERR01", "GOOD1"])
     );
@@ -72,7 +72,7 @@ describe("ingestIhgProperties", () => {
       .mockResolvedValueOnce({});
     (parseIhgProfile as ReturnType<typeof vi.fn>).mockReturnValue(makeParsedProperty("GOOD1"));
 
-    const result: ChainFetchResult = await ingestIhgProperties({ batchSleepMs: 0 });
+    const result: ChainFetchResult = await ingestIhgProperties();
 
     expect(result.errors).toHaveLength(1);
     expect(result.errors[0]).toContain("ERR01");
@@ -86,7 +86,7 @@ describe("ingestIhgProperties", () => {
     (fetchPropertyProfile as ReturnType<typeof vi.fn>).mockResolvedValue({});
     (parseIhgProfile as ReturnType<typeof vi.fn>).mockReturnValue(makeParsedProperty("A1"));
 
-    const result: ChainFetchResult = await ingestIhgProperties({ limit: 1, batchSleepMs: 0 });
+    const result: ChainFetchResult = await ingestIhgProperties({ limit: 1 });
 
     expect(fetchPropertyProfile).toHaveBeenCalledTimes(1);
     expect(result.properties).toHaveLength(1);
@@ -97,7 +97,7 @@ describe("ingestIhgProperties", () => {
     (fetchPropertyProfile as ReturnType<typeof vi.fn>).mockResolvedValue({});
     (parseIhgProfile as ReturnType<typeof vi.fn>).mockReturnValue(makeParsedProperty("HERCT"));
 
-    const result: ChainFetchResult = await ingestIhgProperties({ batchSleepMs: 0 });
+    const result: ChainFetchResult = await ingestIhgProperties();
 
     expect(result.properties[0]).toMatchObject({
       name: "Hotel HERCT",

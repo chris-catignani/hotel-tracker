@@ -52,6 +52,7 @@
     "next": "16.1.6",
     "next-auth": "^5.0.0-beta.30",
     "next-axiom": "^1.10.0",
+    "p-limit": "^7.3.0",
     "playwright": "1.58.2",
     "prisma": "^6.19.2",
     "radix-ui": "^1.4.3",
