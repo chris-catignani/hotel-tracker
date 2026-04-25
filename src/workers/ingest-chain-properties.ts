@@ -80,12 +80,14 @@ async function main() {
         fetchedCount: properties.length,
         skippedCount,
         upsertedCount: writeResult.upsertedCount,
+        dbOperationCount: writeResult.dbOperationCount,
         errorCount: allErrors.length,
       });
       console.log(`[IngestChainProperties] ${chain} done in ${durationMs}ms`, {
         fetchedCount: properties.length,
         skippedCount,
         upsertedCount: writeResult.upsertedCount,
+        dbOperationCount: writeResult.dbOperationCount,
         errors: allErrors,
       });
     } catch (error) {

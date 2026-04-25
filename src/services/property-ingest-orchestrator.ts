@@ -20,6 +20,7 @@ export interface ChainFetchResult {
 
 export interface WriteResult {
   upsertedCount: number;
+  dbOperationCount: number;
   errors: string[];
 }
 
@@ -149,19 +150,24 @@ export async function writeProperties(
   const now = opts.now ?? new Date();
   const errors: string[] = [];
   let upsertedCount = 0;
+  let dbOperationCount = 0;
 
   for (let i = 0; i < properties.length; i += batchSize) {
     const batch = properties.slice(i, i + batchSize);
+    const uniqueSubBrandCount = new Set(
+      batch.map((p) => p.subBrandName).filter((n): n is string => !!n)
+    ).size;
     try {
       await ensureSubBrands(hotelChainId, batch);
       await insertBatch(hotelChainId, batch, now);
       await updateBatch(hotelChainId, batch, opts.conflictKey, now);
       upsertedCount += batch.length;
+      dbOperationCount += uniqueSubBrandCount + 2;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       errors.push(`batch[${i}]: ${msg}`);
     }
   }
 
-  return { upsertedCount, errors };
+  return { upsertedCount, dbOperationCount, errors };
 }
