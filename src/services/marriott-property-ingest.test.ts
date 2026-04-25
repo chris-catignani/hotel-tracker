@@ -1,8 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { ingestMarriottProperties } from "./marriott-property-ingest";
 import type { ChainFetchResult } from "./property-ingest-orchestrator";
-
-type FetchBrand = (code: string) => Promise<unknown | null>;
+import type { FetchBrandFn } from "@/lib/scrapers/marriott/property-fetcher";
 
 function makeBrandData(
   properties: Array<{
@@ -46,7 +45,7 @@ function makeBrandData(
   };
 }
 
-function makeFetchBrand(brandData: Record<string, unknown>): FetchBrand {
+function makeFetchBrand(brandData: Record<string, unknown>): FetchBrandFn {
   return async (code: string) => brandData[code] ?? null;
 }
 
@@ -113,6 +112,7 @@ describe("ingestMarriottProperties", () => {
     expect(result.properties[0]).toMatchObject({
       name: "Hotel TESTM",
       chainPropertyId: "TESTM",
+      chainUrlPath: null,
       countryCode: "US",
       city: "City",
       address: "1 Main St",

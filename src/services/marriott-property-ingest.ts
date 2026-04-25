@@ -6,7 +6,6 @@ import { type ChainFetchResult, type ParsedProperty } from "./property-ingest-or
 interface IngestOptions {
   fetchBrand?: FetchBrandFn;
   sleepMs?: number;
-  now?: Date;
   limit?: number;
 }
 
