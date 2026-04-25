@@ -7,19 +7,20 @@ import { parseGhaPropertyNextData } from "@/lib/scrapers/gha/next-data-parser";
 import { GHA_SUB_BRAND_SLUGS, subBrandNameForSlug } from "@/lib/scrapers/gha/sub-brand-slugs";
 import { withRetry, sleep } from "@/lib/retry";
 
-export const STALE_AFTER_DAYS = 180;
+interface IngestOptions {
+  limit?: number;
+  harvest?: () => Promise<string[]>;
+  fetchHtml?: (url: string) => Promise<string | null>;
+  now?: Date;
+  requestDelayMs?: number;
+}
 
-export function decideUrlsToFetch(
-  harvested: string[],
-  known: Map<string, Date | null>,
-  now: Date
-): string[] {
-  const cutoff = new Date(now.getTime() - STALE_AFTER_DAYS * 24 * 3600_000);
-  return harvested.filter((url) => {
-    const lastFetched = known.get(url);
-    if (lastFetched == null) return true;
-    return lastFetched < cutoff;
-  });
+export interface IngestResult {
+  harvestedCount: number;
+  fetchedCount: number;
+  upsertedCount: number;
+  skippedCount: number;
+  errors: string[];
 }
 
 async function ensureSubBrand(hotelChainId: string, slug: string) {
@@ -32,24 +33,6 @@ async function ensureSubBrand(hotelChainId: string, slug: string) {
     update: {},
     create: { hotelChainId, name },
   });
-}
-
-interface IngestOptions {
-  forceFullRefetch?: boolean;
-  limit?: number;
-  harvest?: () => Promise<string[]>;
-  fetchHtml?: (url: string) => Promise<string | null>;
-  now?: Date;
-  requestDelayMs?: number;
-}
-
-export interface IngestResult {
-  harvestedCount: number;
-  stampedCount: number;
-  fetchedCount: number;
-  upsertedCount: number;
-  skippedCount: number;
-  errors: string[];
 }
 
 export async function ingestGhaProperties(opts: IngestOptions = {}): Promise<IngestResult> {
@@ -70,29 +53,13 @@ export async function ingestGhaProperties(opts: IngestOptions = {}): Promise<Ing
       ));
   const requestDelayMs = opts.requestDelayMs ?? 300;
   const now = opts.now ?? new Date();
-
   const hotelChainId = HOTEL_ID.GHA_DISCOVERY;
 
   const urls = await harvest();
+  const toFetch = opts.limit != null ? urls.slice(0, opts.limit) : urls;
   logger.info("gha_ingest:harvested", { count: urls.length });
-
-  const known = await prisma.property.findMany({
-    where: { hotelChainId, chainUrlPath: { in: urls } },
-    select: { chainUrlPath: true, detailLastFetchedAt: true },
-  });
-  const knownMap = new Map<string, Date | null>();
-  for (const row of known) {
-    if (row.chainUrlPath) knownMap.set(row.chainUrlPath, row.detailLastFetchedAt);
-  }
-  await prisma.property.updateMany({
-    where: { hotelChainId, chainUrlPath: { in: urls } },
-    data: { lastSeenAt: now },
-  });
-
-  const decided = opts.forceFullRefetch ? urls : decideUrlsToFetch(urls, knownMap, now);
-  const toFetch = opts.limit != null ? decided.slice(0, opts.limit) : decided;
   if (opts.limit != null)
-    logger.info("gha_ingest:limit_applied", { limit: opts.limit, decided: decided.length });
+    logger.info("gha_ingest:limit_applied", { limit: opts.limit, toFetch: toFetch.length });
 
   const subBrandCache = new Map<string, string>();
   const errors: string[] = [];
@@ -148,8 +115,6 @@ export async function ingestGhaProperties(opts: IngestOptions = {}): Promise<Ing
             latitude: parsed.latitude,
             longitude: parsed.longitude,
             chainPropertyId: parsed.chainPropertyId,
-            chainCategories: parsed.chainCategories,
-            detailLastFetchedAt: now,
             lastSeenAt: now,
           },
           create: {
@@ -162,8 +127,6 @@ export async function ingestGhaProperties(opts: IngestOptions = {}): Promise<Ing
             longitude: parsed.longitude,
             chainPropertyId: parsed.chainPropertyId,
             chainUrlPath: parsed.chainUrlPath,
-            chainCategories: parsed.chainCategories,
-            detailLastFetchedAt: now,
             lastSeenAt: now,
           },
         });
@@ -180,15 +143,14 @@ export async function ingestGhaProperties(opts: IngestOptions = {}): Promise<Ing
         await prisma.property.update({
           where: { id: existing.id },
           data: {
+            name: parsed.name,
             chainUrlPath: parsed.chainUrlPath,
             chainPropertyId: parsed.chainPropertyId,
-            chainCategories: parsed.chainCategories,
             countryCode: parsed.countryCode,
             city: parsed.city,
             address: parsed.address,
             latitude: parsed.latitude,
             longitude: parsed.longitude,
-            detailLastFetchedAt: now,
             lastSeenAt: now,
           },
         });
@@ -202,12 +164,5 @@ export async function ingestGhaProperties(opts: IngestOptions = {}): Promise<Ing
     }
   }
 
-  return {
-    harvestedCount: urls.length,
-    stampedCount: known.length,
-    fetchedCount,
-    upsertedCount,
-    skippedCount,
-    errors,
-  };
+  return { harvestedCount: urls.length, fetchedCount, upsertedCount, skippedCount, errors };
 }

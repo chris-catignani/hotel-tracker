@@ -19,7 +19,6 @@ const MOCK_CANDIDATES = [
     hotelChainName: "GHA Discovery",
     distanceMiles: 3.2,
     hotelChainId: "chain-1",
-    chainCategories: [],
     isWatched: false,
     priceWatchId: null,
     cashThreshold: null,

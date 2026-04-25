@@ -16,7 +16,6 @@ interface Candidate {
   hotelChainName: string | null;
   distanceMiles: number | null;
   hotelChainId: string | null;
-  chainCategories: string[];
   isWatched: boolean;
   priceWatchId: string | null;
   cashThreshold: number | null;

@@ -1,39 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { decideUrlsToFetch, STALE_AFTER_DAYS } from "./gha-property-ingest";
 import { HOTEL_ID } from "@/lib/constants";
-
-describe("decideUrlsToFetch", () => {
-  const now = new Date("2026-04-20T00:00:00Z");
-  const freshDate = new Date(now.getTime() - 10 * 24 * 3600_000); // 10 days ago
-  const staleDate = new Date(now.getTime() - (STALE_AFTER_DAYS + 1) * 24 * 3600_000);
-
-  it("includes URLs not present in DB", () => {
-    const result = decideUrlsToFetch(["/anantara/a", "/kempinski/b"], new Map(), now);
-    expect(result.sort()).toEqual(["/anantara/a", "/kempinski/b"].sort());
-  });
-
-  it("includes URLs whose detailLastFetchedAt is null", () => {
-    const result = decideUrlsToFetch(["/anantara/a"], new Map([["/anantara/a", null]]), now);
-    expect(result).toEqual(["/anantara/a"]);
-  });
-
-  it("excludes URLs whose detailLastFetchedAt is within the staleness window", () => {
-    const result = decideUrlsToFetch(["/anantara/a"], new Map([["/anantara/a", freshDate]]), now);
-    expect(result).toEqual([]);
-  });
-
-  it("includes URLs whose detailLastFetchedAt is older than the staleness window", () => {
-    const result = decideUrlsToFetch(["/anantara/a"], new Map([["/anantara/a", staleDate]]), now);
-    expect(result).toEqual(["/anantara/a"]);
-  });
-});
 
 vi.mock("@/lib/prisma", () => ({
   __esModule: true,
   default: {
     property: {
-      findMany: vi.fn(),
-      updateMany: vi.fn(),
       upsert: vi.fn(),
       findFirst: vi.fn(),
       update: vi.fn(),
@@ -50,31 +21,36 @@ import { ingestGhaProperties } from "./gha-property-ingest";
 describe("ingestGhaProperties orchestration", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("stamps lastSeenAt on every known URL and fetches only new/stale", async () => {
-    const now = new Date("2026-04-20T00:00:00Z");
-    const stale = new Date(now.getTime() - 200 * 24 * 3600_000);
+  it("fetches all harvested URLs regardless of prior fetch history", async () => {
+    const now = new Date("2026-04-24T00:00:00Z");
 
-    (prisma.property.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([
-      { id: "p1", chainUrlPath: "/anantara/fresh", detailLastFetchedAt: now },
-      { id: "p2", chainUrlPath: "/anantara/stale", detailLastFetchedAt: stale },
-    ]);
-    (prisma.property.updateMany as ReturnType<typeof vi.fn>).mockResolvedValue({ count: 2 });
-    (prisma.property.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p2" });
+    const fetchHtml = vi.fn().mockResolvedValue(null); // 404 for all — we just care about call count
+
+    await ingestGhaProperties({
+      harvest: async () => ["/anantara/a", "/anantara/b", "/anantara/c"],
+      fetchHtml,
+      now,
+      requestDelayMs: 0,
+    });
+
+    expect(fetchHtml).toHaveBeenCalledTimes(3);
+  });
+
+  it("stamps lastSeenAt on all upserted properties", async () => {
+    const now = new Date("2026-04-24T00:00:00Z");
+
+    (prisma.property.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
     (prisma.hotelChainSubBrand.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "sb1" });
 
     const html = `<script id="__NEXT_DATA__" type="application/json">${JSON.stringify({
       props: {
         pageProps: {
           page: {
-            name: "Test Stale",
+            name: "Test Hotel",
             zipCode: null,
             _info: { id: 1 },
             location: { address: "addr", latitude: 1, longitude: 2 },
-            city: {
-              name: "City",
-              _location: { parentLocation: { content: { name: "Italy" } } },
-            },
-            categories: [],
+            city: { name: "City", _location: { parentLocation: { content: { name: "Italy" } } } },
           },
         },
       },
@@ -83,24 +59,20 @@ describe("ingestGhaProperties orchestration", () => {
     const fetchHtml = vi.fn().mockResolvedValue(html);
 
     const result = await ingestGhaProperties({
-      harvest: async () => ["/anantara/fresh", "/anantara/stale", "/anantara/new"],
+      harvest: async () => ["/anantara/a", "/anantara/b"],
       fetchHtml,
       now,
       requestDelayMs: 0,
     });
 
     expect(fetchHtml).toHaveBeenCalledTimes(2);
-    expect(fetchHtml).toHaveBeenCalledWith("/anantara/stale");
-    expect(fetchHtml).toHaveBeenCalledWith("/anantara/new");
-    expect(result.harvestedCount).toBe(3);
+    expect(result.harvestedCount).toBe(2);
     expect(result.fetchedCount).toBe(2);
+    expect(result.upsertedCount).toBe(2);
   });
 
   it("counts 404 URLs as skipped, not errors, and does not increment fetchedCount", async () => {
     const now = new Date("2026-04-20T00:00:00Z");
-
-    (prisma.property.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-    (prisma.property.updateMany as ReturnType<typeof vi.fn>).mockResolvedValue({ count: 0 });
 
     const fetchHtml = vi.fn().mockResolvedValue(null);
 
@@ -119,8 +91,6 @@ describe("ingestGhaProperties orchestration", () => {
   it("upserts by chainUrlPath key and includes name in update arm", async () => {
     const now = new Date("2026-04-20T00:00:00Z");
 
-    (prisma.property.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-    (prisma.property.updateMany as ReturnType<typeof vi.fn>).mockResolvedValue({ count: 0 });
     (prisma.property.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
     (prisma.hotelChainSubBrand.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "sb1" });
 
@@ -136,7 +106,6 @@ describe("ingestGhaProperties orchestration", () => {
               name: "City",
               _location: { parentLocation: { content: { name: "Italy" } } },
             },
-            categories: [],
           },
         },
       },
@@ -170,8 +139,6 @@ describe("ingestGhaProperties orchestration", () => {
       meta: { target: ["hotel_chain_id", "chain_url_path"] },
     });
 
-    (prisma.property.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-    (prisma.property.updateMany as ReturnType<typeof vi.fn>).mockResolvedValue({ count: 0 });
     (prisma.property.upsert as ReturnType<typeof vi.fn>).mockRejectedValue(p2002);
     (prisma.property.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "existing-1" });
     (prisma.property.update as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "existing-1" });
@@ -189,7 +156,6 @@ describe("ingestGhaProperties orchestration", () => {
               name: "City",
               _location: { parentLocation: { content: { name: "Italy" } } },
             },
-            categories: [],
           },
         },
       },
@@ -218,8 +184,6 @@ describe("ingestGhaProperties orchestration", () => {
   it("continues loop on fetch error and records in errors array", async () => {
     const now = new Date("2026-04-20T00:00:00Z");
 
-    (prisma.property.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-    (prisma.property.updateMany as ReturnType<typeof vi.fn>).mockResolvedValue({ count: 0 });
     (prisma.property.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
     (prisma.hotelChainSubBrand.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "sb1" });
 
@@ -257,9 +221,6 @@ describe("ingestGhaProperties orchestration", () => {
   it("increments skippedCount when parser returns null (non-hotel page)", async () => {
     const now = new Date("2026-04-20T00:00:00Z");
 
-    (prisma.property.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-    (prisma.property.updateMany as ReturnType<typeof vi.fn>).mockResolvedValue({ count: 0 });
-
     const fetchHtml = vi.fn().mockResolvedValue("<html><body>Not a hotel page</body></html>");
 
     const result = await ingestGhaProperties({
@@ -271,14 +232,12 @@ describe("ingestGhaProperties orchestration", () => {
 
     expect(result.skippedCount).toBe(1);
     expect(result.upsertedCount).toBe(0);
-    expect(result.fetchedCount).toBe(1); // It was fetched, but then skipped by parser
+    expect(result.fetchedCount).toBe(1);
   });
 
   it("calls prisma.property.upsert with correct parsed fields", async () => {
     const now = new Date("2026-04-20T00:00:00Z");
 
-    (prisma.property.findMany as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-    (prisma.property.updateMany as ReturnType<typeof vi.fn>).mockResolvedValue({ count: 0 });
     (prisma.hotelChainSubBrand.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "sb1" });
 
     const html = `<script id="__NEXT_DATA__" type="application/json">${JSON.stringify({
@@ -293,7 +252,6 @@ describe("ingestGhaProperties orchestration", () => {
               name: "Milan",
               _location: { parentLocation: { content: { name: "Italy" } } },
             },
-            categories: [{ name: "Luxury" }, { name: "Business" }],
           },
         },
       },
@@ -321,8 +279,6 @@ describe("ingestGhaProperties orchestration", () => {
         latitude: 45.0,
         longitude: 9.0,
         chainPropertyId: "GHA123",
-        chainCategories: ["Luxury", "Business"],
-        detailLastFetchedAt: now,
       }),
       create: expect.objectContaining({
         name: "Grand Hotel",
@@ -334,8 +290,6 @@ describe("ingestGhaProperties orchestration", () => {
         latitude: 45.0,
         longitude: 9.0,
         chainPropertyId: "GHA123",
-        chainCategories: ["Luxury", "Business"],
-        detailLastFetchedAt: now,
       }),
     });
   });

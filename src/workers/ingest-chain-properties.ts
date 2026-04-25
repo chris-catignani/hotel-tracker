@@ -14,9 +14,9 @@ import { ingestHyattProperties } from "@/services/hyatt-property-ingest";
 import { ingestMarriottProperties } from "@/services/marriott-property-ingest";
 import { ingestIhgProperties } from "@/services/ihg-property-ingest";
 
-async function runChain(chain: string, forceFullRefetch: boolean, limit: number | undefined) {
+async function runChain(chain: string, limit: number | undefined) {
   if (chain === "gha") {
-    return await ingestGhaProperties({ forceFullRefetch, limit });
+    return await ingestGhaProperties({ limit });
   } else if (chain === "hyatt") {
     return await ingestHyattProperties({ limit });
   } else if (chain === "marriott") {
@@ -35,17 +35,14 @@ async function main() {
     .split(",")
     .map((c) => c.trim())
     .filter(Boolean);
-  const forceFullRefetch = process.env.FORCE_FULL === "1";
   const limit = process.env.LIMIT ? parseInt(process.env.LIMIT, 10) : undefined;
-  console.log(
-    `[IngestChainProperties] chains=${chains.join(",")} forceFullRefetch=${forceFullRefetch} limit=${limit ?? "none"}`
-  );
+  console.log(`[IngestChainProperties] chains=${chains.join(",")} limit=${limit ?? "none"}`);
 
   let exitCode = 0;
   for (const chain of chains) {
     const runStart = Date.now();
     try {
-      const result = await runChain(chain, forceFullRefetch, limit);
+      const result = await runChain(chain, limit);
       const durationMs = Date.now() - runStart;
       log.info("chain_property_ingest:completed", { chain, durationMs, ...result });
       console.log(`[IngestChainProperties] ${chain} done in ${durationMs}ms`, result);

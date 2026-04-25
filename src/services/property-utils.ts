@@ -12,8 +12,6 @@ interface PropertyInput {
   longitude?: number | null;
   chainPropertyId?: string | null;
   chainUrlPath?: string | null;
-  chainCategories?: string[];
-  detailLastFetchedAt?: Date | null;
   lastSeenAt?: Date | null;
 }
 
@@ -54,8 +52,6 @@ export async function findOrCreateProperty(input: PropertyInput): Promise<string
         longitude: input.longitude ?? null,
         chainPropertyId: input.chainPropertyId || null,
         chainUrlPath: input.chainUrlPath || null,
-        chainCategories: input.chainCategories ?? [],
-        detailLastFetchedAt: input.detailLastFetchedAt ?? null,
         lastSeenAt: input.lastSeenAt ?? null,
       },
     });
