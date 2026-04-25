@@ -103,6 +103,30 @@ skipIf("Email parsing integration", () => {
       expect(result?.totalCost).toBe(281.77);
     });
 
+    it("parses multi-night IDR cash booking with per-night taxes", async () => {
+      const result = await parseAndCapture(
+        "marriott-confirmation-cash-idr-multinight",
+        marriottGuide
+      );
+      expect(result).not.toBeNull();
+      expect(result?.bookingType).toBe("cash");
+      expect(result?.propertyName).toContain("The Ritz-Carlton Jakarta");
+      expect(result?.checkIn).toBe("2026-11-15");
+      expect(result?.checkOut).toBe("2026-11-18");
+      expect(result?.numNights).toBe(3);
+      expect(result?.confirmationNumber).toBe("30000001");
+      expect(result?.hotelChain).toBe("Marriott");
+      expect(result?.subBrand).toMatch(/Ritz-Carlton/i);
+      expect(result?.currency).toBe("IDR");
+      expect(result?.nightlyRates).toHaveLength(3);
+      expect(result?.nightlyRates?.[0].amount).toBe(2280000);
+      expect(result?.nightlyRates?.[1].amount).toBe(2375000);
+      expect(result?.nightlyRates?.[2].amount).toBe(2565000);
+      // taxLines contain per-night amounts as shown in email; verifyBalance handles this natively
+      expect(result?.taxLines?.reduce((s, l) => s + l.amount, 0)).toBeCloseTo(505400, 0);
+      expect(result?.totalCost).toBe(8736200);
+    });
+
     it("parses points booking with null costs", async () => {
       const result = await parseAndCapture("marriott-confirmation-points", marriottGuide);
       expect(result).not.toBeNull();

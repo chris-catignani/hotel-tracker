@@ -119,7 +119,16 @@ function verifyBalance(parsed: ParsedBookingData): void {
     expectedTotal = parsed.pretaxCost + netTax;
   } else if (parsed.nightlyRates) {
     const nightlyTotal = parsed.nightlyRates.reduce((sum, r) => sum + r.amount, 0);
-    expectedTotal = nightlyTotal - accommodationDiscounts + netTax;
+    const nightlyBase = nightlyTotal - accommodationDiscounts;
+    expectedTotal = nightlyBase + netTax;
+    // Some hotels (e.g. Marriott) label taxes as "per night per room" — try scaling by numNights.
+    // Tolerance scales with numNights because per-night decimal truncation accumulates per night.
+    if (
+      Math.abs(expectedTotal - parsed.totalCost) > 0.1 &&
+      Math.abs(nightlyBase + netTax * parsed.numNights - parsed.totalCost) <= parsed.numNights
+    ) {
+      return;
+    }
   }
 
   if (expectedTotal !== null && Math.abs(expectedTotal - parsed.totalCost) > 0.1) {
