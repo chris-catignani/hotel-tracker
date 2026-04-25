@@ -4,8 +4,6 @@ import type { ChainFetchResult } from "./property-ingest-orchestrator";
 
 describe("ingestGhaProperties", () => {
   it("fetches all harvested URLs and returns parsed properties", async () => {
-    const now = new Date("2026-04-24T00:00:00Z");
-
     const html = `<script id="__NEXT_DATA__" type="application/json">${JSON.stringify({
       props: {
         pageProps: {
@@ -25,7 +23,6 @@ describe("ingestGhaProperties", () => {
     const result: ChainFetchResult = await ingestGhaProperties({
       harvest: async () => ["/anantara/a", "/anantara/b"],
       fetchHtml,
-      now,
       requestDelayMs: 0,
     });
 
@@ -36,13 +33,11 @@ describe("ingestGhaProperties", () => {
   });
 
   it("counts 404 URLs as skipped", async () => {
-    const now = new Date("2026-04-24T00:00:00Z");
     const fetchHtml = vi.fn().mockResolvedValue(null);
 
     const result: ChainFetchResult = await ingestGhaProperties({
       harvest: async () => ["/anantara/gone"],
       fetchHtml,
-      now,
       requestDelayMs: 0,
     });
 
@@ -52,13 +47,11 @@ describe("ingestGhaProperties", () => {
   });
 
   it("counts unparseable pages as skipped", async () => {
-    const now = new Date("2026-04-24T00:00:00Z");
     const fetchHtml = vi.fn().mockResolvedValue("<html>not a hotel</html>");
 
     const result: ChainFetchResult = await ingestGhaProperties({
       harvest: async () => ["/not-a-hotel"],
       fetchHtml,
-      now,
       requestDelayMs: 0,
     });
 
@@ -67,8 +60,6 @@ describe("ingestGhaProperties", () => {
   });
 
   it("records fetch errors without aborting the run", async () => {
-    const now = new Date("2026-04-24T00:00:00Z");
-
     const html = `<script id="__NEXT_DATA__" type="application/json">${JSON.stringify({
       props: {
         pageProps: {
@@ -90,7 +81,6 @@ describe("ingestGhaProperties", () => {
     const result: ChainFetchResult = await ingestGhaProperties({
       harvest: async () => ["/fail", "/anantara/ok"],
       fetchHtml,
-      now,
       requestDelayMs: 0,
     });
 
@@ -100,13 +90,11 @@ describe("ingestGhaProperties", () => {
   });
 
   it("respects the limit option", async () => {
-    const now = new Date("2026-04-24T00:00:00Z");
     const fetchHtml = vi.fn().mockResolvedValue(null);
 
     await ingestGhaProperties({
       harvest: async () => ["/a", "/b", "/c"],
       fetchHtml,
-      now,
       requestDelayMs: 0,
       limit: 2,
     });
@@ -115,8 +103,6 @@ describe("ingestGhaProperties", () => {
   });
 
   it("maps ParsedProperty fields correctly", async () => {
-    const now = new Date("2026-04-24T00:00:00Z");
-
     const html = `<script id="__NEXT_DATA__" type="application/json">${JSON.stringify({
       props: {
         pageProps: {
@@ -134,7 +120,6 @@ describe("ingestGhaProperties", () => {
     const result: ChainFetchResult = await ingestGhaProperties({
       harvest: async () => ["/anantara/grand-hotel"],
       fetchHtml: vi.fn().mockResolvedValue(html),
-      now,
       requestDelayMs: 0,
     });
 

@@ -9,7 +9,6 @@ interface IngestOptions {
   limit?: number;
   harvest?: () => Promise<string[]>;
   fetchHtml?: (url: string) => Promise<string | null>;
-  now?: Date;
   requestDelayMs?: number;
 }
 
