@@ -16,20 +16,12 @@ vi.mock("@/lib/scrapers/ihg/property-parser", () => ({
   parseIhgProfile: vi.fn(),
 }));
 
-vi.mock("@/lib/prisma", () => ({
-  __esModule: true,
-  default: {
-    property: { upsert: vi.fn(), findFirst: vi.fn(), update: vi.fn() },
-    hotelChainSubBrand: { upsert: vi.fn() },
-  },
-}));
-
 import { chromium } from "playwright";
 import { harvestMnemonicsFromSitemap } from "@/lib/scrapers/ihg/sitemap-harvest";
 import { fetchPropertyProfile } from "@/lib/scrapers/ihg/property-fetcher";
 import { parseIhgProfile } from "@/lib/scrapers/ihg/property-parser";
-import prisma from "@/lib/prisma";
 import { ingestIhgProperties } from "./ihg-property-ingest";
+import type { ChainFetchResult } from "./property-ingest-orchestrator";
 
 function makeMockBrowser() {
   const mockPage = {};
@@ -56,7 +48,7 @@ function makeParsedProperty(chainPropertyId: string) {
 describe("ingestIhgProperties", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("harvests mnemonics from sitemap, fetches profiles, and upserts properties", async () => {
+  it("harvests mnemonics, fetches profiles, and returns parsed properties", async () => {
     const mockBrowser = makeMockBrowser();
     (chromium.launch as ReturnType<typeof vi.fn>).mockResolvedValue(mockBrowser);
     (harvestMnemonicsFromSitemap as ReturnType<typeof vi.fn>).mockResolvedValue(
@@ -66,15 +58,11 @@ describe("ingestIhgProperties", () => {
     (parseIhgProfile as ReturnType<typeof vi.fn>)
       .mockReturnValueOnce(makeParsedProperty("HERCT"))
       .mockReturnValueOnce(makeParsedProperty("NYCPC"));
-    (prisma.hotelChainSubBrand.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "sb1" });
-    (prisma.property.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
 
-    const result = await ingestIhgProperties({ batchSleepMs: 0 });
+    const result: ChainFetchResult = await ingestIhgProperties({ batchSleepMs: 0 });
 
-    expect(result.discoveredCount).toBe(2);
-    expect(result.fetchedCount).toBe(2);
+    expect(result.properties).toHaveLength(2);
     expect(result.skippedCount).toBe(0);
-    expect(result.upsertedCount).toBe(2);
     expect(result.errors).toHaveLength(0);
     expect(mockBrowser.close).toHaveBeenCalledOnce();
   });
@@ -88,12 +76,10 @@ describe("ingestIhgProperties", () => {
     (fetchPropertyProfile as ReturnType<typeof vi.fn>).mockResolvedValue({});
     (parseIhgProfile as ReturnType<typeof vi.fn>).mockReturnValue(null);
 
-    const result = await ingestIhgProperties({ batchSleepMs: 0 });
+    const result: ChainFetchResult = await ingestIhgProperties({ batchSleepMs: 0 });
 
     expect(result.skippedCount).toBe(1);
-    expect(result.fetchedCount).toBe(0);
-    expect(result.upsertedCount).toBe(0);
-    expect(prisma.property.upsert).not.toHaveBeenCalled();
+    expect(result.properties).toHaveLength(0);
   });
 
   it("records error when fetchPropertyProfile throws, does not abort batch", async () => {
@@ -106,14 +92,12 @@ describe("ingestIhgProperties", () => {
       .mockRejectedValueOnce(new Error("HTTP 403"))
       .mockResolvedValueOnce({});
     (parseIhgProfile as ReturnType<typeof vi.fn>).mockReturnValue(makeParsedProperty("GOOD1"));
-    (prisma.hotelChainSubBrand.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({});
-    (prisma.property.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
 
-    const result = await ingestIhgProperties({ batchSleepMs: 0 });
+    const result: ChainFetchResult = await ingestIhgProperties({ batchSleepMs: 0 });
 
     expect(result.errors).toHaveLength(1);
     expect(result.errors[0]).toContain("ERR01");
-    expect(result.upsertedCount).toBe(1);
+    expect(result.properties).toHaveLength(1);
   });
 
   it("does not close an injected browser", async () => {
@@ -136,12 +120,28 @@ describe("ingestIhgProperties", () => {
     );
     (fetchPropertyProfile as ReturnType<typeof vi.fn>).mockResolvedValue({});
     (parseIhgProfile as ReturnType<typeof vi.fn>).mockReturnValue(makeParsedProperty("A1"));
-    (prisma.hotelChainSubBrand.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({});
-    (prisma.property.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "p1" });
 
-    const result = await ingestIhgProperties({ limit: 1, batchSleepMs: 0 });
+    const result: ChainFetchResult = await ingestIhgProperties({ limit: 1, batchSleepMs: 0 });
 
     expect(fetchPropertyProfile).toHaveBeenCalledTimes(1);
-    expect(result.discoveredCount).toBe(1);
+    expect(result.properties).toHaveLength(1);
+  });
+
+  it("maps all ParsedProperty fields correctly", async () => {
+    const mockBrowser = makeMockBrowser();
+    (chromium.launch as ReturnType<typeof vi.fn>).mockResolvedValue(mockBrowser);
+    (harvestMnemonicsFromSitemap as ReturnType<typeof vi.fn>).mockResolvedValue(new Set(["HERCT"]));
+    (fetchPropertyProfile as ReturnType<typeof vi.fn>).mockResolvedValue({});
+    (parseIhgProfile as ReturnType<typeof vi.fn>).mockReturnValue(makeParsedProperty("HERCT"));
+
+    const result: ChainFetchResult = await ingestIhgProperties({ batchSleepMs: 0 });
+
+    expect(result.properties[0]).toMatchObject({
+      name: "Hotel HERCT",
+      chainPropertyId: "HERCT",
+      subBrandName: "InterContinental",
+      countryCode: "US",
+      city: "City",
+    });
   });
 });
