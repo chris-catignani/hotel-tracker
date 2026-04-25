@@ -1,3 +1,7 @@
+// Plain fetch is used here instead of Playwright's page.evaluate(fetch()) because the browser
+// page has no IHG session cookies, causing Akamai WAF to return 403. A direct Node.js fetch
+// with the API key header is sufficient and not blocked.
+
 const IHG_PROFILE_BASE = "https://apis.ihg.com/hotels/v3/profiles";
 
 // Same static public key used by the IHG price-watch scraper.

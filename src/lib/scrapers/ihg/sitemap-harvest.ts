@@ -1,5 +1,9 @@
 import { logger } from "@/lib/logger";
 
+// Plain fetch is used here instead of Playwright because page.goto() + page.content() returns
+// the browser's XML viewer HTML (with escaped tags) rather than raw XML, so sitemap <loc> tags
+// are never found. Plain fetch with browser-like headers returns 200 with the raw XML directly.
+
 const IHG_SITEMAP_INDEX = "https://www.ihg.com/bin/sitemapindex.xml";
 
 const FETCH_HEADERS = {
