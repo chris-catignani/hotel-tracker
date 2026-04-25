@@ -1,11 +1,9 @@
-import { Prisma } from "@prisma/client";
-import prisma from "@/lib/prisma";
 import { logger } from "@/lib/logger";
-import { HOTEL_ID } from "@/lib/constants";
 import { harvestGhaSitemap } from "@/lib/scrapers/gha/sitemap-harvest";
 import { parseGhaPropertyNextData } from "@/lib/scrapers/gha/next-data-parser";
-import { GHA_SUB_BRAND_SLUGS, subBrandNameForSlug } from "@/lib/scrapers/gha/sub-brand-slugs";
+import { subBrandNameForSlug } from "@/lib/scrapers/gha/sub-brand-slugs";
 import { withRetry, sleep } from "@/lib/retry";
+import { type ChainFetchResult, type ParsedProperty } from "./property-ingest-orchestrator";
 
 interface IngestOptions {
   limit?: number;
@@ -15,27 +13,7 @@ interface IngestOptions {
   requestDelayMs?: number;
 }
 
-export interface IngestResult {
-  harvestedCount: number;
-  fetchedCount: number;
-  upsertedCount: number;
-  skippedCount: number;
-  errors: string[];
-}
-
-async function ensureSubBrand(hotelChainId: string, slug: string) {
-  const name = subBrandNameForSlug(slug);
-  if (!(slug in GHA_SUB_BRAND_SLUGS)) {
-    logger.warn("gha_ingest:unknown_sub_brand", { slug, derivedName: name });
-  }
-  return prisma.hotelChainSubBrand.upsert({
-    where: { hotelChainId_name: { hotelChainId, name } },
-    update: {},
-    create: { hotelChainId, name },
-  });
-}
-
-export async function ingestGhaProperties(opts: IngestOptions = {}): Promise<IngestResult> {
+export async function ingestGhaProperties(opts: IngestOptions = {}): Promise<ChainFetchResult> {
   const harvest = opts.harvest ?? harvestGhaSitemap;
   const fetchHtml =
     opts.fetchHtml ??
@@ -43,7 +21,7 @@ export async function ingestGhaProperties(opts: IngestOptions = {}): Promise<Ing
       withRetry(
         async () => {
           const res = await fetch(`https://www.ghadiscovery.com${url}`);
-          if (res.status === 404) return null; // expected — don't retry, don't send to Sentry
+          if (res.status === 404) return null;
           if (!res.ok) throw new Error(`GET ${url} -> ${res.status}`);
           return res.text();
         },
@@ -52,111 +30,52 @@ export async function ingestGhaProperties(opts: IngestOptions = {}): Promise<Ing
         2000
       ));
   const requestDelayMs = opts.requestDelayMs ?? 300;
-  const now = opts.now ?? new Date();
-  const hotelChainId = HOTEL_ID.GHA_DISCOVERY;
 
   const urls = await harvest();
   const toFetch = opts.limit != null ? urls.slice(0, opts.limit) : urls;
   logger.info("gha_ingest:harvested", { count: urls.length });
-  if (opts.limit != null)
-    logger.info("gha_ingest:limit_applied", { limit: opts.limit, toFetch: toFetch.length });
 
-  const subBrandCache = new Map<string, string>();
   const errors: string[] = [];
-  let fetchedCount = 0;
-  let upsertedCount = 0;
   let skippedCount = 0;
+  const properties: ParsedProperty[] = [];
 
   for (const [i, url] of toFetch.entries()) {
     if (i > 0 && i % 50 === 0) {
       logger.info("gha_ingest:progress", {
         processed: i,
         total: toFetch.length,
-        upsertedCount,
+        fetchedCount: properties.length,
         skippedCount,
         errors: errors.length,
       });
     }
     if (i > 0 && requestDelayMs > 0) await sleep(requestDelayMs);
+
     try {
       const html = await fetchHtml(url);
       if (html === null) {
         skippedCount++;
-        logger.info("gha_ingest:skip_404", { url });
         continue;
       }
-      fetchedCount++;
       const parsed = parseGhaPropertyNextData(html, url);
       if (!parsed) {
         skippedCount++;
-        logger.warn("gha_ingest:skip", { url, reason: "no __NEXT_DATA__ or not a hotel" });
         continue;
       }
-
       if (parsed.unknownCountryName) {
         logger.warn("gha_ingest:unknown_country", { url, countryName: parsed.unknownCountryName });
       }
-
-      let subBrandId = subBrandCache.get(parsed.subBrandSlug);
-      if (!subBrandId) {
-        const row = await ensureSubBrand(hotelChainId, parsed.subBrandSlug);
-        subBrandId = row.id;
-        subBrandCache.set(parsed.subBrandSlug, subBrandId);
-      }
-
-      try {
-        await prisma.property.upsert({
-          where: { hotelChainId_chainUrlPath: { hotelChainId, chainUrlPath: parsed.chainUrlPath } },
-          update: {
-            name: parsed.name,
-            countryCode: parsed.countryCode,
-            city: parsed.city,
-            address: parsed.address,
-            latitude: parsed.latitude,
-            longitude: parsed.longitude,
-            chainPropertyId: parsed.chainPropertyId,
-            lastSeenAt: now,
-          },
-          create: {
-            name: parsed.name,
-            hotelChainId,
-            countryCode: parsed.countryCode,
-            city: parsed.city,
-            address: parsed.address,
-            latitude: parsed.latitude,
-            longitude: parsed.longitude,
-            chainPropertyId: parsed.chainPropertyId,
-            chainUrlPath: parsed.chainUrlPath,
-            lastSeenAt: now,
-          },
-        });
-      } catch (upsertErr) {
-        if (
-          !(upsertErr instanceof Prisma.PrismaClientKnownRequestError && upsertErr.code === "P2002")
-        ) {
-          throw upsertErr;
-        }
-        const existing = await prisma.property.findFirst({
-          where: { name: parsed.name, hotelChainId },
-        });
-        if (!existing) throw upsertErr;
-        await prisma.property.update({
-          where: { id: existing.id },
-          data: {
-            name: parsed.name,
-            chainUrlPath: parsed.chainUrlPath,
-            chainPropertyId: parsed.chainPropertyId,
-            countryCode: parsed.countryCode,
-            city: parsed.city,
-            address: parsed.address,
-            latitude: parsed.latitude,
-            longitude: parsed.longitude,
-            lastSeenAt: now,
-          },
-        });
-      }
-
-      upsertedCount++;
+      properties.push({
+        name: parsed.name,
+        chainPropertyId: parsed.chainPropertyId,
+        chainUrlPath: parsed.chainUrlPath,
+        countryCode: parsed.countryCode,
+        city: parsed.city,
+        address: parsed.address,
+        latitude: parsed.latitude,
+        longitude: parsed.longitude,
+        subBrandName: subBrandNameForSlug(parsed.subBrandSlug),
+      });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       errors.push(`${url}: ${msg}`);
@@ -164,5 +83,5 @@ export async function ingestGhaProperties(opts: IngestOptions = {}): Promise<Ing
     }
   }
 
-  return { harvestedCount: urls.length, fetchedCount, upsertedCount, skippedCount, errors };
+  return { properties, skippedCount, errors };
 }
