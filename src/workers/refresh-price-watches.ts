@@ -6,7 +6,11 @@ dotenv.config({ path: ".env.local", override: true });
 import * as Sentry from "@sentry/node";
 import { log } from "next-axiom";
 
-Sentry.init({ dsn: process.env.SENTRY_DSN, tracesSampleRate: 0 });
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  enabled: !!process.env.NODE_ENV && process.env.NODE_ENV !== "development",
+  tracesSampleRate: 0,
+});
 Sentry.setTag("runner_type", process.env.RUNNER_TYPE ?? "unknown");
 
 import { PrismaClient } from "@prisma/client";
