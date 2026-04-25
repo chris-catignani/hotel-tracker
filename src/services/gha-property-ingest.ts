@@ -143,6 +143,7 @@ export async function ingestGhaProperties(opts: IngestOptions = {}): Promise<Ing
         await prisma.property.update({
           where: { id: existing.id },
           data: {
+            name: parsed.name,
             chainUrlPath: parsed.chainUrlPath,
             chainPropertyId: parsed.chainPropertyId,
             countryCode: parsed.countryCode,
