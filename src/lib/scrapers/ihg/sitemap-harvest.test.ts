@@ -1,5 +1,10 @@
-import { describe, it, expect } from "vitest";
-import { parseSitemapIndex, parseBrandSitemap, extractMnemonicFromUrl } from "./sitemap-harvest";
+import { describe, it, expect, vi, afterEach } from "vitest";
+import {
+  parseSitemapIndex,
+  parseBrandSitemap,
+  extractMnemonicFromUrl,
+  harvestMnemonicsFromSitemap,
+} from "./sitemap-harvest";
 
 const SITEMAP_INDEX_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -83,5 +88,39 @@ describe("extractMnemonicFromUrl", () => {
 
   it("returns null for paths too short", () => {
     expect(extractMnemonicFromUrl("https://www.ihg.com/intercontinental/hotels")).toBeNull();
+  });
+});
+
+describe("harvestMnemonicsFromSitemap", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("fetches sitemap index then brand sitemaps and returns all mnemonics", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce({ ok: true, text: async () => SITEMAP_INDEX_XML })
+        .mockResolvedValue({ ok: true, text: async () => BRAND_SITEMAP_XML })
+    );
+
+    const mnemonics = await harvestMnemonicsFromSitemap();
+
+    expect(mnemonics.has("NHACH")).toBe(true);
+    expect(mnemonics.has("SANHB")).toBe(true);
+    expect(mnemonics.has("LONCR")).toBe(true);
+  });
+
+  it("skips brand sitemaps that fail to fetch", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce({ ok: true, text: async () => SITEMAP_INDEX_XML })
+        .mockRejectedValue(new Error("network error"))
+    );
+
+    const mnemonics = await harvestMnemonicsFromSitemap();
+
+    expect(mnemonics.size).toBe(0);
   });
 });

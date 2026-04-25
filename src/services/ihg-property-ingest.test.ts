@@ -1,9 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-vi.mock("playwright", () => ({
-  chromium: { launch: vi.fn() },
-}));
-
 vi.mock("@/lib/scrapers/ihg/sitemap-harvest", () => ({
   harvestMnemonicsFromSitemap: vi.fn(),
 }));
@@ -16,21 +12,11 @@ vi.mock("@/lib/scrapers/ihg/property-parser", () => ({
   parseIhgProfile: vi.fn(),
 }));
 
-import { chromium } from "playwright";
 import { harvestMnemonicsFromSitemap } from "@/lib/scrapers/ihg/sitemap-harvest";
 import { fetchPropertyProfile } from "@/lib/scrapers/ihg/property-fetcher";
 import { parseIhgProfile } from "@/lib/scrapers/ihg/property-parser";
 import { ingestIhgProperties } from "./ihg-property-ingest";
 import type { ChainFetchResult } from "./property-ingest-orchestrator";
-
-function makeMockBrowser() {
-  const mockPage = {};
-  const mockContext = { newPage: vi.fn().mockResolvedValue(mockPage) };
-  return {
-    newContext: vi.fn().mockResolvedValue(mockContext),
-    close: vi.fn().mockResolvedValue(undefined),
-  };
-}
 
 function makeParsedProperty(chainPropertyId: string) {
   return {
@@ -49,8 +35,6 @@ describe("ingestIhgProperties", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("harvests mnemonics, fetches profiles, and returns parsed properties", async () => {
-    const mockBrowser = makeMockBrowser();
-    (chromium.launch as ReturnType<typeof vi.fn>).mockResolvedValue(mockBrowser);
     (harvestMnemonicsFromSitemap as ReturnType<typeof vi.fn>).mockResolvedValue(
       new Set(["HERCT", "NYCPC"])
     );
@@ -64,12 +48,9 @@ describe("ingestIhgProperties", () => {
     expect(result.properties).toHaveLength(2);
     expect(result.skippedCount).toBe(0);
     expect(result.errors).toHaveLength(0);
-    expect(mockBrowser.close).toHaveBeenCalledOnce();
   });
 
   it("counts non-OPEN hotels as skipped (parseIhgProfile returns null)", async () => {
-    const mockBrowser = makeMockBrowser();
-    (chromium.launch as ReturnType<typeof vi.fn>).mockResolvedValue(mockBrowser);
     (harvestMnemonicsFromSitemap as ReturnType<typeof vi.fn>).mockResolvedValue(
       new Set(["CLOSED1"])
     );
@@ -83,8 +64,6 @@ describe("ingestIhgProperties", () => {
   });
 
   it("records error when fetchPropertyProfile throws, does not abort batch", async () => {
-    const mockBrowser = makeMockBrowser();
-    (chromium.launch as ReturnType<typeof vi.fn>).mockResolvedValue(mockBrowser);
     (harvestMnemonicsFromSitemap as ReturnType<typeof vi.fn>).mockResolvedValue(
       new Set(["ERR01", "GOOD1"])
     );
@@ -100,21 +79,7 @@ describe("ingestIhgProperties", () => {
     expect(result.properties).toHaveLength(1);
   });
 
-  it("does not close an injected browser", async () => {
-    const mockBrowser = makeMockBrowser() as ReturnType<typeof makeMockBrowser>;
-    (harvestMnemonicsFromSitemap as ReturnType<typeof vi.fn>).mockResolvedValue(new Set());
-
-    await ingestIhgProperties({
-      browser: mockBrowser as unknown as import("playwright").Browser,
-      batchSleepMs: 0,
-    });
-
-    expect(mockBrowser.close).not.toHaveBeenCalled();
-  });
-
   it("respects limit: fetches only the first N mnemonics", async () => {
-    const mockBrowser = makeMockBrowser();
-    (chromium.launch as ReturnType<typeof vi.fn>).mockResolvedValue(mockBrowser);
     (harvestMnemonicsFromSitemap as ReturnType<typeof vi.fn>).mockResolvedValue(
       new Set(["A1", "B2", "C3"])
     );
@@ -128,8 +93,6 @@ describe("ingestIhgProperties", () => {
   });
 
   it("maps all ParsedProperty fields correctly", async () => {
-    const mockBrowser = makeMockBrowser();
-    (chromium.launch as ReturnType<typeof vi.fn>).mockResolvedValue(mockBrowser);
     (harvestMnemonicsFromSitemap as ReturnType<typeof vi.fn>).mockResolvedValue(new Set(["HERCT"]));
     (fetchPropertyProfile as ReturnType<typeof vi.fn>).mockResolvedValue({});
     (parseIhgProfile as ReturnType<typeof vi.fn>).mockReturnValue(makeParsedProperty("HERCT"));

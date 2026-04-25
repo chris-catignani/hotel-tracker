@@ -1,7 +1,13 @@
 import { logger } from "@/lib/logger";
-import type { Page } from "playwright";
 
 const IHG_SITEMAP_INDEX = "https://www.ihg.com/bin/sitemapindex.xml";
+
+const FETCH_HEADERS = {
+  "User-Agent":
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+  Accept: "text/xml,application/xml,*/*",
+  "Accept-Language": "en-US,en;q=0.9",
+};
 
 function extractLocs(xml: string): string[] {
   return [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1].trim());
@@ -24,25 +30,20 @@ export function extractMnemonicFromUrl(url: string): string | null {
   return mnemonic ? mnemonic.toUpperCase() : null;
 }
 
-async function fetchXml(page: Page, url: string): Promise<string> {
-  return page.evaluate(async (u: string) => {
-    const res = await fetch(u);
-    if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${u}`);
-    return res.text();
-  }, url);
+async function fetchXml(url: string): Promise<string> {
+  const res = await fetch(url, { headers: FETCH_HEADERS });
+  if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${url}`);
+  return res.text();
 }
 
-export async function harvestMnemonicsFromSitemap(page: Page): Promise<Set<string>> {
-  // Navigate once to establish IHG browser context/cookies.
-  await page.goto(IHG_SITEMAP_INDEX, { waitUntil: "domcontentloaded", timeout: 60_000 });
-
-  const indexXml = await page.content();
+export async function harvestMnemonicsFromSitemap(): Promise<Set<string>> {
+  const indexXml = await fetchXml(IHG_SITEMAP_INDEX);
   const brandSitemapUrls = parseSitemapIndex(indexXml);
   logger.info("ihg_ingest:sitemap_brands_found", { count: brandSitemapUrls.length });
 
   const mnemonics = new Set<string>();
 
-  const results = await Promise.allSettled(brandSitemapUrls.map((url) => fetchXml(page, url)));
+  const results = await Promise.allSettled(brandSitemapUrls.map((url) => fetchXml(url)));
   for (let i = 0; i < results.length; i++) {
     const r = results[i];
     if (r.status === "rejected") {
