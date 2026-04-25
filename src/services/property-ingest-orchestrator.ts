@@ -30,11 +30,14 @@ interface WriteOptions {
   now?: Date;
 }
 
-async function ensureSubBrands(hotelChainId: string, properties: ParsedProperty[]): Promise<void> {
+async function ensureSubBrands(
+  hotelChainId: string,
+  properties: ParsedProperty[]
+): Promise<string[]> {
   const uniqueNames = [
     ...new Set(properties.map((p) => p.subBrandName).filter((n): n is string => !!n)),
   ];
-  await Promise.allSettled(
+  const results = await Promise.allSettled(
     uniqueNames.map((name) =>
       prisma.hotelChainSubBrand.upsert({
         where: { hotelChainId_name: { hotelChainId, name } },
@@ -43,6 +46,14 @@ async function ensureSubBrands(hotelChainId: string, properties: ParsedProperty[
       })
     )
   );
+  const errors: string[] = [];
+  results.forEach((r, idx) => {
+    if (r.status === "rejected") {
+      const msg = r.reason instanceof Error ? r.reason.message : String(r.reason);
+      errors.push(`subBrand[${uniqueNames[idx]}]: ${msg}`);
+    }
+  });
+  return errors;
 }
 
 async function insertBatch(
@@ -158,7 +169,8 @@ export async function writeProperties(
       batch.map((p) => p.subBrandName).filter((n): n is string => !!n)
     ).size;
     try {
-      await ensureSubBrands(hotelChainId, batch);
+      const subBrandErrors = await ensureSubBrands(hotelChainId, batch);
+      errors.push(...subBrandErrors);
       await insertBatch(hotelChainId, batch, now);
       await updateBatch(hotelChainId, batch, opts.conflictKey, now);
       processedCount += batch.length;

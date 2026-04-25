@@ -163,6 +163,27 @@ describe("writeProperties", () => {
     expect(result.dbOperationCount).toBe(8);
   });
 
+  it("captures individual sub-brand upsert failures without aborting the batch", async () => {
+    (prisma.hotelChainSubBrand.upsert as ReturnType<typeof vi.fn>)
+      .mockRejectedValueOnce(new Error("upsert failed"))
+      .mockResolvedValue({ id: "sb2" });
+    (prisma.property.createMany as ReturnType<typeof vi.fn>).mockResolvedValue({ count: 2 });
+    (prisma.$executeRawUnsafe as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+
+    const result = await writeProperties(
+      "chain-1",
+      [
+        makeProperty({ subBrandName: "BrandA" }),
+        makeProperty({ chainPropertyId: "TEST2", subBrandName: "BrandB" }),
+      ],
+      { conflictKey: "chainPropertyId" }
+    );
+
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]).toContain("subBrand[BrandA]");
+    expect(prisma.property.createMany).toHaveBeenCalledTimes(1);
+  });
+
   it("captures batch-level errors without aborting other batches", async () => {
     (prisma.hotelChainSubBrand.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "sb1" });
     (prisma.property.createMany as ReturnType<typeof vi.fn>)
