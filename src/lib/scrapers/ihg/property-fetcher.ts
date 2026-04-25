@@ -10,6 +10,7 @@ const IHG_API_KEY = process.env.IHG_API_KEY ?? "se9ym5iAzaW8pxfBjkmgbuGjJcr3Pj6Y
 export async function fetchPropertyProfile(mnemonic: string): Promise<unknown> {
   const res = await fetch(`${IHG_PROFILE_BASE}/${mnemonic}/details?ihg-language=en-us`, {
     headers: { "x-ihg-api-key": IHG_API_KEY },
+    signal: AbortSignal.timeout(20_000),
   });
   if (!res.ok) {
     throw new Error(`HTTP ${res.status} for mnemonic ${mnemonic}`);

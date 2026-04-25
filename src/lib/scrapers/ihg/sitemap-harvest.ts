@@ -35,7 +35,7 @@ export function extractMnemonicFromUrl(url: string): string | null {
 }
 
 async function fetchXml(url: string): Promise<string> {
-  const res = await fetch(url, { headers: FETCH_HEADERS });
+  const res = await fetch(url, { headers: FETCH_HEADERS, signal: AbortSignal.timeout(30_000) });
   if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${url}`);
   return res.text();
 }
