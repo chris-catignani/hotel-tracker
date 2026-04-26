@@ -34,7 +34,7 @@ export function parseHiltonHotel(raw: unknown): ParsedProperty | null {
     if (BRAND_CODES[brandCode] != null) {
       subBrandName = BRAND_CODES[brandCode];
     } else {
-      logger.warn("hilton_parse:unknown_brand_code", { brandCode, ctyhocn });
+      logger.warn("hilton_parse:unknown_brand_code", { brandCode, ctyhocn, name });
       subBrandName = brandCode;
     }
   }

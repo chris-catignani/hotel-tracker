@@ -22,4 +22,7 @@ export const BRAND_CODES: Record<string, string> = {
   UA: "Motto",
   UP: "Tapestry Collection",
   WA: "Waldorf Astoria",
+  AQ: "Placemakr",
+  EY: "LivSmart Studios",
+  ID: "Outset Collection",
 };
