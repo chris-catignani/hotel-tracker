@@ -146,9 +146,30 @@ const initialWatchBooking = {
   priceWatchId: "watch-1",
   cashThreshold: null,
   awardThreshold: null,
+  priceWatch: { isEnabled: true },
 };
 
 describe("BookingPriceWatch", () => {
+  it("shows toggle as on immediately when the watch is enabled without waiting for fetch", () => {
+    render(
+      <BookingPriceWatch
+        {...defaultProps}
+        initialWatchBooking={{ ...initialWatchBooking, priceWatch: { isEnabled: true } }}
+      />
+    );
+    expect(screen.getByTestId("price-watch-toggle")).toHaveAttribute("data-state", "checked");
+  });
+
+  it("shows toggle as off immediately when the watch is disabled without waiting for fetch", () => {
+    render(
+      <BookingPriceWatch
+        {...defaultProps}
+        initialWatchBooking={{ ...initialWatchBooking, priceWatch: { isEnabled: false } }}
+      />
+    );
+    expect(screen.getByTestId("price-watch-toggle")).toHaveAttribute("data-state", "unchecked");
+  });
+
   it("renders with toggle off when no watch exists", async () => {
     render(<BookingPriceWatch {...defaultProps} initialWatchBooking={null} />);
 
@@ -581,6 +602,21 @@ describe("BookingPriceWatch", () => {
     expect(rateRows[0]).toHaveTextContent("Non-refundable Rate"); // $220 — cheapest cash
     expect(rateRows[1]).toHaveTextContent("Standard Rate"); // $250
     expect(rateRows[2]).toHaveTextContent("12,000 pts"); // award row last
+  });
+
+  describe("threshold input labels", () => {
+    it("shows pre-tax per-night labels on cash and award threshold inputs", async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => mockWatch,
+      } as Response);
+      render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
+      await waitFor(() => {
+        expect(screen.getByTestId("cash-threshold-input")).toBeInTheDocument();
+      });
+      expect(screen.getByText("Cash alert below (pre-tax USD/night)")).toBeInTheDocument();
+      expect(screen.getByText("Award alert below (pre-tax pts/night)")).toBeInTheDocument();
+    });
   });
 
   describe("threshold input placeholders", () => {

@@ -391,6 +391,7 @@ export interface PriceWatchBooking {
   cashThreshold: string | number | null;
   awardThreshold: number | null;
   createdAt: string;
+  priceWatch: { isEnabled: boolean };
 }
 
 export interface PriceSnapshotRoom {
