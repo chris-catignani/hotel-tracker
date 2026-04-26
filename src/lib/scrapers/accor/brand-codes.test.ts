@@ -15,8 +15,8 @@ describe("subBrandNameForCode", () => {
     expect(subBrandNameForCode("NOV", mockLogger)).toBe("Novotel");
   });
 
-  it("returns null for SAM (unbranded, managed by Accor)", () => {
-    expect(subBrandNameForCode("SAM", mockLogger)).toBeNull();
+  it("returns 'Other brands' for SAM", () => {
+    expect(subBrandNameForCode("SAM", mockLogger)).toBe("Other brands");
   });
 
   it("returns null and logs warning for unknown code", () => {

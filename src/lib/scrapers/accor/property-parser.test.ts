@@ -50,6 +50,18 @@ describe("parseAccorProperty", () => {
     expect(parseAccorProperty(feature, mockLogger)).toBeNull();
   });
 
+  it("returns null and skips ELA entries (API test hotels)", () => {
+    const feature = makeFeature({
+      properties: {
+        store_id: "ELA1",
+        name: "HOTEL DE TEST API D3",
+        address: { lines: ["Some St"], country_code: "FR", city: null },
+        types: ["ELA"],
+      },
+    });
+    expect(parseAccorProperty(feature, mockLogger)).toBeNull();
+  });
+
   it("uses the first address line; null when lines is empty", () => {
     const feature = makeFeature({
       properties: {
@@ -79,7 +91,7 @@ describe("parseAccorProperty", () => {
     expect(result?.longitude).toBe(2.373);
   });
 
-  it("returns null for SAM (unbranded) with null subBrandName", () => {
+  it("maps SAM to 'Other brands'", () => {
     const feature = makeFeature({
       properties: {
         store_id: "9999",
@@ -90,7 +102,7 @@ describe("parseAccorProperty", () => {
     });
     const result = parseAccorProperty(feature, mockLogger);
     expect(result).not.toBeNull();
-    expect(result?.subBrandName).toBeNull();
+    expect(result?.subBrandName).toBe("Other brands");
   });
 
   it("warns and returns null subBrandName for unknown brand code", () => {
@@ -107,6 +119,8 @@ describe("parseAccorProperty", () => {
     expect(result?.subBrandName).toBeNull();
     expect(mockLogger.warn).toHaveBeenCalledWith("accor_ingest:unknown_brand_code", {
       code: "XYZ",
+      storeId: "8888",
+      name: "Mystery Hotel",
     });
   });
 

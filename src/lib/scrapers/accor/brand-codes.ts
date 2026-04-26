@@ -43,16 +43,42 @@ export const ACCOR_BRAND_CODES: Record<string, string | null> = {
   SO: "SO/",
   SOU: "Handwritten Collection",
   TRI: "TRIBE",
-  SAM: null,
+  // Ennismore/Lifestyle brands (acquired via SBE Entertainment / Ennismore merger)
+  HOX: "The Hoxton",
+  SLS: "SLS Hotels",
+  HYD: "Hyde Hotels",
+  DEL: "Delano Hotels",
+  TOR: "Morgans Originals",
+  REH: "The Redbury",
+  OUR: "Our Habitas",
+  PSC: "Paris Society Collection",
+  // Luxury brands
+  OEX: "Orient Express Hotels",
+  EMB: "Emblems Collection",
+  FAE: "Faena Hotels",
+  FAR: "Fairmont Residences",
+  // Asia minimalist resort brand
+  GAR: "Garrya",
+  // Extended-stay / serviced apartment brands
+  MOL: "Mövenpick Living",
+  CAS: "Cassia",
+  HOM: "Homm",
+  // Rock/lifestyle brand (franchise)
+  HAR: "Hard Rock Hotel",
+  // Additional Ibis Budget code
+  ASE: "Ibis Budget",
+  // Hotels classified under "Other brands" on the Accor website
+  SAM: "Other brands",
 };
 
 export function subBrandNameForCode(
   code: string,
-  logger: { warn: (message: string, extra?: Record<string, unknown>) => void }
+  logger: { warn: (message: string, extra?: Record<string, unknown>) => void },
+  context?: Record<string, unknown>
 ): string | null {
   if (Object.prototype.hasOwnProperty.call(ACCOR_BRAND_CODES, code)) {
     return ACCOR_BRAND_CODES[code];
   }
-  logger.warn("accor_ingest:unknown_brand_code", { code });
+  logger.warn("accor_ingest:unknown_brand_code", { code, ...context });
   return null;
 }
