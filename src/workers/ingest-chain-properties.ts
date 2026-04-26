@@ -17,6 +17,7 @@ import { ingestGhaProperties } from "@/services/gha-property-ingest";
 import { ingestHyattProperties } from "@/services/hyatt-property-ingest";
 import { ingestMarriottProperties } from "@/services/marriott-property-ingest";
 import { ingestIhgProperties } from "@/services/ihg-property-ingest";
+import { ingestAccorProperties } from "@/services/accor-property-ingest";
 import { writeProperties, type ChainFetchResult } from "@/services/property-ingest-orchestrator";
 
 type ConflictKey = "chainPropertyId" | "chainUrlPath";
@@ -52,9 +53,15 @@ function getChainConfig(chain: string): ChainConfig {
       conflictKey: "chainPropertyId",
       fetch: (l) => ingestIhgProperties({ limit: l }),
     };
+  } else if (chain === "accor") {
+    return {
+      hotelChainId: HOTEL_ID.ACCOR,
+      conflictKey: "chainPropertyId",
+      fetch: (l) => ingestAccorProperties({ limit: l }),
+    };
   } else {
     throw new Error(
-      `Unsupported chain=${chain}; supported values: 'gha', 'hyatt', 'marriott', 'ihg'`
+      `Unsupported chain=${chain}; supported values: 'gha', 'hyatt', 'marriott', 'ihg', 'accor'`
     );
   }
 }
@@ -71,7 +78,7 @@ interface ChainSummary {
 }
 
 async function main() {
-  const chains = (process.env.CHAINS ?? "gha,hyatt,marriott,ihg")
+  const chains = (process.env.CHAINS ?? "gha,hyatt,marriott,ihg,accor")
     .split(",")
     .map((c) => c.trim())
     .filter(Boolean);
