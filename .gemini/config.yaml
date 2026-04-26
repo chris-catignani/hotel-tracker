@@ -18,3 +18,4 @@ tool:
       - "npx tsx*"
       - "git*"
       - "gh*"
+      - "gh *"
