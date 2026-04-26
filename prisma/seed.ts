@@ -1,3 +1,7 @@
+import dotenv from "dotenv";
+dotenv.config();
+dotenv.config({ path: ".env.local", override: true });
+
 import { PrismaClient, PointCategory, BenefitPeriod } from "@prisma/client";
 import { hash } from "bcryptjs";
 import { HOTEL_ID, SUB_BRAND_ID } from "../src/lib/constants";
