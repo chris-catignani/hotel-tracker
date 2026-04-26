@@ -1,5 +1,8 @@
 import fs from "fs";
+import os from "os";
+import path from "path";
 import { chromium } from "playwright";
+import { logger } from "@/lib/logger";
 import type { HiltonRawHotel } from "./property-parser";
 
 const LOCATIONS_URL = "https://www.hilton.com/en/locations/hilton-hotels/";
@@ -27,7 +30,10 @@ export interface FetchOptions {
 
 export async function fetchHiltonProperties(opts: FetchOptions = {}): Promise<HiltonRawHotel[]> {
   const requestDelayMs = opts.requestDelayMs ?? 500;
-  const userDataDir = `/tmp/hilton-props-${Math.random().toString(36).substring(7)}`;
+  const userDataDir = path.join(
+    os.tmpdir(),
+    `hilton-props-${Math.random().toString(36).substring(7)}`
+  );
 
   const context = await chromium.launchPersistentContext(userDataDir, {
     headless: false,
@@ -94,7 +100,7 @@ export async function fetchHiltonProperties(opts: FetchOptions = {}): Promise<Hi
       { graphqlBase: GRAPHQL_BASE, token }
     );
 
-    console.log(`[HiltonPropertyFetcher] ${quadrantIds.length} quadrants`);
+    logger.info("hilton_fetch:quadrants_found", { count: quadrantIds.length });
 
     const allHotels: HiltonRawHotel[] = [];
 
@@ -126,6 +132,7 @@ export async function fetchHiltonProperties(opts: FetchOptions = {}): Promise<Hi
                   operationName: "hotelSummaryOptions_geocodePage",
                   query: args.query,
                   variables: {
+                    // "HU" is intentional — other values return incomplete geo data
                     input: { guestLocationCountry: "HU", quadrantId: args.quadrantId },
                     language: "en",
                   },
@@ -141,13 +148,18 @@ export async function fetchHiltonProperties(opts: FetchOptions = {}): Promise<Hi
         );
 
         allHotels.push(...(hotels as HiltonRawHotel[]));
-        console.log(
-          `[HiltonPropertyFetcher] Quadrant ${i + 1}/${quadrantIds.length} (${quadrantId}): ${hotels.length} hotels (total: ${allHotels.length})`
-        );
+        logger.info("hilton_fetch:quadrant_done", {
+          quadrantIndex: i + 1,
+          total: quadrantIds.length,
+          quadrantId,
+          hotelCount: hotels.length,
+          totalSoFar: allHotels.length,
+        });
       } catch (err) {
-        console.warn(
-          `[HiltonPropertyFetcher] Failed quadrant ${quadrantId}: ${err instanceof Error ? err.message : String(err)}`
-        );
+        logger.warn("hilton_fetch:quadrant_failed", {
+          quadrantId,
+          error: err instanceof Error ? err.message : String(err),
+        });
       }
     }
 
