@@ -304,9 +304,9 @@ model Booking {
   checkIn               DateTime             @map("check_in") @db.Date
   checkOut              DateTime             @map("check_out") @db.Date
   numNights             Int                  @map("num_nights")
-  pretaxCost            Decimal              @map("pretax_cost") @db.Decimal(10, 2)
-  taxAmount             Decimal              @map("tax_amount") @db.Decimal(10, 2)
-  totalCost             Decimal              @map("total_cost") @db.Decimal(10, 2)
+  pretaxCost            Decimal              @map("pretax_cost") @db.Decimal(14, 2)
+  taxAmount             Decimal              @map("tax_amount") @db.Decimal(14, 2)
+  totalCost             Decimal              @map("total_cost") @db.Decimal(14, 2)
   userCreditCardId      String?              @map("user_credit_card_id")
   userCreditCard        UserCreditCard?      @relation(fields: [userCreditCardId], references: [id])
   bookingDate           DateTime?            @db.Date @map("booking_date")
@@ -734,7 +734,7 @@ model PriceWatchBooking {
   priceWatch          PriceWatch @relation(fields: [priceWatchId], references: [id], onDelete: Cascade)
   bookingId           String     @map("booking_id")
   booking             Booking    @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  cashThreshold       Decimal?   @map("cash_threshold") @db.Decimal(10, 2)
+  cashThreshold       Decimal?   @map("cash_threshold") @db.Decimal(14, 2)
   awardThreshold      Int?       @map("award_threshold")
   createdAt           DateTime   @default(now()) @map("created_at")
 
@@ -748,7 +748,7 @@ model PriceSnapshot {
   priceWatch                   PriceWatch          @relation(fields: [priceWatchId], references: [id], onDelete: Cascade)
   checkIn                      DateTime            @map("check_in") @db.Date
   checkOut                     DateTime            @map("check_out") @db.Date
-  lowestRefundableCashPrice    Decimal?            @map("lowest_refundable_cash_price") @db.Decimal(10, 2)
+  lowestRefundableCashPrice    Decimal?            @map("lowest_refundable_cash_price") @db.Decimal(14, 2)
   lowestRefundableCashCurrency String              @default("USD") @map("lowest_refundable_cash_currency")
   lowestAwardPrice             Int?                @map("lowest_award_price")
   source                       String
@@ -767,7 +767,7 @@ model PriceSnapshotRoom {
   roomName        String        @map("room_name")
   ratePlanCode    String        @map("rate_plan_code")
   ratePlanName    String        @map("rate_plan_name")
-  cashPrice       Decimal?      @map("cash_price") @db.Decimal(10, 2)
+  cashPrice       Decimal?      @map("cash_price") @db.Decimal(14, 2)
   cashCurrency    String        @default("USD") @map("cash_currency")
   awardPrice      Int?          @map("award_price")
   isRefundable    Refundability @default(UNKNOWN) @map("is_refundable")
