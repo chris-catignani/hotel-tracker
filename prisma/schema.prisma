@@ -1,10 +1,12 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pg_trgm]
 }
 
 enum PointCategory {
@@ -694,6 +696,7 @@ model Property {
   @@unique([hotelChainId, chainPropertyId])
   @@unique([hotelChainId, chainUrlPath])
   @@index([hotelChainId, latitude, longitude])
+  @@index([name(ops: raw("gin_trgm_ops"))], type: Gin, map: "properties_name_trgm")
   @@map("properties")
 }
 
