@@ -27,7 +27,7 @@ export function parseAccorProperty(
   const props = f?.properties;
 
   if (!props?.store_id) return null;
-  if (props.types?.[0] === "TST" || props.types?.[0] === "ELA") return null;
+  if (props.types?.some((t) => t === "TST" || t === "ELA")) return null;
 
   const brandCode = props.types?.[0] ?? "";
   const coords = f.geometry?.coordinates;
@@ -38,7 +38,7 @@ export function parseAccorProperty(
     chainUrlPath: null,
     city: null,
     countryCode: props.address?.country_code ?? null,
-    address: props.address?.lines?.[0] ?? null,
+    address: props.address?.lines?.filter(Boolean).join(", ") || null,
     latitude: coords ? coords[1] : null,
     longitude: coords ? coords[0] : null,
     subBrandName: subBrandNameForCode(brandCode, logger, {

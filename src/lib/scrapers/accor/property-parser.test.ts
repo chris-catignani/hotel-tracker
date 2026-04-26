@@ -62,7 +62,7 @@ describe("parseAccorProperty", () => {
     expect(parseAccorProperty(feature, mockLogger)).toBeNull();
   });
 
-  it("uses the first address line; null when lines is empty", () => {
+  it("joins multiple address lines; null when lines is empty", () => {
     const feature = makeFeature({
       properties: {
         store_id: "C3M1",
@@ -73,6 +73,19 @@ describe("parseAccorProperty", () => {
     });
     const result = parseAccorProperty(feature, mockLogger);
     expect(result?.address).toBeNull();
+  });
+
+  it("joins multiple address lines into a single string", () => {
+    const feature = makeFeature({
+      properties: {
+        store_id: "1111",
+        name: "Multi-line Hotel",
+        address: { lines: ["123 Main St", "Suite 4", "London"], country_code: "GB", city: null },
+        types: ["IBH"],
+      },
+    });
+    const result = parseAccorProperty(feature, mockLogger);
+    expect(result?.address).toBe("123 Main St, Suite 4, London");
   });
 
   it("city is always null", () => {
