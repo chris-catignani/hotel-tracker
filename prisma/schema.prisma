@@ -694,6 +694,7 @@ model Property {
   @@unique([hotelChainId, chainPropertyId])
   @@unique([hotelChainId, chainUrlPath])
   @@index([hotelChainId, latitude, longitude])
+  @@index([name(ops: raw("gin_trgm_ops"))], type: Gin, map: "properties_name_trgm")
   @@map("properties")
 }
 
