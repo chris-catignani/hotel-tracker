@@ -8,7 +8,7 @@ on:
       chains:
         description: "Comma-separated chains to ingest (e.g. gha, hyatt, ihg)"
         required: true
-        default: "gha,marriott,accor"
+        default: "gha,marriott,ihg,accor"
       runner:
         description: "Runner type: remote or local"
         required: true
