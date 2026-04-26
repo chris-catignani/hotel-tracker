@@ -8,7 +8,7 @@ on:
       chains:
         description: "Comma-separated chains to ingest (e.g. gha, hyatt, ihg)"
         required: true
-        default: "gha,marriott"
+        default: "gha,marriott,ihg,accor"
       runner:
         description: "Runner type: remote or local"
         required: true
@@ -87,7 +87,7 @@ jobs:
       - name: Run chain property ingest
         run: xvfb-run npx tsx src/workers/ingest-chain-properties.ts
         env:
-          CHAINS: ${{ github.event.inputs.chains || 'gha,marriott,ihg' }}
+          CHAINS: ${{ github.event.inputs.chains || 'gha,marriott,ihg,accor' }}
           LIMIT: ${{ github.event.inputs.limit }}
           NODE_ENV: production
           RUNNER_TYPE: remote
