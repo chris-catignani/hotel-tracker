@@ -348,7 +348,7 @@ model BookingBenefit {
   bookingId   String      @map("booking_id")
   benefitType BenefitType @map("benefit_type")
   label       String?
-  dollarValue      Decimal?               @map("dollar_value") @db.Decimal(10, 2)
+  dollarValue      Decimal?               @map("dollar_value") @db.Decimal(14, 2)
   pointsEarnType   BenefitPointsEarnType? @map("points_earn_type")
   pointsAmount     Int?                   @map("points_amount")
   pointsMultiplier Decimal?               @map("points_multiplier") @db.Decimal(6, 3)
