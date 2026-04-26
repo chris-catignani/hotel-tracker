@@ -26,6 +26,7 @@ interface PriceWatchBookingData {
   priceWatchId: string;
   cashThreshold: string | number | null;
   awardThreshold: number | null;
+  priceWatch: { isEnabled: boolean };
 }
 
 interface PriceSnapshotRoom {
@@ -225,13 +226,13 @@ export function BookingPriceWatch({
     );
   };
 
-  const isEnabled = watch?.isEnabled ?? false;
+  const isEnabled = watch?.isEnabled ?? initialWatchBooking?.priceWatch?.isEnabled ?? false;
   const latestSnapshot = watch?.snapshots?.[0] ?? null;
 
   const handleToggle = async (enabled: boolean) => {
     setSaving(true);
-    if (!watch) {
-      // Enable — create the watch
+    const existingWatchId = watch?.id ?? initialWatchBooking?.priceWatchId ?? null;
+    if (!existingWatchId) {
       const result = await apiFetch<
         PriceWatchData & { bookings?: (PriceWatchBookingData & { bookingId: string })[] }
       >("/api/price-watches", {
@@ -252,8 +253,7 @@ export function BookingPriceWatch({
         if (pwb) setWatchBooking(pwb);
       }
     } else {
-      // Toggle existing watch
-      const result = await apiFetch<PriceWatchData>(`/api/price-watches/${watch.id}`, {
+      const result = await apiFetch<PriceWatchData>(`/api/price-watches/${existingWatchId}`, {
         method: "PUT",
         body: { isEnabled: enabled },
       });
@@ -326,7 +326,7 @@ export function BookingPriceWatch({
             {/* Alert thresholds */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label className="text-xs">Cash alert below ({currency})</Label>
+                <Label className="text-xs">Cash alert below (pre-tax {currency}/night)</Label>
                 <Input
                   type="number"
                   placeholder={
@@ -339,7 +339,7 @@ export function BookingPriceWatch({
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">Award alert below (pts)</Label>
+                <Label className="text-xs">Award alert below (pre-tax pts/night)</Label>
                 <Input
                   type="number"
                   placeholder={

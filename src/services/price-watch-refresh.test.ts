@@ -101,7 +101,7 @@ describe("runPriceWatchRefresh", () => {
 
     it("does not fire alert when scraper price is above the USD threshold", async () => {
       vi.mocked(prisma.priceWatch.findMany).mockResolvedValue([
-        makeWatch({ cashThreshold: "200" }), // threshold 200, price 250 → no alert
+        makeWatch({ cashThreshold: "200" }), // threshold 200, price 250/night → no alert
       ] as never);
 
       const result = await runPriceWatchRefresh([]);
@@ -131,7 +131,7 @@ describe("runPriceWatchRefresh", () => {
     });
 
     it("fires alert when converted price is below the threshold", async () => {
-      // EUR booking, threshold €240
+      // EUR booking, threshold €240/night
       // Scraper returns $250 USD → €250/1.08 ≈ €231.48 — below threshold → alert
       vi.mocked(prisma.priceWatch.findMany).mockResolvedValue([
         makeWatch({ currency: "EUR", cashThreshold: "240" }),
@@ -147,7 +147,7 @@ describe("runPriceWatchRefresh", () => {
     });
 
     it("handles cross-currency: MYR scraper price vs EUR booking", async () => {
-      // EUR booking, threshold €200
+      // EUR booking, threshold €200/night
       // Scraper returns 1000 MYR (1 MYR = 0.21 USD, 1 EUR = 1.08 USD)
       // 1000 MYR * 0.21 = $210 USD / 1.08 = €194.44 — below threshold → alert
       vi.mocked(prisma.priceWatch.findMany).mockResolvedValue([
@@ -194,8 +194,9 @@ describe("runPriceWatchRefresh", () => {
 
   describe("award threshold", () => {
     it("fires alert when award price is below the award threshold", async () => {
+      // scraper 20,000 pts/night < 25,000/night threshold → alert
       vi.mocked(prisma.priceWatch.findMany).mockResolvedValue([
-        makeWatch({ cashThreshold: "500", awardThreshold: 25000 }), // cash not met (250 < 500 ✓), award met (20000 < 25000 ✓)
+        makeWatch({ cashThreshold: null as unknown as string, awardThreshold: 25000 }),
       ] as never);
 
       const result = await runPriceWatchRefresh([]);
@@ -206,7 +207,7 @@ describe("runPriceWatchRefresh", () => {
 
     it("does not fire alert when award price is above the award threshold", async () => {
       vi.mocked(prisma.priceWatch.findMany).mockResolvedValue([
-        makeWatch({ cashThreshold: null as unknown as string, awardThreshold: 15000 }), // 20000 > 15000 → no alert
+        makeWatch({ cashThreshold: null as unknown as string, awardThreshold: 15000 }), // 20000/night > 15000 → no alert
       ] as never);
 
       const result = await runPriceWatchRefresh([]);

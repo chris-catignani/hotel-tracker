@@ -128,6 +128,7 @@ interface PriceWatchBookingData {
   priceWatchId: string;
   cashThreshold: string | number | null;
   awardThreshold: number | null;
+  priceWatch: { isEnabled: boolean };
 }
 
 interface Booking extends Omit<NetCostBooking, "bookingPromotions" | "userCreditCard"> {
