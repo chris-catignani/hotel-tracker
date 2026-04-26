@@ -13,7 +13,7 @@ export const BRAND_CODES: Record<string, string> = {
   ND: "NoMad",
   OL: "LXR",
   OU: "AutoCamp",
-  PE: "Spark by Hilton",
+  PE: "Spark",
   PO: "Tempo",
   PY: "Canopy",
   QQ: "Curio Collection",
