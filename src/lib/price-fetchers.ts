@@ -1,6 +1,6 @@
-import { createAccorFetcher } from "@/lib/scrapers/accor";
+import { createAccorFetcher } from "@/lib/scrapers/accor/price-watch";
 import { createGhaFetcher } from "@/lib/scrapers/gha/price-watch";
-import { createHiltonFetcher } from "@/lib/scrapers/hilton";
+import { createHiltonFetcher } from "@/lib/scrapers/hilton/price-watch";
 import { createHyattFetcher } from "@/lib/scrapers/hyatt/price-watch";
 import { createIhgFetcher } from "@/lib/scrapers/ihg/price-watch";
 import { createMarriottFetcher } from "@/lib/scrapers/marriott/price-watch";

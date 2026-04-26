@@ -13,7 +13,7 @@
  */
 import { HOTEL_ID } from "../src/lib/constants";
 import type { FetchParams } from "../src/lib/price-fetcher";
-import { HiltonFetcher } from "../src/lib/scrapers/hilton";
+import { HiltonFetcher } from "../src/lib/scrapers/hilton/price-watch";
 
 const ctyhocn = (process.argv[2] ?? "NYCMHHH").toUpperCase();
 const checkIn = process.argv[3] ?? "2026-05-01";
