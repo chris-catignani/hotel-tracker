@@ -1,20 +1,12 @@
 import { logger } from "@/lib/logger";
-import { fetchAccorProperties } from "@/lib/scrapers/accor/property-fetcher";
+import { fetchAccorProperties, type FetchOptions } from "@/lib/scrapers/accor/property-fetcher";
 import { parseAccorProperty } from "@/lib/scrapers/accor/property-parser";
 import { type ChainFetchResult, type ParsedProperty } from "./property-ingest-orchestrator";
 
-export interface IngestOptions {
-  limit?: number;
-  fetchPage?: (page: number) => Promise<unknown>;
-  requestDelayMs?: number;
-}
+export type IngestOptions = FetchOptions;
 
 export async function ingestAccorProperties(opts: IngestOptions = {}): Promise<ChainFetchResult> {
-  const rawFeatures = await fetchAccorProperties({
-    limit: opts.limit,
-    fetchPage: opts.fetchPage,
-    requestDelayMs: opts.requestDelayMs,
-  });
+  const rawFeatures = await fetchAccorProperties(opts);
 
   logger.info("accor_ingest:fetched", { count: rawFeatures.length });
 
