@@ -137,7 +137,10 @@ export async function upsertPriceWatch(
 
   const watch = await prisma.priceWatch.upsert({
     where: { userId_propertyId: { userId, propertyId } },
-    update: { isEnabled },
+    update: {
+      isEnabled,
+      ...(priority === PRICE_WATCH_PRIORITY.ANCHOR ? { priority } : {}),
+    },
     create: { userId, propertyId, isEnabled, priority },
   });
 

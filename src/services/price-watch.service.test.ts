@@ -202,8 +202,22 @@ describe("upsertPriceWatch", () => {
     );
   });
 
-  it("does not include priority in the update branch", async () => {
+  it("includes priority in the update branch when it is ANCHOR", async () => {
     prismaMock.booking.findFirst.mockResolvedValueOnce({ id: "booking-1", propertyId: "prop-1" });
+    prismaMock.priceWatchBooking.count.mockResolvedValue(0);
+    prismaMock.priceWatchBooking.findUnique.mockResolvedValue(null);
+
+    await upsertPriceWatch("user-1", { ...baseInput, bookingId: "booking-1" });
+
+    const updateArg = prismaMock.priceWatch.upsert.mock.calls[0][0].update;
+    expect(updateArg).toHaveProperty("priority", 100);
+  });
+
+  it("does NOT include priority in the update branch when it is ALTERNATE (to avoid downgrading)", async () => {
+    prismaMock.booking.findFirst.mockResolvedValueOnce({
+      id: "booking-1",
+      propertyId: "other-prop",
+    });
     prismaMock.priceWatchBooking.count.mockResolvedValue(0);
     prismaMock.priceWatchBooking.findUnique.mockResolvedValue(null);
 
