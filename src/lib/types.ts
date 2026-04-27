@@ -467,8 +467,8 @@ export interface Booking {
   hotelChainId: string | null;
   accommodationType: AccommodationType;
   hotelChainSubBrandId: string | null;
-  propertyId: string;
-  property: Property;
+  propertyId: string | null;
+  property: Property | null;
   checkIn: string;
   checkOut: string;
   numNights: number;
