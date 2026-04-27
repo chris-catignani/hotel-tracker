@@ -158,8 +158,34 @@ describe("BookingForm", () => {
   it("renders correctly with basic fields", async () => {
     render(<BookingForm {...defaultProps} />);
     expect(screen.getByText("Booking Details")).toBeInTheDocument();
-    expect(screen.getByText(/Hotel Chain \*/i)).toBeInTheDocument();
+    expect(screen.getByText(/^Hotel Chain$/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Property Name/i)).toBeInTheDocument();
+  });
+
+  it("hotel chain dropdown includes 'Other' option", async () => {
+    const user = userEvent.setup();
+    render(<BookingForm {...defaultProps} />);
+
+    const chainSelect = screen.getByTestId("hotel-chain-select");
+    await user.click(chainSelect);
+
+    expect(await screen.findByRole("option", { name: "Other" })).toBeInTheDocument();
+  });
+
+  it("form submits without a chain when 'Other' is selected", async () => {
+    const user = userEvent.setup();
+    render(<BookingForm {...defaultProps} />);
+
+    // Select "Other" chain
+    await user.click(screen.getByTestId("hotel-chain-select"));
+    await user.click(await screen.findByRole("option", { name: "Other" }));
+
+    const propertyInput = screen.getByTestId("property-name-input");
+    await user.type(propertyInput, "Grand Independent Hotel");
+    // geo confirmation is skipped — integration covered in E2E
+
+    await user.click(screen.getByTestId("booking-form-submit"));
+    expect(screen.queryByText(/Hotel chain is required/i)).not.toBeInTheDocument();
   });
 
   it("calculates number of nights correctly when dates change", async () => {
