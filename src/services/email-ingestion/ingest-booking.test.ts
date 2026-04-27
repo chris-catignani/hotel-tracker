@@ -40,6 +40,7 @@ vi.mock("@/services/property-utils", () => ({
 }));
 vi.mock("@/services/geo-lookup", () => ({
   searchPlaces: vi.fn().mockResolvedValue([]),
+  searchLocalProperties: vi.fn().mockResolvedValue([]),
 }));
 vi.mock("@/lib/loyalty-utils", () => ({
   calculatePoints: vi.fn().mockReturnValue(1200),
@@ -276,47 +277,44 @@ describe("ingestBookingFromEmail", () => {
     expect(data.accommodationType).toBe("apartment");
   });
 
-  it("geo-enriches the property using searchPlaces and passes geo fields to findOrCreateProperty", async () => {
-    const { searchPlaces } = await import("@/services/geo-lookup");
+  it("resolves hotel property via searchLocalProperties and uses matched propertyId directly", async () => {
+    const { searchLocalProperties } = await import("@/services/geo-lookup");
     const { findOrCreateProperty } = await import("@/services/property-utils");
-    vi.mocked(searchPlaces).mockResolvedValueOnce([
+    vi.mocked(searchLocalProperties).mockResolvedValueOnce([
       {
-        source: "places",
-        placeId: "gplace-123",
-        displayName: "Kimpton Margot Sydney",
-        city: "Sydney",
-        countryCode: "AU",
-        address: "339 Pitt Street, Sydney NSW 2000, Australia",
-        latitude: -33.8734,
-        longitude: 151.2059,
+        source: "local",
+        propertyId: "local-prop-456",
+        hotelChainId: "chain-hyatt",
+        displayName: "Hyatt Regency Salt Lake City",
+        city: "Salt Lake City",
+        countryCode: "US",
+        address: "170 South West Temple, Salt Lake City, UT 84101",
+        latitude: 40.7608,
+        longitude: -111.8911,
       },
     ]);
 
-    await ingestBookingFromEmail(baseParsed, "user-1", null);
+    await ingestBookingFromEmail(baseParsed, "user-1", "Hyatt");
 
-    expect(searchPlaces).toHaveBeenCalledWith(baseParsed.propertyName, true);
-    expect(findOrCreateProperty).toHaveBeenCalledWith(
-      expect.objectContaining({
-        propertyName: "Kimpton Margot Sydney",
-        placeId: "gplace-123",
-        city: "Sydney",
-        countryCode: "AU",
-        address: "339 Pitt Street, Sydney NSW 2000, Australia",
-        latitude: -33.8734,
-        longitude: 151.2059,
-      })
-    );
+    expect(searchLocalProperties).toHaveBeenCalledWith(baseParsed.propertyName, "chain-hyatt");
+    expect(findOrCreateProperty).not.toHaveBeenCalled();
+    const data = mockBookingCreate.mock.calls[0][0].data;
+    expect(data.propertyId).toBe("local-prop-456");
   });
 
-  it("falls back to parsed propertyName when geo lookup returns no results", async () => {
-    const { findOrCreateProperty } = await import("@/services/property-utils");
-    await ingestBookingFromEmail(baseParsed, "user-1", null);
-    expect(findOrCreateProperty).toHaveBeenCalledWith(
-      expect.objectContaining({ propertyName: baseParsed.propertyName })
-    );
+  it("sets propertyId to null when no local property match found for a hotel booking", async () => {
+    await ingestBookingFromEmail(baseParsed, "user-1", "Hyatt");
+    const data = mockBookingCreate.mock.calls[0][0].data;
+    expect(data.propertyId).toBeNull();
   });
 
-  it("uses propertyAddress (not propertyName) for apartment geo lookup", async () => {
+  it("does not call searchPlaces for hotel bookings", async () => {
+    const { searchPlaces } = await import("@/services/geo-lookup");
+    await ingestBookingFromEmail(baseParsed, "user-1", "Hyatt");
+    expect(searchPlaces).not.toHaveBeenCalled();
+  });
+
+  it("uses propertyAddress (not propertyName) for apartment geo lookup via searchPlaces", async () => {
     const { searchPlaces } = await import("@/services/geo-lookup");
     const address = "135 Hallenstein Street, Queenstown 9300, New Zealand";
     await ingestBookingFromEmail(
