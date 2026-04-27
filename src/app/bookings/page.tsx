@@ -64,7 +64,7 @@ interface BookingCertificate {
 
 interface Booking {
   id: string;
-  hotelChainId: string;
+  hotelChainId: string | null;
   hotelChainSubBrand: { id: string; name: string; basePointRate: string | number | null } | null;
   property: { name: string };
   checkIn: string;
@@ -345,7 +345,9 @@ function BookingsPageInner() {
                       </TableCell>
                       <TableCell data-testid={`chain-cell-${booking.id}`}>
                         {booking.hotelChain?.name ??
-                          (booking.accommodationType === "apartment" ? "Apartment / Rental" : "—")}
+                          (booking.accommodationType === "apartment"
+                            ? "Apartment / Rental"
+                            : "Other")}
                       </TableCell>
                       <TableCell>{formatDate(booking.checkIn)}</TableCell>
                       <TableCell>{formatDate(booking.checkOut)}</TableCell>

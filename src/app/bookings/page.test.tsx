@@ -209,7 +209,7 @@ describe("BookingsPage", () => {
     });
   });
 
-  it("shows dash for hotel booking with no matched chain", async () => {
+  it("shows 'Other' for hotel booking with no matched chain", async () => {
     mockFetch.mockResolvedValue({
       ok: true,
       status: 200,
@@ -264,7 +264,7 @@ describe("BookingsPage", () => {
       expect(screen.getByTestId("booking-row-bk-no-chain")).toBeInTheDocument();
     });
 
-    expect(screen.getByTestId("chain-cell-bk-no-chain")).toHaveTextContent("—");
+    expect(screen.getByTestId("chain-cell-bk-no-chain")).toHaveTextContent("Other");
   });
 
   it("shows Apartment / Rental for apartment booking with no chain", async () => {
