@@ -58,7 +58,7 @@ interface BookingWithRelations {
     name: string;
     countryCode: string | null;
     city: string | null;
-  };
+  } | null;
   checkIn: string;
   checkOut: string;
   numNights: number;

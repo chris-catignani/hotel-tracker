@@ -66,7 +66,7 @@ interface Booking {
   id: string;
   hotelChainId: string | null;
   hotelChainSubBrand: { id: string; name: string; basePointRate: string | number | null } | null;
-  property: { name: string };
+  property: { name: string } | null;
   checkIn: string;
   checkOut: string;
   numNights: number;
