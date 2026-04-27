@@ -442,6 +442,7 @@ export function BookingForm({
                     })),
                     { label: "Other", value: "" },
                   ]}
+                  disableSort
                   placeholder="Select hotel chain..."
                   data-testid="hotel-chain-select"
                 />
