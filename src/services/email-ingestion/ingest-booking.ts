@@ -1,6 +1,6 @@
 import prisma from "@/lib/prisma";
 import { findOrCreateProperty } from "@/services/property-utils";
-import { searchPlaces } from "@/services/geo-lookup";
+import { searchPlaces, searchLocalProperties } from "@/services/geo-lookup";
 import { resolveBookingFinancials } from "@/services/booking-financials";
 import { runPostBookingCreate } from "@/services/booking.service";
 import { matchSubBrand } from "@/services/email-ingestion/email-parser";
@@ -74,25 +74,31 @@ export async function ingestBookingFromEmail(
       })
     : null;
 
-  // Geo-enrich the property via Google Places, mirroring the manual booking flow.
-  // Apartments: always geocode by address (listing names don't exist in Google Places).
-  // Hotels: geocode by property name with lodging type filter.
+  // Resolve property.
+  // Hotels: match against our DB (populated by property ingestors) using trigram search.
+  //   No Google Places fallback — if not found, propertyId is null and the user assigns it on review.
+  // Apartments: geocode via Google Places since they are not in the ingestor's directory.
   const isHotel = (parsed.accommodationType ?? "hotel") !== "apartment";
-  const geoQuery = isHotel ? parsed.propertyName : (parsed.propertyAddress ?? parsed.propertyName);
-  const geoResults = await searchPlaces(geoQuery, isHotel);
-  const geo = geoResults[0] ?? null;
+  let propertyId: string | null = null;
 
-  // Resolve property
-  const propertyId = await findOrCreateProperty({
-    propertyName: geo?.displayName ?? parsed.propertyName,
-    placeId: geo?.placeId ?? null,
-    hotelChainId: hotelChain?.id ?? null,
-    countryCode: geo?.countryCode ?? null,
-    city: geo?.city ?? null,
-    address: geo?.address ?? null,
-    latitude: geo?.latitude ?? null,
-    longitude: geo?.longitude ?? null,
-  });
+  if (isHotel) {
+    const localResults = await searchLocalProperties(parsed.propertyName, hotelChain?.id);
+    propertyId = localResults[0]?.propertyId ?? null;
+  } else {
+    const geoQuery = parsed.propertyAddress ?? parsed.propertyName;
+    const geoResults = await searchPlaces(geoQuery, false);
+    const geo = geoResults[0] ?? null;
+    propertyId = await findOrCreateProperty({
+      propertyName: geo?.displayName ?? parsed.propertyName,
+      placeId: geo?.placeId ?? null,
+      hotelChainId: hotelChain?.id ?? null,
+      countryCode: geo?.countryCode ?? null,
+      city: geo?.city ?? null,
+      address: geo?.address ?? null,
+      latitude: geo?.latitude ?? null,
+      longitude: geo?.longitude ?? null,
+    });
+  }
 
   const parsedTaxAmount = parsed.taxLines
     ? Math.round(parsed.taxLines.reduce((sum, l) => sum + l.amount, 0) * 100) / 100
