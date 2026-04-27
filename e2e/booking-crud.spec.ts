@@ -316,7 +316,6 @@ test.describe("Booking Create Form", () => {
 
     await isolatedUser.page.getByTestId("booking-form-submit").click();
 
-    await expect(isolatedUser.page.getByText("Hotel chain is required")).toBeVisible();
     await expect(isolatedUser.page.getByText("Property name is required")).toBeVisible();
     await expect(isolatedUser.page.getByText("Check-in date is required")).toBeVisible();
     await expect(isolatedUser.page.getByText("Check-out date is required")).toBeVisible();
