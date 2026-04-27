@@ -826,7 +826,7 @@ export default function BookingDetailPage() {
       </div>
 
       {/* Price Watch — outside grid, full-width, future hotel stays only */}
-      {booking.accommodationType === "hotel" && isFutureBooking && (
+      {booking.accommodationType === "hotel" && isFutureBooking && booking.hotelChainId && (
         <BookingPriceWatch
           bookingId={booking.id}
           propertyId={booking.propertyId}

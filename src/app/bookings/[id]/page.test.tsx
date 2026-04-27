@@ -197,4 +197,16 @@ describe("BookingDetailPage", () => {
     render(<BookingDetailPage />);
     await waitFor(() => expect(screen.getByTestId("error-banner")).toBeInTheDocument());
   });
+
+  it("does not render price watch for a future hotel booking with no chain", async () => {
+    mockSuccess({
+      ...cashBooking,
+      hotelChainId: null,
+      hotelChain: null,
+    });
+    render(<BookingDetailPage />);
+    // Wait for the page to load
+    await waitFor(() => screen.getByTestId("hero-net-cost"));
+    expect(screen.queryByTestId("price-watch-toggle")).not.toBeInTheDocument();
+  });
 });
