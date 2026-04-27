@@ -47,6 +47,7 @@ export async function findAlternateCandidates(
   if (!booking) throw new AppError("Booking not found", 404);
 
   const anchor = booking.property;
+  if (!anchor) throw new AppError("Booking has no property set", 400);
   const staleCutoff = new Date(Date.now() - MAX_STALE_DAYS * 24 * 3600_000);
 
   const whereBase: Prisma.PropertyWhereInput = {

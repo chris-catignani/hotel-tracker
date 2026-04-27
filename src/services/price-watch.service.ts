@@ -120,7 +120,7 @@ export async function upsertPriceWatch(
 
   if (!propertyId) throw new AppError("propertyId is required", 400);
 
-  let bookingForPriority: { propertyId: string } | null = null;
+  let bookingForPriority: { propertyId: string | null } | null = null;
   if (bookingId) {
     bookingForPriority = await prisma.booking.findFirst({
       where: { id: bookingId, userId },
@@ -129,7 +129,7 @@ export async function upsertPriceWatch(
     if (!bookingForPriority) throw new AppError("Booking not found", 404);
   }
 
-  const priority = bookingForPriority
+  const priority = bookingForPriority?.propertyId
     ? bookingForPriority.propertyId === propertyId
       ? PRICE_WATCH_PRIORITY.ANCHOR
       : PRICE_WATCH_PRIORITY.ALTERNATE
@@ -149,7 +149,7 @@ export async function upsertPriceWatch(
       const count = await prisma.priceWatchBooking.count({
         where: {
           bookingId,
-          priceWatch: { propertyId: { not: bookingForPriority!.propertyId } },
+          priceWatch: { propertyId: { not: bookingForPriority!.propertyId as string } },
         },
       });
       const alreadyLinked = await prisma.priceWatchBooking.findUnique({

@@ -23,7 +23,7 @@ async function main() {
     const dateStr = new Date(booking.checkIn).toLocaleDateString();
 
     process.stdout.write(
-      `[${i + 1}/${bookings.length}] Processing: ${booking.property.name} (${dateStr})... `
+      `[${i + 1}/${bookings.length}] Processing: ${booking.property?.name ?? "Unknown"} (${dateStr})... `
     );
 
     try {

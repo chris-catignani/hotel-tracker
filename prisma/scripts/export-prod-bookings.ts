@@ -225,9 +225,9 @@ async function main() {
     lines.push(
       `      hotelChainSubBrandId: ${subBrandRef ? subBrandRef : b.hotelChainSubBrandId ? `"${b.hotelChainSubBrandId}" /* unknown */` : "null"},`
     );
-    lines.push(`      propertyName: ${str(b.property.name)},`);
-    lines.push(`      countryCode: ${str(b.property.countryCode ?? "")},`);
-    lines.push(`      city: ${str(b.property.city ?? "")},`);
+    lines.push(`      propertyName: ${str(b.property?.name ?? "")},`);
+    lines.push(`      countryCode: ${str(b.property?.countryCode ?? "")},`);
+    lines.push(`      city: ${str(b.property?.city ?? "")},`);
     lines.push(`      checkIn: ${date(b.checkIn)},`);
     lines.push(`      checkOut: ${date(b.checkOut)},`);
     lines.push(`      numNights: ${b.numNights},`);
