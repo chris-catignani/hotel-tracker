@@ -936,7 +936,7 @@ export default function DashboardPage() {
                                 href={`/bookings/${booking.id}`}
                                 className="font-medium hover:underline"
                               >
-                                {booking.property.name}
+                                {booking.property?.name ?? "Unknown Property"}
                               </Link>
                               <div className="text-xs text-muted-foreground mt-0.5">
                                 {booking.hotelChain?.name ?? "Apartment / Rental"}
