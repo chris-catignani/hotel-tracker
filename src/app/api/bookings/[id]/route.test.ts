@@ -53,7 +53,7 @@ describe("PATCH /api/bookings/[id]", () => {
       user: { id: "user-1" },
       expires: "2099-01-01",
     } as never);
-    mockBookingFindFirst.mockResolvedValue({ id: "booking-1" });
+    mockBookingFindFirst.mockResolvedValue({ id: "booking-1", propertyId: "prop-1" });
     mockBookingUpdate.mockResolvedValue({ id: "booking-1", needsReview: false });
     const res = await PATCH(makeRequest({ needsReview: false }), makeParams());
     expect(res.status).toBe(200);
@@ -63,5 +63,16 @@ describe("PATCH /api/bookings/[id]", () => {
     });
     const body = await res.json();
     expect(body.needsReview).toBe(false);
+  });
+
+  it("returns 422 when setting needsReview: false without a property", async () => {
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: "user-1" },
+      expires: "2099-01-01",
+    } as never);
+    mockBookingFindFirst.mockResolvedValue({ id: "booking-1", propertyId: null });
+    const res = await PATCH(makeRequest({ needsReview: false }), makeParams());
+    expect(res.status).toBe(422);
+    expect(mockBookingUpdate).not.toHaveBeenCalled();
   });
 });

@@ -914,11 +914,14 @@ export async function updateBooking(id: string, userId: string, input: UpdateBoo
 }
 
 export async function patchBooking(id: string, userId: string, input: PatchBookingInput) {
-  const exists = await prisma.booking.findFirst({
+  const booking = await prisma.booking.findFirst({
     where: { id, userId },
-    select: { id: true },
+    select: { id: true, propertyId: true },
   });
-  if (!exists) throw new AppError("Booking not found", 404);
+  if (!booking) throw new AppError("Booking not found", 404);
+  if (input.needsReview === false && !booking.propertyId) {
+    throw new AppError("Cannot mark as reviewed without a property set", 422);
+  }
 
   const data: Record<string, unknown> = {};
   if (input.needsReview !== undefined) data.needsReview = input.needsReview;

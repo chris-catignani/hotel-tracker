@@ -74,11 +74,11 @@ export default function EditBookingPage() {
             submitLabel="Save Changes"
             title="Booking Details"
           />
-          {formAccommodationType === "hotel" && (
+          {formAccommodationType === "hotel" && booking.propertyId && (
             <BookingPriceWatch
               bookingId={booking.id}
               propertyId={booking.propertyId}
-              propertyName={booking.property.name}
+              propertyName={booking.property?.name ?? ""}
               hotelChainId={booking.hotelChainId ?? undefined}
               checkIn={booking.checkIn}
               checkOut={booking.checkOut}

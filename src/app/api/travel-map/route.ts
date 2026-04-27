@@ -47,17 +47,21 @@ export const GET = withObservability(async (req: NextRequest) => {
       orderBy: { checkIn: "asc" },
     });
 
-    const stops: TravelStop[] = bookings.map((b) => ({
-      id: b.id,
-      propertyName: b.property.name,
-      city: b.property.city,
-      countryCode: b.property.countryCode,
-      checkIn: b.checkIn.toISOString().split("T")[0],
-      numNights: b.numNights,
-      // latitude/longitude are non-null: guaranteed by the where clause above
-      lat: b.property.latitude!,
-      lng: b.property.longitude!,
-    }));
+    const stops: TravelStop[] = bookings
+      .filter(
+        (b): b is typeof b & { property: NonNullable<typeof b.property> } => b.property !== null
+      )
+      .map((b) => ({
+        id: b.id,
+        propertyName: b.property.name,
+        city: b.property.city,
+        countryCode: b.property.countryCode,
+        checkIn: b.checkIn.toISOString().split("T")[0],
+        numNights: b.numNights,
+        // latitude/longitude are non-null: guaranteed by the where clause above
+        lat: b.property.latitude!,
+        lng: b.property.longitude!,
+      }));
 
     return NextResponse.json(stops);
   } catch (error) {

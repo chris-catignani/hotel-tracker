@@ -145,8 +145,8 @@ interface Booking extends Omit<NetCostBooking, "bookingPromotions" | "userCredit
     chainPropertyId: string | null;
     latitude: number | null;
     longitude: number | null;
-  };
-  propertyId: string;
+  } | null;
+  propertyId: string | null;
   checkIn: string;
   checkOut: string;
   numNights: number;
@@ -343,7 +343,7 @@ export default function BookingDetailPage() {
             size="sm"
             className="ml-4 shrink-0 border-amber-400 text-amber-800 hover:bg-amber-100"
             onClick={dismissReview}
-            disabled={dismissingReview}
+            disabled={dismissingReview || !booking.property}
             data-testid="dismiss-review-button"
           >
             {dismissingReview ? "Saving…" : "Mark as reviewed"}
@@ -359,14 +359,14 @@ export default function BookingDetailPage() {
             <div className="flex flex-col gap-3">
               <div>
                 <h1 className="text-xl font-bold" data-testid="hero-property-name">
-                  {booking.property.name}
+                  {booking.property?.name ?? "Unknown Property"}
                 </h1>
                 {booking.accommodationType === "hotel" && (
                   <p className="text-sm text-muted-foreground" data-testid="hero-subtitle">
                     {[
                       booking.hotelChain?.name,
                       booking.hotelChainSubBrand?.name,
-                      [booking.property.city, booking.property.countryCode]
+                      [booking.property?.city, booking.property?.countryCode]
                         .filter(Boolean)
                         .join(", "),
                     ]
@@ -378,7 +378,7 @@ export default function BookingDetailPage() {
                   <p className="text-sm text-muted-foreground" data-testid="hero-subtitle">
                     {[
                       "Apartment / Short-term Rental",
-                      [booking.property.city, booking.property.countryCode]
+                      [booking.property?.city, booking.property?.countryCode]
                         .filter(Boolean)
                         .join(", "),
                     ]
@@ -620,11 +620,13 @@ export default function BookingDetailPage() {
                 </p>
               </div>
             )}
-            {(booking.property.city || booking.property.countryCode) && (
+            {(booking.property?.city || booking.property?.countryCode) && (
               <div>
                 <p className="text-sm text-muted-foreground">Location</p>
                 <p className="font-medium" data-testid="booking-location">
-                  {[booking.property.city, booking.property.countryCode].filter(Boolean).join(", ")}
+                  {[booking.property?.city, booking.property?.countryCode]
+                    .filter(Boolean)
+                    .join(", ")}
                 </p>
               </div>
             )}
@@ -826,30 +828,36 @@ export default function BookingDetailPage() {
       </div>
 
       {/* Price Watch — outside grid, full-width, future hotel stays only */}
-      {booking.accommodationType === "hotel" && isFutureBooking && booking.hotelChainId && (
-        <BookingPriceWatch
-          bookingId={booking.id}
-          propertyId={booking.propertyId}
-          propertyName={booking.property.name}
-          hotelChainId={booking.hotelChainId ?? undefined}
-          checkIn={booking.checkIn}
-          checkOut={booking.checkOut}
-          numNights={booking.numNights}
-          totalCost={booking.totalCost}
-          currency={booking.currency}
-          pointsRedeemed={booking.pointsRedeemed}
-          initialWatchBooking={booking.priceWatchBookings[0] ?? null}
-        />
-      )}
+      {booking.accommodationType === "hotel" &&
+        isFutureBooking &&
+        booking.hotelChainId &&
+        booking.propertyId && (
+          <BookingPriceWatch
+            bookingId={booking.id}
+            propertyId={booking.propertyId}
+            propertyName={booking.property?.name ?? ""}
+            hotelChainId={booking.hotelChainId ?? undefined}
+            checkIn={booking.checkIn}
+            checkOut={booking.checkOut}
+            numNights={booking.numNights}
+            totalCost={booking.totalCost}
+            currency={booking.currency}
+            pointsRedeemed={booking.pointsRedeemed}
+            initialWatchBooking={booking.priceWatchBookings[0] ?? null}
+          />
+        )}
 
       {/* Alternate Hotels — outside grid, full-width, future hotel stays only */}
-      {booking.accommodationType === "hotel" && isFutureBooking && booking.hotelChainId && (
-        <AlternateHotelsSection
-          bookingId={booking.id}
-          anchorHasGps={booking.property.latitude !== null && booking.property.longitude !== null}
-          currency={booking.currency}
-        />
-      )}
+      {booking.accommodationType === "hotel" &&
+        isFutureBooking &&
+        booking.hotelChainId &&
+        booking.propertyId && (
+          <AlternateHotelsSection
+            bookingId={booking.id}
+            anchorHasGps={booking.property?.latitude != null && booking.property?.longitude != null}
+            currency={booking.currency}
+          />
+        )}
     </div>
   );
 }

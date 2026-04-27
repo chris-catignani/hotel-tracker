@@ -66,7 +66,7 @@ interface Booking {
   id: string;
   hotelChainId: string | null;
   hotelChainSubBrand: { id: string; name: string; basePointRate: string | number | null } | null;
-  property: { name: string };
+  property: { name: string } | null;
   checkIn: string;
   checkOut: string;
   numNights: number;
@@ -262,7 +262,9 @@ function BookingsPageInner() {
                 key={booking.id}
                 booking={{
                   ...booking,
-                  property: { ...booking.property, name: pruneHotelName(booking.property.name) },
+                  property: booking.property
+                    ? { ...booking.property, name: pruneHotelName(booking.property.name) }
+                    : null,
                 }}
                 onDelete={handleDeleteClick}
                 showActions={true}
@@ -304,7 +306,7 @@ function BookingsPageInner() {
                         <TooltipProvider>
                           <div className="flex items-start gap-1.5">
                             <div>
-                              <div>{pruneHotelName(booking.property.name)}</div>
+                              <div>{pruneHotelName(booking.property?.name ?? "")}</div>
                               {booking.hotelChainSubBrand && (
                                 <div className="text-xs text-muted-foreground">
                                   {booking.hotelChainSubBrand.name}

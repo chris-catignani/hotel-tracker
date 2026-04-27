@@ -12,7 +12,7 @@ import { CalendarDays, Wallet, Coins, ScrollText } from "lucide-react";
 interface BookingCardProps {
   booking: NetCostBooking & {
     id: string;
-    property: { name: string };
+    property: { name: string } | null;
     checkIn: string;
     checkOut: string;
     numNights: number;
@@ -46,7 +46,7 @@ export function BookingCard({ booking, onDelete, showActions = false }: BookingC
                 className="font-bold hover:underline line-clamp-1"
                 data-testid="booking-card-property"
               >
-                {booking.property.name}
+                {booking.property?.name ?? "Unknown Property"}
               </Link>
               <div className="flex flex-wrap gap-1 items-center text-xs text-muted-foreground">
                 {booking.hotelChain ? (

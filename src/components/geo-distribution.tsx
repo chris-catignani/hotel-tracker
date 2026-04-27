@@ -12,7 +12,7 @@ interface BookingForGeo {
   property: {
     countryCode: string | null;
     city: string | null;
-  };
+  } | null;
 }
 
 interface GeoDistributionProps {
@@ -38,6 +38,7 @@ export function GeoDistribution({ bookings }: GeoDistributionProps) {
     const agg: Record<string, { stays: number; nights: number; displayLabel: string }> = {};
 
     bookings.forEach((booking) => {
+      if (!booking.property) return;
       let key: string;
       let displayLabel: string;
 

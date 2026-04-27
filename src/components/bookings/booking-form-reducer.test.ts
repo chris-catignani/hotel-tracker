@@ -636,6 +636,27 @@ describe("bookingFormReducer", () => {
     });
   });
 
+  describe("null property handling", () => {
+    it("initialises blank property fields and geoConfirmed:false when property is null", () => {
+      const booking = makeBooking({ propertyId: null, property: null });
+      const state = buildInitialState(booking, []);
+      expect(state.propertyId).toBeNull();
+      expect(state.propertyName).toBe("");
+      expect(state.placeId).toBeNull();
+      expect(state.geoConfirmed).toBe(false);
+      expect(state.countryCode).toBeNull();
+      expect(state.city).toBeNull();
+      expect(state.address).toBeNull();
+      expect(state.latitude).toBeNull();
+      expect(state.longitude).toBeNull();
+    });
+
+    it("sets geoConfirmed:true when property is present (even without coordinates)", () => {
+      const state = buildInitialState(makeBooking(), []);
+      expect(state.geoConfirmed).toBe(true);
+    });
+  });
+
   describe("buildNewBookingState", () => {
     it("defaults bookingDate to today in YYYY-MM-DD form", () => {
       const state = buildNewBookingState();
