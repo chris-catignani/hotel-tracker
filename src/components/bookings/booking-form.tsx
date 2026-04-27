@@ -279,7 +279,6 @@ export function BookingForm({
 
   const { errors, isValid } = useMemo(() => {
     const errs = {
-      hotelChainId: isHotel && !hotelChainId ? "Hotel chain is required" : "",
       propertyName: !propertyName.trim()
         ? "Property name is required"
         : !geoConfirmed
@@ -304,7 +303,6 @@ export function BookingForm({
     };
 
     const valid =
-      !errs.hotelChainId &&
       !errs.propertyName &&
       !errs.checkIn &&
       !errs.checkOut &&
@@ -315,8 +313,6 @@ export function BookingForm({
 
     return { errors: errs, isValid: valid };
   }, [
-    isHotel,
-    hotelChainId,
     propertyName,
     geoConfirmed,
     checkIn,
@@ -371,7 +367,8 @@ export function BookingForm({
           : Number(portalCashbackRate) / 100;
       })(),
       portalCashbackOnTotal: shoppingPortalId !== "none" ? portalCashbackOnTotal : false,
-      loyaltyPointsEarned: isHotel && loyaltyPointsEarned ? Number(loyaltyPointsEarned) : null,
+      loyaltyPointsEarned:
+        isHotel && !!hotelChainId && loyaltyPointsEarned ? Number(loyaltyPointsEarned) : null,
       bookingSource: bookingSource || null,
       otaAgencyId: bookingSource === "ota" && otaAgencyId !== "none" ? otaAgencyId : null,
       benefits: benefits
@@ -432,17 +429,20 @@ export function BookingForm({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {isHotel && (
               <div className="space-y-2">
-                <Label htmlFor="hotelChainId">Hotel Chain *</Label>
+                <Label htmlFor="hotelChainId">Hotel Chain</Label>
                 <AppSelect
                   value={hotelChainId}
-                  error={showErrors ? errors.hotelChainId : ""}
                   onValueChange={(val) =>
                     dispatch({ type: "SET_HOTEL_CHAIN_ID", hotelChainId: val })
                   }
-                  options={hotelChains.map((chain) => ({
-                    label: chain.name,
-                    value: chain.id,
-                  }))}
+                  options={[
+                    ...hotelChains.map((chain) => ({
+                      label: chain.name,
+                      value: chain.id,
+                    })),
+                    { label: "Other", value: "" },
+                  ]}
+                  disableSort
                   placeholder="Select hotel chain..."
                   data-testid="hotel-chain-select"
                 />
