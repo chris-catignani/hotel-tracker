@@ -854,7 +854,7 @@ export default function BookingDetailPage() {
         booking.propertyId && (
           <AlternateHotelsSection
             bookingId={booking.id}
-            anchorHasGps={!!booking.property?.latitude && !!booking.property?.longitude}
+            anchorHasGps={booking.property?.latitude != null && booking.property?.longitude != null}
             currency={booking.currency}
           />
         )}
