@@ -301,8 +301,8 @@ model Booking {
   accommodationType     AccommodationType    @default(hotel) @map("accommodation_type")
   hotelChainSubBrandId  String?              @map("hotel_chain_sub_brand_id")
   hotelChainSubBrand    HotelChainSubBrand?  @relation(fields: [hotelChainSubBrandId], references: [id])
-  propertyId            String               @map("property_id")
-  property              Property             @relation(fields: [propertyId], references: [id])
+  propertyId            String?              @map("property_id")
+  property              Property?            @relation(fields: [propertyId], references: [id])
   checkIn               DateTime             @map("check_in") @db.Date
   checkOut              DateTime             @map("check_out") @db.Date
   numNights             Int                  @map("num_nights")
