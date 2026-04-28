@@ -37,12 +37,16 @@ const makeRoomOnlyRate = (
     ratePlanName?: string;
     nonRefundable?: boolean;
     advancePurchase?: boolean;
+    cxlPolicyCode?: string;
     hhonorsDiscountRate?: object | null;
   } = {}
 ) => ({
   ratePlanCode,
   rateAmount,
-  guarantee: { nonRefundable: overrides.nonRefundable ?? false },
+  guarantee: {
+    nonRefundable: overrides.nonRefundable ?? false,
+    ...(overrides.cxlPolicyCode !== undefined && { cxlPolicyCode: overrides.cxlPolicyCode }),
+  },
   ratePlan: {
     ratePlanName: overrides.ratePlanName ?? "Standard Rate",
     advancePurchase: overrides.advancePurchase ?? false,
@@ -68,6 +72,7 @@ const makeRedemptionRate = (
     ratePlanName?: string;
     nonRefundable?: boolean;
     redemptionType?: string;
+    cxlPolicyCode?: string;
   } = {}
 ) => ({
   ratePlanCode: overrides.ratePlanCode ?? "STND",
@@ -76,7 +81,10 @@ const makeRedemptionRate = (
     ratePlanName: overrides.ratePlanName ?? "Standard Award",
     redemptionType: overrides.redemptionType ?? "STANDARD_REWARD",
   },
-  guarantee: { nonRefundable: overrides.nonRefundable ?? false },
+  guarantee: {
+    nonRefundable: overrides.nonRefundable ?? false,
+    ...(overrides.cxlPolicyCode !== undefined && { cxlPolicyCode: overrides.cxlPolicyCode }),
+  },
 });
 
 const makeRoomRatesResponse = (
@@ -156,6 +164,26 @@ describe("parseHiltonRoomRates", () => {
     ]);
     const rates = parseHiltonRoomRates(data, "T2", "Twin Room", "USD");
 
+    expect(rates[0].isRefundable).toBe("NON_REFUNDABLE");
+  });
+
+  it("marks rate as NON_REFUNDABLE when guarantee.cxlPolicyCode is 'NRG'", () => {
+    const data = makeRoomRatesResponse("T2", "Twin Room", [
+      makeRoomOnlyRate("LHHSO1", 92, { cxlPolicyCode: "NRG" }),
+    ]);
+    const rates = parseHiltonRoomRates(data, "T2", "Twin Room", "USD");
+
+    expect(rates[0].isRefundable).toBe("NON_REFUNDABLE");
+  });
+
+  it("marks award rate as NON_REFUNDABLE when guarantee.cxlPolicyCode is 'NRG'", () => {
+    const data = makeRoomRatesResponse(
+      "T2",
+      "Twin Room",
+      [],
+      [makeRedemptionRate(30000, { cxlPolicyCode: "NRG" })]
+    );
+    const rates = parseHiltonRoomRates(data, "T2", "Twin Room", "USD");
     expect(rates[0].isRefundable).toBe("NON_REFUNDABLE");
   });
 
