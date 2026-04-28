@@ -52,6 +52,9 @@ export default function EditBookingPage() {
     return <PageSpinner />;
   }
 
+  const today = new Date().toISOString().split("T")[0];
+  const isFutureBooking = booking ? booking.checkIn.slice(0, 10) > today : false;
+
   return (
     <div className="w-full mx-auto max-w-4xl space-y-6 pb-8">
       <div className="flex items-center justify-between">
@@ -74,21 +77,24 @@ export default function EditBookingPage() {
             submitLabel="Save Changes"
             title="Booking Details"
           />
-          {formAccommodationType === "hotel" && booking.propertyId && (
-            <BookingPriceWatch
-              bookingId={booking.id}
-              propertyId={booking.propertyId}
-              propertyName={booking.property?.name ?? ""}
-              hotelChainId={booking.hotelChainId ?? undefined}
-              checkIn={booking.checkIn}
-              checkOut={booking.checkOut}
-              numNights={booking.numNights}
-              totalCost={booking.totalCost}
-              currency={booking.currency}
-              pointsRedeemed={booking.pointsRedeemed}
-              initialWatchBooking={booking.priceWatchBookings?.[0] ?? null}
-            />
-          )}
+          {formAccommodationType === "hotel" &&
+            booking.hotelChainId &&
+            isFutureBooking &&
+            booking.propertyId && (
+              <BookingPriceWatch
+                bookingId={booking.id}
+                propertyId={booking.propertyId}
+                propertyName={booking.property?.name ?? ""}
+                hotelChainId={booking.hotelChainId ?? undefined}
+                checkIn={booking.checkIn}
+                checkOut={booking.checkOut}
+                numNights={booking.numNights}
+                totalCost={booking.totalCost}
+                currency={booking.currency}
+                pointsRedeemed={booking.pointsRedeemed}
+                initialWatchBooking={booking.priceWatchBookings?.[0] ?? null}
+              />
+            )}
         </>
       ) : (
         <p className="text-muted-foreground">Booking not found.</p>

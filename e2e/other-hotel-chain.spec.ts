@@ -73,6 +73,42 @@ test.describe("Other / independent hotel chain", () => {
     }
   });
 
+  test("booking edit page does not show Price Watch for null-chain hotel booking", async ({
+    isolatedUser,
+  }) => {
+    const name = `Other Hotel ${crypto.randomUUID()}`;
+    const res = await isolatedUser.request.post("/api/bookings", {
+      data: {
+        accommodationType: "hotel",
+        hotelChainId: null,
+        propertyName: name,
+        checkIn: `${YEAR}-11-01`,
+        checkOut: `${YEAR}-11-04`,
+        numNights: 3,
+        pretaxCost: 250,
+        taxAmount: 25,
+        totalCost: 275,
+        currency: "USD",
+        countryCode: "US",
+        city: "Austin",
+      },
+    });
+    expect(res.ok()).toBeTruthy();
+    const booking = await res.json();
+
+    try {
+      await isolatedUser.page.goto(`/bookings/${booking.id}/edit`);
+
+      // Wait for form to load
+      await expect(isolatedUser.page.getByRole("heading", { name: "Edit Booking" })).toBeVisible();
+
+      // Price Watch toggle must not be rendered
+      await expect(isolatedUser.page.getByTestId("price-watch-toggle")).not.toBeVisible();
+    } finally {
+      await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
+    }
+  });
+
   test("booking form includes 'Other' option in chain dropdown", async ({ isolatedUser }) => {
     await isolatedUser.page.goto("/bookings/new");
 
