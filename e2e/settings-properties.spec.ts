@@ -45,4 +45,69 @@ test.describe("Settings — Properties", () => {
       await adminRequest.delete(`/api/bookings/${booking.id}`);
     }
   });
+
+  test("search and pagination works", async ({ adminPage, adminRequest }) => {
+    // Create 3 properties with distinct names
+    const YEAR = new Date().getFullYear();
+    const names = ["Alpha Hotel", "Beta Resort", "Gamma Suites"];
+    const bookingIds: string[] = [];
+
+    for (const name of names) {
+      const res = await adminRequest.post("/api/bookings", {
+        data: {
+          propertyName: name,
+          checkIn: `${YEAR}-10-01`,
+          checkOut: `${YEAR}-10-02`,
+          numNights: 1,
+          pretaxCost: 100,
+          taxAmount: 10,
+          totalCost: 110,
+          currency: "USD",
+          countryCode: "US",
+          city: "Test City",
+        },
+      });
+      const b = await res.json();
+      bookingIds.push(b.id);
+    }
+
+    try {
+      await adminPage.goto("/settings");
+      await adminPage.getByRole("tab", { name: "Properties" }).click();
+
+      // Test Search
+      const searchInput = adminPage.getByTestId("property-search");
+      await searchInput.fill("Alpha");
+      // Wait for debounce and fetch
+      await expect(
+        adminPage
+          .getByTestId("properties-desktop")
+          .getByTestId("property-name")
+          .filter({ hasText: "Alpha Hotel" })
+      ).toBeVisible();
+      await expect(
+        adminPage
+          .getByTestId("properties-desktop")
+          .getByTestId("property-name")
+          .filter({ hasText: "Beta Resort" })
+      ).not.toBeVisible();
+
+      await searchInput.fill("");
+      await expect(
+        adminPage
+          .getByTestId("properties-desktop")
+          .getByTestId("property-name")
+          .filter({ hasText: "Beta Resort" })
+      ).toBeVisible();
+
+      // Test Pagination UI (we only have 3-4 properties, so we'll be on page 1 of 1)
+      await expect(adminPage.getByText(/Page 1 of 1/)).toBeVisible();
+      await expect(adminPage.getByRole("button", { name: "Previous page" })).toBeDisabled();
+      await expect(adminPage.getByRole("button", { name: "Next page" })).toBeDisabled();
+    } finally {
+      for (const id of bookingIds) {
+        await adminRequest.delete(`/api/bookings/${id}`);
+      }
+    }
+  });
 });
