@@ -78,7 +78,8 @@ test.describe("Settings — Properties", () => {
       // Test Search
       const searchInput = adminPage.getByTestId("property-search");
       await searchInput.fill("Alpha");
-      // Wait for debounce and fetch
+
+      // Verify filter results - Playwright will wait for these assertions to pass
       await expect(
         adminPage
           .getByTestId("properties-desktop")
@@ -93,6 +94,7 @@ test.describe("Settings — Properties", () => {
       ).not.toBeVisible();
 
       await searchInput.fill("");
+      // Verify filter reset
       await expect(
         adminPage
           .getByTestId("properties-desktop")

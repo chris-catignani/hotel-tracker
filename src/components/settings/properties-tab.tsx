@@ -143,7 +143,7 @@ export function PropertiesTab() {
             data-testid="property-search"
           />
           {loading && (
-            <div className="absolute right-2.5 top-2.5">
+            <div className="absolute right-2.5 top-2.5" data-testid="search-loading">
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
             </div>
           )}
