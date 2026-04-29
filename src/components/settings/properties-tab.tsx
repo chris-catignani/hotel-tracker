@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -69,40 +69,48 @@ export function PropertiesTab() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  const fetchProperties = useCallback(async () => {
-    setLoading(true);
-    const params = new URLSearchParams({
-      includeChain: "true",
-      page: page.toString(),
-      limit: "50",
-    });
-    if (debouncedSearchTerm) {
-      params.set("name", debouncedSearchTerm);
-    }
-
-    const result = await apiFetch<PropertiesResponse>(`/api/properties?${params.toString()}`);
-    if (result.ok) {
-      const { properties: data, metadata } = result.data;
-      setProperties(data);
-      setTotalPages(metadata.totalPages);
-      setTotalCount(metadata.total);
-
-      // Seed edit state from current values
-      const initial: Record<string, string> = {};
-      for (const p of data) {
-        initial[p.id] = p.chainPropertyId ?? "";
-      }
-      setEdits(initial);
-    } else {
-      setError(result.error.message);
-    }
-    setLoading(false);
-  }, [page, debouncedSearchTerm]);
-
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchProperties();
-  }, [fetchProperties]);
+    let active = true;
+
+    async function fetch() {
+      setLoading(true);
+      const params = new URLSearchParams({
+        includeChain: "true",
+        page: page.toString(),
+        limit: "50",
+      });
+      if (debouncedSearchTerm) {
+        params.set("name", debouncedSearchTerm);
+      }
+
+      const result = await apiFetch<PropertiesResponse>(`/api/properties?${params.toString()}`);
+
+      if (!active) return;
+
+      if (result.ok) {
+        const { properties: data, metadata } = result.data;
+        setProperties(data);
+        setTotalPages(metadata.totalPages);
+        setTotalCount(metadata.total);
+
+        // Seed edit state from current values
+        const initial: Record<string, string> = {};
+        for (const p of data) {
+          initial[p.id] = p.chainPropertyId ?? "";
+        }
+        setEdits(initial);
+      } else {
+        setError(result.error.message);
+      }
+      setLoading(false);
+    }
+
+    fetch();
+
+    return () => {
+      active = false;
+    };
+  }, [page, debouncedSearchTerm]);
 
   const handleSave = async (property: PropertyWithChain) => {
     const value = edits[property.id]?.trim() ?? "";
