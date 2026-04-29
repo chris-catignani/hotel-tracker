@@ -14,8 +14,8 @@ export const GET = withObservability(async (request: NextRequest) => {
     const hotelChainId = searchParams.get("hotelChainId");
     const name = searchParams.get("name");
     const includeChain = searchParams.get("includeChain") === "true";
-    const page = parseInt(searchParams.get("page") ?? "1", 10);
-    const limit = parseInt(searchParams.get("limit") ?? "50", 10);
+    const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
+    const limit = Math.max(1, Math.min(100, parseInt(searchParams.get("limit") ?? "50", 10) || 50));
     const skip = (page - 1) * limit;
 
     const where = {
@@ -40,7 +40,7 @@ export const GET = withObservability(async (request: NextRequest) => {
         total,
         page,
         limit,
-        totalPages: Math.ceil(total / limit),
+        totalPages: Math.max(1, Math.ceil(total / limit)),
       },
     });
   } catch (error) {
