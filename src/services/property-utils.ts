@@ -21,7 +21,10 @@ export async function findOrCreateProperty(input: PropertyInput): Promise<string
       ? await prisma.property.findUnique({ where: { placeId: input.placeId } })
       : null) ??
     (await prisma.property.findFirst({
-      where: { name: input.propertyName, hotelChainId: input.hotelChainId ?? undefined },
+      where: {
+        name: input.propertyName,
+        hotelChainId: input.hotelChainId,
+      },
     }));
 
   if (existing) {
@@ -59,7 +62,10 @@ export async function findOrCreateProperty(input: PropertyInput): Promise<string
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
       const race = await prisma.property.findFirst({
-        where: { name: input.propertyName, hotelChainId: input.hotelChainId ?? undefined },
+        where: {
+          name: input.propertyName,
+          hotelChainId: input.hotelChainId,
+        },
       });
       if (race) return race.id;
     }
