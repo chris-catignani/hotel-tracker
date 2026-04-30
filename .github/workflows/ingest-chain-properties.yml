@@ -2,7 +2,7 @@ name: Ingest Chain Properties
 
 on:
   schedule:
-    - cron: "0 6 1 * *" # 6am UTC on the 1st of each month; active-hours check gates local execution
+    - cron: "0 6 15 * *" # 6am UTC on the 15th of each month; active-hours check gates local execution
   workflow_dispatch: # allow manual trigger
     inputs:
       chains:
