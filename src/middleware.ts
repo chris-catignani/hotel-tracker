@@ -11,7 +11,8 @@ export default auth((req) => {
     req.nextUrl.pathname.startsWith("/signup") ||
     req.nextUrl.pathname.startsWith("/api/auth") ||
     req.nextUrl.pathname.startsWith("/api/cron") ||
-    req.nextUrl.pathname.startsWith("/api/inbound-email");
+    req.nextUrl.pathname.startsWith("/api/inbound-email") ||
+    req.nextUrl.pathname.startsWith("/api/e2e");
 
   if (!isAuthRoute && !isLoggedIn) {
     if (req.nextUrl.pathname.startsWith("/api/")) {

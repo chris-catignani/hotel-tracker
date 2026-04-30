@@ -72,6 +72,13 @@ type TestFixtures = {
    * Always pair with adminRequest for any data created during the test.
    */
   adminPage: Page;
+  /**
+   * A per-test isolated admin user with their own request context and browser
+   * page. Use for Settings tests that create user-scoped data (bookings,
+   * properties) — each test gets a fresh admin account so parallel tests
+   * can't see each other's data.
+   */
+  isolatedAdmin: { request: APIRequestContext; page: Page };
 };
 
 export const test = base.extend<TestFixtures>({
@@ -106,6 +113,34 @@ export const test = base.extend<TestFixtures>({
     await page.close();
     await context.close();
     await adminReq.dispose();
+  },
+
+  isolatedAdmin: async ({ playwright, browser, baseURL }, use) => {
+    const resolvedBase = baseURL ?? "http://127.0.0.1:3001";
+    const email = `test-admin-${crypto.randomUUID()}@example.com`;
+    const password = "testpass123";
+
+    const userRequest = await playwright.request.newContext({ baseURL: resolvedBase });
+
+    await userRequest.post("/api/auth/register", {
+      data: { email, password, name: "Isolated Admin User" },
+    });
+
+    await userRequest.post("/api/e2e/make-admin", {
+      data: { email },
+    });
+
+    await loginWithRetry(userRequest, resolvedBase, email, password);
+
+    const storageState = await userRequest.storageState();
+    const context = await browser.newContext({ baseURL: resolvedBase, storageState });
+    const page = await context.newPage();
+
+    await use({ request: userRequest, page });
+
+    await page.close();
+    await context.close();
+    await userRequest.dispose();
   },
 
   isolatedUser: async ({ playwright, browser, baseURL }, use) => {

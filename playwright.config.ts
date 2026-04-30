@@ -54,6 +54,7 @@ export default defineConfig({
       SEED_ADMIN_EMAIL: process.env.SEED_ADMIN_EMAIL || "",
       SEED_ADMIN_PASSWORD: process.env.SEED_ADMIN_PASSWORD || "",
       CRON_SECRET: process.env.CRON_SECRET || "test-cron-secret",
+      E2E_ALLOW_ADMIN_REGISTER: "true",
       // Disable Sentry in the E2E test server so test errors don't pollute
       // the production Sentry project.
       SENTRY_DSN: "",

@@ -1,11 +1,9 @@
 import { test, expect } from "./fixtures";
 
 test.describe("Settings — Properties", () => {
-  test.describe.configure({ mode: "serial" });
-
-  test("Properties tab is visible to admin", async ({ adminPage }) => {
-    await adminPage.goto("/settings");
-    await expect(adminPage.getByRole("tab", { name: "Properties" })).toBeVisible();
+  test("Properties tab is visible to admin", async ({ isolatedAdmin }) => {
+    await isolatedAdmin.page.goto("/settings");
+    await expect(isolatedAdmin.page.getByRole("tab", { name: "Properties" })).toBeVisible();
   });
 
   test("Properties tab is not visible to regular users", async ({ isolatedUser }) => {
@@ -14,12 +12,12 @@ test.describe("Settings — Properties", () => {
     await expect(page.getByRole("tab", { name: "Properties" })).not.toBeVisible();
   });
 
-  test("properties list shows seeded properties", async ({ adminPage, adminRequest }) => {
-    // Create a booking as admin to ensure at least one property exists
-    const chains = await adminRequest.get("/api/hotel-chains");
+  test("properties list shows seeded properties", async ({ isolatedAdmin }) => {
+    const { page, request } = isolatedAdmin;
+    const chains = await request.get("/api/hotel-chains");
     const chain = (await chains.json())[0];
     const YEAR = new Date().getFullYear();
-    const bookingRes = await adminRequest.post("/api/bookings", {
+    const bookingRes = await request.post("/api/bookings", {
       data: {
         hotelChainId: chain.id,
         propertyName: `E2E Properties Tab Hotel ${Date.now()}`,
@@ -38,18 +36,17 @@ test.describe("Settings — Properties", () => {
     const booking = await bookingRes.json();
 
     try {
-      await adminPage.goto("/settings");
-      await adminPage.getByRole("tab", { name: "Properties" }).click();
-      await expect(adminPage.getByTestId("tab-properties")).toBeVisible();
-      // Verify at least one property row exists
-      await expect(adminPage.locator('[data-testid="property-row"]').first()).toBeVisible();
+      await page.goto("/settings");
+      await page.getByRole("tab", { name: "Properties" }).click();
+      await expect(page.getByTestId("tab-properties")).toBeVisible();
+      await expect(page.locator('[data-testid="property-row"]').first()).toBeVisible();
     } finally {
-      await adminRequest.delete(`/api/bookings/${booking.id}`);
+      await request.delete(`/api/bookings/${booking.id}`);
     }
   });
 
-  test("search and pagination works", async ({ adminPage, adminRequest }) => {
-    // Create 3 properties with distinct names and a unique prefix to isolate from other tests
+  test("search and pagination works", async ({ isolatedAdmin }) => {
+    const { page, request } = isolatedAdmin;
     const YEAR = new Date().getFullYear();
     const uniquePrefix = `SearchTest-${Math.random().toString(36).substring(7)}`;
     const names = [
@@ -60,7 +57,7 @@ test.describe("Settings — Properties", () => {
     const bookingIds: string[] = [];
 
     for (const name of names) {
-      const res = await adminRequest.post("/api/bookings", {
+      const res = await request.post("/api/bookings", {
         data: {
           propertyName: name,
           checkIn: `${YEAR}-10-01`,
@@ -79,84 +76,63 @@ test.describe("Settings — Properties", () => {
     }
 
     try {
-      await adminPage.goto("/settings");
-      await adminPage.getByRole("tab", { name: "Properties" }).click();
+      await page.goto("/settings");
+      await page.getByRole("tab", { name: "Properties" }).click();
       // Wait for initial load
-      await expect(adminPage.getByTestId("property-row").first()).toBeVisible();
+      await expect(page.getByTestId("property-row").first()).toBeVisible();
 
       // Test Search
-      const searchInput = adminPage.getByTestId("property-search");
+      const searchInput = page.getByTestId("property-search");
 
-      // Search for prefix
-      const searchPromise = adminPage.waitForResponse(
-        (resp) => resp.url().includes("/api/properties") && resp.url().includes("name=")
-      );
+      // Search for prefix — all 3 should appear
       await searchInput.fill(uniquePrefix);
-      await searchPromise;
-
-      // Verify filter results
       await expect(
-        adminPage
+        page
+          .getByTestId("properties-desktop")
+          .getByTestId("property-name")
+          .filter({ hasText: `${uniquePrefix} Alpha Hotel` })
+      ).toBeVisible({ timeout: 8000 });
+      await expect(
+        page
+          .getByTestId("properties-desktop")
+          .getByTestId("property-name")
+          .filter({ hasText: `${uniquePrefix} Beta Resort` })
+      ).toBeVisible({ timeout: 8000 });
+
+      // Refine search — only Alpha should remain; waiting for Beta to disappear
+      // acts as the signal that the debounced refine request has settled
+      await searchInput.fill(`${uniquePrefix} Alpha`);
+      await expect(
+        page
+          .getByTestId("properties-desktop")
+          .getByTestId("property-name")
+          .filter({ hasText: `${uniquePrefix} Beta Resort` })
+      ).not.toBeVisible({ timeout: 8000 });
+      await expect(
+        page
           .getByTestId("properties-desktop")
           .getByTestId("property-name")
           .filter({ hasText: `${uniquePrefix} Alpha Hotel` })
       ).toBeVisible();
-      await expect(
-        adminPage
-          .getByTestId("properties-desktop")
-          .getByTestId("property-name")
-          .filter({ hasText: `${uniquePrefix} Beta Resort` })
-      ).toBeVisible();
 
-      // Refine search
-      const refinePrefix = `${uniquePrefix} Alpha`;
-      const refinePromise = adminPage.waitForResponse(
-        (resp) => resp.url().includes("/api/properties") && resp.url().includes("name=")
-      );
-      await searchInput.fill(refinePrefix);
-      await refinePromise;
-
-      await expect(
-        adminPage
-          .getByTestId("properties-desktop")
-          .getByTestId("property-name")
-          .filter({ hasText: `${uniquePrefix} Alpha Hotel` })
-      ).toBeVisible();
-      await expect(
-        adminPage
-          .getByTestId("properties-desktop")
-          .getByTestId("property-name")
-          .filter({ hasText: `${uniquePrefix} Beta Resort` })
-      ).not.toBeVisible();
-
-      // Reset search
-      const resetPromise = adminPage.waitForResponse(
-        (resp) => resp.url().includes("/api/properties") && !resp.url().includes("name=")
-      );
+      // Reset search — waiting for Beta to reappear confirms the debounced
+      // reset request has settled
       await searchInput.fill("");
-      await resetPromise;
-
-      // Verify filter reset (should show Beta Resort again)
       await expect(
-        adminPage
+        page
           .getByTestId("properties-desktop")
           .getByTestId("property-name")
           .filter({ hasText: `${uniquePrefix} Beta Resort` })
-      ).toBeVisible();
+      ).toBeVisible({ timeout: 8000 });
 
       // Test pagination UI
-      const isolatedSearchPromise = adminPage.waitForResponse(
-        (resp) => resp.url().includes("/api/properties") && resp.url().includes("name=")
-      );
       await searchInput.fill(uniquePrefix);
-      await isolatedSearchPromise;
-
-      await expect(adminPage.getByText(/Page 1 of 1/)).toBeVisible();
-      await expect(adminPage.getByRole("button", { name: "Previous page" })).toBeDisabled();
-      await expect(adminPage.getByRole("button", { name: "Next page" })).toBeDisabled();
+      await expect(page.getByText(/Page 1 of 1/)).toBeVisible({ timeout: 8000 });
+      await expect(page.getByRole("button", { name: "Previous page" })).toBeDisabled();
+      await expect(page.getByRole("button", { name: "Next page" })).toBeDisabled();
     } finally {
       for (const id of bookingIds) {
-        await adminRequest.delete(`/api/bookings/${id}`);
+        await request.delete(`/api/bookings/${id}`);
       }
     }
   });
