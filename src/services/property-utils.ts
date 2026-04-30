@@ -23,7 +23,7 @@ export async function findOrCreateProperty(input: PropertyInput): Promise<string
     (await prisma.property.findFirst({
       where: {
         name: input.propertyName,
-        hotelChainId: input.hotelChainId === undefined ? undefined : (input.hotelChainId ?? null),
+        hotelChainId: input.hotelChainId,
       },
     }));
 
@@ -64,7 +64,7 @@ export async function findOrCreateProperty(input: PropertyInput): Promise<string
       const race = await prisma.property.findFirst({
         where: {
           name: input.propertyName,
-          hotelChainId: input.hotelChainId === undefined ? undefined : (input.hotelChainId ?? null),
+          hotelChainId: input.hotelChainId,
         },
       });
       if (race) return race.id;
