@@ -114,8 +114,8 @@ Three tiers evaluated in order:
 #### E2E Isolation Rules (mandatory for all new tests)
 
 - **Use `isolatedUser`** for every test that creates bookings, promotions, or asserts user-scoped UI (dashboard, bookings list). Never use the default `page`/`request` fixtures for user data — they are not authenticated after the removal of `auth.setup.ts`.
-- **Use `adminRequest`** for reference-data writes (hotel chains, credit cards, portals, sub-brands) and `adminPage` for admin UI tests (Settings).
-- **Never use `isolatedUserWithPage` or `isolatedUserRequest`** — these legacy fixtures have been removed. Use `isolatedUser` instead.
+- **Use `isolatedAdmin`** for admin UI tests that create user-scoped data (like bookings or properties) to ensure isolation from other parallel admin tests.
+- **Use `adminRequest`** for reference-data writes (hotel chains, credit cards, portals, sub-brands) and `adminPage` for read-only admin UI tests.
 - **No `test.describe.configure({ mode: "serial" })`** — each test must be fully independent. Shared state between serial tests causes flakiness under parallel workers.
 - **UserCreditCard in card-benefit tests**: create inline at test start via `isolatedUser.request.post("/api/user-credit-cards", ...)` and delete in the `finally` block. Do not rely on a fixture to pre-create it.
 

@@ -48,7 +48,9 @@ test.describe("Settings — Properties", () => {
   test("search and pagination works", async ({ isolatedAdmin }) => {
     const { page, request } = isolatedAdmin;
     const YEAR = new Date().getFullYear();
-    const uniquePrefix = `SearchTest-${Math.random().toString(36).substring(7)}`;
+    // Use a '000-' prefix to ensure these properties appear on the first page of the
+    // alphabetical list, even when many other properties from parallel tests exist.
+    const uniquePrefix = `000-SearchTest-${Math.random().toString(36).substring(7)}`;
     const names = [
       `${uniquePrefix} Alpha Hotel`,
       `${uniquePrefix} Beta Resort`,
