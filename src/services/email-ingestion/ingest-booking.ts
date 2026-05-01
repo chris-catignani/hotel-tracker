@@ -2,7 +2,7 @@ import prisma from "@/lib/prisma";
 import { findOrCreateProperty } from "@/services/property-utils";
 import { searchPlaces, searchLocalProperties } from "@/services/geo-lookup";
 import { resolveBookingFinancials } from "@/services/booking-financials";
-import { runPostBookingCreate } from "@/services/booking.service";
+import { runPostBookingCreate, updateBooking } from "@/services/booking.service";
 import { matchSubBrand } from "@/services/email-ingestion/email-parser";
 import { logger } from "@/lib/logger";
 import type { ParsedBookingData } from "@/services/email-ingestion/types";
@@ -10,31 +10,43 @@ import type { ParsedBookingData } from "@/services/email-ingestion/types";
 export interface IngestResult {
   bookingId: string;
   duplicate: boolean;
+  updated: boolean;
 }
 
 /**
- * Create a Booking from parsed email data.
- * Returns { bookingId, duplicate: true } if a booking with the same
- * (userId, confirmationNumber) already exists — no new record is created.
+ * Create or update a Booking from parsed email data.
+ * Returns { duplicate: true } if a booking with the same (userId, confirmationNumber)
+ * and identical details already exists.
+ * Returns { updated: true } if confirmationNumber matches but details differ.
  */
 export async function ingestBookingFromEmail(
   parsed: ParsedBookingData,
   userId: string,
   chainName: string | null
 ): Promise<IngestResult> {
-  // Duplicate check
+  // Check for existing booking with the same confirmation number
+  let existingBookingId: string | null = null;
   if (parsed.confirmationNumber) {
     const existing = await prisma.booking.findFirst({
       where: {
         userId,
         confirmationNumber: parsed.confirmationNumber,
-        checkIn: new Date(parsed.checkIn),
-        checkOut: new Date(parsed.checkOut),
-        totalCost: parsed.totalCost ?? 0,
-        pointsRedeemed: parsed.pointsRedeemed ?? null,
       },
     });
-    if (existing) return { bookingId: existing.id, duplicate: true };
+
+    if (existing) {
+      // Check if it's an exact duplicate
+      const isExactMatch =
+        new Date(parsed.checkIn).getTime() === existing.checkIn.getTime() &&
+        new Date(parsed.checkOut).getTime() === existing.checkOut.getTime() &&
+        (parsed.totalCost ?? 0) === Number(existing.totalCost) &&
+        (parsed.pointsRedeemed ?? null) === existing.pointsRedeemed;
+
+      if (isExactMatch) {
+        return { bookingId: existing.id, duplicate: true, updated: false };
+      }
+      existingBookingId = existing.id;
+    }
   }
 
   // Resolve hotel chain — prefer parsed chain from email content, fall back to caller-supplied name
@@ -168,31 +180,44 @@ export async function ingestBookingFromEmail(
     userId,
   });
 
+  const bookingData = {
+    userId,
+    hotelChainId: hotelChain?.id ?? null,
+    hotelChainSubBrandId: subBrand?.id ?? null,
+    accommodationType: parsed.accommodationType ?? "hotel",
+    propertyId,
+    checkIn: new Date(parsed.checkIn),
+    checkOut: new Date(parsed.checkOut),
+    numNights: parsed.numNights,
+    pretaxCost: pretaxCost ?? 0,
+    taxAmount: taxAmount ?? 0,
+    totalCost: parsed.totalCost ?? 0,
+    currency: parsed.currency ?? "USD",
+    lockedExchangeRate: financials.lockedExchangeRate,
+    pointsRedeemed: parsed.pointsRedeemed ?? null,
+    loyaltyPointsEarned: financials.loyaltyPointsEarned,
+    lockedLoyaltyUsdCentsPerPoint: financials.lockedLoyaltyUsdCentsPerPoint,
+    confirmationNumber: parsed.confirmationNumber ?? null,
+    bookingSource: otaAgency ? "ota" : null,
+    otaAgencyId: otaAgency?.id ?? null,
+    ingestionMethod: "email" as const,
+    needsReview: true,
+    paymentTiming: "postpaid" as const,
+  };
+
+  if (existingBookingId) {
+    await updateBooking(existingBookingId, userId, {
+      ...bookingData,
+      checkIn: parsed.checkIn,
+      checkOut: parsed.checkOut,
+      bookingSource: bookingData.bookingSource ?? undefined,
+    });
+
+    return { bookingId: existingBookingId, duplicate: false, updated: true };
+  }
+
   const booking = await prisma.booking.create({
-    data: {
-      userId,
-      hotelChainId: hotelChain?.id ?? null,
-      hotelChainSubBrandId: subBrand?.id ?? null,
-      accommodationType: parsed.accommodationType ?? "hotel",
-      propertyId,
-      checkIn: new Date(parsed.checkIn),
-      checkOut: new Date(parsed.checkOut),
-      numNights: parsed.numNights,
-      pretaxCost: pretaxCost ?? 0,
-      taxAmount: taxAmount ?? 0,
-      totalCost: parsed.totalCost ?? 0,
-      currency: parsed.currency ?? "USD",
-      lockedExchangeRate: financials.lockedExchangeRate,
-      pointsRedeemed: parsed.pointsRedeemed ?? null,
-      loyaltyPointsEarned: financials.loyaltyPointsEarned,
-      lockedLoyaltyUsdCentsPerPoint: financials.lockedLoyaltyUsdCentsPerPoint,
-      confirmationNumber: parsed.confirmationNumber ?? null,
-      bookingSource: otaAgency ? "ota" : null,
-      otaAgencyId: otaAgency?.id ?? null,
-      ingestionMethod: "email",
-      needsReview: true,
-      paymentTiming: "postpaid",
-    },
+    data: bookingData,
   });
 
   await runPostBookingCreate(booking.id, {
@@ -206,5 +231,5 @@ export async function ingestBookingFromEmail(
     ingestionMethod: "email",
   });
 
-  return { bookingId: booking.id, duplicate: false };
+  return { bookingId: booking.id, duplicate: false, updated: false };
 }

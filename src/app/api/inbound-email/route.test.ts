@@ -171,7 +171,11 @@ describe("POST /api/inbound-email", () => {
       checkOut: "2026-04-03",
       confirmationNumber: "ABC123",
     });
-    (ingestBookingFromEmail as Mock).mockResolvedValueOnce({ bookingId: "b1", duplicate: true });
+    (ingestBookingFromEmail as Mock).mockResolvedValueOnce({
+      bookingId: "b1",
+      duplicate: true,
+      updated: false,
+    });
 
     const req = makeRequest({ from: "user@example.com", email_id: "e1" });
     await POST(req);
@@ -197,7 +201,11 @@ describe("POST /api/inbound-email", () => {
       checkOut: "2026-04-03",
       confirmationNumber: "ABC123",
     });
-    (ingestBookingFromEmail as Mock).mockResolvedValueOnce({ bookingId: "b1", duplicate: false });
+    (ingestBookingFromEmail as Mock).mockResolvedValueOnce({
+      bookingId: "b1",
+      duplicate: false,
+      updated: false,
+    });
 
     const req = makeRequest({ from: "user@example.com", email_id: "e1" });
     await POST(req);
@@ -210,6 +218,44 @@ describe("POST /api/inbound-email", () => {
         checkIn: "2026-04-01",
         userId: "u1",
         resendEmailId: "e1",
+      })
+    );
+  });
+
+  it("logs outcome: booking_updated and sends confirmation with isUpdate: true when booking is updated", async () => {
+    mockSvixVerify.mockReturnValueOnce(makePayload({ from: "user@example.com", email_id: "e1" }));
+    mockEmailBody("<html>booking update</html>");
+    mockUserFindFirst.mockResolvedValueOnce({ id: "u1", email: "user@example.com" });
+    (parseConfirmationEmail as Mock).mockResolvedValueOnce({
+      propertyName: "Grand Hyatt",
+      checkIn: "2026-04-01",
+      checkOut: "2026-04-05", // modified
+      confirmationNumber: "ABC123",
+    });
+    (ingestBookingFromEmail as Mock).mockResolvedValueOnce({
+      bookingId: "b1",
+      duplicate: false,
+      updated: true,
+    });
+
+    const req = makeRequest({ from: "user@example.com", email_id: "e1" });
+    await POST(req);
+
+    expect(mockLoggerInfo).toHaveBeenCalledWith(
+      "inbound-email:booking_updated",
+      expect.objectContaining({
+        bookingId: "b1",
+        property: "Grand Hyatt",
+        checkIn: "2026-04-01",
+        userId: "u1",
+        resendEmailId: "e1",
+      })
+    );
+    const { sendIngestionConfirmation } = await import("@/lib/email");
+    expect(sendIngestionConfirmation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bookingId: "b1",
+        isUpdate: true,
       })
     );
   });

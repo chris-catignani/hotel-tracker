@@ -109,8 +109,8 @@ async function handler(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ ok: true });
   }
 
-  // Create booking
-  const { bookingId, duplicate } = await ingestBookingFromEmail(parsed, user.id, null);
+  // Create or update booking
+  const { bookingId, duplicate, updated } = await ingestBookingFromEmail(parsed, user.id, null);
 
   if (duplicate) {
     logger.info("inbound-email:duplicate", {
@@ -118,6 +118,22 @@ async function handler(req: NextRequest): Promise<NextResponse> {
       confirmationNumber: parsed.confirmationNumber,
       userId: user.id,
       resendEmailId: data.email_id,
+    });
+  } else if (updated) {
+    logger.info("inbound-email:booking_updated", {
+      bookingId,
+      property: parsed.propertyName,
+      checkIn: parsed.checkIn,
+      userId: user.id,
+      resendEmailId: data.email_id,
+    });
+    await sendIngestionConfirmation({
+      to: user.email!,
+      propertyName: parsed.propertyName,
+      checkIn: parsed.checkIn,
+      checkOut: parsed.checkOut,
+      bookingId,
+      isUpdate: true,
     });
   } else {
     logger.info("inbound-email:booking_created", {
@@ -133,6 +149,7 @@ async function handler(req: NextRequest): Promise<NextResponse> {
       checkIn: parsed.checkIn,
       checkOut: parsed.checkOut,
       bookingId,
+      isUpdate: false,
     });
   }
 
