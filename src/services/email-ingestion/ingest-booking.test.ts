@@ -538,4 +538,34 @@ describe("ingestBookingFromEmail", () => {
     // updateBooking handles the post-update logic internally, so ingest-booking shouldn't call runPostBookingCreate
     expect(runPostBookingCreate).not.toHaveBeenCalled();
   });
+
+  it("includes hotelChainId in the duplicate check query to improve accuracy", async () => {
+    // Resolve a specific chain
+    mockHotelChainFindFirst.mockResolvedValueOnce({
+      id: "chain-marriott",
+      name: "Marriott",
+      basePointRate: 10,
+      calculationCurrency: "USD",
+      pointType: null,
+    });
+
+    const parsedWithChain = { ...baseParsed, hotelChain: "Marriott" };
+
+    await ingestBookingFromEmail(parsedWithChain, "user-1", null);
+
+    // The first call to findFirst for booking should include hotelChainId
+    const bookingQuery = mockBookingFindFirst.mock.calls[0][0].where;
+    expect(bookingQuery.confirmationNumber).toBe("73829461");
+    expect(bookingQuery.hotelChainId).toBe("chain-marriott");
+  });
+
+  it("includes hotelChainId: null in the duplicate check when no chain is resolved", async () => {
+    mockHotelChainFindFirst.mockResolvedValueOnce(null);
+
+    await ingestBookingFromEmail(baseParsed, "user-1", null);
+
+    const bookingQuery = mockBookingFindFirst.mock.calls[0][0].where;
+    expect(bookingQuery.confirmationNumber).toBe("73829461");
+    expect(bookingQuery.hotelChainId).toBeNull();
+  });
 });
