@@ -30,13 +30,27 @@ export async function ingestBookingFromEmail(
   userId: string,
   chainName: string | null
 ): Promise<IngestResult> {
-  // Check for existing booking with the same confirmation number
+  // Resolve hotel chain — prefer parsed chain from email content, fall back to caller-supplied name
+  const resolvedChainName = parsed.hotelChain ?? chainName;
+  const hotelChain = resolvedChainName
+    ? await prisma.hotelChain.findFirst({
+        where: { name: { contains: resolvedChainName, mode: "insensitive" } },
+        include: { pointType: true },
+      })
+    : null;
+  logger.info("ingest-booking: chain resolved", {
+    parsed: parsed.hotelChain,
+    resolved: hotelChain?.name ?? null,
+  });
+
+  // Check for existing booking with the same confirmation number and hotel chain
   let existingBookingId: string | null = null;
   if (parsed.confirmationNumber) {
     const existing = await prisma.booking.findFirst({
       where: {
         userId,
         confirmationNumber: parsed.confirmationNumber,
+        hotelChainId: hotelChain?.id ?? null,
       },
     });
 
@@ -54,19 +68,6 @@ export async function ingestBookingFromEmail(
       existingBookingId = existing.id;
     }
   }
-
-  // Resolve hotel chain — prefer parsed chain from email content, fall back to caller-supplied name
-  const resolvedChainName = parsed.hotelChain ?? chainName;
-  const hotelChain = resolvedChainName
-    ? await prisma.hotelChain.findFirst({
-        where: { name: { contains: resolvedChainName, mode: "insensitive" } },
-        include: { pointType: true },
-      })
-    : null;
-  logger.info("ingest-booking: chain resolved", {
-    parsed: parsed.hotelChain,
-    resolved: hotelChain?.name ?? null,
-  });
 
   // Resolve sub-brand — ask Claude to pick the best match from the DB list
   let subBrand = null;
