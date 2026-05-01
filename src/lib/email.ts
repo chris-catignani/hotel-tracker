@@ -90,28 +90,42 @@ export async function sendIngestionConfirmation({
   checkIn,
   checkOut,
   bookingId,
+  isUpdate = false,
 }: {
   to: string;
   propertyName: string;
   checkIn: string;
   checkOut: string;
   bookingId: string;
+  isUpdate?: boolean;
 }): Promise<void> {
   const resend = getResend();
   const from = process.env.RESEND_FROM_EMAIL;
   if (!resend || !from) return;
   const appUrl = process.env.NEXTAUTH_URL ?? process.env.VERCEL_URL ?? "http://localhost:3000";
   const bookingUrl = `${appUrl}/bookings/${bookingId}`;
+
+  const subject = isUpdate
+    ? `Booking updated: ${escapeHtml(propertyName)}`
+    : `Booking created: ${escapeHtml(propertyName)}`;
+
+  const bodyPrefix = isUpdate
+    ? `Your booking at <strong>${escapeHtml(propertyName)}</strong> (${escapeHtml(checkIn)} – ${escapeHtml(checkOut)}) has been updated.`
+    : `Your booking at <strong>${escapeHtml(propertyName)}</strong> (${escapeHtml(checkIn)} – ${escapeHtml(checkOut)}) has been added to your tracker.`;
+
+  const bodySuffix = isUpdate
+    ? `Please review the changes to ensure everything is correct.`
+    : `Open it to add your credit card and any missing details.`;
+
   await resend.emails.send({
     from,
     to,
-    subject: `Booking created: ${escapeHtml(propertyName)}`,
+    subject,
     html:
-      `<p>Your booking at <strong>${escapeHtml(propertyName)}</strong> ` +
-      `(${escapeHtml(checkIn)} – ${escapeHtml(checkOut)}) has been added to your tracker.</p>` +
-      `<p><a href="${escapeHtml(bookingUrl)}">View &amp; complete the booking →</a></p>` +
-      `<p style="color:#92400e;font-size:0.875rem;">This booking was created from a forwarded email. ` +
-      `Open it to add your credit card and any missing details.</p>`,
+      `<p>${bodyPrefix}</p>` +
+      `<p><a href="${escapeHtml(bookingUrl)}">View &amp; verify the booking →</a></p>` +
+      `<p style="color:#92400e;font-size:0.875rem;">This booking was ${isUpdate ? "updated" : "created"} from a forwarded email. ` +
+      `${bodySuffix}</p>`,
   });
 }
 

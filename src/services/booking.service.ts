@@ -129,6 +129,8 @@ export interface UpdateBookingInput {
   notes?: string | null;
   hotelChainSubBrandId?: string | null;
   confirmationNumber?: string | null;
+  needsReview?: boolean;
+  ingestionMethod?: string;
 }
 
 export interface PatchBookingInput {
@@ -687,6 +689,9 @@ export async function updateBooking(id: string, userId: string, input: UpdateBoo
   if (input.pointsRedeemed !== undefined)
     data.pointsRedeemed = input.pointsRedeemed ? Number(input.pointsRedeemed) : null;
   if (input.notes !== undefined) data.notes = input.notes || null;
+  if (input.needsReview !== undefined) data.needsReview = input.needsReview;
+  if (input.ingestionMethod !== undefined)
+    data.ingestionMethod = input.ingestionMethod as IngestionMethod;
   if (input.bookingSource !== undefined) {
     data.bookingSource = input.bookingSource || null;
     data.otaAgencyId =

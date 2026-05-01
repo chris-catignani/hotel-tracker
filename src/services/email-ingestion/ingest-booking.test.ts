@@ -4,6 +4,7 @@ import type { ParsedBookingData } from "@/services/email-ingestion/types";
 
 const {
   mockBookingCreate,
+  mockBookingUpdate,
   mockBookingFindFirst,
   mockHotelChainFindFirst,
   mockHotelChainFindUnique,
@@ -11,6 +12,7 @@ const {
   mockOtaAgencyFindFirst,
 } = vi.hoisted(() => ({
   mockBookingCreate: vi.fn().mockResolvedValue({ id: "booking-abc" }),
+  mockBookingUpdate: vi.fn().mockResolvedValue({ id: "booking-abc" }),
   mockBookingFindFirst: vi.fn().mockResolvedValue(null),
   mockHotelChainFindFirst: vi.fn().mockResolvedValue({
     id: "chain-hyatt",
@@ -54,11 +56,16 @@ vi.mock("@/services/exchange-rate", () => ({
 }));
 vi.mock("@/services/booking.service", () => ({
   runPostBookingCreate: vi.fn().mockResolvedValue(undefined),
+  updateBooking: vi.fn().mockResolvedValue({ id: "booking-abc" }),
 }));
 
 vi.mock("@/lib/prisma", () => ({
   default: {
-    booking: { create: mockBookingCreate, findFirst: mockBookingFindFirst },
+    booking: {
+      create: mockBookingCreate,
+      update: mockBookingUpdate,
+      findFirst: mockBookingFindFirst,
+    },
     hotelChain: { findFirst: mockHotelChainFindFirst, findUnique: mockHotelChainFindUnique },
     userStatus: { findUnique: mockUserStatusFindUnique },
     hotelChainSubBrand: { findMany: vi.fn().mockResolvedValue([]) },
@@ -113,7 +120,7 @@ describe("ingestBookingFromEmail", () => {
 
   it("creates a booking and returns its id", async () => {
     const result = await ingestBookingFromEmail(baseParsed, "user-1", "Hyatt");
-    expect(result).toEqual({ bookingId: "booking-abc", duplicate: false });
+    expect(result).toEqual({ bookingId: "booking-abc", duplicate: false, updated: false });
     expect(mockBookingCreate).toHaveBeenCalledOnce();
     const createArg = mockBookingCreate.mock.calls[0][0].data;
     expect(createArg.ingestionMethod).toBe("email");
@@ -122,16 +129,20 @@ describe("ingestBookingFromEmail", () => {
   });
 
   it("returns duplicate=true when same conf number AND same booking details", async () => {
-    mockBookingFindFirst.mockResolvedValueOnce({ id: "existing-booking" });
+    mockBookingFindFirst.mockResolvedValueOnce({
+      id: "existing-booking",
+      checkIn: new Date("2027-01-14"),
+      checkOut: new Date("2027-01-18"),
+      totalCost: 689.54,
+      pointsRedeemed: null,
+    });
     const result = await ingestBookingFromEmail(baseParsed, "user-1", "Hyatt");
-    expect(result).toEqual({ bookingId: "existing-booking", duplicate: true });
+    expect(result).toEqual({ bookingId: "existing-booking", duplicate: true, updated: false });
     expect(mockBookingCreate).not.toHaveBeenCalled();
-    // Verify the where clause includes all 5 matching fields
+    // Verify the where clause includes matching fields
     const whereClause = mockBookingFindFirst.mock.calls[0][0].where;
     expect(whereClause.confirmationNumber).toBe("73829461");
-    expect(whereClause.checkIn).toEqual(new Date("2027-01-14"));
-    expect(whereClause.checkOut).toEqual(new Date("2027-01-18"));
-    expect(whereClause.totalCost).toBe(689.54);
+    expect(whereClause.userId).toBe("user-1");
   });
 
   it("creates a new booking when conf number matches but dates differ (modification email)", async () => {
@@ -487,5 +498,74 @@ describe("ingestBookingFromEmail", () => {
     const data = mockBookingCreate.mock.calls[0][0].data;
     expect(data.pretaxCost).toBe(1426.43);
     expect(data.taxAmount).toBe(256.76);
+  });
+
+  it("updates existing booking when confirmation number matches but details differ", async () => {
+    mockBookingFindFirst.mockResolvedValueOnce({
+      id: "existing-id",
+      checkIn: new Date("2027-01-14"),
+      checkOut: new Date("2027-01-18"),
+      totalCost: 100.0, // Different from baseParsed (689.54)
+      pointsRedeemed: null,
+    });
+
+    const result = await ingestBookingFromEmail(baseParsed, "user-1", "Hyatt");
+
+    expect(result).toEqual({ bookingId: "existing-id", duplicate: false, updated: true });
+
+    const { updateBooking } = await import("@/services/booking.service");
+    expect(updateBooking).toHaveBeenCalledOnce();
+    const args = vi.mocked(updateBooking).mock.calls[0];
+    expect(args[0]).toBe("existing-id");
+    expect(args[1]).toBe("user-1");
+    expect(args[2].totalCost).toBe(689.54);
+    expect(args[2].needsReview).toBe(true);
+  });
+
+  it("calls updateBooking instead of runPostBookingCreate directly on update", async () => {
+    mockBookingFindFirst.mockResolvedValueOnce({
+      id: "existing-id",
+      checkIn: new Date("2027-01-14"),
+      checkOut: new Date("2027-01-18"),
+      totalCost: 100.0,
+      pointsRedeemed: null,
+    });
+
+    await ingestBookingFromEmail(baseParsed, "user-1", "Hyatt");
+
+    const { updateBooking, runPostBookingCreate } = await import("@/services/booking.service");
+    expect(updateBooking).toHaveBeenCalledWith("existing-id", "user-1", expect.any(Object));
+    // updateBooking handles the post-update logic internally, so ingest-booking shouldn't call runPostBookingCreate
+    expect(runPostBookingCreate).not.toHaveBeenCalled();
+  });
+
+  it("includes hotelChainId in the duplicate check query to improve accuracy", async () => {
+    // Resolve a specific chain
+    mockHotelChainFindFirst.mockResolvedValueOnce({
+      id: "chain-marriott",
+      name: "Marriott",
+      basePointRate: 10,
+      calculationCurrency: "USD",
+      pointType: null,
+    });
+
+    const parsedWithChain = { ...baseParsed, hotelChain: "Marriott" };
+
+    await ingestBookingFromEmail(parsedWithChain, "user-1", null);
+
+    // The first call to findFirst for booking should include hotelChainId
+    const bookingQuery = mockBookingFindFirst.mock.calls[0][0].where;
+    expect(bookingQuery.confirmationNumber).toBe("73829461");
+    expect(bookingQuery.hotelChainId).toBe("chain-marriott");
+  });
+
+  it("includes hotelChainId: null in the duplicate check when no chain is resolved", async () => {
+    mockHotelChainFindFirst.mockResolvedValueOnce(null);
+
+    await ingestBookingFromEmail(baseParsed, "user-1", null);
+
+    const bookingQuery = mockBookingFindFirst.mock.calls[0][0].where;
+    expect(bookingQuery.confirmationNumber).toBe("73829461");
+    expect(bookingQuery.hotelChainId).toBeNull();
   });
 });
