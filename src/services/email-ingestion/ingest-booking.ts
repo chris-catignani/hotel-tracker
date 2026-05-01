@@ -6,6 +6,12 @@ import { runPostBookingCreate, updateBooking } from "@/services/booking.service"
 import { matchSubBrand } from "@/services/email-ingestion/email-parser";
 import { logger } from "@/lib/logger";
 import type { ParsedBookingData } from "@/services/email-ingestion/types";
+import {
+  AccommodationType,
+  BookingSourceType,
+  IngestionMethod,
+  PaymentTiming,
+} from "@prisma/client";
 
 export interface IngestResult {
   bookingId: string;
@@ -184,7 +190,7 @@ export async function ingestBookingFromEmail(
     userId,
     hotelChainId: hotelChain?.id ?? null,
     hotelChainSubBrandId: subBrand?.id ?? null,
-    accommodationType: parsed.accommodationType ?? "hotel",
+    accommodationType: (parsed.accommodationType ?? "hotel") as AccommodationType,
     propertyId,
     checkIn: new Date(parsed.checkIn),
     checkOut: new Date(parsed.checkOut),
@@ -198,11 +204,11 @@ export async function ingestBookingFromEmail(
     loyaltyPointsEarned: financials.loyaltyPointsEarned,
     lockedLoyaltyUsdCentsPerPoint: financials.lockedLoyaltyUsdCentsPerPoint,
     confirmationNumber: parsed.confirmationNumber ?? null,
-    bookingSource: otaAgency ? "ota" : null,
+    bookingSource: (otaAgency ? "ota" : null) as BookingSourceType | null,
     otaAgencyId: otaAgency?.id ?? null,
-    ingestionMethod: "email" as const,
+    ingestionMethod: "email" as IngestionMethod,
     needsReview: true,
-    paymentTiming: "postpaid" as const,
+    paymentTiming: "postpaid" as PaymentTiming,
   };
 
   if (existingBookingId) {
