@@ -464,7 +464,8 @@ export async function createBooking(userId: string, input: CreateBookingInput) {
       longitude: input.longitude ?? null,
     });
   }
-  if (!propertyId) throw new AppError("Property ID or Property Name is required", 400);
+  if (!propertyId && !input.needsReview)
+    throw new AppError("Property ID or Property Name is required", 400);
 
   const userProvidedPoints =
     input.loyaltyPointsEarned != null ? Number(input.loyaltyPointsEarned) : undefined;

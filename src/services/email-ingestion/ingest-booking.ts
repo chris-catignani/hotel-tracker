@@ -1,8 +1,7 @@
 import prisma from "@/lib/prisma";
 import { findOrCreateProperty } from "@/services/property-utils";
 import { searchPlaces, searchLocalProperties } from "@/services/geo-lookup";
-import { resolveBookingFinancials } from "@/services/booking-financials";
-import { runPostBookingCreate, updateBooking } from "@/services/booking.service";
+import { createBooking, updateBooking } from "@/services/booking.service";
 import { matchSubBrand } from "@/services/email-ingestion/email-parser";
 import { logger } from "@/lib/logger";
 import type { ParsedBookingData } from "@/services/email-ingestion/types";
@@ -179,31 +178,19 @@ export async function ingestBookingFromEmail(
     taxAmount = null;
   }
 
-  const financials = await resolveBookingFinancials({
-    checkIn: parsed.checkIn,
-    currency: parsed.currency ?? "USD",
-    hotelChainId: hotelChain?.id ?? null,
-    pretaxCost,
-    userId,
-  });
-
-  const bookingData = {
-    userId,
+  const commonData = {
     hotelChainId: hotelChain?.id ?? null,
     hotelChainSubBrandId: subBrand?.id ?? null,
     accommodationType: (parsed.accommodationType ?? "hotel") as AccommodationType,
-    propertyId,
-    checkIn: new Date(parsed.checkIn),
-    checkOut: new Date(parsed.checkOut),
+    propertyId: propertyId ?? undefined,
+    checkIn: parsed.checkIn,
+    checkOut: parsed.checkOut,
     numNights: parsed.numNights,
     pretaxCost: pretaxCost ?? 0,
     taxAmount: taxAmount ?? 0,
     totalCost: parsed.totalCost ?? 0,
     currency: parsed.currency ?? "USD",
-    lockedExchangeRate: financials.lockedExchangeRate,
     pointsRedeemed: parsed.pointsRedeemed ?? null,
-    loyaltyPointsEarned: financials.loyaltyPointsEarned,
-    lockedLoyaltyUsdCentsPerPoint: financials.lockedLoyaltyUsdCentsPerPoint,
     confirmationNumber: parsed.confirmationNumber ?? null,
     bookingSource: (otaAgency ? "ota" : null) as BookingSourceType | null,
     otaAgencyId: otaAgency?.id ?? null,
@@ -213,30 +200,15 @@ export async function ingestBookingFromEmail(
   };
 
   if (existingBookingId) {
-    await updateBooking(existingBookingId, userId, {
-      ...bookingData,
-      checkIn: parsed.checkIn,
-      checkOut: parsed.checkOut,
-      bookingSource: bookingData.bookingSource ?? undefined,
-    });
-
+    await updateBooking(existingBookingId, userId, commonData);
     return { bookingId: existingBookingId, duplicate: false, updated: true };
   }
 
-  const booking = await prisma.booking.create({
-    data: bookingData,
-  });
+  const booking = await createBooking(userId, commonData);
 
-  await runPostBookingCreate(booking.id, {
-    userId,
-    accommodationType: parsed.accommodationType ?? "hotel",
-    checkIn: parsed.checkIn,
-    checkOut: parsed.checkOut,
-    numNights: parsed.numNights,
-    totalCost: parsed.totalCost ?? 0,
-    currency: parsed.currency ?? "USD",
-    ingestionMethod: "email",
-  });
+  if (!booking) {
+    throw new Error("Failed to create booking");
+  }
 
   return { bookingId: booking.id, duplicate: false, updated: false };
 }

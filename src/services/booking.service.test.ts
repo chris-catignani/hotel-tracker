@@ -3,6 +3,8 @@ import { Prisma } from "@prisma/client";
 
 const {
   mockBookingFindFirst,
+  mockBookingCreate,
+  mockBookingFindUnique,
   mockPropertyUpdate,
   mockPropertyFindUniqueOrThrow,
   mockPropertyFindFirst,
@@ -10,6 +12,8 @@ const {
   mockBookingUpdate,
 } = vi.hoisted(() => ({
   mockBookingFindFirst: vi.fn(),
+  mockBookingCreate: vi.fn().mockResolvedValue({ id: "booking-1" }),
+  mockBookingFindUnique: vi.fn().mockResolvedValue({ id: "booking-1" }),
   mockPropertyUpdate: vi.fn(),
   mockPropertyFindUniqueOrThrow: vi.fn(),
   mockPropertyFindFirst: vi.fn(),
@@ -19,13 +23,19 @@ const {
 
 vi.mock("@/lib/prisma", () => ({
   default: {
-    booking: { findFirst: mockBookingFindFirst, update: mockBookingUpdate },
+    booking: {
+      findFirst: mockBookingFindFirst,
+      create: mockBookingCreate,
+      findUnique: mockBookingFindUnique,
+      update: mockBookingUpdate,
+    },
     property: {
       update: mockPropertyUpdate,
       findUniqueOrThrow: mockPropertyFindUniqueOrThrow,
       findFirst: mockPropertyFindFirst,
     },
     bookingCardBenefit: { findMany: mockBookingCardBenefitFindMany },
+    exchangeRateHistory: { findUnique: vi.fn().mockResolvedValue(null) },
   },
 }));
 vi.mock("@/services/promotion-apply", () => ({
@@ -38,11 +48,15 @@ vi.mock("@/services/card-benefit-apply", () => ({
 vi.mock("@/lib/logger", () => ({
   logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn() },
 }));
+vi.mock("@/services/property-utils", () => ({
+  findOrCreateProperty: vi.fn().mockResolvedValue("prop-123"),
+}));
 
 import {
   runPostBookingCreate,
   derivePostingStatusesForCreate,
   derivePostingStatusesForUpdate,
+  createBooking,
   updateBooking,
 } from "./booking.service";
 import {
@@ -359,6 +373,59 @@ describe("derivePostingStatusesForUpdate", () => {
       {}
     );
     expect(portalCashbackPostingStatus).toBe("pending");
+  });
+});
+
+describe("createBooking", () => {
+  const baseInput = {
+    accommodationType: "hotel",
+    checkIn: "2026-06-01",
+    checkOut: "2026-06-03",
+    numNights: 2,
+    pretaxCost: 250,
+    taxAmount: 50,
+    totalCost: 300,
+  };
+
+  beforeEach(() => {
+    mockBookingCreate.mockResolvedValue({ id: "new-booking" });
+    mockBookingFindUnique.mockResolvedValue({ id: "new-booking" });
+  });
+
+  it("throws error if propertyId and propertyName are missing and needsReview is false", async () => {
+    await expect(createBooking("user-1", { ...baseInput, needsReview: false })).rejects.toThrow(
+      "Property ID or Property Name is required"
+    );
+  });
+
+  it("does not throw error if propertyId is missing but needsReview is true", async () => {
+    const result = await createBooking("user-1", { ...baseInput, needsReview: true });
+    expect(result?.id).toBe("new-booking");
+    expect(mockBookingCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          propertyId: undefined,
+          needsReview: true,
+        }),
+      })
+    );
+  });
+
+  it("resolves propertyId if propertyName is provided", async () => {
+    // We need to mock findOrCreateProperty for this test
+    // But since it's not mocked in the hoisted section, let's see if we can mock it here
+    const { findOrCreateProperty } = await import("@/services/property-utils");
+    vi.mocked(findOrCreateProperty).mockResolvedValueOnce("prop-resolved");
+
+    const result = await createBooking("user-1", { ...baseInput, propertyName: "Test Hotel" });
+    expect(result?.id).toBe("new-booking");
+    expect(mockBookingCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          propertyId: "prop-resolved",
+        }),
+      })
+    );
   });
 });
 

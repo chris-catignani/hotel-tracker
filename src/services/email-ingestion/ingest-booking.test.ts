@@ -3,16 +3,16 @@ import { ingestBookingFromEmail } from "@/services/email-ingestion/ingest-bookin
 import type { ParsedBookingData } from "@/services/email-ingestion/types";
 
 const {
-  mockBookingCreate,
-  mockBookingUpdate,
+  mockCreateBooking,
+  mockUpdateBooking,
   mockBookingFindFirst,
   mockHotelChainFindFirst,
   mockHotelChainFindUnique,
   mockUserStatusFindUnique,
   mockOtaAgencyFindFirst,
 } = vi.hoisted(() => ({
-  mockBookingCreate: vi.fn().mockResolvedValue({ id: "booking-abc" }),
-  mockBookingUpdate: vi.fn().mockResolvedValue({ id: "booking-abc" }),
+  mockCreateBooking: vi.fn().mockResolvedValue({ id: "booking-abc" }),
+  mockUpdateBooking: vi.fn().mockResolvedValue({ id: "booking-abc" }),
   mockBookingFindFirst: vi.fn().mockResolvedValue(null),
   mockHotelChainFindFirst: vi.fn().mockResolvedValue({
     id: "chain-hyatt",
@@ -55,15 +55,14 @@ vi.mock("@/services/exchange-rate", () => ({
   resolveCalcCurrencyRate: vi.fn().mockResolvedValue(null),
 }));
 vi.mock("@/services/booking.service", () => ({
+  createBooking: mockCreateBooking,
+  updateBooking: mockUpdateBooking,
   runPostBookingCreate: vi.fn().mockResolvedValue(undefined),
-  updateBooking: vi.fn().mockResolvedValue({ id: "booking-abc" }),
 }));
 
 vi.mock("@/lib/prisma", () => ({
   default: {
     booking: {
-      create: mockBookingCreate,
-      update: mockBookingUpdate,
       findFirst: mockBookingFindFirst,
     },
     hotelChain: { findFirst: mockHotelChainFindFirst, findUnique: mockHotelChainFindUnique },
@@ -101,7 +100,7 @@ describe("ingestBookingFromEmail", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockBookingFindFirst.mockResolvedValue(null);
-    mockBookingCreate.mockResolvedValue({ id: "booking-abc" });
+    mockCreateBooking.mockResolvedValue({ id: "booking-abc" });
     mockHotelChainFindUnique.mockResolvedValue({
       id: "chain-hyatt",
       basePointRate: 5,
@@ -121,8 +120,8 @@ describe("ingestBookingFromEmail", () => {
   it("creates a booking and returns its id", async () => {
     const result = await ingestBookingFromEmail(baseParsed, "user-1", "Hyatt");
     expect(result).toEqual({ bookingId: "booking-abc", duplicate: false, updated: false });
-    expect(mockBookingCreate).toHaveBeenCalledOnce();
-    const createArg = mockBookingCreate.mock.calls[0][0].data;
+    expect(mockCreateBooking).toHaveBeenCalledOnce();
+    const createArg = mockCreateBooking.mock.calls[0][1];
     expect(createArg.ingestionMethod).toBe("email");
     expect(createArg.needsReview).toBe(true);
     expect(createArg.confirmationNumber).toBe("73829461");
@@ -138,7 +137,7 @@ describe("ingestBookingFromEmail", () => {
     });
     const result = await ingestBookingFromEmail(baseParsed, "user-1", "Hyatt");
     expect(result).toEqual({ bookingId: "existing-booking", duplicate: true, updated: false });
-    expect(mockBookingCreate).not.toHaveBeenCalled();
+    expect(mockCreateBooking).not.toHaveBeenCalled();
     // Verify the where clause includes matching fields
     const whereClause = mockBookingFindFirst.mock.calls[0][0].where;
     expect(whereClause.confirmationNumber).toBe("73829461");
@@ -154,7 +153,7 @@ describe("ingestBookingFromEmail", () => {
       "Hyatt"
     );
     expect(result.duplicate).toBe(false);
-    expect(mockBookingCreate).toHaveBeenCalledOnce();
+    expect(mockCreateBooking).toHaveBeenCalledOnce();
   });
 
   it("still creates booking if confirmationNumber is null (no duplicate check possible)", async () => {
@@ -164,7 +163,7 @@ describe("ingestBookingFromEmail", () => {
       "Hyatt"
     );
     expect(result.duplicate).toBe(false);
-    expect(mockBookingCreate).toHaveBeenCalledOnce();
+    expect(mockCreateBooking).toHaveBeenCalledOnce();
   });
 
   it("creates a points booking with pointsRedeemed set and no loyalty points earned", async () => {
@@ -182,66 +181,36 @@ describe("ingestBookingFromEmail", () => {
       "Hyatt"
     );
     expect(result.duplicate).toBe(false);
-    expect(mockBookingCreate).toHaveBeenCalledOnce();
-    const data = mockBookingCreate.mock.calls[0][0].data;
+    expect(mockCreateBooking).toHaveBeenCalledOnce();
+    const data = mockCreateBooking.mock.calls[0][1];
     expect(data.pointsRedeemed).toBe(25000);
-    expect(data.loyaltyPointsEarned).toBeNull();
-    // loyalty points NOT calculated for points bookings
-    const { calculatePoints } = await import("@/lib/loyalty-utils");
-    expect(vi.mocked(calculatePoints)).not.toHaveBeenCalled();
   });
 
-  it("locks exchange rate for non-USD past check-in", async () => {
-    const { getOrFetchHistoricalRate } = await import("@/services/exchange-rate");
-    vi.mocked(getOrFetchHistoricalRate).mockResolvedValueOnce(1.35);
-
+  it("passes SGD and past check-in to createBooking", async () => {
     const result = await ingestBookingFromEmail(
       { ...baseParsed, currency: "SGD", checkIn: "2024-01-10", checkOut: "2024-01-14" },
       "user-1",
       "Hyatt"
     );
     expect(result.duplicate).toBe(false);
-    expect(getOrFetchHistoricalRate).toHaveBeenCalledWith("SGD", "2024-01-10");
-    const data = mockBookingCreate.mock.calls[0][0].data;
-    expect(data.lockedExchangeRate).toBe(1.35);
+    const data = mockCreateBooking.mock.calls[0][1];
+    expect(data.currency).toBe("SGD");
+    expect(data.checkIn).toBe("2024-01-10");
   });
 
-  it("does not lock exchange rate for future non-USD check-in", async () => {
-    const { getOrFetchHistoricalRate } = await import("@/services/exchange-rate");
-
+  it("passes EUR and future check-in to createBooking", async () => {
     const result = await ingestBookingFromEmail(
       { ...baseParsed, currency: "EUR", checkIn: "2099-01-10", checkOut: "2099-01-14" },
       "user-1",
       "Hyatt"
     );
     expect(result.duplicate).toBe(false);
-    expect(getOrFetchHistoricalRate).not.toHaveBeenCalled();
-    const data = mockBookingCreate.mock.calls[0][0].data;
-    expect(data.lockedExchangeRate).toBeNull();
+    const data = mockCreateBooking.mock.calls[0][1];
+    expect(data.currency).toBe("EUR");
+    expect(data.checkIn).toBe("2099-01-10");
   });
 
-  it("locks lockedLoyaltyUsdCentsPerPoint for a past stay with a foreign-currency program", async () => {
-    // Simulate a chain with a EUR-denominated points program
-    mockHotelChainFindUnique.mockImplementation(
-      (args: { where?: { id?: string }; select?: unknown }) => {
-        if (args.select) {
-          // Called for lockedLoyaltyUsdCentsPerPoint lookup
-          return Promise.resolve({
-            pointType: { programCurrency: "EUR", programCentsPerPoint: 2.0 },
-          });
-        }
-        return Promise.resolve({
-          id: "chain-accor",
-          basePointRate: 10,
-          calculationCurrency: "EUR",
-          pointType: null,
-        });
-      }
-    );
-
-    const { getOrFetchHistoricalRate } = await import("@/services/exchange-rate");
-    vi.mocked(getOrFetchHistoricalRate).mockResolvedValueOnce(1.1); // EUR/USD = 1.1
-
+  it("passes Accor chain and check-in to createBooking", async () => {
     const result = await ingestBookingFromEmail(
       { ...baseParsed, checkIn: "2024-01-10", checkOut: "2024-01-14" },
       "user-1",
@@ -249,9 +218,8 @@ describe("ingestBookingFromEmail", () => {
     );
 
     expect(result.duplicate).toBe(false);
-    expect(getOrFetchHistoricalRate).toHaveBeenCalledWith("EUR", "2024-01-10");
-    const data = mockBookingCreate.mock.calls[0][0].data;
-    expect(data.lockedLoyaltyUsdCentsPerPoint).toBeCloseTo(2.2); // 2.0 * 1.1
+    const data = mockCreateBooking.mock.calls[0][1];
+    expect(data.checkIn).toBe("2024-01-10");
   });
 
   it("sums nightlyRates in code for pretaxCost when provided", async () => {
@@ -265,26 +233,26 @@ describe("ingestBookingFromEmail", () => {
       null
     );
     expect(result.duplicate).toBe(false);
-    const data = mockBookingCreate.mock.calls[0][0].data;
+    const data = mockCreateBooking.mock.calls[0][1];
     expect(data.pretaxCost).toBe(587.02);
   });
 
   it("falls back to pretaxCost when nightlyRates is null", async () => {
     const result = await ingestBookingFromEmail(baseParsed, "user-1", null);
     expect(result.duplicate).toBe(false);
-    const data = mockBookingCreate.mock.calls[0][0].data;
+    const data = mockCreateBooking.mock.calls[0][1];
     expect(data.pretaxCost).toBe(591.04);
   });
 
   it("defaults accommodationType to hotel when not provided in parsed data", async () => {
     await ingestBookingFromEmail(baseParsed, "user-1", null);
-    const data = mockBookingCreate.mock.calls[0][0].data;
+    const data = mockCreateBooking.mock.calls[0][1];
     expect(data.accommodationType).toBe("hotel");
   });
 
   it("uses accommodationType from parsed data when provided", async () => {
     await ingestBookingFromEmail({ ...baseParsed, accommodationType: "apartment" }, "user-1", null);
-    const data = mockBookingCreate.mock.calls[0][0].data;
+    const data = mockCreateBooking.mock.calls[0][1];
     expect(data.accommodationType).toBe("apartment");
   });
 
@@ -309,14 +277,14 @@ describe("ingestBookingFromEmail", () => {
 
     expect(searchLocalProperties).toHaveBeenCalledWith(baseParsed.propertyName, "chain-hyatt");
     expect(findOrCreateProperty).not.toHaveBeenCalled();
-    const data = mockBookingCreate.mock.calls[0][0].data;
+    const data = mockCreateBooking.mock.calls[0][1];
     expect(data.propertyId).toBe("local-prop-456");
   });
 
   it("sets propertyId to null when no local property match found for a hotel booking", async () => {
     await ingestBookingFromEmail(baseParsed, "user-1", "Hyatt");
-    const data = mockBookingCreate.mock.calls[0][0].data;
-    expect(data.propertyId).toBeNull();
+    const data = mockCreateBooking.mock.calls[0][1];
+    expect(data.propertyId).toBeUndefined();
   });
 
   it("does not call searchPlaces for hotel bookings", async () => {
@@ -349,7 +317,7 @@ describe("ingestBookingFromEmail", () => {
   it("sets bookingSource to ota and resolves otaAgencyId when otaAgencyName is provided", async () => {
     mockOtaAgencyFindFirst.mockResolvedValueOnce({ id: "ota-amex-thc" });
     await ingestBookingFromEmail({ ...baseParsed, otaAgencyName: "AMEX THC" }, "user-1", null);
-    const data = mockBookingCreate.mock.calls[0][0].data;
+    const data = mockCreateBooking.mock.calls[0][1];
     expect(data.bookingSource).toBe("ota");
     expect(data.otaAgencyId).toBe("ota-amex-thc");
     expect(mockOtaAgencyFindFirst).toHaveBeenCalledWith({
@@ -359,7 +327,7 @@ describe("ingestBookingFromEmail", () => {
 
   it("leaves bookingSource null when no otaAgencyName", async () => {
     await ingestBookingFromEmail(baseParsed, "user-1", null);
-    const data = mockBookingCreate.mock.calls[0][0].data;
+    const data = mockCreateBooking.mock.calls[0][1];
     expect(data.bookingSource).toBeNull();
     expect(data.otaAgencyId).toBeNull();
   });
@@ -375,7 +343,7 @@ describe("ingestBookingFromEmail", () => {
       "user-1",
       null
     );
-    const data = mockBookingCreate.mock.calls[0][0].data;
+    const data = mockCreateBooking.mock.calls[0][1];
     expect(data.pretaxCost).toBe(969.61);
     expect(data.taxAmount).toBe(69.17);
     expect(data.totalCost).toBe(1038.78);
@@ -397,7 +365,7 @@ describe("ingestBookingFromEmail", () => {
       "user-1",
       null
     );
-    const data = mockBookingCreate.mock.calls[0][0].data;
+    const data = mockCreateBooking.mock.calls[0][1];
     // netTax = 69.17 - 31.02 = 38.15
     // pretaxCost = 1038.78 - 38.15 = 1000.63
     expect(data.taxAmount).toBe(38.15);
@@ -425,7 +393,7 @@ describe("ingestBookingFromEmail", () => {
     // Method B: 1038.78 - (69.17 - 31.02) = 1000.63
     // Method A: 1247.68 - 100.00 = 1147.68 → discrepancy 147.05 > 0.10 → warn
     expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("pretaxCost mismatch"));
-    const data = mockBookingCreate.mock.calls[0][0].data;
+    const data = mockCreateBooking.mock.calls[0][1];
     // Method B is authoritative
     expect(data.pretaxCost).toBe(1000.63);
     warnSpy.mockRestore();
@@ -467,7 +435,7 @@ describe("ingestBookingFromEmail", () => {
       "user-1",
       null
     );
-    const data = mockBookingCreate.mock.calls[0][0].data;
+    const data = mockCreateBooking.mock.calls[0][1];
     // No tax lines → parsedTaxAmount = null → treated as 0
     // feeDiscountsTotal = 0 (discount is accommodation type)
     // taxAmount = (0) - 0 = 0
@@ -495,7 +463,7 @@ describe("ingestBookingFromEmail", () => {
       null
     );
     expect(result.duplicate).toBe(false);
-    const data = mockBookingCreate.mock.calls[0][0].data;
+    const data = mockCreateBooking.mock.calls[0][1];
     expect(data.pretaxCost).toBe(1426.43);
     expect(data.taxAmount).toBe(256.76);
   });
