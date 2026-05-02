@@ -328,8 +328,8 @@ describe("ingestBookingFromEmail", () => {
   it("leaves bookingSource null when no otaAgencyName", async () => {
     await ingestBookingFromEmail(baseParsed, "user-1", null);
     const data = mockCreateBooking.mock.calls[0][1];
-    expect(data.bookingSource).toBeNull();
-    expect(data.otaAgencyId).toBeNull();
+    expect(data.bookingSource).toBeUndefined();
+    expect(data.otaAgencyId).toBeUndefined();
   });
 
   it("derives pretaxCost from totalCost - taxAmount when Claude returns pretaxCost null (Airbnb discounts)", async () => {

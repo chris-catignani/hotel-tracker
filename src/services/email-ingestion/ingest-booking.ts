@@ -179,8 +179,8 @@ export async function ingestBookingFromEmail(
   }
 
   const commonData = {
-    hotelChainId: hotelChain?.id ?? null,
-    hotelChainSubBrandId: subBrand?.id ?? null,
+    hotelChainId: hotelChain?.id ?? undefined,
+    hotelChainSubBrandId: subBrand?.id ?? undefined,
     accommodationType: (parsed.accommodationType ?? "hotel") as AccommodationType,
     propertyId: propertyId ?? undefined,
     checkIn: parsed.checkIn,
@@ -191,9 +191,9 @@ export async function ingestBookingFromEmail(
     totalCost: parsed.totalCost ?? 0,
     currency: parsed.currency ?? "USD",
     pointsRedeemed: parsed.pointsRedeemed ?? null,
-    confirmationNumber: parsed.confirmationNumber ?? null,
-    bookingSource: (otaAgency ? "ota" : null) as BookingSourceType | null,
-    otaAgencyId: otaAgency?.id ?? null,
+    confirmationNumber: parsed.confirmationNumber ?? undefined,
+    bookingSource: (otaAgency ? "ota" : undefined) as BookingSourceType | undefined,
+    otaAgencyId: otaAgency?.id ?? undefined,
     ingestionMethod: "email" as IngestionMethod,
     needsReview: true,
     paymentTiming: "postpaid" as PaymentTiming,
