@@ -19,10 +19,13 @@ export interface IngestResult {
 }
 
 /**
- * Create or update a Booking from parsed email data.
- * Returns { duplicate: true } if a booking with the same (userId, confirmationNumber)
- * and identical details already exists.
- * Returns { updated: true } if confirmationNumber matches but details differ.
+ * Ingests a booking from parsed email data.
+ * Logic:
+ * 1. Resolve hotel chain and sub-brand.
+ * 2. Resolve property (local or geo-lookup).
+ * 3. Resolve financials (costs and taxes).
+ * 4. Check for duplicate booking.
+ * 5. Create or update the booking record.
  */
 export async function ingestBookingFromEmail(
   parsed: ParsedBookingData,
@@ -118,6 +121,7 @@ export async function ingestBookingFromEmail(
     });
   }
 
+  // Resolve financials (pretaxCost and taxAmount).
   const parsedTaxAmount = parsed.taxLines
     ? Math.round(parsed.taxLines.reduce((sum, l) => sum + l.amount, 0) * 100) / 100
     : null;
@@ -181,18 +185,12 @@ export async function ingestBookingFromEmail(
   const commonData = {
     hotelChainId: hotelChain?.id ?? undefined,
     hotelChainSubBrandId: subBrand?.id ?? undefined,
-    accommodationType: (parsed.accommodationType ?? "hotel") as AccommodationType,
     propertyId: propertyId ?? undefined,
     checkIn: parsed.checkIn,
     checkOut: parsed.checkOut,
     numNights: parsed.numNights,
-    pretaxCost: pretaxCost ?? 0,
-    taxAmount: taxAmount ?? 0,
-    totalCost: parsed.totalCost ?? 0,
-    currency: parsed.currency ?? "USD",
-    pointsRedeemed: parsed.pointsRedeemed ?? null,
+    pointsRedeemed: parsed.pointsRedeemed ?? undefined,
     confirmationNumber: parsed.confirmationNumber ?? undefined,
-    bookingSource: (otaAgency ? "ota" : undefined) as BookingSourceType | undefined,
     otaAgencyId: otaAgency?.id ?? undefined,
     ingestionMethod: "email" as IngestionMethod,
     needsReview: true,
@@ -200,11 +198,27 @@ export async function ingestBookingFromEmail(
   };
 
   if (existingBookingId) {
-    await updateBooking(existingBookingId, userId, commonData);
+    await updateBooking(existingBookingId, userId, {
+      ...commonData,
+      accommodationType: (parsed.accommodationType ?? undefined) as AccommodationType | undefined,
+      pretaxCost: pretaxCost ?? undefined,
+      taxAmount: taxAmount ?? undefined,
+      totalCost: parsed.totalCost ?? undefined,
+      currency: parsed.currency ?? undefined,
+      bookingSource: otaAgency ? ("ota" as BookingSourceType) : undefined,
+    });
     return { bookingId: existingBookingId, duplicate: false, updated: true };
   }
 
-  const booking = await createBooking(userId, commonData);
+  const booking = await createBooking(userId, {
+    ...commonData,
+    accommodationType: (parsed.accommodationType ?? "hotel") as AccommodationType,
+    pretaxCost: pretaxCost ?? 0,
+    taxAmount: taxAmount ?? 0,
+    totalCost: parsed.totalCost ?? 0,
+    currency: parsed.currency ?? "USD",
+    bookingSource: otaAgency ? ("ota" as BookingSourceType) : undefined,
+  });
 
   if (!booking) {
     throw new Error("Failed to create booking");
