@@ -429,6 +429,58 @@ describe("BookingPriceWatch", () => {
     expect(screen.queryByTestId("toggle-room-rates")).not.toBeInTheDocument();
   });
 
+  it.each([
+    [
+      "completely different dates (sibling booking)",
+      { checkIn: "2026-07-10", checkOut: "2026-07-12" },
+    ],
+    ["check-in too late (misses first night)", { checkIn: "2026-05-02", checkOut: "2026-05-03" }],
+    ["check-out too early (misses last night)", { checkIn: "2026-05-01", checkOut: "2026-05-02" }],
+  ])(
+    "ignores snapshot with %s — does not cover full booking period",
+    // PriceWatch is shared per (userId, propertyId); snapshots from a sibling booking
+    // or after a booking date change must not appear on this booking's panel.
+    async (_, dates) => {
+      const watchPartial = {
+        ...mockWatch,
+        snapshots: [{ ...mockWatch.snapshots[0], ...dates }],
+      };
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => watchPartial,
+      } as Response);
+
+      render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(/Prices are checked automatically every morning/i)
+        ).toBeInTheDocument();
+      });
+
+      expect(screen.queryByTestId("latest-cash-price")).not.toBeInTheDocument();
+    }
+  );
+
+  it("shows snapshot that covers more than the booking period", async () => {
+    // A snapshot fetched for a wider date range still covers the full booking
+    // and should be displayed (e.g. booking was extended after the snapshot ran).
+    const watchWider = {
+      ...mockWatch,
+      snapshots: [{ ...mockWatch.snapshots[0], checkIn: "2026-04-30", checkOut: "2026-05-04" }],
+    };
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => watchWider,
+    } as Response);
+
+    render(<BookingPriceWatch {...defaultProps} initialWatchBooking={initialWatchBooking} />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("latest-cash-price")).toBeInTheDocument();
+    });
+  });
+
   it("shows no-data message when watch is enabled but has no snapshots", async () => {
     const watchNoSnapshots = { ...mockWatch, snapshots: [] };
     global.fetch = vi.fn().mockResolvedValue({

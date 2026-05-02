@@ -224,7 +224,12 @@ export function BookingPriceWatch({
   };
 
   const isEnabled = watch?.isEnabled ?? initialWatchBooking?.priceWatch?.isEnabled ?? false;
-  const latestSnapshot = watch?.snapshots?.[0] ?? null;
+  const checkInDate = checkIn.slice(0, 10);
+  const checkOutDate = checkOut.slice(0, 10);
+  const latestSnapshot =
+    watch?.snapshots?.find(
+      (s) => s.checkIn.slice(0, 10) <= checkInDate && s.checkOut.slice(0, 10) >= checkOutDate
+    ) ?? null;
 
   const handleToggle = async (enabled: boolean) => {
     setSaving(true);
