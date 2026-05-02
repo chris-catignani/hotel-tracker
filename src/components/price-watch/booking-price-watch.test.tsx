@@ -135,7 +135,6 @@ const defaultProps = {
   hotelChainId: "chain-1",
   checkIn: "2026-05-01",
   checkOut: "2026-05-03",
-  numNights: 2,
   totalCost: 480,
   currency: "USD",
   pointsRedeemed: null,
@@ -605,7 +604,7 @@ describe("BookingPriceWatch", () => {
   });
 
   describe("threshold input labels", () => {
-    it("shows pre-tax per-night labels on cash and award threshold inputs", async () => {
+    it("shows total-price labels on cash and award threshold inputs", async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         json: async () => mockWatch,
@@ -614,15 +613,14 @@ describe("BookingPriceWatch", () => {
       await waitFor(() => {
         expect(screen.getByTestId("cash-threshold-input")).toBeInTheDocument();
       });
-      expect(screen.getByText("Cash alert below (pre-tax USD/night)")).toBeInTheDocument();
-      expect(screen.getByText("Award alert below (pre-tax pts/night)")).toBeInTheDocument();
+      expect(screen.getByText("Cash alert below (USD total)")).toBeInTheDocument();
+      expect(screen.getByText("Award alert below (pts total)")).toBeInTheDocument();
     });
   });
 
   describe("threshold input placeholders", () => {
     const renderEnabled = async (overrides: {
       totalCost?: number;
-      numNights?: number;
       pointsRedeemed?: number | null;
     }) => {
       global.fetch = vi.fn().mockResolvedValue({
@@ -641,36 +639,36 @@ describe("BookingPriceWatch", () => {
       });
     };
 
-    it("shows per-night cash cost as placeholder for a cash-only booking", async () => {
-      // totalCost=480, numNights=2 → 240/night; pointsRedeemed=null
-      await renderEnabled({ totalCost: 480, numNights: 2, pointsRedeemed: null });
+    it("shows total cash cost as placeholder for a cash-only booking", async () => {
+      // totalCost=480, pointsRedeemed=null → placeholder shows full total
+      await renderEnabled({ totalCost: 480, pointsRedeemed: null });
       expect(screen.getByTestId("cash-threshold-input")).toHaveAttribute(
         "placeholder",
-        "240 (your cost/night)"
+        "480 (your total cost)"
       );
       expect(screen.getByTestId("award-threshold-input")).toHaveAttribute(
         "placeholder",
-        "e.g. 25000"
+        "e.g. 75000"
       );
     });
 
-    it("shows per-night award cost as placeholder for an award-only booking", async () => {
-      // totalCost=0, pointsRedeemed=30000, numNights=2 → 15,000 pts/night
-      await renderEnabled({ totalCost: 0, numNights: 2, pointsRedeemed: 30000 });
+    it("shows total award cost as placeholder for an award-only booking", async () => {
+      // totalCost=0, pointsRedeemed=30000 → placeholder shows full points total
+      await renderEnabled({ totalCost: 0, pointsRedeemed: 30000 });
       expect(screen.getByTestId("award-threshold-input")).toHaveAttribute(
         "placeholder",
-        "15,000 (your cost/night)"
+        "30,000 (your total cost)"
       );
-      expect(screen.getByTestId("cash-threshold-input")).toHaveAttribute("placeholder", "e.g. 200");
+      expect(screen.getByTestId("cash-threshold-input")).toHaveAttribute("placeholder", "e.g. 600");
     });
 
     it("shows default placeholders for a mixed cash+points booking", async () => {
-      // both totalCost and pointsRedeemed > 0
-      await renderEnabled({ totalCost: 200, numNights: 2, pointsRedeemed: 20000 });
-      expect(screen.getByTestId("cash-threshold-input")).toHaveAttribute("placeholder", "e.g. 200");
+      // both totalCost and pointsRedeemed > 0 → neither placeholder is personalised
+      await renderEnabled({ totalCost: 200, pointsRedeemed: 20000 });
+      expect(screen.getByTestId("cash-threshold-input")).toHaveAttribute("placeholder", "e.g. 600");
       expect(screen.getByTestId("award-threshold-input")).toHaveAttribute(
         "placeholder",
-        "e.g. 25000"
+        "e.g. 75000"
       );
     });
   });

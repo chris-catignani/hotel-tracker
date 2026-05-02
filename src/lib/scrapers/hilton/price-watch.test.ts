@@ -377,6 +377,20 @@ describe("parseHiltonRoomRates", () => {
     expect(lowestAward(rates)).toBe(25000);
   });
 
+  it("multiplies per-night cash and award rates by numNights for total stay", () => {
+    const data = makeRoomRatesResponse(
+      "T2",
+      "Twin Room",
+      [makeRoomOnlyRate("HTLGO", 150)],
+      [makeRedemptionRate(30000)]
+    );
+    const rates = parseHiltonRoomRates(data, "T2", "Twin Room", "USD", 3);
+    const cashRate = rates.find((r) => r.cashPrice !== null)!;
+    const awardRate = rates.find((r) => r.awardPrice !== null)!;
+    expect(cashRate.cashPrice).toBe(450);
+    expect(awardRate.awardPrice).toBe(90000);
+  });
+
   // --- HHonors Discount Rates ---
 
   it("parses hhonorsDiscountRate nested in a roomOnlyRate", () => {

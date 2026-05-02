@@ -24,7 +24,6 @@
  */
 
 import { HOTEL_ID } from "@/lib/constants";
-import { nightsBetween } from "@/lib/utils";
 import type {
   FetchableProperty,
   FetchParams,
@@ -175,8 +174,7 @@ export class AccorFetcher implements PriceFetcher {
     const offerCount = data.data?.hotelOffers?.offersSelection?.offers?.length ?? 0;
     console.log(`[AccorFetcher] Response for ${hotelId}: ${offerCount} raw offers`);
 
-    const nights = nightsBetween(params.checkIn, params.checkOut);
-    const rates = parseAccorRates(data, nights);
+    const rates = parseAccorRates(data);
     console.log(`[AccorFetcher] Parsed ${rates.length} rates for ${hotelId}`);
 
     return rates.length > 0 ? { rates, source: "accor_api" } : null;
@@ -191,7 +189,7 @@ export class AccorFetcher implements PriceFetcher {
  * cheapest offer per unique combination. ratePlanName comes from rate.label — the
  * canonical name shown on the website (e.g. "ADVANCE SAVER RATE", "INDULGENCE PACKAGE").
  */
-export function parseAccorRates(data: unknown, nights: number): RoomRate[] {
+export function parseAccorRates(data: unknown): RoomRate[] {
   const response = data as AccorResponse;
   const offers = response.data?.hotelOffers?.offersSelection?.offers ?? [];
 
@@ -227,7 +225,7 @@ export function parseAccorRates(data: unknown, nights: number): RoomRate[] {
     // vs non-refundable variants of the same rate (rare but defensive).
     const key = `${roomName}|${offerType}|${ratePlanName}|${cancellationCode}`;
 
-    const cashPrice = amount / Math.max(nights, 1);
+    const cashPrice = amount;
 
     const existing = seen.get(key);
     if (existing && Number(existing.cashPrice) <= cashPrice) continue;

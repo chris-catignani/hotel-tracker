@@ -256,8 +256,10 @@ export function parseMarriottRates(responses: unknown[], numNights = 1): RoomRat
       seen.add(dedupeKey);
 
       if (rateMode.__typename === "HotelRoomRateModesCash") {
+        // averageNightlyRatePerUnit is a per-night value; multiply by numNights for total stay.
         const amtData = (rateMode as MarriottRateModesCash).averageNightlyRatePerUnit.amount;
-        const cashPrice = amtData.amount / Math.pow(10, amtData.decimalPoint);
+        const pricePerNight = amtData.amount / Math.pow(10, amtData.decimalPoint);
+        const cashPrice = pricePerNight * numNights;
         if (!isFinite(cashPrice) || cashPrice <= 0) continue;
 
         result.push({
@@ -272,9 +274,9 @@ export function parseMarriottRates(responses: unknown[], numNights = 1): RoomRat
           isCorporate: false,
         });
       } else if (rateMode.__typename === "HotelRoomRateModesPoints") {
+        // pointsPerUnit.points is already a total-stay value.
         const totalPts = (rateMode as MarriottRateModesPoints).pointsPerUnit.points;
         if (!isFinite(totalPts) || totalPts <= 0) continue;
-        const ptsPerNight = Math.round(totalPts / Math.max(numNights, 1));
 
         result.push({
           roomId: roomName,
@@ -283,7 +285,7 @@ export function parseMarriottRates(responses: unknown[], numNights = 1): RoomRat
           ratePlanName,
           cashPrice: null,
           cashCurrency: "USD",
-          awardPrice: ptsPerNight,
+          awardPrice: totalPts,
           isRefundable: "REFUNDABLE",
           isCorporate: false,
         });

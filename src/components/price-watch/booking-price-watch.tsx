@@ -74,7 +74,6 @@ interface BookingPriceWatchProps {
   hotelChainId: string | null | undefined;
   checkIn: string;
   checkOut: string;
-  numNights: number;
   totalCost: string | number;
   currency: string;
   pointsRedeemed: number | null;
@@ -161,7 +160,6 @@ export function BookingPriceWatch({
   hotelChainId,
   checkIn,
   checkOut,
-  numNights,
   totalCost,
   currency,
   pointsRedeemed,
@@ -169,9 +167,8 @@ export function BookingPriceWatch({
 }: BookingPriceWatchProps) {
   const hasCash = Number(totalCost) > 0;
   const hasPoints = (pointsRedeemed ?? 0) > 0;
-  const cashPerNight = hasCash && !hasPoints ? Math.round(Number(totalCost) / numNights) : null;
-  const awardPerNight =
-    hasPoints && !hasCash ? Math.round((pointsRedeemed ?? 0) / numNights) : null;
+  const cashTotal = hasCash && !hasPoints ? Math.round(Number(totalCost)) : null;
+  const awardTotal = hasPoints && !hasCash ? Math.round(pointsRedeemed ?? 0) : null;
   const [watch, setWatch] = useState<PriceWatchData | null>(null);
   const [, setWatchBooking] = useState<PriceWatchBookingData | null>(initialWatchBooking);
 
@@ -326,12 +323,10 @@ export function BookingPriceWatch({
             {/* Alert thresholds */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label className="text-xs">Cash alert below (pre-tax {currency}/night)</Label>
+                <Label className="text-xs">Cash alert below ({currency} total)</Label>
                 <Input
                   type="number"
-                  placeholder={
-                    cashPerNight != null ? `${cashPerNight} (your cost/night)` : "e.g. 200"
-                  }
+                  placeholder={cashTotal != null ? `${cashTotal} (your total cost)` : "e.g. 600"}
                   value={cashThreshold}
                   onChange={(e) => setCashThreshold(e.target.value)}
                   className="h-8 text-sm"
@@ -339,13 +334,13 @@ export function BookingPriceWatch({
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">Award alert below (pre-tax pts/night)</Label>
+                <Label className="text-xs">Award alert below (pts total)</Label>
                 <Input
                   type="number"
                   placeholder={
-                    awardPerNight != null
-                      ? `${awardPerNight.toLocaleString("en-US")} (your cost/night)`
-                      : "e.g. 25000"
+                    awardTotal != null
+                      ? `${awardTotal.toLocaleString("en-US")} (your total cost)`
+                      : "e.g. 75000"
                   }
                   value={awardThreshold}
                   onChange={(e) => setAwardThreshold(e.target.value)}
@@ -371,7 +366,7 @@ export function BookingPriceWatch({
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
-                    <p className="text-xs text-muted-foreground">Lowest Cash (refundable/night)</p>
+                    <p className="text-xs text-muted-foreground">Lowest Cash (refundable, total)</p>
                     <p className="font-medium" data-testid="latest-cash-price">
                       {latestSnapshot.lowestRefundableCashPrice != null
                         ? formatCurrency(
@@ -382,7 +377,7 @@ export function BookingPriceWatch({
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Lowest Award (pts/night)</p>
+                    <p className="text-xs text-muted-foreground">Lowest Award (pts total)</p>
                     <p className="font-medium" data-testid="latest-award-price">
                       {latestSnapshot.lowestAwardPrice != null
                         ? `${latestSnapshot.lowestAwardPrice.toLocaleString()} pts`
@@ -483,13 +478,13 @@ export function BookingPriceWatch({
                                     className="text-xs text-right cursor-pointer select-none hover:text-foreground"
                                     onClick={() => handleSort("cash")}
                                   >
-                                    Cash/Night <SortIcon col="cash" />
+                                    Cash Total <SortIcon col="cash" />
                                   </TableHead>
                                   <TableHead
                                     className="text-xs text-right cursor-pointer select-none hover:text-foreground"
                                     onClick={() => handleSort("award")}
                                   >
-                                    Award (pts/night) <SortIcon col="award" />
+                                    Award (pts total) <SortIcon col="award" />
                                   </TableHead>
                                 </TableRow>
                               </TableHeader>

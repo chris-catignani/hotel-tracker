@@ -22,6 +22,7 @@ import os from "os";
 import path from "path";
 import { chromium } from "playwright";
 import { HOTEL_ID } from "@/lib/constants";
+import { nightsBetween } from "@/lib/utils";
 import type {
   FetchableProperty,
   FetchParams,
@@ -105,9 +106,10 @@ export class HyattFetcher implements PriceFetcher {
 
     if (!cashData && !awardData) return null;
 
-    const cashRates = cashData ? parseCashRates(cashData) : [];
+    const numNights = nightsBetween(params.checkIn, params.checkOut);
+    const cashRates = cashData ? parseCashRates(cashData, numNights) : [];
     const awardMap = awardData
-      ? buildAwardMap(awardData)
+      ? buildAwardMap(awardData, numNights)
       : new Map<string, { points: number; currency: string }>();
 
     // Build a room name lookup from both responses (cash data is more complete)
@@ -225,8 +227,9 @@ export class HyattFetcher implements PriceFetcher {
 /**
  * Exported for unit testing.
  * Parses cash rate plans from a Hyatt rates response (no award entries).
+ * Hyatt's API returns per-night rates; multiply by numNights for total-stay prices.
  */
-export function parseCashRates(data: HyattRatesResponse): RoomRate[] {
+export function parseCashRates(data: HyattRatesResponse, numNights = 1): RoomRate[] {
   const roomEntries = data.roomRates ? Object.entries(data.roomRates) : [];
   if (roomEntries.length === 0) return [];
 
@@ -244,7 +247,7 @@ export function parseCashRates(data: HyattRatesResponse): RoomRate[] {
             roomName,
             ratePlanCode: plan.id ?? "STANDARD",
             ratePlanName: plan.name ?? plan.ratePlanType ?? plan.id ?? "Standard Rate",
-            cashPrice: plan.rate,
+            cashPrice: plan.rate * numNights,
             cashCurrency: plan.currencyCode ?? currency,
             awardPrice: null,
             isRefundable: parseRefundability(plan.penaltyCode),
@@ -261,7 +264,7 @@ export function parseCashRates(data: HyattRatesResponse): RoomRate[] {
           roomName,
           ratePlanCode: "STANDARD",
           ratePlanName: "Standard Rate",
-          cashPrice: summaryPrice,
+          cashPrice: summaryPrice * numNights,
           cashCurrency: currency,
           awardPrice: null,
           isRefundable: "REFUNDABLE",
@@ -277,15 +280,17 @@ export function parseCashRates(data: HyattRatesResponse): RoomRate[] {
 /**
  * Exported for unit testing.
  * Extracts the lowest award price per room from a woh-filtered response.
+ * lowestAvgPointValue is a per-night average; multiply by numNights for total-stay points.
  */
 export function buildAwardMap(
-  data: HyattRatesResponse
+  data: HyattRatesResponse,
+  numNights = 1
 ): Map<string, { points: number; currency: string }> {
   const map = new Map<string, { points: number; currency: string }>();
   for (const [roomKey, room] of Object.entries(data.roomRates ?? {})) {
     if (room.lowestAvgPointValue != null) {
       map.set(roomKey, {
-        points: room.lowestAvgPointValue,
+        points: room.lowestAvgPointValue * numNights,
         currency: room.currencyCode ?? "USD",
       });
     }

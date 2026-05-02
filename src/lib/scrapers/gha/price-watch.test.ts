@@ -105,7 +105,7 @@ describe("parseGhaRates", () => {
     expect(rates[0].roomName).toBe("Studio Suite");
   });
 
-  it("divides total price by numNights to get per-night rate", () => {
+  it("uses total price directly (no per-night division)", () => {
     const data = {
       rooms: [
         makeRoom("D1D", "Superior Room", [
@@ -113,8 +113,8 @@ describe("parseGhaRates", () => {
         ]),
       ],
     };
-    const rates = parseGhaRates(data, 2);
-    expect(rates[0].cashPrice).toBe(1079);
+    const rates = parseGhaRates(data);
+    expect(rates[0].cashPrice).toBe(2158);
   });
 
   it("skips rates with zero or negative price", () => {
