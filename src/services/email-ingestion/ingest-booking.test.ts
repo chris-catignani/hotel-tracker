@@ -184,6 +184,8 @@ describe("ingestBookingFromEmail", () => {
     expect(mockCreateBooking).toHaveBeenCalledOnce();
     const data = mockCreateBooking.mock.calls[0][1];
     expect(data.pointsRedeemed).toBe(25000);
+    // pretaxCost: 0 is passed so resolveBookingFinancials (inside createBooking) skips loyalty point calculation
+    expect(data.pretaxCost).toBe(0);
   });
 
   it("passes SGD and past check-in to createBooking", async () => {
@@ -325,7 +327,7 @@ describe("ingestBookingFromEmail", () => {
     });
   });
 
-  it("leaves bookingSource null when no otaAgencyName", async () => {
+  it("leaves bookingSource and otaAgencyId undefined when no otaAgencyName", async () => {
     await ingestBookingFromEmail(baseParsed, "user-1", null);
     const data = mockCreateBooking.mock.calls[0][1];
     expect(data.bookingSource).toBeUndefined();
@@ -505,6 +507,24 @@ describe("ingestBookingFromEmail", () => {
     expect(updateBooking).toHaveBeenCalledWith("existing-id", "user-1", expect.any(Object));
     // updateBooking handles the post-update logic internally, so ingest-booking shouldn't call runPostBookingCreate
     expect(runPostBookingCreate).not.toHaveBeenCalled();
+  });
+
+  it("passes bookingSource: null on update when no OTA — clears any previously set value", async () => {
+    mockBookingFindFirst.mockResolvedValueOnce({
+      id: "existing-id",
+      checkIn: new Date("2027-01-14"),
+      checkOut: new Date("2027-01-18"),
+      totalCost: 100.0,
+      pointsRedeemed: null,
+    });
+
+    await ingestBookingFromEmail(baseParsed, "user-1", "Hyatt");
+
+    const { updateBooking } = await import("@/services/booking.service");
+    const args = vi.mocked(updateBooking).mock.calls[0];
+    expect(args[2].bookingSource).toBeNull();
+    // otaAgencyId is not passed explicitly; updateBooking clears it internally when bookingSource is null
+    expect(args[2].otaAgencyId).toBeUndefined();
   });
 
   it("includes hotelChainId in the duplicate check query to improve accuracy", async () => {

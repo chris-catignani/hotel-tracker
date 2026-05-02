@@ -191,7 +191,6 @@ export async function ingestBookingFromEmail(
     numNights: parsed.numNights,
     pointsRedeemed: parsed.pointsRedeemed ?? undefined,
     confirmationNumber: parsed.confirmationNumber ?? undefined,
-    otaAgencyId: otaAgency?.id ?? undefined,
     ingestionMethod: "email" as IngestionMethod,
     needsReview: true,
     paymentTiming: "postpaid" as PaymentTiming,
@@ -205,7 +204,7 @@ export async function ingestBookingFromEmail(
       taxAmount: taxAmount ?? undefined,
       totalCost: parsed.totalCost ?? undefined,
       currency: parsed.currency ?? undefined,
-      bookingSource: otaAgency ? ("ota" as BookingSourceType) : undefined,
+      bookingSource: (otaAgency ? "ota" : null) as BookingSourceType | null,
     });
     return { bookingId: existingBookingId, duplicate: false, updated: true };
   }
@@ -217,12 +216,9 @@ export async function ingestBookingFromEmail(
     taxAmount: taxAmount ?? 0,
     totalCost: parsed.totalCost ?? 0,
     currency: parsed.currency ?? "USD",
-    bookingSource: otaAgency ? ("ota" as BookingSourceType) : undefined,
+    bookingSource: otaAgency ? "ota" : undefined,
+    otaAgencyId: otaAgency?.id ?? undefined,
   });
 
-  if (!booking) {
-    throw new Error("Failed to create booking");
-  }
-
-  return { bookingId: booking.id, duplicate: false, updated: false };
+  return { bookingId: booking!.id, duplicate: false, updated: false };
 }
