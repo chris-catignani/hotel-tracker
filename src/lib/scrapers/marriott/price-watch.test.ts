@@ -188,6 +188,19 @@ describe("parseMarriottRates", () => {
     expect(rates[0].cashPrice).toBe(250);
   });
 
+  it("multiplies averageNightlyRatePerUnit by numNights for total cash price", () => {
+    // averageNightlyRatePerUnit = 159/night × 3 nights = 477 total
+    const rates = parseMarriottRates(
+      [
+        makeResponse([
+          makeEdge("king", "King Room", "XDRZ", "Flexible Rate", "StandardRates", 15900),
+        ]),
+      ],
+      3
+    );
+    expect(rates[0].cashPrice).toBe(477);
+  });
+
   it("parses award (points-only) rates from Redemption category", () => {
     const rates = parseMarriottRates([
       makeResponse([makeAwardEdge("king", "King Room", "BONV", "Redemption with Points", 30000)]),
@@ -203,24 +216,23 @@ describe("parseMarriottRates", () => {
     });
   });
 
-  it("divides total award points by numNights to get per-night price", () => {
-    // API returns total stay cost: 3 nights × 25000 pts/night = 75000 total
+  it("returns total award points directly (no per-night division)", () => {
+    // pointsPerUnit.points is already a total-stay value
     const rates = parseMarriottRates(
       [makeResponse([makeAwardEdge("king", "King Room", "BONV", "Redemption with Points", 75000)])],
       3
     );
 
-    expect(rates[0].awardPrice).toBe(25000);
+    expect(rates[0].awardPrice).toBe(75000);
   });
 
-  it("rounds award points per night when total is not evenly divisible", () => {
-    // 2 nights, 35001 total → rounds to 17501
+  it("total award points returned as-is without rounding", () => {
     const rates = parseMarriottRates(
       [makeResponse([makeAwardEdge("king", "King Room", "BONV", "Award Rate", 35001)])],
       2
     );
 
-    expect(rates[0].awardPrice).toBe(17501);
+    expect(rates[0].awardPrice).toBe(35001);
   });
 
   it("deduplicates rates with the same roomName+ratePlanName across multiple responses", () => {

@@ -293,22 +293,21 @@ describe("parseIhgRates", () => {
     expect(rates.every((r) => r.isCorporate === false)).toBe(true);
   });
 
-  it("divides total-stay cash price by numNights to return per-night rate", () => {
+  it("returns total-stay cash price directly (no per-night division)", () => {
     const data = makeResponse([makeOffer("IGCOR", "KNGX", "900.00", true)]);
     const rates = parseIhgRates(data, 3);
-    expect(rates[0].cashPrice).toBe(300);
+    expect(rates[0].cashPrice).toBe(900);
   });
 
-  it("defaults to 1 night when numNights is omitted (backwards compat)", () => {
+  it("cash price equals total amount when numNights is omitted", () => {
     const data = makeResponse([makeOffer("IGCOR", "KNGX", "299.00", true)]);
     const rates = parseIhgRates(data);
     expect(rates[0].cashPrice).toBe(299);
   });
 
-  it("award price is averageDailyPoints (per-night) regardless of numNights", () => {
-    // averageDailyPoints is already per-night; we use it as-is.
+  it("award price is averageDailyPoints × numNights (total stay points)", () => {
     const data = makeResponse([makeAwardOffer("IVANI", "KNGX", 25000)]);
     const rates = parseIhgRates(data, 3);
-    expect(rates[0].awardPrice).toBe(25000);
+    expect(rates[0].awardPrice).toBe(75000);
   });
 });

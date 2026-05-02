@@ -60,12 +60,12 @@ export async function sendPriceDropAlert(params: PriceDropAlertParams): Promise<
 
   if (params.cashPrice !== null && params.cashThreshold !== null) {
     lines.push(
-      `<p>💰 Cash rate dropped to <strong>${params.cashCurrency} ${params.cashPrice.toFixed(2)}</strong> (your threshold: ${params.cashCurrency} ${params.cashThreshold.toFixed(2)})</p>`
+      `<p>💰 Total cash price dropped to <strong>${params.cashCurrency} ${params.cashPrice.toFixed(2)}</strong> (your threshold: ${params.cashCurrency} ${params.cashThreshold.toFixed(2)})</p>`
     );
   }
   if (params.awardPrice !== null && params.awardThreshold !== null) {
     lines.push(
-      `<p>🏆 Award rate dropped to <strong>${params.awardPrice.toLocaleString()} points</strong> (your threshold: ${params.awardThreshold.toLocaleString()} pts)</p>`
+      `<p>🏆 Total award price dropped to <strong>${params.awardPrice.toLocaleString()} points</strong> (your threshold: ${params.awardThreshold.toLocaleString()} pts)</p>`
     );
   }
 

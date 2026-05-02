@@ -113,6 +113,27 @@ describe("parseCashRates", () => {
     expect(rates[0].cashPrice).toBe(199);
   });
 
+  it("multiplies per-night rate plan price by numNights for total stay", () => {
+    const data = {
+      roomRates: {
+        KNGX: {
+          currencyCode: "USD",
+          ratePlans: [{ id: "STANDARD", rate: 200, penaltyCode: "48H", currencyCode: "USD" }],
+        },
+      },
+    };
+    const rates = parseCashRates(data, 3);
+    expect(rates[0].cashPrice).toBe(600);
+  });
+
+  it("multiplies summary price by numNights when no ratePlans", () => {
+    const data = {
+      roomRates: { "room-1": { lowestPublicRate: 199, currencyCode: "USD" } },
+    };
+    const rates = parseCashRates(data, 3);
+    expect(rates[0].cashPrice).toBe(597);
+  });
+
   it("returns empty array when roomRates is empty", () => {
     expect(parseCashRates({ roomRates: {} })).toHaveLength(0);
   });
@@ -169,6 +190,14 @@ describe("buildAwardMap", () => {
   it("returns empty map when no rooms have award prices", () => {
     const data = { roomRates: { KNGX: { lowestCashRate: 300 } } };
     expect(buildAwardMap(data).size).toBe(0);
+  });
+
+  it("multiplies lowestAvgPointValue by numNights for total stay points", () => {
+    const data = {
+      roomRates: { KNGX: { lowestAvgPointValue: 25000, currencyCode: "USD" } },
+    };
+    const map = buildAwardMap(data, 3);
+    expect(map.get("KNGX")).toEqual({ points: 75000, currency: "USD" });
   });
 });
 

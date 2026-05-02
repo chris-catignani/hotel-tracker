@@ -75,11 +75,11 @@ const makeResponse = (offers: object[]): object => ({
 
 describe("parseAccorRates", () => {
   it("returns empty array for empty response", () => {
-    expect(parseAccorRates({}, 1)).toEqual([]);
+    expect(parseAccorRates({})).toEqual([]);
   });
 
   it("returns empty array when offers array is empty", () => {
-    expect(parseAccorRates(makeResponse([]), 1)).toEqual([]);
+    expect(parseAccorRates(makeResponse([]))).toEqual([]);
   });
 
   it("parses a single refundable offer using rate.label as ratePlanName", () => {
@@ -88,7 +88,7 @@ describe("parseAccorRates", () => {
         rateLabel: "ADVANCE SAVER RATE",
       }),
     ]);
-    const rates = parseAccorRates(data, 1);
+    const rates = parseAccorRates(data);
     expect(rates).toHaveLength(1);
     expect(rates[0]).toMatchObject({
       roomId: "Superior room, 1 king bed",
@@ -109,7 +109,7 @@ describe("parseAccorRates", () => {
         rateLabel: "ADVANCE SAVER RATE",
       }),
     ]);
-    const rates = parseAccorRates(data, 1);
+    const rates = parseAccorRates(data);
     expect(rates[0].isRefundable).toBe("NON_REFUNDABLE");
   });
 
@@ -119,7 +119,7 @@ describe("parseAccorRates", () => {
         rateLabel: "FLEXIBLE RATE",
       }),
     ]);
-    const rates = parseAccorRates(data, 1);
+    const rates = parseAccorRates(data);
     expect(rates[0].isRefundable).toBe("UNKNOWN");
   });
 
@@ -129,7 +129,7 @@ describe("parseAccorRates", () => {
         rateLabel: "ADVANCE SAVER RATE",
       }),
     ]);
-    const rates = parseAccorRates(data, 1);
+    const rates = parseAccorRates(data);
     expect(rates[0].awardPrice).toBeNull();
   });
 
@@ -141,7 +141,7 @@ describe("parseAccorRates", () => {
         rateLabel: null,
       }),
     ]);
-    const rates = parseAccorRates(data, 1);
+    const rates = parseAccorRates(data);
     expect(rates[0].ratePlanName).toBe("Room only");
   });
 
@@ -153,7 +153,7 @@ describe("parseAccorRates", () => {
         rateLabel: null,
       }),
     ]);
-    const rates = parseAccorRates(data, 1);
+    const rates = parseAccorRates(data);
     expect(rates[0].ratePlanName).toBe("Breakfast included");
   });
 
@@ -166,7 +166,7 @@ describe("parseAccorRates", () => {
         rateLabel: "INDULGENCE PACKAGE",
       }),
     ]);
-    const rates = parseAccorRates(data, 1);
+    const rates = parseAccorRates(data);
     expect(rates[0].ratePlanName).toBe("INDULGENCE PACKAGE");
   });
 
@@ -179,7 +179,7 @@ describe("parseAccorRates", () => {
         rateLabel: null,
       }),
     ]);
-    const rates = parseAccorRates(data, 1);
+    const rates = parseAccorRates(data);
     expect(rates[0].ratePlanName).toBe("Package – Breakfast included");
   });
 
@@ -200,7 +200,7 @@ describe("parseAccorRates", () => {
         rateLabel: "INDULGENCE PACKAGE",
       }),
     ]);
-    const rates = parseAccorRates(data, 1);
+    const rates = parseAccorRates(data);
     expect(rates).toHaveLength(2);
     expect(rates.map((r) => r.ratePlanCode).sort()).toEqual([
       "PACKAGE|BED_AND_BREAKFAST|FREE_CANCELLATION",
@@ -225,7 +225,7 @@ describe("parseAccorRates", () => {
         currency: "KRW",
       }),
     ]);
-    const rates = parseAccorRates(data, 1);
+    const rates = parseAccorRates(data);
     expect(rates).toHaveLength(2);
     expect(rates.map((r) => r.ratePlanName).sort()).toEqual([
       "INDULGENCE PACKAGE",
@@ -242,7 +242,7 @@ describe("parseAccorRates", () => {
         rateLabel: "FLEXIBLE RATE",
       }),
     ]);
-    const rates = parseAccorRates(data, 1);
+    const rates = parseAccorRates(data);
     expect(rates).toHaveLength(2);
   });
 
@@ -263,13 +263,13 @@ describe("parseAccorRates", () => {
         currency: "KRW",
       }),
     ]);
-    const rates = parseAccorRates(data, 1);
+    const rates = parseAccorRates(data);
     expect(rates).toHaveLength(1);
     expect(rates[0].cashPrice).toBe(266000);
   });
 
-  it("deduplicates correctly for multi-night stays (compares per-night prices, not totals)", () => {
-    // 2-night stay: first offer total 400 (200/night), second total 300 (150/night) — keep second
+  it("deduplicates using total price — keeps the lower total", () => {
+    // Two offers for the same room/rate: total 400 vs total 300 — keep the lower total (300)
     const data = makeResponse([
       makeOffer("Superior room", 400, "FREE_CANCELLATION", "Cancel free", {
         rateLabel: "FLEXIBLE RATE",
@@ -278,9 +278,9 @@ describe("parseAccorRates", () => {
         rateLabel: "FLEXIBLE RATE",
       }),
     ]);
-    const rates = parseAccorRates(data, 2);
+    const rates = parseAccorRates(data);
     expect(rates).toHaveLength(1);
-    expect(rates[0].cashPrice).toBe(150);
+    expect(rates[0].cashPrice).toBe(300);
   });
 
   it("keeps separate entries for different room types", () => {
@@ -292,7 +292,7 @@ describe("parseAccorRates", () => {
         rateLabel: "ADVANCE SAVER RATE",
       }),
     ]);
-    const rates = parseAccorRates(data, 1);
+    const rates = parseAccorRates(data);
     expect(rates).toHaveLength(2);
   });
 
@@ -301,7 +301,7 @@ describe("parseAccorRates", () => {
       makeOffer("Superior room, 1 king bed", 0, "FREE_CANCELLATION", "Cancel free"),
       makeOffer("Superior room, 1 king bed", -10, "NO_CANCELLATION", "Non-refundable"),
     ]);
-    expect(parseAccorRates(data, 1)).toHaveLength(0);
+    expect(parseAccorRates(data)).toHaveLength(0);
   });
 
   it("skips offers with missing room name", () => {
@@ -331,7 +331,7 @@ describe("parseAccorRates", () => {
         },
       },
     };
-    expect(parseAccorRates(data, 1)).toHaveLength(0);
+    expect(parseAccorRates(data)).toHaveLength(0);
   });
 
   it("parses a realistic Incheon airport response (4 ROOM + 3 PACKAGE rates per room type)", () => {
@@ -385,7 +385,7 @@ describe("parseAccorRates", () => {
         currency: "KRW",
       }),
     ]);
-    const rates = parseAccorRates(data, 1);
+    const rates = parseAccorRates(data);
     // 4 ROOM rates + 3 distinct PACKAGE rates
     expect(rates).toHaveLength(7);
 
@@ -401,14 +401,14 @@ describe("parseAccorRates", () => {
     ]);
   });
 
-  it("divides total stay amount by nights to get per-night cash price", () => {
+  it("uses total stay amount directly (no per-night division)", () => {
     const data = makeResponse([
       makeOffer("Superior room, 1 king bed", 200, "FREE_CANCELLATION", "Cancel free", {
         rateLabel: "FLEXIBLE RATE",
       }),
     ]);
-    const rates = parseAccorRates(data, 2);
-    expect(rates[0].cashPrice).toBe(100);
+    const rates = parseAccorRates(data);
+    expect(rates[0].cashPrice).toBe(200);
   });
 
   it("lowestRefundableCash returns cheapest FREE_CANCELLATION rate", () => {
@@ -426,7 +426,7 @@ describe("parseAccorRates", () => {
         rateLabel: "FLEXIBLE RATE",
       }),
     ]);
-    const rates = parseAccorRates(data, 1);
+    const rates = parseAccorRates(data);
     const { price, currency } = lowestRefundableCash(rates);
     expect(price).toBe(101.31);
     expect(currency).toBe("USD");
@@ -438,7 +438,7 @@ describe("parseAccorRates", () => {
         rateLabel: "FLEXIBLE RATE",
       }),
     ]);
-    const rates = parseAccorRates(data, 1);
+    const rates = parseAccorRates(data);
     expect(lowestAward(rates)).toBeNull();
   });
 
@@ -451,7 +451,7 @@ describe("parseAccorRates", () => {
         rateLabel: "FLEXIBLE RATE",
       }),
     ]);
-    const rates = parseAccorRates(data, 1);
+    const rates = parseAccorRates(data);
     expect(rates.every((r) => r.isCorporate === false)).toBe(true);
   });
 
@@ -481,7 +481,7 @@ describe("parseAccorRates", () => {
         },
       },
     };
-    const rates = parseAccorRates(data, 1);
+    const rates = parseAccorRates(data);
     expect(rates[0].cashCurrency).toBe("USD");
   });
 });

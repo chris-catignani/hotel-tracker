@@ -30,6 +30,7 @@ import fs from "fs";
 import { randomUUID } from "crypto";
 import { chromium } from "playwright";
 import { HOTEL_ID } from "@/lib/constants";
+import { nightsBetween } from "@/lib/utils";
 import type {
   FetchableProperty,
   FetchParams,
@@ -232,6 +233,7 @@ export class HiltonFetcher implements PriceFetcher {
       // A fresh UUID forces the server to compute a new session that includes award rates.
       const ratesCacheId = randomUUID();
 
+      const numNights = nightsBetween(params.checkIn, params.checkOut);
       const rates: RoomRate[] = [];
 
       for (const room of roomTypes) {
@@ -286,7 +288,13 @@ export class HiltonFetcher implements PriceFetcher {
           continue;
         }
 
-        const roomRates = parseHiltonRoomRates(roomData, roomTypeCode, roomTypeName, currency);
+        const roomRates = parseHiltonRoomRates(
+          roomData,
+          roomTypeCode,
+          roomTypeName,
+          currency,
+          numNights
+        );
         console.log(
           `[HiltonFetcher] Room ${roomTypeCode} (${roomTypeName}): ${roomRates.length} rates`
         );
@@ -319,13 +327,15 @@ export class HiltonFetcher implements PriceFetcher {
  * Award rates come from redemptionRoomRates[0].
  *
  * Refundability: `guarantee.nonRefundable`, `guarantee.cxlPolicyCode === "NRG"`, or `ratePlan.advancePurchase`.
- * `rateAmount` is per-night (Hilton's UI always shows per-night pricing).
+ * `rateAmount` is per-night (Hilton's UI always shows per-night pricing); multiply by numNights for total stay.
+ * `pointsRate` is per-night (query uses perNight: true); multiply by numNights for total stay.
  */
 export function parseHiltonRoomRates(
   data: unknown,
   roomTypeCode: string,
   roomTypeName: string,
-  currency: string
+  currency: string,
+  numNights = 1
 ): RoomRate[] {
   const response = data as HiltonGraphQLResponse;
 
@@ -342,8 +352,8 @@ export function parseHiltonRoomRates(
   function pushCashRate(rate: HiltonCashRate) {
     const ratePlanCode = rate.ratePlanCode;
     if (!ratePlanCode) return;
-    const cashPrice = rate.rateAmount;
-    if (cashPrice == null || cashPrice <= 0) return;
+    const ratePerNight = rate.rateAmount;
+    if (ratePerNight == null || ratePerNight <= 0) return;
     const isNonRefundable =
       rate.guarantee?.nonRefundable === true ||
       rate.guarantee?.cxlPolicyCode === "NRG" ||
@@ -353,7 +363,7 @@ export function parseHiltonRoomRates(
       roomName: roomTypeName,
       ratePlanCode,
       ratePlanName: rate.ratePlan?.ratePlanName ?? ratePlanCode,
-      cashPrice,
+      cashPrice: ratePerNight * numNights,
       cashCurrency: responseCurrency,
       awardPrice: null,
       isRefundable: isNonRefundable ? "NON_REFUNDABLE" : "REFUNDABLE",
@@ -376,9 +386,9 @@ export function parseHiltonRoomRates(
 
   // --- Award rate ---
   const redemption = room.redemptionRoomRates?.[0];
-  // pointDetails is an array (one per night); use the first entry as the per-night rate.
-  const pointsRate = redemption?.pointDetails?.[0]?.pointsRate;
-  if (pointsRate != null && pointsRate > 0) {
+  // pointDetails is an array (one per night, perNight: true in query).
+  const pointsPerNight = redemption?.pointDetails?.[0]?.pointsRate;
+  if (pointsPerNight != null && pointsPerNight > 0) {
     result.push({
       roomId: roomTypeCode,
       roomName: roomTypeName,
@@ -386,7 +396,7 @@ export function parseHiltonRoomRates(
       ratePlanName: redemption?.ratePlan?.ratePlanName ?? "Award Rate",
       cashPrice: null,
       cashCurrency: responseCurrency,
-      awardPrice: pointsRate,
+      awardPrice: pointsPerNight * numNights,
       isRefundable:
         redemption?.guarantee?.nonRefundable === true ||
         redemption?.guarantee?.cxlPolicyCode === "NRG"

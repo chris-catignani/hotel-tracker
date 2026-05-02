@@ -25,7 +25,6 @@
  */
 
 import { HOTEL_ID } from "@/lib/constants";
-import { nightsBetween } from "@/lib/utils";
 import type {
   FetchableProperty,
   FetchParams,
@@ -140,13 +139,9 @@ export class GhaFetcher implements PriceFetcher {
       throw new Error(`GHA Rates API error for ${meta.hotelCode}: HTTP ${res.status}`);
     }
 
-    const numNights = nightsBetween(params.checkIn, params.checkOut);
-
     const data = (await res.json()) as GhaRatesResponse;
-    const rates = parseGhaRates(data, numNights);
-    console.log(
-      `[GhaFetcher] Parsed ${rates.length} rates for ${meta.hotelCode} (${numNights} night(s))`
-    );
+    const rates = parseGhaRates(data);
+    console.log(`[GhaFetcher] Parsed ${rates.length} rates for ${meta.hotelCode}`);
 
     if (rates.length > 0) {
       await this.enrichRefundability(rates, meta, params);
@@ -284,7 +279,7 @@ export class GhaFetcher implements PriceFetcher {
  * Exported for unit testing.
  * Parses room rates from a GHA OSCP rates API response.
  */
-export function parseGhaRates(data: unknown, numNights = 1): RoomRate[] {
+export function parseGhaRates(data: unknown): RoomRate[] {
   const response = data as GhaRatesResponse;
   const rooms = response.rooms ?? [];
 
@@ -300,7 +295,7 @@ export function parseGhaRates(data: unknown, numNights = 1): RoomRate[] {
       if (!isFinite(rate.price) || rate.price <= 0) continue;
 
       const key = `${room.roomName}|${rate.rateCode}`;
-      const cashPrice = rate.price / Math.max(numNights, 1);
+      const cashPrice = rate.price;
       const existing = seen.get(key);
       if (existing && Number(existing.cashPrice) <= cashPrice) continue;
 

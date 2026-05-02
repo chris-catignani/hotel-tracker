@@ -211,8 +211,9 @@ export function parseIhgRates(data: unknown, numNights = 1): RoomRate[] {
 
     if (AWARD_RATE_CODES.has(ratePlanCode)) {
       // Award points cost comes from rewardNights.pointsOnly.averageDailyPoints (per-night average).
-      const awardPrice = offer.rewardNights?.pointsOnly?.averageDailyPoints ?? null;
-      if (!awardPrice) continue;
+      const avgDailyPoints = offer.rewardNights?.pointsOnly?.averageDailyPoints ?? null;
+      if (!avgDailyPoints) continue;
+      const awardPrice = avgDailyPoints * numNights;
       result.push({
         roomId,
         roomName,
@@ -225,7 +226,7 @@ export function parseIhgRates(data: unknown, numNights = 1): RoomRate[] {
         isCorporate: false,
       });
     } else {
-      // IHG returns total-stay cost for cash rates; divide by nights to get per-night rate.
+      // IHG returns total-stay cost for cash rates; use totalAmount directly.
       // Treat all non-award offers as cash rates.
       // IHG uses many regional/property-specific codes; rely on the API's
       // isRefundable flag rather than an allowlist of known codes.
@@ -235,7 +236,7 @@ export function parseIhgRates(data: unknown, numNights = 1): RoomRate[] {
         roomName,
         ratePlanCode,
         ratePlanName,
-        cashPrice: totalAmount / Math.max(numNights, 1),
+        cashPrice: totalAmount,
         cashCurrency: currency,
         awardPrice: null,
         isRefundable:

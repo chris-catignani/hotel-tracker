@@ -88,7 +88,6 @@ export default function EditBookingPage() {
                 hotelChainId={booking.hotelChainId ?? undefined}
                 checkIn={booking.checkIn}
                 checkOut={booking.checkOut}
-                numNights={booking.numNights}
                 totalCost={booking.totalCost}
                 currency={booking.currency}
                 pointsRedeemed={booking.pointsRedeemed}
