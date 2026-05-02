@@ -1,8 +1,7 @@
 import prisma from "@/lib/prisma";
 import { findOrCreateProperty } from "@/services/property-utils";
 import { searchPlaces, searchLocalProperties } from "@/services/geo-lookup";
-import { resolveBookingFinancials } from "@/services/booking-financials";
-import { runPostBookingCreate, updateBooking } from "@/services/booking.service";
+import { createBooking, updateBooking } from "@/services/booking.service";
 import { matchSubBrand } from "@/services/email-ingestion/email-parser";
 import { logger } from "@/lib/logger";
 import type { ParsedBookingData } from "@/services/email-ingestion/types";
@@ -20,10 +19,13 @@ export interface IngestResult {
 }
 
 /**
- * Create or update a Booking from parsed email data.
- * Returns { duplicate: true } if a booking with the same (userId, confirmationNumber)
- * and identical details already exists.
- * Returns { updated: true } if confirmationNumber matches but details differ.
+ * Ingests a booking from parsed email data.
+ * Logic:
+ * 1. Resolve hotel chain and sub-brand.
+ * 2. Resolve property (local or geo-lookup).
+ * 3. Resolve financials (costs and taxes).
+ * 4. Check for duplicate booking.
+ * 5. Create or update the booking record.
  */
 export async function ingestBookingFromEmail(
   parsed: ParsedBookingData,
@@ -119,6 +121,7 @@ export async function ingestBookingFromEmail(
     });
   }
 
+  // Resolve financials (pretaxCost and taxAmount).
   const parsedTaxAmount = parsed.taxLines
     ? Math.round(parsed.taxLines.reduce((sum, l) => sum + l.amount, 0) * 100) / 100
     : null;
@@ -179,34 +182,15 @@ export async function ingestBookingFromEmail(
     taxAmount = null;
   }
 
-  const financials = await resolveBookingFinancials({
+  const commonData = {
+    hotelChainId: hotelChain?.id ?? undefined,
+    hotelChainSubBrandId: subBrand?.id ?? undefined,
+    propertyId: propertyId ?? undefined,
     checkIn: parsed.checkIn,
-    currency: parsed.currency ?? "USD",
-    hotelChainId: hotelChain?.id ?? null,
-    pretaxCost,
-    userId,
-  });
-
-  const bookingData = {
-    userId,
-    hotelChainId: hotelChain?.id ?? null,
-    hotelChainSubBrandId: subBrand?.id ?? null,
-    accommodationType: (parsed.accommodationType ?? "hotel") as AccommodationType,
-    propertyId,
-    checkIn: new Date(parsed.checkIn),
-    checkOut: new Date(parsed.checkOut),
+    checkOut: parsed.checkOut,
     numNights: parsed.numNights,
-    pretaxCost: pretaxCost ?? 0,
-    taxAmount: taxAmount ?? 0,
-    totalCost: parsed.totalCost ?? 0,
-    currency: parsed.currency ?? "USD",
-    lockedExchangeRate: financials.lockedExchangeRate,
-    pointsRedeemed: parsed.pointsRedeemed ?? null,
-    loyaltyPointsEarned: financials.loyaltyPointsEarned,
-    lockedLoyaltyUsdCentsPerPoint: financials.lockedLoyaltyUsdCentsPerPoint,
-    confirmationNumber: parsed.confirmationNumber ?? null,
-    bookingSource: (otaAgency ? "ota" : null) as BookingSourceType | null,
-    otaAgencyId: otaAgency?.id ?? null,
+    pointsRedeemed: parsed.pointsRedeemed ?? undefined,
+    confirmationNumber: parsed.confirmationNumber ?? undefined,
     ingestionMethod: "email" as IngestionMethod,
     needsReview: true,
     paymentTiming: "postpaid" as PaymentTiming,
@@ -214,29 +198,27 @@ export async function ingestBookingFromEmail(
 
   if (existingBookingId) {
     await updateBooking(existingBookingId, userId, {
-      ...bookingData,
-      checkIn: parsed.checkIn,
-      checkOut: parsed.checkOut,
-      bookingSource: bookingData.bookingSource ?? undefined,
+      ...commonData,
+      accommodationType: (parsed.accommodationType ?? undefined) as AccommodationType | undefined,
+      pretaxCost: pretaxCost ?? undefined,
+      taxAmount: taxAmount ?? undefined,
+      totalCost: parsed.totalCost ?? undefined,
+      currency: parsed.currency ?? undefined,
+      bookingSource: (otaAgency ? "ota" : null) as BookingSourceType | null,
     });
-
     return { bookingId: existingBookingId, duplicate: false, updated: true };
   }
 
-  const booking = await prisma.booking.create({
-    data: bookingData,
-  });
-
-  await runPostBookingCreate(booking.id, {
-    userId,
-    accommodationType: parsed.accommodationType ?? "hotel",
-    checkIn: parsed.checkIn,
-    checkOut: parsed.checkOut,
-    numNights: parsed.numNights,
+  const booking = await createBooking(userId, {
+    ...commonData,
+    accommodationType: (parsed.accommodationType ?? "hotel") as AccommodationType,
+    pretaxCost: pretaxCost ?? 0,
+    taxAmount: taxAmount ?? 0,
     totalCost: parsed.totalCost ?? 0,
     currency: parsed.currency ?? "USD",
-    ingestionMethod: "email",
+    bookingSource: otaAgency ? "ota" : undefined,
+    otaAgencyId: otaAgency?.id ?? undefined,
   });
 
-  return { bookingId: booking.id, duplicate: false, updated: false };
+  return { bookingId: booking!.id, duplicate: false, updated: false };
 }

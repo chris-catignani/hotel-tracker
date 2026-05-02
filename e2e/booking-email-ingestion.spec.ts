@@ -170,4 +170,41 @@ test.describe("Email Ingestion — needs-review UI", () => {
       await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
     }
   });
+
+  test("allows creating a booking without a property when needsReview is true", async ({
+    isolatedUser,
+  }) => {
+    // Attempt to create a booking with NO propertyId and NO propertyName
+    const res = await isolatedUser.request.post("/api/bookings", {
+      data: {
+        checkIn: `${YEAR}-08-01`,
+        checkOut: `${YEAR}-08-05`,
+        numNights: 4,
+        pretaxCost: 400,
+        taxAmount: 40,
+        totalCost: 440,
+        currency: "USD",
+        needsReview: true,
+        ingestionMethod: "email",
+      },
+    });
+
+    // Should succeed (201 Created)
+    expect(res.status()).toBe(201);
+    const booking = await res.json();
+    expect(booking.propertyId).toBeNull();
+    expect(booking.needsReview).toBe(true);
+
+    try {
+      // Verify it shows up in the "needs review" filter
+      await isolatedUser.page.goto("/bookings?filter=needs-review");
+      await isolatedUser.page.waitForLoadState("networkidle");
+      await expect(isolatedUser.page.getByTestId(`booking-row-${booking.id}`)).toBeVisible();
+
+      // The property name cell should probably be empty or show a placeholder
+      // (Assuming the UI handles null property name gracefully)
+    } finally {
+      await isolatedUser.request.delete(`/api/bookings/${booking.id}`);
+    }
+  });
 });
